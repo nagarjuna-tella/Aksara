@@ -7,8 +7,36 @@ A lightweight, async-native ORM designed specifically for PostgreSQL and FastAPI
 from vidyut.model.base import Model
 from vidyut import fields
 from vidyut.db import Database
-from vidyut.registry import ModelRegistry
+from vidyut.registry import (
+    ModelRegistry,
+    get_models,
+    get_model_meta,
+    get_model_fields,
+    get_model_schema_for_ai,
+    get_all_schemas_for_ai,
+)
 from vidyut.manager import DoesNotExist, MultipleObjectsReturned
+from vidyut.conf import Settings, settings, configure
+from vidyut.exceptions import (
+    VidyutError,
+    DatabaseError,
+    ConnectionError,
+    QueryError,
+    UniqueConstraintError,
+    ForeignKeyConstraintError,
+    NotNullConstraintError,
+    CheckConstraintError,
+)
+
+# v0.3: API layer
+from vidyut.api import (
+    ModelViewSet,
+    include_viewset,
+    generate_create_schema,
+    generate_update_schema,
+    generate_read_schema,
+    get_schemas_for_model,
+)
 
 # Re-export FastAPI components with Vidyut enhancements
 from vidyut.app import (
@@ -39,7 +67,7 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -48,6 +76,32 @@ __all__ = [
     "ModelRegistry",
     "DoesNotExist",
     "MultipleObjectsReturned",
+    # Settings & Configuration
+    "Settings",
+    "settings",
+    "configure",
+    # Exceptions
+    "VidyutError",
+    "DatabaseError",
+    "ConnectionError",
+    "QueryError",
+    "UniqueConstraintError",
+    "ForeignKeyConstraintError",
+    "NotNullConstraintError",
+    "CheckConstraintError",
+    # AI Metadata Helpers
+    "get_models",
+    "get_model_meta",
+    "get_model_fields",
+    "get_model_schema_for_ai",
+    "get_all_schemas_for_ai",
+    # v0.3: API Layer
+    "ModelViewSet",
+    "include_viewset",
+    "generate_create_schema",
+    "generate_update_schema",
+    "generate_read_schema",
+    "get_schemas_for_model",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports

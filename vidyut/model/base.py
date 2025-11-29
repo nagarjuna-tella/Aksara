@@ -8,11 +8,12 @@ table name inference, and CRUD operations.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
-from vidyut.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON
+from vidyut.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey
 from vidyut.registry import ModelRegistry
 
 
@@ -34,12 +35,35 @@ def pluralize(name: str) -> str:
     return name + 's'
 
 
+@dataclass
+class ModelAIMeta:
+    """
+    AI metadata for a model.
+    
+    Stored in Model.Meta and accessible via registry functions.
+    """
+    ai_name: Optional[str] = None
+    ai_description: Optional[str] = None
+    ai_agent_exposed: bool = True
+    ai_permissions: Optional[List[str]] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "name": self.ai_name,
+            "description": self.ai_description,
+            "agent_exposed": self.ai_agent_exposed,
+            "permissions": self.ai_permissions or [],
+        }
+
+
 class ModelMeta(type):
     """
     Metaclass for Model that handles:
     - Field discovery and registration
     - Automatic table name inference
     - Manager attachment
+    - AI metadata extraction
     """
     
     def __new__(mcs, name: str, bases: tuple, namespace: dict, **kwargs):
@@ -48,11 +72,14 @@ class ModelMeta(type):
         
         # Collect fields from the class
         fields: Dict[str, Field] = {}
+        fk_fields: Dict[str, ForeignKey] = {}
         
         # Inherit fields from parent classes
         for base in bases:
             if hasattr(base, '_fields'):
                 fields.update(base._fields)
+            if hasattr(base, '_fk_fields'):
+                fk_fields.update(base._fk_fields)
         
         # Collect new fields defined in this class and REMOVE them from namespace
         # This is crucial so __getattr__ gets called for field access
@@ -61,6 +88,14 @@ class ModelMeta(type):
             if isinstance(value, Field):
                 value.name = key
                 fields[key] = value
+                
+                # Track ForeignKey fields separately
+                if isinstance(value, ForeignKey):
+                    fk_fields[key] = value
+                    # Also create the _id field mapping
+                    fk_col_name = value.db_column_name
+                    value._actual_column_name = fk_col_name
+                
                 field_keys_to_remove.append(key)
         
         # Remove field definitions from namespace so __getattr__ works
@@ -88,6 +123,21 @@ class ModelMeta(type):
                 fields['updated_at'] = updated_field
         
         namespace['_fields'] = fields
+        namespace['_fk_fields'] = fk_fields
+        
+        # Extract AI metadata from nested Meta class
+        meta_class = namespace.get('Meta')
+        ai_meta = ModelAIMeta()
+        if meta_class:
+            ai_meta = ModelAIMeta(
+                ai_name=getattr(meta_class, 'ai_name', None) or name,
+                ai_description=getattr(meta_class, 'ai_description', None),
+                ai_agent_exposed=getattr(meta_class, 'ai_agent_exposed', True),
+                ai_permissions=getattr(meta_class, 'ai_permissions', None),
+            )
+        else:
+            ai_meta.ai_name = name
+        namespace['_ai_meta'] = ai_meta
         
         # Infer table name
         if not is_base and '__tablename__' not in namespace:
@@ -121,11 +171,19 @@ class Model(metaclass=ModelMeta):
             email = fields.String(unique=True)
             name = fields.String(max_length=100)
             is_active = fields.Boolean(default=True)
+            
+            class Meta:
+                ai_name = "User"
+                ai_description = "Application user"
+                ai_agent_exposed = True
+                ai_permissions = ["read", "search"]
     """
     
     __abstract__ = True
     __tablename__: ClassVar[str]
     _fields: ClassVar[Dict[str, Field]]
+    _fk_fields: ClassVar[Dict[str, ForeignKey]]
+    _ai_meta: ClassVar[ModelAIMeta]
     objects: ClassVar["Manager"]  # type: ignore
     
     def __init__(self, **kwargs):
@@ -133,14 +191,23 @@ class Model(metaclass=ModelMeta):
         Initialize a model instance with field values.
         
         Args:
-            **kwargs: Field values
+            **kwargs: Field values (supports both 'field' and 'field_id' for ForeignKeys)
         """
         self._data: Dict[str, Any] = {}
         self._is_new = True
         
         # Set field values from kwargs or defaults
         for field_name, field in self._fields.items():
-            if field_name in kwargs:
+            # Handle ForeignKey fields - accept both 'author' and 'author_id'
+            if isinstance(field, ForeignKey):
+                fk_col = field.db_column_name  # e.g., 'author_id'
+                if fk_col in kwargs:
+                    value = kwargs[fk_col]
+                elif field_name in kwargs:
+                    value = kwargs[field_name]
+                else:
+                    value = field.get_default_value()
+            elif field_name in kwargs:
                 value = kwargs[field_name]
             else:
                 value = field.get_default_value()
@@ -155,6 +222,11 @@ class Model(metaclass=ModelMeta):
         if name in self._fields:
             return self._data.get(name)
         
+        # Handle ForeignKey column access (e.g., author_id)
+        for field_name, field in self._fk_fields.items():
+            if name == field.db_column_name:
+                return self._data.get(field_name)
+        
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
     
     def __setattr__(self, name: str, value: Any) -> None:
@@ -166,6 +238,12 @@ class Model(metaclass=ModelMeta):
         if name in self._fields:
             self._data[name] = value
             return
+        
+        # Handle ForeignKey column access (e.g., author_id)
+        for field_name, field in self._fk_fields.items():
+            if name == field.db_column_name:
+                self._data[field_name] = value
+                return
         
         super().__setattr__(name, value)
     
@@ -189,8 +267,16 @@ class Model(metaclass=ModelMeta):
         instance._data = {}
         instance._is_new = False
         
+        record_keys = set(record.keys())
+        
         for field_name, field in cls._fields.items():
-            if field_name in record.keys():
+            # Handle ForeignKey - look for the _id column
+            if isinstance(field, ForeignKey):
+                col_name = field.db_column_name
+                if col_name in record_keys:
+                    value = field.to_python(record[col_name])
+                    instance._data[field_name] = value
+            elif field_name in record_keys:
                 value = field.to_python(record[field_name])
                 instance._data[field_name] = value
         
@@ -239,7 +325,7 @@ class Model(metaclass=ModelMeta):
         values = []
         placeholders = []
         
-        for i, (field_name, field) in enumerate(self._fields.items(), 1):
+        for field_name, field in self._fields.items():
             # Skip auto-generated fields without values
             if field_name == 'id' and self._data.get('id') is None:
                 continue
@@ -249,7 +335,13 @@ class Model(metaclass=ModelMeta):
             
             value = self._data.get(field_name)
             if value is not None or field.nullable:
-                fields_to_insert.append(field_name)
+                # For ForeignKey, use the column name (e.g., author_id)
+                if isinstance(field, ForeignKey):
+                    col_name = field.db_column_name
+                else:
+                    col_name = field_name
+                
+                fields_to_insert.append(col_name)
                 values.append(field.to_db(value))
                 placeholders.append(f"${len(values)}")
         
@@ -265,8 +357,13 @@ class Model(metaclass=ModelMeta):
         record = await db.fetchrow(query, *values)
         
         # Update instance with returned values (includes generated id, timestamps)
+        record_keys = set(record.keys())
         for field_name, field in self._fields.items():
-            if field_name in record.keys():
+            if isinstance(field, ForeignKey):
+                col_name = field.db_column_name
+                if col_name in record_keys:
+                    self._data[field_name] = field.to_python(record[col_name])
+            elif field_name in record_keys:
                 self._data[field_name] = field.to_python(record[field_name])
     
     async def _update(self, db: "Database") -> None:
@@ -281,7 +378,14 @@ class Model(metaclass=ModelMeta):
             
             value = self._data.get(field_name)
             values.append(field.to_db(value))
-            set_clauses.append(f"{field_name} = ${len(values)}")
+            
+            # For ForeignKey, use the column name (e.g., author_id)
+            if isinstance(field, ForeignKey):
+                col_name = field.db_column_name
+            else:
+                col_name = field_name
+            
+            set_clauses.append(f"{col_name} = ${len(values)}")
         
         # Add the id for the WHERE clause
         values.append(self._data['id'])
@@ -297,8 +401,13 @@ class Model(metaclass=ModelMeta):
         record = await db.fetchrow(query, *values)
         
         # Update instance with returned values
+        record_keys = set(record.keys())
         for field_name, field in self._fields.items():
-            if field_name in record.keys():
+            if isinstance(field, ForeignKey):
+                col_name = field.db_column_name
+                if col_name in record_keys:
+                    self._data[field_name] = field.to_python(record[col_name])
+            elif field_name in record_keys:
                 self._data[field_name] = field.to_python(record[field_name])
     
     async def delete(self) -> None:
@@ -328,11 +437,35 @@ class Model(metaclass=ModelMeta):
         )
         
         columns = []
+        constraints = []
+        
         for field in sorted_fields:
             columns.append(f"    {field.get_column_definition()}")
+            
+            # Collect FK constraints
+            if isinstance(field, ForeignKey):
+                constraints.append(f"    {field.get_constraint_definition()}")
         
-        columns_sql = ",\n".join(columns)
+        all_parts = columns + constraints
+        columns_sql = ",\n".join(all_parts)
         
         return f"""CREATE TABLE IF NOT EXISTS {cls.__tablename__} (
 {columns_sql}
 );"""
+    
+    @classmethod
+    def get_ai_metadata(cls) -> Dict[str, Any]:
+        """
+        Get AI metadata for this model.
+        
+        Returns:
+            Dictionary with model and field AI metadata
+        """
+        return {
+            "model": cls._ai_meta.to_dict(),
+            "table_name": cls.__tablename__,
+            "fields": {
+                name: field.get_ai_metadata()
+                for name, field in cls._fields.items()
+            },
+        }

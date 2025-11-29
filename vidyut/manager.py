@@ -6,12 +6,46 @@ Django-like query interface for Vidyut models.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vidyut.model.base import Model
 
 T = TypeVar("T", bound="Model")
+
+
+# Supported lookup types
+LOOKUP_OPERATORS = {
+    "exact": "=",          # field__exact=value (same as field=value)
+    "gt": ">",             # field__gt=value
+    "gte": ">=",           # field__gte=value
+    "lt": "<",             # field__lt=value
+    "lte": "<=",           # field__lte=value
+    "in": "IN",            # field__in=[v1, v2]
+    "isnull": "IS NULL",   # field__isnull=True/False
+    "icontains": "ILIKE",  # field__icontains="substring"
+    "contains": "LIKE",    # field__contains="substring"
+}
+
+
+def parse_lookup(key: str) -> Tuple[str, str]:
+    """
+    Parse a filter key into field name and lookup type.
+    
+    Args:
+        key: Filter key like "email" or "age__gte"
+        
+    Returns:
+        Tuple of (field_name, lookup_type)
+    """
+    if "__" in key:
+        parts = key.rsplit("__", 1)
+        field_name, lookup = parts[0], parts[1]
+        if lookup in LOOKUP_OPERATORS:
+            return field_name, lookup
+        # If lookup not recognized, treat entire key as field name (exact match)
+        return key, "exact"
+    return key, "exact"
 
 
 class QuerySet(Generic[T]):
@@ -30,6 +64,13 @@ class QuerySet(Generic[T]):
         
         # Count matching records
         count = await User.objects.filter(is_active=True).count()
+        
+        # Advanced lookups
+        users = await User.objects.filter(
+            age__gte=18,
+            email__icontains="@gmail.com",
+            status__in=["active", "pending"],
+        ).all()
     """
     
     def __init__(self, model: Type[T], filters: Optional[Dict[str, Any]] = None):
@@ -38,7 +79,7 @@ class QuerySet(Generic[T]):
         
         Args:
             model: The model class to query
-            filters: Dictionary of field=value filters
+            filters: Dictionary of field=value or field__lookup=value filters
         """
         self._model = model
         self._filters = filters or {}
@@ -47,8 +88,19 @@ class QuerySet(Generic[T]):
         """
         Add filter conditions to the query.
         
+        Supports lookups:
+            - field=value (exact match)
+            - field__gt=value (greater than)
+            - field__gte=value (greater than or equal)
+            - field__lt=value (less than)
+            - field__lte=value (less than or equal)
+            - field__in=[v1, v2, ...] (membership)
+            - field__isnull=True/False (null check)
+            - field__icontains="substring" (case-insensitive contains)
+            - field__contains="substring" (case-sensitive contains)
+        
         Args:
-            **kwargs: Field=value conditions (combined with AND)
+            **kwargs: Field=value or field__lookup=value conditions (combined with AND)
             
         Returns:
             New QuerySet with additional filters
@@ -56,7 +108,7 @@ class QuerySet(Generic[T]):
         new_filters = {**self._filters, **kwargs}
         return QuerySet(self._model, new_filters)
     
-    def _build_where_clause(self) -> tuple[str, list]:
+    def _build_where_clause(self) -> Tuple[str, List]:
         """
         Build WHERE clause from filters.
         
@@ -68,15 +120,77 @@ class QuerySet(Generic[T]):
         
         conditions = []
         values = []
+        param_idx = 1
         
-        for i, (field_name, value) in enumerate(self._filters.items(), 1):
+        for key, value in self._filters.items():
+            field_name, lookup = parse_lookup(key)
+            
             # Validate field exists
             if field_name not in self._model._fields:
                 raise ValueError(f"Unknown field: {field_name}")
             
             field = self._model._fields[field_name]
-            conditions.append(f"{field_name} = ${i}")
-            values.append(field.to_db(value))
+            # Use the actual database column name (e.g., author_id for ForeignKey)
+            col_name = field.column_name
+            
+            # Build condition based on lookup type
+            if lookup == "exact":
+                conditions.append(f"{col_name} = ${param_idx}")
+                values.append(field.to_db(value))
+                param_idx += 1
+            
+            elif lookup == "gt":
+                conditions.append(f"{col_name} > ${param_idx}")
+                values.append(field.to_db(value))
+                param_idx += 1
+            
+            elif lookup == "gte":
+                conditions.append(f"{col_name} >= ${param_idx}")
+                values.append(field.to_db(value))
+                param_idx += 1
+            
+            elif lookup == "lt":
+                conditions.append(f"{col_name} < ${param_idx}")
+                values.append(field.to_db(value))
+                param_idx += 1
+            
+            elif lookup == "lte":
+                conditions.append(f"{col_name} <= ${param_idx}")
+                values.append(field.to_db(value))
+                param_idx += 1
+            
+            elif lookup == "in":
+                if not isinstance(value, (list, tuple, set)):
+                    raise ValueError(f"__in lookup requires a list, got {type(value)}")
+                if not value:
+                    # Empty list - nothing can match
+                    conditions.append("FALSE")
+                else:
+                    placeholders = []
+                    for item in value:
+                        placeholders.append(f"${param_idx}")
+                        values.append(field.to_db(item))
+                        param_idx += 1
+                    conditions.append(f"{col_name} IN ({', '.join(placeholders)})")
+            
+            elif lookup == "isnull":
+                if value:
+                    conditions.append(f"{col_name} IS NULL")
+                else:
+                    conditions.append(f"{col_name} IS NOT NULL")
+            
+            elif lookup == "icontains":
+                conditions.append(f"{col_name} ILIKE ${param_idx}")
+                values.append(f"%{value}%")
+                param_idx += 1
+            
+            elif lookup == "contains":
+                conditions.append(f"{col_name} LIKE ${param_idx}")
+                values.append(f"%{value}%")
+                param_idx += 1
+            
+            else:
+                raise ValueError(f"Unknown lookup type: {lookup}")
         
         return f"WHERE {' AND '.join(conditions)}", values
     

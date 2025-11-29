@@ -7,10 +7,13 @@ Command-line interface for Vidyut ORM.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
+import re
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import click
 
@@ -45,8 +48,78 @@ def discover_models(app_path: Optional[str] = None) -> None:
             pass
 
 
+# =============================================================================
+# Migration History System
+# =============================================================================
+
+MIGRATION_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS vidyut_migrations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    checksum VARCHAR(64) NOT NULL,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+
+def compute_checksum(sql: str) -> str:
+    """Compute SHA-256 checksum of SQL content."""
+    return hashlib.sha256(sql.strip().encode()).hexdigest()[:16]
+
+
+def generate_migration_name(prefix: str = "migration") -> str:
+    """Generate a timestamped migration name."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{timestamp}_{prefix}"
+
+
+def get_migration_files(migrations_dir: Path) -> List[Tuple[str, Path]]:
+    """
+    Get all migration files sorted by name.
+    
+    Returns:
+        List of (migration_name, file_path) tuples
+    """
+    if not migrations_dir.exists():
+        return []
+    
+    files = []
+    for f in migrations_dir.glob("*.sql"):
+        # Extract migration name (filename without .sql)
+        name = f.stem
+        files.append((name, f))
+    
+    # Sort by name (which includes timestamp)
+    return sorted(files, key=lambda x: x[0])
+
+
+async def ensure_migrations_table(db) -> None:
+    """Create the migrations tracking table if it doesn't exist."""
+    await db.execute(MIGRATION_TABLE_SQL)
+
+
+async def get_applied_migrations(db) -> List[str]:
+    """Get list of applied migration names."""
+    rows = await db.fetch_all(
+        "SELECT name FROM vidyut_migrations ORDER BY applied_at"
+    )
+    return [row['name'] for row in rows]
+
+
+async def record_migration(db, name: str, checksum: str) -> None:
+    """Record a migration as applied."""
+    await db.execute(
+        "INSERT INTO vidyut_migrations (name, checksum) VALUES ($1, $2)",
+        name, checksum
+    )
+
+
+# =============================================================================
+# CLI Commands
+# =============================================================================
+
 @click.group()
-@click.version_option(version="0.1.0", prog_name="vidyut")
+@click.version_option(version="0.2.0", prog_name="vidyut")
 def cli():
     """⚡ Vidyut - Async Postgres ORM for FastAPI"""
     pass
@@ -54,10 +127,13 @@ def cli():
 
 @cli.command()
 @click.option("--app", "-a", help="Path to application models module")
-@click.option("--output", "-o", help="Output file for SQL (default: stdout)")
-def makemigrations(app: Optional[str], output: Optional[str]):
-    """Generate CREATE TABLE SQL from models."""
+@click.option("--output", "-o", help="Output directory for migrations (default: ./migrations)")
+@click.option("--name", "-n", default="auto", help="Migration name prefix")
+@click.option("--stdout", is_flag=True, help="Output SQL to stdout instead of file")
+def makemigrations(app: Optional[str], output: Optional[str], name: str, stdout: bool):
+    """Generate migration SQL from models."""
     from vidyut.registry import ModelRegistry
+    from vidyut.conf import settings
     
     click.echo("⚡ Vidyut Makemigrations")
     click.echo("-" * 40)
@@ -75,73 +151,176 @@ def makemigrations(app: Optional[str], output: Optional[str]):
         return
     
     click.echo(f"\nFound {len(models)} model(s):")
-    for name in models:
-        click.echo(f"  • {name}")
+    for model_name in models:
+        click.echo(f"  • {model_name}")
     
     # Generate SQL
-    click.echo("\n" + "=" * 40)
-    click.echo("Generated SQL:")
-    click.echo("=" * 40 + "\n")
-    
     sql_statements = []
-    for name, model in models.items():
+    for model_name, model in models.items():
         sql = model.get_create_table_sql()
+        sql_statements.append(f"-- Model: {model_name}")
         sql_statements.append(sql)
-        click.echo(sql)
-        click.echo()
     
-    # Write to file if specified
-    if output:
-        with open(output, "w") as f:
-            f.write("\n\n".join(sql_statements))
-        click.echo(f"✓ SQL written to {output}")
+    full_sql = "\n\n".join(sql_statements)
+    
+    if stdout:
+        click.echo("\n" + "=" * 40)
+        click.echo("Generated SQL:")
+        click.echo("=" * 40 + "\n")
+        click.echo(full_sql)
+        return
+    
+    # Write to migrations directory
+    migrations_dir = Path(output) if output else Path(settings.migrations_dir)
+    migrations_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate migration filename
+    migration_name = generate_migration_name(name)
+    migration_file = migrations_dir / f"{migration_name}.sql"
+    
+    # Add header to migration file
+    header = f"""-- Migration: {migration_name}
+-- Generated: {datetime.now().isoformat()}
+-- Models: {', '.join(models.keys())}
+
+"""
+    
+    with open(migration_file, "w") as f:
+        f.write(header + full_sql)
+    
+    click.echo(f"\n✓ Migration created: {migration_file}")
+    click.echo(f"  Checksum: {compute_checksum(full_sql)}")
 
 
 @cli.command()
 @click.option("--app", "-a", help="Path to application models module")
-@click.option("--database-url", "-d", envvar="DATABASE_URL", required=True,
+@click.option("--database-url", "-d", envvar="DATABASE_URL",
               help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--migrations-dir", "-m", help="Migrations directory (default: ./migrations)")
 @click.option("--dry-run", is_flag=True, help="Print SQL without executing")
-def migrate(app: Optional[str], database_url: str, dry_run: bool):
+@click.option("--fake", is_flag=True, help="Mark migrations as applied without running")
+def migrate(
+    app: Optional[str],
+    database_url: Optional[str],
+    migrations_dir: Optional[str],
+    dry_run: bool,
+    fake: bool,
+):
     """Apply migrations to the database."""
     from vidyut.registry import ModelRegistry
     from vidyut.db import Database
+    from vidyut.conf import settings
     
     click.echo("⚡ Vidyut Migrate")
     click.echo("-" * 40)
     
-    # Discover models
-    click.echo("\nDiscovering models...")
-    discover_models(app)
-    
-    models = ModelRegistry.all()
-    
-    if not models:
-        click.echo("\n⚠️  No models found!")
+    # Get database URL from args or settings
+    db_url = database_url or settings.database_url
+    if not db_url:
+        click.echo("\n❌ No database URL provided!")
+        click.echo("   Set DATABASE_URL or use --database-url")
         return
     
-    click.echo(f"\nFound {len(models)} model(s)")
+    # Get migrations directory
+    mig_dir = Path(migrations_dir) if migrations_dir else Path(settings.migrations_dir)
+    
+    # Check for migration files
+    migration_files = get_migration_files(mig_dir)
+    
+    if migration_files:
+        click.echo(f"\nFound {len(migration_files)} migration file(s) in {mig_dir}")
+    else:
+        # Fall back to model-based migration (v0.1 behavior)
+        click.echo(f"\nNo migration files in {mig_dir}")
+        click.echo("Falling back to model-based migration...")
+        
+        # Discover models
+        click.echo("\nDiscovering models...")
+        discover_models(app)
+        
+        models = ModelRegistry.all()
+        
+        if not models:
+            click.echo("\n⚠️  No models found!")
+            return
+        
+        click.echo(f"Found {len(models)} model(s)")
     
     async def run_migrations():
-        db = Database(database_url)
+        db = Database(db_url)
         
         try:
             await db.connect()
             click.echo(f"\n✓ Connected to database")
             
-            for name, model in models.items():
-                sql = model.get_create_table_sql()
+            # Ensure migrations table exists
+            await ensure_migrations_table(db)
+            
+            if migration_files:
+                # File-based migrations
+                applied = await get_applied_migrations(db)
+                click.echo(f"  {len(applied)} migration(s) already applied")
                 
-                if dry_run:
-                    click.echo(f"\n[DRY RUN] Would create table '{model.__tablename__}':")
-                    click.echo(sql)
-                else:
-                    click.echo(f"\n→ Creating table '{model.__tablename__}'...")
-                    try:
-                        await db.execute(sql)
-                        click.echo(f"  ✓ Table '{model.__tablename__}' created/verified")
-                    except Exception as e:
-                        click.echo(f"  ✗ Error: {e}")
+                pending = [(name, path) for name, path in migration_files if name not in applied]
+                
+                if not pending:
+                    click.echo("\n✓ All migrations already applied!")
+                    return
+                
+                click.echo(f"\n{len(pending)} pending migration(s):")
+                
+                for name, path in pending:
+                    sql = path.read_text()
+                    checksum = compute_checksum(sql)
+                    
+                    if dry_run:
+                        click.echo(f"\n[DRY RUN] Would apply: {name}")
+                        click.echo(f"  Checksum: {checksum}")
+                        # Show first few lines
+                        lines = sql.strip().split('\n')[:5]
+                        for line in lines:
+                            click.echo(f"    {line}")
+                        if len(sql.strip().split('\n')) > 5:
+                            click.echo(f"    ... ({len(sql.strip().split(chr(10)))} lines total)")
+                    elif fake:
+                        click.echo(f"\n→ Marking as applied: {name}")
+                        await record_migration(db, name, checksum)
+                        click.echo(f"  ✓ Marked (not executed)")
+                    else:
+                        click.echo(f"\n→ Applying: {name}")
+                        try:
+                            await db.execute(sql)
+                            await record_migration(db, name, checksum)
+                            click.echo(f"  ✓ Applied successfully")
+                        except Exception as e:
+                            click.echo(f"  ✗ Error: {e}")
+                            return
+            else:
+                # Model-based migrations (v0.1 behavior)
+                models = ModelRegistry.all()
+                
+                for model_name, model in models.items():
+                    sql = model.get_create_table_sql()
+                    migration_name = f"model_{model_name.lower()}"
+                    
+                    # Check if already applied
+                    applied = await get_applied_migrations(db)
+                    
+                    if migration_name in applied:
+                        click.echo(f"\n→ Table '{model._table_name}' already migrated")
+                        continue
+                    
+                    if dry_run:
+                        click.echo(f"\n[DRY RUN] Would create table '{model._table_name}':")
+                        click.echo(sql)
+                    else:
+                        click.echo(f"\n→ Creating table '{model._table_name}'...")
+                        try:
+                            await db.execute(sql)
+                            await record_migration(db, migration_name, compute_checksum(sql))
+                            click.echo(f"  ✓ Table '{model._table_name}' created/verified")
+                        except Exception as e:
+                            click.echo(f"  ✗ Error: {e}")
             
             if not dry_run:
                 click.echo("\n" + "=" * 40)
@@ -153,10 +332,78 @@ def migrate(app: Optional[str], database_url: str, dry_run: bool):
 
 
 @cli.command()
-@click.option("--database-url", "-d", envvar="DATABASE_URL", required=True,
+@click.option("--database-url", "-d", envvar="DATABASE_URL",
               help="PostgreSQL connection URL (or set DATABASE_URL env var)")
-def shell(database_url: str):
+def status(database_url: Optional[str]):
+    """Show migration status."""
+    from vidyut.db import Database
+    from vidyut.conf import settings
+    
+    click.echo("⚡ Vidyut Migration Status")
+    click.echo("-" * 40)
+    
+    # Get database URL
+    db_url = database_url or settings.database_url
+    if not db_url:
+        click.echo("\n❌ No database URL provided!")
+        return
+    
+    # Get migrations directory
+    mig_dir = Path(settings.migrations_dir)
+    migration_files = get_migration_files(mig_dir)
+    
+    async def show_status():
+        db = Database(db_url)
+        
+        try:
+            await db.connect()
+            
+            # Ensure migrations table exists
+            await ensure_migrations_table(db)
+            
+            applied = await get_applied_migrations(db)
+            
+            click.echo(f"\n📁 Migrations directory: {mig_dir}")
+            click.echo(f"📊 Applied migrations: {len(applied)}")
+            
+            if migration_files:
+                click.echo(f"\n{'Migration':<40} {'Status':<12}")
+                click.echo("-" * 52)
+                
+                for name, path in migration_files:
+                    if name in applied:
+                        status = click.style("✓ applied", fg="green")
+                    else:
+                        status = click.style("○ pending", fg="yellow")
+                    click.echo(f"{name:<40} {status}")
+            
+            # Show applied migrations not in files (removed migrations)
+            file_names = {name for name, _ in migration_files}
+            orphaned = [m for m in applied if m not in file_names]
+            
+            if orphaned:
+                click.echo(f"\n⚠️  Orphaned migrations (applied but file missing):")
+                for name in orphaned:
+                    click.echo(f"  • {name}")
+                    
+        finally:
+            await db.disconnect()
+    
+    asyncio.run(show_status())
+
+
+@cli.command()
+@click.option("--database-url", "-d", envvar="DATABASE_URL",
+              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+def shell(database_url: Optional[str]):
     """Open an interactive async shell with Vidyut."""
+    from vidyut.conf import settings
+    
+    db_url = database_url or settings.database_url
+    if not db_url:
+        click.echo("❌ No database URL provided!")
+        return
+    
     click.echo("⚡ Vidyut Interactive Shell")
     click.echo("-" * 40)
     click.echo("Use 'await' for async operations")
@@ -170,7 +417,7 @@ def shell(database_url: str):
     from vidyut.db import Database
     from vidyut.registry import ModelRegistry
     
-    db = Database(database_url)
+    db = Database(db_url)
     
     # Create async REPL
     async def async_shell():
@@ -201,9 +448,10 @@ def shell(database_url: str):
 
 @cli.command()
 @click.option("--app", "-a", help="Path to application models module")
-def models(app: Optional[str]):
+@click.option("--ai", is_flag=True, help="Show AI metadata")
+def models(app: Optional[str], ai: bool):
     """List all registered models."""
-    from vidyut.registry import ModelRegistry
+    from vidyut.registry import ModelRegistry, get_model_meta
     
     click.echo("⚡ Vidyut Models")
     click.echo("-" * 40)
@@ -221,13 +469,30 @@ def models(app: Optional[str]):
     
     for name, model in all_models.items():
         click.echo(f"📦 {name}")
-        click.echo(f"   Table: {model.__tablename__}")
+        click.echo(f"   Table: {model._table_name}")
+        
+        if ai:
+            # Show AI metadata
+            meta = get_model_meta(model)
+            if meta.get('description'):
+                click.echo(f"   AI Description: {meta['description']}")
+            click.echo(f"   AI Exposed: {meta.get('ai_agent_exposed', True)}")
+            click.echo(f"   AI Permissions: {', '.join(meta.get('ai_permissions', []))}")
+        
         click.echo("   Fields:")
         for field_name, field in model._fields.items():
             pk = " (PK)" if field.primary_key else ""
-            nullable = " nullable" if field.nullable else ""
+            nullable = " nullable" if field.null else ""
             unique = " unique" if field.unique else ""
-            click.echo(f"     • {field_name}: {field.sql_type}{pk}{unique}{nullable}")
+            
+            field_info = f"     • {field_name}: {field.sql_type}{pk}{unique}{nullable}"
+            
+            if ai and field.ai_description:
+                field_info += f"\n       AI: {field.ai_description}"
+                if field.ai_sensitive:
+                    field_info += " [SENSITIVE]"
+            
+            click.echo(field_info)
         click.echo()
 
 
@@ -255,7 +520,7 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     
     # Print Vidyut banner
     click.echo()
-    click.echo("  \033[33m⚡\033[0m \033[1mVidyut\033[0m v0.1.0")
+    click.echo("  \033[33m⚡\033[0m \033[1mVidyut\033[0m v0.2.0")
     click.echo("  \033[90mAsync Postgres ORM for FastAPI\033[0m")
     click.echo()
     click.echo(f"  \033[36m→\033[0m Running: {app_path}")
