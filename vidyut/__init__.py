@@ -42,6 +42,12 @@ from vidyut.api import (
     ModelSerializer,
 )
 
+# v0.3.3: Migration layer
+from vidyut.migrations import (
+    Migration,
+    operations as migration_operations,
+)
+
 # Re-export FastAPI components with Vidyut enhancements
 from vidyut.app import (
     Vidyut,
@@ -71,7 +77,7 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -110,6 +116,9 @@ __all__ = [
     "action",
     # v0.3.2: Serializer
     "ModelSerializer",
+    # v0.3.3: Migrations
+    "Migration",
+    "migration_operations",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports
