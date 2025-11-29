@@ -100,7 +100,7 @@ async def ensure_migrations_table(db) -> None:
 
 async def get_applied_migrations(db) -> List[str]:
     """Get list of applied migration names."""
-    rows = await db.fetch_all(
+    rows = await db.fetch(
         "SELECT name FROM vidyut_migrations ORDER BY applied_at"
     )
     return [row['name'] for row in rows]
@@ -121,7 +121,7 @@ async def record_migration(db, name: str, checksum: str) -> None:
 @click.group()
 @click.version_option(version="0.2.0", prog_name="vidyut")
 def cli():
-    """⚡ Vidyut - Async Postgres ORM for FastAPI"""
+    """⚡ Vidyut - Async Framework"""
     pass
 
 

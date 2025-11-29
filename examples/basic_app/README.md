@@ -1,6 +1,22 @@
-# Vidyut Basic Example
+# Vidyut Basic Example (v0.3.1)
 
-This is a simple FastAPI application demonstrating Vidyut ORM usage.
+A FastAPI application demonstrating Vidyut ORM with all v0.2-v0.3.1 features.
+
+## Project Structure
+
+```
+basic_app/
+├── __init__.py          # Package init
+├── main.py              # FastAPI application with ViewSets
+├── models.py            # Model definitions (single source of truth)
+├── settings.py          # Vidyut settings configuration
+├── migrations/          # Database migrations
+│   ├── __init__.py
+│   ├── 0001_initial.sql
+│   ├── 0002_add_posts.sql
+│   └── 0003_add_articles.sql
+└── README.md
+```
 
 ## Setup
 
@@ -16,9 +32,26 @@ This is a simple FastAPI application demonstrating Vidyut ORM usage.
    pip install -e ".[dev]"
    ```
 
-4. Set database URL (optional, defaults to localhost):
+4. Set database URL:
    ```bash
-   export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vidyut_example"
+   export DATABASE_URL="postgresql://postgres:password@localhost:5432/vidyut_example"
+   ```
+
+5. Apply migrations using Vidyut CLI:
+   ```bash
+   cd examples/basic_app
+   vidyut migrate --migrations-dir migrations
+   ```
+
+   Or generate new migrations from models:
+   ```bash
+   vidyut makemigrations --app models --name initial --output migrations
+   vidyut migrate --migrations-dir migrations
+   ```
+
+   Check migration status:
+   ```bash
+   vidyut status
    ```
 
 ## Running the App
@@ -32,19 +65,45 @@ The API will be available at http://localhost:8000
 
 ## API Endpoints
 
-### Users
+### v0.3 ViewSet-generated CRUD (Recommended!)
 
-- `POST /users` - Create a user
-- `GET /users` - List all users (filter with `?is_active=true`)
-- `GET /users/{id}` - Get a user
-- `PUT /users/{id}` - Update a user
-- `DELETE /users/{id}` - Delete a user
+**Users (`/api/users/`)**
+- `GET /api/users/` - List users (with pagination)
+- `POST /api/users/` - Create user
+- `GET /api/users/{id}` - Get user
+- `PATCH /api/users/{id}` - Update user
+- `DELETE /api/users/{id}` - Delete user
 
-### Posts
+**Posts (`/api/posts/`)**
+- `GET /api/posts/` - List posts (with pagination)
+- `POST /api/posts/` - Create post
+- `GET /api/posts/{id}` - Get post
+- `PATCH /api/posts/{id}` - Update post
+- `DELETE /api/posts/{id}` - Delete post
 
-- `POST /posts` - Create a post
-- `GET /posts` - List all posts (filter with `?is_published=true`)
-- `GET /posts/{id}` - Get a post (increments view count)
+### v0.3.1 Custom Actions (NEW!)
+
+**User Actions**
+- `POST /api/users/{pk}/deactivate` - Deactivate user
+- `POST /api/users/{pk}/activate` - Activate user
+- `GET /api/users/active` - List active users only
+- `GET /api/users/stats` - Get user statistics
+
+**Post Actions**
+- `POST /api/posts/{pk}/publish` - Publish post
+- `POST /api/posts/{pk}/unpublish` - Unpublish post
+- `GET /api/posts/published` - List published posts
+- `POST /api/posts/{pk}/view` - Increment view count
+
+### Legacy Manual Endpoints (for comparison)
+
+- `POST /users`, `GET /users`, `GET /users/{id}`, etc.
+- `POST /posts`, `GET /posts`, `GET /posts/{id}`
+
+### AI Schema Endpoints (v0.2)
+
+- `GET /ai/schema` - Get all AI-exposed model schemas
+- `GET /ai/schema/{model}` - Get specific model schema
 
 ### Health
 
@@ -53,23 +112,50 @@ The API will be available at http://localhost:8000
 ## Example Usage
 
 ```bash
+# v0.3 CRUD via ViewSets
+curl http://localhost:8000/api/users/
+
+# v0.3.1 Custom actions
+curl http://localhost:8000/api/users/stats
+curl http://localhost:8000/api/users/active
+curl -X POST http://localhost:8000/api/users/{id}/deactivate
+
 # Create a user
-curl -X POST http://localhost:8000/users \
+curl -X POST http://localhost:8000/api/users/ \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "name": "Test User"}'
 
-# List active users
-curl http://localhost:8000/users?is_active=true
-
-# Create a post
-curl -X POST http://localhost:8000/posts \
+# Create a post with author
+curl -X POST http://localhost:8000/api/posts/ \
   -H "Content-Type: application/json" \
-  -d '{"title": "Hello World", "content": "This is my first post!"}'
+  -d '{"title": "Hello World", "content": "My first post!", "author_id": "USER_ID"}'
+
+# Publish the post
+curl -X POST http://localhost:8000/api/posts/{id}/publish
 
 # Get published posts
-curl http://localhost:8000/posts?is_published=true
+curl http://localhost:8000/api/posts/published
 ```
+
+## Features Demonstrated
+
+### v0.3.1
+- `@action(detail=True)` - Actions on specific items (`/{pk}/action`)
+- `@action(detail=False)` - Collection-level actions (`/action`)
+- Full Swagger/OpenAPI documentation for custom actions
+
+### v0.3
+- `ModelViewSet` - Auto-generated CRUD endpoints
+- `include_viewset()` - Wire ViewSets to FastAPI routers
+- Auto-generated Pydantic schemas from models
+
+### v0.2
+- Centralized settings with env var support
+- ForeignKey relationships
+- AI metadata on models and fields
+- Query lookups (`__gt`, `__gte`, `__lt`, `__lte`, `__in`, `__isnull`, `__icontains`)
+- Custom exceptions with proper error mapping
 
 ## Interactive Docs
 
-Visit http://localhost:8000/docs for Swagger UI documentation.
+Visit http://localhost:8000/docs for Swagger UI documentation with full action support!

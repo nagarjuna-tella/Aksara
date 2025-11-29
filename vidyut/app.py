@@ -76,7 +76,7 @@ class Vidyut(FastAPI):
         title: str = "Vidyut API",
         summary: Optional[str] = None,
         description: str = "",
-        version: str = "0.1.0",
+        version: str = "0.3.1",
         openapi_url: Optional[str] = "/openapi.json",
         openapi_tags: Optional[list[dict[str, Any]]] = None,
         docs_url: Optional[str] = "/docs",

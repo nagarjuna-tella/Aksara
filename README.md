@@ -116,14 +116,14 @@ vidyut migrate --app main
 vidyut run main:app --reload
 
 # Output:
-#   ⚡ Vidyut v0.1.0
-#   Async Postgres ORM for FastAPI
+#   ⚡ Vidyut v0.3.1
+#   Async Framework
 #
 #   → Running: main:app
 #   → Server:  http://127.0.0.1:8000
 #   → Reload:  enabled
 #
-#   ⚡ Vidyut - Async Postgres ORM
+#   ⚡ Vidyut - Async Framework
 #   ✓ Database connected
 ```
 

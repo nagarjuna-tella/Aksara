@@ -19,6 +19,13 @@ Usage:
             # Custom list logic
             queryset = self.model.objects.filter(is_active=True)
             return await self._paginate(queryset, limit, offset)
+    
+    # v0.3.2: Use serializers for validation and serialization:
+    class UserViewSet(ModelViewSet):
+        model = User
+        prefix = "/users"
+        create_serializer_class = UserCreateSerializer
+        retrieve_serializer_class = UserDetailSerializer
 """
 
 from __future__ import annotations
@@ -38,6 +45,7 @@ from vidyut.api.schemas import (
 
 if TYPE_CHECKING:
     from vidyut.manager import QuerySet
+    from vidyut.api.serializers import ModelSerializer
 
 
 class ModelViewSet:
@@ -57,6 +65,12 @@ class ModelViewSet:
         - PATCH {prefix}/{pk} → update
         - DELETE {prefix}/{pk} → delete
     
+    v0.3.2 Serializer Attributes:
+        - list_serializer_class: Serializer for list responses
+        - retrieve_serializer_class: Serializer for retrieve responses
+        - create_serializer_class: Serializer for create input/output
+        - update_serializer_class: Serializer for update input/output
+    
     Override Methods:
         Override list(), retrieve(), create(), update(), delete()
         for custom business logic.
@@ -71,6 +85,18 @@ class ModelViewSet:
     default_limit: int = 20
     max_limit: int = 100
     
+    # v0.3.2: Serializer classes (optional, takes precedence over schemas)
+    list_serializer_class: Optional[Type["ModelSerializer"]] = None
+    retrieve_serializer_class: Optional[Type["ModelSerializer"]] = None
+    create_serializer_class: Optional[Type["ModelSerializer"]] = None
+    update_serializer_class: Optional[Type["ModelSerializer"]] = None
+    
+    # v0.3: Schema classes (optional, fallback if no serializer)
+    list_schema_class: Optional[Type] = None
+    read_schema_class: Optional[Type] = None
+    create_schema_class: Optional[Type] = None
+    update_schema_class: Optional[Type] = None
+    
     def __init__(self):
         """Initialize the ViewSet."""
         if self.model is None:
@@ -83,10 +109,10 @@ class ModelViewSet:
         if self.tags is None:
             self.tags = [self.model.__name__]
         
-        # Generate schemas
-        self._create_schema = generate_create_schema(self.model)
-        self._update_schema = generate_update_schema(self.model)
-        self._read_schema = generate_read_schema(self.model)
+        # Generate schemas (used as fallback if no serializers defined)
+        self._create_schema = self.create_schema_class or generate_create_schema(self.model)
+        self._update_schema = self.update_schema_class or generate_update_schema(self.model)
+        self._read_schema = self.read_schema_class or generate_read_schema(self.model)
     
     @property
     def create_schema(self) -> Type:
@@ -102,6 +128,64 @@ class ModelViewSet:
     def read_schema(self) -> Type:
         """Get the Pydantic Read schema."""
         return self._read_schema
+    
+    # =========================================================================
+    # v0.3.2: Serializer/Schema Resolution
+    # =========================================================================
+    
+    def get_serializer_class(self, action: str) -> Optional[Type["ModelSerializer"]]:
+        """
+        Get the serializer class for a given action.
+        
+        Args:
+            action: One of 'list', 'retrieve', 'create', 'update'
+            
+        Returns:
+            Serializer class or None if not defined
+        """
+        mapping = {
+            'list': self.list_serializer_class,
+            'retrieve': self.retrieve_serializer_class,
+            'create': self.create_serializer_class,
+            'update': self.update_serializer_class,
+        }
+        return mapping.get(action)
+    
+    def get_serializer(
+        self,
+        action: str,
+        instance: Optional[Model] = None,
+        data: Optional[Dict[str, Any]] = None,
+        many: bool = False,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Optional["ModelSerializer"]:
+        """
+        Get an instantiated serializer for a given action.
+        
+        Args:
+            action: One of 'list', 'retrieve', 'create', 'update'
+            instance: Model instance for serialization
+            data: Data for deserialization
+            many: Whether handling multiple items
+            context: Additional context (e.g., request)
+            
+        Returns:
+            Serializer instance or None if no serializer defined
+        """
+        serializer_cls = self.get_serializer_class(action)
+        if serializer_cls is None:
+            return None
+        
+        return serializer_cls(
+            instance=instance,
+            data=data,
+            many=many,
+            context=context,
+        )
+    
+    def uses_serializer(self, action: str) -> bool:
+        """Check if an action uses a serializer (vs Pydantic schema)."""
+        return self.get_serializer_class(action) is not None
     
     # =========================================================================
     # CRUD Operations (Override these for custom logic)
@@ -127,7 +211,7 @@ class ModelViewSet:
             Paginated response with count and results
         """
         queryset = self.get_queryset(**filters)
-        return await self._paginate(queryset, limit, offset)
+        return await self._paginate(queryset, limit, offset, request=request)
     
     async def retrieve(
         self,
@@ -149,7 +233,7 @@ class ModelViewSet:
         """
         try:
             instance = await self.model.objects.get(**{self.lookup_field: pk})
-            return self._serialize(instance)
+            return self._serialize(instance, action='retrieve', request=request)
         except DoesNotExist:
             raise HTTPException(
                 status_code=404,
@@ -170,15 +254,31 @@ class ModelViewSet:
         """
         Create a new item.
         
+        If create_serializer_class is defined, uses serializer for validation
+        and creation. Otherwise uses the data directly.
+        
         Args:
-            data: Validated data from Create schema
+            data: Validated data from Create schema or raw data for serializer
             request: FastAPI Request object
             
         Returns:
             Created item data
         """
-        instance = await self.model.objects.create(**data)
-        return self._serialize(instance)
+        serializer = self.get_serializer(
+            'create',
+            data=data,
+            context={'request': request},
+        )
+        
+        if serializer is not None:
+            # Use serializer flow
+            serializer.is_valid(raise_exception=True)
+            instance = await serializer.save()
+            return self._serialize(instance, action='retrieve', request=request)
+        else:
+            # Schema flow (original behavior)
+            instance = await self.model.objects.create(**data)
+            return self._serialize(instance, action='retrieve', request=request)
     
     async def update(
         self,
@@ -189,9 +289,12 @@ class ModelViewSet:
         """
         Update an existing item (partial update).
         
+        If update_serializer_class is defined, uses serializer for validation
+        and update. Otherwise applies changes directly.
+        
         Args:
             pk: Primary key value
-            data: Validated data from Update schema (only non-None fields)
+            data: Validated data from Update schema or raw data for serializer
             request: FastAPI Request object
             
         Returns:
@@ -213,13 +316,27 @@ class ModelViewSet:
                 detail=f"Invalid {self.lookup_field} format: {pk}"
             )
         
-        # Apply updates (only non-None values)
-        for key, value in data.items():
-            if value is not None:
-                setattr(instance, key, value)
+        serializer = self.get_serializer(
+            'update',
+            instance=instance,
+            data=data,
+            context={'request': request},
+        )
         
-        await instance.save()
-        return self._serialize(instance)
+        if serializer is not None:
+            # Use serializer flow
+            serializer.is_valid(raise_exception=True)
+            instance = await serializer.save()
+            return self._serialize(instance, action='retrieve', request=request)
+        else:
+            # Schema flow (original behavior)
+            # Apply updates (only non-None values)
+            for key, value in data.items():
+                if value is not None:
+                    setattr(instance, key, value)
+            
+            await instance.save()
+            return self._serialize(instance, action='retrieve', request=request)
     
     async def delete(
         self,
@@ -283,6 +400,7 @@ class ModelViewSet:
         queryset: "QuerySet",
         limit: int,
         offset: int,
+        request: Optional[Request] = None,
     ) -> Dict[str, Any]:
         """
         Apply pagination to a queryset.
@@ -291,6 +409,7 @@ class ModelViewSet:
             queryset: The queryset to paginate
             limit: Maximum items to return
             offset: Items to skip
+            request: Optional request for serializer context
             
         Returns:
             Dict with count and results
@@ -309,7 +428,10 @@ class ModelViewSet:
             "count": total,
             "limit": limit,
             "offset": offset,
-            "results": [self._serialize(item) for item in results],
+            "results": [
+                self._serialize(item, action='list', request=request)
+                for item in results
+            ],
         }
     
     async def _fetch_with_pagination(
@@ -341,17 +463,35 @@ class ModelViewSet:
         records = await db.fetch(query, *values)
         return [self.model._from_record(record) for record in records]
     
-    def _serialize(self, instance: Model) -> Dict[str, Any]:
+    def _serialize(
+        self,
+        instance: Model,
+        action: str = 'retrieve',
+        request: Optional[Request] = None,
+    ) -> Dict[str, Any]:
         """
         Serialize a model instance to a dictionary.
         
+        Uses serializer if defined for the action, otherwise uses model_to_dict.
+        
         Args:
             instance: Model instance
+            action: One of 'list', 'retrieve', 'create', 'update'
+            request: Optional request for serializer context
             
         Returns:
             Dictionary suitable for JSON response
         """
-        return model_to_dict(instance)
+        serializer = self.get_serializer(
+            action,
+            instance=instance,
+            context={'request': request} if request else None,
+        )
+        
+        if serializer is not None:
+            return serializer.to_representation()
+        else:
+            return model_to_dict(instance)
     
     def get_filter_fields(self) -> List[str]:
         """

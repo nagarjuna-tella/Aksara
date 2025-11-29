@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vidyut"
-version = "0.1.0"
-description = "⚡ Vidyut - Async Postgres ORM for FastAPI"
+version = "0.3.1"
+description = "⚡ Vidyut - Async Framework"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

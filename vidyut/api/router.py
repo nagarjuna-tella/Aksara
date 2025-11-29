@@ -125,11 +125,18 @@ def include_viewset(
         """Create a new item."""
         try:
             body = await request.json()
-            data = CreateSchema(**body)
-            return await viewset.create(
-                data=data.model_dump(exclude_unset=True),
-                request=request,
-            )
+            
+            # Check if viewset uses serializer for create
+            if viewset.uses_serializer('create'):
+                # Serializer handles validation internally
+                return await viewset.create(data=body, request=request)
+            else:
+                # Schema validation
+                data = CreateSchema(**body)
+                return await viewset.create(
+                    data=data.model_dump(exclude_unset=True),
+                    request=request,
+                )
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
         except Exception as e:
@@ -178,12 +185,19 @@ def include_viewset(
         """Update an existing item (partial update)."""
         try:
             body = await request.json()
-            data = UpdateSchema(**body)
-            return await viewset.update(
-                pk=pk,
-                data=data.model_dump(exclude_unset=True),
-                request=request,
-            )
+            
+            # Check if viewset uses serializer for update
+            if viewset.uses_serializer('update'):
+                # Serializer handles validation internally
+                return await viewset.update(pk=pk, data=body, request=request)
+            else:
+                # Schema validation
+                data = UpdateSchema(**body)
+                return await viewset.update(
+                    pk=pk,
+                    data=data.model_dump(exclude_unset=True),
+                    request=request,
+                )
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
         except HTTPException:

@@ -1,8 +1,17 @@
 """
-Basic Vidyut Example Application (v0.3)
+Basic Vidyut Example Application (v0.3.2)
 
 A simple FastAPI application demonstrating Vidyut ORM usage.
 All imports come from vidyut - clean and unified!
+
+New in v0.3.2:
+- ModelSerializer for DRF-style validation and serialization
+- Serializer-based ViewSets with validation hooks
+- Nested FK expansion via serializers
+
+New in v0.3.1:
+- @action decorator for custom ViewSet endpoints
+- Full Swagger/OpenAPI support for custom actions
 
 New in v0.3:
 - ModelViewSet for auto-generated CRUD APIs
@@ -25,14 +34,15 @@ from pydantic import BaseModel
 # Import settings module first - this configures Vidyut!
 from . import settings as app_settings  # noqa: F401 - import for side effects
 
+# Import models from models.py (single source of truth)
+from .models import User, Post, Article
+
 # Everything imported from vidyut - clean and unified!
 from vidyut import (
-    Model,
-    fields,
     Vidyut,
     Database,
+    Request,
     HTTPException,
-    DoesNotExist,
     # v0.2: Settings (configured by app_settings import above)
     settings,
     # v0.2: Custom exceptions
@@ -44,104 +54,68 @@ from vidyut import (
     # v0.3: API layer
     ModelViewSet,
     include_viewset,
+    # v0.3.1: Action decorator
+    action,
+    # v0.3.2: Serializer
+    ModelSerializer,
 )
 
 
 # =============================================================================
-# v0.2: Configure settings (optional - can also use env vars)
+# v0.3.2: ModelSerializer - Django/DRF-style Validation
 # =============================================================================
-# Settings are loaded from environment variables by default:
-#   VIDYUT_DATABASE_URL or DATABASE_URL
-#   VIDYUT_DEBUG=true/false
-#   VIDYUT_POOL_SIZE=20
-#
-# Or configure explicitly:
-# configure(
-#     database_url="postgresql://postgres:password@localhost:5432/mydb",
-#     debug=True,
-# )
-
-
-# =============================================================================
-# Models with v0.2 Features
+# Serializers provide a thin layer on top of Pydantic for:
+# - Field selection and exclusion
+# - Validation hooks (validate_<field>, validate)
+# - Async save/create/update
+# - Nested FK expansion
 # =============================================================================
 
-class User(Model):
+class UserSerializer(ModelSerializer):
     """
-    User model with email, name, and active status.
+    Serializer for User model with validation hooks.
     
-    Demonstrates v0.2 AI metadata for field-level documentation.
+    Demonstrates:
+        - Field selection with fields/exclude
+        - read_only_fields for output-only fields
+        - validate_<field>() hooks for field-level validation
+        - validate() for cross-field validation
     """
-    
-    email = fields.String(
-        max_length=255, 
-        unique=True,
-        ai_description="User's email address for authentication",
-        ai_sensitive=True,  # Won't be exposed to AI by default
-    )
-    name = fields.String(
-        max_length=100, 
-        nullable=True,
-        ai_description="User's display name",
-    )
-    is_active = fields.Boolean(
-        default=True,
-        ai_description="Whether the user account is active",
-    )
-    metadata = fields.JSON(
-        nullable=True,
-        ai_description="Arbitrary user metadata as JSON",
-    )
     
     class Meta:
-        table_name = "users"
-        # v0.2: AI metadata for the model
-        ai_name = "User"
-        ai_description = "System user accounts for authentication and authorization"
-        ai_agent_exposed = True
-        ai_permissions = ["read", "write"]
+        model = User
+        fields = ["id", "email", "name", "is_active", "created_at"]
+        read_only_fields = ["id", "created_at"]
+    
+    def validate_email(self, value):
+        """Validate and normalize email."""
+        if not value or "@" not in value:
+            raise ValueError("Invalid email format")
+        return value.lower().strip()
+    
+    def validate(self, data):
+        """Cross-field validation."""
+        # Example: ensure name is provided for active users
+        if data.get("is_active") and not data.get("name"):
+            # Just a warning - we'll allow it
+            pass
+        return data
 
 
-class Post(Model):
+class PostSerializer(ModelSerializer):
     """
-    Blog post model with ForeignKey to User.
+    Serializer for Post model with FK expansion.
     
-    Demonstrates v0.2 ForeignKey relationships.
+    Demonstrates:
+        - ForeignKey handling (author → author_id)
+        - expand for nested serializer data
     """
-    
-    title = fields.String(
-        max_length=200,
-        ai_description="Post title",
-    )
-    content = fields.String(
-        max_length=10000, 
-        nullable=True,
-        ai_description="Post body content",
-    )
-    is_published = fields.Boolean(
-        default=False,
-        ai_description="Whether the post is publicly visible",
-    )
-    view_count = fields.Integer(
-        default=0,
-        ai_description="Number of times the post has been viewed",
-        ai_agent_writable=False,  # AI shouldn't modify view counts
-    )
-    
-    # v0.2: ForeignKey relationship to User
-    author = fields.ForeignKey(
-        User,
-        on_delete="CASCADE",  # Delete posts when user is deleted
-        nullable=True,  # Allow posts without authors for now
-        ai_description="The user who authored this post",
-    )
     
     class Meta:
-        table_name = "posts"
-        ai_name = "Post"
-        ai_description = "Blog posts created by users"
-        ai_agent_exposed = True
-        ai_permissions = ["read", "write"]
+        model = Post
+        fields = ["id", "title", "content", "is_published", "view_count", "author", "created_at"]
+        read_only_fields = ["id", "view_count", "created_at"]
+        expand = {"author": UserSerializer}  # Nested serializer for FK
 
 
 # =============================================================================
@@ -149,6 +123,9 @@ class Post(Model):
 # =============================================================================
 # Instead of manually writing endpoints, ViewSets generate them automatically.
 # Pydantic schemas are also auto-generated from the model fields.
+#
+# v0.3.1: @action decorator for custom endpoints with full Swagger support!
+# v0.3.2: Use serializers for validation and response shaping!
 # =============================================================================
 
 class UserViewSet(ModelViewSet):
@@ -162,10 +139,13 @@ class UserViewSet(ModelViewSet):
         - PATCH /api/users/{id} → update
         - DELETE /api/users/{id} → delete
     
-    Also auto-generates Pydantic schemas:
-        - UserCreate (for POST)
-        - UserUpdate (for PATCH)
-        - UserRead (for responses)
+    v0.3.1 Custom Actions:
+        - POST /api/users/{pk}/deactivate → deactivate user
+        - POST /api/users/{pk}/activate → activate user
+        - GET /api/users/active → list active users only
+        - GET /api/users/stats → get user statistics
+    
+    v0.3.2: Uses UserSerializer for validation and response shaping.
     """
     model = User
     prefix = "/api/users"
@@ -174,6 +154,63 @@ class UserViewSet(ModelViewSet):
     # Customize pagination
     default_limit = 20
     max_limit = 100
+    
+    # -------------------------------------------------------------------------
+    # v0.3.1: Custom Actions with @action decorator
+    # -------------------------------------------------------------------------
+    
+    @action(detail=True, methods=["post"], summary="Deactivate user")
+    async def deactivate(self, pk: str, request: Request):
+        """
+        Deactivate a user account.
+        
+        Sets is_active to False for the specified user.
+        """
+        user = await self.model.objects.get(id=pk)
+        user.is_active = False
+        await user.save()
+        return {"status": "deactivated", "id": str(user.id), "email": user.email}
+    
+    @action(detail=True, methods=["post"], summary="Activate user")
+    async def activate(self, pk: str, request: Request):
+        """
+        Activate a user account.
+        
+        Sets is_active to True for the specified user.
+        """
+        user = await self.model.objects.get(id=pk)
+        user.is_active = True
+        await user.save()
+        return {"status": "activated", "id": str(user.id), "email": user.email}
+    
+    @action(detail=False, methods=["get"], summary="List active users")
+    async def active(self, request: Request):
+        """
+        Get all active users.
+        
+        Returns only users with is_active=True.
+        """
+        users = await self.model.objects.filter(is_active=True).all()
+        return [
+            {"id": str(u.id), "email": u.email, "name": u.name}
+            for u in users
+        ]
+    
+    @action(detail=False, methods=["get"], summary="Get user statistics")
+    async def stats(self, request: Request):
+        """
+        Get user statistics.
+        
+        Returns counts of total, active, and inactive users.
+        """
+        total = await self.model.objects.filter().count()
+        active = await self.model.objects.filter(is_active=True).count()
+        inactive = await self.model.objects.filter(is_active=False).count()
+        return {
+            "total": total,
+            "active": active,
+            "inactive": inactive,
+        }
 
 
 class PostViewSet(ModelViewSet):
@@ -181,10 +218,74 @@ class PostViewSet(ModelViewSet):
     ViewSet for Post model.
     
     Auto-generates full CRUD API at /api/posts/
+    
+    v0.3.1 Custom Actions:
+        - POST /api/posts/{pk}/publish → publish a post
+        - POST /api/posts/{pk}/unpublish → unpublish a post
+        - GET /api/posts/published → list published posts only
+        - GET /api/posts/by-author/{author_id} → list posts by author
     """
     model = Post
     prefix = "/api/posts"
     tags = ["Posts"]
+    
+    # -------------------------------------------------------------------------
+    # v0.3.1: Custom Actions
+    # -------------------------------------------------------------------------
+    
+    @action(detail=True, methods=["post"], summary="Publish post")
+    async def publish(self, pk: str, request: Request):
+        """
+        Publish a post.
+        
+        Sets is_published to True for the specified post.
+        """
+        post = await self.model.objects.get(id=pk)
+        post.is_published = True
+        await post.save()
+        return {"status": "published", "id": str(post.id), "title": post.title}
+    
+    @action(detail=True, methods=["post"], summary="Unpublish post")
+    async def unpublish(self, pk: str, request: Request):
+        """
+        Unpublish a post.
+        
+        Sets is_published to False for the specified post.
+        """
+        post = await self.model.objects.get(id=pk)
+        post.is_published = False
+        await post.save()
+        return {"status": "unpublished", "id": str(post.id), "title": post.title}
+    
+    @action(detail=False, methods=["get"], summary="List published posts")
+    async def published(self, request: Request):
+        """
+        Get all published posts.
+        
+        Returns only posts with is_published=True.
+        """
+        posts = await self.model.objects.filter(is_published=True).all()
+        return [
+            {
+                "id": str(p.id),
+                "title": p.title,
+                "view_count": p.view_count,
+                "author_id": str(p.author_id) if p.author_id else None,
+            }
+            for p in posts
+        ]
+    
+    @action(detail=True, methods=["post"], summary="Increment view count")
+    async def view(self, pk: str, request: Request):
+        """
+        Increment the view count for a post.
+        
+        Call this when a post is viewed to track analytics.
+        """
+        post = await self.model.objects.get(id=pk)
+        post.view_count = (post.view_count or 0) + 1
+        await post.save()
+        return {"id": str(post.id), "view_count": post.view_count}
 
 
 # =============================================================================
@@ -258,8 +359,8 @@ async def lifespan(app):
 app = Vidyut(
     database_url=settings.database_url,
     title="Vidyut Example App",
-    description="Demo application using Vidyut async ORM (v0.3)",
-    version="0.3.0",
+    description="Demo application using Vidyut async ORM (v0.3.2)",
+    version="0.3.2",
     lifespan=lifespan,
 )
 
@@ -437,7 +538,7 @@ async def get_ai_schemas():
     """
     return {
         "schemas": get_all_schemas_for_ai(),
-        "version": "0.3.0",
+        "version": "0.3.2",
     }
 
 
@@ -463,7 +564,7 @@ async def health_check():
         return {
             "status": "healthy", 
             "database": "connected",
-            "version": "0.3.0",
+            "version": "0.3.2",
             "debug": settings.debug,
         }
     return {"status": "unhealthy", "database": "not configured"}

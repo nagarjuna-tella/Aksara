@@ -1,5 +1,5 @@
 """
-⚡ Vidyut - Async Postgres ORM for FastAPI
+⚡ Vidyut - Async Framework
 
 A lightweight, async-native ORM designed specifically for PostgreSQL and FastAPI.
 """
@@ -38,6 +38,8 @@ from vidyut.api import (
     get_schemas_for_model,
     # v0.3.1: Action decorator
     action,
+    # v0.3.2: Serializer
+    ModelSerializer,
 )
 
 # Re-export FastAPI components with Vidyut enhancements
@@ -69,7 +71,7 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -106,6 +108,8 @@ __all__ = [
     "get_schemas_for_model",
     # v0.3.1: Action decorator
     "action",
+    # v0.3.2: Serializer
+    "ModelSerializer",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports
