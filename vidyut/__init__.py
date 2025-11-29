@@ -36,6 +36,8 @@ from vidyut.api import (
     generate_update_schema,
     generate_read_schema,
     get_schemas_for_model,
+    # v0.3.1: Action decorator
+    action,
 )
 
 # Re-export FastAPI components with Vidyut enhancements
@@ -67,7 +69,7 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -102,6 +104,8 @@ __all__ = [
     "generate_update_schema",
     "generate_read_schema",
     "get_schemas_for_model",
+    # v0.3.1: Action decorator
+    "action",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports

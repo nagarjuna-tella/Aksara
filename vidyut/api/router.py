@@ -5,12 +5,16 @@ Provides include_viewset() to wire a ModelViewSet to a FastAPI router.
 
 Usage:
     from fastapi import APIRouter
-    from vidyut.api import ModelViewSet, include_viewset
+    from vidyut.api import ModelViewSet, include_viewset, action
 
     class UserViewSet(ModelViewSet):
         model = User
         prefix = "/users"
         tags = ["Users"]
+        
+        @action(detail=True, methods=["post"], summary="Deactivate user")
+        async def deactivate(self, pk: UUID, request: Request):
+            ...
 
     router = APIRouter()
     include_viewset(router, UserViewSet)
@@ -22,7 +26,8 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, Union
+import inspect
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -31,6 +36,12 @@ from pydantic import ValidationError
 
 from vidyut.api.viewsets import ModelViewSet
 from vidyut.api.schemas import generate_read_schema
+from vidyut.api.actions import (
+    get_action_metadata,
+    is_action,
+    extract_docstring_summary,
+    extract_docstring_description,
+)
 from vidyut.exceptions import (
     UniqueConstraintError,
     ForeignKeyConstraintError,
@@ -71,7 +82,7 @@ def include_viewset(
     filter_fields = viewset.get_filter_fields()
     
     # =========================================================================
-    # LIST endpoint
+    # LIST endpoint (no {pk})
     # =========================================================================
     @router.get(
         f"{prefix}/",
@@ -108,28 +119,7 @@ def include_viewset(
             return _handle_exception(e)
     
     # =========================================================================
-    # RETRIEVE endpoint
-    # =========================================================================
-    @router.get(
-        f"{prefix}/{{pk}}",
-        tags=tags,
-        summary=f"Get {viewset.model.__name__}",
-        description=f"Retrieve a single {viewset.model.__name__} by ID.",
-    )
-    async def retrieve_item(
-        pk: str,
-        request: Request,
-    ) -> Dict[str, Any]:
-        """Retrieve a single item by ID."""
-        try:
-            return await viewset.retrieve(pk=pk, request=request)
-        except HTTPException:
-            raise
-        except Exception as e:
-            return _handle_exception(e)
-    
-    # =========================================================================
-    # CREATE endpoint - use add_api_route for dynamic type
+    # CREATE endpoint (no {pk})
     # =========================================================================
     async def create_item(request: Request) -> Dict[str, Any]:
         """Create a new item."""
@@ -156,7 +146,33 @@ def include_viewset(
     )
     
     # =========================================================================
-    # UPDATE endpoint - use add_api_route for dynamic type
+    # COLLECTION @action endpoints (no {pk}) - MUST come before {pk} routes!
+    # =========================================================================
+    _register_collection_actions(router, viewset, prefix, tags)
+    
+    # =========================================================================
+    # RETRIEVE endpoint (with {pk})
+    # =========================================================================
+    @router.get(
+        f"{prefix}/{{pk}}",
+        tags=tags,
+        summary=f"Get {viewset.model.__name__}",
+        description=f"Retrieve a single {viewset.model.__name__} by ID.",
+    )
+    async def retrieve_item(
+        pk: str,
+        request: Request,
+    ) -> Dict[str, Any]:
+        """Retrieve a single item by ID."""
+        try:
+            return await viewset.retrieve(pk=pk, request=request)
+        except HTTPException:
+            raise
+        except Exception as e:
+            return _handle_exception(e)
+    
+    # =========================================================================
+    # UPDATE endpoint (with {pk})
     # =========================================================================
     async def update_item(pk: str, request: Request) -> Dict[str, Any]:
         """Update an existing item (partial update)."""
@@ -185,7 +201,7 @@ def include_viewset(
     )
     
     # =========================================================================
-    # DELETE endpoint
+    # DELETE endpoint (with {pk})
     # =========================================================================
     @router.delete(
         f"{prefix}/{{pk}}",
@@ -204,6 +220,123 @@ def include_viewset(
             raise
         except Exception as e:
             _handle_exception(e)
+    
+    # =========================================================================
+    # DETAIL @action endpoints (with {pk})
+    # =========================================================================
+    _register_detail_actions(router, viewset, prefix, tags)
+
+
+def _register_collection_actions(
+    router: APIRouter,
+    viewset: ModelViewSet,
+    prefix: str,
+    tags: List[str],
+) -> None:
+    """
+    Register collection-level @action methods (detail=False).
+    
+    These routes don't include {pk} and must be registered BEFORE
+    the retrieve endpoint to avoid path conflicts.
+    
+    Args:
+        router: FastAPI router to register routes on
+        viewset: Instantiated viewset to scan for actions
+        prefix: URL prefix for the viewset
+        tags: OpenAPI tags for the routes
+    """
+    _register_actions_by_detail(router, viewset, prefix, tags, detail=False)
+
+
+def _register_detail_actions(
+    router: APIRouter,
+    viewset: ModelViewSet,
+    prefix: str,
+    tags: List[str],
+) -> None:
+    """
+    Register detail-level @action methods (detail=True).
+    
+    These routes include {pk} and are registered after CRUD routes.
+    
+    Args:
+        router: FastAPI router to register routes on
+        viewset: Instantiated viewset to scan for actions
+        prefix: URL prefix for the viewset
+        tags: OpenAPI tags for the routes
+    """
+    _register_actions_by_detail(router, viewset, prefix, tags, detail=True)
+
+
+def _register_actions_by_detail(
+    router: APIRouter,
+    viewset: ModelViewSet,
+    prefix: str,
+    tags: List[str],
+    detail: bool,
+) -> None:
+    """
+    Scan viewset for @action decorated methods and register them as routes.
+    
+    Args:
+        router: FastAPI router to register routes on
+        viewset: Instantiated viewset to scan for actions
+        prefix: URL prefix for the viewset
+        tags: OpenAPI tags for the routes
+        detail: If True, register detail actions. If False, register collection actions.
+    """
+    # Scan all attributes of the viewset instance
+    for attr_name in dir(viewset):
+        # Skip private/magic attributes
+        if attr_name.startswith("_"):
+            continue
+        
+        try:
+            method = getattr(viewset, attr_name)
+        except AttributeError:
+            continue
+        
+        # Check if it's a callable with action metadata
+        if not callable(method):
+            continue
+        
+        meta = get_action_metadata(method)
+        if meta is None:
+            continue
+        
+        # Only process actions matching the requested detail type
+        if meta["detail"] != detail:
+            continue
+        
+        # Build the route path
+        action_path = meta["path"]
+        if meta["detail"]:
+            # Detail action: /prefix/{pk}/action_path
+            full_path = f"{prefix}/{{pk}}/{action_path}"
+        else:
+            # Collection action: /prefix/action_path
+            full_path = f"{prefix}/{action_path}"
+        
+        # Determine summary and description
+        summary = meta["summary"]
+        if summary is None:
+            summary = extract_docstring_summary(method)
+        
+        description = meta["description"]
+        if description is None:
+            description = extract_docstring_description(method)
+        
+        # Register the route
+        # Use the bound method directly so FastAPI can inspect its signature
+        router.add_api_route(
+            path=full_path,
+            endpoint=method,
+            methods=meta["methods"],
+            tags=tags,
+            name=meta["name"],
+            summary=summary,
+            description=description,
+        )
 
 
 def _extract_filters(request: Request, allowed_fields: List[str]) -> Dict[str, Any]:
