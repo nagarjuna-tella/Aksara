@@ -18,7 +18,7 @@ from typing import List, Optional, Tuple
 import click
 
 # Version for CLI
-CLI_VERSION = "0.3.3"
+CLI_VERSION = "0.3.4"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -126,6 +126,89 @@ async def record_migration(db, name: str, checksum: str) -> None:
 def cli():
     """⚡ Vidyut - Async Framework"""
     pass
+
+
+@cli.command()
+@click.argument("project_name")
+@click.option("--directory", "-d", default=".", help="Directory to create project in (default: current)")
+def startproject(project_name: str, directory: str):
+    """
+    Create a new Vidyut project with scaffolded structure.
+    
+    PROJECT_NAME: Name of the project to create
+    
+    Creates a complete project structure with:
+    - main.py (Vidyut app entry point)
+    - settings.py (VidyutSettings configuration)
+    - app/ (models, views, serializers)
+    - migrations/ (database migrations)
+    - .env (environment configuration)
+    - README.md (documentation)
+    
+    Example:
+        vidyut startproject blogapi
+        cd blogapi
+        vidyut makemigrations --app app.models
+        vidyut migrate
+        vidyut run main:app --reload
+    """
+    from vidyut.cli.scaffold import create_project_scaffold, write_scaffold_files
+    
+    # Validate project name
+    if not project_name.isidentifier():
+        click.echo(f"❌ Invalid project name: '{project_name}'")
+        click.echo("   Project name must be a valid Python identifier")
+        click.echo("   (letters, numbers, underscores, cannot start with number)")
+        return
+    
+    base_path = Path(directory).resolve()
+    project_path = base_path / project_name
+    
+    # Check if project already exists
+    if project_path.exists():
+        click.echo(f"❌ Directory already exists: {project_path}")
+        return
+    
+    click.echo()
+    click.echo(f"  ⚡ \033[1mVidyut\033[0m v{CLI_VERSION}")
+    click.echo("  \033[90mCreating new project...\033[0m")
+    click.echo()
+    
+    try:
+        # Generate and write scaffold files
+        files = create_project_scaffold(project_name, base_path)
+        write_scaffold_files(files)
+        
+        click.echo(f"  \033[32m✓\033[0m Created project: \033[1m{project_name}\033[0m")
+        click.echo()
+        click.echo("  Project structure:")
+        click.echo(f"  \033[36m{project_name}/\033[0m")
+        click.echo("  ├── main.py")
+        click.echo("  ├── settings.py")
+        click.echo("  ├── .env")
+        click.echo("  ├── requirements.txt")
+        click.echo("  ├── README.md")
+        click.echo("  ├── app/")
+        click.echo("  │   ├── models.py")
+        click.echo("  │   ├── views.py")
+        click.echo("  │   └── serializers.py")
+        click.echo("  └── migrations/")
+        click.echo()
+        click.echo("  \033[90m" + "─" * 40 + "\033[0m")
+        click.echo()
+        click.echo("  \033[1mNext steps:\033[0m")
+        click.echo()
+        click.echo(f"    cd {project_name}")
+        click.echo("    pip install -r requirements.txt")
+        click.echo("    # Edit .env with your database URL")
+        click.echo("    vidyut makemigrations --app app.models")
+        click.echo("    vidyut migrate")
+        click.echo("    vidyut run main:app --reload")
+        click.echo()
+        
+    except Exception as e:
+        click.echo(f"❌ Error creating project: {e}")
+        return
 
 
 @cli.command()

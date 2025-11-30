@@ -60,6 +60,11 @@ class Settings:
     
     # Debug & Logging
     debug: bool = False
+    log_level: str = "INFO"
+    
+    # App metadata (v0.3.4)
+    app_title: Optional[str] = None
+    app_version: Optional[str] = None
     
     # Migrations
     migrations_dir: str = "migrations"
@@ -100,6 +105,17 @@ class Settings:
         # Debug mode
         if not self.debug:
             self.debug = _get_bool_env("VIDYUT_DEBUG", False)
+        
+        # Log level
+        env_log_level = os.environ.get("VIDYUT_LOG_LEVEL")
+        if env_log_level:
+            self.log_level = env_log_level
+        
+        # App metadata (v0.3.4)
+        if self.app_title is None:
+            self.app_title = os.environ.get("VIDYUT_APP_TITLE")
+        if self.app_version is None:
+            self.app_version = os.environ.get("VIDYUT_APP_VERSION")
         
         # Migrations directory
         env_migrations = os.environ.get("VIDYUT_MIGRATIONS_DIR")
@@ -183,6 +199,9 @@ def configure(new_settings: Optional[Settings] = None, **kwargs: Any) -> Setting
             "pool_min_size": settings.pool_min_size,
             "pool_max_size": settings.pool_max_size,
             "debug": settings.debug,
+            "log_level": settings.log_level,
+            "app_title": settings.app_title,
+            "app_version": settings.app_version,
             "migrations_dir": settings.migrations_dir,
             "ai_enabled": settings.ai_enabled,
             "mcp_enabled": settings.mcp_enabled,

@@ -1,8 +1,13 @@
 """
-Basic Vidyut Example Application (v0.3.3)
+Basic Vidyut Example Application (v0.3.4)
 
 A simple FastAPI application demonstrating Vidyut ORM usage.
 All imports come from vidyut - clean and unified!
+
+New in v0.3.4:
+- vidyut startproject <name> for scaffolded project creation
+- Clean project structure: app/, settings.py, migrations/
+- No more manual get_create_table_sql - use migrations!
 
 New in v0.3.3:
 - Operation-based Python migrations (CreateTable, AddField, etc.)
@@ -365,8 +370,8 @@ async def lifespan(app):
 app = Vidyut(
     database_url=settings.database_url,
     title="Vidyut Example App",
-    description="Demo application using Vidyut async ORM (v0.3.3)",
-    version="0.3.3",
+    description="Demo application using Vidyut async ORM (v0.3.4)",
+    version="0.3.4",
     lifespan=lifespan,
 )
 
@@ -544,7 +549,7 @@ async def get_ai_schemas():
     """
     return {
         "schemas": get_all_schemas_for_ai(),
-        "version": "0.3.3",
+        "version": "0.3.4",
     }
 
 
@@ -570,7 +575,7 @@ async def health_check():
         return {
             "status": "healthy", 
             "database": "connected",
-            "version": "0.3.3",
+            "version": "0.3.4",
             "debug": settings.debug,
         }
     return {"status": "unhealthy", "database": "not configured"}
