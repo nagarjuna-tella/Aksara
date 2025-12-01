@@ -49,6 +49,67 @@ from vidyut.exceptions import (
 )
 
 
+def _create_create_endpoint(viewset: ModelViewSet, CreateSchema: Type) -> Callable:
+    """
+    Create a properly typed create endpoint function.
+    
+    FastAPI inspects the function signature to generate OpenAPI docs,
+    so we need to create a function with the schema as a typed parameter.
+    """
+    async def create_item(request: Request, data: CreateSchema) -> Dict[str, Any]:
+        """Create a new item."""
+        try:
+            # Check if viewset uses serializer for create
+            if viewset.uses_serializer('create'):
+                # Serializer handles validation internally
+                return await viewset.create(data=data.model_dump(), request=request)
+            else:
+                return await viewset.create(
+                    data=data.model_dump(exclude_unset=True),
+                    request=request,
+                )
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+        except Exception as e:
+            _handle_exception(e)
+    
+    # Fix the type annotation for FastAPI to pick up
+    create_item.__annotations__['data'] = CreateSchema
+    return create_item
+
+
+def _create_update_endpoint(viewset: ModelViewSet, UpdateSchema: Type) -> Callable:
+    """
+    Create a properly typed update endpoint function.
+    
+    FastAPI inspects the function signature to generate OpenAPI docs,
+    so we need to create a function with the schema as a typed parameter.
+    """
+    async def update_item(pk: str, request: Request, data: UpdateSchema) -> Dict[str, Any]:
+        """Update an existing item (partial update)."""
+        try:
+            # Check if viewset uses serializer for update
+            if viewset.uses_serializer('update'):
+                # Serializer handles validation internally
+                return await viewset.update(pk=pk, data=data.model_dump(exclude_unset=True), request=request)
+            else:
+                return await viewset.update(
+                    pk=pk,
+                    data=data.model_dump(exclude_unset=True),
+                    request=request,
+                )
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+        except HTTPException:
+            raise
+        except Exception as e:
+            _handle_exception(e)
+    
+    # Fix the type annotation for FastAPI to pick up
+    update_item.__annotations__['data'] = UpdateSchema
+    return update_item
+
+
 def include_viewset(
     router: APIRouter,
     viewset_cls: Type[ModelViewSet],
@@ -121,30 +182,13 @@ def include_viewset(
     # =========================================================================
     # CREATE endpoint (no {pk})
     # =========================================================================
-    async def create_item(request: Request) -> Dict[str, Any]:
-        """Create a new item."""
-        try:
-            body = await request.json()
-            
-            # Check if viewset uses serializer for create
-            if viewset.uses_serializer('create'):
-                # Serializer handles validation internally
-                return await viewset.create(data=body, request=request)
-            else:
-                # Schema validation
-                data = CreateSchema(**body)
-                return await viewset.create(
-                    data=data.model_dump(exclude_unset=True),
-                    request=request,
-                )
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
-        except Exception as e:
-            _handle_exception(e)
+    # Dynamically create a properly typed endpoint function
+    # FastAPI needs the schema type in the signature for OpenAPI docs
+    create_endpoint = _create_create_endpoint(viewset, CreateSchema)
     
     router.add_api_route(
         f"{prefix}/",
-        create_item,
+        create_endpoint,
         methods=["POST"],
         tags=tags,
         status_code=201,
@@ -181,33 +225,12 @@ def include_viewset(
     # =========================================================================
     # UPDATE endpoint (with {pk})
     # =========================================================================
-    async def update_item(pk: str, request: Request) -> Dict[str, Any]:
-        """Update an existing item (partial update)."""
-        try:
-            body = await request.json()
-            
-            # Check if viewset uses serializer for update
-            if viewset.uses_serializer('update'):
-                # Serializer handles validation internally
-                return await viewset.update(pk=pk, data=body, request=request)
-            else:
-                # Schema validation
-                data = UpdateSchema(**body)
-                return await viewset.update(
-                    pk=pk,
-                    data=data.model_dump(exclude_unset=True),
-                    request=request,
-                )
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
-        except HTTPException:
-            raise
-        except Exception as e:
-            _handle_exception(e)
+    # Dynamically create a properly typed endpoint function
+    update_endpoint = _create_update_endpoint(viewset, UpdateSchema)
     
     router.add_api_route(
         f"{prefix}/{{pk}}",
-        update_item,
+        update_endpoint,
         methods=["PATCH"],
         tags=tags,
         summary=f"Update {viewset.model.__name__}",

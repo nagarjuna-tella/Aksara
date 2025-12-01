@@ -29,6 +29,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware import Middleware
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -41,6 +42,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from vidyut.db import Database
+
+
+# Vidyut SVG logo (blue lightning bolt with gradient)
+VIDYUT_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234DA8FF'/%3E%3Cstop offset='100%25' style='stop-color:%231E90FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='55,5 25,45 45,45 20,95 75,40 50,40 70,5' fill='url(%23g)'/%3E%3C/svg%3E'''
 
 
 class Vidyut(FastAPI):
@@ -76,7 +81,7 @@ class Vidyut(FastAPI):
         title: str = "Vidyut API",
         summary: Optional[str] = None,
         description: str = "",
-        version: str = "0.3.1",
+        version: str = "0.3.4",
         openapi_url: Optional[str] = "/openapi.json",
         openapi_tags: Optional[list[dict[str, Any]]] = None,
         docs_url: Optional[str] = "/docs",
@@ -95,6 +100,12 @@ class Vidyut(FastAPI):
         self._max_pool_size = max_pool_size
         self._db: Optional[Database] = None
         
+        # Store docs URLs for custom handlers
+        self._docs_url = docs_url
+        self._redoc_url = redoc_url
+        self._openapi_url = openapi_url
+        self._swagger_ui_oauth2_redirect_url = swagger_ui_oauth2_redirect_url
+        
         # If user provides custom lifespan, wrap it with our DB lifecycle
         if lifespan is not None:
             wrapped_lifespan = self._wrap_lifespan(lifespan)
@@ -103,7 +114,7 @@ class Vidyut(FastAPI):
         else:
             wrapped_lifespan = None
         
-        # Initialize FastAPI with all standard args
+        # Initialize FastAPI with docs disabled (we'll add custom ones)
         super().__init__(
             debug=debug,
             title=title,
@@ -112,8 +123,8 @@ class Vidyut(FastAPI):
             version=version,
             openapi_url=openapi_url,
             openapi_tags=openapi_tags,
-            docs_url=docs_url,
-            redoc_url=redoc_url,
+            docs_url=None,  # Disable default, we'll add custom
+            redoc_url=None,  # Disable default, we'll add custom
             swagger_ui_oauth2_redirect_url=swagger_ui_oauth2_redirect_url,
             middleware=middleware,
             exception_handlers=exception_handlers,
@@ -123,6 +134,12 @@ class Vidyut(FastAPI):
             **extra,
         )
         
+        # Add custom Vidyut-branded docs
+        self._setup_custom_docs(docs_url, redoc_url, title)
+        
+        # Add welcome page at root
+        self._setup_welcome_page(title, version)
+        
         # Register ORM exception handlers
         self._register_orm_exceptions()
     
@@ -130,6 +147,168 @@ class Vidyut(FastAPI):
     def db(self) -> Optional[Database]:
         """Get the database instance."""
         return self._db
+    
+    def _setup_custom_docs(
+        self,
+        docs_url: Optional[str],
+        redoc_url: Optional[str],
+        title: str,
+    ) -> None:
+        """Setup custom Swagger UI and ReDoc with Vidyut branding."""
+        if docs_url:
+            @self.get(docs_url, include_in_schema=False)
+            async def custom_swagger_ui_html():
+                return get_swagger_ui_html(
+                    openapi_url=self._openapi_url or "/openapi.json",
+                    title=f"{title} - Swagger UI",
+                    oauth2_redirect_url=self._swagger_ui_oauth2_redirect_url,
+                    swagger_favicon_url=VIDYUT_LOGO_SVG,
+                    swagger_ui_parameters={
+                        "docExpansion": "list",
+                        "defaultModelsExpandDepth": 1,
+                        "deepLinking": True,
+                        "displayRequestDuration": True,
+                    },
+                )
+        
+        if redoc_url:
+            @self.get(redoc_url, include_in_schema=False)
+            async def custom_redoc_html():
+                return get_redoc_html(
+                    openapi_url=self._openapi_url or "/openapi.json",
+                    title=f"{title} - ReDoc",
+                    redoc_favicon_url=VIDYUT_LOGO_SVG,
+                )
+    
+    def _setup_welcome_page(self, title: str, version: str) -> None:
+        """Setup a welcome page at the root URL."""
+        @self.get("/", include_in_schema=False)
+        async def welcome_page():
+            html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="icon" href="{VIDYUT_LOGO_SVG}">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }}
+        .container {{
+            text-align: center;
+            padding: 2rem;
+        }}
+        .logo {{
+            width: 120px;
+            height: 120px;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 30px rgba(77, 168, 255, 0.5));
+            animation: pulse 2s ease-in-out infinite;
+        }}
+        @keyframes pulse {{
+            0%, 100% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.05); }}
+        }}
+        h1 {{
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #4DA8FF, #1E90FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }}
+        .tagline {{
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 2rem;
+        }}
+        .version {{
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }}
+        .links {{
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }}
+        .link {{
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }}
+        .link-primary {{
+            background: linear-gradient(90deg, #4DA8FF, #1E90FF);
+            color: #fff;
+        }}
+        .link-primary:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(77, 168, 255, 0.3);
+        }}
+        .link-secondary {{
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }}
+        .link-secondary:hover {{
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }}
+        .footer {{
+            margin-top: 3rem;
+            font-size: 0.85rem;
+            color: #555;
+        }}
+        .footer a {{
+            color: #4DA8FF;
+            text-decoration: none;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bolt-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#4DA8FF"/>
+                    <stop offset="100%" style="stop-color:#1E90FF"/>
+                </linearGradient>
+            </defs>
+            <polygon points="55,5 25,45 45,45 20,95 75,40 50,40 70,5" fill="url(#bolt-gradient)"/>
+        </svg>
+        <h1>{title}</h1>
+        <p class="tagline">⚡ Async Postgres ORM for FastAPI</p>
+        <p class="version">v{version}</p>
+        <div class="links">
+            <a href="/docs" class="link link-primary">📚 API Documentation</a>
+            <a href="/redoc" class="link link-secondary">📖 ReDoc</a>
+        </div>
+        <p class="footer">
+            Powered by <a href="https://github.com/nagarjuna-tella/vidyut" target="_blank">Vidyut</a>
+        </p>
+    </div>
+</body>
+</html>
+"""
+            return HTMLResponse(content=html_content)
     
     def _wrap_lifespan(self, user_lifespan: Callable):
         """Wrap user's lifespan with DB lifecycle."""

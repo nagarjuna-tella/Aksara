@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vidyut"
-version = "0.3.1"
+version = "0.3.4"
 description = "⚡ Vidyut - Async Framework"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    { name = "Vidyut Contributors" }
+    { name = "Nagarjuna Reddy Tella" }
 ]
 keywords = ["async", "postgres", "orm", "fastapi", "asyncpg"]
 classifiers = [
@@ -30,6 +30,7 @@ dependencies = [
     "fastapi>=0.104.0",
     "pydantic>=2.0.0",
     "click>=8.0.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]

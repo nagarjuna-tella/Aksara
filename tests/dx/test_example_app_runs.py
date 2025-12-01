@@ -3,9 +3,9 @@ Tests for example app running with the new scaffold structure.
 
 Tests that a generated project:
 - Can be imported without errors
-- Has working ViewSet routes
-- Has working AI schema endpoints
+- Has proper template structure with examples in comments
 - Has working health check
+- Templates are Django-style (empty with documentation)
 """
 
 import pytest
@@ -51,8 +51,7 @@ class TestGeneratedAppImports:
             del sys.modules[mod]
     
     def test_app_models_can_be_imported(self):
-        """app.models should be importable."""
-        # We need to import from the generated project
+        """app.models should be importable (empty template)."""
         import importlib.util
         
         models_path = self.project_path / "app" / "models.py"
@@ -60,29 +59,21 @@ class TestGeneratedAppImports:
         models = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(models)
         
-        # Check models exist
-        assert hasattr(models, 'User')
-        assert hasattr(models, 'Post')
+        # Empty template should import successfully
+        assert spec is not None
     
     def test_app_serializers_can_be_imported(self):
-        """app.serializers should be importable after models."""
+        """app.serializers should be importable (empty template)."""
         import importlib.util
         
-        # First import models
-        models_path = self.project_path / "app" / "models.py"
-        spec = importlib.util.spec_from_file_location("app.models", models_path)
-        models = importlib.util.module_from_spec(spec)
-        sys.modules['app.models'] = models
-        spec.loader.exec_module(models)
-        
-        # Then import serializers
+        # Import serializers (empty template)
         serializers_path = self.project_path / "app" / "serializers.py"
         spec = importlib.util.spec_from_file_location("app.serializers", serializers_path)
         serializers = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(serializers)
         
-        assert hasattr(serializers, 'UserSerializer')
-        assert hasattr(serializers, 'PostSerializer')
+        # Empty template should import successfully
+        assert spec is not None
     
     def test_settings_can_be_imported(self):
         """settings.py should be importable."""
@@ -98,7 +89,7 @@ class TestGeneratedAppImports:
 
 
 class TestGeneratedAppStructure:
-    """Test structural aspects of the generated app."""
+    """Test structural aspects of the generated app (Django-style empty templates)."""
     
     def setup_method(self):
         """Create a temporary directory for each test."""
@@ -109,8 +100,8 @@ class TestGeneratedAppStructure:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_models_use_vidyut_model_base(self):
-        """Models should use Vidyut Model base class."""
+    def test_models_use_vidyut_imports(self):
+        """Models should import from Vidyut with examples in comments."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -118,11 +109,11 @@ class TestGeneratedAppStructure:
         content = models_path.read_text()
         
         assert "from vidyut import Model, fields" in content
-        assert "class User(Model):" in content
-        assert "class Post(Model):" in content
+        assert "# Define your models here" in content
+        assert "Example:" in content
     
     def test_views_use_vidyut_viewset(self):
-        """Views should use Vidyut ModelViewSet."""
+        """Views should import Vidyut ModelViewSet with examples."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -131,10 +122,11 @@ class TestGeneratedAppStructure:
         
         assert "from vidyut import" in content
         assert "ModelViewSet" in content
-        assert "class UserViewSet(ModelViewSet):" in content
+        assert "# Define your ViewSets here" in content
+        assert "Example:" in content
     
     def test_serializers_use_vidyut_serializer(self):
-        """Serializers should use Vidyut ModelSerializer."""
+        """Serializers should import Vidyut ModelSerializer with examples."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -142,7 +134,8 @@ class TestGeneratedAppStructure:
         content = serializers_path.read_text()
         
         assert "from vidyut import ModelSerializer" in content
-        assert "class UserSerializer(ModelSerializer):" in content
+        assert "# Define your serializers here" in content
+        assert "Example:" in content
     
     def test_main_uses_vidyut_app(self):
         """Main should use Vidyut app, not FastAPI."""
@@ -157,8 +150,8 @@ class TestGeneratedAppStructure:
         assert "from fastapi import" not in content
 
 
-class TestViewsHaveRequiredEndpoints:
-    """Test that views define all required endpoints."""
+class TestTemplatesHaveExamples:
+    """Test that empty templates have proper examples in comments."""
     
     def setup_method(self):
         """Create a temporary directory for each test."""
@@ -169,44 +162,41 @@ class TestViewsHaveRequiredEndpoints:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_user_viewset_has_custom_actions(self):
-        """UserViewSet should have custom actions."""
+    def test_models_template_has_example(self):
+        """Models template should have example showing how to define models."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
-        views_path = self.base_path / "testapp" / "app" / "views.py"
-        content = views_path.read_text()
+        models_path = self.base_path / "testapp" / "app" / "models.py"
+        content = models_path.read_text()
         
-        # Check for user actions
-        assert "async def deactivate" in content
-        assert "async def activate" in content
-        assert "async def active" in content
-        assert "async def stats" in content
+        # Should show example model syntax
+        assert "class User(Model):" in content  # In docstring example
+        assert "fields." in content  # Shows field usage
     
-    def test_post_viewset_has_custom_actions(self):
-        """PostViewSet should have custom actions."""
+    def test_views_template_has_example(self):
+        """Views template should have example showing ViewSet with actions."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         views_path = self.base_path / "testapp" / "app" / "views.py"
         content = views_path.read_text()
         
-        # Check for post actions
-        assert "async def publish" in content
-        assert "async def unpublish" in content
-        assert "async def published" in content
+        # Should show action decorator usage
+        assert "@action" in content
+        assert "detail=" in content
     
-    def test_ai_schema_endpoints_registered(self):
-        """AI schema endpoints should be registered in views."""
+    def test_urls_template_has_structure(self):
+        """Urls template should have proper structure for route registration."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
-        views_path = self.base_path / "testapp" / "app" / "views.py"
-        content = views_path.read_text()
+        urls_path = self.base_path / "testapp" / "app" / "urls.py"
+        content = urls_path.read_text()
         
-        assert '@app.get("/ai/schema"' in content
-        assert "get_ai_schemas" in content
-        assert "get_model_ai_schema" in content
+        assert "urlpatterns = [" in content
+        assert "def register_routes(app):" in content
+        assert "include_viewset" in content
 
 
 class TestSettingsConfiguration:
@@ -328,15 +318,13 @@ class TestProjectDocumentation:
         assert "pip install" in content
         assert "vidyut run main:app" in content
     
-    def test_readme_has_api_endpoints_docs(self):
-        """README should document API endpoints."""
+    def test_readme_has_api_docs_reference(self):
+        """README should reference API documentation."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         readme_path = self.base_path / "testapp" / "README.md"
         content = readme_path.read_text()
         
-        assert "/api/users/" in content
-        assert "/api/posts/" in content
-        assert "/ai/schema" in content
+        assert "/docs" in content or "Swagger" in content.lower() or "api" in content.lower()
         assert "/health" in content

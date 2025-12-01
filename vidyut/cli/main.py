@@ -17,6 +17,15 @@ from typing import List, Optional, Tuple
 
 import click
 
+# Load .env file from current directory
+# This must happen before any settings are read
+try:
+    from dotenv import load_dotenv
+    # Always load from current working directory
+    load_dotenv(Path.cwd() / ".env")
+except ImportError:
+    pass  # python-dotenv not installed
+
 # Version for CLI
 CLI_VERSION = "0.3.4"
 
@@ -191,6 +200,7 @@ def startproject(project_name: str, directory: str):
         click.echo("  ├── app/")
         click.echo("  │   ├── models.py")
         click.echo("  │   ├── views.py")
+        click.echo("  │   ├── urls.py")
         click.echo("  │   └── serializers.py")
         click.echo("  └── migrations/")
         click.echo()
@@ -723,6 +733,11 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
         click.echo("❌ uvicorn not installed. Run: pip install uvicorn")
         return
     
+    # Ensure current directory is in Python path for module imports
+    cwd = str(Path.cwd())
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+    
     # Print Vidyut banner
     click.echo()
     click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m v{CLI_VERSION}")
@@ -736,7 +751,7 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     click.echo("  \033[90m" + "─" * 40 + "\033[0m")
     click.echo()
     
-    # Configure uvicorn with minimal output
+    # Configure uvicorn - use app_dir for proper module resolution
     uvicorn.run(
         app_path,
         host=host,
@@ -745,6 +760,7 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
         workers=workers if not reload else 1,
         log_level="info",
         access_log=True,
+        app_dir=cwd,  # Ensure uvicorn can find the app module
     )
 
 

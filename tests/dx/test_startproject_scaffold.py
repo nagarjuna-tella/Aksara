@@ -20,6 +20,7 @@ from vidyut.cli.scaffold import (
     get_settings_py_template,
     get_models_template,
     get_views_template,
+    get_urls_template,
     get_serializers_template,
     get_env_template,
     get_readme_template,
@@ -50,10 +51,11 @@ class TestScaffoldTemplates:
         assert '@app.get("/health")' in content
         assert "async def health_check" in content
     
-    def test_main_py_template_uses_views_register(self):
-        """Main.py should register routes via views.register_routes."""
+    def test_main_py_template_uses_urls_register(self):
+        """Main.py should register routes via urls.register_routes."""
         content = get_main_py_template("testproject")
-        assert "views.register_routes(app)" in content
+        assert "from app.urls import register_routes" in content
+        assert "register_routes(app)" in content
     
     def test_settings_py_template(self):
         """Settings.py should extend VidyutSettings."""
@@ -63,44 +65,50 @@ class TestScaffoldTemplates:
         assert "class Settings(VidyutSettings):" in content
         assert "settings = Settings()" in content
     
-    def test_models_template_has_user_and_post(self):
-        """Models.py should include User and Post models."""
+    def test_models_template_is_empty_with_example(self):
+        """Models.py should be empty with example in comments."""
         content = get_models_template("testproject")
         
         assert "from vidyut import Model, fields" in content
-        assert "class User(Model):" in content
-        assert "class Post(Model):" in content
-        assert "fields.ForeignKey(" in content
+        # Should have example in docstring/comments, not actual models
+        assert "# Define your models here" in content
+        assert "Example:" in content
     
-    def test_views_template_has_viewsets(self):
-        """Views.py should include ViewSet classes."""
+    def test_views_template_is_empty_with_example(self):
+        """Views.py should be empty with example in comments."""
         content = get_views_template("testproject")
         
         assert "from vidyut import" in content
         assert "ModelViewSet" in content
-        assert "include_viewset" in content
         assert "action" in content
+        # Should have example in docstring, not actual viewsets
+        assert "# Define your ViewSets here" in content
+        assert "Example:" in content
+    
+    def test_urls_template_has_register_routes(self):
+        """Urls.py should include register_routes function."""
+        content = get_urls_template("testproject")
         
-        assert "class UserViewSet(ModelViewSet):" in content
-        assert "class PostViewSet(ModelViewSet):" in content
+        assert "from vidyut import" in content
+        assert "include_viewset" in content
+        assert "urlpatterns = [" in content
         assert "def register_routes(app):" in content
     
-    def test_views_template_has_ai_endpoints(self):
-        """Views.py should include AI schema endpoints."""
-        content = get_views_template("testproject")
+    def test_urls_template_has_empty_urlpatterns(self):
+        """Urls.py should have empty urlpatterns list."""
+        content = get_urls_template("testproject")
         
-        assert "get_all_schemas_for_ai" in content
-        assert "get_model_schema_for_ai" in content
-        assert '@app.get("/ai/schema"' in content
+        # Should have commented out example
+        assert "# Add your ViewSets here" in content
     
-    def test_serializers_template(self):
-        """Serializers.py should include ModelSerializer classes."""
+    def test_serializers_template_is_empty_with_example(self):
+        """Serializers.py should be empty with example in comments."""
         content = get_serializers_template("testproject")
         
         assert "from vidyut import ModelSerializer" in content
-        assert "class UserSerializer(ModelSerializer):" in content
-        assert "class PostSerializer(ModelSerializer):" in content
-        assert "def validate_email" in content
+        # Should have example in docstring, not actual serializers
+        assert "# Define your serializers here" in content
+        assert "Example:" in content
     
     def test_env_template(self):
         """Env template should have all required variables."""
@@ -154,6 +162,7 @@ class TestScaffoldCreation:
         assert any("settings.py" in f for f in file_names)
         assert any("models.py" in f for f in file_names)
         assert any("views.py" in f for f in file_names)
+        assert any("urls.py" in f for f in file_names)
         assert any("serializers.py" in f for f in file_names)
     
     def test_write_scaffold_files_creates_structure(self):
@@ -179,6 +188,7 @@ class TestScaffoldCreation:
         assert (project_path / "app" / "__init__.py").exists()
         assert (project_path / "app" / "models.py").exists()
         assert (project_path / "app" / "views.py").exists()
+        assert (project_path / "app" / "urls.py").exists()
         assert (project_path / "app" / "serializers.py").exists()
         
         # Check migrations directory
@@ -283,28 +293,32 @@ class TestScaffoldValidation:
 
 
 class TestScaffoldViewSetIntegration:
-    """Test that generated ViewSets are properly structured."""
+    """Test that generated ViewSets templates are properly structured."""
     
-    def test_views_has_custom_actions(self):
-        """Generated views should have @action decorated methods."""
+    def test_views_has_example_with_custom_actions(self):
+        """Generated views should have example with @action decorated methods."""
         content = get_views_template("testproject")
         
-        # Check for action decorators
-        assert "@action(detail=True" in content
-        assert "@action(detail=False" in content
-        
-        # Check for specific actions
-        assert "async def deactivate" in content
-        assert "async def activate" in content
-        assert "async def stats" in content
-        assert "async def publish" in content
+        # Check for action examples in docstring/comments
+        assert "@action" in content
+        assert "Example:" in content
+        assert "detail=True" in content or "detail=False" in content
     
-    def test_views_registers_viewsets(self):
-        """register_routes should use include_viewset."""
-        content = get_views_template("testproject")
+    def test_urls_has_register_routes(self):
+        """register_routes in urls.py should use include_viewset."""
+        content = get_urls_template("testproject")
         
-        assert "include_viewset(app, UserViewSet)" in content
-        assert "include_viewset(app, PostViewSet)" in content
+        assert "include_viewset(app, viewset)" in content
+        # Example viewsets should be in comments
+        assert "# UserViewSet" in content or "UserViewSet" in content
+    
+    def test_urls_has_urlpatterns(self):
+        """urls.py should have Django-style urlpatterns."""
+        content = get_urls_template("testproject")
+        
+        assert "urlpatterns = [" in content
+        # Example should be commented out
+        assert "# Add your ViewSets here" in content
 
 
 class TestScaffoldMigrationsReady:
