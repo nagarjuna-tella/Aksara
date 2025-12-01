@@ -385,6 +385,13 @@ from vidyut import (
 vidyut run main:app --reload
 vidyut run main:app --host 0.0.0.0 --port 8080
 
+# Create new project
+vidyut startproject myproject
+
+# Create new app within project
+vidyut startapp blog
+vidyut startapp users
+
 # Migrations
 vidyut makemigrations --app mymodule          # Preview CREATE TABLE SQL
 vidyut migrate --app mymodule                  # Apply to database
@@ -395,6 +402,68 @@ vidyut models --app mymodule                   # List all models and fields
 
 # Interactive shell
 vidyut shell                                   # Async REPL with DB access
+```
+
+---
+
+## Multi-App Projects (v0.3.6)
+
+Vidyut supports multi-app architecture for larger projects:
+
+### Create Apps with CLI
+
+```bash
+# Create project structure
+vidyut startproject myapi
+cd myapi
+
+# Add more apps
+vidyut startapp blog
+vidyut startapp users
+vidyut startapp orders
+```
+
+### Configure Apps in Settings
+
+```python
+# settings.py
+from vidyut import Settings, configure
+
+settings = Settings(
+    database_url="postgresql://...",
+    apps=["app", "blog", "users", "orders"],  # List all your apps
+)
+configure(settings)
+```
+
+### Auto-Discovery of ViewSets
+
+```python
+from vidyut import Vidyut
+
+# ViewSets are auto-discovered from all apps in settings.apps
+app = Vidyut(
+    database_url="...",
+    auto_discover_views=True,  # Default: True
+)
+
+# Or specify a single module
+app = Vidyut(
+    database_url="...",
+    views_module="blog.views",  # Only discover from this module
+)
+```
+
+### App Structure
+
+Each app created with `vidyut startapp` includes:
+
+```
+blog/
+├── __init__.py
+├── models.py      # Define your Vidyut models
+├── views.py       # Define your ModelViewSets
+└── serializers.py # Define your ModelSerializers
 ```
 
 ---
@@ -436,7 +505,15 @@ myproject/
 
 ## Changelog
 
-### v0.3.5 (Latest)
+### v0.3.6 (Latest)
+- 🏗️ **Multi-app support**: Configure `apps: List[str]` in settings for multi-app projects
+- 🔍 **Auto-discovery**: Automatically discover and register `ModelViewSet` classes
+- 🛠️ **`vidyut startapp`**: New CLI command to scaffold new apps with `models.py`, `views.py`, `serializers.py`
+- 🏷️ **OpenAPI tags**: `ModelViewSet.get_tags()` classmethod for improved API documentation
+- 🚀 Vidyut app now supports `auto_discover_views` and `views_module` parameters
+- ✅ 526 tests passing
+
+### v0.3.5
 - ✨ New field types: `Email`, `URL`, `Text`, `Decimal`, `EnumField`
 - 🔗 `OneToOne` field (ForeignKey with unique constraint)
 - 🔗 `ManyToMany` field with auto-generated join tables

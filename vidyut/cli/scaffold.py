@@ -537,3 +537,124 @@ def write_scaffold_files(files: Dict[Path, str]) -> None:
         # Write file
         with open(file_path, 'w') as f:
             f.write(content)
+
+
+# =============================================================================
+# App Scaffold Templates (for startapp command)
+# =============================================================================
+
+
+def get_app_models_template(app_name: str) -> str:
+    """Generate models.py content for a new app."""
+    return f'''"""
+Define Vidyut ORM models for the '{app_name}' app here.
+
+Example:
+    from vidyut import Model, fields
+
+    class Item(Model):
+        name = fields.String(max_length=100)
+        description = fields.Text(nullable=True)
+        is_active = fields.Boolean(default=True)
+
+        class Meta:
+            table_name = "{app_name}_items"
+"""
+
+from vidyut import Model, fields
+
+
+# Define your models here
+'''
+
+
+def get_app_views_template(app_name: str) -> str:
+    """Generate views.py content for a new app."""
+    return f'''"""
+Define ModelViewSet classes and any manual routes for the '{app_name}' app here.
+
+Example:
+    from vidyut import ModelViewSet, action, Request
+    from .models import Item
+
+    class ItemViewSet(ModelViewSet):
+        model = Item
+        prefix = "/api/{app_name}/items"
+        tags = ["Items"]
+
+        @action(detail=True, methods=["post"])
+        async def activate(self, pk: str, request: Request):
+            item = await self.model.objects.get(id=pk)
+            item.is_active = True
+            await item.save()
+            return {{"status": "activated"}}
+"""
+
+from vidyut import ModelViewSet, action, Request
+
+# Import your models
+# from .models import Item
+
+
+# Define your ViewSets here
+'''
+
+
+def get_app_serializers_template(app_name: str) -> str:
+    """Generate serializers.py content for a new app."""
+    return f'''"""
+Define ModelSerializer classes for the '{app_name}' app here.
+
+Example:
+    from vidyut import ModelSerializer
+    from .models import Item
+
+    class ItemSerializer(ModelSerializer):
+        class Meta:
+            model = Item
+            fields = ["id", "name", "description", "is_active", "created_at"]
+            read_only_fields = ["id", "created_at"]
+"""
+
+from vidyut import ModelSerializer
+
+# Import your models
+# from .models import Item
+
+
+# Define your serializers here
+'''
+
+
+def get_app_init_template_for_startapp(app_name: str) -> str:
+    """Generate __init__.py content for a new app."""
+    return f'''"""
+{app_name} - Vidyut App
+
+This app contains models, views, and serializers for {app_name} functionality.
+"""
+'''
+
+
+def create_app_scaffold(app_name: str, base_path: Path) -> Dict[Path, str]:
+    """
+    Create the app scaffold directory structure and files.
+    
+    Args:
+        app_name: Name of the app
+        base_path: Base path where the app will be created (usually cwd)
+        
+    Returns:
+        Dict mapping file paths to their content
+    """
+    app_path = base_path / app_name
+    
+    # Define all files to create
+    files = {
+        app_path / "__init__.py": get_app_init_template_for_startapp(app_name),
+        app_path / "models.py": get_app_models_template(app_name),
+        app_path / "views.py": get_app_views_template(app_name),
+        app_path / "serializers.py": get_app_serializers_template(app_name),
+    }
+    
+    return files

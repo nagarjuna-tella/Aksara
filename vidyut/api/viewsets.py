@@ -114,6 +114,29 @@ class ModelViewSet:
         self._update_schema = self.update_schema_class or generate_update_schema(self.model)
         self._read_schema = self.read_schema_class or generate_read_schema(self.model)
     
+    # =========================================================================
+    # v0.3.6: OpenAPI Tag Support
+    # =========================================================================
+    
+    @classmethod
+    def get_tags(cls) -> List[str]:
+        """
+        Get the OpenAPI tags for this ViewSet.
+        
+        If tags are explicitly set, returns those.
+        Otherwise, derives tags from the model name.
+        
+        Returns:
+            List of tag strings for OpenAPI documentation.
+        """
+        if cls.tags is not None:
+            return cls.tags
+        
+        if cls.model is not None:
+            return [cls.model.__name__]
+        
+        return [cls.__name__.replace("ViewSet", "")]
+    
     @property
     def create_schema(self) -> Type:
         """Get the Pydantic Create schema."""

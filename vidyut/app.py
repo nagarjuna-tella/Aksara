@@ -54,6 +54,7 @@ class Vidyut(FastAPI):
     
     This is a thin wrapper that adds:
     - Automatic database lifecycle management
+    - Auto-discovery of ModelViewSet classes
     - Vidyut branding on startup
     - Pre-configured exception handlers for ORM errors
     
@@ -68,6 +69,21 @@ class Vidyut(FastAPI):
         @app.get("/")
         async def root():
             return {"hello": "world"}
+        
+    Auto-Discovery:
+        # Automatically discovers and registers all ModelViewSet classes
+        # from settings.apps (default: ["app"])
+        
+        app = Vidyut(
+            database_url="...",
+            auto_discover_views=True,  # Default: True
+        )
+        
+        # Or specify a single module
+        app = Vidyut(
+            database_url="...",
+            views_module="myapp.views",
+        )
     """
     
     def __init__(
@@ -76,12 +92,15 @@ class Vidyut(FastAPI):
         *,
         min_pool_size: int = 5,
         max_pool_size: int = 20,
+        # Auto-discovery args
+        auto_discover_views: bool = True,
+        views_module: Optional[str] = None,
         # Standard FastAPI args
         debug: bool = False,
         title: str = "Vidyut API",
         summary: Optional[str] = None,
         description: str = "",
-        version: str = "0.3.4",
+        version: str = "0.3.6",
         openapi_url: Optional[str] = "/openapi.json",
         openapi_tags: Optional[list[dict[str, Any]]] = None,
         docs_url: Optional[str] = "/docs",
@@ -99,6 +118,10 @@ class Vidyut(FastAPI):
         self._min_pool_size = min_pool_size
         self._max_pool_size = max_pool_size
         self._db: Optional[Database] = None
+        
+        # Store auto-discovery config
+        self._auto_discover_views = auto_discover_views
+        self._views_module = views_module
         
         # Store docs URLs for custom handlers
         self._docs_url = docs_url
@@ -142,6 +165,10 @@ class Vidyut(FastAPI):
         
         # Register ORM exception handlers
         self._register_orm_exceptions()
+        
+        # Auto-discover and register ViewSets
+        if self._auto_discover_views:
+            self._auto_register_viewsets()
     
     @property
     def db(self) -> Optional[Database]:
@@ -384,6 +411,61 @@ class Vidyut(FastAPI):
                 status_code=500,
                 content={"detail": str(exc)},
             )
+    
+    def _auto_register_viewsets(self) -> None:
+        """
+        Auto-discover and register all ModelViewSet classes.
+        
+        Discovers ViewSets from:
+        - views_module parameter (if specified)
+        - settings.apps (if no views_module specified)
+        """
+        from vidyut.core.discovery import auto_discover_viewsets
+        from vidyut.api.router import include_viewset
+        
+        # Discover all ViewSets
+        viewsets = auto_discover_viewsets(views_module=self._views_module)
+        
+        if viewsets:
+            # Create a router for discovered viewsets
+            router = APIRouter()
+            
+            for viewset_cls in viewsets:
+                include_viewset(router, viewset_cls)
+            
+            # Include the router in the app
+            self.include_router(router)
+    
+    def discover_viewsets(self, views_module: Optional[str] = None) -> list:
+        """
+        Manually discover ViewSets from a module.
+        
+        Args:
+            views_module: Optional module path to discover from.
+                         If not provided, uses settings.apps.
+        
+        Returns:
+            List of discovered ViewSet classes.
+        """
+        from vidyut.core.discovery import auto_discover_viewsets
+        return auto_discover_viewsets(views_module=views_module)
+    
+    def register_viewsets(self, viewsets: list, prefix: str = "") -> None:
+        """
+        Manually register a list of ViewSet classes.
+        
+        Args:
+            viewsets: List of ModelViewSet classes to register.
+            prefix: Optional URL prefix for all viewsets.
+        """
+        from vidyut.api.router import include_viewset
+        
+        router = APIRouter(prefix=prefix)
+        
+        for viewset_cls in viewsets:
+            include_viewset(router, viewset_cls)
+        
+        self.include_router(router)
 
 
 # Re-export for convenience

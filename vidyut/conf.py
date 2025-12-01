@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 
 def _get_bool_env(key: str, default: bool = False) -> bool:
@@ -72,6 +72,9 @@ class Settings:
     # Future: AI features
     ai_enabled: bool = False
     mcp_enabled: bool = False
+    
+    # v0.3.6: Multi-app support
+    apps: List[str] = field(default_factory=lambda: ["app"])
     
     # Internal tracking
     _configured: bool = field(default=False, repr=False)
@@ -158,6 +161,11 @@ class Settings:
     def MCP_ENABLED(self) -> bool:
         """Alias for mcp_enabled (uppercase convention)."""
         return self.mcp_enabled
+    
+    @property
+    def APPS(self) -> List[str]:
+        """Alias for apps (uppercase convention)."""
+        return self.apps
 
 
 # Global settings instance
@@ -205,6 +213,7 @@ def configure(new_settings: Optional[Settings] = None, **kwargs: Any) -> Setting
             "migrations_dir": settings.migrations_dir,
             "ai_enabled": settings.ai_enabled,
             "mcp_enabled": settings.mcp_enabled,
+            "apps": settings.apps,
         }
         # Override with kwargs
         current_values.update(kwargs)

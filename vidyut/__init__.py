@@ -48,6 +48,12 @@ from vidyut.migrations import (
     operations as migration_operations,
 )
 
+# v0.3.6: Core discovery
+from vidyut.core.discovery import (
+    discover_viewsets_from_module,
+    auto_discover_viewsets,
+)
+
 # Re-export FastAPI components with Vidyut enhancements
 from vidyut.app import (
     Vidyut,
@@ -77,7 +83,7 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -119,6 +125,9 @@ __all__ = [
     # v0.3.3: Migrations
     "Migration",
     "migration_operations",
+    # v0.3.6: Core Discovery
+    "discover_viewsets_from_module",
+    "auto_discover_viewsets",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports

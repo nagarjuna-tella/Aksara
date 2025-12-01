@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.3.4"
+CLI_VERSION = "0.3.6"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -218,6 +218,87 @@ def startproject(project_name: str, directory: str):
         
     except Exception as e:
         click.echo(f"❌ Error creating project: {e}")
+        return
+
+
+@cli.command()
+@click.argument("app_name")
+@click.option("--directory", "-d", default=".", help="Directory to create app in (default: current)")
+def startapp(app_name: str, directory: str):
+    """
+    Create a new Vidyut app within an existing project.
+    
+    APP_NAME: Name of the app to create (e.g., 'blog', 'users', 'orders')
+    
+    Creates an app structure with:
+    - models.py (Vidyut ORM models)
+    - views.py (ModelViewSet classes)
+    - serializers.py (ModelSerializer classes)
+    
+    Example:
+        vidyut startapp blog
+        vidyut startapp users
+        
+    After creating the app, add it to settings.apps:
+        settings = VidyutSettings(
+            apps=["app", "blog", "users"],
+        )
+    """
+    from vidyut.cli.scaffold import create_app_scaffold, write_scaffold_files
+    
+    # Validate app name
+    if not app_name.isidentifier():
+        click.echo(f"❌ Invalid app name: '{app_name}'")
+        click.echo("   App name must be a valid Python identifier")
+        click.echo("   (letters, numbers, underscores, cannot start with number)")
+        return
+    
+    base_path = Path(directory).resolve()
+    app_path = base_path / app_name
+    
+    # Check if app already exists
+    if app_path.exists():
+        click.echo(f"❌ Directory already exists: {app_path}")
+        return
+    
+    click.echo()
+    click.echo(f"  ⚡ \033[1mVidyut\033[0m v{CLI_VERSION}")
+    click.echo("  \033[90mCreating new app...\033[0m")
+    click.echo()
+    
+    try:
+        # Generate and write scaffold files
+        files = create_app_scaffold(app_name, base_path)
+        write_scaffold_files(files)
+        
+        click.echo(f"  \033[32m✓\033[0m Created app: \033[1m{app_name}\033[0m")
+        click.echo()
+        click.echo("  App structure:")
+        click.echo(f"  \033[36m{app_name}/\033[0m")
+        click.echo("  ├── __init__.py")
+        click.echo("  ├── models.py")
+        click.echo("  ├── views.py")
+        click.echo("  └── serializers.py")
+        click.echo()
+        click.echo("  \033[90m" + "─" * 40 + "\033[0m")
+        click.echo()
+        click.echo("  \033[1mNext steps:\033[0m")
+        click.echo()
+        click.echo(f"  1. Add '{app_name}' to settings.apps in settings.py:")
+        click.echo()
+        click.echo("     settings = VidyutSettings(")
+        click.echo(f'         apps=["app", "{app_name}"],')
+        click.echo("     )")
+        click.echo()
+        click.echo(f"  2. Define your models in {app_name}/models.py")
+        click.echo(f"  3. Create ViewSets in {app_name}/views.py")
+        click.echo("  4. Run migrations:")
+        click.echo(f"     vidyut makemigrations --app {app_name}.models")
+        click.echo("     vidyut migrate")
+        click.echo()
+        
+    except Exception as e:
+        click.echo(f"❌ Error creating app: {e}")
         return
 
 
