@@ -11,11 +11,18 @@ Field Type Mappings:
     - DateTime → datetime
     - JSON → dict | list
     - ForeignKey → UUID
+    - Text → str
+    - Email → str (format=email)
+    - URL → str (format=uri)
+    - Decimal → Decimal
+    - Enum → str (with allowed values)
+    - ManyToMany → list[UUID]
 """
 
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
 from uuid import UUID
 
@@ -43,6 +50,12 @@ def _get_python_type(field: vidyut_fields.Field) -> type:
         return UUID
     elif isinstance(field, vidyut_fields.String):
         return str
+    elif isinstance(field, vidyut_fields.Text):
+        return str
+    elif isinstance(field, vidyut_fields.Email):
+        return str
+    elif isinstance(field, vidyut_fields.URL):
+        return str
     elif isinstance(field, vidyut_fields.Integer):
         return int
     elif isinstance(field, vidyut_fields.Boolean):
@@ -51,8 +64,14 @@ def _get_python_type(field: vidyut_fields.Field) -> type:
         return datetime
     elif isinstance(field, vidyut_fields.JSON):
         return Union[dict, list, None]
+    elif isinstance(field, vidyut_fields.Decimal):
+        return Decimal
+    elif isinstance(field, vidyut_fields.Enum):
+        return str
     elif isinstance(field, vidyut_fields.ForeignKey):
         return UUID
+    elif isinstance(field, vidyut_fields.ManyToMany):
+        return List[UUID]
     else:
         return Any
 
@@ -64,6 +83,9 @@ def _should_include_in_create(field_name: str, field: vidyut_fields.Field) -> bo
     Excludes:
         - Primary key (auto-generated)
         - Auto timestamps (created_at, updated_at)
+    
+    Includes:
+        - ManyToMany (as list of UUIDs)
     """
     # Skip primary key
     if field.primary_key:
@@ -84,6 +106,9 @@ def _should_include_in_update(field_name: str, field: vidyut_fields.Field) -> bo
     Excludes:
         - Primary key
         - Auto timestamps
+    
+    Includes:
+        - ManyToMany (as list of UUIDs)
     """
     return _should_include_in_create(field_name, field)
 
@@ -105,6 +130,7 @@ def generate_create_schema(model: Type[Model]) -> Type[BaseModel]:
         - All user-defined fields
         - Excludes PK and auto-timestamps
         - Respects nullable/default settings
+        - ManyToMany as list of UUIDs
     
     Args:
         model: Vidyut Model class
@@ -150,6 +176,14 @@ def generate_create_schema(model: Type[Model]) -> Type[BaseModel]:
                 PydanticField(default=default_value, description=field.ai_description)
             )
     
+    # Add ManyToMany fields as list of UUIDs (optional)
+    if hasattr(model, '_m2m_fields'):
+        for field_name, field in model._m2m_fields.items():
+            field_definitions[field_name] = (
+                Optional[List[UUID]],
+                PydanticField(default=None, description=field.ai_description)
+            )
+    
     schema = create_model(
         cache_key,
         __base__=BaseModel,
@@ -171,6 +205,7 @@ def generate_update_schema(model: Type[Model]) -> Type[BaseModel]:
     The Update schema:
         - All fields are optional (partial updates)
         - Excludes PK and auto-timestamps
+        - ManyToMany as optional list of UUIDs
     
     Args:
         model: Vidyut Model class
@@ -204,6 +239,14 @@ def generate_update_schema(model: Type[Model]) -> Type[BaseModel]:
             PydanticField(default=None, description=field.ai_description)
         )
     
+    # Add ManyToMany fields as optional list of UUIDs
+    if hasattr(model, '_m2m_fields'):
+        for field_name, field in model._m2m_fields.items():
+            field_definitions[field_name] = (
+                Optional[List[UUID]],
+                PydanticField(default=None, description=field.ai_description)
+            )
+    
     schema = create_model(
         cache_key,
         __base__=BaseModel,
@@ -225,6 +268,7 @@ def generate_read_schema(model: Type[Model]) -> Type[BaseModel]:
     The Read schema:
         - Includes all fields
         - All types are properly serialized
+        - ManyToMany as list of UUIDs
     
     Args:
         model: Vidyut Model class
@@ -262,6 +306,14 @@ def generate_read_schema(model: Type[Model]) -> Type[BaseModel]:
             field_definitions[actual_field_name] = (
                 python_type,
                 PydanticField(description=field.ai_description)
+            )
+    
+    # Add ManyToMany fields as list of UUIDs
+    if hasattr(model, '_m2m_fields'):
+        for field_name, field in model._m2m_fields.items():
+            field_definitions[field_name] = (
+                Optional[List[UUID]],
+                PydanticField(default=None, description=field.ai_description)
             )
     
     schema = create_model(

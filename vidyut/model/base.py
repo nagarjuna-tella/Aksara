@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
-from vidyut.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey
+from vidyut.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager
 from vidyut.registry import ModelRegistry
 
 
@@ -64,6 +64,7 @@ class ModelMeta(type):
     - Automatic table name inference
     - Manager attachment
     - AI metadata extraction
+    - ManyToMany field setup
     """
     
     def __new__(mcs, name: str, bases: tuple, namespace: dict, **kwargs):
@@ -73,6 +74,7 @@ class ModelMeta(type):
         # Collect fields from the class
         fields: Dict[str, Field] = {}
         fk_fields: Dict[str, ForeignKey] = {}
+        m2m_fields: Dict[str, ManyToMany] = {}
         
         # Inherit fields from parent classes
         for base in bases:
@@ -80,6 +82,8 @@ class ModelMeta(type):
                 fields.update(base._fields)
             if hasattr(base, '_fk_fields'):
                 fk_fields.update(base._fk_fields)
+            if hasattr(base, '_m2m_fields'):
+                m2m_fields.update(base._m2m_fields)
         
         # Collect new fields defined in this class and REMOVE them from namespace
         # This is crucial so __getattr__ gets called for field access
@@ -87,6 +91,13 @@ class ModelMeta(type):
         for key, value in list(namespace.items()):
             if isinstance(value, Field):
                 value.name = key
+                
+                # Handle ManyToMany separately (virtual field)
+                if isinstance(value, ManyToMany):
+                    m2m_fields[key] = value
+                    field_keys_to_remove.append(key)
+                    continue
+                
                 fields[key] = value
                 
                 # Track ForeignKey fields separately
@@ -124,6 +135,7 @@ class ModelMeta(type):
         
         namespace['_fields'] = fields
         namespace['_fk_fields'] = fk_fields
+        namespace['_m2m_fields'] = m2m_fields
         
         # Extract AI metadata from nested Meta class
         meta_class = namespace.get('Meta')
@@ -153,6 +165,10 @@ class ModelMeta(type):
             # Attach the manager
             from vidyut.manager import Manager
             cls.objects = Manager(cls)
+            
+            # Set source model on ManyToMany fields
+            for field_name, m2m_field in m2m_fields.items():
+                m2m_field._source_model = cls
         
         return cls
 
@@ -183,6 +199,7 @@ class Model(metaclass=ModelMeta):
     __tablename__: ClassVar[str]
     _fields: ClassVar[Dict[str, Field]]
     _fk_fields: ClassVar[Dict[str, ForeignKey]]
+    _m2m_fields: ClassVar[Dict[str, ManyToMany]]
     _ai_meta: ClassVar[ModelAIMeta]
     objects: ClassVar["Manager"]  # type: ignore
     
@@ -194,6 +211,7 @@ class Model(metaclass=ModelMeta):
             **kwargs: Field values (supports both 'field' and 'field_id' for ForeignKeys)
         """
         self._data: Dict[str, Any] = {}
+        self._m2m_managers: Dict[str, ManyToManyManager] = {}
         self._is_new = True
         
         # Set field values from kwargs or defaults
@@ -215,12 +233,22 @@ class Model(metaclass=ModelMeta):
             self._data[field_name] = value
     
     def __getattr__(self, name: str) -> Any:
-        """Get field value."""
+        """Get field value or ManyToMany manager."""
         if name.startswith('_'):
             raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
         
+        # Check regular fields
         if name in self._fields:
             return self._data.get(name)
+        
+        # Check ManyToMany fields - return manager
+        if name in self._m2m_fields:
+            if name not in self._m2m_managers:
+                self._m2m_managers[name] = ManyToManyManager(
+                    self._m2m_fields[name],
+                    self
+                )
+            return self._m2m_managers[name]
         
         # Handle ForeignKey column access (e.g., author_id)
         for field_name, field in self._fk_fields.items():
@@ -265,6 +293,7 @@ class Model(metaclass=ModelMeta):
         """
         instance = cls.__new__(cls)
         instance._data = {}
+        instance._m2m_managers = {}
         instance._is_new = False
         
         record_keys = set(record.keys())

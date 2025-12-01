@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vidyut"
-version = "0.3.4"
+version = "0.3.5"
 description = "⚡ Vidyut - Async Framework"
 readme = "README.md"
 license = "MIT"

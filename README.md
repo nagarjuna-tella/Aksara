@@ -10,8 +10,10 @@ Vidyut (meaning "electricity" in Sanskrit) is a lightweight, async-native ORM de
 - 🐘 **Postgres-native**: Designed specifically for PostgreSQL
 - ⚡ **FastAPI integration**: Seamless dependency injection and lifecycle management
 - 🎯 **Django-like API**: Familiar model definition and query syntax
-- 🔧 **Simple migrations**: Generate and apply CREATE TABLE SQL
+- 🔧 **Full migrations**: Generate and apply schema changes with `makemigrations` and `migrate`
 - 📦 **Unified imports**: Everything you need from a single package
+- 🔗 **Rich relationships**: ForeignKey, OneToOne, and ManyToMany support
+- 🛡️ **Field validation**: Email, URL, Decimal, Enum fields with built-in validation
 
 ---
 
@@ -191,14 +193,34 @@ await user.delete()
 
 ## Model Fields
 
+### Basic Fields
+
 | Field | PostgreSQL Type | Key Arguments |
 |-------|-----------------|---------------|
 | `String` | `VARCHAR(n)` | `max_length=255`, `unique`, `nullable`, `default` |
+| `Text` | `TEXT` | `nullable`, `default` |
 | `Integer` | `INTEGER` | `unique`, `nullable`, `default` |
 | `Boolean` | `BOOLEAN` | `nullable`, `default` |
 | `DateTime` | `TIMESTAMP WITH TIME ZONE` | `auto_now`, `auto_now_add`, `nullable` |
 | `UUID` | `UUID` | `primary_key` |
 | `JSON` | `JSONB` | `nullable`, `default` |
+| `Decimal` | `NUMERIC(p,s)` | `max_digits`, `decimal_places`, `nullable` |
+
+### Validated Fields
+
+| Field | PostgreSQL Type | Validation |
+|-------|-----------------|------------|
+| `Email` | `VARCHAR(254)` | RFC email format, auto-lowercase |
+| `URL` | `TEXT` | Must start with `http://` or `https://` |
+| `EnumField` | `TEXT` | Validates against Python Enum values |
+
+### Relationship Fields
+
+| Field | Description |
+|-------|-------------|
+| `ForeignKey` | Many-to-one relationship |
+| `OneToOne` | One-to-one relationship (FK with unique constraint) |
+| `ManyToMany` | Many-to-many with auto-generated join table |
 
 ### Built-in Fields (auto-added to every model)
 
@@ -206,6 +228,129 @@ await user.delete()
 id         # UUID primary key (auto-generated)
 created_at # TIMESTAMP - set once on insert
 updated_at # TIMESTAMP - updated on every save()
+```
+
+---
+
+## Relationships
+
+### ForeignKey (Many-to-One)
+
+```python
+from vidyut import Model, fields
+
+class Author(Model):
+    name = fields.String(max_length=100)
+
+class Book(Model):
+    title = fields.String(max_length=200)
+    author = fields.ForeignKey(Author, on_delete="CASCADE")
+
+# Usage
+author = await Author.objects.create(name="Jane Austen")
+book = await Book.objects.create(title="Pride and Prejudice", author_id=author.id)
+```
+
+### OneToOne
+
+```python
+class User(Model):
+    email = fields.Email(unique=True)
+
+class Profile(Model):
+    bio = fields.Text(nullable=True)
+    user = fields.OneToOne(User)  # Unique constraint enforced
+
+# Usage
+user = await User.objects.create(email="jane@example.com")
+profile = await Profile.objects.create(bio="Author", user_id=user.id)
+```
+
+### ManyToMany
+
+```python
+class Tag(Model):
+    name = fields.String(max_length=50, unique=True)
+
+class Article(Model):
+    title = fields.String(max_length=200)
+    tags = fields.ManyToMany(Tag, related_name="articles")
+
+# Usage
+article = await Article.objects.create(title="Async Python Guide")
+python_tag = await Tag.objects.create(name="python")
+async_tag = await Tag.objects.create(name="async")
+
+# Add tags
+await article.tags.add(python_tag, async_tag)
+
+# Get all tags for article
+tags = await article.tags.all()
+
+# Count tags
+count = await article.tags.count()
+
+# Remove a tag
+await article.tags.remove(python_tag)
+
+# Replace all tags
+await article.tags.set([async_tag])
+
+# Clear all tags
+await article.tags.clear()
+
+# Get just the IDs
+tag_ids = await article.tags.ids()
+```
+
+---
+
+## Validated Fields
+
+### Email Field
+
+```python
+class User(Model):
+    email = fields.Email(unique=True)  # Auto-lowercased, RFC validated
+
+user = await User.objects.create(email="John.Doe@Example.COM")
+print(user.email)  # "john.doe@example.com"
+```
+
+### URL Field
+
+```python
+class Website(Model):
+    url = fields.URL()  # Must be http:// or https://
+
+site = await Website.objects.create(url="https://github.com")
+```
+
+### Decimal Field
+
+```python
+class Product(Model):
+    price = fields.Decimal(max_digits=10, decimal_places=2)
+
+product = await Product.objects.create(price=Decimal("19.99"))
+```
+
+### Enum Field
+
+```python
+from enum import Enum
+
+class Status(Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+
+class Post(Model):
+    title = fields.String(max_length=200)
+    status = fields.EnumField(Status, default=Status.DRAFT)
+
+post = await Post.objects.create(title="Hello World")
+print(post.status)  # Status.DRAFT
 ```
 
 ---
@@ -286,6 +431,35 @@ myproject/
 - PostgreSQL 12+
 - FastAPI 0.104+
 - asyncpg 0.29+
+
+---
+
+## Changelog
+
+### v0.3.5 (Latest)
+- ✨ New field types: `Email`, `URL`, `Text`, `Decimal`, `EnumField`
+- 🔗 `OneToOne` field (ForeignKey with unique constraint)
+- 🔗 `ManyToMany` field with auto-generated join tables
+- 🛠️ `ManyToManyManager` with `add()`, `remove()`, `clear()`, `all()`, `set()`, `ids()`, `count()`
+- 📦 Migration support for all new field types
+- ✅ 549 tests passing
+
+### v0.3.4
+- 🔧 Migration scaffolding and operations
+- 📝 `makemigrations` and `migrate` CLI commands
+
+### v0.3.3
+- 🚀 Full migration system
+
+### v0.3.2
+- 📦 `ModelSerializer` for DRF-style serialization
+
+### v0.3.1
+- 🎯 `@action` decorator for custom ViewSet actions
+
+### v0.3.0
+- 🌐 `ModelViewSet` for auto-generated CRUD APIs
+- 📋 Schema generation for Pydantic models
 
 ---
 

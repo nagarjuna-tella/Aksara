@@ -345,29 +345,222 @@ class DecimalField(FieldOp):
     
     def __init__(
         self,
-        precision: int = 10,
-        scale: int = 2,
+        max_digits: int = 10,
+        decimal_places: int = 2,
         *,
         nullable: bool = False,
+        unique: bool = False,
         default: Optional[float] = None,
     ):
-        self.precision = precision
-        self.scale = scale
+        self.max_digits = max_digits
+        self.decimal_places = decimal_places
         self.nullable = nullable
+        self.unique = unique
         self.default = default
     
     def to_sql(self) -> str:
-        parts = [f"NUMERIC({self.precision}, {self.scale})"]
+        parts = [f"NUMERIC({self.max_digits}, {self.decimal_places})"]
         
         if not self.nullable:
             parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
         if self.default is not None:
             parts.append(f"DEFAULT {self.default}")
         
         return " ".join(parts)
     
     def __repr__(self) -> str:
-        return f"DecimalField(precision={self.precision}, scale={self.scale})"
+        return f"DecimalField(max_digits={self.max_digits}, decimal_places={self.decimal_places})"
+
+
+class EmailField(FieldOp):
+    """Email field type for migrations (VARCHAR with format=email)."""
+    
+    def __init__(
+        self,
+        max_length: int = 254,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.max_length = max_length
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+    
+    def to_sql(self) -> str:
+        parts = [f"VARCHAR({self.max_length})"]
+        
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        
+        return " ".join(parts)
+    
+    def __repr__(self) -> str:
+        return f"EmailField(max_length={self.max_length})"
+
+
+class URLField(FieldOp):
+    """URL field type for migrations (TEXT with format=uri)."""
+    
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+    
+    def to_sql(self) -> str:
+        parts = ["TEXT"]
+        
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        
+        return " ".join(parts)
+    
+    def __repr__(self) -> str:
+        return "URLField()"
+
+
+class EnumField(FieldOp):
+    """Enum field type for migrations (TEXT storing enum values)."""
+    
+    def __init__(
+        self,
+        allowed_values: Optional[list] = None,
+        *,
+        nullable: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.allowed_values = allowed_values or []
+        self.nullable = nullable
+        self.default = default
+    
+    def to_sql(self) -> str:
+        parts = ["TEXT"]
+        
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        
+        return " ".join(parts)
+    
+    def __repr__(self) -> str:
+        return f"EnumField(allowed_values={self.allowed_values})"
+
+
+class OneToOneField(FieldOp):
+    """One-to-one relationship field type for migrations (FK with unique)."""
+    
+    def __init__(
+        self,
+        to_table: str,
+        to_column: str = "id",
+        *,
+        on_delete: str = "CASCADE",
+        on_update: str = "CASCADE",
+        nullable: bool = False,
+        column_type: str = "UUID",
+    ):
+        self.to_table = to_table
+        self.to_column = to_column
+        self.on_delete = on_delete
+        self.on_update = on_update
+        self.nullable = nullable
+        self.column_type = column_type
+    
+    def to_sql(self) -> str:
+        parts = [self.column_type]
+        
+        if not self.nullable:
+            parts.append("NOT NULL")
+        parts.append("UNIQUE")
+        
+        return " ".join(parts)
+    
+    def get_constraint_sql(self, column_name: str) -> str:
+        """Generate the FOREIGN KEY constraint SQL."""
+        return (
+            f"CONSTRAINT fk_{column_name} "
+            f"FOREIGN KEY ({column_name}) "
+            f"REFERENCES {self.to_table}({self.to_column}) "
+            f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
+        )
+    
+    def __repr__(self) -> str:
+        return f"OneToOneField(to_table='{self.to_table}')"
+
+
+class ManyToManyField(FieldOp):
+    """
+    Many-to-many relationship for migrations.
+    
+    Note: ManyToMany is a virtual field - it doesn't create a column,
+    instead it creates a separate join table.
+    """
+    
+    def __init__(
+        self,
+        source_table: str,
+        target_table: str,
+        field_name: str,
+        *,
+        source_column: str = "id",
+        target_column: str = "id",
+    ):
+        self.source_table = source_table
+        self.target_table = target_table
+        self.field_name = field_name
+        self.source_column = source_column
+        self.target_column = target_column
+    
+    @property
+    def join_table_name(self) -> str:
+        """Return the name of the join table."""
+        return f"{self.source_table}_{self.field_name}"
+    
+    def to_sql(self) -> str:
+        """M2M doesn't create a column, returns empty."""
+        return ""
+    
+    def get_join_table_sql(self) -> str:
+        """Generate CREATE TABLE SQL for the join table."""
+        return f'''CREATE TABLE IF NOT EXISTS "{self.join_table_name}" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "source_id" UUID NOT NULL,
+    "target_id" UUID NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_{self.join_table_name}_source 
+        FOREIGN KEY (source_id) REFERENCES "{self.source_table}"({self.source_column}) ON DELETE CASCADE,
+    CONSTRAINT fk_{self.join_table_name}_target 
+        FOREIGN KEY (target_id) REFERENCES "{self.target_table}"({self.target_column}) ON DELETE CASCADE,
+    UNIQUE (source_id, target_id)
+)'''
+    
+    def get_drop_join_table_sql(self) -> str:
+        """Generate DROP TABLE SQL for the join table."""
+        return f'DROP TABLE IF EXISTS "{self.join_table_name}" CASCADE'
+    
+    def __repr__(self) -> str:
+        return f"ManyToManyField(source='{self.source_table}', target='{self.target_table}')"
 
 
 class ForeignKeyField(FieldOp):
@@ -590,6 +783,67 @@ class CreateTable(Operation):
     
     def __repr__(self) -> str:
         return f"CreateTable(name='{self.name}')"
+
+
+class CreateManyToManyTable(Operation):
+    """
+    Create a join table for ManyToMany relationships.
+    
+    Example:
+        CreateManyToManyTable(
+            source_table="articles",
+            target_table="tags",
+            field_name="tags",
+        )
+    """
+    
+    def __init__(
+        self,
+        source_table: str,
+        target_table: str,
+        field_name: str,
+        *,
+        source_column: str = "id",
+        target_column: str = "id",
+    ):
+        self.source_table = source_table
+        self.target_table = target_table
+        self.field_name = field_name
+        self.source_column = source_column
+        self.target_column = target_column
+    
+    @property
+    def join_table_name(self) -> str:
+        return f"{self.source_table}_{self.field_name}"
+    
+    async def apply(self, connection) -> None:
+        """Create the ManyToMany join table."""
+        sql = f'''CREATE TABLE IF NOT EXISTS "{self.join_table_name}" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "source_id" UUID NOT NULL,
+    "target_id" UUID NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_{self.join_table_name}_source 
+        FOREIGN KEY (source_id) REFERENCES "{self.source_table}"({self.source_column}) ON DELETE CASCADE,
+    CONSTRAINT fk_{self.join_table_name}_target 
+        FOREIGN KEY (target_id) REFERENCES "{self.target_table}"({self.target_column}) ON DELETE CASCADE,
+    UNIQUE (source_id, target_id)
+)'''
+        
+        if hasattr(connection, 'execute'):
+            await connection.execute(sql)
+        else:
+            raise TypeError(f"Unsupported connection type: {type(connection)}")
+    
+    def reverse(self) -> "DropTable":
+        """Return a DropTable operation to reverse this."""
+        return DropTable(name=self.join_table_name, cascade=True)
+    
+    def describe(self) -> str:
+        return f"Create ManyToMany join table '{self.join_table_name}'"
+    
+    def __repr__(self) -> str:
+        return f"CreateManyToManyTable(source='{self.source_table}', target='{self.target_table}')"
 
 
 class DropTable(Operation):
@@ -1268,12 +1522,19 @@ __all__ = [
     "FloatField",
     "DecimalField",
     "ForeignKeyField",
+    # v0.3.5: New field types
+    "EmailField",
+    "URLField",
+    "EnumField",
+    "OneToOneField",
+    "ManyToManyField",
     # Index
     "IndexOp",
     # Base operation
     "Operation",
     # Table operations
     "CreateTable",
+    "CreateManyToManyTable",
     "DropTable",
     "RenameTable",
     # Column operations

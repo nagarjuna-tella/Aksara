@@ -9,6 +9,7 @@ Features:
     - Validation hooks: validate_<field>(), validate()
     - Async save/create/update methods
     - Nested FK expansion via expand
+    - ManyToMany handling (accepts list of UUIDs)
     - Automatic Pydantic model generation
 
 Usage:
@@ -39,6 +40,7 @@ from __future__ import annotations
 
 import inspect
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union, get_type_hints, TYPE_CHECKING
 from uuid import UUID
 
@@ -70,6 +72,12 @@ def _get_python_type(field: vidyut_fields.Field) -> type:
         return UUID
     elif isinstance(field, vidyut_fields.String):
         return str
+    elif isinstance(field, vidyut_fields.Text):
+        return str
+    elif isinstance(field, vidyut_fields.Email):
+        return str
+    elif isinstance(field, vidyut_fields.URL):
+        return str
     elif isinstance(field, vidyut_fields.Integer):
         return int
     elif isinstance(field, vidyut_fields.Boolean):
@@ -78,8 +86,14 @@ def _get_python_type(field: vidyut_fields.Field) -> type:
         return datetime
     elif isinstance(field, vidyut_fields.JSON):
         return Union[dict, list, None]
+    elif isinstance(field, vidyut_fields.Decimal):
+        return Decimal
+    elif isinstance(field, vidyut_fields.Enum):
+        return str
     elif isinstance(field, vidyut_fields.ForeignKey):
         return UUID
+    elif isinstance(field, vidyut_fields.ManyToMany):
+        return List[UUID]
     else:
         return Any
 
@@ -256,6 +270,15 @@ class ModelSerializer(metaclass=SerializerMetaclass):
                     PydanticField(default=default_value, description=field.ai_description)
                 )
         
+        # Add ManyToMany fields as Optional[List[UUID]]
+        if hasattr(model, '_m2m_fields'):
+            for field_name, field in model._m2m_fields.items():
+                # M2M fields are always optional on input
+                field_definitions[field_name] = (
+                    Optional[List[UUID]],
+                    PydanticField(default=None, description=getattr(field, 'ai_description', None))
+                )
+        
         input_model = create_model(
             f"{cls.__name__}Input",
             __base__=BaseModel,
@@ -311,6 +334,14 @@ class ModelSerializer(metaclass=SerializerMetaclass):
                 field_definitions[actual_field_name] = (
                     python_type,
                     PydanticField(description=field.ai_description)
+                )
+        
+        # Add ManyToMany fields as Optional[List[UUID]]
+        if hasattr(model, '_m2m_fields'):
+            for field_name, field in model._m2m_fields.items():
+                field_definitions[field_name] = (
+                    Optional[List[UUID]],
+                    PydanticField(default=None, description=getattr(field, 'ai_description', None))
                 )
         
         output_model = create_model(
@@ -516,6 +547,7 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         Create a new instance.
         
         Override this method to customize creation logic.
+        Handles ManyToMany fields by applying them after instance creation.
         
         Args:
             validated_data: Validated data dictionary
@@ -523,13 +555,47 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         Returns:
             Created model instance
         """
-        return await self._model.objects.create(**validated_data)
+        # Extract M2M data before creating instance
+        m2m_data = {}
+        create_data = {}
+        
+        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
+        
+        for key, value in validated_data.items():
+            if key in m2m_field_names:
+                m2m_data[key] = value
+            else:
+                create_data[key] = value
+        
+        # Create the instance
+        instance = await self._model.objects.create(**create_data)
+        
+        # Apply M2M relationships
+        for field_name, ids in m2m_data.items():
+            if ids:
+                m2m_manager = getattr(instance, field_name)
+                # Get target model and fetch instances
+                target_model = self._model._m2m_fields[field_name].to_model
+                instances = []
+                for id_val in ids:
+                    try:
+                        obj = await target_model.objects.get(id=id_val)
+                        instances.append(obj)
+                    except Exception:
+                        pass  # Skip invalid IDs
+                if instances:
+                    await m2m_manager.add(*instances)
+                # Store IDs for serialization
+                setattr(instance, f'_{field_name}_ids', [inst.id for inst in instances])
+        
+        return instance
     
     async def update(self, instance: Model, validated_data: Dict[str, Any]) -> Model:
         """
         Update an existing instance.
         
         Override this method to customize update logic.
+        Handles ManyToMany fields by replacing them.
         
         Args:
             instance: Existing model instance
@@ -538,11 +604,42 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         Returns:
             Updated model instance
         """
+        # Extract M2M data before updating instance
+        m2m_data = {}
+        update_data = {}
+        
+        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
+        
         for key, value in validated_data.items():
+            if key in m2m_field_names:
+                m2m_data[key] = value
+            else:
+                update_data[key] = value
+        
+        # Update regular fields
+        for key, value in update_data.items():
             if value is not None:
                 setattr(instance, key, value)
         
         await instance.save()
+        
+        # Apply M2M relationships (replace)
+        for field_name, ids in m2m_data.items():
+            if ids is not None:  # Allow empty list to clear
+                m2m_manager = getattr(instance, field_name)
+                # Get target model and fetch instances
+                target_model = self._model._m2m_fields[field_name].to_model
+                instances = []
+                for id_val in ids:
+                    try:
+                        obj = await target_model.objects.get(id=id_val)
+                        instances.append(obj)
+                    except Exception:
+                        pass  # Skip invalid IDs
+                await m2m_manager.set(instances)
+                # Store IDs for serialization
+                setattr(instance, f'_{field_name}_ids', [inst.id for inst in instances])
+        
         return instance
     
     # =========================================================================
@@ -609,6 +706,14 @@ class ModelSerializer(metaclass=SerializerMetaclass):
                 result[key] = value
             else:
                 result[key] = value
+        
+        # Include ManyToMany field IDs if cached
+        if hasattr(instance.__class__, '_m2m_fields'):
+            for field_name in instance.__class__._m2m_fields.keys():
+                # Check if M2M IDs were pre-loaded during create/update
+                m2m_ids = getattr(instance, f'_{field_name}_ids', None)
+                if m2m_ids is not None:
+                    result[field_name] = list(m2m_ids)
         
         # Handle FK expansion
         self._expand_relations(instance, result)
