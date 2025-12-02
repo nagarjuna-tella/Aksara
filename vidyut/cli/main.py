@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.3.6"
+CLI_VERSION = "0.3.12"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -691,55 +691,142 @@ def status(database_url: Optional[str]):
 @cli.command()
 @click.option("--database-url", "-d", envvar="DATABASE_URL",
               help="PostgreSQL connection URL (or set DATABASE_URL env var)")
-def shell(database_url: Optional[str]):
-    """Open an interactive async shell with Vidyut."""
+@click.option("--no-ipython", is_flag=True, help="Disable IPython even if available")
+def shell(database_url: Optional[str], no_ipython: bool):
+    """
+    Open an interactive async shell with Vidyut.
+    
+    Starts a Python shell with Vidyut imports pre-loaded, database
+    connection ready, and the arun() helper for running async code.
+    
+    Uses IPython if available, falls back to standard Python shell.
+    
+    Examples:
+    
+        $ vidyut shell
+        
+        # In the shell:
+        vidyut> users = arun(User.objects.all())
+        vidyut> user = arun(User.objects.get(id=1))
+        vidyut> arun(user.posts.all())
+    """
+    from vidyut.shell import run_shell
+    
+    db_url = database_url or None
+    run_shell(database_url=db_url, use_ipython=not no_ipython)
+
+
+@cli.command()
+@click.option("--database-url", "-d", envvar="DATABASE_URL",
+              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+def info(database_url: Optional[str]):
+    """
+    Show Vidyut environment information.
+    
+    Displays version, database connection status, configured apps,
+    and pending migrations. Useful for debugging configuration issues.
+    """
+    from vidyut import __version__
     from vidyut.conf import settings
-    
-    db_url = database_url or settings.database_url
-    if not db_url:
-        click.echo("❌ No database URL provided!")
-        return
-    
-    click.echo("⚡ Vidyut Interactive Shell")
-    click.echo("-" * 40)
-    click.echo("Use 'await' for async operations")
-    click.echo("Available: Model, fields, Database, db")
-    click.echo("-" * 40)
-    
-    # Import everything needed
-    import code
-    import asyncio
-    from vidyut import Model, fields
-    from vidyut.db import Database
     from vidyut.registry import ModelRegistry
     
-    db = Database(db_url)
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut Info\033[0m")
+    click.echo("  " + "-" * 36)
     
-    # Create async REPL
-    async def async_shell():
-        await db.connect()
-        
-        # Create namespace for shell
-        namespace = {
-            'Model': Model,
-            'fields': fields,
-            'Database': Database,
-            'db': db,
-            'ModelRegistry': ModelRegistry,
-            'asyncio': asyncio,
-        }
-        
-        # Add all registered models
-        for name, model in ModelRegistry.all().items():
-            namespace[name] = model
-        
-        # Start interactive console
-        console = code.InteractiveConsole(namespace)
-        console.interact(banner="")
-        
-        await db.disconnect()
+    # Version info
+    click.echo(f"\n  \033[1mVersion:\033[0m {__version__}")
+    click.echo(f"  \033[1mCLI Version:\033[0m {CLI_VERSION}")
     
-    asyncio.run(async_shell())
+    # Database URL (redacted)
+    db_url = database_url or settings.database_url
+    if db_url:
+        # Redact password from URL
+        redacted = _redact_db_url(db_url)
+        click.echo(f"  \033[1mDatabase:\033[0m {redacted}")
+    else:
+        click.echo(f"  \033[1mDatabase:\033[0m \033[90mNot configured\033[0m")
+    
+    # Settings
+    click.echo(f"  \033[1mDebug:\033[0m {settings.debug}")
+    click.echo(f"  \033[1mMigrations Dir:\033[0m {settings.migrations_dir}")
+    
+    # Apps
+    click.echo(f"\n  \033[1mConfigured Apps:\033[0m")
+    for app in settings.apps:
+        click.echo(f"    • {app}")
+    
+    # Discover models
+    for app in settings.apps:
+        try:
+            import importlib
+            importlib.import_module(f"{app}.models")
+        except ImportError:
+            pass
+    
+    all_models = ModelRegistry.all()
+    click.echo(f"\n  \033[1mRegistered Models:\033[0m {len(all_models)}")
+    if all_models:
+        for name in sorted(all_models.keys())[:10]:
+            click.echo(f"    • {name}")
+        if len(all_models) > 10:
+            click.echo(f"    ... and {len(all_models) - 10} more")
+    
+    # Pending migrations (if DB is configured)
+    if db_url:
+        async def check_migrations():
+            from vidyut.migrations.executor import (
+                discover_migrations,
+                get_pending_migrations,
+                ensure_migrations_table,
+                get_applied_migrations as get_applied_migs,
+                discover_internal_migrations,
+            )
+            from vidyut.db import Database
+            
+            try:
+                db = Database(db_url)
+                await db.connect()
+                await ensure_migrations_table(db)
+                applied = await get_applied_migs(db)
+                await db.disconnect()
+                
+                # Discover migrations
+                mig_dir = Path(settings.migrations_dir)
+                user_migrations = discover_migrations(mig_dir) if mig_dir.exists() else []
+                internal_migrations = discover_internal_migrations()
+                all_migrations = user_migrations + internal_migrations
+                
+                pending = get_pending_migrations(all_migrations, applied)
+                
+                click.echo(f"\n  \033[1mMigrations:\033[0m")
+                click.echo(f"    Applied: {len(applied)}")
+                click.echo(f"    Pending: {len(pending)}")
+                
+                if pending:
+                    click.echo(f"\n  \033[1mPending Migrations:\033[0m")
+                    for name, _ in pending[:5]:
+                        click.echo(f"    • {name}")
+                    if len(pending) > 5:
+                        click.echo(f"    ... and {len(pending) - 5} more")
+                        
+            except Exception as e:
+                click.echo(f"\n  \033[33m⚠️  Could not check migrations:\033[0m {e}")
+        
+        asyncio.run(check_migrations())
+    
+    click.echo()
+
+
+def _redact_db_url(url: str) -> str:
+    """Redact password from database URL for display."""
+    import re
+    # Match postgresql://user:password@host... pattern
+    pattern = r"(postgresql(?:\+\w+)?://[^:]+:)([^@]+)(@.+)"
+    match = re.match(pattern, url)
+    if match:
+        return f"{match.group(1)}****{match.group(3)}"
+    return url
 
 
 @cli.command()
