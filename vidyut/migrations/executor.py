@@ -6,6 +6,7 @@ Handles loading, tracking, and executing migrations against the database.
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import logging
 import os
@@ -103,6 +104,12 @@ async def unrecord_migration(connection, name: str) -> None:
 # Migration Discovery
 # =============================================================================
 
+# Internal migration packages (auto-discovered)
+INTERNAL_MIGRATION_PACKAGES = [
+    "vidyut.contrib.auth.migrations",
+]
+
+
 def discover_migrations(migrations_path: Path) -> List[Tuple[str, Path]]:
     """
     Discover all migration files in a directory.
@@ -136,6 +143,72 @@ def discover_migrations(migrations_path: Path) -> List[Tuple[str, Path]]:
     
     # Sort by name (includes timestamp for proper ordering)
     return sorted(migrations, key=lambda x: x[0])
+
+
+def discover_internal_migrations() -> List[Tuple[str, Path]]:
+    """
+    Discover internal migrations from vidyut packages.
+    
+    These are migrations bundled with vidyut (e.g., vidyut.contrib.auth)
+    and are automatically applied when the package is used.
+    
+    Returns:
+        List of (migration_name, file_path) tuples sorted by name
+    """
+    migrations = []
+    
+    for package_name in INTERNAL_MIGRATION_PACKAGES:
+        try:
+            # Import the migrations package
+            package = importlib.import_module(package_name)
+            package_path = Path(package.__file__).parent
+            
+            # Discover migrations in the package
+            for f in package_path.glob("*.py"):
+                if f.name.startswith("_"):
+                    continue
+                
+                # Prefix with package name to avoid collisions
+                name = f"{package_name.replace('.', '_')}_{f.stem}"
+                migrations.append((name, f))
+                
+        except ImportError:
+            # Package not available, skip
+            continue
+        except Exception as e:
+            logger.warning(f"Error discovering migrations from {package_name}: {e}")
+            continue
+    
+    return sorted(migrations, key=lambda x: x[0])
+
+
+def discover_all_migrations(
+    user_migrations_path: Optional[Path] = None,
+    include_internal: bool = True,
+) -> List[Tuple[str, Path]]:
+    """
+    Discover all migrations (user + internal).
+    
+    Internal migrations are applied first, then user migrations.
+    
+    Args:
+        user_migrations_path: Path to user's migrations directory
+        include_internal: Whether to include internal migrations
+        
+    Returns:
+        List of (migration_name, file_path) tuples sorted by name
+    """
+    all_migrations = []
+    
+    # Internal migrations first (if enabled)
+    if include_internal:
+        all_migrations.extend(discover_internal_migrations())
+    
+    # User migrations
+    if user_migrations_path is not None:
+        all_migrations.extend(discover_migrations(user_migrations_path))
+    
+    return sorted(all_migrations, key=lambda x: x[0])
 
 
 def load_migration_module(file_path: Path) -> Type[Migration]:
@@ -262,6 +335,7 @@ async def apply_migrations(
     *,
     fake: bool = False,
     verbose: bool = True,
+    include_internal: bool = True,
 ) -> Dict[str, Any]:
     """
     Apply all pending migrations.
@@ -271,6 +345,7 @@ async def apply_migrations(
         migrations_path: Path to migrations directory
         fake: If True, record as applied without executing
         verbose: If True, print progress messages
+        include_internal: If True, include internal vidyut migrations
         
     Returns:
         Dict with results:
@@ -286,8 +361,11 @@ async def apply_migrations(
     # Get applied migrations
     applied = await get_applied_migrations(connection)
     
-    # Discover all migrations
-    all_migrations = discover_migrations(migrations_path)
+    # Discover all migrations (internal + user)
+    all_migrations = discover_all_migrations(
+        user_migrations_path=migrations_path,
+        include_internal=include_internal,
+    )
     
     # Get pending migrations
     pending = get_pending_migrations(all_migrations, applied)

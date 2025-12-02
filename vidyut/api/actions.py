@@ -22,12 +22,25 @@ Usage:
         async def active(self, request: Request):
             '''Return all active users.'''
             return await self.model.objects.filter(is_active=True).all()
+        
+        # v0.3.10: Action-specific permissions
+        @action(
+            detail=False,
+            methods=["get"],
+            permission_classes=[IsAdminUser],
+        )
+        async def admin_only(self, request: Request):
+            '''Endpoint only accessible to admin users.'''
+            return {"secret": "admin data"}
 """
 
 from __future__ import annotations
 
 from functools import wraps
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, TypeVar, Type, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from vidyut.permissions import BasePermission
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -40,6 +53,8 @@ def action(
     name: Optional[str] = None,
     summary: Optional[str] = None,
     description: Optional[str] = None,
+    permission_classes: Optional[List[Type["BasePermission"]]] = None,
+    ai_exposed: bool = True,
 ) -> Callable[[F], F]:
     """
     Decorator to mark a ModelViewSet method as a custom action endpoint.
@@ -56,6 +71,10 @@ def action(
         name: Route name for reverse URL lookup. Defaults to function name.
         summary: Short summary for OpenAPI docs. Defaults to first line of docstring.
         description: Full description for OpenAPI docs. Defaults to full docstring.
+        permission_classes: Override permission classes for this action.
+                           If None, uses the ViewSet's permission_classes.
+        ai_exposed: Whether this action is exposed to AI agents.
+                   Defaults to True. Set to False to hide from AI.
     
     Returns:
         Decorated function with _vidyut_action metadata attached.
@@ -75,6 +94,24 @@ def action(
         @action(detail=True, methods=["get"], path="full-profile")
         async def get_full_profile(self, pk: UUID, request: Request):
             ...
+        
+        # Action with specific permissions (v0.3.10)
+        @action(
+            detail=False,
+            methods=["get"],
+            permission_classes=[IsAuthenticated, IsAdminUser],
+        )
+        async def admin_dashboard(self, request: Request):
+            ...
+        
+        # Action hidden from AI agents (v0.3.10)
+        @action(
+            detail=True,
+            methods=["post"],
+            ai_exposed=False,
+        )
+        async def sensitive_action(self, pk: UUID, request: Request):
+            ...
     """
     def decorator(func: F) -> F:
         # Normalize methods to uppercase
@@ -88,6 +125,8 @@ def action(
             "name": name or func.__name__,
             "summary": summary,
             "description": description,
+            "permission_classes": permission_classes,
+            "ai_exposed": ai_exposed,
         }
         
         return func
@@ -136,6 +175,40 @@ def is_action(func: Callable) -> bool:
     return hasattr(func, "_vidyut_action")
 
 
+def get_action_permissions(func: Callable) -> Optional[List[Type["BasePermission"]]]:
+    """
+    Get the permission classes for an action.
+    
+    Args:
+        func: The action function
+        
+    Returns:
+        List of permission classes, or None if not specified
+    """
+    meta = get_action_metadata(func)
+    if meta is None:
+        return None
+    
+    return meta.get("permission_classes")
+
+
+def is_action_ai_exposed(func: Callable) -> bool:
+    """
+    Check if an action is exposed to AI agents.
+    
+    Args:
+        func: The action function
+        
+    Returns:
+        True if action is AI-exposed (default), False otherwise
+    """
+    meta = get_action_metadata(func)
+    if meta is None:
+        return True
+    
+    return meta.get("ai_exposed", True)
+
+
 def extract_docstring_summary(func: Callable) -> Optional[str]:
     """
     Extract the first line of a function's docstring as a summary.
@@ -178,6 +251,8 @@ __all__ = [
     "action",
     "get_action_metadata",
     "is_action",
+    "get_action_permissions",
+    "is_action_ai_exposed",
     "extract_docstring_summary",
     "extract_docstring_description",
 ]

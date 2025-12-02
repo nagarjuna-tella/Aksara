@@ -1,5 +1,5 @@
 """
-⚡ Vidyut API Layer (v0.3.2)
+⚡ Vidyut API Layer (v0.3.10)
 
 Auto-generate CRUD REST APIs from Vidyut models.
 
@@ -9,10 +9,12 @@ This module provides:
 - @action decorator: Define custom endpoints on ViewSets
 - Auto-generated Pydantic schemas from models
 - Router utilities for registering viewsets
+- Permission support on ViewSets and actions (v0.3.10)
 
 Usage:
     from vidyut import Model, fields
     from vidyut.api import ModelViewSet, ModelSerializer, include_viewset, action
+    from vidyut.permissions import IsAuthenticated, IsAdminUser
 
     class User(Model):
         email = fields.String(unique=True)
@@ -29,9 +31,15 @@ Usage:
         model = User
         prefix = "/users"
         tags = ["Users"]
+        permission_classes = [IsAuthenticated]  # v0.3.10
         create_serializer_class = UserSerializer
         
-        @action(detail=True, methods=["post"], summary="Deactivate user")
+        @action(
+            detail=True, 
+            methods=["post"], 
+            summary="Deactivate user",
+            permission_classes=[IsAdminUser],  # v0.3.10
+        )
         async def deactivate(self, pk: UUID, request: Request):
             ...
 
@@ -49,7 +57,13 @@ from vidyut.api.schemas import (
 )
 from vidyut.api.viewsets import ModelViewSet
 from vidyut.api.router import include_viewset
-from vidyut.api.actions import action
+from vidyut.api.actions import (
+    action,
+    get_action_metadata,
+    is_action,
+    get_action_permissions,
+    is_action_ai_exposed,
+)
 from vidyut.api.serializers import (
     ModelSerializer,
     serialize_instance,
@@ -74,8 +88,12 @@ __all__ = [
     "prefetch_many_to_many",
     "prefetch_foreign_keys",
     "prefetch_for_serializer",
-    # Action decorator
+    # Action decorator & utilities (v0.3.10)
     "action",
+    "get_action_metadata",
+    "is_action",
+    "get_action_permissions",
+    "is_action_ai_exposed",
     # Router
     "include_viewset",
     # Schema generation

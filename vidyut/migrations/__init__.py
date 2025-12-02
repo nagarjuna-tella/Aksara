@@ -27,6 +27,9 @@ from vidyut.migrations.executor import (
     apply_migrations,
     get_applied_migrations,
     get_pending_migrations,
+    discover_migrations,
+    discover_internal_migrations,
+    discover_all_migrations,
 )
 
 __all__ = [
@@ -35,4 +38,7 @@ __all__ = [
     "apply_migrations",
     "get_applied_migrations",
     "get_pending_migrations",
+    "discover_migrations",
+    "discover_internal_migrations",
+    "discover_all_migrations",
 ]

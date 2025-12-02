@@ -95,7 +95,23 @@ from vidyut.relations import (
 from vidyut.exceptions import RestrictedError
 from vidyut.model.base import finalize_relations
 
-__version__ = "0.3.9"
+# v0.3.10: Identity & Permissions
+from vidyut.identity import VidyutUserProtocol, AnonymousUser
+from vidyut.permissions import (
+    BasePermission,
+    AllowAny,
+    IsAuthenticated,
+    IsAdminUser,
+    IsActiveUser,
+    IsOwnerOrReadOnly,
+    DenyAI,
+    OperationPermission,
+    AND,
+    OR,
+    check_permissions,
+)
+
+__version__ = "0.3.10"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -178,4 +194,18 @@ __all__ = [
     "RelationMeta",
     "RestrictedError",
     "finalize_relations",
+    # v0.3.10: Identity & Permissions
+    "VidyutUserProtocol",
+    "AnonymousUser",
+    "BasePermission",
+    "AllowAny",
+    "IsAuthenticated",
+    "IsAdminUser",
+    "IsActiveUser",
+    "IsOwnerOrReadOnly",
+    "DenyAI",
+    "OperationPermission",
+    "AND",
+    "OR",
+    "check_permissions",
 ]

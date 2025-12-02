@@ -26,11 +26,24 @@ Usage:
         prefix = "/users"
         create_serializer_class = UserCreateSerializer
         retrieve_serializer_class = UserDetailSerializer
+    
+    # v0.3.10: Use permissions for access control:
+    from vidyut.permissions import IsAuthenticated, IsAdminUser
+    
+    class UserViewSet(ModelViewSet):
+        model = User
+        prefix = "/users"
+        permission_classes = [IsAuthenticated]
+        
+        # Action-specific permissions
+        @action(detail=False, permission_classes=[IsAdminUser])
+        async def admin_only(self, request):
+            return {"secret": "admin data"}
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
 
 from fastapi import Request, HTTPException
 
@@ -46,6 +59,7 @@ from vidyut.api.schemas import (
 if TYPE_CHECKING:
     from vidyut.manager import QuerySet
     from vidyut.api.serializers import ModelSerializer
+    from vidyut.permissions import BasePermission
 
 
 class ModelViewSet:
@@ -57,6 +71,8 @@ class ModelViewSet:
         prefix: URL prefix (e.g., "/users")
         tags: FastAPI tags for documentation
         lookup_field: Field used for single-item lookups (default: "id")
+        permission_classes: List of permission classes for access control
+        ai_exposed: Whether this ViewSet is exposed to AI agents (default: True)
     
     Generated Endpoints:
         - GET {prefix}/ → list
@@ -71,6 +87,10 @@ class ModelViewSet:
         - create_serializer_class: Serializer for create input/output
         - update_serializer_class: Serializer for update input/output
     
+    v0.3.10 Permission Attributes:
+        - permission_classes: List of permission classes to check
+        - ai_exposed: Whether to expose to AI agents
+    
     Override Methods:
         Override list(), retrieve(), create(), update(), delete()
         for custom business logic.
@@ -84,6 +104,10 @@ class ModelViewSet:
     # Pagination defaults
     default_limit: int = 20
     max_limit: int = 100
+    
+    # v0.3.10: Permission classes
+    permission_classes: List[Type["BasePermission"]] = []
+    ai_exposed: bool = True  # Whether exposed to AI agents
     
     # v0.3.2: Serializer classes (optional, takes precedence over schemas)
     list_serializer_class: Optional[Type["ModelSerializer"]] = None
@@ -151,6 +175,106 @@ class ModelViewSet:
     def read_schema(self) -> Type:
         """Get the Pydantic Read schema."""
         return self._read_schema
+    
+    # =========================================================================
+    # v0.3.10: Permission Methods
+    # =========================================================================
+    
+    def get_permissions(self) -> List["BasePermission"]:
+        """
+        Get instantiated permission instances.
+        
+        Override this for dynamic permission selection.
+        
+        Returns:
+            List of permission instances.
+        """
+        permissions = []
+        for perm_cls in self.permission_classes:
+            if isinstance(perm_cls, type):
+                permissions.append(perm_cls())
+            else:
+                permissions.append(perm_cls)
+        return permissions
+    
+    def check_permissions(self, request: Request) -> None:
+        """
+        Check view-level permissions.
+        
+        Raises HTTPException if permission denied.
+        
+        Args:
+            request: The incoming request.
+        
+        Raises:
+            HTTPException: 403 if permission denied.
+        """
+        for permission in self.get_permissions():
+            if not permission.has_permission(request, self):
+                raise HTTPException(
+                    status_code=403,
+                    detail=permission.message,
+                )
+    
+    def check_object_permissions(self, request: Request, obj: Model) -> None:
+        """
+        Check object-level permissions.
+        
+        Called after retrieving an object.
+        
+        Args:
+            request: The incoming request.
+            obj: The object being accessed.
+        
+        Raises:
+            HTTPException: 403 if permission denied.
+        """
+        for permission in self.get_permissions():
+            if not permission.has_object_permission(request, self, obj):
+                raise HTTPException(
+                    status_code=403,
+                    detail=permission.message,
+                )
+    
+    def check_ai_access(self, request: Request) -> None:
+        """
+        Check if AI agent access is allowed.
+        
+        Args:
+            request: The incoming request.
+        
+        Raises:
+            HTTPException: 403 if AI access denied.
+        """
+        # Check viewset-level ai_exposed
+        if not self.ai_exposed:
+            if self._is_ai_request(request):
+                raise HTTPException(
+                    status_code=403,
+                    detail="AI agent access denied.",
+                )
+        
+        # Check permission-level ai_allow
+        for permission in self.get_permissions():
+            if not permission.ai_allow and self._is_ai_request(request):
+                raise HTTPException(
+                    status_code=403,
+                    detail="AI agent access denied.",
+                )
+    
+    def _is_ai_request(self, request: Request) -> bool:
+        """Check if request is from an AI agent."""
+        # Check header
+        ai_header = request.headers.get("X-AI-Agent", "")
+        if ai_header.lower() in ("true", "1", "yes"):
+            return True
+        
+        # Check request state
+        if hasattr(request, "state"):
+            if getattr(request.state, "is_ai_agent", False):
+                return True
+        
+        return False
     
     # =========================================================================
     # v0.3.2: Serializer/Schema Resolution
@@ -233,6 +357,10 @@ class ModelViewSet:
         Returns:
             Paginated response with count and results
         """
+        # Check permissions
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        
         queryset = self.get_queryset(**filters)
         return await self._paginate(queryset, limit, offset, request=request)
     
@@ -254,8 +382,16 @@ class ModelViewSet:
         Raises:
             HTTPException: 404 if not found, 400 if invalid UUID
         """
+        # Check view permissions
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        
         try:
             instance = await self.model.objects.get(**{self.lookup_field: pk})
+            
+            # Check object permissions
+            self.check_object_permissions(request, instance)
+            
             return self._serialize(instance, action='retrieve', request=request)
         except DoesNotExist:
             raise HTTPException(
@@ -287,6 +423,10 @@ class ModelViewSet:
         Returns:
             Created item data
         """
+        # Check permissions
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        
         serializer = self.get_serializer(
             'create',
             data=data,
@@ -326,6 +466,10 @@ class ModelViewSet:
         Raises:
             HTTPException: 404 if not found, 400 if invalid UUID
         """
+        # Check view permissions
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        
         try:
             instance = await self.model.objects.get(**{self.lookup_field: pk})
         except DoesNotExist:
@@ -338,6 +482,9 @@ class ModelViewSet:
                 status_code=400,
                 detail=f"Invalid {self.lookup_field} format: {pk}"
             )
+        
+        # Check object permissions
+        self.check_object_permissions(request, instance)
         
         serializer = self.get_serializer(
             'update',
@@ -379,6 +526,10 @@ class ModelViewSet:
         Raises:
             HTTPException: 404 if not found, 400 if invalid UUID
         """
+        # Check view permissions
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        
         try:
             instance = await self.model.objects.get(**{self.lookup_field: pk})
         except DoesNotExist:
@@ -391,6 +542,9 @@ class ModelViewSet:
                 status_code=400,
                 detail=f"Invalid {self.lookup_field} format: {pk}"
             )
+        
+        # Check object permissions
+        self.check_object_permissions(request, instance)
         
         await instance.delete()
         return {"deleted": True, "id": pk}
