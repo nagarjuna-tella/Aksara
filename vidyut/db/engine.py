@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 
 from vidyut.logging import QueryLogger, logger
 from vidyut.exceptions import map_database_error, ConnectionError as VidyutConnectionError
+from vidyut.db.debug import log_query
 
 
 class Database:
@@ -155,6 +156,9 @@ class Database:
         Returns:
             Status string (e.g., "INSERT 0 1")
         """
+        # Log query for debugging/testing
+        log_query(query, args if args else None)
+        
         with QueryLogger(query, args):
             try:
                 async with self.acquire() as conn:
@@ -179,6 +183,9 @@ class Database:
         Returns:
             List of records
         """
+        # Log query for debugging/testing
+        log_query(query, args if args else None)
+        
         with QueryLogger(query, args):
             try:
                 async with self.acquire() as conn:
@@ -203,6 +210,9 @@ class Database:
         Returns:
             Single record or None
         """
+        # Log query for debugging/testing
+        log_query(query, args if args else None)
+        
         with QueryLogger(query, args):
             try:
                 async with self.acquire() as conn:
@@ -229,6 +239,9 @@ class Database:
         Returns:
             Single value
         """
+        # Log query for debugging/testing
+        log_query(query, args if args else None)
+        
         with QueryLogger(query, args):
             try:
                 async with self.acquire() as conn:

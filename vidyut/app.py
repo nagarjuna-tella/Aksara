@@ -100,7 +100,7 @@ class Vidyut(FastAPI):
         title: str = "Vidyut API",
         summary: Optional[str] = None,
         description: str = "",
-        version: str = "0.3.6",
+        version: str = "0.3.8",
         openapi_url: Optional[str] = "/openapi.json",
         openapi_tags: Optional[list[dict[str, Any]]] = None,
         docs_url: Optional[str] = "/docs",
@@ -349,6 +349,11 @@ class Vidyut(FastAPI):
                     max_size=self._max_pool_size,
                 )
                 await self._db.connect()
+                
+                # Finalize relations for reverse access
+                from vidyut.model.base import finalize_relations
+                finalize_relations()
+                
                 self._print_startup()
             
             # Run user's lifespan
@@ -372,6 +377,11 @@ class Vidyut(FastAPI):
                 max_size=self._max_pool_size,
             )
             await self._db.connect()
+            
+            # Finalize relations for reverse access
+            from vidyut.model.base import finalize_relations
+            finalize_relations()
+            
             self._print_startup()
         
         yield
@@ -397,6 +407,7 @@ class Vidyut(FastAPI):
     def _register_orm_exceptions(self) -> None:
         """Register exception handlers for Vidyut ORM errors."""
         from vidyut.manager import DoesNotExist, MultipleObjectsReturned
+        from vidyut.exceptions import ValidationError, UniqueConstraintError, RestrictedError
         
         @self.exception_handler(DoesNotExist)
         async def handle_does_not_exist(request: Request, exc: DoesNotExist):
@@ -410,6 +421,41 @@ class Vidyut(FastAPI):
             return JSONResponse(
                 status_code=500,
                 content={"detail": str(exc)},
+            )
+        
+        @self.exception_handler(UniqueConstraintError)
+        async def handle_unique_constraint(request: Request, exc: UniqueConstraintError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "detail": str(exc),
+                    "field": exc.field_name,
+                    "code": "unique_constraint_violated",
+                },
+            )
+        
+        @self.exception_handler(ValidationError)
+        async def handle_validation_error(request: Request, exc: ValidationError):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "detail": str(exc),
+                    "errors": exc.errors,
+                    "code": "validation_error",
+                },
+            )
+        
+        @self.exception_handler(RestrictedError)
+        async def handle_restricted_error(request: Request, exc: RestrictedError):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "detail": str(exc),
+                    "model": exc.model_name,
+                    "related_model": exc.related_model,
+                    "related_count": exc.related_count,
+                    "code": "delete_restricted",
+                },
             )
     
     def _auto_register_viewsets(self) -> None:

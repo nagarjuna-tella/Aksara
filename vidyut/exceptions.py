@@ -137,9 +137,71 @@ class CheckConstraintError(DatabaseError):
         super().__init__(message, **kwargs)
 
 
+class ValidationError(VidyutError):
+    """
+    Raised when field or model validation fails.
+    
+    Attributes:
+        errors: Dictionary mapping field names to error messages
+    """
+    
+    def __init__(
+        self,
+        message: str = "Validation failed",
+        *,
+        errors: Optional[dict[str, str]] = None,
+        field_name: Optional[str] = None,
+    ):
+        self.errors = errors or {}
+        self.field_name = field_name
+        super().__init__(message)
+    
+    def __str__(self) -> str:
+        if self.errors:
+            error_details = "; ".join(f"{k}: {v}" for k, v in self.errors.items())
+            return f"{self.message} ({error_details})"
+        return self.message
+
+
 class QueryError(DatabaseError):
     """Raised when a query fails for reasons other than constraints."""
     pass
+
+
+class RestrictedError(VidyutError):
+    """
+    Raised when trying to delete an object that has protected relations.
+    
+    This occurs when on_delete=RESTRICT is set on a ForeignKey/OneToOne
+    and related objects exist.
+    
+    Attributes:
+        model_name: Name of the model being deleted
+        related_model: Name of the model with related objects
+        related_count: Number of related objects blocking deletion
+    """
+    
+    def __init__(
+        self,
+        message: str = "Cannot delete due to protected relation",
+        *,
+        model_name: Optional[str] = None,
+        related_model: Optional[str] = None,
+        related_count: int = 0,
+    ):
+        self.model_name = model_name
+        self.related_model = related_model
+        self.related_count = related_count
+        super().__init__(message)
+    
+    def __str__(self) -> str:
+        if self.model_name and self.related_model:
+            return (
+                f"Cannot delete {self.model_name}: "
+                f"{self.related_count} related {self.related_model} object(s) exist "
+                f"(on_delete=RESTRICT)"
+            )
+        return self.message
 
 
 def map_database_error(
@@ -293,6 +355,8 @@ __all__ = [
     "ForeignKeyConstraintError",
     "NotNullConstraintError",
     "CheckConstraintError",
+    "ValidationError",
+    "RestrictedError",
     "QueryError",
     "map_database_error",
 ]

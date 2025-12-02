@@ -17,6 +17,40 @@ from typing import Any, Optional, Type, Union, Callable, TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from vidyut.model.base import Model
+    from vidyut.relations import OnDelete as OnDeleteType
+
+
+# =============================================================================
+# on_delete constants (Django-style API)
+# =============================================================================
+
+class OnDelete:
+    """
+    Delete behavior policies for FK and OneToOne relations.
+    
+    Use these constants for the on_delete parameter:
+    
+        author = ForeignKey(User, on_delete=CASCADE)
+        owner = ForeignKey(User, on_delete=SET_NULL, nullable=True)
+        parent = ForeignKey(Category, on_delete=RESTRICT)
+    
+    Values:
+        CASCADE: Delete related objects when parent is deleted
+        SET_NULL: Set FK to NULL when parent is deleted (requires nullable=True)
+        RESTRICT: Prevent deletion if related objects exist
+        PROTECT: Alias for RESTRICT
+    """
+    CASCADE = "CASCADE"
+    SET_NULL = "SET NULL"
+    RESTRICT = "RESTRICT"
+    PROTECT = "RESTRICT"  # Alias
+
+
+# Module-level exports for convenience (Django-style)
+CASCADE = OnDelete.CASCADE
+SET_NULL = OnDelete.SET_NULL
+RESTRICT = OnDelete.RESTRICT
+PROTECT = OnDelete.PROTECT
 
 
 # Email validation regex (basic RFC-style check)
@@ -960,27 +994,39 @@ class ForeignKey(Field):
     
     Args:
         to: The model class being referenced (or string name for lazy reference)
+        related_name: Name for reverse access on target model (default: "{model}_set")
         column_name: Name for the FK column (default: "{field_name}_id")
-        on_delete: Action on delete ("CASCADE", "SET NULL", "RESTRICT", etc.)
+        on_delete: Action on delete - use CASCADE, SET_NULL, RESTRICT, or PROTECT
         nullable: Whether the field can be NULL
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
     
     Usage:
+        from vidyut import fields
+        from vidyut.fields import CASCADE, SET_NULL, RESTRICT
+        
         class Post(Model):
-            author = fields.ForeignKey(User)  # Creates author_id column
+            # Using module constant (recommended)
+            author = fields.ForeignKey(User, on_delete=CASCADE, related_name="posts")
             
-        # Access the FK value
+            # Or using OnDelete class
+            editor = fields.ForeignKey(User, on_delete=fields.OnDelete.SET_NULL, nullable=True)
+            
+        # Forward access
         post.author_id  # The UUID of the referenced User
+        
+        # Reverse access
+        posts = await user.posts.all()
     """
     
     def __init__(
         self,
         to: Union[Type["Model"], str],
         *,
+        related_name: Optional[str] = None,
         column_name: Optional[str] = None,
-        on_delete: str = "CASCADE",
+        on_delete: str = CASCADE,
         nullable: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
@@ -994,7 +1040,9 @@ class ForeignKey(Field):
         )
         self._to = to
         self._column_name = column_name
-        self.on_delete = on_delete
+        # Normalize on_delete to string (handles both string and OnDelete enum)
+        self.on_delete = on_delete.upper() if isinstance(on_delete, str) else str(on_delete)
+        self.related_name = related_name
         
         # These will be set after model class creation
         self._resolved_model: Optional[Type["Model"]] = None
@@ -1134,18 +1182,23 @@ class OneToOne(ForeignKey):
     
     Args:
         to: The model class being referenced (or string name)
-        related_name: Name for reverse access (future use)
+        related_name: Name for reverse access on target model
         column_name: Name for the FK column (default: "{field_name}_id")
-        on_delete: Action on delete ("CASCADE", "SET NULL", "RESTRICT", etc.)
+        on_delete: Action on delete - use CASCADE, SET_NULL, RESTRICT, or PROTECT
         nullable: Whether the field can be NULL
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
     
     Usage:
+        from vidyut.fields import CASCADE
+        
         class UserProfile(Model):
-            user = fields.OneToOne("User", related_name="profile")
+            user = fields.OneToOne(User, on_delete=CASCADE, related_name="profile")
             bio = fields.Text(nullable=True)
+            
+        # Reverse access
+        profile = await user.profile()
     """
     
     def __init__(
@@ -1154,7 +1207,7 @@ class OneToOne(ForeignKey):
         *,
         related_name: Optional[str] = None,
         column_name: Optional[str] = None,
-        on_delete: str = "CASCADE",
+        on_delete: str = CASCADE,
         nullable: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,

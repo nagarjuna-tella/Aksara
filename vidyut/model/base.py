@@ -169,8 +169,75 @@ class ModelMeta(type):
             # Set source model on ManyToMany fields
             for field_name, m2m_field in m2m_fields.items():
                 m2m_field._source_model = cls
+            
+            # Register relations for reverse access (deferred until target models are loaded)
+            cls._pending_relations = []
+            
+            # Collect FK relations
+            for field_name, fk_field in fk_fields.items():
+                from vidyut.fields import OneToOne
+                relation_type = "o2o" if isinstance(fk_field, OneToOne) else "fk"
+                cls._pending_relations.append({
+                    "type": relation_type,
+                    "field_name": field_name,
+                    "field": fk_field,
+                })
+            
+            # Collect M2M relations
+            for field_name, m2m_field in m2m_fields.items():
+                cls._pending_relations.append({
+                    "type": "m2m",
+                    "field_name": field_name,
+                    "field": m2m_field,
+                })
         
         return cls
+
+
+def finalize_relations() -> None:
+    """
+    Finalize all pending relations after all models are loaded.
+    
+    This registers relations with the RelationRegistry and attaches
+    reverse descriptors to target models.
+    
+    Call this after all models are imported, typically at app startup.
+    """
+    from vidyut.registry import ModelRegistry
+    from vidyut.relations import RelationRegistry, register_relation
+    
+    for model_name, model_cls in ModelRegistry.all().items():
+        pending = getattr(model_cls, '_pending_relations', [])
+        
+        for rel_info in pending:
+            try:
+                field = rel_info["field"]
+                target_model = field.to_model
+                
+                if rel_info["type"] == "m2m":
+                    register_relation(
+                        relation_type="m2m",
+                        source_model=model_cls,
+                        target_model=target_model,
+                        field_name=rel_info["field_name"],
+                        related_name=field.related_name,
+                        through_table=field.join_table_name,
+                    )
+                else:
+                    register_relation(
+                        relation_type=rel_info["type"],
+                        source_model=model_cls,
+                        target_model=target_model,
+                        field_name=rel_info["field_name"],
+                        related_name=field.related_name,
+                        on_delete=field.on_delete,
+                    )
+            except Exception as e:
+                # Skip if target model not yet loaded (lazy reference)
+                pass
+    
+    # Attach reverse descriptors to all target models
+    RelationRegistry.attach_reverse_descriptors()
 
 
 class Model(metaclass=ModelMeta):
@@ -212,6 +279,7 @@ class Model(metaclass=ModelMeta):
         """
         self._data: Dict[str, Any] = {}
         self._m2m_managers: Dict[str, ManyToManyManager] = {}
+        self._prefetched_relations: Dict[str, Any] = {}  # Cache for select_related
         self._is_new = True
         
         # Set field values from kwargs or defaults
@@ -294,6 +362,7 @@ class Model(metaclass=ModelMeta):
         instance = cls.__new__(cls)
         instance._data = {}
         instance._m2m_managers = {}
+        instance._prefetched_relations = {}  # Cache for select_related
         instance._is_new = False
         
         record_keys = set(record.keys())
@@ -311,6 +380,69 @@ class Model(metaclass=ModelMeta):
         
         return instance
     
+    def get_related(self, field_name: str) -> Any:
+        """
+        Get a prefetched related object for a FK/O2O field.
+        
+        This returns the related model instance if it was preloaded
+        via select_related(). Returns None if not prefetched or if
+        the FK value is NULL.
+        
+        Args:
+            field_name: Name of the FK/O2O field
+            
+        Returns:
+            Related model instance or None
+            
+        Raises:
+            ValueError: If field is not FK/O2O or wasn't prefetched
+            
+        Usage:
+            posts = await Post.objects.select_related("author").all()
+            author = posts[0].get_related("author")
+        """
+        if field_name not in self._fk_fields:
+            raise ValueError(f"'{field_name}' is not a ForeignKey/OneToOne field")
+        
+        if field_name not in self._prefetched_relations:
+            raise ValueError(
+                f"'{field_name}' was not prefetched. "
+                f"Use select_related('{field_name}') to preload it."
+            )
+        
+        return self._prefetched_relations.get(field_name)
+    
+    def get_prefetched_m2m(self, field_name: str) -> List["Model"]:
+        """
+        Get prefetched M2M related objects.
+        
+        This returns the list of related model instances if they were
+        preloaded via prefetch_related().
+        
+        Args:
+            field_name: Name of the M2M field
+            
+        Returns:
+            List of related model instances
+            
+        Raises:
+            ValueError: If field is not M2M or wasn't prefetched
+        """
+        if field_name not in self._m2m_fields:
+            raise ValueError(f"'{field_name}' is not a ManyToMany field")
+        
+        if field_name not in self._prefetched_relations:
+            raise ValueError(
+                f"'{field_name}' was not prefetched. "
+                f"Use prefetch_related('{field_name}') to preload it."
+            )
+        
+        return self._prefetched_relations.get(field_name, [])
+    
+    def is_prefetched(self, field_name: str) -> bool:
+        """Check if a relation field has been prefetched."""
+        return field_name in self._prefetched_relations
+    
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert model to dictionary.
@@ -327,14 +459,65 @@ class Model(metaclass=ModelMeta):
             result[field_name] = value
         return result
     
+    async def _validate_fields(self) -> None:
+        """
+        Validate all fields before saving.
+        
+        Checks:
+        - Non-nullable fields have values (unless auto-generated or have defaults)
+        - Field-specific validation (Email, URL, Decimal, etc.)
+        
+        Raises:
+            ValidationError: If validation fails
+        """
+        from vidyut.exceptions import ValidationError
+        
+        errors = {}
+        
+        for field_name, field in self._fields.items():
+            value = self._data.get(field_name)
+            
+            # Skip auto-generated fields
+            if field.primary_key and value is None:
+                continue
+            if isinstance(field, DateTime):
+                if field.auto_now or field.auto_now_add:
+                    continue
+            
+            # Check non-nullable constraint
+            if value is None:
+                has_default = field.default is not None or callable(field.default)
+                if not field.nullable and not has_default:
+                    errors[field_name] = f"Field '{field_name}' cannot be null"
+                    continue
+            
+            # Run field-specific validation if value is not None
+            if value is not None and hasattr(field, 'validate'):
+                try:
+                    field.validate(value)
+                except ValueError as e:
+                    errors[field_name] = str(e)
+        
+        if errors:
+            # Raise with the first error for backwards compatibility
+            first_error = next(iter(errors.values()))
+            raise ValidationError(first_error, errors=errors)
+    
     async def save(self) -> None:
         """
         Save the model instance to the database.
         
         If this is a new instance (not yet persisted), performs INSERT.
         If this is an existing instance, performs UPDATE.
+        
+        Raises:
+            ValidationError: If field validation fails
         """
         from vidyut.db import Database
+        from vidyut.exceptions import ValidationError
+        
+        # Validate all fields before saving
+        await self._validate_fields()
         
         db = Database.get_instance()
         
@@ -440,13 +623,70 @@ class Model(metaclass=ModelMeta):
                 self._data[field_name] = field.to_python(record[field_name])
     
     async def delete(self) -> None:
-        """Delete this model instance from the database."""
+        """
+        Delete this model instance from the database.
+        
+        Handles on_delete policies for reverse relations:
+        - RESTRICT: Raises RestrictedError if dependent objects exist
+        - SET_NULL: Sets FK to NULL on dependent objects before delete
+        - CASCADE: Lets database handle cascading deletes
+        
+        Raises:
+            ValueError: If model hasn't been saved yet
+            RestrictedError: If RESTRICT policy prevents deletion
+        """
         from vidyut.db import Database
+        from vidyut.fields import ForeignKey
+        from vidyut.relations import RelationRegistry, OnDelete
+        from vidyut.exceptions import RestrictedError
         
         if self._is_new:
             raise ValueError("Cannot delete a model that hasn't been saved yet")
         
         db = Database.get_instance()
+        
+        # Get relations pointing to this model
+        relations = RelationRegistry.get_relations_to(self.__class__)
+        
+        for relation in relations:
+            if relation.relation_type not in ("fk", "o2o"):
+                continue  # M2M handled by join table CASCADE
+            
+            # Get the FK column name
+            source_model = relation.source_model
+            field = source_model._fields.get(relation.field_name)
+            if isinstance(field, ForeignKey):
+                fk_column = field.db_column_name
+            else:
+                fk_column = f"{relation.field_name}_id"
+            
+            on_delete = relation.on_delete or OnDelete.CASCADE.value
+            
+            if on_delete == OnDelete.RESTRICT.value:
+                # Check if dependent objects exist
+                count_query = f"""
+                    SELECT COUNT(*) FROM {source_model.__tablename__}
+                    WHERE {fk_column} = $1
+                """
+                count = await db.fetchval(count_query, self._data['id'])
+                
+                if count > 0:
+                    raise RestrictedError(
+                        model_name=self.__class__.__name__,
+                        related_model=source_model.__name__,
+                        related_count=count,
+                    )
+            
+            elif on_delete == OnDelete.SET_NULL.value:
+                # Set FK to NULL on dependent objects
+                update_query = f"""
+                    UPDATE {source_model.__tablename__}
+                    SET {fk_column} = NULL
+                    WHERE {fk_column} = $1
+                """
+                await db.execute(update_query, self._data['id'])
+            
+            # CASCADE is handled by database constraint
         
         query = f"DELETE FROM {self.__tablename__} WHERE id = $1"
         await db.execute(query, self._data['id'])

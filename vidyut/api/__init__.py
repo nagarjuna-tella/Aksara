@@ -56,6 +56,11 @@ from vidyut.api.serializers import (
     serialize_many,
     clear_serializer_cache,
 )
+from vidyut.api.prefetch import (
+    prefetch_many_to_many,
+    prefetch_foreign_keys,
+    prefetch_for_serializer,
+)
 
 __all__ = [
     # ViewSet
@@ -65,6 +70,10 @@ __all__ = [
     "serialize_instance",
     "serialize_many",
     "clear_serializer_cache",
+    # Prefetch utilities (v0.3.9)
+    "prefetch_many_to_many",
+    "prefetch_foreign_keys",
+    "prefetch_for_serializer",
     # Action decorator
     "action",
     # Router

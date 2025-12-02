@@ -28,6 +28,9 @@ from vidyut.exceptions import (
     CheckConstraintError,
 )
 
+# on_delete constants (Django-style)
+from vidyut.fields import CASCADE, SET_NULL, RESTRICT, PROTECT
+
 # v0.3: API layer
 from vidyut.api import (
     ModelViewSet,
@@ -83,7 +86,16 @@ from vidyut.app import (
     Middleware,
 )
 
-__version__ = "0.3.6"
+# v0.3.8: Relationships & Delete Semantics
+from vidyut.relations import (
+    OnDelete,
+    RelationRegistry,
+    RelationMeta,
+)
+from vidyut.exceptions import RestrictedError
+from vidyut.model.base import finalize_relations
+
+__version__ = "0.3.9"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -92,6 +104,11 @@ __all__ = [
     "ModelRegistry",
     "DoesNotExist",
     "MultipleObjectsReturned",
+    # on_delete constants (Django-style)
+    "CASCADE",
+    "SET_NULL",
+    "RESTRICT",
+    "PROTECT",
     # Settings & Configuration
     "Settings",
     "settings",
@@ -155,4 +172,10 @@ __all__ = [
     "StaticFiles",
     "Jinja2Templates",
     "Middleware",
+    # v0.3.8: Relationships & Delete Semantics
+    "OnDelete",
+    "RelationRegistry",
+    "RelationMeta",
+    "RestrictedError",
+    "finalize_relations",
 ]

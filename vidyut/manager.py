@@ -6,7 +6,7 @@ Django-like query interface for Vidyut models.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vidyut.model.base import Model
@@ -71,18 +71,33 @@ class QuerySet(Generic[T]):
             email__icontains="@gmail.com",
             status__in=["active", "pending"],
         ).all()
+        
+        # Preload FK/O2O relations (avoids N+1)
+        posts = await Post.objects.select_related("author").all()
+        for p in posts:
+            _ = p.author  # No additional query!
     """
     
-    def __init__(self, model: Type[T], filters: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        model: Type[T],
+        filters: Optional[Dict[str, Any]] = None,
+        select_related_fields: Optional[Set[str]] = None,
+        prefetch_related_fields: Optional[Set[str]] = None,
+    ):
         """
         Initialize a QuerySet.
         
         Args:
             model: The model class to query
             filters: Dictionary of field=value or field__lookup=value filters
+            select_related_fields: Set of FK/O2O fields to eagerly load
+            prefetch_related_fields: Set of M2M fields to eagerly load
         """
         self._model = model
         self._filters = filters or {}
+        self._select_related: Set[str] = select_related_fields or set()
+        self._prefetch_related: Set[str] = prefetch_related_fields or set()
     
     def filter(self, **kwargs) -> "QuerySet[T]":
         """
@@ -106,7 +121,63 @@ class QuerySet(Generic[T]):
             New QuerySet with additional filters
         """
         new_filters = {**self._filters, **kwargs}
-        return QuerySet(self._model, new_filters)
+        return QuerySet(
+            self._model,
+            new_filters,
+            self._select_related.copy(),
+            self._prefetch_related.copy(),
+        )
+    
+    def select_related(self, *fields: str) -> "QuerySet[T]":
+        """
+        Mark ForeignKey / OneToOne fields to be eagerly loaded.
+        
+        Uses batched queries to avoid N+1 problems. After the main query,
+        a single additional query fetches all related objects.
+        
+        Args:
+            *fields: Names of FK/O2O fields to preload
+            
+        Returns:
+            New QuerySet with select_related fields added
+            
+        Usage:
+            # Single field
+            posts = await Post.objects.select_related("author").all()
+            
+            # Multiple fields
+            posts = await Post.objects.select_related("author", "category").all()
+            
+            # Chained
+            posts = await Post.objects.select_related("author").select_related("category").all()
+        """
+        new_select_related = self._select_related | set(fields)
+        return QuerySet(
+            self._model,
+            self._filters.copy(),
+            new_select_related,
+            self._prefetch_related.copy(),
+        )
+    
+    def prefetch_related(self, *fields: str) -> "QuerySet[T]":
+        """
+        Mark ManyToMany fields to be eagerly loaded.
+        
+        Uses batched queries to avoid N+1 problems.
+        
+        Args:
+            *fields: Names of M2M fields to preload
+            
+        Returns:
+            New QuerySet with prefetch_related fields added
+        """
+        new_prefetch_related = self._prefetch_related | set(fields)
+        return QuerySet(
+            self._model,
+            self._filters.copy(),
+            self._select_related.copy(),
+            new_prefetch_related,
+        )
     
     def _build_where_clause(self) -> Tuple[str, List]:
         """
@@ -210,7 +281,137 @@ class QuerySet(Generic[T]):
         
         records = await db.fetch(query, *values)
         
-        return [self._model._from_record(record) for record in records]
+        instances = [self._model._from_record(record) for record in records]
+        
+        # Handle select_related - batch load FK/O2O relations
+        if self._select_related and instances:
+            await self._load_select_related(instances, db)
+        
+        # Handle prefetch_related - batch load M2M relations
+        if self._prefetch_related and instances:
+            await self._load_prefetch_related(instances, db)
+        
+        return instances
+    
+    async def _load_select_related(self, instances: List[T], db) -> None:
+        """
+        Batch load FK/O2O related objects for all instances.
+        
+        For each select_related field:
+        1. Collect all FK IDs from instances
+        2. Run a single query to fetch all related objects
+        3. Build a mapping {id: related_instance}
+        4. Attach to each instance._prefetched_relations
+        """
+        from vidyut.fields import ForeignKey, OneToOne
+        
+        for field_name in self._select_related:
+            # Validate field exists and is FK/O2O
+            if field_name not in self._model._fk_fields:
+                raise ValueError(
+                    f"select_related: '{field_name}' is not a ForeignKey/OneToOne field "
+                    f"on {self._model.__name__}"
+                )
+            
+            field = self._model._fk_fields[field_name]
+            related_model = field.to_model
+            
+            # Collect all FK IDs (filter out None)
+            fk_ids = set()
+            for instance in instances:
+                fk_id = instance._data.get(field_name)
+                if fk_id is not None:
+                    fk_ids.add(fk_id)
+            
+            if not fk_ids:
+                # No FKs to load, set all to None
+                for instance in instances:
+                    instance._prefetched_relations[field_name] = None
+                continue
+            
+            # Batch query for all related objects
+            placeholders = ", ".join(f"${i+1}" for i in range(len(fk_ids)))
+            related_query = f"""
+                SELECT * FROM {related_model.__tablename__}
+                WHERE id IN ({placeholders})
+            """
+            
+            related_records = await db.fetch(related_query, *list(fk_ids))
+            
+            # Build mapping {id: related_instance}
+            related_map = {}
+            for record in related_records:
+                related_instance = related_model._from_record(record)
+                related_map[related_instance.id] = related_instance
+            
+            # Attach to each instance
+            for instance in instances:
+                fk_id = instance._data.get(field_name)
+                instance._prefetched_relations[field_name] = related_map.get(fk_id)
+    
+    async def _load_prefetch_related(self, instances: List[T], db) -> None:
+        """
+        Batch load M2M related objects for all instances.
+        
+        For each prefetch_related field:
+        1. Collect all source IDs
+        2. Query through table with JOIN
+        3. Build a mapping {source_id: [related_instances]}
+        4. Attach to each instance._prefetched_relations
+        """
+        for field_name in self._prefetch_related:
+            # Validate field exists and is M2M
+            if field_name not in self._model._m2m_fields:
+                raise ValueError(
+                    f"prefetch_related: '{field_name}' is not a ManyToMany field "
+                    f"on {self._model.__name__}"
+                )
+            
+            m2m_field = self._model._m2m_fields[field_name]
+            related_model = m2m_field.to_model
+            join_table = m2m_field.join_table_name
+            
+            # Get column names for join table
+            source_table = self._model.__tablename__
+            target_table = related_model.__tablename__
+            
+            # Singularize table names for column names
+            def singularize(name: str) -> str:
+                if name.endswith('ies'):
+                    return name[:-3] + 'y'
+                return name.rstrip('s')
+            
+            source_col = f"{singularize(source_table)}_id"
+            target_col = f"{singularize(target_table)}_id"
+            
+            # Collect all source IDs
+            source_ids = [instance.id for instance in instances]
+            
+            if not source_ids:
+                continue
+            
+            # Batch query - join through table with target table
+            placeholders = ", ".join(f"${i+1}" for i in range(len(source_ids)))
+            m2m_query = f"""
+                SELECT j.{source_col}, t.*
+                FROM {join_table} j
+                INNER JOIN {target_table} t ON t.id = j.{target_col}
+                WHERE j.{source_col} IN ({placeholders})
+            """
+            
+            records = await db.fetch(m2m_query, *source_ids)
+            
+            # Build mapping {source_id: [related_instances]}
+            related_map: Dict[Any, List] = {sid: [] for sid in source_ids}
+            for record in records:
+                source_id = record[source_col]
+                # Create instance from record (excluding the source_col)
+                related_instance = related_model._from_record(record)
+                related_map[source_id].append(related_instance)
+            
+            # Attach to each instance
+            for instance in instances:
+                instance._prefetched_relations[field_name] = related_map.get(instance.id, [])
     
     async def first(self) -> Optional[T]:
         """
@@ -320,6 +521,30 @@ class Manager(Generic[T]):
             QuerySet for chaining
         """
         return QuerySet(self._model, kwargs)
+    
+    def select_related(self, *fields: str) -> QuerySet[T]:
+        """
+        Create a QuerySet with select_related fields.
+        
+        Args:
+            *fields: FK/O2O field names to preload
+            
+        Returns:
+            QuerySet for chaining
+        """
+        return QuerySet(self._model).select_related(*fields)
+    
+    def prefetch_related(self, *fields: str) -> QuerySet[T]:
+        """
+        Create a QuerySet with prefetch_related fields.
+        
+        Args:
+            *fields: M2M field names to preload
+            
+        Returns:
+            QuerySet for chaining
+        """
+        return QuerySet(self._model).prefetch_related(*fields)
     
     async def all(self) -> List[T]:
         """

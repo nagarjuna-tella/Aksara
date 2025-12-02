@@ -722,7 +722,11 @@ class ModelSerializer(metaclass=SerializerMetaclass):
     
     def _expand_relations(self, instance: Model, result: Dict[str, Any]) -> None:
         """
-        Expand FK relations if configured in Meta.expand.
+        Expand FK and M2M relations if configured in Meta.expand.
+        
+        Uses prefetched relations when available to avoid N+1 queries.
+        For null FK values, returns null (not an error).
+        For empty M2M relations, returns empty list.
         
         Args:
             instance: Model instance
@@ -740,29 +744,62 @@ class ModelSerializer(metaclass=SerializerMetaclass):
             expand_config = expand
         
         for relation_name, serializer_cls in expand_config.items():
-            if relation_name not in instance._fields:
-                continue
-            
-            field = instance._fields[relation_name]
-            if not isinstance(field, vidyut_fields.ForeignKey):
-                continue
-            
-            # Get the related object if it's loaded
-            # Note: This requires the related object to be fetched
-            related_obj = getattr(instance, f"_{relation_name}_cache", None)
-            
-            if related_obj is None:
-                # Try to get from _data if pre-loaded
-                related_obj = instance._data.get(f"_{relation_name}_obj")
-            
-            if related_obj is not None:
-                if serializer_cls is not None:
-                    # Use the nested serializer
-                    nested_serializer = serializer_cls(instance=related_obj)
-                    result[relation_name] = nested_serializer.to_representation()
+            # Check if it's a FK/O2O field
+            if relation_name in instance._fk_fields:
+                field = instance._fk_fields[relation_name]
+                
+                # Check if the FK value itself is null
+                fk_value = instance._data.get(relation_name)
+                if fk_value is None:
+                    result[relation_name] = None
+                    continue
+                
+                # Check for prefetched relation first (from select_related/prefetch_for_serializer)
+                related_obj = None
+                if hasattr(instance, '_prefetched_relations') and relation_name in instance._prefetched_relations:
+                    related_obj = instance._prefetched_relations[relation_name]
                 else:
-                    # Use basic dict conversion
-                    result[relation_name] = _model_to_dict(related_obj)
+                    # Fall back to legacy cache mechanisms
+                    related_obj = getattr(instance, f"_{relation_name}_cache", None)
+                    if related_obj is None:
+                        related_obj = instance._data.get(f"_{relation_name}_obj")
+                
+                if related_obj is not None:
+                    if serializer_cls is not None:
+                        nested_serializer = serializer_cls(instance=related_obj)
+                        result[relation_name] = nested_serializer.to_representation()
+                    else:
+                        result[relation_name] = _model_to_dict(related_obj)
+                # If related_obj is None, keep the _id field in result
+                
+            # Check if it's a M2M field
+            elif hasattr(instance, '_m2m_fields') and relation_name in instance._m2m_fields:
+                related_list = []
+                
+                # Check for prefetched relation first
+                if hasattr(instance, '_prefetched_relations') and relation_name in instance._prefetched_relations:
+                    related_list = instance._prefetched_relations[relation_name]
+                else:
+                    # Fall back to cached IDs from create/update
+                    m2m_ids = getattr(instance, f'_{relation_name}_ids', None)
+                    if m2m_ids is not None:
+                        result[relation_name] = list(m2m_ids)
+                        continue
+                
+                # Serialize the related objects
+                if related_list:
+                    if serializer_cls is not None:
+                        result[relation_name] = [
+                            serializer_cls(instance=obj).to_representation()
+                            for obj in related_list
+                        ]
+                    else:
+                        result[relation_name] = [
+                            _model_to_dict(obj)
+                            for obj in related_list
+                        ]
+                else:
+                    result[relation_name] = []
     
     # =========================================================================
     # Properties
