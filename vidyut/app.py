@@ -8,7 +8,7 @@ Core FastAPI functionality remains untouched.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 # Re-export everything from FastAPI as-is
 from fastapi import (
@@ -29,6 +29,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.responses import (
     FileResponse,
@@ -95,6 +96,8 @@ class Vidyut(FastAPI):
         # Auto-discovery args
         auto_discover_views: bool = True,
         views_module: Optional[str] = None,
+        # v0.3.13: Vidyut middleware configuration
+        middlewares: Optional[List[Tuple[Type[BaseHTTPMiddleware], Dict[str, Any]]]] = None,
         # Standard FastAPI args
         debug: bool = False,
         title: str = "Vidyut API",
@@ -156,6 +159,13 @@ class Vidyut(FastAPI):
             lifespan=wrapped_lifespan,
             **extra,
         )
+        
+        # v0.3.13: Register Vidyut middlewares
+        # Note: Middlewares are registered in reverse order because Starlette
+        # wraps them like onion layers - last added is first executed
+        if middlewares:
+            for mw_class, options in reversed(middlewares):
+                self.add_middleware(mw_class, **(options or {}))
         
         # Add custom Vidyut-branded docs
         self._setup_custom_docs(docs_url, redoc_url, title)

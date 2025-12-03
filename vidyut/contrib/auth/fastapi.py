@@ -24,6 +24,9 @@ from typing import TYPE_CHECKING, Optional, Callable, Any
 if TYPE_CHECKING:
     from starlette.requests import Request
 
+# v0.3.13: Import user_id_var for context propagation
+from vidyut.middleware.context import user_id_var
+
 
 __all__ = [
     "get_current_user",
@@ -54,6 +57,8 @@ async def get_current_user(request: "Request") -> Optional[Any]:
     """
     # Check if user already attached by middleware
     if hasattr(request.state, "user") and request.state.user is not None:
+        # v0.3.13: Set user_id_var for logging/context propagation
+        user_id_var.set(str(request.state.user.id))
         return request.state.user
     
     # Check for user ID header
@@ -73,6 +78,8 @@ async def get_current_user(request: "Request") -> Optional[Any]:
         user = await User.objects.get(id=user_id)
         # Cache on request state
         request.state.user = user
+        # v0.3.13: Set user_id_var for logging/context propagation
+        user_id_var.set(str(user.id))
         return user
     except Exception:
         return None

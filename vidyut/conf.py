@@ -62,6 +62,10 @@ class Settings:
     debug: bool = False
     log_level: str = "INFO"
     
+    # v0.3.13: Request logging
+    log_requests: bool = True
+    log_json: bool = False
+    
     # App metadata (v0.3.4)
     app_title: Optional[str] = None
     app_version: Optional[str] = None
@@ -113,6 +117,12 @@ class Settings:
         env_log_level = os.environ.get("VIDYUT_LOG_LEVEL")
         if env_log_level:
             self.log_level = env_log_level
+        
+        # v0.3.13: Request logging
+        if self.log_requests:
+            self.log_requests = not _get_bool_env("VIDYUT_LOG_REQUESTS_DISABLED", False)
+        if not self.log_json:
+            self.log_json = _get_bool_env("VIDYUT_LOG_JSON", False)
         
         # App metadata (v0.3.4)
         if self.app_title is None:
@@ -208,6 +218,8 @@ def configure(new_settings: Optional[Settings] = None, **kwargs: Any) -> Setting
             "pool_max_size": settings.pool_max_size,
             "debug": settings.debug,
             "log_level": settings.log_level,
+            "log_requests": settings.log_requests,
+            "log_json": settings.log_json,
             "app_title": settings.app_title,
             "app_version": settings.app_version,
             "migrations_dir": settings.migrations_dir,
