@@ -51,14 +51,15 @@ app = Vidyut(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
     description="Vidyut async API for {project_name}",
-    version=settings.app_version or "0.3.14",
+    version=settings.app_version or "0.3.15",
+    # enable_admin=True,  # Uncomment to enable admin in production
 )
 
 
 # Register all routes from app/urls.py (explicit registration)
 register_routes(app)
 
-# Alternative: Auto-register all ViewSets from configured apps (v0.3.14)
+# Alternative: Auto-register all ViewSets from configured apps (v0.3.15)
 # include_all_app_viewsets(app)  # Registers ViewSets from all apps in settings.apps
 
 
@@ -71,7 +72,7 @@ async def health_check():
         return {{
             "status": "healthy",
             "database": "connected",
-            "version": settings.app_version or "0.3.14",
+            "version": settings.app_version or "0.3.15",
             "debug": settings.debug,
         }}
     return {{"status": "unhealthy", "database": "not configured"}}
@@ -359,14 +360,20 @@ A Vidyut-powered async API application.
    vidyut migrate
    ```
 
-6. **Start the server:**
+6. **Create admin superuser (optional):**
+   ```bash
+   vidyut createsuperuser
+   ```
+
+7. **Start the server:**
    ```bash
    vidyut run main:app --reload
    ```
 
-7. **Open the API docs:**
+8. **Open the API docs:**
    - Swagger UI: http://localhost:8000/docs
    - ReDoc: http://localhost:8000/redoc
+   - Admin (debug mode): http://localhost:8000/admin/
 
 ## Project Structure
 
@@ -383,6 +390,27 @@ A Vidyut-powered async API application.
 ├── main.py              # Vidyut app entry point
 ├── .env                 # Environment variables
 └── requirements.txt     # Python dependencies
+```
+
+## Admin Interface
+
+Vidyut includes a Django-style admin interface (v0.3.15+).
+
+**Enable admin:**
+- Auto-enabled in debug mode (`VIDYUT_DEBUG=true`)
+- Or set `enable_admin=True` in `Vidyut()` constructor
+
+**Register models:**
+```python
+from vidyut.contrib.admin import site
+from app.models import User
+
+site.register(User)
+```
+
+**Create superuser:**
+```bash
+vidyut createsuperuser --email admin@example.com
 ```
 
 ## Example Endpoints
@@ -408,13 +436,16 @@ Once you define your models and ViewSets:
 def get_requirements_template() -> str:
     """Generate requirements.txt content."""
     return '''# Vidyut ORM (includes FastAPI, asyncpg, pydantic)
-vidyut>=0.3.4
+vidyut>=0.3.15
 
 # Server
 uvicorn[standard]>=0.24.0
 
 # Environment variables
 python-dotenv>=1.0.0
+
+# Admin interface templates
+jinja2>=3.0.0
 '''
 
 
@@ -426,9 +457,10 @@ version = "0.1.0"
 description = "A Vidyut-powered async API application"
 requires-python = ">=3.10"
 dependencies = [
-    "vidyut>=0.3.4",
+    "vidyut>=0.3.15",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
+    "jinja2>=3.0.0",
 ]
 
 [project.optional-dependencies]
