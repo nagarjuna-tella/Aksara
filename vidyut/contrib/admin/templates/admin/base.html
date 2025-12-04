@@ -147,49 +147,246 @@
             background: rgba(77, 168, 255, 0.05);
         }
         
-        /* Buttons */
+        /* Buttons - Neumorphic style */
         .btn {
             display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 0.625rem 1.5rem;
+            min-width: 8em;
+            height: 2.75em;
+            border-radius: 30em;
             font-weight: 500;
             font-size: 0.875rem;
+            font-family: inherit;
             text-decoration: none;
+            text-align: center;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3),
+                        -4px -4px 8px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .btn::before {
+            content: '';
+            width: 0;
+            height: 100%;
+            border-radius: 30em;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: 0.5s ease;
+            display: block;
+            z-index: -1;
+        }
+        
+        .btn:hover::before {
+            width: 100%;
+        }
+        
+        .btn:hover {
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3),
+                        -2px -2px 4px rgba(255, 255, 255, 0.05);
         }
         
         .btn-primary {
-            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            background: var(--bg-card);
             color: white;
         }
         
+        .btn-primary::before {
+            background-image: linear-gradient(to right, var(--primary) 0%, #6dd5fa 100%);
+        }
+        
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(77, 168, 255, 0.3);
-            text-decoration: none;
+            color: white;
+            box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4),
+                        -4px -4px 12px rgba(77, 168, 255, 0.1);
         }
         
         .btn-secondary {
             background: var(--bg-light);
             color: var(--text);
-            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary::before {
+            background-image: linear-gradient(to right, var(--bg-card) 0%, #2a2a4e 100%);
         }
         
         .btn-secondary:hover {
-            background: var(--bg-card);
-            text-decoration: none;
+            color: var(--text);
         }
         
         .btn-danger {
-            background: var(--danger);
+            background: var(--bg-card);
             color: white;
         }
         
+        .btn-danger::before {
+            background-image: linear-gradient(to right, #dc3545 0%, #ff6b6b 100%);
+        }
+        
         .btn-danger:hover {
-            background: #c82333;
-            text-decoration: none;
+            color: white;
+            box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4),
+                        -4px -4px 12px rgba(220, 53, 69, 0.1);
+        }
+        
+        .btn-success {
+            background: var(--bg-card);
+            color: white;
+        }
+        
+        .btn-success::before {
+            background-image: linear-gradient(to right, #0fd850 0%, #f9f047 100%);
+        }
+        
+        .btn-success:hover {
+            color: #111;
+            box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4),
+                        -4px -4px 12px rgba(15, 216, 80, 0.1);
+        }
+        
+        /* 3D Cube Spinner */
+        .spinner {
+            width: 44px;
+            height: 44px;
+            animation: spinner-y0fdc1 2s infinite ease;
+            transform-style: preserve-3d;
+        }
+        
+        .spinner > div {
+            background-color: rgba(77, 168, 255, 0.2);
+            height: 100%;
+            position: absolute;
+            width: 100%;
+            border: 2px solid var(--primary);
+        }
+        
+        .spinner div:nth-of-type(1) {
+            transform: translateZ(-22px) rotateY(180deg);
+        }
+        
+        .spinner div:nth-of-type(2) {
+            transform: rotateY(-270deg) translateX(50%);
+            transform-origin: top right;
+        }
+        
+        .spinner div:nth-of-type(3) {
+            transform: rotateY(270deg) translateX(-50%);
+            transform-origin: center left;
+        }
+        
+        .spinner div:nth-of-type(4) {
+            transform: rotateX(90deg) translateY(-50%);
+            transform-origin: top center;
+        }
+        
+        .spinner div:nth-of-type(5) {
+            transform: rotateX(-90deg) translateY(50%);
+            transform-origin: bottom center;
+        }
+        
+        .spinner div:nth-of-type(6) {
+            transform: translateZ(22px);
+        }
+        
+        @keyframes spinner-y0fdc1 {
+            0% {
+                transform: rotate(45deg) rotateX(-25deg) rotateY(25deg);
+            }
+            50% {
+                transform: rotate(45deg) rotateX(-385deg) rotateY(25deg);
+            }
+            100% {
+                transform: rotate(45deg) rotateX(-385deg) rotateY(385deg);
+            }
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 35, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-overlay .loading-text {
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Inline spinner (smaller) */
+        .spinner-sm {
+            width: 22px;
+            height: 22px;
+        }
+        
+        .spinner-sm > div {
+            border-width: 1px;
+        }
+        
+        .spinner-sm div:nth-of-type(1) {
+            transform: translateZ(-11px) rotateY(180deg);
+        }
+        
+        .spinner-sm div:nth-of-type(6) {
+            transform: translateZ(11px);
+        }
+        
+        /* Button loading state */
+        .btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .btn.loading .btn-text {
+            visibility: hidden;
+        }
+        
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: btn-spinner 0.6s linear infinite;
+        }
+        
+        @keyframes btn-spinner {
+            to {
+                transform: rotate(360deg);
+            }
         }
         
         /* Forms */
@@ -333,5 +530,50 @@
     <main class="admin-main">
         {% block content %}{% endblock %}
     </main>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <div class="loading-text">Loading...</div>
+    </div>
+    
+    <script>
+        // Loading overlay helpers
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        function showLoading(text = 'Loading...') {
+            loadingOverlay.querySelector('.loading-text').textContent = text;
+            loadingOverlay.classList.add('active');
+        }
+        
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+        
+        // Auto-show loading on form submit
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.classList.add('loading');
+                }
+                showLoading('Saving...');
+            });
+        });
+        
+        // Show loading on delete actions
+        document.querySelectorAll('form[action*="delete"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                showLoading('Deleting...');
+            });
+        });
+    </script>
 </body>
 </html>
