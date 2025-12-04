@@ -56,7 +56,12 @@ from vidyut.api.schemas import (
     clear_schema_cache,
 )
 from vidyut.api.viewsets import ModelViewSet
-from vidyut.api.router import include_viewset
+from vidyut.api.router import (
+    include_viewset,
+    discover_viewsets,
+    include_app_viewsets,
+    include_all_app_viewsets,
+)
 from vidyut.api.actions import (
     action,
     get_action_metadata,
@@ -96,6 +101,10 @@ __all__ = [
     "is_action_ai_exposed",
     # Router
     "include_viewset",
+    # ViewSet Auto-Registration (v0.3.14)
+    "discover_viewsets",
+    "include_app_viewsets",
+    "include_all_app_viewsets",
     # Schema generation
     "generate_create_schema",
     "generate_update_schema",

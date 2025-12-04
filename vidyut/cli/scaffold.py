@@ -36,6 +36,7 @@ Run with:
 """
 
 from vidyut import Vidyut
+from vidyut.api import include_all_app_viewsets
 from settings import settings
 
 # Import models to register with Vidyut
@@ -50,12 +51,15 @@ app = Vidyut(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
     description="Vidyut async API for {project_name}",
-    version=settings.app_version or "0.3.4",
+    version=settings.app_version or "0.3.14",
 )
 
 
-# Register all routes from app/urls.py
+# Register all routes from app/urls.py (explicit registration)
 register_routes(app)
+
+# Alternative: Auto-register all ViewSets from configured apps (v0.3.14)
+# include_all_app_viewsets(app)  # Registers ViewSets from all apps in settings.apps
 
 
 # Health check endpoint
@@ -67,7 +71,7 @@ async def health_check():
         return {{
             "status": "healthy",
             "database": "connected",
-            "version": settings.app_version or "0.3.4",
+            "version": settings.app_version or "0.3.14",
             "debug": settings.debug,
         }}
     return {{"status": "unhealthy", "database": "not configured"}}
@@ -220,6 +224,9 @@ def get_views_template(project_name: str) -> str:
 
 Define your ViewSets and custom actions here.
 Route registration is in urls.py (Django-style).
+
+Alternative: Use include_all_app_viewsets(app) in main.py to auto-register
+all ViewSets defined in app/api.py modules.
 
 Example:
     from vidyut import ModelViewSet, action, Request
@@ -626,6 +633,46 @@ from vidyut import ModelSerializer
 '''
 
 
+def get_app_api_template(app_name: str) -> str:
+    """Generate api.py content for a new app (for auto-registration)."""
+    return f'''"""
+ViewSets for '{app_name}' app - Auto-registration supported.
+
+ViewSets defined here can be auto-registered using:
+    from vidyut.api import include_all_app_viewsets
+    include_all_app_viewsets(app)  # Auto-registers all ViewSets from app.api modules
+
+Or use include_app_viewsets for a single app:
+    from vidyut.api import include_app_viewsets
+    include_app_viewsets(app, "{app_name}")
+
+Example:
+    from vidyut import ModelViewSet, action, Request
+    from .models import Item
+
+    class ItemViewSet(ModelViewSet):
+        model = Item
+        prefix = "/api/{app_name}/items"
+        tags = ["Items"]
+
+        @action(detail=True, methods=["post"])
+        async def activate(self, pk: str, request: Request):
+            item = await self.model.objects.get(id=pk)
+            item.is_active = True
+            await item.save()
+            return {{"status": "activated"}}
+"""
+
+from vidyut import ModelViewSet, action, Request
+
+# Import your models
+# from .models import Item
+
+
+# Define your ViewSets here - they will be auto-discovered
+'''
+
+
 def get_app_init_template_for_startapp(app_name: str) -> str:
     """Generate __init__.py content for a new app."""
     return f'''"""
@@ -654,6 +701,7 @@ def create_app_scaffold(app_name: str, base_path: Path) -> Dict[Path, str]:
         app_path / "__init__.py": get_app_init_template_for_startapp(app_name),
         app_path / "models.py": get_app_models_template(app_name),
         app_path / "views.py": get_app_views_template(app_name),
+        app_path / "api.py": get_app_api_template(app_name),
         app_path / "serializers.py": get_app_serializers_template(app_name),
     }
     

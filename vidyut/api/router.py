@@ -439,4 +439,153 @@ def _handle_exception(exc: Exception) -> None:
     raise exc
 
 
-__all__ = ["include_viewset"]
+# =============================================================================
+# ViewSet Auto-Registration Helpers (v0.3.14)
+# =============================================================================
+
+def discover_viewsets(module) -> List[Type[ModelViewSet]]:
+    """
+    Discover all ModelViewSet subclasses in a module.
+    
+    Scans the module for classes that are subclasses of ModelViewSet.
+    Excludes the base ModelViewSet class itself.
+    
+    Args:
+        module: Python module to scan
+        
+    Returns:
+        List of ModelViewSet subclass types found in the module
+    """
+    viewsets: List[Type[ModelViewSet]] = []
+    
+    for attr_name in dir(module):
+        # Skip private attributes
+        if attr_name.startswith("_"):
+            continue
+        
+        try:
+            attr = getattr(module, attr_name)
+        except AttributeError:
+            continue
+        
+        # Check if it's a ModelViewSet subclass
+        try:
+            if (
+                isinstance(attr, type)
+                and issubclass(attr, ModelViewSet)
+                and attr is not ModelViewSet
+            ):
+                viewsets.append(attr)
+        except TypeError:
+            # issubclass raises TypeError for non-class types
+            continue
+    
+    return viewsets
+
+
+def include_app_viewsets(
+    app: Union[APIRouter, "Vidyut"],
+    app_label: str,
+    module_name: str = "api",
+) -> List[Type[ModelViewSet]]:
+    """
+    Auto-import and register all ModelViewSet subclasses from an app.
+    
+    Imports `<app_label>.<module_name>` (default: `<app>.api`) and registers
+    all ModelViewSet subclasses found there with the given app/router.
+    
+    v0.3.14: Developer Delight Pack 2
+    
+    Args:
+        app: FastAPI router or Vidyut app to register viewsets with
+        app_label: The app label (e.g., "blog", "users")
+        module_name: Module name to import (default: "api"). Can also be
+                    "views" for Django-style organization.
+    
+    Returns:
+        List of ViewSet classes that were registered
+    
+    Example:
+        from vidyut import Vidyut
+        from vidyut.api import include_app_viewsets
+        
+        app = Vidyut(database_url="...")
+        include_app_viewsets(app, "blog")           # imports blog.api
+        include_app_viewsets(app, "users", "views") # imports users.views
+    """
+    from importlib import import_module
+    
+    registered = []
+    
+    # Try to import the module
+    try:
+        mod = import_module(f"{app_label}.{module_name}")
+    except ModuleNotFoundError:
+        # App doesn't have this module, silently skip
+        return registered
+    except ImportError as e:
+        # Actual import error - warn but continue
+        import warnings
+        warnings.warn(
+            f"Error importing viewsets from '{app_label}.{module_name}': {e}",
+            ImportWarning,
+            stacklevel=2,
+        )
+        return registered
+    
+    # Discover and register viewsets
+    viewsets = discover_viewsets(mod)
+    
+    for vs_class in viewsets:
+        include_viewset(app, vs_class)
+        registered.append(vs_class)
+    
+    return registered
+
+
+def include_all_app_viewsets(
+    app: Union[APIRouter, "Vidyut"],
+    module_name: str = "api",
+) -> Dict[str, List[Type[ModelViewSet]]]:
+    """
+    Auto-import and register ViewSets from all configured apps.
+    
+    Loops through settings.apps and calls include_app_viewsets for each.
+    
+    v0.3.14: Developer Delight Pack 2
+    
+    Args:
+        app: FastAPI router or Vidyut app to register viewsets with
+        module_name: Module name to import from each app (default: "api")
+    
+    Returns:
+        Dict mapping app_label to list of registered ViewSet classes
+    
+    Example:
+        from vidyut import Vidyut
+        from vidyut.api import include_all_app_viewsets
+        
+        app = Vidyut(database_url="...")
+        
+        # Register all viewsets from all apps
+        registered = include_all_app_viewsets(app)
+        # {'blog': [PostViewSet, CommentViewSet], 'users': [UserViewSet]}
+    """
+    from vidyut.conf import settings
+    
+    result: Dict[str, List[Type[ModelViewSet]]] = {}
+    
+    for app_label in settings.apps:
+        viewsets = include_app_viewsets(app, app_label, module_name)
+        if viewsets:
+            result[app_label] = viewsets
+    
+    return result
+
+
+__all__ = [
+    "include_viewset",
+    "discover_viewsets",
+    "include_app_viewsets",
+    "include_all_app_viewsets",
+]

@@ -43,6 +43,10 @@ from vidyut.api import (
     action,
     # v0.3.2: Serializer
     ModelSerializer,
+    # v0.3.14: ViewSet auto-registration
+    discover_viewsets,
+    include_app_viewsets,
+    include_all_app_viewsets,
 )
 
 # v0.3.3: Migration layer
@@ -55,6 +59,13 @@ from vidyut.migrations import (
 from vidyut.core.discovery import (
     discover_viewsets_from_module,
     auto_discover_viewsets,
+)
+
+# v0.3.14: App discovery
+from vidyut.apps import (
+    load_app_models,
+    get_app_models,
+    get_all_app_labels,
 )
 
 # Re-export FastAPI components with Vidyut enhancements
@@ -111,7 +122,7 @@ from vidyut.permissions import (
     check_permissions,
 )
 
-__version__ = "0.3.13"
+__version__ = "0.3.14"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -161,6 +172,13 @@ __all__ = [
     # v0.3.6: Core Discovery
     "discover_viewsets_from_module",
     "auto_discover_viewsets",
+    # v0.3.14: App & ViewSet Auto-Discovery
+    "load_app_models",
+    "get_app_models",
+    "get_all_app_labels",
+    "discover_viewsets",
+    "include_app_viewsets",
+    "include_all_app_viewsets",
     # Vidyut App (enhanced FastAPI)
     "Vidyut",
     # FastAPI re-exports

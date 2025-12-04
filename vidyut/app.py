@@ -43,6 +43,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from vidyut.db import Database
+from vidyut.apps import load_app_models
 
 
 # Vidyut SVG logo (blue lightning bolt with gradient)
@@ -166,6 +167,10 @@ class Vidyut(FastAPI):
         if middlewares:
             for mw_class, options in reversed(middlewares):
                 self.add_middleware(mw_class, **(options or {}))
+        
+        # v0.3.14: Auto-load models from configured apps
+        # This ensures models are registered before any routes or migrations
+        load_app_models()
         
         # Add custom Vidyut-branded docs
         self._setup_custom_docs(docs_url, redoc_url, title)

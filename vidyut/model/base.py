@@ -57,6 +57,186 @@ class ModelAIMeta:
         }
 
 
+class ModelMetaInfo:
+    """
+    Rich, introspectable metadata interface for a model.
+    
+    Provides access to model metadata including fields, relations,
+    table name, and primary key information.
+    
+    v0.3.14: Developer Delight Pack 2
+    
+    Usage:
+        User.meta.name           # "User"
+        User.meta.table_name     # "users"
+        User.meta.fields         # List of field objects
+        User.meta.pk             # Primary key field
+        User.meta.relations      # Dict of FK/M2M fields
+        User.meta.to_dict()      # Full serializable representation
+    
+    This supports:
+    - Admin UI generation
+    - AI schema & tool generation
+    - DX tools like `vidyut shell` and docs
+    """
+    
+    def __init__(self, model: Type["Model"]):
+        self._model = model
+    
+    @property
+    def name(self) -> str:
+        """Get the model class name."""
+        return self._model.__name__
+    
+    @property
+    def app_label(self) -> Optional[str]:
+        """Get the app_label from Meta class, if defined."""
+        meta_class = getattr(self._model, "Meta", None)
+        if meta_class:
+            return getattr(meta_class, "app_label", None)
+        return None
+    
+    @property
+    def table_name(self) -> str:
+        """Get the database table name."""
+        return self._model.__tablename__
+    
+    @property
+    def fields(self) -> List[Field]:
+        """Get all field objects defined on this model."""
+        return list(self._model._fields.values())
+    
+    @property
+    def field_names(self) -> List[str]:
+        """Get all field names defined on this model."""
+        return list(self._model._fields.keys())
+    
+    @property
+    def pk(self) -> Optional[Field]:
+        """Get the primary key field."""
+        for field in self.fields:
+            if getattr(field, "primary_key", False):
+                return field
+        # Fallback: look for 'id' field
+        return self._model._fields.get("id")
+    
+    @property
+    def pk_name(self) -> Optional[str]:
+        """Get the primary key field name."""
+        pk = self.pk
+        return pk.name if pk else None
+    
+    @property
+    def relations(self) -> Dict[str, Field]:
+        """
+        Get all relation fields (ForeignKey, OneToOne, ManyToMany).
+        
+        Returns:
+            Dict mapping field name to field object
+        """
+        from vidyut.fields import ForeignKey, ManyToMany, OneToOne
+        
+        result: Dict[str, Field] = {}
+        
+        # FK and OneToOne fields
+        for name, field in self._model._fk_fields.items():
+            result[name] = field
+        
+        # ManyToMany fields
+        for name, field in self._model._m2m_fields.items():
+            result[name] = field
+        
+        return result
+    
+    @property
+    def foreign_keys(self) -> Dict[str, ForeignKey]:
+        """Get all ForeignKey fields."""
+        return dict(self._model._fk_fields)
+    
+    @property
+    def many_to_many(self) -> Dict[str, ManyToMany]:
+        """Get all ManyToMany fields."""
+        return dict(self._model._m2m_fields)
+    
+    def get_field(self, name: str) -> Optional[Field]:
+        """Get a field by name."""
+        return self._model._fields.get(name)
+    
+    def has_field(self, name: str) -> bool:
+        """Check if model has a field with the given name."""
+        return name in self._model._fields
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert model metadata to a dictionary.
+        
+        Useful for serialization, API responses, and AI/LLM consumption.
+        
+        Returns:
+            Dictionary with model metadata including fields and relations
+        """
+        return {
+            "name": self.name,
+            "app_label": self.app_label,
+            "table_name": self.table_name,
+            "fields": [self._field_to_dict(f) for f in self.fields],
+            "pk": self.pk.name if self.pk else None,
+            "relations": {
+                name: self._field_to_dict(field)
+                for name, field in self.relations.items()
+            },
+        }
+    
+    def _field_to_dict(self, field: Field) -> Dict[str, Any]:
+        """Convert a field to a dictionary representation."""
+        from vidyut.fields import ForeignKey, ManyToMany, OneToOne
+        
+        result = {
+            "name": field.name,
+            "column_name": getattr(field, "column_name", field.name),
+            "type": field.__class__.__name__,
+            "null": getattr(field, "nullable", False),
+            "unique": getattr(field, "unique", False),
+            "primary_key": getattr(field, "primary_key", False),
+            "default": self._serialize_default(field),
+            "choices": getattr(field, "choices", None),
+        }
+        
+        # Add relation-specific metadata
+        if isinstance(field, ForeignKey):
+            related_model = getattr(field, "to_model", None)
+            result["related_model"] = (
+                related_model.__name__ if related_model else None
+            )
+            result["related_name"] = getattr(field, "related_name", None)
+            result["on_delete"] = getattr(field, "on_delete", None)
+        
+        elif isinstance(field, ManyToMany):
+            related_model = getattr(field, "to_model", None)
+            result["related_model"] = (
+                related_model.__name__ if related_model else None
+            )
+            result["related_name"] = getattr(field, "related_name", None)
+            result["through_table"] = getattr(field, "join_table_name", None)
+        
+        return result
+    
+    def _serialize_default(self, field: Field) -> Any:
+        """Serialize a field's default value for JSON output."""
+        default = getattr(field, "default", None)
+        if default is None:
+            return None
+        if callable(default):
+            return f"<callable: {default.__name__}>"
+        # Handle common non-serializable types
+        if hasattr(default, "__name__"):
+            return f"<{default.__name__}>"
+        return default
+    
+    def __repr__(self) -> str:
+        return f"<ModelMetaInfo: {self.name}>"
+
+
 class ModelMeta(type):
     """
     Metaclass for Model that handles:
@@ -166,6 +346,9 @@ class ModelMeta(type):
             from vidyut.manager import Manager
             cls.objects = Manager(cls)
             
+            # v0.3.14: Attach ModelMetaInfo for introspection
+            cls.meta = ModelMetaInfo(cls)
+            
             # Set source model on ManyToMany fields
             for field_name, m2m_field in m2m_fields.items():
                 m2m_field._source_model = cls
@@ -268,6 +451,7 @@ class Model(metaclass=ModelMeta):
     _fk_fields: ClassVar[Dict[str, ForeignKey]]
     _m2m_fields: ClassVar[Dict[str, ManyToMany]]
     _ai_meta: ClassVar[ModelAIMeta]
+    meta: ClassVar["ModelMetaInfo"]  # v0.3.14: Model introspection
     objects: ClassVar["Manager"]  # type: ignore
     
     def __init__(self, **kwargs):
