@@ -59,6 +59,7 @@ class Vidyut(FastAPI):
     - Auto-discovery of ModelViewSet classes
     - Vidyut branding on startup
     - Pre-configured exception handlers for ORM errors
+    - Optional admin interface (v0.3.15)
     
     All FastAPI functionality works exactly the same.
     
@@ -86,6 +87,16 @@ class Vidyut(FastAPI):
             database_url="...",
             views_module="myapp.views",
         )
+    
+    Admin Interface (v0.3.15):
+        # enable_admin=None (default): Auto-enable in debug mode if auth available
+        # enable_admin=True: Always enable (requires auth contrib)
+        # enable_admin=False: Never enable
+        
+        app = Vidyut(
+            database_url="...",
+            enable_admin=True,  # Explicitly enable admin
+        )
     """
     
     def __init__(
@@ -99,6 +110,8 @@ class Vidyut(FastAPI):
         views_module: Optional[str] = None,
         # v0.3.13: Vidyut middleware configuration
         middlewares: Optional[List[Tuple[Type[BaseHTTPMiddleware], Dict[str, Any]]]] = None,
+        # v0.3.15: Admin interface
+        enable_admin: Optional[bool] = None,
         # Standard FastAPI args
         debug: bool = False,
         title: str = "Vidyut API",
@@ -126,6 +139,10 @@ class Vidyut(FastAPI):
         # Store auto-discovery config
         self._auto_discover_views = auto_discover_views
         self._views_module = views_module
+        
+        # v0.3.15: Store admin config
+        self.enable_admin = enable_admin
+        self._debug = debug
         
         # Store docs URLs for custom handlers
         self._docs_url = docs_url
@@ -181,6 +198,9 @@ class Vidyut(FastAPI):
         # Register ORM exception handlers
         self._register_orm_exceptions()
         
+        # v0.3.15: Maybe mount admin interface
+        self._maybe_mount_admin()
+        
         # Auto-discover and register ViewSets
         if self._auto_discover_views:
             self._auto_register_viewsets()
@@ -189,6 +209,47 @@ class Vidyut(FastAPI):
     def db(self) -> Optional[Database]:
         """Get the database instance."""
         return self._db
+    
+    def _maybe_mount_admin(self) -> None:
+        """
+        Mount admin interface based on enable_admin setting.
+        
+        v0.3.15: Admin mounting rules:
+        - enable_admin=None (default):
+          - If settings.debug == True and auth is available → mount /admin
+          - Else → no admin
+        - enable_admin=True:
+          - Always mount /admin, requires auth contrib → or RuntimeError
+        - enable_admin=False:
+          - Never mount admin
+        """
+        from vidyut.conf import settings
+        
+        # Check if auth contrib is available
+        try:
+            from vidyut.contrib import auth  # noqa: F401
+            auth_available = True
+        except ImportError:
+            auth_available = False
+        
+        if self.enable_admin is True:
+            # Explicit enable: require auth
+            if not auth_available:
+                raise RuntimeError(
+                    "Vidyut Admin requires 'vidyut.contrib.auth' to be installed. "
+                    "Install extra: pip install vidyut[auth] and configure auth."
+                )
+            from vidyut.contrib.admin import include_admin
+            include_admin(self)
+        
+        elif self.enable_admin is None:
+            # Default: auto-enable in debug mode only if auth is available
+            is_debug = self._debug or getattr(settings, "debug", False)
+            if is_debug and auth_available:
+                from vidyut.contrib.admin import include_admin
+                include_admin(self)
+        
+        # else: enable_admin is False → never mount admin
     
     def _setup_custom_docs(
         self,

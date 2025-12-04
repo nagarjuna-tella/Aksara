@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ model_name }} - {{ site_name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+    <a href="{{ request.url_for('admin:index') }}">Home</a>
+    <span>›</span>
+    <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}">{{ app_label }}</a>
+    <span>›</span>
+    <span>{{ model_name }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ model_name }}</h1>
+
+<div class="actions">
+    {% if can_add %}
+    <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
+        + Add {{ model_name }}
+    </a>
+    {% endif %}
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% if objects %}
+    <table>
+        <thead>
+            <tr>
+                {% for field_name in list_display %}
+                <th>{{ field_name }}</th>
+                {% endfor %}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+            <tr>
+                {% for field_name in list_display %}
+                <td>{{ obj[field_name] if obj[field_name] is defined else '' }}</td>
+                {% endfor %}
+                <td>
+                    <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" class="btn btn-secondary">
+                        Edit
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No {{ model_name }} objects found.</p>
+        {% if can_add %}
+        <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
+            + Add {{ model_name }}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

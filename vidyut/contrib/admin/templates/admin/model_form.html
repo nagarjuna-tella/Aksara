@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if is_add %}Add{% else %}Change{% endif %} {{ model_name }} - {{ site_name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+    <a href="{{ request.url_for('admin:index') }}">Home</a>
+    <span>›</span>
+    <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}">{{ app_label }}</a>
+    <span>›</span>
+    <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}">{{ model_name }}</a>
+    <span>›</span>
+    <span>{% if is_add %}Add{% else %}Change{% endif %}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{% if is_add %}Add {{ model_name }}{% else %}Change {{ model_name }}{% endif %}</h1>
+
+{% if errors and errors.__all__ %}
+<div class="error-message">
+    {{ errors.__all__ }}
+</div>
+{% endif %}
+
+<div class="card">
+    <form method="post">
+        {% for field in fields %}
+        <div class="form-group">
+            <label for="{{ field.name }}" {% if field.required %}class="required"{% endif %}>
+                {{ field.label }}
+            </label>
+            
+            {% if field.type == "checkbox" %}
+                <input 
+                    type="checkbox" 
+                    id="{{ field.name }}" 
+                    name="{{ field.name }}"
+                    {% if field.value %}checked{% endif %}
+                    {% if field.readonly %}disabled{% endif %}
+                >
+            {% elif field.type == "textarea" %}
+                <textarea 
+                    id="{{ field.name }}" 
+                    name="{{ field.name }}" 
+                    class="form-control"
+                    {% if field.readonly %}readonly{% endif %}
+                    {% if field.required %}required{% endif %}
+                >{{ field.value }}</textarea>
+            {% else %}
+                <input 
+                    type="{{ field.type }}" 
+                    id="{{ field.name }}" 
+                    name="{{ field.name }}" 
+                    value="{{ field.value }}"
+                    class="form-control"
+                    {% if field.readonly %}readonly{% endif %}
+                    {% if field.required %}required{% endif %}
+                    {% if field.type == "number" %}step="any"{% endif %}
+                >
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div class="actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">
+                {% if is_add %}Create{% else %}Save{% endif %}
+            </button>
+            <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-secondary">
+                Cancel
+            </a>
+            
+            {% if not is_add and can_delete %}
+            <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: inline; margin-left: auto;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this {{ model_name }}?')">
+                    Delete
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% if not is_add and can_delete %}
+<div class="card" style="margin-top: 1rem;">
+    <h2 style="color: var(--danger);">Danger Zone</h2>
+    <p style="margin-bottom: 1rem; color: var(--text-muted);">
+        Permanently delete this {{ model_name }}. This action cannot be undone.
+    </p>
+    <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this {{ model_name }}?')">
+            Delete {{ model_name }}
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

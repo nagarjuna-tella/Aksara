@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.3.14"
+CLI_VERSION = "0.3.15"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -714,6 +714,87 @@ def shell(database_url: Optional[str], no_ipython: bool):
     
     db_url = database_url or None
     run_shell(database_url=db_url, use_ipython=not no_ipython)
+
+
+@cli.command()
+@click.option("--database-url", "-d", envvar="DATABASE_URL",
+              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--email", "-e", prompt="Email", help="Admin user email address")
+@click.option("--password", "-p", prompt=True, hide_input=True, 
+              confirmation_prompt=True, help="Admin user password")
+def createsuperuser(database_url: Optional[str], email: str, password: str):
+    """
+    Create a superuser for the admin interface.
+    
+    Creates a new user with is_staff=True and is_superuser=True,
+    which grants full access to the admin interface.
+    
+    Example:
+        vidyut createsuperuser
+        vidyut createsuperuser --email admin@example.com
+    """
+    from vidyut.conf import settings
+    from vidyut.db import Database
+    
+    click.echo()
+    click.echo(f"  ⚡ \033[1mVidyut\033[0m v{CLI_VERSION}")
+    click.echo("  \033[90mCreating superuser...\033[0m")
+    click.echo()
+    
+    # Get database URL
+    db_url = database_url or settings.database_url
+    if not db_url:
+        click.echo("❌ No database URL provided!")
+        click.echo("   Set DATABASE_URL or use --database-url")
+        return
+    
+    async def create_user():
+        try:
+            from vidyut.contrib.auth import User
+        except ImportError:
+            click.echo("❌ vidyut.contrib.auth is not available.")
+            click.echo("   Make sure auth tables are migrated.")
+            return False
+        
+        db = Database(db_url)
+        
+        try:
+            await db.connect()
+            
+            # Check if user already exists
+            existing = await User.objects.get_by_email(email)
+            if existing:
+                click.echo(f"  ⚠️  User with email '{email}' already exists.")
+                if existing.is_superuser:
+                    click.echo("     User is already a superuser.")
+                else:
+                    click.echo("     Updating to superuser status...")
+                    existing.is_staff = True
+                    existing.is_superuser = True
+                    await existing.save()
+                    click.echo(f"  \033[32m✓\033[0m User updated to superuser.")
+                return True
+            
+            # Create new superuser
+            user = await User.objects.create_superuser(
+                email=email,
+                password=password,
+            )
+            
+            click.echo(f"  \033[32m✓\033[0m Superuser created: {user.email}")
+            click.echo()
+            click.echo("  You can now log in to the admin interface.")
+            return True
+            
+        except Exception as e:
+            click.echo(f"  ❌ Error: {e}")
+            return False
+        finally:
+            await db.disconnect()
+    
+    success = asyncio.run(create_user())
+    if not success:
+        sys.exit(1)
 
 
 @cli.command()

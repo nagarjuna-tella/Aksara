@@ -1,0 +1,506 @@
+"""
+Admin Views
+
+Server-rendered views for the admin interface.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+
+from fastapi import HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from starlette import status
+
+if TYPE_CHECKING:
+    from vidyut.model.base import Model
+    from vidyut.contrib.admin.options import ModelAdmin
+
+# Resolve templates directory within the package
+_package_dir = Path(__file__).parent
+_templates_dir = _package_dir / "templates"
+templates = Jinja2Templates(directory=str(_templates_dir))
+
+
+def get_admin_user(request: Request):
+    """
+    Get the authenticated admin user from request state.
+    
+    Raises:
+        HTTPException: 403 if user is not staff
+    """
+    user = getattr(request.state, "user", None)
+    if not (user and getattr(user, "is_staff", False)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access forbidden. Staff access required.",
+        )
+    return user
+
+
+def _get_model_and_admin(
+    app_label: str,
+    model_name: str,
+) -> Tuple[Type["Model"], "ModelAdmin"]:
+    """
+    Look up model and its ModelAdmin by app_label and model_name.
+    
+    Args:
+        app_label: The app label
+        model_name: The model name (case-insensitive)
+        
+    Returns:
+        Tuple of (Model class, ModelAdmin instance)
+        
+    Raises:
+        HTTPException: 404 if not found
+    """
+    from vidyut.contrib.admin import site
+    
+    model = site.get_model_by_name(app_label, model_name)
+    if model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model '{model_name}' not found in app '{app_label}'",
+        )
+    
+    model_admin = site.get_model_admin(model)
+    if model_admin is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model '{model_name}' is not registered with admin",
+        )
+    
+    return model, model_admin
+
+
+def _get_settings():
+    """Get Vidyut settings (import here to avoid circular imports)."""
+    from vidyut.conf import settings
+    return settings
+
+
+# -----------------------------------------------------------------------------
+# Admin Index View: /admin/
+# -----------------------------------------------------------------------------
+
+async def admin_index(request: Request) -> HTMLResponse:
+    """
+    Admin dashboard showing all registered apps and models.
+    
+    Route: GET /admin/
+    """
+    from vidyut.contrib.admin import site
+    
+    user = get_admin_user(request)
+    settings = _get_settings()
+    
+    # Group models by app_label
+    apps: Dict[str, List[Type["Model"]]] = {}
+    for model, model_admin in site.registry.items():
+        app_label = model.meta.app_label or "default"
+        apps.setdefault(app_label, []).append(model)
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/index.html",
+        {
+            "apps": apps,
+            "user": user,
+            "debug": settings.debug,
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# App Index View: /admin/{app_label}/
+# -----------------------------------------------------------------------------
+
+async def app_index(request: Request, app_label: str) -> HTMLResponse:
+    """
+    Show all models for a specific app.
+    
+    Route: GET /admin/{app_label}/
+    """
+    from vidyut.contrib.admin import site
+    
+    user = get_admin_user(request)
+    
+    # Find all models for this app
+    app_models: List[Type["Model"]] = []
+    for model, admin in site.registry.items():
+        if (model.meta.app_label or "default") == app_label:
+            app_models.append(model)
+    
+    if not app_models:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"App '{app_label}' not found or has no registered models",
+        )
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/app_index.html",
+        {
+            "app_label": app_label,
+            "models": app_models,
+            "user": user,
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Model List View: /admin/{app_label}/{model_name}/
+# -----------------------------------------------------------------------------
+
+async def model_list(
+    request: Request,
+    app_label: str,
+    model_name: str,
+) -> HTMLResponse:
+    """
+    List all objects for a model.
+    
+    Route: GET /admin/{app_label}/{model_name}/
+    """
+    user = get_admin_user(request)
+    model, model_admin = _get_model_and_admin(app_label, model_name)
+    
+    if not model_admin.has_view_permission(request):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied",
+        )
+    
+    # Get objects
+    queryset = await model_admin.get_queryset(request)
+    objects = await queryset.all()
+    
+    # Get list display fields
+    list_display = model_admin.get_list_display(request)
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/model_list.html",
+        {
+            "app_label": app_label,
+            "model": model,
+            "model_name": model.__name__,
+            "objects": objects,
+            "list_display": list_display,
+            "user": user,
+            "can_add": model_admin.has_add_permission(request),
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Model Add View: /admin/{app_label}/{model_name}/add/
+# -----------------------------------------------------------------------------
+
+async def model_add(
+    request: Request,
+    app_label: str,
+    model_name: str,
+) -> HTMLResponse:
+    """
+    Add a new object.
+    
+    Route: GET, POST /admin/{app_label}/{model_name}/add/
+    """
+    user = get_admin_user(request)
+    model, model_admin = _get_model_and_admin(app_label, model_name)
+    
+    if not model_admin.has_add_permission(request):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied",
+        )
+    
+    form_fields = model_admin.get_form_fields(request)
+    errors: Dict[str, str] = {}
+    form_data: Dict[str, Any] = {}
+    
+    if request.method == "POST":
+        # Parse form data
+        raw_form = await request.form()
+        form_data = _parse_form_data(raw_form, model, form_fields)
+        
+        try:
+            # Create new instance
+            obj = model(**form_data)
+            await model_admin.save_model(request, obj, form_data, is_created=True)
+            
+            # Redirect to list view
+            return RedirectResponse(
+                url=request.url_for(
+                    "admin:model_list",
+                    app_label=app_label,
+                    model_name=model_name.lower(),
+                ),
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+        except Exception as e:
+            errors["__all__"] = str(e)
+    
+    # Prepare field info for template
+    fields_info = _get_fields_info(model, model_admin, form_fields, form_data, request)
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/model_form.html",
+        {
+            "app_label": app_label,
+            "model": model,
+            "model_name": model.__name__,
+            "fields": fields_info,
+            "obj": None,
+            "is_add": True,
+            "errors": errors,
+            "user": user,
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Model Change View: /admin/{app_label}/{model_name}/{pk}/change/
+# -----------------------------------------------------------------------------
+
+async def model_change(
+    request: Request,
+    app_label: str,
+    model_name: str,
+    pk: str,
+) -> HTMLResponse:
+    """
+    Edit an existing object.
+    
+    Route: GET, POST /admin/{app_label}/{model_name}/{pk}/change/
+    """
+    user = get_admin_user(request)
+    model, model_admin = _get_model_and_admin(app_label, model_name)
+    
+    # Get the object
+    try:
+        obj = await model_admin.get_object(request, pk)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Object with pk={pk} not found",
+        )
+    
+    if not model_admin.has_change_permission(request, obj):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied",
+        )
+    
+    form_fields = model_admin.get_form_fields(request, obj)
+    readonly_fields = set(model_admin.get_readonly_fields(request, obj))
+    errors: Dict[str, str] = {}
+    form_data: Dict[str, Any] = {}
+    
+    if request.method == "POST":
+        # Parse form data
+        raw_form = await request.form()
+        form_data = _parse_form_data(raw_form, model, form_fields)
+        
+        # Remove readonly fields from form_data
+        for field_name in readonly_fields:
+            form_data.pop(field_name, None)
+        
+        try:
+            await model_admin.save_model(request, obj, form_data, is_created=False)
+            
+            # Redirect to list view
+            return RedirectResponse(
+                url=request.url_for(
+                    "admin:model_list",
+                    app_label=app_label,
+                    model_name=model_name.lower(),
+                ),
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+        except Exception as e:
+            errors["__all__"] = str(e)
+    
+    # Prepare field info with current values
+    fields_info = _get_fields_info(
+        model, model_admin, form_fields, form_data, request, obj
+    )
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/model_form.html",
+        {
+            "app_label": app_label,
+            "model": model,
+            "model_name": model.__name__,
+            "fields": fields_info,
+            "obj": obj,
+            "is_add": False,
+            "errors": errors,
+            "user": user,
+            "can_delete": model_admin.has_delete_permission(request, obj),
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Model Delete View: /admin/{app_label}/{model_name}/{pk}/delete/
+# -----------------------------------------------------------------------------
+
+async def model_delete(
+    request: Request,
+    app_label: str,
+    model_name: str,
+    pk: str,
+) -> RedirectResponse:
+    """
+    Delete an object.
+    
+    Route: POST /admin/{app_label}/{model_name}/{pk}/delete/
+    """
+    user = get_admin_user(request)
+    model, model_admin = _get_model_and_admin(app_label, model_name)
+    
+    # Get the object
+    try:
+        obj = await model_admin.get_object(request, pk)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Object with pk={pk} not found",
+        )
+    
+    if not model_admin.has_delete_permission(request, obj):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied",
+        )
+    
+    await model_admin.delete_model(request, obj)
+    
+    # Redirect to list view
+    return RedirectResponse(
+        url=request.url_for(
+            "admin:model_list",
+            app_label=app_label,
+            model_name=model_name.lower(),
+        ),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
+
+def _parse_form_data(
+    raw_form: Any,
+    model: Type["Model"],
+    form_fields: List[str],
+) -> Dict[str, Any]:
+    """
+    Parse and convert form data to appropriate types.
+    
+    Args:
+        raw_form: The raw form data from request.form()
+        model: The Model class
+        form_fields: List of field names expected
+        
+    Returns:
+        Dict of parsed field values
+    """
+    data: Dict[str, Any] = {}
+    
+    for field_name in form_fields:
+        field = model.meta.get_field(field_name)
+        if not field:
+            continue
+        
+        raw_value = raw_form.get(field_name, "")
+        
+        # Skip empty strings for optional fields
+        if raw_value == "" and getattr(field, "nullable", False):
+            data[field_name] = None
+            continue
+        
+        # Convert based on field type
+        field_type = field.__class__.__name__
+        
+        try:
+            if field_type == "Boolean":
+                data[field_name] = raw_value in ("true", "on", "1", True)
+            elif field_type == "Integer":
+                data[field_name] = int(raw_value) if raw_value else None
+            elif field_type in ("Float", "Decimal"):
+                data[field_name] = float(raw_value) if raw_value else None
+            elif field_type == "JSON":
+                import json
+                data[field_name] = json.loads(raw_value) if raw_value else None
+            else:
+                data[field_name] = raw_value if raw_value else None
+        except (ValueError, TypeError):
+            data[field_name] = raw_value
+    
+    return data
+
+
+def _get_fields_info(
+    model: Type["Model"],
+    model_admin: "ModelAdmin",
+    form_fields: List[str],
+    form_data: Dict[str, Any],
+    request: Request,
+    obj: Optional["Model"] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Build field info list for template rendering.
+    
+    Args:
+        model: The Model class
+        model_admin: The ModelAdmin instance
+        form_fields: List of field names
+        form_data: Current form data (for error re-rendering)
+        request: The request object
+        obj: Optional existing object (for change view)
+        
+    Returns:
+        List of field info dicts
+    """
+    readonly = set(model_admin.get_readonly_fields(request, obj))
+    fields_info = []
+    
+    for field_name in form_fields:
+        field = model.meta.get_field(field_name)
+        if not field:
+            continue
+        
+        # Get current value
+        if form_data.get(field_name) is not None:
+            value = form_data[field_name]
+        elif obj is not None:
+            value = getattr(obj, field_name, "")
+        else:
+            value = ""
+        
+        field_info = {
+            "name": field_name,
+            "label": field_name.replace("_", " ").title(),
+            "type": model_admin.get_field_type(field_name),
+            "value": value if value is not None else "",
+            "readonly": field_name in readonly,
+            "required": not getattr(field, "nullable", True),
+        }
+        
+        fields_info.append(field_info)
+    
+    return fields_info
