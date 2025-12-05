@@ -26,6 +26,8 @@ from vidyut.exceptions import (
     ForeignKeyConstraintError,
     NotNullConstraintError,
     CheckConstraintError,
+    ValidationError,
+    ConfigurationError,
 )
 
 # on_delete constants (Django-style)
@@ -122,7 +124,7 @@ from vidyut.permissions import (
     check_permissions,
 )
 
-__version__ = "0.3.18"
+__version__ = "0.3.20"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -149,6 +151,8 @@ __all__ = [
     "ForeignKeyConstraintError",
     "NotNullConstraintError",
     "CheckConstraintError",
+    "ValidationError",
+    "ConfigurationError",
     # AI Metadata Helpers
     "get_models",
     "get_model_meta",

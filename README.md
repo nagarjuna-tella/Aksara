@@ -4,7 +4,7 @@
 
 **Vidyut** (meaning "electricity" in Sanskrit) is a batteries-included, async-native web framework for Python. Built on top of FastAPI and PostgreSQL, it combines Django's developer experience with modern async performance.
 
-[![Tests](https://img.shields.io/badge/tests-1047%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1136%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -298,7 +298,22 @@ myapi/
 
 ## 📜 Changelog
 
-### v0.3.18 (Latest)
+### v0.3.20 (Latest)
+- 🔢 **QuerySet.order_by()**: Full ordering API for ORM queries
+  - `order_by("field")` for ascending, `order_by("-field")` for descending
+  - Multiple fields: `order_by("is_active", "-created_at")`
+  - Chaining: `filter(is_active=True).order_by("email")`
+  - FK fields: `order_by("author_id")` and `order_by("author")`
+- 🧪 **44 New Tests**: Comprehensive ordering test coverage
+- 🛠️ **ORM Polish**: Stable foundation before 0.4.0 AI features
+
+### v0.3.19
+- ✅ **Sanity Audit**: Comprehensive pre-0.4.0 hardening with 45 new edge-case tests
+- 📦 **Export Fixes**: Added `ValidationError`, `ConfigurationError` to public API
+- 🧪 **1092 Tests**: Full coverage across all 14+ subsystems
+- 📋 **Verified**: CLI scaffolding, migrations, admin, auth, permissions, API layer
+
+### v0.3.18
 - 🛠️ **Dev Tools CLI**: `vidyut format`, `vidyut lint`, `vidyut typecheck`, `vidyut test`
 - 🔗 **Pre-commit Integration**: `vidyut precommit init` and `vidyut precommit run`
 - 📦 **Dev Extra**: `pip install vidyut[dev]` for black, ruff, mypy, pytest, pre-commit

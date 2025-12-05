@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, Set
 if TYPE_CHECKING:
     from vidyut.model.base import Model
 
+from vidyut.exceptions import ConfigurationError
+
 T = TypeVar("T", bound="Model")
 
 
@@ -72,6 +74,14 @@ class QuerySet(Generic[T]):
             status__in=["active", "pending"],
         ).all()
         
+        # Ordering
+        users = await User.objects.order_by("email").all()           # Ascending
+        users = await User.objects.order_by("-created_at").all()     # Descending
+        users = await User.objects.order_by("is_active", "-email").all()  # Multiple
+        
+        # Chained with filter
+        users = await User.objects.filter(is_active=True).order_by("email").all()
+        
         # Preload FK/O2O relations (avoids N+1)
         posts = await Post.objects.select_related("author").all()
         for p in posts:
@@ -84,6 +94,7 @@ class QuerySet(Generic[T]):
         filters: Optional[Dict[str, Any]] = None,
         select_related_fields: Optional[Set[str]] = None,
         prefetch_related_fields: Optional[Set[str]] = None,
+        order_by_fields: Optional[List[str]] = None,
     ):
         """
         Initialize a QuerySet.
@@ -93,11 +104,13 @@ class QuerySet(Generic[T]):
             filters: Dictionary of field=value or field__lookup=value filters
             select_related_fields: Set of FK/O2O fields to eagerly load
             prefetch_related_fields: Set of M2M fields to eagerly load
+            order_by_fields: List of field names for ordering (prefix with - for descending)
         """
         self._model = model
         self._filters = filters or {}
         self._select_related: Set[str] = select_related_fields or set()
         self._prefetch_related: Set[str] = prefetch_related_fields or set()
+        self._order_by: Optional[List[str]] = order_by_fields
     
     def filter(self, **kwargs) -> "QuerySet[T]":
         """
@@ -126,6 +139,111 @@ class QuerySet(Generic[T]):
             new_filters,
             self._select_related.copy(),
             self._prefetch_related.copy(),
+            self._order_by.copy() if self._order_by else None,
+        )
+    
+    def order_by(self, *fields: str) -> "QuerySet[T]":
+        """
+        Specify ordering for the query results.
+        
+        Fields can be specified as:
+            - "field_name" for ascending order
+            - "-field_name" for descending order
+        
+        Multiple fields can be specified; ordering is applied in order.
+        Calling order_by() again replaces previous ordering.
+        
+        Args:
+            *fields: Field names to order by (prefix with - for descending)
+            
+        Returns:
+            New QuerySet with ordering applied
+            
+        Raises:
+            ConfigurationError: If no fields provided or field doesn't exist
+            
+        Usage:
+            # Ascending
+            User.objects.order_by("email")
+            
+            # Descending
+            User.objects.order_by("-created_at")
+            
+            # Multiple fields
+            User.objects.order_by("is_active", "-created_at")
+            
+            # Chained (later call replaces earlier)
+            User.objects.order_by("email").order_by("-created_at")  # final: created_at DESC
+        """
+        if not fields:
+            raise ConfigurationError(
+                "order_by() requires at least one field. "
+                "Usage: .order_by('field') or .order_by('-field')"
+            )
+        
+        # Validate each field
+        validated_fields = []
+        for field in fields:
+            if not isinstance(field, str):
+                raise ConfigurationError(
+                    f"order_by() fields must be strings, got {type(field).__name__}"
+                )
+            
+            # Parse descending prefix
+            if field.startswith("-"):
+                field_name = field[1:]
+                if field_name.startswith("-"):
+                    # Double minus like "--email" is invalid
+                    raise ConfigurationError(
+                        f"Invalid order_by field '{field}'. "
+                        f"Use '-{field_name[1:]}' for descending order."
+                    )
+            else:
+                field_name = field
+            
+            if not field_name:
+                raise ConfigurationError(
+                    "order_by() field name cannot be empty"
+                )
+            
+            # Check if field exists on model
+            # Allow 'id' as it's always present
+            field_valid = False
+            
+            if field_name == "id":
+                field_valid = True
+            elif field_name in self._model._fields:
+                field_valid = True
+            elif field_name.endswith("_id"):
+                # Check if it's a FK column name (e.g., author_id for FK field 'author')
+                base_field_name = field_name[:-3]  # Remove _id suffix
+                if base_field_name in self._model._fields:
+                    # Verify it's actually a FK field with this column name
+                    base_field = self._model._fields[base_field_name]
+                    if hasattr(base_field, 'column_name') and base_field.column_name == field_name:
+                        field_valid = True
+            
+            if not field_valid:
+                available_fields = sorted(self._model._fields.keys())
+                # Also add _id variants for FK fields
+                fk_columns = []
+                for fname, fobj in self._model._fields.items():
+                    if hasattr(fobj, 'column_name') and fobj.column_name != fname:
+                        fk_columns.append(fobj.column_name)
+                all_orderable = sorted(set(available_fields + fk_columns))
+                raise ConfigurationError(
+                    f"Cannot order by '{field_name}' - field does not exist on {self._model.__name__}. "
+                    f"Available fields: {', '.join(all_orderable)}"
+                )
+            
+            validated_fields.append(field)
+        
+        return QuerySet(
+            self._model,
+            self._filters.copy(),
+            self._select_related.copy(),
+            self._prefetch_related.copy(),
+            validated_fields,
         )
     
     def select_related(self, *fields: str) -> "QuerySet[T]":
@@ -157,6 +275,7 @@ class QuerySet(Generic[T]):
             self._filters.copy(),
             new_select_related,
             self._prefetch_related.copy(),
+            self._order_by.copy() if self._order_by else None,
         )
     
     def prefetch_related(self, *fields: str) -> "QuerySet[T]":
@@ -177,6 +296,7 @@ class QuerySet(Generic[T]):
             self._filters.copy(),
             self._select_related.copy(),
             new_prefetch_related,
+            self._order_by.copy() if self._order_by else None,
         )
     
     def _build_where_clause(self) -> Tuple[str, List]:
@@ -265,6 +385,46 @@ class QuerySet(Generic[T]):
         
         return f"WHERE {' AND '.join(conditions)}", values
     
+    def _build_order_by_clause(self) -> str:
+        """
+        Build ORDER BY clause from ordering fields.
+        
+        Returns:
+            ORDER BY clause string (empty if no ordering)
+        """
+        if not self._order_by:
+            return ""
+        
+        order_parts = []
+        for field in self._order_by:
+            # Parse descending prefix
+            if field.startswith("-"):
+                field_name = field[1:]
+                direction = "DESC"
+            else:
+                field_name = field
+                direction = "ASC"
+            
+            # Get column name
+            if field_name == "id":
+                col_name = "id"
+            elif field_name in self._model._fields:
+                col_name = self._model._fields[field_name].column_name
+            elif field_name.endswith("_id"):
+                # Check if it's a FK column name (e.g., author_id for FK field 'author')
+                base_field_name = field_name[:-3]
+                if base_field_name in self._model._fields:
+                    # Use the field's column_name (which should be field_name)
+                    col_name = self._model._fields[base_field_name].column_name
+                else:
+                    col_name = field_name  # Fallback
+            else:
+                col_name = field_name  # Fallback (should have been validated)
+            
+            order_parts.append(f"{col_name} {direction}")
+        
+        return f"ORDER BY {', '.join(order_parts)}"
+    
     async def all(self) -> List[T]:
         """
         Execute the query and return all matching records.
@@ -277,7 +437,8 @@ class QuerySet(Generic[T]):
         db = Database.get_instance()
         
         where_clause, values = self._build_where_clause()
-        query = f"SELECT * FROM {self._model.__tablename__} {where_clause}"
+        order_by_clause = self._build_order_by_clause()
+        query = f"SELECT * FROM {self._model.__tablename__} {where_clause} {order_by_clause}".strip()
         
         records = await db.fetch(query, *values)
         
@@ -425,7 +586,10 @@ class QuerySet(Generic[T]):
         db = Database.get_instance()
         
         where_clause, values = self._build_where_clause()
-        query = f"SELECT * FROM {self._model.__tablename__} {where_clause} LIMIT 1"
+        order_by_clause = self._build_order_by_clause()
+        query = f"SELECT * FROM {self._model.__tablename__} {where_clause} {order_by_clause} LIMIT 1".strip()
+        # Clean up any double spaces
+        query = " ".join(query.split())
         
         record = await db.fetchrow(query, *values)
         
@@ -521,6 +685,23 @@ class Manager(Generic[T]):
             QuerySet for chaining
         """
         return QuerySet(self._model, kwargs)
+    
+    def order_by(self, *fields: str) -> QuerySet[T]:
+        """
+        Create a QuerySet with ordering.
+        
+        Args:
+            *fields: Field names to order by (prefix with - for descending)
+            
+        Returns:
+            QuerySet for chaining
+            
+        Usage:
+            User.objects.order_by("email")           # Ascending
+            User.objects.order_by("-created_at")     # Descending
+            User.objects.order_by("is_active", "-email")  # Multiple
+        """
+        return QuerySet(self._model).order_by(*fields)
     
     def select_related(self, *fields: str) -> QuerySet[T]:
         """
