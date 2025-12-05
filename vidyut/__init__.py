@@ -122,7 +122,7 @@ from vidyut.permissions import (
     check_permissions,
 )
 
-__version__ = "0.3.15"
+__version__ = "0.3.18"
 __all__ = [
     # Vidyut ORM
     "Model",

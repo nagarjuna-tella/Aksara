@@ -2,6 +2,7 @@
 Vidyut Migration Executor
 
 Handles loading, tracking, and executing migrations against the database.
+Includes support for migration graph building and conflict detection.
 """
 
 from __future__ import annotations
@@ -10,12 +11,17 @@ import importlib
 import importlib.util
 import logging
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 from vidyut.migrations.base import Migration
+from vidyut.migrations.graph import MigrationGraph, MigrationNode, find_conflicts
+
+if TYPE_CHECKING:
+    from vidyut.migrations.graph import MigrationGraph
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +272,164 @@ def get_pending_migrations(
     """
     applied_set = set(applied)
     return [(name, path) for name, path in all_migrations if name not in applied_set]
+
+
+# =============================================================================
+# Migration Graph Building
+# =============================================================================
+
+def extract_app_label_from_name(migration_name: str, file_path: Path) -> str:
+    """
+    Extract the app label from a migration name or path.
+    
+    For user migrations, the app label is typically the parent directory name.
+    For internal migrations, it's extracted from the prefixed name.
+    
+    Args:
+        migration_name: The migration name
+        file_path: Path to the migration file
+        
+    Returns:
+        The app label string
+    """
+    # Check if this is an internal migration (has package prefix)
+    for pkg in INTERNAL_MIGRATION_PACKAGES:
+        prefix = pkg.replace(".", "_") + "_"
+        if migration_name.startswith(prefix):
+            # Extract the app label from the package name (last component)
+            return pkg.split(".")[-2] if len(pkg.split(".")) > 2 else pkg.split(".")[-1]
+    
+    # For user migrations, use the parent directory name
+    parent = file_path.parent.name
+    if parent == "migrations":
+        # Go up one more level to get the app name
+        grandparent = file_path.parent.parent.name
+        return grandparent if grandparent else "default"
+    
+    return parent if parent else "default"
+
+
+def build_migration_graph(
+    migrations_path: Optional[Path] = None,
+    include_internal: bool = True,
+    migrations_list: Optional[List[Tuple[str, Path]]] = None,
+) -> MigrationGraph:
+    """
+    Build a migration graph from discovered migrations.
+    
+    The graph tracks all migrations and their dependencies, enabling
+    conflict detection and proper execution ordering.
+    
+    Args:
+        migrations_path: Path to user's migrations directory
+        include_internal: Whether to include internal migrations
+        migrations_list: Optional pre-discovered list of migrations.
+                        If provided, migrations_path is ignored.
+        
+    Returns:
+        A MigrationGraph with all discovered migrations
+        
+    Example:
+        graph = build_migration_graph(Path("./migrations"))
+        
+        # Check for conflicts
+        conflicts = find_conflicts(graph)
+        if conflicts:
+            print("Conflicts detected!")
+            for app, heads in conflicts.items():
+                print(f"  {app}: {[h.name for h in heads]}")
+    """
+    graph = MigrationGraph()
+    
+    # Discover or use provided migrations
+    if migrations_list is not None:
+        all_migrations = migrations_list
+    else:
+        all_migrations = discover_all_migrations(
+            user_migrations_path=migrations_path,
+            include_internal=include_internal,
+        )
+    
+    # First pass: create nodes for all migrations
+    migration_modules: Dict[str, Type[Migration]] = {}
+    
+    for name, path in all_migrations:
+        if path.suffix != ".py":
+            # SQL migrations don't have dependencies
+            app_label = extract_app_label_from_name(name, path)
+            node = MigrationNode(app_label=app_label, name=name)
+            graph.add_node(node)
+            continue
+        
+        try:
+            # Load the migration module to get dependencies
+            migration_class = load_migration_module(path)
+            migration_modules[name] = migration_class
+            
+            # Get app label
+            app_label = extract_app_label_from_name(name, path)
+            
+            # Get dependencies from the Migration class
+            deps = getattr(migration_class, "dependencies", [])
+            
+            # Create node with dependencies
+            node = MigrationNode(
+                app_label=app_label,
+                name=name,
+                dependencies=list(deps) if deps else [],
+            )
+            graph.add_node(node)
+            
+        except Exception as e:
+            logger.warning(f"Could not load migration {name}: {e}")
+            # Still add the node without dependencies
+            app_label = extract_app_label_from_name(name, path)
+            node = MigrationNode(app_label=app_label, name=name)
+            graph.add_node(node)
+    
+    # Build children relationships
+    graph.build_children()
+    
+    return graph
+
+
+def check_migration_conflicts(
+    graph: MigrationGraph,
+    applied: Optional[List[str]] = None,
+) -> Dict[str, List[MigrationNode]]:
+    """
+    Check for migration conflicts that would block execution.
+    
+    A conflict exists when:
+    - An app has multiple heads (migrations with no children)
+    - At least one of those heads is not yet applied
+    
+    Args:
+        graph: The migration graph
+        applied: Optional list of already-applied migration names
+        
+    Returns:
+        Dict of app_label -> list of conflicting head nodes
+    """
+    conflicts = find_conflicts(graph)
+    
+    if not conflicts or applied is None:
+        return conflicts
+    
+    # Filter to only include conflicts where at least one head is unapplied
+    applied_set = set(applied)
+    real_conflicts = {}
+    
+    for app_label, heads in conflicts.items():
+        unapplied_heads = [h for h in heads if h.name not in applied_set]
+        if len(unapplied_heads) > 1:
+            # Multiple unapplied heads = real conflict
+            real_conflicts[app_label] = heads
+        elif len(unapplied_heads) == 1 and len(heads) > 1:
+            # One unapplied, but there are other heads = still a conflict
+            real_conflicts[app_label] = heads
+    
+    return real_conflicts
 
 
 # =============================================================================

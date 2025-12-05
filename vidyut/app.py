@@ -198,6 +198,9 @@ class Vidyut(FastAPI):
         # Register ORM exception handlers
         self._register_orm_exceptions()
         
+        # v0.3.17: Register debug-aware exception handlers
+        self._register_debug_exception_handlers()
+        
         # v0.3.15: Maybe mount admin interface
         self._maybe_mount_admin()
         
@@ -533,6 +536,17 @@ class Vidyut(FastAPI):
                     "code": "delete_restricted",
                 },
             )
+    
+    def _register_debug_exception_handlers(self) -> None:
+        """
+        Register debug-aware exception handlers.
+        
+        v0.3.17: Provides beautiful dark-mode error pages in debug mode
+        with rich context including stacktrace, request details, and more.
+        In production, shows clean JSON or minimal HTML.
+        """
+        from vidyut.debug import register_debug_exception_handlers
+        register_debug_exception_handlers(self)
     
     def _auto_register_viewsets(self) -> None:
         """

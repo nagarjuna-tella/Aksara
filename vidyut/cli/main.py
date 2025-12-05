@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.3.15"
+CLI_VERSION = "0.3.18"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -126,6 +126,125 @@ async def record_migration(db, name: str, checksum: str) -> None:
     )
 
 
+def _handle_merge_migration(
+    app_label: Optional[str], 
+    output: Optional[str], 
+    settings,
+) -> None:
+    """
+    Create a merge migration to resolve conflicting heads.
+    
+    This creates an empty migration that depends on all current heads
+    for the specified app, effectively linearizing the migration history.
+    """
+    from vidyut.migrations.executor import (
+        discover_migrations,
+        build_migration_graph,
+    )
+    from vidyut.migrations.graph import find_conflicts
+    
+    click.echo("⚡ Vidyut Makemigrations --merge")
+    click.echo("-" * 40)
+    
+    # Get migrations directory
+    mig_dir = Path(output) if output else Path(settings.migrations_dir)
+    
+    if not mig_dir.exists():
+        click.echo(f"\n❌ Migrations directory not found: {mig_dir}")
+        return
+    
+    # Build migration graph
+    migration_files = discover_migrations(mig_dir)
+    if not migration_files:
+        click.echo(f"\n⚠️  No migrations found in {mig_dir}")
+        return
+    
+    graph = build_migration_graph(migrations_list=migration_files)
+    conflicts = find_conflicts(graph)
+    
+    if not conflicts:
+        click.echo("\n✓ No conflicts detected. Nothing to merge.")
+        return
+    
+    # If app_label specified, only merge that app
+    if app_label:
+        if app_label not in conflicts:
+            click.echo(f"\n✓ No conflicts in app '{app_label}'.")
+            return
+        conflicts = {app_label: conflicts[app_label]}
+    
+    # Create merge migrations for each conflicting app
+    for target_app, heads in conflicts.items():
+        click.echo(f"\nMerging conflicts for '{target_app}':")
+        for head in heads:
+            click.echo(f"  • {head.name}")
+        
+        # Determine next migration number
+        app_migrations = [
+            node for node in graph.nodes.values() 
+            if node.app_label == target_app
+        ]
+        
+        # Extract numbers from migration names
+        numbers = []
+        for node in app_migrations:
+            # Try to extract leading number (e.g., 0001 from 0001_initial)
+            parts = node.name.split("_")
+            if parts and parts[0].isdigit():
+                numbers.append(int(parts[0]))
+        
+        if numbers:
+            next_num = max(numbers) + 1
+        else:
+            next_num = len(app_migrations) + 1
+        
+        new_name = f"{next_num:04d}_merge"
+        
+        # Build dependencies list
+        dependencies = [(h.app_label, h.name) for h in heads]
+        deps_code = ",\n        ".join(
+            f'("{app}", "{name}")' for app, name in dependencies
+        )
+        
+        # Generate merge migration content
+        timestamp = datetime.now().isoformat()
+        content = f'''"""
+Migration: {new_name}
+Generated: {timestamp}
+
+Merge migration to resolve conflicting heads:
+{chr(10).join(f"  - {h.app_label}.{h.name}" for h in heads)}
+"""
+
+from vidyut.migrations import Migration
+
+
+class Migration(Migration):
+    """
+    Merge migration - resolves conflicts by depending on all heads.
+    """
+    
+    dependencies = [
+        {deps_code},
+    ]
+    
+    operations = []
+'''
+        
+        # Write the merge migration file
+        merge_filename = f"{new_name}.py"
+        merge_path = mig_dir / merge_filename
+        
+        merge_path.write_text(content)
+        
+        click.echo(f"\n✓ Created merge migration: {merge_path}")
+        click.echo(f"  Dependencies: {len(heads)} heads merged")
+    
+    click.echo("\n" + "=" * 40)
+    click.echo("✓ Merge migration(s) created!")
+    click.echo("\nRun 'vidyut migrate' to apply.")
+
+
 # =============================================================================
 # CLI Commands
 # =============================================================================
@@ -194,7 +313,10 @@ def startproject(project_name: str, directory: str):
         click.echo(f"  \033[36m{project_name}/\033[0m")
         click.echo("  ├── main.py")
         click.echo("  ├── settings.py")
+        click.echo("  ├── pyproject.toml")
         click.echo("  ├── .env")
+        click.echo("  ├── .pre-commit-config.yaml")
+        click.echo("  ├── .editorconfig")
         click.echo("  ├── requirements.txt")
         click.echo("  ├── README.md")
         click.echo("  ├── app/")
@@ -209,7 +331,8 @@ def startproject(project_name: str, directory: str):
         click.echo("  \033[1mNext steps:\033[0m")
         click.echo()
         click.echo(f"    cd {project_name}")
-        click.echo("    pip install -r requirements.txt")
+        click.echo('    pip install -e ".[dev]"       # Install with dev tools')
+        click.echo("    pre-commit install            # Enable git hooks")
         click.echo("    # Edit .env with your database URL")
         click.echo("    vidyut makemigrations --app app.models")
         click.echo("    vidyut migrate")
@@ -308,14 +431,36 @@ def startapp(app_name: str, directory: str):
 @click.option("--name", "-n", default="auto", help="Migration name prefix")
 @click.option("--stdout", is_flag=True, help="Output to stdout instead of file")
 @click.option("--sql", is_flag=True, help="Generate legacy SQL migration (default: Python)")
-def makemigrations(app: Optional[str], output: Optional[str], name: str, stdout: bool, sql: bool):
-    """Generate migration from models (Python or SQL)."""
+@click.option("--merge", is_flag=True, help="Create a merge migration to resolve conflicts")
+@click.argument("merge_app", required=False)
+def makemigrations(
+    app: Optional[str], 
+    output: Optional[str], 
+    name: str, 
+    stdout: bool, 
+    sql: bool,
+    merge: bool,
+    merge_app: Optional[str],
+):
+    """Generate migration from models (Python or SQL).
+    
+    Use --merge APP_LABEL to create a merge migration that resolves
+    conflicting migrations (multiple heads) for the specified app.
+    """
     from vidyut.registry import ModelRegistry
     from vidyut.conf import settings
     from vidyut.migrations.executor import (
         generate_migration_filename,
         models_to_migration_code,
+        discover_migrations,
+        build_migration_graph,
     )
+    from vidyut.migrations.graph import find_conflicts
+    
+    # Handle --merge mode
+    if merge:
+        _handle_merge_migration(merge_app, output, settings)
+        return
     
     click.echo("⚡ Vidyut Makemigrations")
     click.echo("-" * 40)
@@ -472,7 +617,10 @@ def migrate(
         get_applied_migrations as get_applied_migs,
         record_migration,
         load_migration_module,
+        build_migration_graph,
+        check_migration_conflicts,
     )
+    from vidyut.migrations.graph import format_conflict_message
     
     click.echo("⚡ Vidyut Migrate")
     click.echo("-" * 40)
@@ -492,6 +640,10 @@ def migrate(
     
     if migration_files:
         click.echo(f"\nFound {len(migration_files)} migration file(s) in {mig_dir}")
+        
+        # v0.3.16: Build migration graph and check for conflicts
+        graph = build_migration_graph(migrations_list=migration_files)
+        
     else:
         # Fall back to model-based migration (v0.1 behavior)
         click.echo(f"\nNo migration files in {mig_dir}")
@@ -508,6 +660,7 @@ def migrate(
             return
         
         click.echo(f"Found {len(models)} model(s)")
+        graph = None  # No graph for model-based migrations
     
     async def run_migrations():
         db = Database(db_url)
@@ -523,6 +676,15 @@ def migrate(
                 # File-based migrations (v0.3.3 path)
                 applied = await get_applied_migs(db)
                 click.echo(f"  {len(applied)} migration(s) already applied")
+                
+                # v0.3.16: Check for conflicts before proceeding
+                if graph is not None:
+                    conflicts = check_migration_conflicts(graph, applied)
+                    if conflicts:
+                        click.echo("\n" + click.style("❌ Migration Conflicts Detected!", fg="red", bold=True))
+                        click.echo(format_conflict_message(conflicts))
+                        click.echo("\nMigration aborted. Resolve conflicts first.")
+                        return
                 
                 pending = get_pending_migrations(migration_files, applied)
                 
@@ -549,7 +711,7 @@ def migrate(
                             await record_migration(db, name)
                             click.echo(f"  ✓ Marked (not executed)")
                         else:
-                            click.echo(f"\n→ Applying: {name}")
+                            click.echo(f"\nApplying {name}...")
                             try:
                                 migration_class = load_migration_module(path)
                                 migration = migration_class()
@@ -1011,6 +1173,244 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
         access_log=True,
         app_dir=cwd,  # Ensure uvicorn can find the app module
     )
+
+
+# =============================================================================
+# v0.3.18: Developer Workflow Commands
+# =============================================================================
+
+def _run_tool(tool_name: str, module: str, args: List[str], install_hint: str) -> int:
+    """
+    Run a dev tool via subprocess.
+    
+    Args:
+        tool_name: Display name of the tool (e.g., "Black")
+        module: Python module to run (e.g., "black")
+        args: Arguments to pass to the tool
+        install_hint: Package name for pip install hint
+    
+    Returns:
+        Exit code from the tool
+    """
+    import subprocess
+    
+    cmd = [sys.executable, "-m", module] + args
+    
+    try:
+        result = subprocess.run(cmd, check=False)
+        return result.returncode
+    except FileNotFoundError:
+        click.echo(f"\n❌ {tool_name} is not installed.")
+        click.echo(f"   Install dev tools via:")
+        click.echo(f"     pip install vidyut[dev]")
+        click.echo(f"   or:")
+        click.echo(f"     pip install {install_hint}")
+        click.echo()
+        return 1
+
+
+@cli.command()
+@click.argument("path", default=".", required=False)
+@click.option("--check", is_flag=True, help="Check formatting without making changes")
+def format(path: str, check: bool):
+    """Format code using Black.
+    
+    Runs Black formatter on the specified path (default: current directory).
+    
+    Examples:
+        vidyut format
+        vidyut format src/
+        vidyut format --check
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Formatting code...")
+    click.echo()
+    
+    args = [path]
+    if check:
+        args.append("--check")
+    
+    exit_code = _run_tool("Black", "black", args, "black")
+    sys.exit(exit_code)
+
+
+@cli.command()
+@click.argument("path", default=".", required=False)
+@click.option("--fix", is_flag=True, help="Automatically fix fixable issues")
+def lint(path: str, fix: bool):
+    """Lint code using Ruff.
+    
+    Runs Ruff linter on the specified path (default: current directory).
+    
+    Examples:
+        vidyut lint
+        vidyut lint src/
+        vidyut lint --fix
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Linting code...")
+    click.echo()
+    
+    args = ["check", path]
+    if fix:
+        args.append("--fix")
+    
+    exit_code = _run_tool("Ruff", "ruff", args, "ruff")
+    sys.exit(exit_code)
+
+
+@cli.command()
+@click.argument("path", default=".", required=False)
+@click.option("--strict", is_flag=True, help="Enable strict mode")
+def typecheck(path: str, strict: bool):
+    """Type-check code using mypy.
+    
+    Runs mypy type checker on the specified path (default: current directory).
+    
+    Examples:
+        vidyut typecheck
+        vidyut typecheck src/
+        vidyut typecheck --strict
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Type-checking code...")
+    click.echo()
+    
+    args = [path]
+    if strict:
+        args.append("--strict")
+    
+    exit_code = _run_tool("mypy", "mypy", args, "mypy")
+    sys.exit(exit_code)
+
+
+@cli.command(context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+def test(args: tuple):
+    """Run tests using pytest.
+    
+    Runs pytest with any additional arguments passed through.
+    
+    Examples:
+        vidyut test
+        vidyut test tests/
+        vidyut test -v --tb=short
+        vidyut test tests/test_models.py -k "test_create"
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Running tests...")
+    click.echo()
+    
+    exit_code = _run_tool("pytest", "pytest", list(args), "pytest")
+    sys.exit(exit_code)
+
+
+# Pre-commit configuration template
+PRECOMMIT_CONFIG = '''# Vidyut Pre-commit Configuration
+# Install hooks: pre-commit install
+# Run all hooks: vidyut precommit run
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+'''
+
+
+@cli.group()
+def precommit():
+    """Pre-commit hook management.
+    
+    Commands for managing pre-commit hooks in your project.
+    """
+    pass
+
+
+@precommit.command("init")
+def precommit_init():
+    """Scaffold .pre-commit-config.yaml for your project.
+    
+    Creates a standard pre-commit configuration with:
+    - Ruff (linting with auto-fix)
+    - Black (formatting)
+    - mypy (type checking)
+    - Common pre-commit hooks (large files, merge conflicts, YAML)
+    
+    Example:
+        vidyut precommit init
+        pre-commit install
+    """
+    config_path = Path.cwd() / ".pre-commit-config.yaml"
+    
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Pre-commit Setup")
+    click.echo()
+    
+    if config_path.exists():
+        click.echo("  \033[33m⚠️\033[0m  .pre-commit-config.yaml already exists; not overwriting.")
+        click.echo()
+        click.echo("  To regenerate, delete the file first:")
+        click.echo(f"    rm {config_path}")
+        click.echo()
+        return
+    
+    # Write the config file
+    with open(config_path, "w") as f:
+        f.write(PRECOMMIT_CONFIG)
+    
+    click.echo("  \033[32m✓\033[0m Created .pre-commit-config.yaml")
+    click.echo()
+    click.echo("  \033[90m" + "─" * 40 + "\033[0m")
+    click.echo()
+    click.echo("  \033[1mNext steps:\033[0m")
+    click.echo()
+    click.echo("    pre-commit install        # Install git hooks")
+    click.echo("    vidyut precommit run      # Run on all files")
+    click.echo()
+
+
+@precommit.command("run")
+@click.option("--hook", "-h", help="Run a specific hook by ID")
+def precommit_run(hook: Optional[str]):
+    """Run pre-commit hooks on all files.
+    
+    Runs all configured pre-commit hooks against all files in the repository.
+    
+    Examples:
+        vidyut precommit run
+        vidyut precommit run --hook ruff
+        vidyut precommit run --hook black
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut\033[0m - Running pre-commit hooks...")
+    click.echo()
+    
+    args = ["run", "--all-files"]
+    if hook:
+        args.extend(["--hook-stage", "manual", hook])
+    
+    exit_code = _run_tool("pre-commit", "pre_commit", args, "pre-commit")
+    sys.exit(exit_code)
 
 
 def main():

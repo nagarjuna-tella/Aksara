@@ -4,7 +4,7 @@
 
 **Vidyut** (meaning "electricity" in Sanskrit) is a batteries-included, async-native web framework for Python. Built on top of FastAPI and PostgreSQL, it combines Django's developer experience with modern async performance.
 
-[![Tests](https://img.shields.io/badge/tests-925%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1047%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -298,7 +298,28 @@ myapi/
 
 ## 📜 Changelog
 
-### v0.3.15 (Latest)
+### v0.3.18 (Latest)
+- 🛠️ **Dev Tools CLI**: `vidyut format`, `vidyut lint`, `vidyut typecheck`, `vidyut test`
+- 🔗 **Pre-commit Integration**: `vidyut precommit init` and `vidyut precommit run`
+- 📦 **Dev Extra**: `pip install vidyut[dev]` for black, ruff, mypy, pytest, pre-commit
+- 🆕 **Enhanced Scaffolding**: `.pre-commit-config.yaml`, `.editorconfig`, tool configs in pyproject.toml
+- 📊 **Improved DX**: Graceful error messages when dev tools are not installed
+
+### v0.3.17
+- 🌙 **Dark-Mode Debug Pages**: Beautiful dark-themed error pages in debug mode
+- 📊 **Rich Error Context**: Stacktrace, request details, context variables (request_id, tenant_id, user_id)
+- 🔒 **Production-Safe**: Clean JSON or minimal HTML in production mode
+- 🎨 **Interactive UI**: Tabs for traceback, request, context, environment
+- 🛡️ **XSS Safe**: Automatic HTML escaping of error messages
+- 📝 **Sensitive Headers**: Automatic redaction of auth headers
+
+### v0.3.16
+- 🔀 **Migration Conflict Resolution**: Detect and resolve parallel migration branches
+- 📊 **Migration Graph**: Track dependencies between migrations
+- 🛠️ **`--merge` flag**: `vidyut makemigrations --merge app` creates merge migrations
+- ⚡ **Improved UX**: Clear conflict messages and resolution hints
+
+### v0.3.15
 - 🎛️ **Admin Interface**: Django-style server-rendered admin panel
 - 👤 **createsuperuser**: CLI command for admin user creation
 - 🎨 **Admin UI**: Neumorphic design with loading states

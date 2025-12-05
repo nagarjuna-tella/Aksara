@@ -1,0 +1,1158 @@
+"""
+Debug exception handlers and context collection.
+
+v0.3.17: Provides rich error context and beautiful error pages.
+"""
+from __future__ import annotations
+
+import html
+import os
+import sys
+import traceback
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse, Response
+from starlette.types import ASGIApp
+
+if TYPE_CHECKING:
+    from vidyut.app import Vidyut
+
+
+@dataclass
+class DebugContext:
+    """
+    Rich debug context for error pages.
+    
+    Contains all relevant information about the error,
+    request, and application state.
+    """
+    # Error info
+    exception_type: str = ""
+    exception_message: str = ""
+    exception_detail: Optional[str] = None
+    status_code: int = 500
+    
+    # Traceback
+    traceback_frames: list[dict[str, Any]] = field(default_factory=list)
+    traceback_text: str = ""
+    
+    # Request info
+    request_method: str = ""
+    request_url: str = ""
+    request_path: str = ""
+    request_headers: dict[str, str] = field(default_factory=dict)
+    request_query_params: dict[str, str] = field(default_factory=dict)
+    request_path_params: dict[str, Any] = field(default_factory=dict)
+    request_body: Optional[str] = None
+    request_client: Optional[str] = None
+    
+    # Context vars
+    request_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    user_id: Optional[str] = None
+    
+    # Environment
+    python_version: str = ""
+    vidyut_version: str = ""
+    debug_mode: bool = True
+    timestamp: str = ""
+    
+    # DB queries (for future integration)
+    db_queries: list[dict[str, Any]] = field(default_factory=list)
+
+
+def _extract_traceback_frames(exc: BaseException) -> list[dict[str, Any]]:
+    """Extract structured traceback frames from exception."""
+    frames = []
+    tb = traceback.extract_tb(exc.__traceback__)
+    
+    for frame in tb:
+        frame_info = {
+            "filename": frame.filename,
+            "lineno": frame.lineno,
+            "name": frame.name,
+            "line": frame.line or "",
+            "is_library": _is_library_path(frame.filename),
+        }
+        
+        # Try to get context lines
+        try:
+            context_lines = _get_context_lines(frame.filename, frame.lineno)
+            frame_info["context_lines"] = context_lines
+        except Exception:
+            frame_info["context_lines"] = []
+        
+        frames.append(frame_info)
+    
+    return frames
+
+
+def _is_library_path(filepath: str) -> bool:
+    """Check if a file path is from a library (not user code)."""
+    # Common library paths
+    library_indicators = [
+        "site-packages",
+        "dist-packages",
+        "/lib/python",
+        "\\lib\\python",
+        "<frozen",
+        "<string>",
+    ]
+    return any(indicator in filepath for indicator in library_indicators)
+
+
+def _get_context_lines(
+    filepath: str, 
+    lineno: int, 
+    context: int = 5
+) -> list[dict[str, Any]]:
+    """Get context lines around the error line."""
+    try:
+        path = Path(filepath)
+        if not path.exists() or not path.is_file():
+            return []
+        
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        
+        start = max(0, lineno - context - 1)
+        end = min(len(lines), lineno + context)
+        
+        context_lines = []
+        for i in range(start, end):
+            context_lines.append({
+                "number": i + 1,
+                "content": lines[i].rstrip("\n\r"),
+                "is_error_line": i + 1 == lineno,
+            })
+        
+        return context_lines
+    except Exception:
+        return []
+
+
+async def collect_debug_context(
+    request: Request,
+    exc: BaseException,
+    status_code: int = 500,
+) -> DebugContext:
+    """
+    Collect rich debug context from request and exception.
+    
+    Args:
+        request: The Starlette/FastAPI request object.
+        exc: The exception that was raised.
+        status_code: HTTP status code for the error.
+    
+    Returns:
+        DebugContext with all relevant information.
+    """
+    from vidyut import __version__
+    
+    # Get context variables
+    try:
+        from vidyut.middleware.context import (
+            request_id_var,
+            tenant_id_var,
+            user_id_var,
+        )
+        request_id = request_id_var.get()
+        tenant_id = tenant_id_var.get()
+        user_id = user_id_var.get()
+    except Exception:
+        request_id = None
+        tenant_id = None
+        user_id = None
+    
+    # Extract traceback
+    traceback_frames = _extract_traceback_frames(exc)
+    traceback_text = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    
+    # Get request body (if available and not too large)
+    request_body = None
+    try:
+        body = await request.body()
+        if len(body) <= 10000:  # 10KB limit
+            request_body = body.decode("utf-8", errors="replace")
+    except Exception:
+        pass
+    
+    # Build headers dict (filter sensitive ones)
+    sensitive_headers = {"authorization", "cookie", "x-api-key", "api-key"}
+    headers = {}
+    for key, value in request.headers.items():
+        if key.lower() in sensitive_headers:
+            headers[key] = "[REDACTED]"
+        else:
+            headers[key] = value
+    
+    # Get exception detail (for HTTPException)
+    exception_detail = None
+    if hasattr(exc, "detail"):
+        exception_detail = str(exc.detail)
+    
+    context = DebugContext(
+        # Error info
+        exception_type=type(exc).__name__,
+        exception_message=str(exc),
+        exception_detail=exception_detail,
+        status_code=status_code,
+        
+        # Traceback
+        traceback_frames=traceback_frames,
+        traceback_text=traceback_text,
+        
+        # Request info
+        request_method=request.method,
+        request_url=str(request.url),
+        request_path=request.url.path,
+        request_headers=headers,
+        request_query_params=dict(request.query_params),
+        request_path_params=dict(request.path_params),
+        request_body=request_body,
+        request_client=f"{request.client.host}:{request.client.port}" if request.client else None,
+        
+        # Context vars
+        request_id=request_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        
+        # Environment
+        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        vidyut_version=__version__,
+        debug_mode=True,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+    
+    return context
+
+
+def render_debug_page(context: DebugContext) -> HTMLResponse:
+    """
+    Render a beautiful dark-mode debug error page.
+    
+    Args:
+        context: The DebugContext with error information.
+    
+    Returns:
+        HTMLResponse with the styled error page.
+    """
+    # Build traceback HTML
+    traceback_html = _build_traceback_html(context.traceback_frames)
+    
+    # Build request info HTML
+    request_html = _build_request_html(context)
+    
+    # Build context vars HTML
+    context_vars_html = _build_context_vars_html(context)
+    
+    # Escape for safe HTML
+    exc_type = html.escape(context.exception_type)
+    exc_message = html.escape(context.exception_message)
+    exc_detail = html.escape(context.exception_detail or "")
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{context.status_code} - {exc_type}</title>
+    <style>
+{_get_debug_css()}
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <header class="error-header">
+            <div class="status-badge status-{_get_status_class(context.status_code)}">{context.status_code}</div>
+            <div class="error-info">
+                <h1 class="error-type">{exc_type}</h1>
+                <p class="error-message">{exc_message}</p>
+                {f'<p class="error-detail">{exc_detail}</p>' if exc_detail and exc_detail != exc_message else ''}
+            </div>
+        </header>
+        
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="traceback">Traceback</button>
+            <button class="tab-btn" data-tab="request">Request</button>
+            <button class="tab-btn" data-tab="context">Context</button>
+            <button class="tab-btn" data-tab="environment">Environment</button>
+        </nav>
+        
+        <div class="tab-content">
+            <section id="traceback" class="tab-pane active">
+                <h2>Traceback <span class="subtitle">(most recent call last)</span></h2>
+                {traceback_html}
+            </section>
+            
+            <section id="request" class="tab-pane">
+                <h2>Request Details</h2>
+                {request_html}
+            </section>
+            
+            <section id="context" class="tab-pane">
+                <h2>Context Variables</h2>
+                {context_vars_html}
+            </section>
+            
+            <section id="environment" class="tab-pane">
+                <h2>Environment</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Python</span>
+                        <span class="info-value">{context.python_version}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Vidyut</span>
+                        <span class="info-value">{context.vidyut_version}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Debug Mode</span>
+                        <span class="info-value">{"Enabled" if context.debug_mode else "Disabled"}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Timestamp</span>
+                        <span class="info-value">{context.timestamp}</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer class="error-footer">
+            <span class="footer-logo">⚡ Vidyut v{context.vidyut_version}</span>
+            <span class="footer-note">Debug mode is enabled. Disable it in production.</span>
+        </footer>
+    </div>
+    
+    <script>
+{_get_debug_js()}
+    </script>
+</body>
+</html>"""
+    
+    return HTMLResponse(content=html_content, status_code=context.status_code)
+
+
+def render_minimal_error_page(
+    status_code: int,
+    message: str = "An error occurred",
+    request_id: Optional[str] = None,
+) -> HTMLResponse:
+    """
+    Render a minimal, production-safe error page.
+    
+    Args:
+        status_code: HTTP status code.
+        message: User-friendly error message.
+        request_id: Optional request ID for support.
+    
+    Returns:
+        HTMLResponse with minimal error page.
+    """
+    message_escaped = html.escape(message)
+    request_id_escaped = html.escape(request_id or "")
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error {status_code}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        .container {{
+            text-align: center;
+            padding: 2rem;
+            max-width: 480px;
+        }}
+        .status {{ font-size: 6rem; font-weight: 700; color: #f85149; }}
+        .message {{ font-size: 1.5rem; margin: 1rem 0; color: #8b949e; }}
+        .request-id {{ font-size: 0.875rem; color: #484f58; margin-top: 2rem; }}
+        .request-id code {{ 
+            background: #161b22; 
+            padding: 0.25rem 0.5rem; 
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status">{status_code}</div>
+        <p class="message">{message_escaped}</p>
+        {f'<p class="request-id">Request ID: <code>{request_id_escaped}</code></p>' if request_id else ''}
+    </div>
+</body>
+</html>"""
+    
+    return HTMLResponse(content=html_content, status_code=status_code)
+
+
+def render_json_error(
+    status_code: int,
+    message: str,
+    error_type: Optional[str] = None,
+    request_id: Optional[str] = None,
+    errors: Optional[list[dict[str, Any]]] = None,
+) -> JSONResponse:
+    """
+    Render a JSON error response for API consumers.
+    
+    Args:
+        status_code: HTTP status code.
+        message: Error message.
+        error_type: Optional error type/code.
+        request_id: Optional request ID.
+        errors: Optional list of detailed errors.
+    
+    Returns:
+        JSONResponse with error details.
+    """
+    content: dict[str, Any] = {
+        "error": {
+            "status": status_code,
+            "message": message,
+        }
+    }
+    
+    if error_type:
+        content["error"]["type"] = error_type
+    
+    if request_id:
+        content["error"]["request_id"] = request_id
+    
+    if errors:
+        content["error"]["errors"] = errors
+    
+    return JSONResponse(content=content, status_code=status_code)
+
+
+class VidyutDebugMiddleware:
+    """
+    Debug middleware that provides beautiful dark-mode error pages.
+    
+    This middleware catches exceptions and renders either:
+    - Rich HTML debug pages in debug mode
+    - Clean JSON or minimal HTML in production
+    
+    Note: This is added as an ASGI middleware to take priority over
+    Starlette's ServerErrorMiddleware when debug=True.
+    """
+    
+    def __init__(self, app: ASGIApp, debug: bool = False) -> None:
+        self.app = app
+        self.debug = debug
+    
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        
+        request = Request(scope, receive, send)
+        
+        try:
+            await self.app(scope, receive, send)
+        except Exception as exc:
+            # Handle the exception with our beautiful error pages
+            response = await self._handle_exception(request, exc)
+            await response(scope, receive, send)
+    
+    async def _handle_exception(self, request: Request, exc: Exception) -> Response:
+        """Handle an exception and return appropriate response."""
+        from fastapi import HTTPException as FastAPIHTTPException
+        from fastapi.exceptions import RequestValidationError
+        from starlette.exceptions import HTTPException as StarletteHTTPException
+        
+        # Determine status code
+        if isinstance(exc, (StarletteHTTPException, FastAPIHTTPException)):
+            status_code = exc.status_code
+        elif isinstance(exc, RequestValidationError):
+            status_code = 422
+        else:
+            status_code = 500
+        
+        # Check content preference
+        wants_html = self._wants_html(request)
+        
+        if self.debug and wants_html:
+            # Debug mode with HTML: rich error page
+            context = await collect_debug_context(request, exc, status_code)
+            return render_debug_page(context)
+        
+        elif isinstance(exc, RequestValidationError):
+            # Validation errors always return JSON
+            errors = [
+                {
+                    "loc": list(err.get("loc", [])),
+                    "msg": err.get("msg", ""),
+                    "type": err.get("type", ""),
+                }
+                for err in exc.errors()
+            ]
+            return render_json_error(
+                422,
+                "Validation error",
+                error_type="validation_error",
+                errors=errors,
+            )
+        
+        elif isinstance(exc, (StarletteHTTPException, FastAPIHTTPException)):
+            # HTTP exceptions
+            detail = str(exc.detail) if hasattr(exc, "detail") and exc.detail else "An error occurred"
+            
+            if wants_html:
+                request_id = self._get_request_id()
+                return render_minimal_error_page(status_code, detail, request_id)
+            else:
+                return render_json_error(
+                    status_code,
+                    detail,
+                    error_type="http_exception",
+                )
+        
+        else:
+            # Generic exceptions
+            if wants_html:
+                request_id = self._get_request_id()
+                return render_minimal_error_page(500, "Internal Server Error", request_id)
+            else:
+                message = str(exc) if self.debug else "Internal Server Error"
+                return render_json_error(500, message, error_type="internal_error")
+    
+    def _wants_html(self, request: Request) -> bool:
+        """Check if client prefers HTML response."""
+        accept = request.headers.get("accept", "")
+        if "application/json" in accept and "text/html" not in accept:
+            return False
+        return "text/html" in accept or "*/*" in accept
+    
+    def _get_request_id(self) -> Optional[str]:
+        """Try to get request ID from context."""
+        try:
+            from vidyut.middleware.context import request_id_var
+            return request_id_var.get()
+        except Exception:
+            return None
+
+
+def _get_status_class(status_code: int) -> str:
+    """Get CSS class based on status code."""
+    if status_code >= 500:
+        return "500"
+    elif status_code >= 400:
+        return "400"
+    else:
+        return "other"
+
+
+def _build_traceback_html(frames: list[dict[str, Any]]) -> str:
+    """Build HTML for traceback frames."""
+    if not frames:
+        return "<p class='no-traceback'>No traceback available</p>"
+    
+    html_parts = ['<div class="traceback-list">']
+    
+    for i, frame in enumerate(frames):
+        is_user_code = not frame.get("is_library", False)
+        frame_class = "traceback-frame user-code" if is_user_code else "traceback-frame library-code"
+        
+        filename = html.escape(frame.get("filename", ""))
+        lineno = frame.get("lineno", 0)
+        name = html.escape(frame.get("name", ""))
+        line = html.escape(frame.get("line", ""))
+        
+        html_parts.append(f'''
+        <div class="{frame_class}" data-expanded="{"true" if i == len(frames) - 1 else "false"}">
+            <div class="frame-header" onclick="toggleFrame(this)">
+                <span class="frame-location">
+                    <span class="frame-file">{filename}</span>
+                    <span class="frame-lineno">:{lineno}</span>
+                    in <span class="frame-func">{name}</span>
+                </span>
+                <span class="frame-toggle">▼</span>
+            </div>
+            <div class="frame-body">
+                <code class="frame-line">{line}</code>
+        ''')
+        
+        # Add context lines if available
+        context_lines = frame.get("context_lines", [])
+        if context_lines:
+            html_parts.append('<div class="context-code"><pre>')
+            for ctx in context_lines:
+                line_num = ctx.get("number", 0)
+                content = html.escape(ctx.get("content", ""))
+                is_error = ctx.get("is_error_line", False)
+                line_class = "line error-line" if is_error else "line"
+                html_parts.append(
+                    f'<span class="{line_class}"><span class="line-num">{line_num}</span>{content}</span>\n'
+                )
+            html_parts.append('</pre></div>')
+        
+        html_parts.append('</div></div>')
+    
+    html_parts.append('</div>')
+    return "".join(html_parts)
+
+
+def _build_request_html(context: DebugContext) -> str:
+    """Build HTML for request details."""
+    parts = [f'''
+        <div class="request-summary">
+            <span class="method method-{context.request_method.lower()}">{context.request_method}</span>
+            <span class="url">{html.escape(context.request_url)}</span>
+        </div>
+    ''']
+    
+    # Path params
+    if context.request_path_params:
+        parts.append('<h3>Path Parameters</h3><table class="info-table">')
+        for key, value in context.request_path_params.items():
+            parts.append(f'<tr><td>{html.escape(str(key))}</td><td>{html.escape(str(value))}</td></tr>')
+        parts.append('</table>')
+    
+    # Query params
+    if context.request_query_params:
+        parts.append('<h3>Query Parameters</h3><table class="info-table">')
+        for key, value in context.request_query_params.items():
+            parts.append(f'<tr><td>{html.escape(str(key))}</td><td>{html.escape(str(value))}</td></tr>')
+        parts.append('</table>')
+    
+    # Headers
+    if context.request_headers:
+        parts.append('<h3>Headers</h3><table class="info-table">')
+        for key, value in sorted(context.request_headers.items()):
+            parts.append(f'<tr><td>{html.escape(key)}</td><td>{html.escape(value)}</td></tr>')
+        parts.append('</table>')
+    
+    # Body
+    if context.request_body:
+        parts.append(f'''
+        <h3>Request Body</h3>
+        <pre class="request-body">{html.escape(context.request_body)}</pre>
+        ''')
+    
+    # Client
+    if context.request_client:
+        parts.append(f'''
+        <h3>Client</h3>
+        <p class="client-info">{html.escape(context.request_client)}</p>
+        ''')
+    
+    return "".join(parts)
+
+
+def _build_context_vars_html(context: DebugContext) -> str:
+    """Build HTML for context variables."""
+    parts = ['<div class="context-grid">']
+    
+    vars_list = [
+        ("Request ID", context.request_id),
+        ("Tenant ID", context.tenant_id),
+        ("User ID", context.user_id),
+    ]
+    
+    for label, value in vars_list:
+        value_display = html.escape(str(value)) if value else "<em>Not set</em>"
+        value_class = "context-value" if value else "context-value not-set"
+        parts.append(f'''
+        <div class="context-item">
+            <span class="context-label">{label}</span>
+            <span class="{value_class}">{value_display}</span>
+        </div>
+        ''')
+    
+    parts.append('</div>')
+    return "".join(parts)
+
+
+def _get_debug_css() -> str:
+    """Get CSS for the debug error page."""
+    return """
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-orange: #d29922;
+            --accent-purple: #a371f7;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .error-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .error-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .status-badge {
+            font-size: 2.5rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .status-500 { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); }
+        .status-400 { background: rgba(210, 153, 34, 0.15); color: var(--accent-orange); }
+        .status-other { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); }
+        
+        .error-info { flex: 1; }
+        .error-type {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .error-message {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            word-break: break-word;
+        }
+        .error-detail {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        
+        /* Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .tab-btn.active { background: var(--bg-secondary); color: var(--accent-blue); }
+        
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        
+        .tab-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+        
+        .tab-content h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .tab-content h2 .subtitle {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+        
+        .tab-content h3 {
+            font-size: 1rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Traceback */
+        .traceback-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        .traceback-frame {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .traceback-frame.user-code {
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .traceback-frame.library-code {
+            opacity: 0.7;
+        }
+        
+        .frame-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .frame-header:hover { background: var(--bg-tertiary); }
+        
+        .frame-location { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 0.875rem; }
+        .frame-file { color: var(--accent-blue); }
+        .frame-lineno { color: var(--accent-purple); }
+        .frame-func { color: var(--accent-green); }
+        .frame-toggle { color: var(--text-muted); transition: transform 0.2s; }
+        
+        .traceback-frame[data-expanded="true"] .frame-toggle { transform: rotate(180deg); }
+        .traceback-frame[data-expanded="false"] .frame-body { display: none; }
+        
+        .frame-body {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+        
+        .frame-line {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.875rem;
+            color: var(--accent-orange);
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+        
+        .context-code {
+            background: var(--bg-primary);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .context-code pre {
+            margin: 0;
+            padding: 0.5rem 0;
+            overflow-x: auto;
+        }
+        
+        .context-code .line {
+            display: block;
+            padding: 0.125rem 1rem;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.8125rem;
+            white-space: pre;
+        }
+        
+        .context-code .line.error-line {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+        }
+        
+        .context-code .line-num {
+            display: inline-block;
+            width: 3rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-right: 1rem;
+            user-select: none;
+        }
+        
+        /* Request */
+        .request-summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .method {
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .method-get { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+        .method-post { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); }
+        .method-put, .method-patch { background: rgba(210, 153, 34, 0.15); color: var(--accent-orange); }
+        .method-delete { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); }
+        
+        .url {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        .info-table td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .info-table td:first-child {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--accent-purple);
+            width: 30%;
+        }
+        
+        .info-table td:last-child {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        
+        .request-body {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.8125rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .client-info {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            color: var(--text-secondary);
+        }
+        
+        /* Context */
+        .context-grid, .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .context-item, .info-item {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .context-label, .info-label {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .context-value, .info-value {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+        }
+        
+        .context-value.not-set {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Footer */
+        .error-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding: 1rem 0;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        .footer-logo { color: var(--accent-blue); }
+        .footer-note { color: var(--accent-orange); }
+        
+        .no-traceback { color: var(--text-muted); font-style: italic; }
+    """
+
+
+def _get_debug_js() -> str:
+    """Get JavaScript for the debug error page."""
+    return """
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Frame toggle
+        function toggleFrame(header) {
+            const frame = header.parentElement;
+            const expanded = frame.dataset.expanded === 'true';
+            frame.dataset.expanded = expanded ? 'false' : 'true';
+        }
+    """
+
+
+def register_debug_exception_handlers(app: "Vidyut") -> None:
+    """
+    Register debug-aware exception handlers on the Vidyut app.
+    
+    This adds the VidyutDebugMiddleware which provides:
+    - Rich HTML error pages with dark theme in debug mode
+    - Clean JSON or minimal HTML in production
+    
+    Args:
+        app: The Vidyut application instance.
+    """
+    is_debug = app._debug or getattr(app, "debug", False)
+    
+    # Add our debug middleware as an ASGI middleware
+    # This wraps the entire app and catches exceptions before
+    # Starlette's ServerErrorMiddleware can handle them
+    app.add_middleware(VidyutDebugMiddleware, debug=is_debug)
+    
+    # Also register exception handlers for cases where middleware
+    # doesn't catch the exception (e.g., inside the app itself)
+    from fastapi.exceptions import RequestValidationError
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+    from fastapi import HTTPException as FastAPIHTTPException
+    
+    # Check if we should use HTML or JSON
+    def _wants_html(request: Request) -> bool:
+        """Check if client prefers HTML response."""
+        accept = request.headers.get("accept", "")
+        # Prefer JSON for API-like requests
+        if "application/json" in accept and "text/html" not in accept:
+            return False
+        # Default to HTML for browser-like requests
+        return "text/html" in accept or "*/*" in accept
+    
+    @app.exception_handler(StarletteHTTPException)
+    async def debug_http_exception_handler(
+        request: Request, 
+        exc: StarletteHTTPException
+    ) -> Response:
+        """Handle HTTP exceptions with debug awareness."""
+        if is_debug and _wants_html(request):
+            context = await collect_debug_context(request, exc, exc.status_code)
+            return render_debug_page(context)
+        elif _wants_html(request):
+            # Production HTML
+            try:
+                from vidyut.middleware.context import request_id_var
+                request_id = request_id_var.get()
+            except Exception:
+                request_id = None
+            
+            return render_minimal_error_page(
+                exc.status_code,
+                str(exc.detail) if exc.detail else "An error occurred",
+                request_id,
+            )
+        else:
+            # JSON response
+            return render_json_error(
+                exc.status_code,
+                str(exc.detail) if exc.detail else "An error occurred",
+                error_type="http_exception",
+            )
+    
+    @app.exception_handler(FastAPIHTTPException)
+    async def debug_fastapi_http_exception_handler(
+        request: Request,
+        exc: FastAPIHTTPException
+    ) -> Response:
+        """Handle FastAPI HTTP exceptions."""
+        if is_debug and _wants_html(request):
+            context = await collect_debug_context(request, exc, exc.status_code)
+            return render_debug_page(context)
+        elif _wants_html(request):
+            try:
+                from vidyut.middleware.context import request_id_var
+                request_id = request_id_var.get()
+            except Exception:
+                request_id = None
+            
+            return render_minimal_error_page(
+                exc.status_code,
+                str(exc.detail) if exc.detail else "An error occurred",
+                request_id,
+            )
+        else:
+            return render_json_error(
+                exc.status_code,
+                str(exc.detail) if exc.detail else "An error occurred",
+                error_type="http_exception",
+            )
+    
+    @app.exception_handler(RequestValidationError)
+    async def debug_validation_exception_handler(
+        request: Request,
+        exc: RequestValidationError
+    ) -> Response:
+        """Handle validation errors with debug awareness."""
+        if is_debug and _wants_html(request):
+            context = await collect_debug_context(request, exc, 422)
+            return render_debug_page(context)
+        else:
+            # Always JSON for validation errors (even in production)
+            errors = [
+                {
+                    "loc": list(err.get("loc", [])),
+                    "msg": err.get("msg", ""),
+                    "type": err.get("type", ""),
+                }
+                for err in exc.errors()
+            ]
+            return render_json_error(
+                422,
+                "Validation error",
+                error_type="validation_error",
+                errors=errors,
+            )

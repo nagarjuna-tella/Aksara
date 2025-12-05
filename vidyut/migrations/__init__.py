@@ -30,6 +30,14 @@ from vidyut.migrations.executor import (
     discover_migrations,
     discover_internal_migrations,
     discover_all_migrations,
+    build_migration_graph,
+    check_migration_conflicts,
+)
+from vidyut.migrations.graph import (
+    MigrationGraph,
+    MigrationNode,
+    find_conflicts,
+    format_conflict_message,
 )
 
 __all__ = [
@@ -41,4 +49,11 @@ __all__ = [
     "discover_migrations",
     "discover_internal_migrations",
     "discover_all_migrations",
+    # v0.3.16: Graph and conflict detection
+    "build_migration_graph",
+    "check_migration_conflicts",
+    "MigrationGraph",
+    "MigrationNode",
+    "find_conflicts",
+    "format_conflict_message",
 ]

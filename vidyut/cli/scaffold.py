@@ -455,9 +455,9 @@ def get_pyproject_template(project_name: str) -> str:
 name = "{project_name}"
 version = "0.1.0"
 description = "A Vidyut-powered async API application"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "vidyut>=0.3.15",
+    "vidyut>=0.3.18",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
     "jinja2>=3.0.0",
@@ -465,14 +465,38 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-asyncio>=0.21.0",
     "httpx>=0.24.0",
+    "black>=24.0.0",
+    "ruff>=0.5.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]
+ignore = []
+src = ["."]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 '''
 
 
@@ -521,6 +545,69 @@ htmlcov/
 
 # Logs
 *.log
+
+# mypy
+.mypy_cache/
+'''
+
+
+def get_precommit_config_template() -> str:
+    """Generate .pre-commit-config.yaml content."""
+    return '''# Vidyut Pre-commit Configuration
+# Install hooks: pre-commit install
+# Run all hooks: vidyut precommit run
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+'''
+
+
+def get_editorconfig_template() -> str:
+    """Generate .editorconfig content."""
+    return '''# EditorConfig - https://editorconfig.org
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.py]
+indent_size = 4
+
+[*.{yaml,yml,json,toml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
 '''
 
 
@@ -556,7 +643,11 @@ def create_project_scaffold(project_name: str, base_path: Path) -> Dict[str, str
         project_path / "migrations" / "__init__.py": get_migrations_init_template(),
         project_path / "README.md": get_readme_template(project_name),
         project_path / "requirements.txt": get_requirements_template(),
+        project_path / "pyproject.toml": get_pyproject_template(project_name),
         project_path / ".gitignore": get_gitignore_template(),
+        # v0.3.18: Dev workflow files
+        project_path / ".pre-commit-config.yaml": get_precommit_config_template(),
+        project_path / ".editorconfig": get_editorconfig_template(),
     }
     
     return files
