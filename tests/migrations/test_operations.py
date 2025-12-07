@@ -236,7 +236,8 @@ class TestCreateTable:
         )
         desc = create.describe()
         assert "users" in desc
-        assert "2" in desc
+        # Only counts user-defined fields (excludes auto fields like id, created_at, updated_at)
+        assert "1" in desc  # email is the only user-defined field
     
     def test_reverse(self):
         create = op.CreateTable(

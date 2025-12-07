@@ -228,19 +228,28 @@ class Vidyut(FastAPI):
         """
         from vidyut.conf import settings
         
-        # Check if auth contrib is available
+        # Check if auth contrib is available (including bcrypt dependency)
+        auth_available = False
+        auth_error = None
         try:
-            from vidyut.contrib import auth  # noqa: F401
+            from vidyut.contrib.auth import User  # noqa: F401
+            # Also verify bcrypt is available
+            from vidyut.contrib.auth.hashing import hash_password  # noqa: F401
             auth_available = True
-        except ImportError:
-            auth_available = False
+        except ImportError as e:
+            auth_error = str(e)
         
         if self.enable_admin is True:
             # Explicit enable: require auth
             if not auth_available:
+                if auth_error and "bcrypt" in auth_error.lower():
+                    raise RuntimeError(
+                        "Vidyut Admin requires bcrypt for password hashing. "
+                        "Install with: pip install vidyut[auth]"
+                    )
                 raise RuntimeError(
-                    "Vidyut Admin requires 'vidyut.contrib.auth' to be installed. "
-                    "Install extra: pip install vidyut[auth] and configure auth."
+                    "Vidyut Admin requires 'vidyut.contrib.auth'. "
+                    "Install with: pip install vidyut[auth]"
                 )
             from vidyut.contrib.admin import include_admin
             include_admin(self)

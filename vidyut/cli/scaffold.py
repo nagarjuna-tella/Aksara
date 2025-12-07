@@ -21,50 +21,44 @@ def get_main_py_template(project_name: str) -> str:
     return f'''"""
 {project_name} - Vidyut Application
 
-This is a Vidyut app (powered by FastAPI under the hood), showcasing:
-
-- Async Postgres ORM
-- ModelViewSet CRUD APIs
-- ModelSerializer-based validation
-- Operation-based migrations
-- AI schema endpoints
-
 Run with:
     vidyut makemigrations --app app.models
     vidyut migrate
+    vidyut createsuperuser  # Optional: create admin user
     vidyut run main:app --reload
 """
 
 from vidyut import Vidyut
-from vidyut.api import include_all_app_viewsets
 from settings import settings
 
 # Import models to register with Vidyut
 from app import models  # noqa: F401
 
-# Import URL configuration (Django-style)
+# Import admin configuration
+from app import admin  # noqa: F401
+
+# Import URL configuration
 from app.urls import register_routes
 
 
-# Create the Vidyut app - database connection is automatic!
+# Create the Vidyut app
 app = Vidyut(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
-    description="Vidyut async API for {project_name}",
-    version=settings.app_version or "0.3.15",
-    # enable_admin=True,  # Uncomment to enable admin in production
+    description="A Vidyut-powered async API",
+    version="0.1.0",
+    debug=settings.debug,
+    # Admin is auto-enabled in debug mode, or set explicitly:
+    # enable_admin=True,
 )
 
 
-# Register all routes from app/urls.py (explicit registration)
+# Register routes from app/urls.py
 register_routes(app)
-
-# Alternative: Auto-register all ViewSets from configured apps (v0.3.15)
-# include_all_app_viewsets(app)  # Registers ViewSets from all apps in settings.apps
 
 
 # Health check endpoint
-@app.get("/health")
+@app.get("/health", tags=["System"])
 async def health_check():
     """Health check endpoint."""
     if app.db:
@@ -72,17 +66,19 @@ async def health_check():
         return {{
             "status": "healthy",
             "database": "connected",
-            "version": settings.app_version or "0.3.15",
-            "debug": settings.debug,
         }}
     return {{"status": "unhealthy", "database": "not configured"}}
 
 
 # =============================================================================
-# Run with:
-#   vidyut makemigrations --app app.models
-#   vidyut migrate
-#   vidyut run main:app --reload
+# Quick Start:
+#   1. Define models in app/models.py
+#   2. Run: vidyut makemigrations --app app.models
+#   3. Run: vidyut migrate
+#   4. Run: vidyut createsuperuser (optional)
+#   5. Run: vidyut run main:app --reload
+#   6. Open: http://localhost:8000/docs (API)
+#   7. Open: http://localhost:8000/admin (Admin - debug mode)
 # =============================================================================
 '''
 
@@ -96,11 +92,8 @@ Vidyut settings with environment variable support.
 Configure via .env file or environment variables.
 """
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # python-dotenv not installed, use environment variables directly
+from dotenv import load_dotenv
+load_dotenv()
 
 from vidyut.conf import Settings as VidyutSettings
 
@@ -109,20 +102,19 @@ class Settings(VidyutSettings):
     """
     Project settings for {project_name}.
 
-    Inherits defaults from VidyutSettings:
-      - database_url (from env: DATABASE_URL)
-      - debug (from env: VIDYUT_DEBUG)
-      - log_level (from env: VIDYUT_LOG_LEVEL)
-      - app_title (from env: VIDYUT_APP_TITLE)
-      - app_version (from env: VIDYUT_APP_VERSION)
-      - migrations_dir (from env: VIDYUT_MIGRATIONS_DIR)
+    Inherits from VidyutSettings which loads from environment:
+      - DATABASE_URL: PostgreSQL connection string
+      - VIDYUT_DEBUG: Enable debug mode (default: false)
+      - VIDYUT_LOG_LEVEL: Logging level (default: INFO)
+      - VIDYUT_APP_TITLE: Application title
+      - VIDYUT_MIGRATIONS_DIR: Migrations directory (default: migrations)
     
-    You can override or extend settings here.
+    Add custom settings here as needed.
     """
     pass
 
 
-# Global settings instance - loads from environment automatically
+# Global settings instance
 settings = Settings()
 '''
 
@@ -130,12 +122,11 @@ settings = Settings()
 def get_env_template(project_name: str) -> str:
     """Generate .env content."""
     return f'''# {project_name} - Environment Configuration
-# Copy this to .env and customize for your environment
 
-# Database connection URL (PostgreSQL via asyncpg)
+# Database (PostgreSQL)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/{project_name}
 
-# Debug mode (enables detailed error messages)
+# Debug mode - enables admin interface and detailed errors
 VIDYUT_DEBUG=true
 
 # Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -143,9 +134,8 @@ VIDYUT_LOG_LEVEL=INFO
 
 # App metadata
 VIDYUT_APP_TITLE={project_name}
-VIDYUT_APP_VERSION=0.3.4
 
-# Migrations directory (relative to project root)
+# Migrations directory
 VIDYUT_MIGRATIONS_DIR=migrations
 '''
 
@@ -154,9 +144,26 @@ def get_app_init_template() -> str:
     """Generate app/__init__.py content."""
     return '''"""
 Application package.
-
-Contains models, views, and serializers.
 """
+'''
+
+
+def get_admin_template(project_name: str) -> str:
+    """Generate app/admin.py content."""
+    return f'''"""
+{project_name} - Admin Configuration
+
+Register your models with the admin interface here.
+"""
+
+from vidyut.contrib.admin import site
+
+# from .models import User, Post
+
+
+# Register models with admin
+# site.register(User)
+# site.register(Post)
 '''
 
 
@@ -166,25 +173,30 @@ def get_models_template(project_name: str) -> str:
 {project_name} - Models
 
 Define your Vidyut ORM models here.
-
-Example:
-    from vidyut import Model, fields
-
-    class User(Model):
-        email = fields.String(max_length=255, unique=True)
-        name = fields.String(max_length=100, nullable=True)
-        is_active = fields.Boolean(default=True)
-
-        class Meta:
-            table_name = "users"
-
-Documentation: https://github.com/nagarjuna-tella/vidyut
 """
 
 from vidyut import Model, fields
 
 
-# Define your models here
+# Example model - uncomment and customize:
+#
+# class User(Model):
+#     email = fields.Email(unique=True)
+#     name = fields.String(max_length=100)
+#     is_active = fields.Boolean(default=True)
+#
+#     class Meta:
+#         table_name = "users"
+#
+#
+# class Post(Model):
+#     title = fields.String(max_length=200)
+#     content = fields.Text()
+#     author = fields.ForeignKey(User, on_delete="CASCADE")
+#     published = fields.Boolean(default=False)
+#
+#     class Meta:
+#         table_name = "posts"
 '''
 
 
@@ -193,28 +205,28 @@ def get_serializers_template(project_name: str) -> str:
     return f'''"""
 {project_name} - Serializers
 
-Define your ModelSerializer classes here for validation and response shaping.
-
-Example:
-    from vidyut import ModelSerializer
-    from .models import User
-
-    class UserSerializer(ModelSerializer):
-        class Meta:
-            model = User
-            fields = ["id", "email", "name", "is_active", "created_at"]
-            read_only_fields = ["id", "created_at"]
-
-Documentation: https://github.com/nagarjuna-tella/vidyut
+Define your ModelSerializer classes for validation and response shaping.
 """
 
 from vidyut import ModelSerializer
 
-# Import your models
-# from .models import User
+# from .models import User, Post
 
 
-# Define your serializers here
+# Example serializers - uncomment and customize:
+#
+# class UserSerializer(ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ["id", "email", "name", "is_active", "created_at"]
+#         read_only_fields = ["id", "created_at"]
+#
+#
+# class PostSerializer(ModelSerializer):
+#     class Meta:
+#         model = Post
+#         fields = ["id", "title", "content", "author_id", "published", "created_at"]
+#         read_only_fields = ["id", "created_at"]
 '''
 
 
@@ -224,41 +236,38 @@ def get_views_template(project_name: str) -> str:
 {project_name} - Views
 
 Define your ViewSets and custom actions here.
-Route registration is in urls.py (Django-style).
-
-Alternative: Use include_all_app_viewsets(app) in main.py to auto-register
-all ViewSets defined in app/api.py modules.
-
-Example:
-    from vidyut import ModelViewSet, action, Request
-    from .models import User
-
-    class UserViewSet(ModelViewSet):
-        model = User
-        prefix = "/api/users"
-        tags = ["Users"]
-
-        @action(detail=True, methods=["post"])
-        async def deactivate(self, pk: str, request: Request):
-            user = await self.model.objects.get(id=pk)
-            user.is_active = False
-            await user.save()
-            return {{"status": "deactivated"}}
-
-Documentation: https://github.com/nagarjuna-tella/vidyut
 """
 
-from vidyut import (
-    Request,
-    ModelViewSet,
-    action,
-)
+from vidyut import ModelViewSet, action, Request
+from vidyut.permissions import IsAuthenticated, IsAdminUser
 
-# Import your models
-# from .models import User
+# from .models import User, Post
+# from .serializers import UserSerializer, PostSerializer
 
 
-# Define your ViewSets here
+# Example ViewSets - uncomment and customize:
+#
+# class UserViewSet(ModelViewSet):
+#     model = User
+#     serializer_class = UserSerializer
+#     prefix = "/api/users"
+#     tags = ["Users"]
+#     permission_classes = [IsAuthenticated]
+#
+#
+# class PostViewSet(ModelViewSet):
+#     model = Post
+#     serializer_class = PostSerializer
+#     prefix = "/api/posts"
+#     tags = ["Posts"]
+#
+#     @action(detail=True, methods=["POST"])
+#     async def publish(self, pk: str, request: Request):
+#         """Publish a post."""
+#         post = await self.model.objects.get(id=pk)
+#         post.published = True
+#         await post.save()
+#         return {{"status": "published", "id": str(post.id)}}
 '''
 
 
@@ -267,40 +276,23 @@ def get_urls_template(project_name: str) -> str:
     return f'''"""
 {project_name} - URL Configuration
 
-Define your URL patterns here (Django-style).
-ViewSets are registered via the `urlpatterns` list.
-
-Example:
-    from .views import UserViewSet, PostViewSet
-
-    urlpatterns = [
-        UserViewSet,
-        PostViewSet,
-    ]
-
-Documentation: https://github.com/nagarjuna-tella/vidyut
+Register your ViewSets here.
 """
 
 from vidyut import include_viewset
 
-# Import your ViewSets
-# from .views import UserViewSet
+# from .views import UserViewSet, PostViewSet
 
 
-# URL Patterns - Add your ViewSets here
+# URL Patterns - list your ViewSets here
 urlpatterns = [
-    # Add your ViewSets here, e.g.:
     # UserViewSet,
+    # PostViewSet,
 ]
 
 
 def register_routes(app):
-    """
-    Register all routes with the Vidyut app.
-    
-    This is called from main.py to wire up all endpoints.
-    """
-    # Register ViewSets from urlpatterns
+    """Register all routes with the Vidyut app."""
     for viewset in urlpatterns:
         include_viewset(app, viewset)
 '''
@@ -325,127 +317,78 @@ A Vidyut-powered async API application.
 
 ## Quick Start
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+# 1. Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
-2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials
-   ```
+# 2. Install dependencies
+pip install -e .
 
-3. **Create database:**
-   ```bash
-   createdb {project_name}
-   ```
+# 3. Configure environment (edit .env with your database URL)
+cp .env.example .env
 
-4. **Create models in `app/models.py`:**
-   ```python
-   from vidyut import Model, fields
+# 4. Create database
+createdb {project_name}
 
-   class User(Model):
-       email = fields.String(max_length=255, unique=True)
-       name = fields.String(max_length=100, nullable=True)
-       is_active = fields.Boolean(default=True)
+# 5. Define your models in app/models.py, then:
+vidyut makemigrations --app app.models
+vidyut migrate
 
-       class Meta:
-           table_name = "users"
-   ```
+# 6. Create admin user (optional)
+vidyut createsuperuser
 
-5. **Run migrations:**
-   ```bash
-   vidyut makemigrations --app app.models
-   vidyut migrate
-   ```
+# 7. Start the server
+vidyut run main:app --reload
+```
 
-6. **Create admin superuser (optional):**
-   ```bash
-   vidyut createsuperuser
-   ```
+## URLs
 
-7. **Start the server:**
-   ```bash
-   vidyut run main:app --reload
-   ```
-
-8. **Open the API docs:**
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-   - Admin (debug mode): http://localhost:8000/admin/
+- **API Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc  
+- **Admin**: http://localhost:8000/admin/ (debug mode)
 
 ## Project Structure
 
 ```
 {project_name}/
 ├── app/
-│   ├── __init__.py
-│   ├── models.py        # Vidyut ORM models
-│   ├── views.py         # ViewSets with custom actions
-│   ├── urls.py          # URL patterns (Django-style)
-│   └── serializers.py   # ModelSerializer classes
+│   ├── models.py        # ORM models
+│   ├── views.py         # ViewSets
+│   ├── serializers.py   # Serializers
+│   ├── urls.py          # Route registration
+│   └── admin.py         # Admin registration
 ├── migrations/          # Database migrations
-├── settings.py          # VidyutSettings configuration
-├── main.py              # Vidyut app entry point
-├── .env                 # Environment variables
-└── requirements.txt     # Python dependencies
+├── settings.py          # Configuration
+├── main.py              # App entry point
+└── .env                 # Environment variables
 ```
 
-## Admin Interface
+## CLI Commands
 
-Vidyut includes a Django-style admin interface (v0.3.15+).
-
-**Enable admin:**
-- Auto-enabled in debug mode (`VIDYUT_DEBUG=true`)
-- Or set `enable_admin=True` in `Vidyut()` constructor
-
-**Register models:**
-```python
-from vidyut.contrib.admin import site
-from app.models import User
-
-site.register(User)
-```
-
-**Create superuser:**
 ```bash
-vidyut createsuperuser --email admin@example.com
+vidyut makemigrations --app app.models  # Generate migrations
+vidyut migrate                           # Apply migrations
+vidyut createsuperuser                   # Create admin user
+vidyut run main:app --reload            # Run dev server
+vidyut shell                             # Interactive shell
+vidyut format                            # Format code (black)
+vidyut lint                              # Lint code (ruff)
 ```
 
-## Example Endpoints
+## Built with ⚡ Vidyut
 
-Once you define your models and ViewSets:
-
-### Users API (example)
-- `GET /api/users/` - List users (paginated)
-- `POST /api/users/` - Create user
-- `GET /api/users/{{id}}` - Get user
-- `PATCH /api/users/{{id}}` - Update user
-- `DELETE /api/users/{{id}}` - Delete user
-
-### Health Check
-- `GET /health` - Health check endpoint
-
-## Built with Vidyut
-
-⚡ [Vidyut](https://github.com/nagarjuna-tella/vidyut) - Async Postgres ORM for FastAPI
+https://github.com/nagarjuna-tella/vidyut
 '''
 
 
 def get_requirements_template() -> str:
     """Generate requirements.txt content."""
-    return '''# Vidyut ORM (includes FastAPI, asyncpg, pydantic)
-vidyut>=0.3.15
+    return '''# Core
+-e .
 
 # Server
 uvicorn[standard]>=0.24.0
-
-# Environment variables
-python-dotenv>=1.0.0
-
-# Admin interface templates
-jinja2>=3.0.0
 '''
 
 
@@ -457,10 +400,9 @@ version = "0.1.0"
 description = "A Vidyut-powered async API application"
 requires-python = ">=3.11"
 dependencies = [
-    "vidyut>=0.3.18",
+    "vidyut>=0.3.20",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
-    "jinja2>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -640,12 +582,12 @@ def create_project_scaffold(project_name: str, base_path: Path) -> Dict[str, str
         project_path / "app" / "serializers.py": get_serializers_template(project_name),
         project_path / "app" / "views.py": get_views_template(project_name),
         project_path / "app" / "urls.py": get_urls_template(project_name),
+        project_path / "app" / "admin.py": get_admin_template(project_name),
         project_path / "migrations" / "__init__.py": get_migrations_init_template(),
         project_path / "README.md": get_readme_template(project_name),
         project_path / "requirements.txt": get_requirements_template(),
         project_path / "pyproject.toml": get_pyproject_template(project_name),
         project_path / ".gitignore": get_gitignore_template(),
-        # v0.3.18: Dev workflow files
         project_path / ".pre-commit-config.yaml": get_precommit_config_template(),
         project_path / ".editorconfig": get_editorconfig_template(),
     }

@@ -779,7 +779,10 @@ class CreateTable(Operation):
         return DropTable(name=self.name)
     
     def describe(self) -> str:
-        return f"Create table '{self.name}' with {len(self.fields)} field(s)"
+        # Count only user-defined fields (exclude auto fields: id, created_at, updated_at)
+        auto_fields = {"id", "created_at", "updated_at"}
+        user_field_count = sum(1 for name, _ in self.fields if name not in auto_fields)
+        return f"Create table '{self.name}' with {user_field_count} field(s)"
     
     def __repr__(self) -> str:
         return f"CreateTable(name='{self.name}')"
