@@ -501,7 +501,7 @@ class OneToOneField(FieldOp):
         return (
             f"CONSTRAINT fk_{column_name} "
             f"FOREIGN KEY ({column_name}) "
-            f"REFERENCES {self.to_table}({self.to_column}) "
+            f'REFERENCES "{self.to_table}"({self.to_column}) '
             f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
         )
     
@@ -597,7 +597,7 @@ class ForeignKeyField(FieldOp):
         return (
             f"CONSTRAINT fk_{column_name} "
             f"FOREIGN KEY ({column_name}) "
-            f"REFERENCES {self.to_table}({self.to_column}) "
+            f'REFERENCES "{self.to_table}"({self.to_column}) '
             f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
         )
     

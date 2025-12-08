@@ -368,7 +368,7 @@ class TestForeignKey:
         fk.name = "author"
         constraint = fk.get_constraint_definition()
         assert "FOREIGN KEY (author_id)" in constraint
-        assert "REFERENCES users(id)" in constraint
+        assert 'REFERENCES "users"(id)' in constraint
         assert "ON DELETE CASCADE" in constraint
     
     def test_model_with_foreign_key_sql(self):

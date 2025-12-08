@@ -1128,7 +1128,7 @@ class ForeignKey(Field):
         col_name = self.db_column_name
         constraint_name = f"fk_{col_name}"
         
-        return f"CONSTRAINT {constraint_name} FOREIGN KEY ({col_name}) REFERENCES {target_table}(id) ON DELETE {self.on_delete}"
+        return f'CONSTRAINT {constraint_name} FOREIGN KEY ({col_name}) REFERENCES "{target_table}"(id) ON DELETE {self.on_delete}'
     
     def to_python(self, value: Any) -> Optional[uuid_lib.UUID]:
         """Convert database value to Python UUID."""
@@ -1397,15 +1397,15 @@ class ManyToMany(Field):
         source_col = self.source_column
         target_col = self.target_column
         
-        return f"""CREATE TABLE IF NOT EXISTS {join_table} (
+        return f'''CREATE TABLE IF NOT EXISTS "{join_table}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     {source_col} UUID NOT NULL,
     {target_col} UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_{join_table}_{source_col} FOREIGN KEY ({source_col}) REFERENCES {source_table}(id) ON DELETE CASCADE,
-    CONSTRAINT fk_{join_table}_{target_col} FOREIGN KEY ({target_col}) REFERENCES {target_table}(id) ON DELETE CASCADE,
+    CONSTRAINT fk_{join_table}_{source_col} FOREIGN KEY ({source_col}) REFERENCES "{source_table}"(id) ON DELETE CASCADE,
+    CONSTRAINT fk_{join_table}_{target_col} FOREIGN KEY ({target_col}) REFERENCES "{target_table}"(id) ON DELETE CASCADE,
     CONSTRAINT uq_{join_table} UNIQUE ({source_col}, {target_col})
-);"""
+);'''
     
     def to_python(self, value: Any) -> Any:
         """ManyToMany returns a manager, not a direct value."""
