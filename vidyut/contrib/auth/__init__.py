@@ -34,6 +34,12 @@ from vidyut.contrib.auth.hashing import (
     verify_password,
     make_random_password,
 )
+from vidyut.contrib.auth.session import (
+    authenticate,
+    create_session_token,
+    get_user_from_session_token,
+    invalidate_session_token,
+)
 
 __all__ = [
     "AbstractUser",
@@ -42,6 +48,10 @@ __all__ = [
     "hash_password",
     "verify_password",
     "make_random_password",
+    "authenticate",
+    "create_session_token",
+    "get_user_from_session_token",
+    "invalidate_session_token",
 ]
 
 # Conditional FastAPI imports

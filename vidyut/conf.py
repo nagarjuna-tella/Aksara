@@ -80,6 +80,14 @@ class Settings:
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     
+    # v0.3.20: Django-style INSTALLED_APPS
+    # These apps are auto-loaded on startup
+    installed_apps: List[str] = field(default_factory=lambda: [
+        "vidyut.contrib.auth",   # User authentication (creates vidyut_users table)
+        "vidyut.contrib.admin",  # Admin interface
+        "app",                   # Default user app
+    ])
+    
     # Internal tracking
     _configured: bool = field(default=False, repr=False)
     

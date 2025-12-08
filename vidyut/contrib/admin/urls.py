@@ -8,6 +8,8 @@ from fastapi import APIRouter
 
 from vidyut.contrib.admin.views import (
     admin_index,
+    admin_login,
+    admin_logout,
     app_index,
     model_list,
     model_add,
@@ -17,6 +19,21 @@ from vidyut.contrib.admin.views import (
 
 # Create the admin router
 router = APIRouter(tags=["Admin"])
+
+# Auth routes (must be before the catch-all routes)
+router.add_api_route(
+    "/login/",
+    admin_login,
+    methods=["GET", "POST"],
+    name="admin:login",
+)
+
+router.add_api_route(
+    "/logout/",
+    admin_logout,
+    methods=["GET", "POST"],
+    name="admin:logout",
+)
 
 # Index routes
 router.add_api_route(

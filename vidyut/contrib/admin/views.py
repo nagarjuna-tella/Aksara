@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from urllib.parse import urlencode
 
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -24,20 +25,48 @@ _templates_dir = _package_dir / "templates"
 templates = Jinja2Templates(directory=str(_templates_dir))
 
 
-def get_admin_user(request: Request):
+def get_admin_user(request: Request, redirect_to_login: bool = True):
     """
     Get the authenticated admin user from request state.
     
+    Args:
+        request: The FastAPI request
+        redirect_to_login: If True, redirect to login page instead of raising 403
+    
+    Returns:
+        User object if authenticated, None otherwise
+        
     Raises:
-        HTTPException: 403 if user is not staff
+        HTTPException: 403 if user is not staff and redirect_to_login is False
     """
     user = getattr(request.state, "user", None)
-    if not (user and getattr(user, "is_staff", False)):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access forbidden. Staff access required.",
-        )
-    return user
+    if user and getattr(user, "is_staff", False):
+        return user
+    
+    if redirect_to_login:
+        return None  # Will trigger redirect in view
+    
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admin access forbidden. Staff access required.",
+    )
+
+
+def require_admin_user(request: Request):
+    """
+    Get the authenticated admin user, redirecting to login if not authenticated.
+    
+    Returns a tuple of (user, redirect_response).
+    If user is authenticated, returns (user, None).
+    If user is not authenticated, returns (None, RedirectResponse).
+    """
+    user = get_admin_user(request, redirect_to_login=True)
+    if user is None:
+        # Build login URL with next parameter
+        next_url = str(request.url)
+        login_url = str(request.url_for("admin:login")) + "?" + urlencode({"next": next_url})
+        return None, RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
+    return user, None
 
 
 def _get_model_and_admin(
@@ -94,7 +123,10 @@ async def admin_index(request: Request) -> HTMLResponse:
     """
     from vidyut.contrib.admin import site
     
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
+    
     settings = _get_settings()
     
     # Group models by app_label
@@ -127,7 +159,9 @@ async def app_index(request: Request, app_label: str) -> HTMLResponse:
     """
     from vidyut.contrib.admin import site
     
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
     
     # Find all models for this app
     app_models: List[Type["Model"]] = []
@@ -167,7 +201,9 @@ async def model_list(
     
     Route: GET /admin/{app_label}/{model_name}/
     """
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     if not model_admin.has_view_permission(request):
@@ -213,7 +249,9 @@ async def model_add(
     
     Route: GET, POST /admin/{app_label}/{model_name}/add/
     """
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     if not model_admin.has_add_permission(request):
@@ -283,7 +321,9 @@ async def model_change(
     
     Route: GET, POST /admin/{app_label}/{model_name}/{pk}/change/
     """
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     # Get the object
@@ -368,7 +408,9 @@ async def model_delete(
     
     Route: POST /admin/{app_label}/{model_name}/{pk}/delete/
     """
-    user = get_admin_user(request)
+    user, redirect = require_admin_user(request)
+    if redirect:
+        return redirect
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     # Get the object
@@ -504,3 +546,113 @@ def _get_fields_info(
         fields_info.append(field_info)
     
     return fields_info
+
+
+# -----------------------------------------------------------------------------
+# Login View: /admin/login/
+# -----------------------------------------------------------------------------
+
+async def admin_login(request: Request) -> HTMLResponse:
+    """
+    Admin login page.
+    
+    Route: GET, POST /admin/login/
+    """
+    settings = _get_settings()
+    error = None
+    username = ""
+    next_url = request.query_params.get("next", "/admin/")
+    
+    # Check if user is already logged in
+    user = getattr(request.state, "user", None)
+    if user and getattr(user, "is_staff", False):
+        return RedirectResponse(url=next_url, status_code=status.HTTP_302_FOUND)
+    
+    if request.method == "POST":
+        form_data = await request.form()
+        username = form_data.get("username", "")
+        password = form_data.get("password", "")
+        next_url = form_data.get("next", "/admin/")
+        
+        if username and password:
+            # Try to authenticate
+            try:
+                from vidyut.contrib.auth import authenticate
+                
+                user = await authenticate(
+                    request.app.db,
+                    username=username,
+                    password=password,
+                )
+                
+                if user:
+                    if not getattr(user, "is_staff", False):
+                        error = "You don't have permission to access the admin. Staff access required."
+                    else:
+                        # Create session token
+                        from vidyut.contrib.auth import create_session_token
+                        
+                        token = await create_session_token(request.app.db, user)
+                        
+                        # Set cookie and redirect
+                        response = RedirectResponse(
+                            url=next_url,
+                            status_code=status.HTTP_302_FOUND,
+                        )
+                        response.set_cookie(
+                            key="session_token",
+                            value=token,
+                            httponly=True,
+                            secure=not settings.debug,
+                            samesite="lax",
+                            max_age=60 * 60 * 24 * 7,  # 7 days
+                        )
+                        return response
+                else:
+                    error = "Invalid username or password."
+            except ImportError:
+                error = "Authentication module not configured. Please set up vidyut.contrib.auth."
+            except Exception as e:
+                error = f"Login failed: {str(e)}"
+        else:
+            error = "Please enter both username and password."
+    
+    return templates.TemplateResponse(
+        request,
+        "admin/login.html",
+        {
+            "error": error,
+            "username": username,
+            "next": next_url,
+            "site_name": "Vidyut Admin",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# Logout View: /admin/logout/
+# -----------------------------------------------------------------------------
+
+async def admin_logout(request: Request) -> RedirectResponse:
+    """
+    Admin logout - clears session and redirects to login.
+    
+    Route: GET, POST /admin/logout/
+    """
+    # Try to invalidate session in database
+    try:
+        token = request.cookies.get("session_token")
+        if token and request.app.db:
+            from vidyut.contrib.auth import invalidate_session_token
+            await invalidate_session_token(request.app.db, token)
+    except Exception:
+        pass  # Session cleanup is best-effort
+    
+    # Clear cookie and redirect to login
+    response = RedirectResponse(
+        url=str(request.url_for("admin:login")),
+        status_code=status.HTTP_302_FOUND,
+    )
+    response.delete_cookie(key="session_token")
+    
+    return response

@@ -28,14 +28,45 @@ Run with:
     vidyut run main:app --reload
 """
 
+import importlib
 from vidyut import Vidyut
-from settings import settings
+from settings import settings, INSTALLED_APPS
 
-# Import models to register with Vidyut
-from app import models  # noqa: F401
 
-# Import admin configuration
-from app import admin  # noqa: F401
+def load_installed_apps():
+    """
+    Load all installed apps from INSTALLED_APPS.
+    
+    This imports each app module, which triggers:
+    - Model registration (from models.py)
+    - Admin registration (from admin.py)  
+    - Any other app initialization
+    """
+    for app_path in INSTALLED_APPS:
+        try:
+            # Import the app module
+            importlib.import_module(app_path)
+            
+            # Try to import models submodule
+            try:
+                importlib.import_module(f"{{app_path}}.models")
+            except ImportError:
+                pass
+            
+            # Try to import admin submodule
+            try:
+                importlib.import_module(f"{{app_path}}.admin")
+            except ImportError:
+                pass
+                
+        except ImportError as e:
+            # Skip vidyut built-in apps if not needed
+            if not app_path.startswith("vidyut."):
+                print(f"Warning: Could not load app '{{app_path}}': {{e}}")
+
+
+# Load all installed apps
+load_installed_apps()
 
 # Import URL configuration
 from app.urls import register_routes
@@ -98,6 +129,30 @@ load_dotenv()
 from vidyut.conf import Settings as VidyutSettings
 
 
+# =============================================================================
+# Installed Apps
+# =============================================================================
+# List of app modules to load. Each app can contain:
+#   - models.py: Database models
+#   - views.py: ViewSets and API endpoints
+#   - admin.py: Admin interface registrations
+#
+# Format: "app_module_path" (e.g., "app", "myapp.blog", "myapp.users")
+
+INSTALLED_APPS = [
+    # Vidyut built-in apps
+    "vidyut.contrib.auth",      # User authentication & sessions
+    "vidyut.contrib.admin",     # Admin interface
+    
+    # Your apps
+    "app",                      # Default app created by startproject
+]
+
+
+# =============================================================================
+# Settings Class
+# =============================================================================
+
 class Settings(VidyutSettings):
     """
     Project settings for {project_name}.
@@ -111,7 +166,9 @@ class Settings(VidyutSettings):
     
     Add custom settings here as needed.
     """
-    pass
+    
+    # Reference to installed apps (can be overridden)
+    installed_apps: list = INSTALLED_APPS
 
 
 # Global settings instance

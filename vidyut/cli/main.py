@@ -923,6 +923,37 @@ def createsuperuser(database_url: Optional[str], email: str, password: str):
         try:
             await db.connect()
             
+            # Check if vidyut_users table exists, create if not
+            table_exists = await db.fetchval("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'vidyut_users'
+                )
+            """)
+            
+            if not table_exists:
+                click.echo("  📦 Creating auth tables...")
+                # Create the vidyut_users table
+                await db.execute("""
+                    CREATE TABLE IF NOT EXISTS vidyut_users (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        hashed_password VARCHAR(255) NOT NULL,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        is_staff BOOLEAN DEFAULT FALSE,
+                        is_superuser BOOLEAN DEFAULT FALSE,
+                        metadata JSONB DEFAULT '{}',
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
+                # Create index on email
+                await db.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_vidyut_users_email 
+                    ON vidyut_users(email)
+                """)
+                click.echo("  \033[32m✓\033[0m Auth tables created.")
+            
             # Check if user already exists
             existing = await User.objects.get_by_email(email)
             if existing:

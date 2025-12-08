@@ -58,10 +58,11 @@ class TestScaffoldTemplates:
         assert "from app.urls import register_routes" in content
         assert "register_routes(app)" in content
     
-    def test_main_py_imports_admin(self):
-        """Main.py should import admin configuration."""
+    def test_main_py_loads_installed_apps(self):
+        """Main.py should load apps from INSTALLED_APPS."""
         content = get_main_py_template("testproject")
-        assert "from app import admin" in content
+        assert "INSTALLED_APPS" in content
+        assert "load_installed_apps" in content
     
     def test_settings_py_template(self):
         """Settings.py should extend VidyutSettings."""
@@ -70,6 +71,15 @@ class TestScaffoldTemplates:
         assert "from vidyut.conf import Settings as VidyutSettings" in content
         assert "class Settings(VidyutSettings):" in content
         assert "settings = Settings()" in content
+    
+    def test_settings_has_installed_apps(self):
+        """Settings.py should have Django-style INSTALLED_APPS."""
+        content = get_settings_py_template("testproject")
+        
+        assert "INSTALLED_APPS = [" in content
+        assert '"vidyut.contrib.auth"' in content
+        assert '"vidyut.contrib.admin"' in content
+        assert '"app"' in content
     
     def test_models_template_has_commented_example(self):
         """Models.py should have commented example code."""

@@ -2,8 +2,9 @@
 Tests for admin view permissions (v0.3.15).
 
 Tests that:
-- Non-staff users get 403 on admin routes
+- Non-staff users are redirected to login
 - Staff users can access admin routes
+- Login page is accessible without auth
 - Permission checks work for CRUD operations
 """
 
@@ -16,8 +17,8 @@ from vidyut import Model, fields, Vidyut
 from vidyut.registry import ModelRegistry
 
 
-class TestAdminPermissions:
-    """Tests for admin permission checks."""
+class TestAdminLogin:
+    """Tests for admin login functionality."""
     
     def setup_method(self):
         """Clear registries before each test."""
@@ -25,8 +26,8 @@ class TestAdminPermissions:
         from vidyut.contrib.admin import site
         site.clear()
     
-    def test_admin_index_requires_staff(self):
-        """Test that admin index returns 403 without staff user."""
+    def test_login_page_accessible_without_auth(self):
+        """Test that login page is accessible without authentication."""
         from vidyut.contrib.admin import site
         
         class TestModel(Model):
@@ -45,9 +46,71 @@ class TestAdminPermissions:
         
         client = TestClient(app, raise_server_exceptions=False)
         
-        # No user set - should get 403
+        # Login page should be accessible without auth
+        response = client.get("/admin/login/")
+        assert response.status_code == 200
+        assert "Sign in" in response.text or "Login" in response.text
+    
+    def test_login_page_has_form(self):
+        """Test that login page has the login form."""
+        from vidyut.contrib.admin import site
+        
+        class TestModel(Model):
+            name = fields.String()
+            
+            class Meta:
+                app_label = "test"
+        
+        site.register(TestModel)
+        
+        app = Vidyut(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        
+        client = TestClient(app, raise_server_exceptions=False)
+        
+        response = client.get("/admin/login/")
+        assert response.status_code == 200
+        assert 'name="username"' in response.text
+        assert 'name="password"' in response.text
+        assert 'type="submit"' in response.text or 'Sign In' in response.text
+
+
+class TestAdminPermissions:
+    """Tests for admin permission checks."""
+    
+    def setup_method(self):
+        """Clear registries before each test."""
+        ModelRegistry.clear()
+        from vidyut.contrib.admin import site
+        site.clear()
+    
+    def test_admin_index_requires_staff(self):
+        """Test that admin index redirects to login without staff user."""
+        from vidyut.contrib.admin import site
+        
+        class TestModel(Model):
+            name = fields.String()
+            
+            class Meta:
+                app_label = "test"
+        
+        site.register(TestModel)
+        
+        app = Vidyut(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        
+        client = TestClient(app, raise_server_exceptions=False, follow_redirects=False)
+        
+        # No user set - should redirect to login
         response = client.get("/admin/")
-        assert response.status_code == 403
+        assert response.status_code == 302
+        assert "/admin/login" in response.headers.get("location", "")
     
     def test_admin_index_accessible_for_staff(self):
         """Test that admin index is accessible for staff user."""
@@ -88,7 +151,7 @@ class TestAdminPermissions:
         assert "Vidyut Admin" in response.text
     
     def test_model_list_requires_staff(self):
-        """Test that model list view requires staff user."""
+        """Test that model list view redirects to login without staff user."""
         from vidyut.contrib.admin import site
         
         class Book(Model):
@@ -105,14 +168,15 @@ class TestAdminPermissions:
             auto_discover_views=False,
         )
         
-        client = TestClient(app, raise_server_exceptions=False)
+        client = TestClient(app, raise_server_exceptions=False, follow_redirects=False)
         
-        # No user - should get 403
+        # No user - should redirect to login
         response = client.get("/admin/library/book/")
-        assert response.status_code == 403
+        assert response.status_code == 302
+        assert "/admin/login" in response.headers.get("location", "")
     
     def test_non_staff_user_denied(self):
-        """Test that non-staff users are denied access."""
+        """Test that non-staff users are redirected to login."""
         from vidyut.contrib.admin import site
         from starlette.middleware.base import BaseHTTPMiddleware
         
@@ -142,11 +206,12 @@ class TestAdminPermissions:
         
         app.add_middleware(MockUserMiddleware)
         
-        client = TestClient(app, raise_server_exceptions=False)
+        client = TestClient(app, raise_server_exceptions=False, follow_redirects=False)
         
-        # Non-staff user should get 403
+        # Non-staff user should be redirected to login
         response = client.get("/admin/")
-        assert response.status_code == 403
+        assert response.status_code == 302
+        assert "/admin/login" in response.headers.get("location", "")
 
 
 class TestModelAdminPermissions:
