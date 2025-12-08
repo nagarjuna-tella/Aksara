@@ -47,6 +47,36 @@
                     {% if field.readonly %}readonly{% endif %}
                     {% if field.required %}required{% endif %}
                 >{{ field.value }}</textarea>
+            {% elif field.type == "select" %}
+                <select
+                    id="{{ field.name }}"
+                    name="{{ field.name }}"
+                    class="form-control"
+                    {% if field.readonly %}disabled{% endif %}
+                    {% if field.required %}required{% endif %}
+                >
+                    <option value="">---------</option>
+                    {% for choice_value, choice_label in field.choices %}
+                    <option value="{{ choice_value }}" {% if field.value == choice_value %}selected{% endif %}>
+                        {{ choice_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            {% elif field.type == "multiselect" %}
+                <select
+                    id="{{ field.name }}"
+                    name="{{ field.name }}"
+                    class="form-control multiselect"
+                    multiple
+                    {% if field.readonly %}disabled{% endif %}
+                >
+                    {% for choice_value, choice_label in field.choices %}
+                    <option value="{{ choice_value }}" {% if choice_value in field.value %}selected{% endif %}>
+                        {{ choice_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="form-help">Hold Ctrl/Cmd to select multiple items</small>
             {% else %}
                 <input 
                     type="{{ field.type }}" 

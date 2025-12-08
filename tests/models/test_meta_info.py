@@ -48,11 +48,12 @@ class TestModelMetaInfo:
         assert CustomModel.meta.table_name == "my_custom_table"
     
     def test_meta_app_label(self):
-        """Test that meta.app_label returns the value from Meta class."""
+        """Test that meta.app_label returns the value from Meta class or auto-detects."""
         class NoAppLabel(Model):
             name = fields.String()
         
-        assert NoAppLabel.meta.app_label is None
+        # Auto-detects from module path (test_meta_info module)
+        assert NoAppLabel.meta.app_label == "test_meta_info"
         
         class WithAppLabel(Model):
             name = fields.String()
@@ -60,6 +61,7 @@ class TestModelMetaInfo:
             class Meta:
                 app_label = "myapp"
         
+        # Explicit app_label takes precedence
         assert WithAppLabel.meta.app_label == "myapp"
     
     def test_meta_fields(self):

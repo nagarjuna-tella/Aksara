@@ -71,6 +71,24 @@
         .admin-user {
             color: var(--text-muted);
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .admin-user .logout-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.25rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+        
+        .admin-user .logout-link:hover {
+            color: var(--text);
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
         }
         
         /* Breadcrumb */
@@ -433,6 +451,64 @@
             resize: vertical;
         }
         
+        /* Datetime inputs */
+        input[type="datetime-local"],
+        input[type="date"],
+        input[type="time"] {
+            color-scheme: dark;
+        }
+        
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        
+        /* Select dropdowns */
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+            cursor: pointer;
+        }
+        
+        select.form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        select.form-control option {
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 0.5rem;
+        }
+        
+        /* Multi-select */
+        select.form-control.multiselect {
+            min-height: 120px;
+            background-image: none;
+            padding-right: 0.875rem;
+        }
+        
+        select.form-control.multiselect option {
+            padding: 0.5rem;
+        }
+        
+        select.form-control.multiselect option:checked {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .form-help {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
         input[type="checkbox"] {
             width: 20px;
             height: 20px;
@@ -473,11 +549,43 @@
             text-decoration: none;
         }
         
+        /* List Header */
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
         /* Actions */
         .actions {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
+        }
+        
+        /* Search Form */
+        .search-form {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .search-input {
+            width: 250px;
+        }
+        
+        .search-results-info {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Small buttons */
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
         }
         
         /* Debug badge */
@@ -520,7 +628,8 @@
         </div>
         <div class="admin-user">
             {% if user %}
-                {{ user.email or user.id }}
+                <span>{{ user.email or user.id }}</span>
+                <a href="{{ request.url_for('admin:logout') }}" class="logout-link">Logout</a>
             {% endif %}
         </div>
     </header>

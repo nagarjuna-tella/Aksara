@@ -183,8 +183,8 @@ class TestAdminSiteRegistration:
         assert Post in app_list["blog"]
         assert Comment in app_list["blog"]
     
-    def test_model_without_app_label_uses_default(self):
-        """Test that models without app_label use 'default'."""
+    def test_model_without_app_label_auto_detects_from_module(self):
+        """Test that models without app_label auto-detect from module path."""
         from vidyut.contrib.admin import site
         
         class NoLabel(Model):
@@ -193,11 +193,12 @@ class TestAdminSiteRegistration:
         site.register(NoLabel)
         
         app_list = site.get_app_list()
-        assert "default" in app_list
-        assert NoLabel in app_list["default"]
+        # Should auto-detect "tests" from the module path tests.admin.test_...
+        assert "tests" in app_list
+        assert NoLabel in app_list["tests"]
         
         # Also test lookup
-        found = site.get_model_by_name("default", "NoLabel")
+        found = site.get_model_by_name("tests", "NoLabel")
         assert found is NoLabel
     
     def test_clear_site(self):

@@ -205,6 +205,9 @@ class ModelAdmin:
         """
         return self.readonly_fields or []
     
+    # Fields that are always excluded from forms (auto-managed by the ORM)
+    AUTO_EXCLUDE_FIELDS = {"created_at", "updated_at"}
+    
     def get_form_fields(
         self,
         request: "Request",
@@ -212,6 +215,11 @@ class ModelAdmin:
     ) -> List[str]:
         """
         Get fields to show in add/change forms.
+        
+        By default, excludes:
+        - Primary key fields
+        - Auto-managed timestamp fields (created_at, updated_at)
+        - Readonly fields
         
         Args:
             request: The FastAPI Request object
@@ -230,10 +238,18 @@ class ModelAdmin:
             # Skip primary key
             if getattr(field, "primary_key", False):
                 continue
+            # Skip auto-managed timestamp fields
+            if field.name in self.AUTO_EXCLUDE_FIELDS:
+                continue
             # Skip readonly fields
             if field.name in readonly:
                 continue
             fields.append(field.name)
+        
+        # Also include ManyToMany fields
+        for m2m_name in self.model.meta.many_to_many.keys():
+            if m2m_name not in readonly:
+                fields.append(m2m_name)
         
         return fields
     
@@ -247,6 +263,10 @@ class ModelAdmin:
         Returns:
             HTML input type string
         """
+        # Check if it's a ManyToMany field first
+        if field_name in self.model.meta.many_to_many:
+            return "multiselect"
+        
         field = self.model.meta.get_field(field_name)
         if not field:
             return "text"
@@ -265,9 +285,76 @@ class ModelAdmin:
             "Time": "time",
             "Text": "textarea",
             "JSON": "textarea",
+            "ForeignKey": "select",
         }
         
         return type_map.get(field_type, "text")
+    
+    async def get_field_choices(
+        self,
+        field_name: str,
+        request: "Request",
+    ) -> List[tuple]:
+        """
+        Get choices for a ForeignKey or ManyToMany field.
+        
+        Returns list of (value, label) tuples for the select dropdown.
+        
+        Args:
+            field_name: Name of the FK or M2M field
+            request: The FastAPI Request object
+            
+        Returns:
+            List of (id, display_string) tuples
+        """
+        from vidyut.fields import ForeignKey, ManyToMany
+        
+        # Check for ManyToMany field first
+        m2m_fields = self.model.meta.many_to_many
+        if field_name in m2m_fields:
+            m2m_field = m2m_fields[field_name]
+            related_model = m2m_field.to_model
+            objects = await related_model.objects.all()
+            return [(str(obj.id), self._get_object_display(obj)) for obj in objects]
+        
+        # Check for ForeignKey field
+        field = self.model.meta.get_field(field_name)
+        if not field or not isinstance(field, ForeignKey):
+            return []
+        
+        # Get the related model
+        related_model = field.to_model
+        
+        # Fetch all related objects
+        objects = await related_model.objects.all()
+        
+        choices = []
+        for obj in objects:
+            # Try to get a good display string
+            label = self._get_object_display(obj)
+            choices.append((str(obj.id), label))
+        
+        return choices
+    
+    def _get_object_display(self, obj: "Model") -> str:
+        """
+        Get a display string for a model instance.
+        
+        Tries __str__, then common field names, then falls back to ID.
+        """
+        # Try __str__ if it's been customized
+        str_repr = str(obj)
+        if str_repr and not str_repr.startswith("<"):
+            return str_repr
+        
+        # Try common display fields
+        for attr in ["name", "title", "email", "username", "label", "description"]:
+            val = getattr(obj, attr, None)
+            if val:
+                return str(val)
+        
+        # Fall back to ID
+        return str(obj.id)
     
     # -------------------------------------------------------------------------
     # Save / Delete Hooks
@@ -291,9 +378,39 @@ class ModelAdmin:
             form_data: Form data dict
             is_created: True if this is a new object
         """
+        m2m_fields = self.model.meta.many_to_many
+        m2m_data = {}
+        
+        # Separate M2M data from regular field data
         for name, value in form_data.items():
-            setattr(obj, name, value)
+            if name in m2m_fields:
+                m2m_data[name] = value
+            else:
+                setattr(obj, name, value)
+        
+        # Save the object first (required for M2M relations)
         await obj.save()
+        
+        # Now handle M2M relations
+        for m2m_name, related_ids in m2m_data.items():
+            m2m_manager = getattr(obj, m2m_name)
+            related_model = m2m_fields[m2m_name].to_model
+            
+            # Clear existing relations and set new ones
+            await m2m_manager.clear()
+            
+            if related_ids:
+                # Fetch the related objects by IDs
+                related_objects = []
+                for rid in related_ids:
+                    try:
+                        related_obj = await related_model.objects.get(id=rid)
+                        related_objects.append(related_obj)
+                    except Exception:
+                        pass  # Skip invalid IDs
+                
+                if related_objects:
+                    await m2m_manager.add(*related_objects)
     
     async def delete_model(self, request: "Request", obj: "Model") -> None:
         """

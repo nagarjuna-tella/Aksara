@@ -157,7 +157,8 @@ class TestModelSQLGeneration:
         
         sql = SimpleModel.get_create_table_sql()
         
-        assert "CREATE TABLE IF NOT EXISTS simple_models" in sql
+        # Table names are quoted to handle SQL reserved words
+        assert 'CREATE TABLE IF NOT EXISTS "simple_models"' in sql
         assert "id UUID PRIMARY KEY" in sql
         assert "name VARCHAR(100) NOT NULL" in sql
         assert "created_at TIMESTAMP WITH TIME ZONE NOT NULL" in sql

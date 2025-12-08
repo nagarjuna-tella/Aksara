@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
+from vidyut.db import quote_identifier
 from vidyut.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager
 from vidyut.registry import ModelRegistry
 
@@ -90,10 +91,35 @@ class ModelMetaInfo:
     
     @property
     def app_label(self) -> Optional[str]:
-        """Get the app_label from Meta class, if defined."""
+        """
+        Get the app_label for this model.
+        
+        Returns the app_label from Meta class if defined, otherwise
+        derives it from the model's module path.
+        
+        For example:
+        - myapp.models.Post -> "myapp"
+        - blog.models.Article -> "blog"  
+        - app.models.User -> "app"
+        """
         meta_class = getattr(self._model, "Meta", None)
         if meta_class:
-            return getattr(meta_class, "app_label", None)
+            explicit_label = getattr(meta_class, "app_label", None)
+            if explicit_label:
+                return explicit_label
+        
+        # Auto-detect from module path
+        module = getattr(self._model, "__module__", None)
+        if module:
+            # Split module path: "myapp.models" -> ["myapp", "models"]
+            parts = module.split(".")
+            # If it looks like "something.models", use "something"
+            if len(parts) >= 2 and parts[-1] == "models":
+                return parts[-2]
+            # Otherwise use the first part
+            if parts:
+                return parts[0]
+        
         return None
     
     @property
@@ -743,9 +769,10 @@ class Model(metaclass=ModelMeta):
         
         columns = ", ".join(fields_to_insert)
         params = ", ".join(placeholders)
+        table = quote_identifier(self.__tablename__)
         
         query = f"""
-            INSERT INTO {self.__tablename__} ({columns})
+            INSERT INTO {table} ({columns})
             VALUES ({params})
             RETURNING *
         """
@@ -787,8 +814,9 @@ class Model(metaclass=ModelMeta):
         values.append(self._data['id'])
         
         set_sql = ", ".join(set_clauses)
+        table = quote_identifier(self.__tablename__)
         query = f"""
-            UPDATE {self.__tablename__}
+            UPDATE {table}
             SET {set_sql}
             WHERE id = ${len(values)}
             RETURNING *
@@ -848,8 +876,9 @@ class Model(metaclass=ModelMeta):
             
             if on_delete == OnDelete.RESTRICT.value:
                 # Check if dependent objects exist
+                source_table = quote_identifier(source_model.__tablename__)
                 count_query = f"""
-                    SELECT COUNT(*) FROM {source_model.__tablename__}
+                    SELECT COUNT(*) FROM {source_table}
                     WHERE {fk_column} = $1
                 """
                 count = await db.fetchval(count_query, self._data['id'])
@@ -863,8 +892,9 @@ class Model(metaclass=ModelMeta):
             
             elif on_delete == OnDelete.SET_NULL.value:
                 # Set FK to NULL on dependent objects
+                source_table = quote_identifier(source_model.__tablename__)
                 update_query = f"""
-                    UPDATE {source_model.__tablename__}
+                    UPDATE {source_table}
                     SET {fk_column} = NULL
                     WHERE {fk_column} = $1
                 """
@@ -872,7 +902,8 @@ class Model(metaclass=ModelMeta):
             
             # CASCADE is handled by database constraint
         
-        query = f"DELETE FROM {self.__tablename__} WHERE id = $1"
+        table = quote_identifier(self.__tablename__)
+        query = f"DELETE FROM {table} WHERE id = $1"
         await db.execute(query, self._data['id'])
     
     @classmethod
@@ -901,8 +932,9 @@ class Model(metaclass=ModelMeta):
         
         all_parts = columns + constraints
         columns_sql = ",\n".join(all_parts)
+        table = quote_identifier(cls.__tablename__)
         
-        return f"""CREATE TABLE IF NOT EXISTS {cls.__tablename__} (
+        return f"""CREATE TABLE IF NOT EXISTS {table} (
 {columns_sql}
 );"""
     

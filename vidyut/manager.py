@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, Set
 if TYPE_CHECKING:
     from vidyut.model.base import Model
 
+from vidyut.db import quote_identifier
 from vidyut.exceptions import ConfigurationError
 
 T = TypeVar("T", bound="Model")
@@ -438,7 +439,8 @@ class QuerySet(Generic[T]):
         
         where_clause, values = self._build_where_clause()
         order_by_clause = self._build_order_by_clause()
-        query = f"SELECT * FROM {self._model.__tablename__} {where_clause} {order_by_clause}".strip()
+        table = quote_identifier(self._model.__tablename__)
+        query = f"SELECT * FROM {table} {where_clause} {order_by_clause}".strip()
         
         records = await db.fetch(query, *values)
         
@@ -492,8 +494,9 @@ class QuerySet(Generic[T]):
             
             # Batch query for all related objects
             placeholders = ", ".join(f"${i+1}" for i in range(len(fk_ids)))
+            related_table = quote_identifier(related_model.__tablename__)
             related_query = f"""
-                SELECT * FROM {related_model.__tablename__}
+                SELECT * FROM {related_table}
                 WHERE id IN ({placeholders})
             """
             
@@ -587,7 +590,8 @@ class QuerySet(Generic[T]):
         
         where_clause, values = self._build_where_clause()
         order_by_clause = self._build_order_by_clause()
-        query = f"SELECT * FROM {self._model.__tablename__} {where_clause} {order_by_clause} LIMIT 1".strip()
+        table = quote_identifier(self._model.__tablename__)
+        query = f"SELECT * FROM {table} {where_clause} {order_by_clause} LIMIT 1".strip()
         # Clean up any double spaces
         query = " ".join(query.split())
         
@@ -610,7 +614,8 @@ class QuerySet(Generic[T]):
         db = Database.get_instance()
         
         where_clause, values = self._build_where_clause()
-        query = f"SELECT COUNT(*) FROM {self._model.__tablename__} {where_clause}"
+        table = quote_identifier(self._model.__tablename__)
+        query = f"SELECT COUNT(*) FROM {table} {where_clause}"
         
         count = await db.fetchval(query, *values)
         
@@ -637,7 +642,8 @@ class QuerySet(Generic[T]):
         db = Database.get_instance()
         
         where_clause, values = self._build_where_clause()
-        query = f"DELETE FROM {self._model.__tablename__} {where_clause}"
+        table = quote_identifier(self._model.__tablename__)
+        query = f"DELETE FROM {table} {where_clause}"
         
         result = await db.execute(query, *values)
         

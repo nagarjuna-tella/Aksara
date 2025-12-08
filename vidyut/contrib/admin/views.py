@@ -212,12 +212,36 @@ async def model_list(
             detail="Permission denied",
         )
     
+    # Get search query
+    search_query = request.query_params.get("q", "").strip()
+    
     # Get objects
     queryset = await model_admin.get_queryset(request)
     objects = await queryset.all()
     
+    # Apply search filter in Python (OR across all search_fields)
+    if search_query and model_admin.search_fields:
+        search_lower = search_query.lower()
+        filtered_objects = []
+        for obj in objects:
+            for field_name in model_admin.search_fields:
+                value = getattr(obj, field_name, None)
+                if value and search_lower in str(value).lower():
+                    filtered_objects.append(obj)
+                    break
+        objects = filtered_objects
+    
     # Get list display fields
     list_display = model_admin.get_list_display(request)
+    
+    # Prepare display values for each object
+    objects_data = []
+    for obj in objects:
+        row = {"obj": obj, "values": []}
+        for field_name in list_display:
+            value = await _get_display_value(obj, field_name, model_admin)
+            row["values"].append(value)
+        objects_data.append(row)
     
     return templates.TemplateResponse(
         request,
@@ -226,10 +250,12 @@ async def model_list(
             "app_label": app_label,
             "model": model,
             "model_name": model.__name__,
-            "objects": objects,
+            "objects": objects_data,
             "list_display": list_display,
             "user": user,
             "can_add": model_admin.has_add_permission(request),
+            "search_query": search_query,
+            "search_fields": model_admin.search_fields,
             "site_name": "Vidyut Admin",
         },
     )
@@ -287,7 +313,7 @@ async def model_add(
             errors["__all__"] = str(e)
     
     # Prepare field info for template
-    fields_info = _get_fields_info(model, model_admin, form_fields, form_data, request)
+    fields_info = await _get_fields_info(model, model_admin, form_fields, form_data, request)
     
     return templates.TemplateResponse(
         request,
@@ -371,7 +397,7 @@ async def model_change(
             errors["__all__"] = str(e)
     
     # Prepare field info with current values
-    fields_info = _get_fields_info(
+    fields_info = await _get_fields_info(
         model, model_admin, form_fields, form_data, request, obj
     )
     
@@ -445,6 +471,59 @@ async def model_delete(
 # Helper Functions
 # -----------------------------------------------------------------------------
 
+async def _get_display_value(
+    obj: "Model",
+    field_name: str,
+    model_admin: "ModelAdmin",
+) -> str:
+    """
+    Get display value for a field, handling FK relations.
+    
+    Args:
+        obj: The model instance
+        field_name: Name of the field
+        model_admin: The ModelAdmin instance
+        
+    Returns:
+        String representation of the value
+    """
+    from vidyut.fields import ForeignKey
+    from datetime import datetime
+    
+    model = model_admin.model
+    field = model.meta.get_field(field_name)
+    
+    # Get raw value
+    value = getattr(obj, field_name, None)
+    
+    if value is None:
+        return "-"
+    
+    # Handle ForeignKey - show related object display
+    if field and isinstance(field, ForeignKey):
+        # value is the FK ID, we need to fetch the related object
+        try:
+            related_model = field.to_model
+            related_obj = await related_model.objects.get(id=value)
+            return model_admin._get_object_display(related_obj)
+        except Exception:
+            return str(value)
+    
+    # Handle datetime
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M")
+    
+    # Handle boolean
+    if isinstance(value, bool):
+        return "✓" if value else "✗"
+    
+    # Handle UUID (shorten for display)
+    if hasattr(value, "hex") and len(str(value)) == 36:
+        return str(value)[:8] + "..."
+    
+    return str(value)
+
+
 def _parse_form_data(
     raw_form: Any,
     model: Type["Model"],
@@ -462,8 +541,16 @@ def _parse_form_data(
         Dict of parsed field values
     """
     data: Dict[str, Any] = {}
+    m2m_fields = model.meta.many_to_many
     
     for field_name in form_fields:
+        # Handle ManyToMany fields (come as multiple values)
+        if field_name in m2m_fields:
+            # getlist returns all values for a multi-select
+            values = raw_form.getlist(field_name)
+            data[field_name] = values if values else []
+            continue
+        
         field = model.meta.get_field(field_name)
         if not field:
             continue
@@ -488,6 +575,14 @@ def _parse_form_data(
             elif field_type == "JSON":
                 import json
                 data[field_name] = json.loads(raw_value) if raw_value else None
+            elif field_type == "ForeignKey":
+                # FK needs UUID or None
+                if raw_value:
+                    import uuid
+                    data[field_name] = uuid.UUID(raw_value)
+                else:
+                    # Empty means no selection
+                    data[field_name] = None
             else:
                 data[field_name] = raw_value if raw_value else None
         except (ValueError, TypeError):
@@ -496,7 +591,7 @@ def _parse_form_data(
     return data
 
 
-def _get_fields_info(
+async def _get_fields_info(
     model: Type["Model"],
     model_admin: "ModelAdmin",
     form_fields: List[str],
@@ -520,28 +615,72 @@ def _get_fields_info(
     """
     readonly = set(model_admin.get_readonly_fields(request, obj))
     fields_info = []
+    m2m_fields = model.meta.many_to_many
     
     for field_name in form_fields:
-        field = model.meta.get_field(field_name)
-        if not field:
-            continue
+        # Check if it's a ManyToMany field
+        is_m2m = field_name in m2m_fields
         
-        # Get current value
-        if form_data.get(field_name) is not None:
-            value = form_data[field_name]
-        elif obj is not None:
-            value = getattr(obj, field_name, "")
+        if is_m2m:
+            field = m2m_fields[field_name]
+            field_type = "multiselect"
+            nullable = True  # M2M is always optional
+            
+            # Get current selected values for M2M
+            if form_data.get(field_name) is not None:
+                value = form_data[field_name]  # List of IDs from form
+            elif obj is not None:
+                # Fetch current related IDs
+                m2m_manager = getattr(obj, field_name)
+                related_ids = await m2m_manager.ids()
+                value = [str(rid) for rid in related_ids]
+            else:
+                value = []
         else:
-            value = ""
+            field = model.meta.get_field(field_name)
+            if not field:
+                continue
+            
+            field_type = model_admin.get_field_type(field_name)
+            nullable = getattr(field, "nullable", False)
+            
+            # Get current value
+            if form_data.get(field_name) is not None:
+                value = form_data[field_name]
+            elif obj is not None:
+                value = getattr(obj, field_name, "")
+            else:
+                value = ""
+            
+            # Format datetime values for HTML datetime-local input (YYYY-MM-DDTHH:MM)
+            if field_type == "datetime-local" and value:
+                from datetime import datetime
+                if isinstance(value, datetime):
+                    value = value.strftime("%Y-%m-%dT%H:%M")
+                elif isinstance(value, str) and value:
+                    try:
+                        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                        value = dt.strftime("%Y-%m-%dT%H:%M")
+                    except (ValueError, AttributeError):
+                        pass
+            
+            # Convert value to string for regular fields
+            if not isinstance(value, list):
+                value = str(value) if value is not None else ""
         
         field_info = {
             "name": field_name,
             "label": field_name.replace("_", " ").title(),
-            "type": model_admin.get_field_type(field_name),
-            "value": value if value is not None else "",
+            "type": field_type,
+            "value": value,
             "readonly": field_name in readonly,
-            "required": not getattr(field, "nullable", True),
+            "required": not nullable,
+            "choices": None,
         }
+        
+        # Fetch choices for FK and M2M fields
+        if field_type in ("select", "multiselect"):
+            field_info["choices"] = await model_admin.get_field_choices(field_name, request)
         
         fields_info.append(field_info)
     

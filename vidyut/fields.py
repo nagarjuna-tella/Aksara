@@ -1498,20 +1498,21 @@ class ManyToManyManager:
         Args:
             *instances: Model instances to add
         """
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         if not instances:
             return
         
         db = Database.get_instance()
         source_id = self._source.id
+        join_table = quote_identifier(self._join_table)
         
         for instance in instances:
             target_id = instance.id
             
             # Insert into join table (ignore if already exists)
             query = f"""
-                INSERT INTO {self._join_table} ({self._source_col}, {self._target_col})
+                INSERT INTO {join_table} ({self._source_col}, {self._target_col})
                 VALUES ($1, $2)
                 ON CONFLICT ({self._source_col}, {self._target_col}) DO NOTHING
             """
@@ -1524,32 +1525,34 @@ class ManyToManyManager:
         Args:
             *instances: Model instances to remove
         """
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         if not instances:
             return
         
         db = Database.get_instance()
         source_id = self._source.id
+        join_table = quote_identifier(self._join_table)
         
         for instance in instances:
             target_id = instance.id
             
             query = f"""
-                DELETE FROM {self._join_table}
+                DELETE FROM {join_table}
                 WHERE {self._source_col} = $1 AND {self._target_col} = $2
             """
             await db.execute(query, source_id, target_id)
     
     async def clear(self) -> None:
         """Remove all instances from the relationship."""
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         db = Database.get_instance()
         source_id = self._source.id
+        join_table = quote_identifier(self._join_table)
         
         query = f"""
-            DELETE FROM {self._join_table}
+            DELETE FROM {join_table}
             WHERE {self._source_col} = $1
         """
         await db.execute(query, source_id)
@@ -1561,16 +1564,17 @@ class ManyToManyManager:
         Returns:
             List of related model instances
         """
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         db = Database.get_instance()
         source_id = self._source.id
         target_model = self._target_model
-        target_table = target_model.__tablename__
+        target_table = quote_identifier(target_model.__tablename__)
+        join_table = quote_identifier(self._join_table)
         
         query = f"""
             SELECT t.* FROM {target_table} t
-            INNER JOIN {self._join_table} j ON t.id = j.{self._target_col}
+            INNER JOIN {join_table} j ON t.id = j.{self._target_col}
             WHERE j.{self._source_col} = $1
         """
         
@@ -1584,13 +1588,14 @@ class ManyToManyManager:
         Returns:
             Number of related instances
         """
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         db = Database.get_instance()
         source_id = self._source.id
+        join_table = quote_identifier(self._join_table)
         
         query = f"""
-            SELECT COUNT(*) FROM {self._join_table}
+            SELECT COUNT(*) FROM {join_table}
             WHERE {self._source_col} = $1
         """
         
@@ -1615,13 +1620,14 @@ class ManyToManyManager:
         Returns:
             List of UUIDs of related instances
         """
-        from vidyut.db import Database
+        from vidyut.db import Database, quote_identifier
         
         db = Database.get_instance()
         source_id = self._source.id
+        join_table = quote_identifier(self._join_table)
         
         query = f"""
-            SELECT {self._target_col} FROM {self._join_table}
+            SELECT {self._target_col} FROM {join_table}
             WHERE {self._source_col} = $1
         """
         
