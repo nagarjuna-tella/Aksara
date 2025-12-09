@@ -61,11 +61,11 @@
         <tbody>
             {% for row in objects %}
             <tr>
-                {% for value in row.values %}
+                {% for value in row["values"] %}
                 <td>{{ value }}</td>
                 {% endfor %}
                 <td>
-                    <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row.obj.id|string) }}" class="btn btn-secondary btn-sm">
+                    <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row['obj'].id|string) }}" class="btn btn-secondary btn-sm">
                         Edit
                     </a>
                 </td>
