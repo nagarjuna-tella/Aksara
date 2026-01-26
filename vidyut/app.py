@@ -144,6 +144,9 @@ class Vidyut(FastAPI):
         self.enable_admin = enable_admin
         self._debug = debug
         
+        # v0.4.0: AI registry (initialized later)
+        self.ai_registry = None
+        
         # Store docs URLs for custom handlers
         self._docs_url = docs_url
         self._redoc_url = redoc_url
@@ -203,6 +206,9 @@ class Vidyut(FastAPI):
         
         # v0.3.15: Maybe mount admin interface
         self._maybe_mount_admin()
+        
+        # v0.4.0: Initialize AI registry and endpoints
+        self._setup_ai_registry()
         
         # Auto-discover and register ViewSets
         if self._auto_discover_views:
@@ -557,6 +563,40 @@ class Vidyut(FastAPI):
         from vidyut.debug import register_debug_exception_handlers
         register_debug_exception_handlers(self)
     
+    def _setup_ai_registry(self) -> None:
+        """
+        Initialize AI tool registry and mount AI endpoints.
+        
+        v0.4.0: AI Mode - exposes models and ViewSets as AI tools.
+        """
+        from vidyut.ai import AiToolRegistry
+        from vidyut.ai.fastapi import router as ai_router
+        
+        # Initialize the registry
+        self.ai_registry = AiToolRegistry()
+        
+        # Include AI endpoints
+        self.include_router(ai_router)
+    
+    def _discover_ai_tools_from_viewsets(self, viewsets: list) -> None:
+        """
+        Discover AI tools from a list of ViewSet classes.
+        
+        Called after ViewSets are registered to populate the AI registry.
+        
+        Args:
+            viewsets: List of ModelViewSet classes
+        """
+        if self.ai_registry is None:
+            return
+        
+        from vidyut.ai.registry import discover_tools_from_viewset
+        
+        for viewset_cls in viewsets:
+            tools = discover_tools_from_viewset(viewset_cls)
+            for tool in tools:
+                self.ai_registry.register_tool(tool)
+    
     def _auto_register_viewsets(self) -> None:
         """
         Auto-discover and register all ModelViewSet classes.
@@ -580,6 +620,9 @@ class Vidyut(FastAPI):
             
             # Include the router in the app
             self.include_router(router)
+            
+            # v0.4.0: Discover AI tools from registered ViewSets
+            self._discover_ai_tools_from_viewsets(viewsets)
     
     def discover_viewsets(self, views_module: Optional[str] = None) -> list:
         """
@@ -611,6 +654,9 @@ class Vidyut(FastAPI):
             include_viewset(router, viewset_cls)
         
         self.include_router(router)
+        
+        # v0.4.0: Discover AI tools from registered ViewSets
+        self._discover_ai_tools_from_viewsets(viewsets)
 
 
 # Re-export for convenience

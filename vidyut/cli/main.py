@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.3.20"
+CLI_VERSION = "0.4.9"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1442,6 +1442,705 @@ def precommit_run(hook: Optional[str]):
     
     exit_code = _run_tool("pre-commit", "pre_commit", args, "pre-commit")
     sys.exit(exit_code)
+
+
+# =============================================================================
+# AI CLI Commands (v0.4.8)
+# =============================================================================
+
+@cli.group()
+def ai():
+    """AI-powered development commands.
+    
+    Commands for interacting with Vidyut's AI subsystems:
+    - Context gathering for LLM agents
+    - Schema health and drift detection
+    - Plan preview and application
+    
+    These commands are LLM-provider-agnostic. They do NOT call any
+    AI models directly; they provide structured data that external
+    AI agents can use.
+    
+    Example workflow:
+        vidyut ai context --intent "Add Category model"  # Get context
+        # ... external AI generates plan.json ...
+        vidyut ai plan preview plan.json               # Preview changes
+        vidyut ai plan apply plan.json --yes           # Apply changes
+    """
+    pass
+
+
+def _setup_app_for_cli(database_url: Optional[str] = None) -> "FastAPI":
+    """
+    Set up a minimal FastAPI app for CLI commands.
+    
+    This loads settings, discovers models, and optionally connects to DB.
+    """
+    from fastapi import FastAPI
+    from vidyut.conf import settings
+    from vidyut.registry import ModelRegistry
+    import importlib
+    
+    # Add current directory to path
+    cwd = Path.cwd()
+    if str(cwd) not in sys.path:
+        sys.path.insert(0, str(cwd))
+    
+    # Discover models from configured apps
+    for app_name in settings.apps:
+        try:
+            importlib.import_module(f"{app_name}.models")
+        except ImportError:
+            pass
+    
+    # Create a minimal FastAPI app
+    app = FastAPI()
+    
+    # Store settings on app for context builders
+    app.state.settings = settings
+    
+    return app
+
+
+async def _connect_db_for_cli(database_url: Optional[str] = None):
+    """Connect to database for CLI commands that need it."""
+    from vidyut.conf import settings
+    from vidyut.db import Database
+    
+    db_url = database_url or settings.database_url
+    if db_url:
+        db = Database(db_url)
+        await db.connect()
+        return db
+    return None
+
+
+@ai.command("context")
+@click.option("--intent", "-i", help="The intent/request to get context for")
+@click.option("--mode", "-m", type=click.Choice(["read", "design", "modify"]), 
+              default="modify", help="Operation mode (default: modify)")
+@click.option("--scope", "-s", help="Comma-separated scope (e.g., 'models,routes,admin')")
+@click.option("--stdin", "use_stdin", is_flag=True, help="Read intent from stdin")
+@click.option("--format", "-f", "output_format", type=click.Choice(["json", "summary"]),
+              default="summary", help="Output format (default: summary)")
+@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+def ai_context(
+    intent: Optional[str],
+    mode: str,
+    scope: Optional[str],
+    use_stdin: bool,
+    output_format: str,
+    database_url: Optional[str],
+):
+    """
+    Get context bundle for an AI agent.
+    
+    Builds an AgentContextBundle containing everything an external AI needs
+    to understand the application and generate plans.
+    
+    The bundle includes:
+    - Full context (models, routes, migrations, admin, settings)
+    - Schema definitions for plans, patches, queries
+    - Available AI tools
+    
+    Examples:
+        vidyut ai context --intent "Add a Category model"
+        vidyut ai context --intent "What does this app look like?" --format json
+        echo "Add slug to Article" | vidyut ai context --stdin --format json
+    """
+    import json
+    
+    # Get intent from stdin or flag
+    if use_stdin:
+        intent_text = sys.stdin.read().strip()
+    elif intent:
+        intent_text = intent
+    else:
+        click.echo("❌ Error: --intent is required (or use --stdin)", err=True)
+        sys.exit(1)
+    
+    if not intent_text:
+        click.echo("❌ Error: Intent cannot be empty", err=True)
+        sys.exit(1)
+    
+    # Parse scope
+    scope_list = [s.strip() for s in scope.split(",")] if scope else None
+    
+    try:
+        from vidyut.ai.agent import AgentIntent, build_agent_context_bundle
+        
+        # Build intent
+        agent_intent = AgentIntent(
+            user_message=intent_text,
+            mode=mode,
+            scope=scope_list,
+        )
+        
+        # Set up app and build context
+        app = _setup_app_for_cli(database_url)
+        
+        async def get_context():
+            # Connect to DB if available
+            await _connect_db_for_cli(database_url)
+            return await build_agent_context_bundle(app, agent_intent)
+        
+        bundle = asyncio.run(get_context())
+        
+        if output_format == "json":
+            click.echo(json.dumps(bundle.model_dump(), indent=2))
+        else:
+            # Summary format
+            click.echo()
+            click.echo(f"  \033[33m⚡\033[0m \033[1mVidyut AI Context\033[0m")
+            click.echo("  " + "-" * 36)
+            click.echo()
+            click.echo(f"  \033[1mIntent:\033[0m {intent_text[:60]}{'...' if len(intent_text) > 60 else ''}")
+            click.echo(f"  \033[1mMode:\033[0m {mode}")
+            if scope_list:
+                click.echo(f"  \033[1mScope:\033[0m {', '.join(scope_list)}")
+            click.echo()
+            
+            ctx = bundle.full_context
+            click.echo(f"  \033[1mContext Summary:\033[0m")
+            click.echo(f"    Models:     {len(ctx.get('models', []))}")
+            click.echo(f"    ViewSets:   {len(ctx.get('viewsets', []))}")
+            click.echo(f"    Routes:     {len(ctx.get('routes', []))}")
+            click.echo(f"    Migrations: {len(ctx.get('migrations', []))}")
+            click.echo(f"    Tools:      {len(bundle.tools)}")
+            click.echo()
+            click.echo(f"  \033[1mVersion:\033[0m {bundle.version}")
+            click.echo()
+        
+        sys.exit(0)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@ai.command("schema-health")
+@click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]),
+              default="table", help="Output format (default: table)")
+@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+def ai_schema_health(output_format: str, database_url: Optional[str]):
+    """
+    Check schema health (models vs database drift).
+    
+    Analyzes the database schema and compares it against registered models
+    to detect drift and inconsistencies.
+    
+    Status levels:
+    - healthy:  No warnings or danger issues
+    - degraded: Has warnings but no danger issues
+    - danger:   Has at least one danger-level issue
+    
+    Examples:
+        vidyut ai schema-health
+        vidyut ai schema-health --format json
+    """
+    import json
+    
+    try:
+        from vidyut.ai.schema_doctor import analyze_schema_health
+        
+        app = _setup_app_for_cli(database_url)
+        
+        async def get_health():
+            await _connect_db_for_cli(database_url)
+            return await analyze_schema_health(app)
+        
+        health = asyncio.run(get_health())
+        
+        if output_format == "json":
+            click.echo(json.dumps(health.model_dump(), indent=2))
+        else:
+            # Table format
+            click.echo()
+            click.echo(f"  \033[33m⚡\033[0m \033[1mSchema Health\033[0m")
+            click.echo("  " + "-" * 36)
+            click.echo()
+            
+            # Color-code status
+            status_colors = {
+                "healthy": "\033[32m",   # Green
+                "degraded": "\033[33m",  # Yellow
+                "danger": "\033[31m",    # Red
+            }
+            color = status_colors.get(health.status, "")
+            reset = "\033[0m"
+            
+            click.echo(f"  \033[1mStatus:\033[0m   {color}{health.status.upper()}{reset}")
+            click.echo()
+            click.echo(f"  \033[1mIssues:\033[0m")
+            click.echo(f"    Info:     {health.issue_counts.get('info', 0)}")
+            click.echo(f"    Warning:  {health.issue_counts.get('warning', 0)}")
+            click.echo(f"    Danger:   {health.issue_counts.get('danger', 0)}")
+            click.echo()
+            
+            if health.db_name:
+                click.echo(f"  \033[1mDatabase:\033[0m {health.db_name}")
+            if health.db_version:
+                click.echo(f"  \033[1mDB Version:\033[0m {health.db_version}")
+            click.echo(f"  \033[1mInspected:\033[0m {health.inspected_at}")
+            click.echo()
+        
+        # Exit code based on status
+        if health.status == "danger":
+            sys.exit(1)
+        sys.exit(0)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@ai.command("schema-issues")
+@click.option("--severity", "-s", help="Filter by severity (info, warning, danger)")
+@click.option("--kind", "-k", help="Filter by kind (comma-separated: missing_table,extra_column,...)")
+@click.option("--table", "-t", help="Filter by table name")
+@click.option("--app-label", "-a", help="Filter by app label")
+@click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]),
+              default="table", help="Output format (default: table)")
+@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+def ai_schema_issues(
+    severity: Optional[str],
+    kind: Optional[str],
+    table: Optional[str],
+    app_label: Optional[str],
+    output_format: str,
+    database_url: Optional[str],
+):
+    """
+    List schema issues with optional filtering.
+    
+    Shows detailed drift and inconsistencies between models and database.
+    
+    Filter options:
+        --severity: Filter by severity level (info, warning, danger)
+        --kind: Filter by drift kind (missing_table, extra_column, type_mismatch, etc.)
+        --table: Filter by specific table name
+        --app-label: Filter by application label
+    
+    Examples:
+        vidyut ai schema-issues
+        vidyut ai schema-issues --severity danger
+        vidyut ai schema-issues --kind missing_column,type_mismatch
+        vidyut ai schema-issues --format json
+    """
+    import json
+    
+    # Validate severity
+    valid_severities = {"info", "warning", "danger"}
+    if severity and severity not in valid_severities:
+        click.echo(f"❌ Error: Invalid severity '{severity}'. Must be one of: {valid_severities}", err=True)
+        sys.exit(1)
+    
+    # Parse kind list
+    kind_list = [k.strip() for k in kind.split(",")] if kind else None
+    
+    try:
+        from vidyut.ai.schema_doctor import analyze_schema_health
+        
+        app = _setup_app_for_cli(database_url)
+        
+        async def get_health():
+            await _connect_db_for_cli(database_url)
+            return await analyze_schema_health(app)
+        
+        health = asyncio.run(get_health())
+        
+        # Filter issues
+        issues = health.issues
+        
+        if severity:
+            issues = [i for i in issues if i.severity == severity]
+        if kind_list:
+            issues = [i for i in issues if i.kind in kind_list]
+        if table:
+            issues = [i for i in issues if i.table == table]
+        if app_label:
+            issues = [i for i in issues if i.app_label == app_label]
+        
+        if output_format == "json":
+            click.echo(json.dumps([i.model_dump() for i in issues], indent=2))
+        else:
+            # Table format
+            click.echo()
+            click.echo(f"  \033[33m⚡\033[0m \033[1mSchema Issues\033[0m ({len(issues)} found)")
+            click.echo("  " + "-" * 60)
+            
+            if not issues:
+                click.echo()
+                click.echo("  ✓ No issues found")
+                click.echo()
+            else:
+                # Print header
+                click.echo()
+                click.echo(f"  {'SEV':<8} {'KIND':<20} {'TABLE':<20} {'COLUMN':<15}")
+                click.echo("  " + "-" * 63)
+                
+                severity_colors = {
+                    "info": "\033[34m",     # Blue
+                    "warning": "\033[33m",  # Yellow
+                    "danger": "\033[31m",   # Red
+                }
+                reset = "\033[0m"
+                
+                for issue in issues:
+                    color = severity_colors.get(issue.severity, "")
+                    sev = f"{color}{issue.severity:<8}{reset}"
+                    kind_str = (issue.kind[:18] + "..") if len(issue.kind) > 20 else issue.kind
+                    table_str = ((issue.table or "-")[:18] + "..") if len(issue.table or "") > 20 else (issue.table or "-")
+                    col_str = ((issue.column or "-")[:13] + "..") if len(issue.column or "") > 15 else (issue.column or "-")
+                    click.echo(f"  {sev} {kind_str:<20} {table_str:<20} {col_str:<15}")
+                
+                click.echo()
+                
+                # Show first few messages
+                click.echo("  \033[1mDetails:\033[0m")
+                for issue in issues[:5]:
+                    click.echo(f"    • {issue.message[:70]}{'...' if len(issue.message) > 70 else ''}")
+                if len(issues) > 5:
+                    click.echo(f"    ... and {len(issues) - 5} more")
+                click.echo()
+        
+        sys.exit(0)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+# Plan subgroup
+@ai.group()
+def plan():
+    """AI plan preview and application.
+    
+    Commands for working with AI-generated plans:
+    - Preview plan execution (dry run)
+    - Apply plans to the codebase
+    - Generate plan templates
+    
+    Plans are JSON files containing an intent and execution steps.
+    They are typically generated by external AI agents.
+    """
+    pass
+
+
+@plan.command("preview")
+@click.argument("path", required=False)
+@click.option("--format", "-f", "output_format", type=click.Choice(["summary", "json"]),
+              default="summary", help="Output format (default: summary)")
+@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+def plan_preview(path: Optional[str], output_format: str, database_url: Optional[str]):
+    """
+    Preview a plan file (dry run).
+    
+    Executes the plan in dry-run mode without making any changes.
+    Shows what would happen if the plan were applied.
+    
+    PATH: Path to plan.json file, or '-' to read from stdin
+    
+    Expected plan.json structure:
+        {
+            "intent": { "user_message": "...", "mode": "modify" },
+            "plan": { "intent": "...", "steps": [...] }
+        }
+    
+    Examples:
+        vidyut ai plan preview plan.json
+        vidyut ai plan preview plan.json --format json
+        cat plan.json | vidyut ai plan preview -
+    """
+    import json
+    
+    # Read plan from file or stdin
+    try:
+        if path == "-" or path is None:
+            plan_data = json.loads(sys.stdin.read())
+        else:
+            with open(path, "r") as f:
+                plan_data = json.load(f)
+    except json.JSONDecodeError as e:
+        click.echo(f"❌ Error: Invalid JSON: {e}", err=True)
+        sys.exit(1)
+    except FileNotFoundError:
+        click.echo(f"❌ Error: File not found: {path}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"❌ Error reading plan: {e}", err=True)
+        sys.exit(1)
+    
+    try:
+        from vidyut.ai.agent import AgentIntent, AgentPlanPreviewResponse
+        from vidyut.ai.planner import AiPlan, execute_plan, validate_plan
+        
+        # Parse intent and plan
+        intent_data = plan_data.get("intent", {})
+        plan_dict = plan_data.get("plan", {})
+        
+        if not plan_dict:
+            click.echo("❌ Error: Plan JSON must have a 'plan' key", err=True)
+            sys.exit(1)
+        
+        intent = AgentIntent(**intent_data) if intent_data else AgentIntent(user_message="CLI preview")
+        ai_plan = AiPlan(**plan_dict)
+        
+        # Validate plan
+        errors = validate_plan(ai_plan)
+        if errors:
+            click.echo("❌ Plan validation failed:", err=True)
+            for err in errors:
+                click.echo(f"  • {err}", err=True)
+            sys.exit(1)
+        
+        app = _setup_app_for_cli(database_url)
+        
+        async def run_preview():
+            await _connect_db_for_cli(database_url)
+            return await execute_plan(app, ai_plan, dry_run=True)
+        
+        execution = asyncio.run(run_preview())
+        
+        # Build response
+        response = AgentPlanPreviewResponse(
+            intent=intent,
+            plan=plan_dict,
+            execution=execution.model_dump(),
+            summary={
+                "success": execution.success,
+                "step_count": len(execution.steps),
+                "failed_steps": [s.id for s in execution.steps if not s.success],
+            }
+        )
+        
+        if output_format == "json":
+            click.echo(json.dumps(response.model_dump(), indent=2))
+        else:
+            # Summary format
+            click.echo()
+            click.echo(f"  \033[33m⚡\033[0m \033[1mPlan Preview\033[0m (dry run)")
+            click.echo("  " + "-" * 36)
+            click.echo()
+            click.echo(f"  \033[1mIntent:\033[0m {intent.user_message[:50]}{'...' if len(intent.user_message) > 50 else ''}")
+            click.echo(f"  \033[1mPlan:\033[0m {ai_plan.intent[:50]}{'...' if len(ai_plan.intent) > 50 else ''}")
+            click.echo(f"  \033[1mSteps:\033[0m {len(ai_plan.steps)}")
+            click.echo()
+            
+            # Status color
+            if execution.success:
+                status = "\033[32m✓ WOULD SUCCEED\033[0m"
+            else:
+                status = "\033[31m✗ WOULD FAIL\033[0m"
+            click.echo(f"  \033[1mResult:\033[0m {status}")
+            click.echo()
+            
+            # Step details
+            click.echo(f"  \033[1mStep Results:\033[0m")
+            for step_result in execution.steps:
+                if step_result.success:
+                    icon = "\033[32m✓\033[0m"
+                else:
+                    icon = "\033[31m✗\033[0m"
+                click.echo(f"    {icon} {step_result.id} ({step_result.type})")
+                if not step_result.success and step_result.error:
+                    click.echo(f"      Error: {step_result.error[:60]}...")
+            click.echo()
+            
+            # Notes
+            if execution.notes:
+                click.echo(f"  \033[1mNotes:\033[0m")
+                for note in execution.notes[:5]:
+                    click.echo(f"    • {note}")
+                click.echo()
+        
+        sys.exit(0 if execution.success else 1)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@plan.command("apply")
+@click.argument("path", required=False)
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+@click.option("--format", "-f", "output_format", type=click.Choice(["summary", "json"]),
+              default="summary", help="Output format (default: summary)")
+@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+def plan_apply(path: Optional[str], yes: bool, output_format: str, database_url: Optional[str]):
+    """
+    Apply a plan file to the codebase.
+    
+    ⚠️  This will modify files on disk!
+    
+    Executes the plan for real, making actual changes.
+    Requires confirmation unless --yes is provided.
+    
+    PATH: Path to plan.json file, or '-' to read from stdin
+    
+    Examples:
+        vidyut ai plan apply plan.json
+        vidyut ai plan apply plan.json --yes
+        cat plan.json | vidyut ai plan apply - --yes
+    """
+    import json
+    
+    # Read plan from file or stdin
+    try:
+        if path == "-" or path is None:
+            plan_data = json.loads(sys.stdin.read())
+        else:
+            with open(path, "r") as f:
+                plan_data = json.load(f)
+    except json.JSONDecodeError as e:
+        click.echo(f"❌ Error: Invalid JSON: {e}", err=True)
+        sys.exit(1)
+    except FileNotFoundError:
+        click.echo(f"❌ Error: File not found: {path}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"❌ Error reading plan: {e}", err=True)
+        sys.exit(1)
+    
+    try:
+        from vidyut.ai.agent import AgentIntent, AgentPlanApplyResponse
+        from vidyut.ai.planner import AiPlan, execute_plan, validate_plan
+        
+        # Parse intent and plan
+        intent_data = plan_data.get("intent", {})
+        plan_dict = plan_data.get("plan", {})
+        
+        if not plan_dict:
+            click.echo("❌ Error: Plan JSON must have a 'plan' key", err=True)
+            sys.exit(1)
+        
+        intent = AgentIntent(**intent_data) if intent_data else AgentIntent(user_message="CLI apply")
+        ai_plan = AiPlan(**plan_dict)
+        
+        # Validate plan
+        errors = validate_plan(ai_plan)
+        if errors:
+            click.echo("❌ Plan validation failed:", err=True)
+            for err in errors:
+                click.echo(f"  • {err}", err=True)
+            sys.exit(1)
+        
+        # Confirmation prompt
+        if not yes:
+            click.echo()
+            click.echo(f"  \033[33m⚠️  WARNING\033[0m")
+            click.echo()
+            click.echo(f"  This will APPLY the plan to your codebase.")
+            click.echo(f"  Intent: {intent.user_message[:50]}{'...' if len(intent.user_message) > 50 else ''}")
+            click.echo(f"  Steps: {len(ai_plan.steps)}")
+            click.echo()
+            
+            if not click.confirm("  Continue?", default=False):
+                click.echo("  Aborted.")
+                sys.exit(0)
+        
+        app = _setup_app_for_cli(database_url)
+        
+        async def run_apply():
+            await _connect_db_for_cli(database_url)
+            return await execute_plan(app, ai_plan, dry_run=False)
+        
+        execution = asyncio.run(run_apply())
+        
+        # Build response
+        response = AgentPlanApplyResponse(
+            intent=intent,
+            plan=plan_dict,
+            execution=execution.model_dump(),
+        )
+        
+        if output_format == "json":
+            click.echo(json.dumps(response.model_dump(), indent=2))
+        else:
+            # Summary format
+            click.echo()
+            click.echo(f"  \033[33m⚡\033[0m \033[1mPlan Applied\033[0m")
+            click.echo("  " + "-" * 36)
+            click.echo()
+            
+            # Status color
+            if execution.success:
+                status = "\033[32m✓ SUCCESS\033[0m"
+            else:
+                status = "\033[31m✗ FAILED\033[0m"
+            click.echo(f"  \033[1mResult:\033[0m {status}")
+            click.echo()
+            
+            # Step details
+            click.echo(f"  \033[1mStep Results:\033[0m")
+            for step_result in execution.steps:
+                if step_result.success:
+                    icon = "\033[32m✓\033[0m"
+                else:
+                    icon = "\033[31m✗\033[0m"
+                click.echo(f"    {icon} {step_result.id} ({step_result.type})")
+                if not step_result.success and step_result.error:
+                    click.echo(f"      Error: {step_result.error[:60]}...")
+            click.echo()
+        
+        sys.exit(0 if execution.success else 1)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@plan.command("template")
+@click.option("--intent", "-i", required=True, help="The intent for the plan template")
+@click.option("--mode", "-m", type=click.Choice(["read", "design", "modify"]),
+              default="modify", help="Operation mode (default: modify)")
+@click.option("--include-schema", is_flag=True, help="Include plan JSON schema in output")
+def plan_template(intent: str, mode: str, include_schema: bool):
+    """
+    Generate a plan template for external AI.
+    
+    Creates a starter JSON structure that can be filled in by an
+    external AI agent and then used with `plan preview` or `plan apply`.
+    
+    Examples:
+        vidyut ai plan template --intent "Add Category model" > plan.json
+        vidyut ai plan template --intent "Add slug field" --include-schema
+    """
+    import json
+    
+    try:
+        from vidyut.ai.agent import AgentIntent
+        from vidyut.ai.planner import get_plan_schema
+        
+        agent_intent = AgentIntent(
+            user_message=intent,
+            mode=mode,
+        )
+        
+        template = {
+            "intent": agent_intent.model_dump(),
+            "plan": {
+                "intent": intent,
+                "steps": [
+                    {
+                        "id": "step_1",
+                        "type": "analyze_context",
+                        "description": "Analyze current application state",
+                        "payload": {}
+                    }
+                ]
+            }
+        }
+        
+        if include_schema:
+            template["_plan_schema"] = get_plan_schema()
+        
+        click.echo(json.dumps(template, indent=2))
+        sys.exit(0)
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
 
 
 def main():

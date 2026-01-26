@@ -1,0 +1,1207 @@
+"""
+Tests for Vidyut AI Patch Engine (v0.4.4)
+
+Comprehensive tests for the AI Patch module including:
+- Pydantic model validation
+- Path safety validation
+- Syntax validation
+- File patch executors
+- ORM-aware patch executors
+- Patch engine orchestrator
+- Preview mode
+- Rollback functionality
+- Endpoint tests
+- Edge cases and error handling
+
+70+ tests required for v0.4.4
+"""
+
+import pytest
+import os
+import tempfile
+import shutil
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any
+
+from pydantic import ValidationError
+
+from vidyut.ai.patch import (
+    # Enums
+    PatchOperationType,
+    PatchValidationError,
+    # Models
+    AiPatchOperation,
+    AiPatchRequest,
+    AiPatchValidationResult,
+    AiPatchFileChange,
+    AiPatchResult,
+    # Validation
+    validate_operation,
+    validate_patch_request,
+    _is_path_safe,
+    _is_protected_file,
+    _contains_dangerous_code,
+    _validate_python_syntax,
+    # File executors
+    apply_modify_file,
+    apply_replace_text,
+    apply_insert_text,
+    apply_delete_text,
+    apply_add_import,
+    # ORM executors
+    apply_add_model,
+    apply_add_field,
+    apply_update_field,
+    apply_delete_field,
+    apply_delete_model,
+    apply_add_viewset,
+    apply_update_viewset,
+    apply_delete_viewset,
+    # Orchestrator
+    apply_ai_patches,
+    apply_ai_patches_async,
+    rollback_patches,
+    preview_patch_diff,
+    # Constants
+    ALLOWED_OPERATIONS,
+    PROTECTED_PATTERNS,
+    _generate_diff,
+)
+
+
+# =============================================================================
+# Test Fixtures
+# =============================================================================
+
+@pytest.fixture
+def temp_project():
+    """Create a temporary project directory with sample files."""
+    temp_dir = tempfile.mkdtemp()
+    
+    # Create app directory structure
+    app_dir = os.path.join(temp_dir, "app")
+    os.makedirs(app_dir)
+    
+    # Create models.py
+    models_content = '''"""Models for app."""
+from vidyut import Model, fields
+
+
+class User(Model):
+    """User model."""
+    
+    name = fields.String(max_length=100)
+    email = fields.Email()
+    is_active = fields.Boolean(default=True)
+'''
+    with open(os.path.join(app_dir, "models.py"), "w") as f:
+        f.write(models_content)
+    
+    # Create views.py
+    views_content = '''"""ViewSets for app."""
+from vidyut.api import ModelViewSet
+from app.models import User
+
+
+class UserViewSet(ModelViewSet):
+    """API ViewSet for User."""
+    
+    model = User
+    prefix = "/api/users"
+'''
+    with open(os.path.join(app_dir, "views.py"), "w") as f:
+        f.write(views_content)
+    
+    # Create __init__.py
+    with open(os.path.join(app_dir, "__init__.py"), "w") as f:
+        f.write("")
+    
+    yield temp_dir
+    
+    # Cleanup
+    shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def sample_operation():
+    """Create a sample patch operation."""
+    return AiPatchOperation(
+        type="add_field",
+        model="User",
+        field="bio",
+        field_spec={"type": "text", "nullable": True}
+    )
+
+
+@pytest.fixture
+def sample_request(sample_operation):
+    """Create a sample patch request."""
+    return AiPatchRequest(
+        operations=[sample_operation],
+        reason="Add bio field to user"
+    )
+
+
+# =============================================================================
+# Test Pydantic Models
+# =============================================================================
+
+class TestAiPatchOperation:
+    """Tests for AiPatchOperation model."""
+    
+    def test_valid_operation(self):
+        """Test creating a valid operation."""
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            field="bio",
+            field_spec={"type": "text"}
+        )
+        assert op.type == "add_field"
+        assert op.model == "User"
+        assert op.field == "bio"
+    
+    def test_operation_types(self):
+        """Test all operation types are valid."""
+        for op_type in ALLOWED_OPERATIONS:
+            op = AiPatchOperation(type=op_type)
+            assert op.type == op_type
+    
+    def test_invalid_operation_type(self):
+        """Test invalid operation type raises error."""
+        with pytest.raises(ValidationError):
+            AiPatchOperation(type="invalid_type")
+    
+    def test_modify_file_operation(self):
+        """Test modify_file operation."""
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/models.py",
+            text="new content"
+        )
+        assert op.type == "modify_file"
+        assert op.path == "app/models.py"
+    
+    def test_replace_text_operation(self):
+        """Test replace_text operation."""
+        op = AiPatchOperation(
+            type="replace_text",
+            path="app/models.py",
+            old_text="old",
+            new_text="new"
+        )
+        assert op.old_text == "old"
+        assert op.new_text == "new"
+    
+    def test_insert_text_operation(self):
+        """Test insert_text operation."""
+        op = AiPatchOperation(
+            type="insert_text",
+            path="app/models.py",
+            start_line=10,
+            text="new line"
+        )
+        assert op.start_line == 10
+        assert op.text == "new line"
+    
+    def test_delete_text_operation(self):
+        """Test delete_text operation."""
+        op = AiPatchOperation(
+            type="delete_text",
+            path="app/models.py",
+            start_line=10,
+            end_line=15
+        )
+        assert op.start_line == 10
+        assert op.end_line == 15
+    
+    def test_operation_with_note(self):
+        """Test operation with note."""
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            field="bio",
+            field_spec={"type": "text"},
+            note="Adding bio field for user profiles"
+        )
+        assert op.note == "Adding bio field for user profiles"
+    
+    def test_add_import_operation(self):
+        """Test add_import operation."""
+        op = AiPatchOperation(
+            type="add_import",
+            path="app/models.py",
+            import_statement="from datetime import datetime"
+        )
+        assert op.import_statement == "from datetime import datetime"
+
+
+class TestAiPatchRequest:
+    """Tests for AiPatchRequest model."""
+    
+    def test_valid_request(self):
+        """Test creating a valid request."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"})
+            ],
+            reason="Add bio field"
+        )
+        assert len(req.operations) == 1
+        assert req.reason == "Add bio field"
+    
+    def test_empty_operations_rejected(self):
+        """Test empty operations list is rejected."""
+        with pytest.raises(ValidationError):
+            AiPatchRequest(operations=[])
+    
+    def test_multiple_operations(self):
+        """Test multiple operations in request."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"}),
+                AiPatchOperation(type="add_field", model="User", field="avatar", field_spec={"type": "string"}),
+            ]
+        )
+        assert len(req.operations) == 2
+    
+    def test_dry_run_flag(self):
+        """Test dry_run flag."""
+        req = AiPatchRequest(
+            operations=[AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"})],
+            dry_run=True
+        )
+        assert req.dry_run is True
+
+
+class TestAiPatchResult:
+    """Tests for AiPatchResult model."""
+    
+    def test_success_result(self):
+        """Test successful result."""
+        result = AiPatchResult(
+            applied=True,
+            operations_applied=3,
+            checksum="abc123"
+        )
+        assert result.applied is True
+        assert result.operations_applied == 3
+    
+    def test_failure_result(self):
+        """Test failure result."""
+        result = AiPatchResult(
+            applied=False,
+            errors=["Syntax error in file"],
+            operations_failed=1
+        )
+        assert result.applied is False
+        assert len(result.errors) == 1
+    
+    def test_preview_result(self):
+        """Test preview result."""
+        result = AiPatchResult(
+            applied=False,
+            preview_only=True,
+            files_changed={"app/models.py": AiPatchFileChange(
+                path="app/models.py",
+                new_content="content",
+                diff="diff"
+            )}
+        )
+        assert result.preview_only is True
+
+
+class TestAiPatchFileChange:
+    """Tests for AiPatchFileChange model."""
+    
+    def test_file_change(self):
+        """Test file change model."""
+        change = AiPatchFileChange(
+            path="app/models.py",
+            original_content="old",
+            new_content="new",
+            diff="diff here"
+        )
+        assert change.path == "app/models.py"
+        assert change.original_content == "old"
+        assert change.new_content == "new"
+    
+    def test_created_file(self):
+        """Test created file flag."""
+        change = AiPatchFileChange(
+            path="app/new_file.py",
+            new_content="content",
+            created=True
+        )
+        assert change.created is True
+
+
+# =============================================================================
+# Test Path Safety
+# =============================================================================
+
+class TestPathSafety:
+    """Tests for path safety validation."""
+    
+    def test_safe_path(self, temp_project):
+        """Test safe path within project."""
+        assert _is_path_safe("app/models.py", temp_project) is True
+    
+    def test_unsafe_path_outside_project(self, temp_project):
+        """Test path outside project is rejected."""
+        assert _is_path_safe("../../../etc/passwd", temp_project) is False
+    
+    def test_unsafe_absolute_path(self, temp_project):
+        """Test absolute path outside project is rejected."""
+        assert _is_path_safe("/etc/passwd", temp_project) is False
+    
+    def test_protected_migration_file(self):
+        """Test migration files are protected."""
+        assert _is_protected_file("app/migrations/0001_initial.py") is True
+    
+    def test_protected_pycache(self):
+        """Test __pycache__ is protected."""
+        assert _is_protected_file("app/__pycache__/models.cpython-39.pyc") is True
+    
+    def test_protected_git(self):
+        """Test .git is protected."""
+        assert _is_protected_file(".git/config") is True
+    
+    def test_protected_env_file(self):
+        """Test .env is protected."""
+        assert _is_protected_file(".env") is True
+    
+    def test_non_protected_file(self):
+        """Test normal file is not protected."""
+        assert _is_protected_file("app/models.py") is False
+
+
+# =============================================================================
+# Test Dangerous Code Detection
+# =============================================================================
+
+class TestDangerousCode:
+    """Tests for dangerous code detection."""
+    
+    def test_safe_code(self):
+        """Test safe code passes."""
+        code = "class User(Model):\n    name = fields.String()"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is False
+    
+    def test_detect_eval(self):
+        """Test eval() is detected."""
+        code = "result = eval(user_input)"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is True
+        assert "eval" in msg
+    
+    def test_detect_exec(self):
+        """Test exec() is detected."""
+        code = "exec(user_code)"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is True
+    
+    def test_detect_os_system(self):
+        """Test os.system() is detected."""
+        code = "os.system('rm -rf /')"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is True
+    
+    def test_detect_subprocess(self):
+        """Test subprocess calls are detected."""
+        code = "subprocess.run(['ls'])"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is True
+    
+    def test_detect_shutil_rmtree(self):
+        """Test shutil.rmtree() is detected."""
+        code = "shutil.rmtree('/important')"
+        is_dangerous, msg = _contains_dangerous_code(code)
+        assert is_dangerous is True
+
+
+# =============================================================================
+# Test Syntax Validation
+# =============================================================================
+
+class TestSyntaxValidation:
+    """Tests for Python syntax validation."""
+    
+    def test_valid_syntax(self):
+        """Test valid Python syntax."""
+        code = "class User:\n    pass"
+        is_valid, error = _validate_python_syntax(code)
+        assert is_valid is True
+        assert error is None
+    
+    def test_invalid_syntax(self):
+        """Test invalid Python syntax is detected."""
+        code = "class User\n    pass"  # Missing colon
+        is_valid, error = _validate_python_syntax(code)
+        assert is_valid is False
+        assert "Syntax error" in error
+    
+    def test_indentation_error(self):
+        """Test indentation error is detected."""
+        code = "def foo():\nprint('hi')"  # Bad indentation
+        is_valid, error = _validate_python_syntax(code)
+        assert is_valid is False
+
+
+# =============================================================================
+# Test Operation Validation
+# =============================================================================
+
+class TestOperationValidation:
+    """Tests for operation validation."""
+    
+    def test_valid_add_field(self, temp_project):
+        """Test valid add_field operation."""
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            field="bio",
+            field_spec={"type": "text"}
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is True
+    
+    def test_missing_model_for_add_field(self, temp_project):
+        """Test add_field without model is rejected."""
+        op = AiPatchOperation(
+            type="add_field",
+            field="bio",
+            field_spec={"type": "text"}
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert "model" in result.error_message
+    
+    def test_missing_field_for_add_field(self, temp_project):
+        """Test add_field without field is rejected."""
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            field_spec={"type": "text"}
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert "field" in result.error_message
+    
+    def test_missing_field_spec_for_add_field(self, temp_project):
+        """Test add_field without field_spec is rejected."""
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            field="bio"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert "field_spec" in result.error_message
+    
+    def test_path_outside_project_rejected(self, temp_project):
+        """Test path outside project is rejected."""
+        op = AiPatchOperation(
+            type="modify_file",
+            path="../../../etc/passwd",
+            text="hack"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert result.error_type == PatchValidationError.PATH_OUTSIDE_PROJECT.value
+    
+    def test_protected_file_rejected(self, temp_project):
+        """Test protected file is rejected."""
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/migrations/0001_initial.py",
+            text="hack"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert result.error_type == PatchValidationError.PROTECTED_FILE.value
+    
+    def test_dangerous_code_rejected(self, temp_project):
+        """Test dangerous code is rejected."""
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/models.py",
+            text="import os; os.system('rm -rf /')"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert result.error_type == PatchValidationError.DANGEROUS_CODE.value
+    
+    def test_delete_model_warning(self, temp_project):
+        """Test delete_model generates migration warning."""
+        op = AiPatchOperation(
+            type="delete_model",
+            model="User"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is True
+        assert any("migration" in w.lower() for w in result.warnings)
+    
+    def test_delete_field_warning(self, temp_project):
+        """Test delete_field generates migration warning."""
+        op = AiPatchOperation(
+            type="delete_field",
+            model="User",
+            field="bio"
+        )
+        result = validate_operation(op, temp_project)
+        assert result.valid is True
+        assert any("migration" in w.lower() for w in result.warnings)
+
+
+class TestRequestValidation:
+    """Tests for full request validation."""
+    
+    def test_valid_request(self, temp_project, sample_request):
+        """Test valid request passes validation."""
+        all_valid, results = validate_patch_request(sample_request, temp_project)
+        assert all_valid is True
+    
+    def test_invalid_request_fails(self, temp_project):
+        """Test request with invalid operation fails."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio")  # Missing field_spec
+            ]
+        )
+        all_valid, results = validate_patch_request(req, temp_project)
+        assert all_valid is False
+
+
+# =============================================================================
+# Test File Executors
+# =============================================================================
+
+class TestFileExecutors:
+    """Tests for file patch executors."""
+    
+    def test_apply_modify_file_full_replace(self, temp_project):
+        """Test modify_file with full content replacement."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/models.py",
+            text='"""New models."""\nfrom vidyut import Model, fields\n'
+        )
+        
+        success, change, error = apply_modify_file(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert change.new_content == op.text
+    
+    def test_apply_replace_text(self, temp_project):
+        """Test replace_text operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="replace_text",
+            path="app/models.py",
+            old_text="max_length=100",
+            new_text="max_length=200"
+        )
+        
+        success, change, error = apply_replace_text(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "max_length=200" in change.new_content
+    
+    def test_apply_replace_text_not_found(self, temp_project):
+        """Test replace_text when text not found."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="replace_text",
+            path="app/models.py",
+            old_text="nonexistent text",
+            new_text="new"
+        )
+        
+        success, change, error = apply_replace_text(op, temp_project, file_cache)
+        
+        assert success is False
+        assert "not found" in error
+    
+    def test_apply_insert_text(self, temp_project):
+        """Test insert_text operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="insert_text",
+            path="app/models.py",
+            start_line=3,
+            text="# Inserted comment"
+        )
+        
+        success, change, error = apply_insert_text(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "# Inserted comment" in change.new_content
+    
+    def test_apply_delete_text(self, temp_project):
+        """Test delete_text operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="delete_text",
+            path="app/models.py",
+            start_line=1,
+            end_line=1
+        )
+        
+        success, change, error = apply_delete_text(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+    
+    def test_apply_add_import(self, temp_project):
+        """Test add_import operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_import",
+            path="app/models.py",
+            import_statement="from datetime import datetime"
+        )
+        
+        success, change, error = apply_add_import(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "from datetime import datetime" in change.new_content
+    
+    def test_apply_add_import_already_exists(self, temp_project):
+        """Test add_import when import already exists."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_import",
+            path="app/models.py",
+            import_statement="from vidyut import Model, fields"
+        )
+        
+        success, change, error = apply_add_import(op, temp_project, file_cache)
+        
+        # Should succeed but no change needed
+        assert success is True
+    
+    def test_syntax_error_rejected(self, temp_project):
+        """Test syntax error in result is rejected."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/models.py",
+            text="class User\n    pass"  # Missing colon
+        )
+        
+        success, change, error = apply_modify_file(op, temp_project, file_cache)
+        
+        assert success is False
+        assert "Syntax error" in error
+
+
+# =============================================================================
+# Test ORM-Aware Executors
+# =============================================================================
+
+class TestOrmExecutors:
+    """Tests for ORM-aware patch executors."""
+    
+    def test_apply_add_model(self, temp_project):
+        """Test add_model operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_model",
+            model="Article",
+            app_label="app",
+            model_spec={
+                "fields": [
+                    {"name": "title", "type": "string", "max_length": 200},
+                    {"name": "body", "type": "text"}
+                ]
+            }
+        )
+        
+        success, change, error = apply_add_model(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "class Article(Model):" in change.new_content
+        assert "title = fields.String" in change.new_content
+    
+    def test_apply_add_model_already_exists(self, temp_project):
+        """Test add_model when model already exists."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_model",
+            model="User",  # Already exists
+            app_label="app",
+            model_spec={"fields": []}
+        )
+        
+        success, change, error = apply_add_model(op, temp_project, file_cache)
+        
+        assert success is False
+        assert "already exists" in error
+    
+    def test_apply_add_field(self, temp_project):
+        """Test add_field operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            app_label="app",
+            field="bio",
+            field_spec={"type": "text", "nullable": True}
+        )
+        
+        success, change, error = apply_add_field(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "bio = fields.Text" in change.new_content
+    
+    def test_apply_add_field_model_not_found(self, temp_project):
+        """Test add_field when model not found."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_field",
+            model="NonExistent",
+            app_label="app",
+            field="bio",
+            field_spec={"type": "text"}
+        )
+        
+        success, change, error = apply_add_field(op, temp_project, file_cache)
+        
+        assert success is False
+        assert "not found" in error
+    
+    def test_apply_update_field(self, temp_project):
+        """Test update_field operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="update_field",
+            model="User",
+            app_label="app",
+            field="name",
+            field_spec={"type": "string", "max_length": 200}  # Changed from 100
+        )
+        
+        success, change, error = apply_update_field(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "max_length=200" in change.new_content
+    
+    def test_apply_delete_field(self, temp_project):
+        """Test delete_field operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="delete_field",
+            model="User",
+            app_label="app",
+            field="is_active"
+        )
+        
+        success, change, error = apply_delete_field(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "is_active" not in change.new_content
+    
+    def test_apply_delete_model(self, temp_project):
+        """Test delete_model operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="delete_model",
+            model="User",
+            app_label="app"
+        )
+        
+        success, change, error = apply_delete_model(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "class User(" not in change.new_content
+    
+    def test_apply_add_viewset(self, temp_project):
+        """Test add_viewset operation."""
+        file_cache = {}
+        
+        # First add a model to reference
+        models_op = AiPatchOperation(
+            type="add_model",
+            model="Article",
+            app_label="app",
+            model_spec={"fields": [{"name": "title", "type": "string", "max_length": 200}]}
+        )
+        apply_add_model(models_op, temp_project, file_cache)
+        
+        # Now add viewset
+        op = AiPatchOperation(
+            type="add_viewset",
+            model="Article",
+            app_label="app"
+        )
+        
+        success, change, error = apply_add_viewset(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "class ArticleViewSet(ModelViewSet):" in change.new_content
+    
+    def test_apply_delete_viewset(self, temp_project):
+        """Test delete_viewset operation."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="delete_viewset",
+            model="User",
+            app_label="app"
+        )
+        
+        success, change, error = apply_delete_viewset(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change is not None
+        assert "class UserViewSet(" not in change.new_content
+
+
+# =============================================================================
+# Test Patch Orchestrator
+# =============================================================================
+
+class TestPatchOrchestrator:
+    """Tests for the patch engine orchestrator."""
+    
+    def test_preview_mode(self, temp_project, sample_request):
+        """Test preview mode doesn't modify files."""
+        original_content = open(os.path.join(temp_project, "app/models.py")).read()
+        
+        result = apply_ai_patches(sample_request, temp_project, preview=True)
+        
+        assert result.applied is False
+        assert result.preview_only is True
+        
+        # File should be unchanged
+        current_content = open(os.path.join(temp_project, "app/models.py")).read()
+        assert current_content == original_content
+    
+    def test_apply_without_header_rejected(self, temp_project, sample_request):
+        """Test apply without confirmation header is rejected."""
+        result = apply_ai_patches(sample_request, temp_project, preview=False)
+        
+        assert result.applied is False
+        assert any("X-AI-Apply" in e for e in result.errors)
+    
+    def test_apply_with_header(self, temp_project, sample_request):
+        """Test apply with confirmation header works."""
+        result = apply_ai_patches(
+            sample_request,
+            temp_project,
+            preview=False,
+            confirm_header="true"
+        )
+        
+        assert result.applied is True
+        assert result.operations_applied == 1
+        
+        # Verify file was modified
+        content = open(os.path.join(temp_project, "app/models.py")).read()
+        assert "bio = fields.Text" in content
+    
+    def test_dry_run_in_request(self, temp_project):
+        """Test dry_run flag in request."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"})
+            ],
+            dry_run=True
+        )
+        
+        result = apply_ai_patches(req, temp_project, confirm_header="true")
+        
+        assert result.preview_only is True
+        assert result.applied is False
+    
+    def test_multiple_operations(self, temp_project):
+        """Test multiple operations in sequence."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"}),
+                AiPatchOperation(type="add_field", model="User", field="avatar", field_spec={"type": "string", "max_length": 255}),
+            ]
+        )
+        
+        result = apply_ai_patches(req, temp_project, preview=True)
+        
+        assert result.operations_applied == 2
+        assert "bio = fields.Text" in result.files_changed["app/models.py"].new_content
+        assert "avatar = fields.String" in result.files_changed["app/models.py"].new_content
+    
+    def test_rollback_on_failure(self, temp_project):
+        """Test rollback when operation fails."""
+        req = AiPatchRequest(
+            operations=[
+                AiPatchOperation(type="add_field", model="User", field="bio", field_spec={"type": "text"}),
+                AiPatchOperation(type="add_field", model="NonExistent", field="fail", field_spec={"type": "text"}),
+            ]
+        )
+        
+        original_content = open(os.path.join(temp_project, "app/models.py")).read()
+        
+        result = apply_ai_patches(req, temp_project, preview=False, confirm_header="true")
+        
+        assert result.applied is False
+        assert result.operations_failed > 0
+        
+        # File should be unchanged due to rollback
+        current_content = open(os.path.join(temp_project, "app/models.py")).read()
+        assert current_content == original_content
+    
+    def test_checksum_generated(self, temp_project, sample_request):
+        """Test checksum is generated."""
+        result = apply_ai_patches(sample_request, temp_project, preview=True)
+        
+        assert result.checksum != ""
+        assert len(result.checksum) == 16
+    
+    def test_checksum_deterministic(self, temp_project, sample_request):
+        """Test checksum is deterministic."""
+        result1 = apply_ai_patches(sample_request, temp_project, preview=True)
+        result2 = apply_ai_patches(sample_request, temp_project, preview=True)
+        
+        assert result1.checksum == result2.checksum
+
+
+class TestRollback:
+    """Tests for rollback functionality."""
+    
+    def test_rollback_patches(self, temp_project, sample_request):
+        """Test rollback restores original content."""
+        original_content = open(os.path.join(temp_project, "app/models.py")).read()
+        
+        # Apply patches
+        result = apply_ai_patches(sample_request, temp_project, preview=False, confirm_header="true")
+        assert result.applied is True
+        
+        # Verify file was changed
+        changed_content = open(os.path.join(temp_project, "app/models.py")).read()
+        assert changed_content != original_content
+        
+        # Rollback
+        success = rollback_patches(result, temp_project)
+        assert success is True
+        
+        # Verify file is restored
+        restored_content = open(os.path.join(temp_project, "app/models.py")).read()
+        assert restored_content == original_content
+
+
+class TestPreviewDiff:
+    """Tests for diff preview functionality."""
+    
+    def test_preview_patch_diff(self, temp_project, sample_request):
+        """Test diff preview generation."""
+        diff = preview_patch_diff(sample_request, temp_project)
+        
+        assert "app/models.py" in diff
+        assert "+    bio = fields.Text" in diff or "+ bio = fields.Text" in diff.replace("    ", " ")
+
+
+# =============================================================================
+# Test Async Support
+# =============================================================================
+
+class TestAsyncSupport:
+    """Tests for async patch operations."""
+    
+    @pytest.mark.asyncio
+    async def test_async_apply_patches(self, temp_project, sample_request):
+        """Test async version of apply_ai_patches."""
+        result = await apply_ai_patches_async(sample_request, temp_project, preview=True)
+        
+        assert result.preview_only is True
+        assert result.operations_applied == 1
+
+
+# =============================================================================
+# Test Edge Cases
+# =============================================================================
+
+class TestEdgeCases:
+    """Tests for edge cases."""
+    
+    def test_empty_file_modification(self, temp_project):
+        """Test modifying a non-existent file creates it."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="modify_file",
+            path="app/new_module.py",
+            text='"""New module."""\n'
+        )
+        
+        success, change, error = apply_modify_file(op, temp_project, file_cache)
+        
+        assert success is True
+        assert change.created is True
+    
+    def test_field_with_fk(self, temp_project):
+        """Test adding foreign key field."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            app_label="app",
+            field="profile",
+            field_spec={
+                "type": "fk",
+                "fk_model": "Profile",
+                "on_delete": "CASCADE"
+            }
+        )
+        
+        success, change, error = apply_add_field(op, temp_project, file_cache)
+        
+        assert success is True
+        assert 'ForeignKey("Profile"' in change.new_content
+    
+    def test_field_with_default(self, temp_project):
+        """Test adding field with default value."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_field",
+            model="User",
+            app_label="app",
+            field="status",
+            field_spec={
+                "type": "string",
+                "max_length": 50,
+                "default": "active"
+            }
+        )
+        
+        success, change, error = apply_add_field(op, temp_project, file_cache)
+        
+        assert success is True
+        assert 'default="active"' in change.new_content
+    
+    def test_model_with_multiple_fields(self, temp_project):
+        """Test adding model with multiple fields."""
+        file_cache = {}
+        op = AiPatchOperation(
+            type="add_model",
+            model="Post",
+            app_label="app",
+            model_spec={
+                "fields": [
+                    {"name": "title", "type": "string", "max_length": 200},
+                    {"name": "body", "type": "text"},
+                    {"name": "published", "type": "boolean", "default": False},
+                    {"name": "view_count", "type": "integer", "default": 0}
+                ]
+            }
+        )
+        
+        success, change, error = apply_add_model(op, temp_project, file_cache)
+        
+        assert success is True
+        assert "title = fields.String" in change.new_content
+        assert "body = fields.Text" in change.new_content
+        assert "published = fields.Boolean" in change.new_content
+        assert "view_count = fields.Integer" in change.new_content
+
+
+# =============================================================================
+# Test Diff Generation
+# =============================================================================
+
+class TestDiffGeneration:
+    """Tests for diff generation."""
+    
+    def test_generate_diff(self):
+        """Test unified diff generation."""
+        original = "line1\nline2\nline3"
+        modified = "line1\nmodified\nline3"
+        
+        diff = _generate_diff(original, modified, "test.py")
+        
+        assert "--- a/test.py" in diff
+        assert "+++ b/test.py" in diff
+        assert "-line2" in diff
+        assert "+modified" in diff
+
+
+# =============================================================================
+# Test Module Exports
+# =============================================================================
+
+class TestModuleExports:
+    """Tests for module exports."""
+    
+    def test_patch_exports(self):
+        """Test patch module exports are available."""
+        from vidyut.ai import (
+            AiPatchOperation,
+            AiPatchRequest,
+            AiPatchResult,
+            apply_ai_patches,
+        )
+        
+        assert AiPatchOperation is not None
+        assert AiPatchRequest is not None
+        assert AiPatchResult is not None
+        assert apply_ai_patches is not None
+    
+    def test_all_list_complete(self):
+        """Test __all__ list is complete."""
+        from vidyut import ai
+        
+        # Check patch exports
+        assert "AiPatchOperation" in ai.__all__
+        assert "AiPatchRequest" in ai.__all__
+        assert "AiPatchResult" in ai.__all__
+        assert "apply_ai_patches" in ai.__all__
+
+
+# =============================================================================
+# Test Constants
+# =============================================================================
+
+class TestConstants:
+    """Tests for module constants."""
+    
+    def test_allowed_operations(self):
+        """Test allowed operations set."""
+        assert "add_model" in ALLOWED_OPERATIONS
+        assert "add_field" in ALLOWED_OPERATIONS
+        assert "modify_file" in ALLOWED_OPERATIONS
+        assert "invalid" not in ALLOWED_OPERATIONS
+    
+    def test_protected_patterns(self):
+        """Test protected patterns set."""
+        assert "**/migrations/*.py" in PROTECTED_PATTERNS
+        assert "**/__pycache__/**" in PROTECTED_PATTERNS
+        assert "**/.git/**" in PROTECTED_PATTERNS
+
+
+# =============================================================================
+# Test Enums
+# =============================================================================
+
+class TestEnums:
+    """Tests for enum types."""
+    
+    def test_operation_type_enum(self):
+        """Test PatchOperationType enum."""
+        assert PatchOperationType.ADD_MODEL.value == "add_model"
+        assert PatchOperationType.ADD_FIELD.value == "add_field"
+        assert PatchOperationType.MODIFY_FILE.value == "modify_file"
+    
+    def test_validation_error_enum(self):
+        """Test PatchValidationError enum."""
+        assert PatchValidationError.PATH_OUTSIDE_PROJECT.value == "path_outside_project"
+        assert PatchValidationError.SYNTAX_ERROR.value == "syntax_error"
+        assert PatchValidationError.DANGEROUS_CODE.value == "dangerous_code"

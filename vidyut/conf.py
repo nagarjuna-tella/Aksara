@@ -73,9 +73,13 @@ class Settings:
     # Migrations
     migrations_dir: str = "migrations"
     
-    # Future: AI features
+    # v0.4.0: AI features
     ai_enabled: bool = False
     mcp_enabled: bool = False
+    
+    # v0.4.1: AI Debug Assistant
+    ai_debug_enabled: bool = True  # Enabled by default in debug mode
+    ai_debug_advisor_class: Optional[str] = None  # Custom advisor class path
     
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])

@@ -124,7 +124,26 @@ from vidyut.permissions import (
     check_permissions,
 )
 
-__version__ = "0.3.20"
+# v0.4.0: AI Mode
+from vidyut.ai import (
+    AiTool,
+    AiToolParam,
+    AiToolRegistry,
+    discover_tools_from_viewset,
+    get_ai_tools_for_request,
+    export_tools_as_generic,
+    export_tools_as_mcp,
+)
+
+# v0.4.1: AI Debug exports
+from vidyut.ai.debug import (
+    AiDebugContext,
+    AiDebugSuggestion,
+    build_ai_debug_context,
+    RuleBasedAiDebugAdvisor,
+)
+
+__version__ = "0.4.9"
 __all__ = [
     # Vidyut ORM
     "Model",
@@ -230,4 +249,12 @@ __all__ = [
     "AND",
     "OR",
     "check_permissions",
+    # v0.4.0: AI Mode
+    "AiTool",
+    "AiToolParam",
+    "AiToolRegistry",
+    "discover_tools_from_viewset",
+    "get_ai_tools_for_request",
+    "export_tools_as_generic",
+    "export_tools_as_mcp",
 ]

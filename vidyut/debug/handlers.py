@@ -232,16 +232,24 @@ async def collect_debug_context(
     return context
 
 
-def render_debug_page(context: DebugContext) -> HTMLResponse:
+def render_debug_page(
+    context: DebugContext,
+    ai_context: Optional["AiDebugContext"] = None,
+) -> HTMLResponse:
     """
     Render a beautiful dark-mode debug error page.
     
     Args:
         context: The DebugContext with error information.
+        ai_context: Optional AI debug context with suggestions.
     
     Returns:
         HTMLResponse with the styled error page.
     """
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from vidyut.ai.debug import AiDebugContext
+    
     # Build traceback HTML
     traceback_html = _build_traceback_html(context.traceback_frames)
     
@@ -250,6 +258,10 @@ def render_debug_page(context: DebugContext) -> HTMLResponse:
     
     # Build context vars HTML
     context_vars_html = _build_context_vars_html(context)
+    
+    # Build AI debug HTML if context available
+    ai_debug_html = _build_ai_debug_html(ai_context) if ai_context else ""
+    ai_tab_button = '<button class="tab-btn ai-tab" data-tab="ai-debug">🤖 AI Debug</button>' if ai_context else ""
     
     # Escape for safe HTML
     exc_type = html.escape(context.exception_type)
@@ -282,6 +294,7 @@ def render_debug_page(context: DebugContext) -> HTMLResponse:
             <button class="tab-btn" data-tab="request">Request</button>
             <button class="tab-btn" data-tab="context">Context</button>
             <button class="tab-btn" data-tab="environment">Environment</button>
+            {ai_tab_button}
         </nav>
         
         <div class="tab-content">
@@ -321,6 +334,8 @@ def render_debug_page(context: DebugContext) -> HTMLResponse:
                     </div>
                 </div>
             </section>
+            
+            {ai_debug_html}
         </div>
         
         <footer class="error-footer">
@@ -491,7 +506,23 @@ class VidyutDebugMiddleware:
         if self.debug and wants_html:
             # Debug mode with HTML: rich error page
             context = await collect_debug_context(request, exc, status_code)
-            return render_debug_page(context)
+            
+            # Build AI debug context if enabled
+            ai_context = None
+            try:
+                from vidyut.conf import settings
+                if getattr(settings, 'ai_debug_enabled', True) and settings.debug:
+                    from vidyut.ai.debug import build_ai_debug_context, default_advisor
+                    ai_context = await build_ai_debug_context(
+                        request, exc, status_code, 
+                        debug_context=context,
+                        advisor=default_advisor
+                    )
+            except Exception:
+                # Silently fail if AI debug is not available
+                pass
+            
+            return render_debug_page(context, ai_context=ai_context)
         
         elif isinstance(exc, RequestValidationError):
             # Validation errors always return JSON
@@ -677,6 +708,115 @@ def _build_context_vars_html(context: DebugContext) -> str:
         ''')
     
     parts.append('</div>')
+    return "".join(parts)
+
+
+def _build_ai_debug_html(ai_context: Optional[Any]) -> str:
+    """Build HTML for AI debug section."""
+    if ai_context is None:
+        return ""
+    
+    import json
+    
+    parts = ['<section id="ai-debug" class="tab-pane">']
+    parts.append('<h2>🤖 AI Debug Assistant</h2>')
+    
+    # Suggestions section
+    if ai_context.suggestions:
+        parts.append('<div class="ai-suggestions">')
+        parts.append('<h3>💡 Suggestions</h3>')
+        
+        for i, suggestion in enumerate(ai_context.suggestions, 1):
+            confidence_pct = int(suggestion.confidence * 100)
+            confidence_class = "high" if suggestion.confidence >= 0.8 else "medium" if suggestion.confidence >= 0.5 else "low"
+            
+            parts.append(f'''
+            <div class="ai-suggestion">
+                <div class="suggestion-header">
+                    <span class="suggestion-number">#{i}</span>
+                    <span class="suggestion-title">{html.escape(suggestion.title)}</span>
+                    <span class="confidence-badge {confidence_class}">{confidence_pct}% confidence</span>
+                    <span class="category-badge">{html.escape(suggestion.category)}</span>
+                </div>
+                <p class="suggestion-description">{html.escape(suggestion.description)}</p>
+            ''')
+            
+            if suggestion.code_snippet:
+                parts.append(f'''
+                <div class="suggestion-code">
+                    <pre><code>{html.escape(suggestion.code_snippet)}</code></pre>
+                </div>
+                ''')
+            
+            if suggestion.doc_url:
+                parts.append(f'''
+                <a href="{html.escape(suggestion.doc_url)}" class="doc-link" target="_blank">📚 Documentation</a>
+                ''')
+            
+            parts.append('</div>')
+        
+        parts.append('</div>')
+    else:
+        parts.append('<p class="no-suggestions">No suggestions available for this error type.</p>')
+    
+    # Exception classification
+    exc = ai_context.exception
+    classification_flags = []
+    if exc.is_validation_error:
+        classification_flags.append("Validation Error")
+    if exc.is_db_error:
+        classification_flags.append("Database Error")
+    if exc.is_auth_error:
+        classification_flags.append("Auth Error")
+    if exc.is_not_found:
+        classification_flags.append("Not Found")
+    if exc.is_timeout:
+        classification_flags.append("Timeout")
+    if exc.is_connection_error:
+        classification_flags.append("Connection Error")
+    
+    if classification_flags:
+        parts.append('<div class="ai-classification">')
+        parts.append('<h3>🏷️ Error Classification</h3>')
+        parts.append('<div class="classification-tags">')
+        for flag in classification_flags:
+            parts.append(f'<span class="classification-tag">{html.escape(flag)}</span>')
+        parts.append('</div>')
+        parts.append('</div>')
+    
+    # LLM Prompt section
+    parts.append('<div class="ai-prompt-section">')
+    parts.append('<h3>🤖 LLM Prompt</h3>')
+    parts.append('<p class="prompt-hint">Copy this prompt to analyze the error with an AI assistant:</p>')
+    
+    llm_prompt = ai_context.to_llm_prompt()
+    parts.append(f'''
+    <div class="prompt-container">
+        <button class="copy-btn" onclick="copyPrompt()">📋 Copy Prompt</button>
+        <pre class="llm-prompt" id="llm-prompt">{html.escape(llm_prompt)}</pre>
+    </div>
+    ''')
+    parts.append('</div>')
+    
+    # JSON Context section
+    parts.append('<div class="ai-json-section">')
+    parts.append('<h3>📄 JSON Context</h3>')
+    parts.append('<p class="json-hint">Structured JSON for programmatic use:</p>')
+    
+    try:
+        json_context = ai_context.model_dump_json(indent=2)
+    except Exception:
+        json_context = "{}"
+    
+    parts.append(f'''
+    <div class="json-container">
+        <button class="copy-btn" onclick="copyJson()">📋 Copy JSON</button>
+        <pre class="ai-json" id="ai-json">{html.escape(json_context)}</pre>
+    </div>
+    ''')
+    parts.append('</div>')
+    
+    parts.append('</section>')
     return "".join(parts)
 
 
@@ -1014,6 +1154,174 @@ def _get_debug_css() -> str:
         .footer-note { color: var(--accent-orange); }
         
         .no-traceback { color: var(--text-muted); font-style: italic; }
+        
+        /* AI Debug Tab */
+        .ai-tab { 
+            background: linear-gradient(135deg, rgba(163, 113, 247, 0.1), rgba(88, 166, 255, 0.1));
+            border: 1px solid var(--accent-purple);
+        }
+        .ai-tab:hover { 
+            background: linear-gradient(135deg, rgba(163, 113, 247, 0.2), rgba(88, 166, 255, 0.2));
+        }
+        
+        .ai-suggestions { margin-bottom: 2rem; }
+        .ai-suggestions h3 { margin-bottom: 1rem; color: var(--accent-orange); }
+        
+        .ai-suggestion {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .suggestion-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .suggestion-number {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .confidence-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        .confidence-badge.high { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+        .confidence-badge.medium { background: rgba(210, 153, 34, 0.15); color: var(--accent-orange); }
+        .confidence-badge.low { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); }
+        
+        .category-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+        
+        .suggestion-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .suggestion-code {
+            margin-top: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 0.75rem;
+            overflow-x: auto;
+        }
+        
+        .suggestion-code pre {
+            margin: 0;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.8125rem;
+            color: var(--accent-green);
+        }
+        
+        .doc-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        .doc-link:hover { text-decoration: underline; }
+        
+        .no-suggestions {
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .ai-classification { margin-bottom: 2rem; }
+        .ai-classification h3 { margin-bottom: 1rem; color: var(--accent-purple); }
+        
+        .classification-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .classification-tag {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .ai-prompt-section, .ai-json-section {
+            margin-bottom: 2rem;
+        }
+        
+        .ai-prompt-section h3, .ai-json-section h3 {
+            margin-bottom: 0.5rem;
+            color: var(--accent-blue);
+        }
+        
+        .prompt-hint, .json-hint {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .prompt-container, .json-container {
+            position: relative;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            z-index: 1;
+        }
+        .copy-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--accent-blue);
+        }
+        
+        .llm-prompt, .ai-json {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            padding-top: 2.5rem;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.8125rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-secondary);
+            max-height: 400px;
+            overflow-y: auto;
+        }
     """
 
 
@@ -1035,6 +1343,32 @@ def _get_debug_js() -> str:
             const frame = header.parentElement;
             const expanded = frame.dataset.expanded === 'true';
             frame.dataset.expanded = expanded ? 'false' : 'true';
+        }
+        
+        // Copy prompt to clipboard
+        function copyPrompt() {
+            const prompt = document.getElementById('llm-prompt');
+            if (prompt) {
+                navigator.clipboard.writeText(prompt.textContent).then(() => {
+                    const btn = event.target;
+                    const original = btn.textContent;
+                    btn.textContent = '✓ Copied!';
+                    setTimeout(() => btn.textContent = original, 2000);
+                });
+            }
+        }
+        
+        // Copy JSON to clipboard
+        function copyJson() {
+            const json = document.getElementById('ai-json');
+            if (json) {
+                navigator.clipboard.writeText(json.textContent).then(() => {
+                    const btn = event.target;
+                    const original = btn.textContent;
+                    btn.textContent = '✓ Copied!';
+                    setTimeout(() => btn.textContent = original, 2000);
+                });
+            }
         }
     """
 
