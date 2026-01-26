@@ -143,7 +143,7 @@ from vidyut.ai.debug import (
     RuleBasedAiDebugAdvisor,
 )
 
-__version__ = "0.4.9"
+from vidyut._version import __version__
 __all__ = [
     # Vidyut ORM
     "Model",

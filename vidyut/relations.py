@@ -32,6 +32,10 @@ if TYPE_CHECKING:
     from vidyut.model.base import Model
 
 
+# NOTE:
+# This enum backs the string on_delete constants defined in vidyut.fields.
+# Use either the enum or the strings; Vidyut normalizes them internally.
+
 class OnDelete(str, Enum):
     """
     Delete behavior policies for FK and OneToOne relations.

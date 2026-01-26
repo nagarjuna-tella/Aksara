@@ -50,7 +50,7 @@ configure(
 # =============================================================================
 
 APP_NAME = "Vidyut Example App"
-APP_VERSION = "0.2.0"
+APP_VERSION = "dev"  # Example app version (not tied to framework version)
 APP_DESCRIPTION = "Demo application using Vidyut async ORM"
 
 # CORS settings (if needed)

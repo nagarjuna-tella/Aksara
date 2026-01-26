@@ -7,6 +7,11 @@ Defines all operation classes for schema changes:
 - Column operations (AddField, RemoveField, AlterFieldType)
 - Index operations (AddIndex, RemoveIndex)
 - Raw SQL escape hatch (RunSQL)
+
+NOTE:
+These are migration-time field definitions/operations.
+They are separate from runtime fields in vidyut.fields, but conceptually aligned.
+Keep them in sync when adding new field types or options.
 """
 
 from __future__ import annotations

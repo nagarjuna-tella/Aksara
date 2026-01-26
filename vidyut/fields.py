@@ -2,6 +2,11 @@
 Vidyut Field Types
 
 Field definitions for model columns with PostgreSQL type mappings.
+
+NOTE:
+These are runtime model fields used by the ORM (Model, QuerySet, etc.).
+Migration field operations live separately in vidyut.migrations.operations.
+If you change behavior or supported options here, check if migrations also need updates.
 """
 
 from __future__ import annotations
@@ -22,6 +27,12 @@ if TYPE_CHECKING:
 
 # =============================================================================
 # on_delete constants (Django-style API)
+# =============================================================================
+# NOTE:
+# on_delete may be specified using these string constants (CASCADE, SET_NULL, etc.)
+# or via the OnDelete enum in vidyut.relations.
+# Both are supported for now; the string form is friendlier for devs,
+# while the enum provides stronger typing internally.
 # =============================================================================
 
 class OnDelete:

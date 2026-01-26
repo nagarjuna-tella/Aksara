@@ -44,6 +44,7 @@ from fastapi.templating import Jinja2Templates
 
 from vidyut.db import Database
 from vidyut.apps import load_app_models
+from vidyut._version import __version__
 
 
 # Vidyut SVG logo (blue lightning bolt with gradient)
@@ -117,7 +118,7 @@ class Vidyut(FastAPI):
         title: str = "Vidyut API",
         summary: Optional[str] = None,
         description: str = "",
-        version: str = "0.3.8",
+        version: str = __version__,
         openapi_url: Optional[str] = "/openapi.json",
         openapi_tags: Optional[list[dict[str, Any]]] = None,
         docs_url: Optional[str] = "/docs",
