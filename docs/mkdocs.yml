@@ -1,0 +1,174 @@
+site_name: Vidyut Framework
+site_description: AI-Native Async Backend Framework for Python
+site_url: https://vidyut.dev
+repo_url: https://github.com/vidyut-orm/vidyut
+repo_name: vidyut-orm/vidyut
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.tabs
+    - navigation.top
+    - navigation.footer
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Project Layout: getting-started/project-layout.md
+      - Settings: getting-started/settings.md
+      - First App: getting-started/first-app.md
+      - Database Setup: getting-started/database-setup.md
+      - Running Your App: getting-started/running-your-app.md
+  - ORM:
+      - orm/index.md
+      - Models: orm/models.md
+      - Fields: orm/fields.md
+      - Relations: orm/relations.md
+      - Querying: orm/querying.md
+      - Migrations: orm/migrations.md
+      - Model Meta: orm/model-meta.md
+  - API:
+      - api/index.md
+      - ViewSets: api/viewsets.md
+      - Actions: api/actions.md
+      - Serializers: api/serializers.md
+      - Routing: api/routing.md
+      - Permissions: api/permissions.md
+      - Authentication: api/authentication.md
+      - Throttling: api/throttling.md
+  - Admin:
+      - admin/index.md
+      - Admin Site: admin/admin-site.md
+      - ModelAdmin: admin/modeladmin.md
+      - Customization: admin/customization.md
+  - Middleware:
+      - middleware/index.md
+      - Overview: middleware/overview.md
+      - Request ID: middleware/request-id.md
+      - Tenant: middleware/tenant.md
+      - Logging: middleware/logging.md
+  - Debugging:
+      - debugging/index.md
+      - Error Pages: debugging/error-pages.md
+      - AI Debug: debugging/ai-debug.md
+      - Observability: debugging/observability.md
+  - AI Mode:
+      - ai/index.md
+      - Overview: ai/overview.md
+      - Tools: ai/tools.md
+      - Context Engine: ai/context-engine.md
+      - Query Engine: ai/query-engine.md
+      - CodeGen: ai/codegen.md
+      - Patch Engine: ai/patch-engine.md
+      - Planner: ai/planner.md
+      - Agent Runtime: ai/agent-runtime.md
+      - Schema Doctor: ai/schema-doctor.md
+      - Best Practices: ai/best-practices.md
+  - CLI:
+      - cli/index.md
+      - Overview: cli/overview.md
+      - Project Management: cli/manage.md
+      - AI Commands: cli/ai-commands.md
+      - Dev Tools: cli/dev-tools.md
+  - Tutorials:
+      - tutorials/index.md
+      - Build a Blog: tutorials/build-a-blog.md
+      - Add Auth & Admin: tutorials/add-auth-admin.md
+      - AI Refactor Tutorial: tutorials/ai-refactor-tutorial.md
+      - Schema Drift Tutorial: tutorials/schema-drift-tutorial.md
+  - Advanced:
+      - advanced/index.md
+      - Custom Fields: advanced/custom-fields.md
+      - Custom Migrations: advanced/custom-migrations.md
+      - Extending Admin: advanced/extending-admin.md
+      - Custom Permissions: advanced/custom-permissions.md
+      - Integrating with FastAPI: advanced/integrating-with-pure-fastapi.md
+      - Multi-App Projects: advanced/multi-app-projects.md
+  - Reference:
+      - reference/index.md
+      - Settings Reference: reference/settings-reference.md
+      - Model API Reference: reference/model-api-reference.md
+      - ViewSet API Reference: reference/viewset-api-reference.md
+      - Serializer API Reference: reference/serializer-api-reference.md
+      - AI API Reference: reference/ai-api-reference.md
+      - CLI Reference: reference/cli-reference.md
+  - Roadmap: roadmap.md
+  - Changelog: changelog.md
+  - Glossary: glossary.md
+
+plugins:
+  - search
+  - autorefs
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vidyut-orm/vidyut
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/vidyut/
+  version:
+    provider: mike
+
+extra_css:
+  - stylesheets/extra.css
+
+copyright: Copyright &copy; 2024-2026 Vidyut Framework

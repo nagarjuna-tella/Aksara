@@ -1,0 +1,462 @@
+# Running Your App
+
+Start, debug, and deploy your Vidyut application.
+
+---
+
+## Development Server
+
+### Using the CLI
+
+The recommended way to run your app during development:
+
+```bash
+vidyut run main:app --reload
+```
+
+Options:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--reload` | Auto-reload on code changes | Off |
+| `--host` | Bind address | `127.0.0.1` |
+| `--port` | Port number | `8000` |
+| `--workers` | Number of workers | `1` |
+
+Examples:
+
+```bash
+# Development with auto-reload
+vidyut run main:app --reload
+
+# Custom port
+vidyut run main:app --port 3000 --reload
+
+# Bind to all interfaces
+vidyut run main:app --host 0.0.0.0 --port 8000
+
+# Multiple workers (production-like)
+vidyut run main:app --workers 4
+```
+
+### Using Uvicorn Directly
+
+You can also use Uvicorn directly:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Using Python
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+---
+
+## Interactive Shell
+
+Access the interactive Python shell with your app context:
+
+```bash
+vidyut shell
+```
+
+The shell automatically:
+
+- Imports your models
+- Connects to the database
+- Provides an async-ready environment
+
+Example session:
+
+```python
+>>> # Models are auto-imported
+>>> users = await User.objects.all()
+>>> len(users)
+5
+
+>>> # Create new records
+>>> task = await Task.objects.create(
+...     title="Review code",
+...     priority=2
+... )
+>>> task.id
+UUID('...')
+
+>>> # Query with filters
+>>> pending = await Task.objects.filter(status="pending")
+>>> for t in pending:
+...     print(f"{t.title}: {t.priority}")
+```
+
+---
+
+## Debug Mode
+
+Enable debug mode for development:
+
+### Via Environment
+
+```bash
+VIDYUT_DEBUG=true vidyut run main:app --reload
+```
+
+### Via Settings
+
+```python
+from vidyut import configure
+
+configure(debug=True)
+```
+
+### Via Constructor
+
+```python
+app = Vidyut(
+    database_url="...",
+    debug=True,
+)
+```
+
+Debug mode enables:
+
+- **Detailed error pages** with stack traces
+- **AI debugging suggestions** for common errors
+- **Request/response logging**
+- **Auto-reload** (when using `--reload`)
+
+!!! danger "Never Use Debug Mode in Production"
+    Debug mode exposes sensitive information. Always set `VIDYUT_DEBUG=false` in production.
+
+---
+
+## Production Deployment
+
+### Using Gunicorn + Uvicorn Workers
+
+The recommended production setup:
+
+```bash
+pip install gunicorn uvicorn[standard]
+```
+
+```bash
+gunicorn main:app \
+  --workers 4 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000 \
+  --access-logfile - \
+  --error-logfile -
+```
+
+### Using Docker
+
+Create a `Dockerfile`:
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY . .
+
+# Run with Gunicorn
+CMD ["gunicorn", "main:app", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8000"]
+```
+
+Create a `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/myapp
+      - VIDYUT_DEBUG=false
+      - VIDYUT_LOG_JSON=true
+    depends_on:
+      - db
+  
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+```
+
+Run with:
+
+```bash
+docker-compose up -d
+```
+
+### Worker Count
+
+Calculate workers based on CPU cores:
+
+```
+workers = (2 × CPU cores) + 1
+```
+
+| CPU Cores | Recommended Workers |
+|-----------|---------------------|
+| 1 | 2-3 |
+| 2 | 4-5 |
+| 4 | 8-9 |
+| 8 | 16-17 |
+
+### Environment Variables for Production
+
+```bash
+# Required
+DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
+
+# Recommended
+VIDYUT_DEBUG=false
+VIDYUT_LOG_LEVEL=INFO
+VIDYUT_LOG_JSON=true
+VIDYUT_POOL_MIN_SIZE=10
+VIDYUT_POOL_MAX_SIZE=50
+```
+
+---
+
+## Health Checks
+
+Add health check endpoints for container orchestration:
+
+```python
+from vidyut.db import Database
+
+@app.get("/health")
+async def health():
+    """Basic health check."""
+    return {"status": "ok"}
+
+@app.get("/health/ready")
+async def readiness():
+    """Readiness check with database verification."""
+    try:
+        db = Database.get_instance()
+        await db.fetchval("SELECT 1")
+        return {"status": "ready", "database": "connected"}
+    except Exception as e:
+        return {"status": "not_ready", "error": str(e)}, 503
+```
+
+---
+
+## Process Management
+
+### Using systemd
+
+Create `/etc/systemd/system/vidyut-app.service`:
+
+```ini
+[Unit]
+Description=Vidyut Application
+After=network.target postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/myapp
+Environment="DATABASE_URL=postgresql://..."
+Environment="VIDYUT_DEBUG=false"
+ExecStart=/opt/myapp/venv/bin/gunicorn main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind unix:/run/vidyut/app.sock
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl enable vidyut-app
+sudo systemctl start vidyut-app
+```
+
+### Using Supervisor
+
+Create `/etc/supervisor/conf.d/vidyut.conf`:
+
+```ini
+[program:vidyut]
+command=/opt/myapp/venv/bin/gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+directory=/opt/myapp
+user=www-data
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/vidyut/app.log
+environment=DATABASE_URL="postgresql://...",VIDYUT_DEBUG="false"
+```
+
+---
+
+## Reverse Proxy
+
+### Nginx Configuration
+
+```nginx
+upstream vidyut {
+    server 127.0.0.1:8000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    
+    location / {
+        proxy_pass http://vidyut;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+    }
+    
+    location /static {
+        alias /opt/myapp/static;
+        expires 30d;
+    }
+}
+```
+
+### Caddy Configuration
+
+```
+example.com {
+    reverse_proxy localhost:8000
+}
+```
+
+---
+
+## Logging
+
+### Development Logging
+
+```python
+configure(
+    log_level="DEBUG",
+    log_requests=True,
+    log_json=False,  # Human-readable
+)
+```
+
+### Production Logging
+
+```python
+configure(
+    log_level="INFO",
+    log_requests=True,
+    log_json=True,  # Machine-readable for log aggregation
+)
+```
+
+### Log Output
+
+Development:
+```
+INFO:     127.0.0.1:52340 - "GET /api/tasks HTTP/1.1" 200
+DEBUG:    Query: SELECT * FROM tasks WHERE status = $1
+```
+
+Production (JSON):
+```json
+{"timestamp":"2026-01-26T10:00:00Z","level":"INFO","method":"GET","path":"/api/tasks","status":200,"duration_ms":15,"request_id":"abc-123"}
+```
+
+---
+
+## Performance Tuning
+
+### Connection Pool
+
+```python
+configure(
+    pool_min_size=10,   # Keep connections ready
+    pool_max_size=50,   # Limit maximum connections
+)
+```
+
+### Database Indexes
+
+Ensure your frequently-queried fields are indexed:
+
+```python
+class Task(Model):
+    status = fields.String(max_length=20, db_index=True)
+    created_at = fields.DateTime(auto_now_add=True, db_index=True)
+```
+
+### Query Optimization
+
+Use `select_related` for foreign keys:
+
+```python
+# Efficient: single query with join
+posts = await Post.objects.select_related("author").all()
+
+# Inefficient: N+1 queries
+posts = await Post.objects.all()
+for post in posts:
+    author = await post.author  # Separate query each time
+```
+
+---
+
+## Monitoring
+
+### Prometheus Metrics (Optional)
+
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app)
+```
+
+### OpenTelemetry (Optional)
+
+```python
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+FastAPIInstrumentor.instrument_app(app)
+```
+
+---
+
+## Related Documentation
+
+- [Settings](settings.md) — Configuration options
+- [Middleware](../middleware/overview.md) — Request processing
+- [Observability](../debugging/observability.md) — Monitoring and tracing
