@@ -1,5 +1,5 @@
 """
-Tests for `vidyut startapp` CLI command.
+Tests for `aksara startapp` CLI command.
 """
 
 import os
@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from vidyut.cli.main import cli
+from aksara.cli.main import cli
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ class TestStartappCommand:
         assert models_file.exists()
         
         content = models_file.read_text()
-        assert "from vidyut import Model, fields" in content
+        assert "from aksara import Model, fields" in content
         assert "'orders'" in content  # App name in template
     
     def test_startapp_creates_views_file(self, temp_dir):
@@ -66,7 +66,7 @@ class TestStartappCommand:
         assert views_file.exists()
         
         content = views_file.read_text()
-        assert "from vidyut import ModelViewSet" in content
+        assert "from aksara import ModelViewSet" in content
         assert "'products'" in content  # App name in template
     
     def test_startapp_creates_serializers_file(self, temp_dir):
@@ -79,7 +79,7 @@ class TestStartappCommand:
         assert serializers_file.exists()
         
         content = serializers_file.read_text()
-        assert "from vidyut import ModelSerializer" in content
+        assert "from aksara import ModelSerializer" in content
         assert "'catalog'" in content  # App name in template
     
     def test_startapp_invalid_name(self, temp_dir):

@@ -1,5 +1,5 @@
 """
-Tests for Vidyut v0.3.8 Relationships & Delete Semantics
+Tests for Aksara v0.3.8 Relationships & Delete Semantics
 
 Tests for:
 - Reverse FK relations (user.posts.all())
@@ -13,7 +13,7 @@ import os
 import pytest
 from uuid import UUID
 
-from vidyut.relations import (
+from aksara.relations import (
     OnDelete,
     RelationMeta,
     RelationRegistry,
@@ -26,7 +26,7 @@ from vidyut.relations import (
     get_default_related_name,
     register_relation,
 )
-from vidyut.exceptions import RestrictedError
+from aksara.exceptions import RestrictedError
 
 
 class TestOnDeleteEnum:
@@ -55,7 +55,7 @@ class TestRelationMeta:
     @pytest.fixture
     def mock_models(self):
         """Create mock models for testing."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         
         class MockUser(Model):
             __tablename__ = "mock_users"
@@ -140,8 +140,8 @@ class TestRelationRegistry:
     
     @pytest.fixture
     def mock_models(self):
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -221,8 +221,8 @@ class TestDefaultRelatedName:
     
     @pytest.fixture
     def mock_models(self):
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -280,8 +280,8 @@ class TestDescriptors:
     
     @pytest.fixture
     def mock_models_and_relation(self):
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         RelationRegistry.clear()
@@ -335,8 +335,8 @@ class TestReverseO2OAccessor:
     
     @pytest.fixture
     def mock_models_and_relation(self):
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         RelationRegistry.clear()
@@ -389,8 +389,8 @@ pytestmark_db = pytest.mark.skipif(
 @pytest.fixture
 async def db():
     """Create database connection and clean up tables."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     RelationRegistry.clear()
@@ -423,8 +423,8 @@ async def db():
 @pytest.fixture
 def relation_models():
     """Create models for relation tests."""
-    from vidyut import Model, fields
-    from vidyut.registry import ModelRegistry
+    from aksara import Model, fields
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     RelationRegistry.clear()
@@ -467,7 +467,7 @@ def relation_models():
 @pytest.fixture
 async def setup_relation_tables(db, relation_models):
     """Create the test tables."""
-    from vidyut.model.base import finalize_relations
+    from aksara.model.base import finalize_relations
     
     # Create tables
     await db.execute(relation_models['User'].get_create_table_sql())
@@ -646,8 +646,8 @@ class TestOnDeletePoliciesIntegration:
     @pytest.fixture
     def on_delete_models(self):
         """Create models with different on_delete policies."""
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         RelationRegistry.clear()
@@ -694,7 +694,7 @@ class TestOnDeletePoliciesIntegration:
     @pytest.fixture
     async def setup_on_delete_tables(self, db, on_delete_models):
         """Create on_delete test tables."""
-        from vidyut.model.base import finalize_relations
+        from aksara.model.base import finalize_relations
         
         # Clean up first
         try:

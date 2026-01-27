@@ -75,7 +75,7 @@ Complete code for each tutorial is available:
 
 ```bash
 # Clone the examples repository
-git clone https://github.com/vidyut/examples.git
+git clone https://github.com/aksara/examples.git
 
 # Navigate to a tutorial
 cd examples/blog-api
@@ -84,7 +84,7 @@ cd examples/blog-api
 pip install -e .
 
 # Run
-vidyut runserver
+aksara runserver
 ```
 
 ---
@@ -136,7 +136,7 @@ Deploy to production:
 
 - Check the [documentation](../index.md)
 - Read the [API reference](../reference/api-reference.md)
-- Ask questions on [GitHub Discussions](https://github.com/vidyut/vidyut/discussions)
+- Ask questions on [GitHub Discussions](https://github.com/aksara/aksara/discussions)
 
 ---
 

@@ -1,12 +1,12 @@
 # CLI
 
-Command-line interface for Vidyut development.
+Command-line interface for Aksara development.
 
 ---
 
 ## Overview
 
-The Vidyut CLI provides commands for:
+The Aksara CLI provides commands for:
 
 | Category | Commands |
 |----------|----------|
@@ -21,23 +21,23 @@ The Vidyut CLI provides commands for:
 
 ### Installation
 
-The CLI is included with Vidyut:
+The CLI is included with Aksara:
 
 ```bash
-pip install vidyut
+pip install aksara
 ```
 
 ### Basic Usage
 
 ```bash
 # Show help
-vidyut --help
+aksara --help
 
 # Show version
-vidyut --version
+aksara --version
 
 # Run a command
-vidyut runserver
+aksara runserver
 ```
 
 ---
@@ -46,10 +46,10 @@ vidyut runserver
 
 ### startproject
 
-Create a new Vidyut project:
+Create a new Aksara project:
 
 ```bash
-vidyut startproject myproject
+aksara startproject myproject
 ```
 
 Creates:
@@ -67,8 +67,8 @@ myproject/
 
 Options:
 ```bash
-vidyut startproject myproject --directory /path/to/dir
-vidyut startproject myproject --template minimal  # or "full", "api"
+aksara startproject myproject --directory /path/to/dir
+aksara startproject myproject --template minimal  # or "full", "api"
 ```
 
 ### startapp
@@ -76,7 +76,7 @@ vidyut startproject myproject --template minimal  # or "full", "api"
 Create a new app within your project:
 
 ```bash
-vidyut startapp blog
+aksara startapp blog
 ```
 
 Creates:
@@ -99,7 +99,7 @@ blog/
 Generate migrations from model changes:
 
 ```bash
-vidyut makemigrations
+aksara makemigrations
 ```
 
 Output:
@@ -111,10 +111,10 @@ Migrations for 'blog':
 
 Options:
 ```bash
-vidyut makemigrations --app blog        # Specific app
-vidyut makemigrations --name add_slug   # Custom name
-vidyut makemigrations --empty           # Empty migration
-vidyut makemigrations --dry-run         # Preview only
+aksara makemigrations --app blog        # Specific app
+aksara makemigrations --name add_slug   # Custom name
+aksara makemigrations --empty           # Empty migration
+aksara makemigrations --dry-run         # Preview only
 ```
 
 ### migrate
@@ -122,7 +122,7 @@ vidyut makemigrations --dry-run         # Preview only
 Apply pending migrations:
 
 ```bash
-vidyut migrate
+aksara migrate
 ```
 
 Output:
@@ -133,10 +133,10 @@ Applying blog.0002_add_post_slug... OK
 
 Options:
 ```bash
-vidyut migrate --app blog               # Specific app
-vidyut migrate blog 0001                # Migrate to specific version
-vidyut migrate --fake                   # Mark as applied without running
-vidyut migrate --plan                   # Show migration plan
+aksara migrate --app blog               # Specific app
+aksara migrate blog 0001                # Migrate to specific version
+aksara migrate --fake                   # Mark as applied without running
+aksara migrate --plan                   # Show migration plan
 ```
 
 ### shell
@@ -144,7 +144,7 @@ vidyut migrate --plan                   # Show migration plan
 Interactive Python shell with models loaded:
 
 ```bash
-vidyut shell
+aksara shell
 ```
 
 ```python
@@ -156,8 +156,8 @@ vidyut shell
 
 Options:
 ```bash
-vidyut shell --ipython    # Use IPython if available
-vidyut shell --bpython    # Use bpython if available
+aksara shell --ipython    # Use IPython if available
+aksara shell --bpython    # Use bpython if available
 ```
 
 ---
@@ -169,7 +169,7 @@ vidyut shell --bpython    # Use bpython if available
 Start the development server:
 
 ```bash
-vidyut runserver
+aksara runserver
 ```
 
 Output:
@@ -180,11 +180,11 @@ INFO:     Started reloader process
 
 Options:
 ```bash
-vidyut runserver --port 3000
-vidyut runserver --host 0.0.0.0
-vidyut runserver --reload           # Auto-reload on changes (default)
-vidyut runserver --no-reload        # Disable auto-reload
-vidyut runserver --workers 4        # Multiple workers
+aksara runserver --port 3000
+aksara runserver --host 0.0.0.0
+aksara runserver --reload           # Auto-reload on changes (default)
+aksara runserver --no-reload        # Disable auto-reload
+aksara runserver --workers 4        # Multiple workers
 ```
 
 ### routes
@@ -192,7 +192,7 @@ vidyut runserver --workers 4        # Multiple workers
 List all registered routes:
 
 ```bash
-vidyut routes
+aksara routes
 ```
 
 Output:
@@ -209,8 +209,8 @@ POST      /api/posts/{id}/publish/  posts-publish
 
 Options:
 ```bash
-vidyut routes --format json
-vidyut routes --filter posts
+aksara routes --format json
+aksara routes --filter posts
 ```
 
 ### info
@@ -218,12 +218,12 @@ vidyut routes --filter posts
 Show project information:
 
 ```bash
-vidyut info
+aksara info
 ```
 
 Output:
 ```
-Vidyut Project Information
+Aksara Project Information
 ==========================
 Version: 0.4.9
 Python: 3.11.0
@@ -256,7 +256,7 @@ See [AI Commands](ai-commands.md) for detailed documentation.
 Query data using natural language:
 
 ```bash
-vidyut ai query "Users who signed up this week"
+aksara ai query "Users who signed up this week"
 ```
 
 ### ai generate
@@ -264,7 +264,7 @@ vidyut ai query "Users who signed up this week"
 Generate code from descriptions:
 
 ```bash
-vidyut ai generate model "BlogPost with title, content, author FK"
+aksara ai generate model "BlogPost with title, content, author FK"
 ```
 
 ### ai doctor
@@ -272,7 +272,7 @@ vidyut ai generate model "BlogPost with title, content, author FK"
 Analyze schema for issues:
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 ### ai plan
@@ -280,7 +280,7 @@ vidyut ai doctor
 Create multi-step plans:
 
 ```bash
-vidyut ai plan "Add tagging system to posts"
+aksara ai plan "Add tagging system to posts"
 ```
 
 ---
@@ -291,15 +291,15 @@ vidyut ai plan "Add tagging system to posts"
 
 The CLI looks for settings in:
 
-1. `VIDYUT_SETTINGS` environment variable
+1. `AKSARA_SETTINGS` environment variable
 2. `settings.py` in current directory
 3. `{project}/settings.py`
 
 ### Environment Variables
 
 ```bash
-export VIDYUT_SETTINGS=myproject.settings
-export VIDYUT_DEBUG=true
+export AKSARA_SETTINGS=myproject.settings
+export AKSARA_DEBUG=true
 export DATABASE_URL=postgresql://localhost/mydb
 ```
 
@@ -312,9 +312,9 @@ export DATABASE_URL=postgresql://localhost/mydb
 Many commands support JSON output:
 
 ```bash
-vidyut routes --format json
-vidyut info --format json
-vidyut ai doctor --output report.json
+aksara routes --format json
+aksara info --format json
+aksara ai doctor --output report.json
 ```
 
 ### Quiet Mode
@@ -322,7 +322,7 @@ vidyut ai doctor --output report.json
 Suppress non-essential output:
 
 ```bash
-vidyut migrate --quiet
+aksara migrate --quiet
 ```
 
 ### Verbose Mode
@@ -330,8 +330,8 @@ vidyut migrate --quiet
 Show more details:
 
 ```bash
-vidyut migrate --verbose
-vidyut makemigrations --verbose
+aksara migrate --verbose
+aksara makemigrations --verbose
 ```
 
 ---
@@ -350,7 +350,7 @@ vidyut makemigrations --verbose
 Use in scripts:
 
 ```bash
-vidyut migrate && echo "Migration successful"
+aksara migrate && echo "Migration successful"
 ```
 
 ---
@@ -361,10 +361,10 @@ Create shell aliases for common commands:
 
 ```bash
 # ~/.bashrc or ~/.zshrc
-alias vr='vidyut runserver'
-alias vm='vidyut migrate'
-alias vmm='vidyut makemigrations'
-alias vs='vidyut shell'
+alias vr='aksara runserver'
+alias vm='aksara migrate'
+alias vmm='aksara makemigrations'
+alias vs='aksara shell'
 ```
 
 ---

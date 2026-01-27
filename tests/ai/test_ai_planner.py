@@ -18,7 +18,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 
-from vidyut.ai.planner import (
+from aksara.ai.planner import (
     # Types
     PlanStepType,
     VALID_STEP_TYPES,
@@ -389,7 +389,7 @@ class TestAnalyzeContextHandler:
         step = AiPlanStep(id="s1", type="analyze_context", description="Check state")
         
         # Mock the context builder - need to patch where it's imported
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.framework_version = "0.4.5"
             mock_context.model_count = 5
@@ -413,7 +413,7 @@ class TestAnalyzeContextHandler:
         app = MagicMock(spec=FastAPI)
         step = AiPlanStep(id="s1", type="analyze_context", description="Check state")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_ctx.side_effect = Exception("Context build failed")
             
             result = await _handle_analyze_context(app, step, dry_run=True)
@@ -443,7 +443,7 @@ class TestCreateFieldHandler:
             }
         )
         
-        with patch("vidyut.ai.patch.apply_ai_patches") as mock_apply:
+        with patch("aksara.ai.patch.apply_ai_patches") as mock_apply:
             mock_result = MagicMock()
             mock_result.applied = False
             mock_result.preview_only = True
@@ -639,7 +639,7 @@ class TestExecutePlan:
             ]
         )
         
-        with patch.dict("vidyut.ai.planner.STEP_HANDLERS", {"run_health_check": track_health_check}):
+        with patch.dict("aksara.ai.planner.STEP_HANDLERS", {"run_health_check": track_health_check}):
             result = await execute_plan(app, plan, dry_run=True)
         
         assert result.success is True
@@ -665,7 +665,7 @@ class TestExecutePlan:
             ]
         )
         
-        with patch.dict("vidyut.ai.planner.STEP_HANDLERS", {"run_health_check": capture_dry_run}):
+        with patch.dict("aksara.ai.planner.STEP_HANDLERS", {"run_health_check": capture_dry_run}):
             await execute_plan(app, plan, dry_run=True)
             await execute_plan(app, plan, dry_run=False)
         
@@ -788,7 +788,7 @@ class TestPlannerIntegration:
             ]
         )
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.framework_version = "0.4.5"
             mock_context.model_count = 3

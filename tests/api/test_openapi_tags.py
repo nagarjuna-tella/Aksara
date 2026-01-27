@@ -3,7 +3,7 @@ Tests for OpenAPI tag handling in ModelViewSet.
 """
 
 import pytest
-from vidyut.api.viewsets import ModelViewSet
+from aksara.api.viewsets import ModelViewSet
 
 
 class DummyModel:

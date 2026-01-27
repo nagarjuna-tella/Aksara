@@ -10,8 +10,8 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.testclient import TestClient
 
-from vidyut import Vidyut
-from vidyut.middleware import TenantMiddleware, tenant_id_var
+from aksara import Aksara
+from aksara.middleware import TenantMiddleware, tenant_id_var
 
 
 class TestTenantMiddleware:
@@ -19,7 +19,7 @@ class TestTenantMiddleware:
     
     def test_extracts_tenant_from_header(self):
         """Test that tenant ID is extracted from header."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -39,7 +39,7 @@ class TestTenantMiddleware:
     
     def test_custom_header_name(self):
         """Test using a custom header name."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -59,7 +59,7 @@ class TestTenantMiddleware:
     
     def test_tenant_id_in_contextvar(self):
         """Test that tenant ID is available via contextvar."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -83,7 +83,7 @@ class TestTenantMiddleware:
     
     def test_no_tenant_header(self):
         """Test that tenant_id is None when header not provided."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -103,7 +103,7 @@ class TestTenantMiddleware:
     
     def test_contextvar_reset_after_request(self):
         """Test that contextvar is reset after request completes."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -130,7 +130,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_extracts_tenant_from_subdomain(self):
         """Test that tenant is extracted from subdomain."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -150,7 +150,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_header_takes_precedence_over_subdomain(self):
         """Test that header takes precedence over subdomain."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -176,7 +176,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_ignores_www_subdomain(self):
         """Test that www subdomain is ignored."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -196,7 +196,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_ignores_api_subdomain(self):
         """Test that api subdomain is ignored."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -216,7 +216,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_handles_host_with_port(self):
         """Test that host with port is handled correctly."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -236,7 +236,7 @@ class TestTenantMiddlewareSubdomain:
     
     def test_no_subdomain_for_two_part_host(self):
         """Test that two-part hosts don't yield tenant."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[

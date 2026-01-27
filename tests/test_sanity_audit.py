@@ -27,83 +27,83 @@ from enum import Enum
 # =============================================================================
 
 class TestPublicAPIExports:
-    """Verify all public APIs are properly exported from vidyut package."""
+    """Verify all public APIs are properly exported from aksara package."""
     
     def test_core_exports(self):
         """Core ORM exports should be available."""
-        import vidyut
+        import aksara
         
         # Core ORM
-        assert hasattr(vidyut, 'Model')
-        assert hasattr(vidyut, 'fields')
-        assert hasattr(vidyut, 'Database')
+        assert hasattr(aksara, 'Model')
+        assert hasattr(aksara, 'fields')
+        assert hasattr(aksara, 'Database')
         
         # Exceptions
-        assert hasattr(vidyut, 'VidyutError')
-        assert hasattr(vidyut, 'DatabaseError')
-        assert hasattr(vidyut, 'ValidationError')
-        assert hasattr(vidyut, 'ConfigurationError')
-        assert hasattr(vidyut, 'UniqueConstraintError')
-        assert hasattr(vidyut, 'ForeignKeyConstraintError')
-        assert hasattr(vidyut, 'NotNullConstraintError')
-        assert hasattr(vidyut, 'RestrictedError')
-        assert hasattr(vidyut, 'DoesNotExist')
-        assert hasattr(vidyut, 'MultipleObjectsReturned')
+        assert hasattr(aksara, 'AksaraError')
+        assert hasattr(aksara, 'DatabaseError')
+        assert hasattr(aksara, 'ValidationError')
+        assert hasattr(aksara, 'ConfigurationError')
+        assert hasattr(aksara, 'UniqueConstraintError')
+        assert hasattr(aksara, 'ForeignKeyConstraintError')
+        assert hasattr(aksara, 'NotNullConstraintError')
+        assert hasattr(aksara, 'RestrictedError')
+        assert hasattr(aksara, 'DoesNotExist')
+        assert hasattr(aksara, 'MultipleObjectsReturned')
         
         # on_delete constants
-        assert hasattr(vidyut, 'CASCADE')
-        assert hasattr(vidyut, 'SET_NULL')
-        assert hasattr(vidyut, 'RESTRICT')
-        assert hasattr(vidyut, 'PROTECT')
+        assert hasattr(aksara, 'CASCADE')
+        assert hasattr(aksara, 'SET_NULL')
+        assert hasattr(aksara, 'RESTRICT')
+        assert hasattr(aksara, 'PROTECT')
     
     def test_api_layer_exports(self):
         """API layer exports should be available."""
-        import vidyut
+        import aksara
         
-        assert hasattr(vidyut, 'ModelViewSet')
-        assert hasattr(vidyut, 'ModelSerializer')
-        assert hasattr(vidyut, 'action')
-        assert hasattr(vidyut, 'include_viewset')
-        assert hasattr(vidyut, 'discover_viewsets')
+        assert hasattr(aksara, 'ModelViewSet')
+        assert hasattr(aksara, 'ModelSerializer')
+        assert hasattr(aksara, 'action')
+        assert hasattr(aksara, 'include_viewset')
+        assert hasattr(aksara, 'discover_viewsets')
     
     def test_permission_exports(self):
         """Permission exports should be available."""
-        import vidyut
+        import aksara
         
-        assert hasattr(vidyut, 'BasePermission')
-        assert hasattr(vidyut, 'AllowAny')
-        assert hasattr(vidyut, 'IsAuthenticated')
-        assert hasattr(vidyut, 'IsAdminUser')
-        assert hasattr(vidyut, 'IsActiveUser')
-        assert hasattr(vidyut, 'IsOwnerOrReadOnly')
-        assert hasattr(vidyut, 'DenyAI')
-        assert hasattr(vidyut, 'AND')
-        assert hasattr(vidyut, 'OR')
-        assert hasattr(vidyut, 'check_permissions')
+        assert hasattr(aksara, 'BasePermission')
+        assert hasattr(aksara, 'AllowAny')
+        assert hasattr(aksara, 'IsAuthenticated')
+        assert hasattr(aksara, 'IsAdminUser')
+        assert hasattr(aksara, 'IsActiveUser')
+        assert hasattr(aksara, 'IsOwnerOrReadOnly')
+        assert hasattr(aksara, 'DenyAI')
+        assert hasattr(aksara, 'AND')
+        assert hasattr(aksara, 'OR')
+        assert hasattr(aksara, 'check_permissions')
     
     def test_identity_exports(self):
         """Identity exports should be available."""
-        import vidyut
+        import aksara
         
-        assert hasattr(vidyut, 'VidyutUserProtocol')
-        assert hasattr(vidyut, 'AnonymousUser')
+        assert hasattr(aksara, 'AksaraUserProtocol')
+        assert hasattr(aksara, 'AnonymousUser')
     
     def test_migration_exports(self):
         """Migration exports should be available."""
-        import vidyut
+        import aksara
         
-        assert hasattr(vidyut, 'Migration')
-        assert hasattr(vidyut, 'migration_operations')
+        assert hasattr(aksara, 'Migration')
+        assert hasattr(aksara, 'migration_operations')
     
     def test_fastapi_re_exports(self):
         """FastAPI re-exports should be available."""
-        import vidyut
+        import aksara
         
-        assert hasattr(vidyut, 'Vidyut')
-        assert hasattr(vidyut, 'FastAPI')
-        assert hasattr(vidyut, 'APIRouter')
-        assert hasattr(vidyut, 'HTTPException')
-        assert hasattr(vidyut, 'Depends')
+        assert hasattr(aksara, 'Aksara')
+        assert hasattr(aksara, 'FastAPI')
+        assert hasattr(aksara, 'APIRouter')
+        assert hasattr(aksara, 'HTTPException')
+        assert hasattr(aksara, 'Depends')
 
 
 # =============================================================================
@@ -115,14 +115,14 @@ class TestFieldEdgeCases:
     
     def test_string_field_default_value(self):
         """String field with default should use default."""
-        from vidyut.fields import String
+        from aksara.fields import String
         
         field = String(default="hello")
         assert field.get_default_value() == "hello"
     
     def test_string_field_callable_default(self):
         """String field with callable default should call it."""
-        from vidyut.fields import String
+        from aksara.fields import String
         
         counter = [0]
         def get_default():
@@ -136,7 +136,7 @@ class TestFieldEdgeCases:
     
     def test_email_field_normalization(self):
         """Email field should normalize values."""
-        from vidyut.fields import Email
+        from aksara.fields import Email
         
         field = Email()
         
@@ -146,7 +146,7 @@ class TestFieldEdgeCases:
     
     def test_email_field_validation(self):
         """Email field should validate format."""
-        from vidyut.fields import Email
+        from aksara.fields import Email
         
         field = Email()
         field.name = "email"
@@ -164,7 +164,7 @@ class TestFieldEdgeCases:
     
     def test_decimal_field_precision(self):
         """Decimal field should respect precision settings."""
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         
         field = DecimalField(max_digits=6, decimal_places=2)
         
@@ -176,7 +176,7 @@ class TestFieldEdgeCases:
     
     def test_enum_field_roundtrip(self):
         """Enum field should preserve value through to_python/to_db cycle."""
-        from vidyut.fields import EnumField
+        from aksara.fields import EnumField
         
         class Status(Enum):
             ACTIVE = "active"
@@ -192,7 +192,7 @@ class TestFieldEdgeCases:
     
     def test_json_field_dict_default(self):
         """JSON field with dict default should work correctly."""
-        from vidyut.fields import JSON
+        from aksara.fields import JSON
         
         field = JSON(default=dict)
         
@@ -206,7 +206,7 @@ class TestFieldEdgeCases:
     
     def test_uuid_field_primary_key_auto_generates(self):
         """UUID field as primary key should auto-generate."""
-        from vidyut.fields import UUID
+        from aksara.fields import UUID
         import uuid as uuid_lib
         
         field = UUID(primary_key=True)
@@ -216,7 +216,7 @@ class TestFieldEdgeCases:
     
     def test_boolean_field_default(self):
         """Boolean field should handle defaults correctly."""
-        from vidyut.fields import Boolean
+        from aksara.fields import Boolean
         
         field_true = Boolean(default=True)
         field_false = Boolean(default=False)
@@ -234,7 +234,7 @@ class TestExceptionConsistency:
     
     def test_validation_error_structure(self):
         """ValidationError should have proper structure."""
-        from vidyut.exceptions import ValidationError
+        from aksara.exceptions import ValidationError
         
         error = ValidationError(
             "Validation failed",
@@ -247,7 +247,7 @@ class TestExceptionConsistency:
     
     def test_restricted_error_message(self):
         """RestrictedError should have informative message."""
-        from vidyut.exceptions import RestrictedError
+        from aksara.exceptions import RestrictedError
         
         error = RestrictedError(
             model_name="User",
@@ -263,7 +263,7 @@ class TestExceptionConsistency:
     
     def test_unique_constraint_error_field(self):
         """UniqueConstraintError should identify field."""
-        from vidyut.exceptions import UniqueConstraintError
+        from aksara.exceptions import UniqueConstraintError
         
         error = UniqueConstraintError(
             field_name="email",
@@ -275,7 +275,7 @@ class TestExceptionConsistency:
     
     def test_database_error_preserves_original(self):
         """DatabaseError should preserve original exception."""
-        from vidyut.exceptions import DatabaseError
+        from aksara.exceptions import DatabaseError
         
         original = ValueError("Original error")
         error = DatabaseError(
@@ -297,9 +297,9 @@ class TestQuerySetEdgeCases:
     
     def test_empty_in_lookup_returns_false(self):
         """Empty __in lookup should match nothing."""
-        from vidyut import Model, fields
-        from vidyut.manager import QuerySet
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.manager import QuerySet
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -316,9 +316,9 @@ class TestQuerySetEdgeCases:
     
     def test_isnull_true_lookup(self):
         """__isnull=True should generate IS NULL."""
-        from vidyut import Model, fields
-        from vidyut.manager import QuerySet
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.manager import QuerySet
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -335,9 +335,9 @@ class TestQuerySetEdgeCases:
     
     def test_isnull_false_lookup(self):
         """__isnull=False should generate IS NOT NULL."""
-        from vidyut import Model, fields
-        from vidyut.manager import QuerySet
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.manager import QuerySet
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -354,9 +354,9 @@ class TestQuerySetEdgeCases:
     
     def test_unknown_field_raises(self):
         """Unknown field in filter should raise ValueError."""
-        from vidyut import Model, fields
-        from vidyut.manager import QuerySet
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.manager import QuerySet
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -372,9 +372,9 @@ class TestQuerySetEdgeCases:
     
     def test_filter_chaining_immutable(self):
         """Filter chaining should not mutate original QuerySet."""
-        from vidyut import Model, fields
-        from vidyut.manager import QuerySet
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.manager import QuerySet
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         
@@ -403,7 +403,7 @@ class TestPermissionEdgeCases:
     
     def test_permission_and_short_circuits(self):
         """AND permission should short-circuit on first failure."""
-        from vidyut.permissions import AND, BasePermission
+        from aksara.permissions import AND, BasePermission
         
         class AlwaysDeny(BasePermission):
             def has_permission(self, request, view=None):
@@ -422,7 +422,7 @@ class TestPermissionEdgeCases:
     
     def test_permission_or_short_circuits(self):
         """OR permission should short-circuit on first success."""
-        from vidyut.permissions import OR, BasePermission
+        from aksara.permissions import OR, BasePermission
         
         class AlwaysAllow(BasePermission):
             def has_permission(self, request, view=None):
@@ -441,7 +441,7 @@ class TestPermissionEdgeCases:
     
     def test_permission_ai_allow_aggregation(self):
         """ai_allow should aggregate correctly in compositions."""
-        from vidyut.permissions import AND, OR, AllowAny, DenyAI
+        from aksara.permissions import AND, OR, AllowAny, DenyAI
         
         # AND: all must allow AI
         perm_and = AND(AllowAny(), DenyAI())
@@ -461,7 +461,7 @@ class TestIdentityEdgeCases:
     
     def test_anonymous_user_is_falsy(self):
         """AnonymousUser should be falsy."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon = AnonymousUser()
         assert not anon
@@ -469,14 +469,14 @@ class TestIdentityEdgeCases:
     
     def test_anonymous_user_has_no_id(self):
         """AnonymousUser should have None id."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon = AnonymousUser()
         assert anon.id is None
     
     def test_anonymous_user_not_authenticated(self):
         """AnonymousUser should not be authenticated."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon = AnonymousUser()
         assert anon.is_authenticated is False
@@ -486,7 +486,7 @@ class TestIdentityEdgeCases:
     
     def test_anonymous_users_are_equal(self):
         """All AnonymousUser instances should be equal."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         a1 = AnonymousUser()
         a2 = AnonymousUser()
@@ -504,7 +504,7 @@ class TestMiddlewareContextIsolation:
     
     def test_context_vars_default_to_none(self):
         """Context vars should default to None outside request."""
-        from vidyut.middleware import request_id_var, tenant_id_var, user_id_var
+        from aksara.middleware import request_id_var, tenant_id_var, user_id_var
         
         assert request_id_var.get() is None
         assert tenant_id_var.get() is None
@@ -520,7 +520,7 @@ class TestOnDeleteConsistency:
     
     def test_on_delete_values_match(self):
         """on_delete module-level and class constants should match."""
-        from vidyut.fields import CASCADE, SET_NULL, RESTRICT, PROTECT, OnDelete
+        from aksara.fields import CASCADE, SET_NULL, RESTRICT, PROTECT, OnDelete
         
         assert CASCADE == OnDelete.CASCADE
         assert SET_NULL == OnDelete.SET_NULL
@@ -529,7 +529,7 @@ class TestOnDeleteConsistency:
     
     def test_protect_is_restrict_alias(self):
         """PROTECT should be an alias for RESTRICT."""
-        from vidyut.fields import PROTECT, RESTRICT
+        from aksara.fields import PROTECT, RESTRICT
         
         assert PROTECT == RESTRICT
 
@@ -543,14 +543,14 @@ class TestMigrationGraphConsistency:
     
     def test_empty_graph_has_no_heads(self):
         """Empty graph should have no heads for any app."""
-        from vidyut.migrations.graph import MigrationGraph
+        from aksara.migrations.graph import MigrationGraph
         
         graph = MigrationGraph()
         assert graph.heads_for_app("nonexistent") == []
     
     def test_graph_len(self):
         """Graph len should count nodes."""
-        from vidyut.migrations.graph import MigrationGraph, MigrationNode
+        from aksara.migrations.graph import MigrationGraph, MigrationNode
         
         graph = MigrationGraph()
         assert len(graph) == 0
@@ -571,7 +571,7 @@ class TestSettingsEdgeCases:
     
     def test_settings_has_debug_attribute(self):
         """Settings should have debug attribute."""
-        from vidyut.conf import Settings
+        from aksara.conf import Settings
         
         s = Settings()
         assert hasattr(s, 'debug')
@@ -579,7 +579,7 @@ class TestSettingsEdgeCases:
     
     def test_settings_has_database_url_attribute(self):
         """Settings should have database_url attribute."""
-        from vidyut.conf import Settings
+        from aksara.conf import Settings
         
         s = Settings()
         assert hasattr(s, 'database_url')
@@ -594,9 +594,9 @@ class TestAdminSiteConsistency:
     
     def test_register_model_unregister_and_reregister(self):
         """Unregistering and re-registering should work."""
-        from vidyut import Model, fields
-        from vidyut.contrib.admin import site
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.contrib.admin import site
+        from aksara.registry import ModelRegistry
         
         ModelRegistry.clear()
         site.clear()
@@ -619,7 +619,7 @@ class TestAdminSiteConsistency:
     
     def test_get_app_list_empty(self):
         """get_app_list on empty site should return empty dict."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         site.clear()
         
@@ -636,10 +636,10 @@ class TestSerializerEdgeCases:
     
     def test_serializer_with_all_fields(self):
         """Serializer with __all__ should include all fields."""
-        from vidyut import Model, fields
-        from vidyut.api import ModelSerializer
-        from vidyut.registry import ModelRegistry
-        from vidyut.api.serializers import clear_serializer_cache
+        from aksara import Model, fields
+        from aksara.api import ModelSerializer
+        from aksara.registry import ModelRegistry
+        from aksara.api.serializers import clear_serializer_cache
         
         ModelRegistry.clear()
         clear_serializer_cache()
@@ -666,10 +666,10 @@ class TestSerializerEdgeCases:
     
     def test_serializer_exclude_works(self):
         """Serializer exclude should remove fields."""
-        from vidyut import Model, fields
-        from vidyut.api import ModelSerializer
-        from vidyut.registry import ModelRegistry
-        from vidyut.api.serializers import clear_serializer_cache
+        from aksara import Model, fields
+        from aksara.api import ModelSerializer
+        from aksara.registry import ModelRegistry
+        from aksara.api.serializers import clear_serializer_cache
         
         ModelRegistry.clear()
         clear_serializer_cache()
@@ -702,7 +702,7 @@ class TestViewSetActionConsistency:
     
     def test_action_decorator_stores_metadata(self):
         """Action decorator should store metadata on function."""
-        from vidyut.api import action, get_action_metadata, is_action
+        from aksara.api import action, get_action_metadata, is_action
         
         @action(detail=True, methods=["post"], summary="Test action")
         async def test_action(self, pk):
@@ -717,7 +717,7 @@ class TestViewSetActionConsistency:
     
     def test_action_ai_exposed_default(self):
         """Action should be AI exposed by default."""
-        from vidyut.api import action, is_action_ai_exposed
+        from aksara.api import action, is_action_ai_exposed
         
         @action(detail=False, methods=["get"])
         async def exposed_action(self):
@@ -727,7 +727,7 @@ class TestViewSetActionConsistency:
     
     def test_action_ai_exposed_false(self):
         """Action can be hidden from AI."""
-        from vidyut.api import action, is_action_ai_exposed
+        from aksara.api import action, is_action_ai_exposed
         
         @action(detail=False, methods=["post"], ai_exposed=False)
         async def hidden_action(self):

@@ -13,8 +13,8 @@ from unittest.mock import MagicMock, AsyncMock, patch
 
 from starlette.testclient import TestClient
 
-from vidyut import Model, fields, Vidyut
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields, Aksara
+from aksara.registry import ModelRegistry
 
 
 class TestAdminLogin:
@@ -23,12 +23,12 @@ class TestAdminLogin:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_login_page_accessible_without_auth(self):
         """Test that login page is accessible without authentication."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class TestModel(Model):
             name = fields.String()
@@ -38,7 +38,7 @@ class TestAdminLogin:
         
         site.register(TestModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -53,7 +53,7 @@ class TestAdminLogin:
     
     def test_login_page_has_form(self):
         """Test that login page has the login form."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class TestModel(Model):
             name = fields.String()
@@ -63,7 +63,7 @@ class TestAdminLogin:
         
         site.register(TestModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -84,12 +84,12 @@ class TestAdminPermissions:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_admin_index_requires_staff(self):
         """Test that admin index redirects to login without staff user."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class TestModel(Model):
             name = fields.String()
@@ -99,7 +99,7 @@ class TestAdminPermissions:
         
         site.register(TestModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -114,7 +114,7 @@ class TestAdminPermissions:
     
     def test_admin_index_accessible_for_staff(self):
         """Test that admin index is accessible for staff user."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         from starlette.middleware.base import BaseHTTPMiddleware
         
         class TestModel(Model):
@@ -125,7 +125,7 @@ class TestAdminPermissions:
         
         site.register(TestModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -148,11 +148,11 @@ class TestAdminPermissions:
         # Staff user should get 200
         response = client.get("/admin/")
         assert response.status_code == 200
-        assert "Vidyut Admin" in response.text
+        assert "Aksara Admin" in response.text
     
     def test_model_list_requires_staff(self):
         """Test that model list view redirects to login without staff user."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Book(Model):
             title = fields.String()
@@ -162,7 +162,7 @@ class TestAdminPermissions:
         
         site.register(Book)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -177,7 +177,7 @@ class TestAdminPermissions:
     
     def test_non_staff_user_denied(self):
         """Test that non-staff users are redirected to login."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         from starlette.middleware.base import BaseHTTPMiddleware
         
         class TestModel(Model):
@@ -188,7 +188,7 @@ class TestAdminPermissions:
         
         site.register(TestModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -219,7 +219,7 @@ class TestModelAdminPermissions:
     
     def test_has_view_permission_requires_staff(self):
         """Test has_view_permission requires is_staff=True."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()
@@ -246,7 +246,7 @@ class TestModelAdminPermissions:
     
     def test_permission_methods_cascade(self):
         """Test that add/change/delete permissions cascade from view."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()

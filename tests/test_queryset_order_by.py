@@ -1,13 +1,13 @@
 """
 Tests for QuerySet.order_by() functionality.
 
-Vidyut 0.3.20 - ORM Polish: Ordering API
+Aksara 0.3.20 - ORM Polish: Ordering API
 """
 
 import pytest
 from datetime import datetime, timedelta
-from vidyut import Model, fields, ConfigurationError
-from vidyut.manager import QuerySet, Manager
+from aksara import Model, fields, ConfigurationError
+from aksara.manager import QuerySet, Manager
 
 
 # =============================================================================

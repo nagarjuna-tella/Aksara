@@ -1,5 +1,5 @@
 """
-Tests for vidyut.contrib.auth module.
+Tests for aksara.contrib.auth module.
 
 Tests the built-in authentication functionality including:
 - Password hashing
@@ -21,7 +21,7 @@ class TestPasswordHashing:
     
     def test_hash_password(self):
         """hash_password should return a bcrypt hash."""
-        from vidyut.contrib.auth.hashing import hash_password
+        from aksara.contrib.auth.hashing import hash_password
         
         password = "secret123"
         hashed = hash_password(password)
@@ -35,7 +35,7 @@ class TestPasswordHashing:
     
     def test_hash_password_different_each_time(self):
         """hash_password should produce different hashes for same password."""
-        from vidyut.contrib.auth.hashing import hash_password
+        from aksara.contrib.auth.hashing import hash_password
         
         password = "secret123"
         hash1 = hash_password(password)
@@ -46,7 +46,7 @@ class TestPasswordHashing:
     
     def test_verify_password_correct(self):
         """verify_password should return True for correct password."""
-        from vidyut.contrib.auth.hashing import hash_password, verify_password
+        from aksara.contrib.auth.hashing import hash_password, verify_password
         
         password = "secret123"
         hashed = hash_password(password)
@@ -55,7 +55,7 @@ class TestPasswordHashing:
     
     def test_verify_password_incorrect(self):
         """verify_password should return False for incorrect password."""
-        from vidyut.contrib.auth.hashing import hash_password, verify_password
+        from aksara.contrib.auth.hashing import hash_password, verify_password
         
         password = "secret123"
         wrong_password = "wrong123"
@@ -65,7 +65,7 @@ class TestPasswordHashing:
     
     def test_make_random_password(self):
         """make_random_password should generate random password of correct length."""
-        from vidyut.contrib.auth.hashing import make_random_password
+        from aksara.contrib.auth.hashing import make_random_password
         
         # Default length
         password = make_random_password()
@@ -90,13 +90,13 @@ class TestAbstractUser:
     
     def test_abstract_user_is_abstract(self):
         """AbstractUser should be marked as abstract."""
-        from vidyut.contrib.auth.models import AbstractUser
+        from aksara.contrib.auth.models import AbstractUser
         
         assert AbstractUser.__abstract__ is True
     
     def test_abstract_user_fields(self):
         """AbstractUser should have correct fields."""
-        from vidyut.contrib.auth.models import AbstractUser
+        from aksara.contrib.auth.models import AbstractUser
         
         # Check field names
         field_names = set(AbstractUser._fields.keys())
@@ -113,27 +113,27 @@ class TestUser:
     
     def test_user_inherits_abstract_user(self):
         """User should inherit from AbstractUser."""
-        from vidyut.contrib.auth.models import User, AbstractUser
+        from aksara.contrib.auth.models import User, AbstractUser
         
         assert issubclass(User, AbstractUser)
     
     def test_user_tablename(self):
         """User should have correct tablename."""
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.models import User
         
-        assert User.__tablename__ == "vidyut_users"
+        assert User.__tablename__ == "aksara_users"
     
     def test_user_has_manager(self):
         """User should have UserManager attached."""
-        from vidyut.contrib.auth.models import User
-        from vidyut.contrib.auth.manager import UserManager
+        from aksara.contrib.auth.models import User
+        from aksara.contrib.auth.manager import UserManager
         
         assert hasattr(User, "objects")
         assert isinstance(User.objects, UserManager)
     
     def test_user_ai_agent_exposed(self):
         """User model should not be exposed to AI agents by default."""
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.models import User
         
         # Check Meta class
         meta = getattr(User, "Meta", None)
@@ -142,7 +142,7 @@ class TestUser:
     
     def test_user_has_fields(self):
         """User should inherit fields from AbstractUser."""
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.models import User
         
         # Check field names
         field_names = set(User._fields.keys())
@@ -161,8 +161,8 @@ class TestUserManager:
     
     def test_user_manager_init(self):
         """UserManager should initialize correctly."""
-        from vidyut.contrib.auth.manager import UserManager
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.manager import UserManager
+        from aksara.contrib.auth.models import User
         
         manager = UserManager(User)
         assert manager._model == User
@@ -170,9 +170,9 @@ class TestUserManager:
     @pytest.mark.asyncio
     async def test_create_user_hashes_password(self):
         """create_user should hash the password."""
-        from vidyut.contrib.auth.manager import UserManager
-        from vidyut.contrib.auth.models import User
-        from vidyut.contrib.auth.hashing import verify_password
+        from aksara.contrib.auth.manager import UserManager
+        from aksara.contrib.auth.models import User
+        from aksara.contrib.auth.hashing import verify_password
         
         manager = UserManager(User)
         
@@ -203,8 +203,8 @@ class TestUserManager:
     @pytest.mark.asyncio
     async def test_create_superuser_sets_flags(self):
         """create_superuser should set is_staff and is_superuser."""
-        from vidyut.contrib.auth.manager import UserManager
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.manager import UserManager
+        from aksara.contrib.auth.models import User
         
         manager = UserManager(User)
         
@@ -232,12 +232,12 @@ class TestUserManager:
 # Identity Protocol Tests
 # =============================================================================
 
-class TestVidyutUserProtocol:
-    """Tests for VidyutUserProtocol."""
+class TestAksaraUserProtocol:
+    """Tests for AksaraUserProtocol."""
     
     def test_user_has_required_fields(self):
         """User model should have fields required by protocol."""
-        from vidyut.contrib.auth.models import User
+        from aksara.contrib.auth.models import User
         
         # Check that fields exist in _fields
         assert "is_active" in User._fields
@@ -246,7 +246,7 @@ class TestVidyutUserProtocol:
     
     def test_anonymous_user(self):
         """AnonymousUser should represent unauthenticated users."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon = AnonymousUser()
         
@@ -258,7 +258,7 @@ class TestVidyutUserProtocol:
     
     def test_anonymous_user_is_falsy(self):
         """AnonymousUser should be falsy."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon = AnonymousUser()
         
@@ -267,7 +267,7 @@ class TestVidyutUserProtocol:
     
     def test_anonymous_user_equality(self):
         """Two AnonymousUser instances should be equal."""
-        from vidyut.identity import AnonymousUser
+        from aksara.identity import AnonymousUser
         
         anon1 = AnonymousUser()
         anon2 = AnonymousUser()
@@ -285,7 +285,7 @@ class TestFastAPIIntegration:
     @pytest.mark.asyncio
     async def test_get_current_user_from_state(self):
         """get_current_user should return user from request.state."""
-        from vidyut.contrib.auth.fastapi import get_current_user
+        from aksara.contrib.auth.fastapi import get_current_user
         
         mock_user = MagicMock()
         mock_user.id = 1
@@ -302,7 +302,7 @@ class TestFastAPIIntegration:
     @pytest.mark.asyncio
     async def test_get_current_user_no_auth(self):
         """get_current_user should return None if not authenticated."""
-        from vidyut.contrib.auth.fastapi import get_current_user
+        from aksara.contrib.auth.fastapi import get_current_user
         
         request = MagicMock()
         request.state = MagicMock()
@@ -316,7 +316,7 @@ class TestFastAPIIntegration:
     @pytest.mark.asyncio
     async def test_get_current_active_user_inactive(self):
         """get_current_active_user should return None for inactive users."""
-        from vidyut.contrib.auth.fastapi import get_current_active_user
+        from aksara.contrib.auth.fastapi import get_current_active_user
         
         mock_user = MagicMock()
         mock_user.is_active = False
@@ -338,8 +338,8 @@ class TestModuleExports:
     """Tests for module exports."""
     
     def test_auth_module_exports(self):
-        """vidyut.contrib.auth should export key classes."""
-        from vidyut.contrib import auth
+        """aksara.contrib.auth should export key classes."""
+        from aksara.contrib import auth
         
         assert hasattr(auth, "User")
         assert hasattr(auth, "AbstractUser")
@@ -349,15 +349,15 @@ class TestModuleExports:
         assert hasattr(auth, "make_random_password")
     
     def test_identity_module_exports(self):
-        """vidyut.identity should export key classes."""
-        from vidyut import identity
+        """aksara.identity should export key classes."""
+        from aksara import identity
         
-        assert hasattr(identity, "VidyutUserProtocol")
+        assert hasattr(identity, "AksaraUserProtocol")
         assert hasattr(identity, "AnonymousUser")
     
     def test_main_module_exports_identity(self):
-        """vidyut main module should export identity components."""
-        import vidyut
+        """aksara main module should export identity components."""
+        import aksara
         
-        assert hasattr(vidyut, "VidyutUserProtocol")
-        assert hasattr(vidyut, "AnonymousUser")
+        assert hasattr(aksara, "AksaraUserProtocol")
+        assert hasattr(aksara, "AnonymousUser")

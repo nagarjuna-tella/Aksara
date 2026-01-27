@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from vidyut.cli.main import (
+from aksara.cli.main import (
     cli,
     format as format_cmd,
     lint,
@@ -66,7 +66,7 @@ class TestRunToolHelper:
         assert exit_code == 1
         captured = capsys.readouterr()
         assert "Black is not installed" in captured.out
-        assert "pip install vidyut[dev]" in captured.out
+        assert "pip install aksara[dev]" in captured.out
         assert "pip install black" in captured.out
 
 
@@ -77,7 +77,7 @@ class TestRunToolHelper:
 class TestFormatCommand:
     """Tests for the format command."""
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_format_default_path(self, mock_run_tool):
         """Test format command with default path."""
         mock_run_tool.return_value = 0
@@ -92,7 +92,7 @@ class TestFormatCommand:
         assert args[0][1] == "black"  # module
         assert "." in args[0][2]  # args
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_format_custom_path(self, mock_run_tool):
         """Test format command with custom path."""
         mock_run_tool.return_value = 0
@@ -103,7 +103,7 @@ class TestFormatCommand:
         args = mock_run_tool.call_args[0][2]
         assert "src/" in args
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_format_check_mode(self, mock_run_tool):
         """Test format command with --check flag."""
         mock_run_tool.return_value = 0
@@ -122,7 +122,7 @@ class TestFormatCommand:
 class TestLintCommand:
     """Tests for the lint command."""
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_lint_default(self, mock_run_tool):
         """Test lint command with defaults."""
         mock_run_tool.return_value = 0
@@ -136,7 +136,7 @@ class TestLintCommand:
         assert "check" in args[0][2]
         assert "." in args[0][2]
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_lint_with_fix(self, mock_run_tool):
         """Test lint command with --fix flag."""
         mock_run_tool.return_value = 0
@@ -155,7 +155,7 @@ class TestLintCommand:
 class TestTypecheckCommand:
     """Tests for the typecheck command."""
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_typecheck_default(self, mock_run_tool):
         """Test typecheck command with defaults."""
         mock_run_tool.return_value = 0
@@ -168,7 +168,7 @@ class TestTypecheckCommand:
         assert args[0][1] == "mypy"
         assert "." in args[0][2]
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_typecheck_strict(self, mock_run_tool):
         """Test typecheck command with --strict flag."""
         mock_run_tool.return_value = 0
@@ -187,7 +187,7 @@ class TestTypecheckCommand:
 class TestTestCommand:
     """Tests for the test command."""
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_test_default(self, mock_run_tool):
         """Test test command with no args."""
         mock_run_tool.return_value = 0
@@ -199,7 +199,7 @@ class TestTestCommand:
         assert args[0][0] == "pytest"
         assert args[0][1] == "pytest"
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_test_with_args(self, mock_run_tool):
         """Test test command passes through arguments."""
         mock_run_tool.return_value = 0
@@ -267,7 +267,7 @@ class TestPrecommitInitCommand:
             result = runner.invoke(cli, ["precommit", "init"])
             
             assert "pre-commit install" in result.output
-            assert "vidyut precommit run" in result.output
+            assert "aksara precommit run" in result.output
 
 
 # =============================================================================
@@ -277,7 +277,7 @@ class TestPrecommitInitCommand:
 class TestPrecommitRunCommand:
     """Tests for the precommit run command."""
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_precommit_run_default(self, mock_run_tool):
         """Test precommit run command."""
         mock_run_tool.return_value = 0
@@ -291,7 +291,7 @@ class TestPrecommitRunCommand:
         assert "run" in args[0][2]
         assert "--all-files" in args[0][2]
     
-    @patch("vidyut.cli.main._run_tool")
+    @patch("aksara.cli.main._run_tool")
     def test_precommit_run_propagates_exit_code(self, mock_run_tool):
         """Test precommit run propagates exit code from tool."""
         mock_run_tool.return_value = 1

@@ -1,21 +1,21 @@
 """
 Application Settings (v0.2)
 
-Demonstrates how to configure Vidyut using the settings system.
+Demonstrates how to configure Aksara using the settings system.
 Settings are loaded from environment variables with sensible defaults.
 """
 
 import os
-from vidyut import configure
+from aksara import configure
 
 # =============================================================================
-# Configure Vidyut
+# Configure Aksara
 # =============================================================================
 # 
 # Option 1: Environment variables (recommended for production)
-#   DATABASE_URL or VIDYUT_DATABASE_URL
-#   VIDYUT_DEBUG=true
-#   VIDYUT_POOL_SIZE=20
+#   DATABASE_URL or AKSARA_DATABASE_URL
+#   AKSARA_DEBUG=true
+#   AKSARA_POOL_SIZE=20
 #
 # Option 2: Explicit configuration (useful for development)
 #   Call configure() with your settings
@@ -26,15 +26,15 @@ from vidyut import configure
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     os.getenv(
-        "VIDYUT_DATABASE_URL",
-        "postgresql://postgres:qwertyuiop@localhost:5432/vidyut_example"
+        "AKSARA_DATABASE_URL",
+        "postgresql://postgres:qwertyuiop@localhost:5432/aksara_example"
     )
 )
 
 # Debug mode from environment
-DEBUG = os.getenv("VIDYUT_DEBUG", "false").lower() in ("true", "1", "yes")
+DEBUG = os.getenv("AKSARA_DEBUG", "false").lower() in ("true", "1", "yes")
 
-# Configure Vidyut with our settings
+# Configure Aksara with our settings
 configure(
     database_url=DATABASE_URL,
     debug=DEBUG,
@@ -46,12 +46,12 @@ configure(
 )
 
 # =============================================================================
-# App-specific settings (non-Vidyut)
+# App-specific settings (non-Aksara)
 # =============================================================================
 
-APP_NAME = "Vidyut Example App"
+APP_NAME = "Aksara Example App"
 APP_VERSION = "dev"  # Example app version (not tied to framework version)
-APP_DESCRIPTION = "Demo application using Vidyut async ORM"
+APP_DESCRIPTION = "Demo application using Aksara async ORM"
 
 # CORS settings (if needed)
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
@@ -59,9 +59,9 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 # =============================================================================
 # Using Settings
 # =============================================================================
-# After calling configure(), import settings from vidyut:
+# After calling configure(), import settings from aksara:
 #
-#   from vidyut import settings
+#   from aksara import settings
 #   print(settings.database_url)  # Your configured URL
 #   print(settings.debug)         # True/False
 #

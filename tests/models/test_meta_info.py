@@ -13,9 +13,9 @@ Tests that:
 import pytest
 from typing import Dict, Any
 
-from vidyut import Model, fields
-from vidyut.fields import ForeignKey, ManyToMany
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields
+from aksara.fields import ForeignKey, ManyToMany
+from aksara.registry import ModelRegistry
 
 
 class TestModelMetaInfo:

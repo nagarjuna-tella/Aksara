@@ -1,5 +1,5 @@
 """
-Tests for Vidyut Fields
+Tests for Aksara Fields
 
 Unit tests for field types and their SQL generation.
 """
@@ -8,7 +8,7 @@ import pytest
 import uuid
 from datetime import datetime
 
-from vidyut.fields import (
+from aksara.fields import (
     String, Integer, Boolean, DateTime, UUID, JSON,
     Field
 )

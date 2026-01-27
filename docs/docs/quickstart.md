@@ -1,6 +1,6 @@
 # Quickstart
 
-Get Vidyut running in under 5 minutes.
+Get Aksara running in under 5 minutes.
 
 ---
 
@@ -14,24 +14,24 @@ Before you begin, ensure you have:
 
 ---
 
-## Step 1: Install Vidyut
+## Step 1: Install Aksara
 
 === "pip"
 
     ```bash
-    pip install vidyut
+    pip install aksara
     ```
 
 === "uv"
 
     ```bash
-    uv pip install vidyut
+    uv pip install aksara
     ```
 
 === "poetry"
 
     ```bash
-    poetry add vidyut
+    poetry add aksara
     ```
 
 ---
@@ -41,7 +41,7 @@ Before you begin, ensure you have:
 Use the CLI to scaffold a new project:
 
 ```bash
-vidyut startproject myproject
+aksara startproject myproject
 cd myproject
 ```
 
@@ -70,13 +70,13 @@ Edit the `.env` file with your PostgreSQL connection:
 
 ```bash
 DATABASE_URL=postgresql://postgres:password@localhost:5432/myproject
-VIDYUT_DEBUG=true
+AKSARA_DEBUG=true
 ```
 
 Or set it directly in `settings.py`:
 
 ```python
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url="postgresql://postgres:password@localhost:5432/myproject",
@@ -91,7 +91,7 @@ configure(
 Open `app/models.py` and add a model:
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Task(Model):
     """A simple task model."""
@@ -111,10 +111,10 @@ Generate and apply migrations:
 
 ```bash
 # Generate migration files
-vidyut makemigrations --app app.models
+aksara makemigrations --app app.models
 
 # Apply migrations to the database
-vidyut migrate
+aksara migrate
 ```
 
 ---
@@ -124,7 +124,7 @@ vidyut migrate
 Open `app/views.py`:
 
 ```python
-from vidyut.api import ModelViewSet, action
+from aksara.api import ModelViewSet, action
 from fastapi import Request
 from uuid import UUID
 
@@ -150,7 +150,7 @@ class TaskViewSet(ModelViewSet):
 Open `app/urls.py`:
 
 ```python
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from fastapi import APIRouter
 
 from app.views import TaskViewSet
@@ -162,10 +162,10 @@ include_viewset(router, TaskViewSet)
 Then in `main.py`, include the router:
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 from app.urls import router
 
-app = Vidyut(
+app = Aksara(
     database_url="postgresql://postgres:password@localhost:5432/myproject",
     title="My Task API",
     enable_admin=True,
@@ -179,7 +179,7 @@ app.include_router(router, prefix="/api")
 ## Step 8: Run the Application
 
 ```bash
-vidyut run main:app --reload
+aksara run main:app --reload
 ```
 
 Your API is now running at `http://localhost:8000`.
@@ -199,8 +199,8 @@ Visit **http://localhost:8000/admin** to manage your data.
 !!! note "Admin Login"
     Create a superuser first:
     ```bash
-    vidyut shell
-    >>> from vidyut.contrib.auth import User
+    aksara shell
+    >>> from aksara.contrib.auth import User
     >>> await User.objects.create(
     ...     email="admin@example.com",
     ...     hashed_password=User.hash_password("secret"),
@@ -215,7 +215,7 @@ Visit **http://localhost:8000/admin** to manage your data.
 # Create a task
 curl -X POST http://localhost:8000/api/tasks/ \
   -H "Content-Type: application/json" \
-  -d '{"title": "Learn Vidyut", "priority": 1}'
+  -d '{"title": "Learn Aksara", "priority": 1}'
 
 # List tasks
 curl http://localhost:8000/api/tasks/
@@ -270,4 +270,4 @@ curl -X POST http://localhost:8000/api/tasks/{task_id}/complete
 
 - Check the [Glossary](glossary.md) for terminology
 - Browse the [API Reference](reference/model-api-reference.md)
-- Open an issue on [GitHub](https://github.com/vidyut-orm/vidyut/issues)
+- Open an issue on [GitHub](https://github.com/aksara-orm/aksara/issues)

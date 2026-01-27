@@ -3,13 +3,13 @@ Tests for settings.apps multi-app configuration.
 """
 
 import pytest
-import vidyut.conf
-from vidyut.conf import Settings, configure, reset_settings
+import aksara.conf
+from aksara.conf import Settings, configure, reset_settings
 
 
 def get_settings():
     """Get current settings (reimport to get fresh reference)."""
-    return vidyut.conf.settings
+    return aksara.conf.settings
 
 
 class TestSettingsApps:
@@ -54,8 +54,8 @@ class TestConfigureWithApps:
             database_url="postgresql://test:test@localhost/test"
         )
         # Access via module to get fresh reference
-        assert vidyut.conf.settings.apps == ["blog", "users"]
-        assert vidyut.conf.settings.database_url == "postgresql://test:test@localhost/test"
+        assert aksara.conf.settings.apps == ["blog", "users"]
+        assert aksara.conf.settings.database_url == "postgresql://test:test@localhost/test"
     
     def test_configure_default_apps(self):
         """configure() without apps should use current value."""
@@ -64,7 +64,7 @@ class TestConfigureWithApps:
             database_url="postgresql://test:test@localhost/testdb"
         )
         # Default is ["app"]
-        assert vidyut.conf.settings.apps == ["app"]
+        assert aksara.conf.settings.apps == ["app"]
     
     def test_configure_with_settings_object(self):
         """configure() should accept a Settings object with apps."""
@@ -73,4 +73,4 @@ class TestConfigureWithApps:
             database_url="postgresql://test:test@localhost/custom"
         )
         configure(custom_settings)
-        assert vidyut.conf.settings.apps == ["api", "admin", "auth"]
+        assert aksara.conf.settings.apps == ["api", "admin", "auth"]

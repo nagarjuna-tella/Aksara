@@ -3,16 +3,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "vidyut"
-version = "0.4.9"
-description = "⚡ Vidyut - Async Framework"
+name = "aksara"
+version = "0.4.10"
+description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
     { name = "Nagarjuna Reddy Tella" }
 ]
-keywords = ["async", "postgres", "orm", "fastapi", "asyncpg"]
+keywords = ["async", "postgres", "orm", "fastapi", "asyncpg", "ai-native"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: FastAPI",
@@ -49,14 +49,14 @@ dev = [
 ]
 
 [project.scripts]
-vidyut = "vidyut.cli:main"
+aksara = "aksara.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/vidyut-orm/vidyut"
-Documentation = "https://github.com/vidyut-orm/vidyut#readme"
+Homepage = "https://github.com/aksara-framework/aksara"
+Documentation = "https://github.com/aksara-framework/aksara#readme"
 
 [tool.hatch.build.targets.wheel]
-packages = ["vidyut"]
+packages = ["aksara"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

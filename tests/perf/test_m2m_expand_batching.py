@@ -7,7 +7,7 @@ Tests for prefetch_related() and batched M2M loading.
 import os
 import pytest
 
-from vidyut.db.debug import capture_queries
+from aksara.db.debug import capture_queries
 
 
 # Integration tests require DATABASE_URL
@@ -20,9 +20,9 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 async def db():
     """Create database connection."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
-    from vidyut.relations import RelationRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
+    from aksara.relations import RelationRegistry
     
     ModelRegistry.clear()
     RelationRegistry.clear()
@@ -52,9 +52,9 @@ async def db():
 @pytest.fixture
 def m2m_models():
     """Create models for M2M tests."""
-    from vidyut import Model, fields
-    from vidyut.registry import ModelRegistry
-    from vidyut.relations import RelationRegistry
+    from aksara import Model, fields
+    from aksara.registry import ModelRegistry
+    from aksara.relations import RelationRegistry
     
     ModelRegistry.clear()
     RelationRegistry.clear()
@@ -115,7 +115,7 @@ class TestPrefetchRelatedQuerySet:
         
         queryset = models['Post'].objects.prefetch_related("tags")
         
-        from vidyut.manager import QuerySet
+        from aksara.manager import QuerySet
         assert isinstance(queryset, QuerySet)
     
     @pytest.mark.asyncio
@@ -282,9 +282,9 @@ class TestCombinedSelectAndPrefetch:
     @pytest.fixture
     def combined_models(self):
         """Create models with both FK and M2M."""
-        from vidyut import Model, fields, CASCADE
-        from vidyut.registry import ModelRegistry
-        from vidyut.relations import RelationRegistry
+        from aksara import Model, fields, CASCADE
+        from aksara.registry import ModelRegistry
+        from aksara.relations import RelationRegistry
         
         ModelRegistry.clear()
         RelationRegistry.clear()

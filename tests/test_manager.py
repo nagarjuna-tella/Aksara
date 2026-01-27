@@ -5,9 +5,9 @@ Unit tests for the query API.
 """
 
 import pytest
-from vidyut import Model, fields
-from vidyut.manager import QuerySet, Manager, DoesNotExist, MultipleObjectsReturned
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields
+from aksara.manager import QuerySet, Manager, DoesNotExist, MultipleObjectsReturned
+from aksara.registry import ModelRegistry
 
 
 @pytest.fixture(autouse=True)

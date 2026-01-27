@@ -9,7 +9,7 @@ Natural language to database queries.
 The Query Engine translates natural language into database queries:
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 engine = QueryEngine()
 result = await engine.query("Users who signed up this month")
@@ -25,7 +25,7 @@ print(result.sql)   # Generated SQL
 ### Basic Queries
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 engine = QueryEngine()
 
@@ -235,7 +235,7 @@ records = result.to_dict()
 ### Using Context Engine
 
 ```python
-from vidyut.ai import QueryEngine, ContextEngine
+from aksara.ai import QueryEngine, ContextEngine
 
 context_engine = ContextEngine()
 query_engine = QueryEngine()
@@ -314,7 +314,7 @@ if result.requires_confirmation:
 ### Query Parse Errors
 
 ```python
-from vidyut.ai.exceptions import QueryParseError
+from aksara.ai.exceptions import QueryParseError
 
 try:
     result = await engine.query("@#$%^&*")
@@ -326,7 +326,7 @@ except QueryParseError as e:
 ### Ambiguous Queries
 
 ```python
-from vidyut.ai.exceptions import AmbiguousQueryError
+from aksara.ai.exceptions import AmbiguousQueryError
 
 try:
     result = await engine.query("Items")  # Could be Product, Order, etc.
@@ -338,7 +338,7 @@ except AmbiguousQueryError as e:
 ### Execution Errors
 
 ```python
-from vidyut.ai.exceptions import QueryExecutionError
+from aksara.ai.exceptions import QueryExecutionError
 
 try:
     result = await engine.query("Posts with invalid_field")
@@ -354,7 +354,7 @@ except QueryExecutionError as e:
 ### Interactive Query
 
 ```bash
-vidyut ai query "Active users"
+aksara ai query "Active users"
 ```
 
 Output:
@@ -375,16 +375,16 @@ Found 150 results:
 
 ```bash
 # To CSV
-vidyut ai query "All orders" --output orders.csv
+aksara ai query "All orders" --output orders.csv
 
 # To JSON
-vidyut ai query "All orders" --output orders.json
+aksara ai query "All orders" --output orders.json
 ```
 
 ### SQL Only
 
 ```bash
-vidyut ai query "Users with posts" --sql-only
+aksara ai query "Users with posts" --sql-only
 
 # Output: SELECT * FROM users WHERE EXISTS (SELECT 1 FROM posts WHERE ...)
 ```
@@ -443,7 +443,7 @@ vidyut ai query "Users with posts" --sql-only
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_QUERY_ENGINE": {
         # Safety
         "read_only": True,

@@ -13,14 +13,14 @@ from unittest.mock import patch, MagicMock
 
 
 class TestAdminMountingBehavior:
-    """Tests for Vidyut._maybe_mount_admin() behavior."""
+    """Tests for Aksara._maybe_mount_admin() behavior."""
     
     def test_admin_mounts_in_debug_with_auth(self):
         """Test that admin auto-mounts in debug mode when auth is available."""
-        from vidyut import Vidyut
+        from aksara import Aksara
         
         # Create app in debug mode (auth is available in this project)
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -32,10 +32,10 @@ class TestAdminMountingBehavior:
     
     def test_admin_does_not_mount_in_production_by_default(self):
         """Test that admin does NOT mount when debug=False and enable_admin=None."""
-        from vidyut import Vidyut
+        from aksara import Aksara
         
         # Create app in production mode
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=False,
             auto_discover_views=False,
@@ -47,10 +47,10 @@ class TestAdminMountingBehavior:
     
     def test_admin_mounts_when_explicitly_enabled(self):
         """Test that admin mounts when enable_admin=True."""
-        from vidyut import Vidyut
+        from aksara import Aksara
         
         # Create app with explicit enable
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=False,
             enable_admin=True,
@@ -63,10 +63,10 @@ class TestAdminMountingBehavior:
     
     def test_admin_does_not_mount_when_explicitly_disabled(self):
         """Test that admin does NOT mount when enable_admin=False."""
-        from vidyut import Vidyut
+        from aksara import Aksara
         
         # Create app with explicit disable in debug mode
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             enable_admin=False,
@@ -83,26 +83,26 @@ class TestAdminMountingBehavior:
         import sys
         
         # Temporarily hide the auth module
-        original_module = sys.modules.get("vidyut.contrib.auth")
+        original_module = sys.modules.get("aksara.contrib.auth")
         
         try:
             # Make auth unavailable
-            sys.modules["vidyut.contrib.auth"] = None
+            sys.modules["aksara.contrib.auth"] = None
             
-            with patch.dict(sys.modules, {"vidyut.contrib.auth": None}):
+            with patch.dict(sys.modules, {"aksara.contrib.auth": None}):
                 # Need to reload to pick up the mock
                 # Instead, let's directly test the _maybe_mount_admin logic
                 # by mocking the import
                 pass
         finally:
             if original_module:
-                sys.modules["vidyut.contrib.auth"] = original_module
+                sys.modules["aksara.contrib.auth"] = original_module
     
     def test_admin_routes_are_correct(self):
         """Test that all expected admin routes are mounted."""
-        from vidyut import Vidyut
+        from aksara import Aksara
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -129,15 +129,15 @@ class TestAdminMountingWithSettings:
     
     def test_admin_uses_settings_debug(self):
         """Test that admin respects settings.debug when app debug is not set."""
-        from vidyut import Vidyut
-        from vidyut.conf import settings, configure
+        from aksara import Aksara
+        from aksara.conf import settings, configure
         
         # Configure settings.debug = True
         original_debug = settings.debug
         try:
             configure(debug=True)
             
-            app = Vidyut(
+            app = Aksara(
                 database_url=None,
                 debug=False,  # App debug is False, but settings.debug is True
                 auto_discover_views=False,

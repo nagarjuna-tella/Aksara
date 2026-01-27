@@ -9,7 +9,7 @@ Multi-step task planning for complex operations.
 The Planner breaks down complex tasks into executable steps:
 
 ```python
-from vidyut.ai import Planner
+from aksara.ai import Planner
 
 planner = Planner()
 plan = await planner.create("Add a tagging system to the blog")
@@ -25,7 +25,7 @@ for step in plan.steps:
 ### Create a Plan
 
 ```python
-from vidyut.ai import Planner
+from aksara.ai import Planner
 
 planner = Planner()
 
@@ -121,7 +121,7 @@ plan = await planner.create(
 ### With Context
 
 ```python
-from vidyut.ai import ContextEngine
+from aksara.ai import ContextEngine
 
 context = await ContextEngine().gather("existing models")
 
@@ -196,7 +196,7 @@ result = await planner.execute(
 CLI equivalent:
 
 ```bash
-vidyut ai plan "Add tagging" --interactive
+aksara ai plan "Add tagging" --interactive
 
 Step 1/5: Create Tag model
   + class Tag(Model):
@@ -275,7 +275,7 @@ plan = await planner.from_template(
 ### Create Custom Templates
 
 ```python
-from vidyut.ai.planner import PlanTemplate
+from aksara.ai.planner import PlanTemplate
 
 @planner.register_template
 class AuditLogTemplate(PlanTemplate):
@@ -342,7 +342,7 @@ if not result.success:
 ### Create Plan
 
 ```bash
-vidyut ai plan "Add user profiles"
+aksara ai plan "Add user profiles"
 
 📋 Plan: Add user profiles
 
@@ -368,19 +368,19 @@ Execute plan? [y/N]
 ### Execute Plan
 
 ```bash
-vidyut ai plan "Add tagging" --execute
+aksara ai plan "Add tagging" --execute
 ```
 
 ### Save Plan
 
 ```bash
-vidyut ai plan "Add tagging" --save tagging-plan.json
+aksara ai plan "Add tagging" --save tagging-plan.json
 ```
 
 ### Load and Execute
 
 ```bash
-vidyut ai plan --load tagging-plan.json --execute
+aksara ai plan --load tagging-plan.json --execute
 ```
 
 ---
@@ -390,7 +390,7 @@ vidyut ai plan --load tagging-plan.json --execute
 ### With Patch Engine
 
 ```python
-from vidyut.ai import Planner, PatchEngine
+from aksara.ai import Planner, PatchEngine
 
 planner = Planner()
 patch_engine = PatchEngine()
@@ -409,7 +409,7 @@ for step in plan.steps:
 ### With Agent Runtime
 
 ```python
-from vidyut.ai import AgentRuntime
+from aksara.ai import AgentRuntime
 
 runtime = AgentRuntime()
 
@@ -426,7 +426,7 @@ result = await runtime.execute(
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_PLANNER": {
         # Execution
         "rollback_on_failure": True,

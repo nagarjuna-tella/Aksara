@@ -6,7 +6,7 @@ Create specialized field types for your application.
 
 ## Overview
 
-Vidyut's field system is extensible. You can create custom fields for:
+Aksara's field system is extensible. You can create custom fields for:
 
 - Domain-specific data types (phone numbers, currencies)
 - Complex validation
@@ -20,8 +20,8 @@ Vidyut's field system is extensible. You can create custom fields for:
 ### Field Structure
 
 ```python
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class PercentageField(Field):
     """Field for percentage values (0-100)."""
@@ -105,8 +105,8 @@ await product.save()
 
 ```python
 import re
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class PhoneField(Field):
     """Phone number field with validation."""
@@ -151,8 +151,8 @@ class Contact(Model):
 
 ```python
 from decimal import Decimal
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class MoneyField(Field):
     """Field for monetary values."""
@@ -204,8 +204,8 @@ class Order(Model):
 
 ```python
 from cryptography.fernet import Fernet
-from vidyut.fields import Field
-from vidyut.conf import settings
+from aksara.fields import Field
+from aksara.conf import settings
 
 class EncryptedField(Field):
     """Field that encrypts data at rest."""
@@ -249,8 +249,8 @@ class User(Model):
 
 ```python
 from enum import Enum
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class EnumField(Field):
     """Field for Python enums."""
@@ -303,8 +303,8 @@ class Task(Model):
 
 ```python
 from slugify import slugify
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class SlugField(Field):
     """Auto-generating slug field."""
@@ -327,7 +327,7 @@ class SlugField(Field):
         
         # Auto-generate from source field
         if self.source_field:
-            from vidyut.signals import pre_save
+            from aksara.signals import pre_save
             
             @pre_save(cls)
             async def auto_slug(sender, instance, **kwargs):
@@ -354,8 +354,8 @@ class Post(Model):
 
 ```python
 import json
-from vidyut.fields import Field
-from vidyut.exceptions import ValidationError
+from aksara.fields import Field
+from aksara.exceptions import ValidationError
 
 class ArrayField(Field):
     """PostgreSQL array field."""
@@ -405,8 +405,8 @@ class Article(Model):
 ### Custom Serialization
 
 ```python
-from vidyut.fields import Field
-from vidyut.api.serializers import SerializerField
+from aksara.fields import Field
+from aksara.api.serializers import SerializerField
 
 class ColorField(Field):
     """RGB color field."""
@@ -520,9 +520,9 @@ class PercentageField(Field[float]):
 
 ```python
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 
-class TestPercentageField(VidyutTestCase):
+class TestPercentageField(AksaraTestCase):
     async def test_valid_value(self):
         field = PercentageField()
         assert field.validate(50) == 50.0

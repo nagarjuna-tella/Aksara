@@ -1,5 +1,5 @@
 """
-Tests for Vidyut v0.2 Features
+Tests for Aksara v0.2 Features
 
 Tests for:
 - Settings/Configuration
@@ -17,10 +17,10 @@ import pytest
 from datetime import datetime
 from unittest.mock import patch
 
-from vidyut import Model, fields
-from vidyut.conf import Settings, configure, settings, reset_settings
-from vidyut.exceptions import (
-    VidyutError,
+from aksara import Model, fields
+from aksara.conf import Settings, configure, settings, reset_settings
+from aksara.exceptions import (
+    AksaraError,
     DatabaseError,
     ConnectionError,
     QueryError,
@@ -30,7 +30,7 @@ from vidyut.exceptions import (
     CheckConstraintError,
     map_database_error,
 )
-from vidyut.registry import (
+from aksara.registry import (
     ModelRegistry,
     get_models,
     get_model_meta,
@@ -38,7 +38,7 @@ from vidyut.registry import (
     get_model_schema_for_ai,
     get_all_schemas_for_ai,
 )
-from vidyut.manager import Manager
+from aksara.manager import Manager
 
 
 # =============================================================================
@@ -94,9 +94,9 @@ class TestSettings:
     def test_settings_from_env(self):
         """Test loading settings from environment variables."""
         with patch.dict(os.environ, {
-            "VIDYUT_DATABASE_URL": "postgresql://env/db",
-            "VIDYUT_DEBUG": "true",
-            "VIDYUT_POOL_SIZE": "25",
+            "AKSARA_DATABASE_URL": "postgresql://env/db",
+            "AKSARA_DEBUG": "true",
+            "AKSARA_POOL_SIZE": "25",
         }, clear=False):
             s = Settings()  # Will load from env
             assert s.database_url == "postgresql://env/db"
@@ -123,11 +123,11 @@ class TestSettings:
 class TestExceptions:
     """Tests for the exception hierarchy."""
     
-    def test_vidyut_error_is_base(self):
-        """Test VidyutError is the base exception."""
-        assert issubclass(DatabaseError, VidyutError)
-        assert issubclass(ConnectionError, VidyutError)
-        assert issubclass(QueryError, VidyutError)
+    def test_aksara_error_is_base(self):
+        """Test AksaraError is the base exception."""
+        assert issubclass(DatabaseError, AksaraError)
+        assert issubclass(ConnectionError, AksaraError)
+        assert issubclass(QueryError, AksaraError)
     
     def test_constraint_errors(self):
         """Test constraint error hierarchy."""
@@ -194,7 +194,7 @@ class TestQueryLookups:
     @pytest.fixture
     def queryset(self):
         """Create a QuerySet for testing."""
-        from vidyut.manager import QuerySet, parse_lookup
+        from aksara.manager import QuerySet, parse_lookup
         
         # Clear registry before re-registering
         ModelRegistry.clear()
@@ -213,56 +213,56 @@ class TestQueryLookups:
     
     def test_parse_lookup_simple(self, queryset):
         """Test parsing simple field name."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("name")
         assert field == "name"
         assert lookup == "exact"
     
     def test_parse_lookup_gt(self, queryset):
         """Test parsing __gt lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("age__gt")
         assert field == "age"
         assert lookup == "gt"
     
     def test_parse_lookup_gte(self, queryset):
         """Test parsing __gte lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("age__gte")
         assert field == "age"
         assert lookup == "gte"
     
     def test_parse_lookup_lt(self, queryset):
         """Test parsing __lt lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("age__lt")
         assert field == "age"
         assert lookup == "lt"
     
     def test_parse_lookup_lte(self, queryset):
         """Test parsing __lte lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("age__lte")
         assert field == "age"
         assert lookup == "lte"
     
     def test_parse_lookup_in(self, queryset):
         """Test parsing __in lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("age__in")
         assert field == "age"
         assert lookup == "in"
     
     def test_parse_lookup_isnull(self, queryset):
         """Test parsing __isnull lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("name__isnull")
         assert field == "name"
         assert lookup == "isnull"
     
     def test_parse_lookup_icontains(self, queryset):
         """Test parsing __icontains lookup."""
-        from vidyut.manager import parse_lookup
+        from aksara.manager import parse_lookup
         field, lookup = parse_lookup("name__icontains")
         assert field == "name"
         assert lookup == "icontains"
@@ -639,7 +639,7 @@ class TestMigrationHelpers:
     
     def test_generate_migration_name(self):
         """Test migration name generation."""
-        from vidyut.cli.main import generate_migration_name
+        from aksara.cli.main import generate_migration_name
         
         name = generate_migration_name("create_users")
         
@@ -652,7 +652,7 @@ class TestMigrationHelpers:
     
     def test_compute_checksum(self):
         """Test SQL checksum computation."""
-        from vidyut.cli.main import compute_checksum
+        from aksara.cli.main import compute_checksum
         
         sql = "CREATE TABLE users (id INT PRIMARY KEY);"
         checksum = compute_checksum(sql)
@@ -666,9 +666,9 @@ class TestMigrationHelpers:
     
     def test_migration_table_sql(self):
         """Test migration table SQL structure."""
-        from vidyut.cli.main import MIGRATION_TABLE_SQL
+        from aksara.cli.main import MIGRATION_TABLE_SQL
         
-        assert "vidyut_migrations" in MIGRATION_TABLE_SQL
+        assert "aksara_migrations" in MIGRATION_TABLE_SQL
         assert "name VARCHAR(255)" in MIGRATION_TABLE_SQL
         assert "checksum VARCHAR(64)" in MIGRATION_TABLE_SQL
         assert "applied_at TIMESTAMP" in MIGRATION_TABLE_SQL

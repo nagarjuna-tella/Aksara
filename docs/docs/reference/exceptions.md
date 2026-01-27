@@ -1,6 +1,6 @@
 # Exceptions
 
-Complete reference for Vidyut exceptions.
+Complete reference for Aksara exceptions.
 
 ---
 
@@ -9,7 +9,7 @@ Complete reference for Vidyut exceptions.
 ```
 BaseException
 └── Exception
-    └── VidyutError
+    └── AksaraError
         ├── ConfigurationError
         ├── DatabaseError
         │   ├── ConnectionError
@@ -28,18 +28,18 @@ BaseException
 
 ## Core Exceptions
 
-### VidyutError
+### AksaraError
 
-Base exception for all Vidyut errors.
+Base exception for all Aksara errors.
 
 ```python
-from vidyut.exceptions import VidyutError
+from aksara.exceptions import AksaraError
 
 try:
     # some operation
     pass
-except VidyutError as e:
-    print(f"Vidyut error: {e}")
+except AksaraError as e:
+    print(f"Aksara error: {e}")
 ```
 
 ### ConfigurationError
@@ -47,7 +47,7 @@ except VidyutError as e:
 Raised when configuration is invalid.
 
 ```python
-from vidyut.exceptions import ConfigurationError
+from aksara.exceptions import ConfigurationError
 
 raise ConfigurationError("DATABASE_URL is required")
 ```
@@ -61,7 +61,7 @@ raise ConfigurationError("DATABASE_URL is required")
 Base exception for database errors.
 
 ```python
-from vidyut.exceptions import DatabaseError
+from aksara.exceptions import DatabaseError
 
 try:
     await Model.objects.raw("INVALID SQL")
@@ -74,7 +74,7 @@ except DatabaseError as e:
 Raised when database connection fails.
 
 ```python
-from vidyut.exceptions import ConnectionError
+from aksara.exceptions import ConnectionError
 
 try:
     await database.connect()
@@ -87,7 +87,7 @@ except ConnectionError as e:
 Raised when database integrity constraints are violated.
 
 ```python
-from vidyut.exceptions import IntegrityError
+from aksara.exceptions import IntegrityError
 
 try:
     await User.objects.create(email="existing@example.com")
@@ -100,7 +100,7 @@ except IntegrityError as e:
 Raised for operational database errors.
 
 ```python
-from vidyut.exceptions import OperationalError
+from aksara.exceptions import OperationalError
 
 try:
     await Model.objects.execute("...")
@@ -117,7 +117,7 @@ except OperationalError as e:
 Raised when a query expects a single object but finds none.
 
 ```python
-from vidyut.exceptions import DoesNotExist
+from aksara.exceptions import DoesNotExist
 
 # Model-specific exception
 try:
@@ -126,7 +126,7 @@ except User.DoesNotExist:
     print("User not found")
 
 # Generic exception
-from vidyut.exceptions import DoesNotExist
+from aksara.exceptions import DoesNotExist
 try:
     user = await User.objects.get(id="nonexistent")
 except DoesNotExist:
@@ -138,7 +138,7 @@ except DoesNotExist:
 Raised when a query expects a single object but finds multiple.
 
 ```python
-from vidyut.exceptions import MultipleObjectsReturned
+from aksara.exceptions import MultipleObjectsReturned
 
 try:
     user = await User.objects.get(name="John")
@@ -155,7 +155,7 @@ except MultipleObjectsReturned:
 Raised when data validation fails.
 
 ```python
-from vidyut.exceptions import ValidationError
+from aksara.exceptions import ValidationError
 
 # Single error
 raise ValidationError("Invalid value")
@@ -190,7 +190,7 @@ raise ValidationError({
 #### Handling
 
 ```python
-from vidyut.exceptions import ValidationError
+from aksara.exceptions import ValidationError
 
 try:
     await serializer.is_valid(raise_exception=True)
@@ -208,7 +208,7 @@ except ValidationError as e:
 Base exception for API errors.
 
 ```python
-from vidyut.exceptions import APIException
+from aksara.exceptions import APIException
 
 raise APIException(
     detail="Something went wrong",
@@ -229,7 +229,7 @@ raise APIException(
 Raised when a resource is not found (404).
 
 ```python
-from vidyut.exceptions import NotFound
+from aksara.exceptions import NotFound
 
 raise NotFound("User not found")
 raise NotFound(detail="Post not found")
@@ -240,7 +240,7 @@ raise NotFound(detail="Post not found")
 Raised when user lacks permission (403).
 
 ```python
-from vidyut.exceptions import PermissionDenied
+from aksara.exceptions import PermissionDenied
 
 raise PermissionDenied("You do not have permission to edit this post")
 ```
@@ -250,7 +250,7 @@ raise PermissionDenied("You do not have permission to edit this post")
 Raised when authentication is required (401).
 
 ```python
-from vidyut.exceptions import NotAuthenticated
+from aksara.exceptions import NotAuthenticated
 
 raise NotAuthenticated("Authentication required")
 ```
@@ -260,7 +260,7 @@ raise NotAuthenticated("Authentication required")
 Raised when HTTP method is not allowed (405).
 
 ```python
-from vidyut.exceptions import MethodNotAllowed
+from aksara.exceptions import MethodNotAllowed
 
 raise MethodNotAllowed("GET")
 ```
@@ -270,7 +270,7 @@ raise MethodNotAllowed("GET")
 Raised when rate limit is exceeded (429).
 
 ```python
-from vidyut.exceptions import Throttled
+from aksara.exceptions import Throttled
 
 raise Throttled(wait=60)  # Retry after 60 seconds
 ```
@@ -290,7 +290,7 @@ raise Throttled(wait=60)  # Retry after 60 seconds
 Raised for migration errors.
 
 ```python
-from vidyut.exceptions import MigrationError
+from aksara.exceptions import MigrationError
 
 raise MigrationError("Migration failed")
 ```
@@ -300,7 +300,7 @@ raise MigrationError("Migration failed")
 Raised when migrations conflict.
 
 ```python
-from vidyut.exceptions import ConflictingMigrations
+from aksara.exceptions import ConflictingMigrations
 
 raise ConflictingMigrations(["0002_add_email", "0002_add_name"])
 ```
@@ -310,7 +310,7 @@ raise ConflictingMigrations(["0002_add_email", "0002_add_name"])
 Raised when migration is not found.
 
 ```python
-from vidyut.exceptions import MigrationNotFound
+from aksara.exceptions import MigrationNotFound
 
 raise MigrationNotFound("0003_update_users")
 ```
@@ -322,7 +322,7 @@ raise MigrationNotFound("0003_update_users")
 ### Creating Custom Exceptions
 
 ```python
-from vidyut.exceptions import APIException
+from aksara.exceptions import APIException
 
 class PaymentError(APIException):
     status_code = 402
@@ -341,7 +341,7 @@ raise PaymentError("Card declined")
 ### Exception Handler
 
 ```python
-from vidyut.exceptions import exception_handler
+from aksara.exceptions import exception_handler
 
 @app.exception_handler(PaymentError)
 async def handle_payment_error(request, exc):
@@ -426,7 +426,7 @@ logger = logging.getLogger(__name__)
 
 try:
     await dangerous_operation()
-except VidyutError as e:
+except AksaraError as e:
     logger.exception("Operation failed")
     raise
 ```

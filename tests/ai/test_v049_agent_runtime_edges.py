@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - Agent Runtime Edge Cases
+Aksara v0.4.10 - Agent Runtime Edge Cases
 
 Tests for:
 1. Invalid plan shape (missing fields, extra fields, invalid types)
@@ -14,13 +14,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
-from vidyut.ai.agent import (
+from aksara.ai.agent import (
     AgentIntent,
     AgentContextBundle,
     build_agent_context_bundle,
 )
-from vidyut.ai.models import AiTool
-from vidyut.ai.planner import AiPlan, AiPlanStep
+from aksara.ai.models import AiTool
+from aksara.ai.planner import AiPlan, AiPlanStep
 
 
 # =============================================================================
@@ -305,7 +305,7 @@ class TestMassivePlanSize:
     
     def test_topological_sort_performance(self):
         """Topological sort should handle large plans efficiently."""
-        from vidyut.ai.planner import _topological_sort
+        from aksara.ai.planner import _topological_sort
         
         num_steps = 200
         
@@ -330,7 +330,7 @@ class TestMassivePlanSize:
     
     def test_circular_dependency_check_performance(self):
         """Circular dependency check should handle large plans efficiently."""
-        from vidyut.ai.planner import _has_circular_dependency
+        from aksara.ai.planner import _has_circular_dependency
         
         num_steps = 200
         
@@ -356,7 +356,7 @@ class TestMassivePlanSize:
     
     def test_validate_plan_performance(self):
         """validate_plan should handle large plans efficiently."""
-        from vidyut.ai.planner import validate_plan
+        from aksara.ai.planner import validate_plan
         
         num_steps = 100
         
@@ -418,7 +418,7 @@ class TestAgentContextBundleValidation:
                 patch_schema={},
                 query_plan_schema={},
                 codegen_schema={},
-                version="0.4.9"
+                version="0.4.10"
             )
     
     def test_bundle_requires_version(self):
@@ -445,11 +445,11 @@ class TestAgentContextBundleValidation:
             patch_schema={"type": "object"},
             query_plan_schema={"type": "object"},
             codegen_schema={"type": "object"},
-            version="0.4.9"
+            version="0.4.10"
         )
         
         assert bundle.intent.user_message == "Test"
-        assert bundle.version == "0.4.9"
+        assert bundle.version == "0.4.10"
 
 
 # =============================================================================
@@ -567,7 +567,7 @@ class TestBuildAgentContextBundle:
         intent = AgentIntent(user_message="Test", mode="read")
         
         # Patch the context builder (imported inside the function)
-        with patch("vidyut.ai.context.build_full_ai_context", new_callable=AsyncMock) as mock_context:
+        with patch("aksara.ai.context.build_full_ai_context", new_callable=AsyncMock) as mock_context:
             # Return a mock that has model_dump()
             mock_result = MagicMock()
             mock_result.model_dump.return_value = {"models": [], "viewsets": [], "routes": [], "migrations": []}
@@ -585,7 +585,7 @@ class TestBuildAgentContextBundle:
         intent = AgentIntent(user_message="Test")
         
         # Patch the context builder (imported inside the function)
-        with patch("vidyut.ai.context.build_full_ai_context", new_callable=AsyncMock) as mock_context:
+        with patch("aksara.ai.context.build_full_ai_context", new_callable=AsyncMock) as mock_context:
             mock_result = MagicMock()
             mock_result.model_dump.return_value = {}
             mock_context.return_value = mock_result

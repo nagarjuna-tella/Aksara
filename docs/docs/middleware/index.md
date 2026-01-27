@@ -1,6 +1,6 @@
 # Middleware
 
-Add request processing logic with Vidyut middleware.
+Add request processing logic with Aksara middleware.
 
 ---
 
@@ -13,10 +13,10 @@ Request → Middleware → View → Middleware → Response
 ```
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import RequestIDMiddleware
+from aksara import Aksara
+from aksara.middleware import RequestIDMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(RequestIDMiddleware)
 ```
 
@@ -24,7 +24,7 @@ app.add_middleware(RequestIDMiddleware)
 
 ## Built-in Middleware
 
-Vidyut provides several production-ready middleware:
+Aksara provides several production-ready middleware:
 
 | Middleware | Purpose |
 |------------|---------|
@@ -41,13 +41,13 @@ Vidyut provides several production-ready middleware:
 ### Basic Usage
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import (
+from aksara import Aksara
+from aksara.middleware import (
     RequestIDMiddleware,
     LoggingMiddleware,
 )
 
-app = Vidyut()
+app = Aksara()
 
 # Add middleware (order matters!)
 app.add_middleware(RequestIDMiddleware)
@@ -152,10 +152,10 @@ app.add_middleware(TimingMiddleware)
 
 ## Context Variables
 
-Vidyut middleware uses context variables to share data:
+Aksara middleware uses context variables to share data:
 
 ```python
-from vidyut.middleware import (
+from aksara.middleware import (
     request_id_var,  # Current request ID
     tenant_id_var,   # Current tenant ID
     user_id_var,     # Current user ID
@@ -169,7 +169,7 @@ current_tenant = tenant_id_var.get()
 ### Using in Views
 
 ```python
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 @app.get("/api/data")
 async def get_data(request):
@@ -181,7 +181,7 @@ async def get_data(request):
 ### Using in Services
 
 ```python
-from vidyut.middleware import request_id_var, tenant_id_var
+from aksara.middleware import request_id_var, tenant_id_var
 
 class DataService:
     async def fetch_data(self):
@@ -205,15 +205,15 @@ class DataService:
 ## Complete Example
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import (
+from aksara import Aksara
+from aksara.middleware import (
     RequestIDMiddleware,
     TenantMiddleware,
     LoggingMiddleware,
 )
 from starlette.middleware.cors import CORSMiddleware
 
-app = Vidyut()
+app = Aksara()
 
 # CORS (first, so it handles preflight)
 app.add_middleware(

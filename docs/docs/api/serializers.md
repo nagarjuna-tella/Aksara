@@ -14,7 +14,7 @@ Serializers handle:
 - **Nested serialization** — Handle related objects
 
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 from myapp.models import Post
 
 class PostSerializer(ModelSerializer):
@@ -30,7 +30,7 @@ class PostSerializer(ModelSerializer):
 The most common serializer type, automatically maps to a model:
 
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 
 class PostSerializer(ModelSerializer):
     model = Post
@@ -91,7 +91,7 @@ class UserSerializer(ModelSerializer):
 ### Custom Field Configuration
 
 ```python
-from vidyut.api import ModelSerializer, Field
+from aksara.api import ModelSerializer, Field
 
 class PostSerializer(ModelSerializer):
     model = Post
@@ -463,7 +463,7 @@ class PostSerializer(ModelSerializer):
 ## Complete Example
 
 ```python
-from vidyut.api import ModelSerializer, Field, ValidationError
+from aksara.api import ModelSerializer, Field, ValidationError
 from myapp.models import Post, Author, Tag, Comment
 
 

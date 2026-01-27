@@ -9,7 +9,7 @@ Configure the admin interface.
 `AdminSite` is the main entry point for the admin interface:
 
 ```python
-from vidyut.contrib.admin import AdminSite
+from aksara.contrib.admin import AdminSite
 
 admin = AdminSite(
     title="My Admin",
@@ -58,7 +58,7 @@ admin = AdminSite(
 ### Decorator Style
 
 ```python
-from vidyut.contrib.admin import ModelAdmin
+from aksara.contrib.admin import ModelAdmin
 
 @admin.register(Post)
 class PostAdmin(ModelAdmin):
@@ -68,7 +68,7 @@ class PostAdmin(ModelAdmin):
 ### Method Style
 
 ```python
-from vidyut.contrib.admin import ModelAdmin
+from aksara.contrib.admin import ModelAdmin
 
 class PostAdmin(ModelAdmin):
     list_display = ["title", "author"]
@@ -99,13 +99,13 @@ class ContentAdmin(ModelAdmin):
 
 ## Mounting Admin
 
-### On Vidyut App
+### On Aksara App
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.admin import admin
 
-app = Vidyut()
+app = Aksara()
 app.mount("/admin", admin)
 ```
 
@@ -178,7 +178,7 @@ await user.save()
 ### Custom Permission
 
 ```python
-from vidyut.permissions import BasePermission
+from aksara.permissions import BasePermission
 
 class IsSuperAdmin(BasePermission):
     def has_permission(self, request, view):
@@ -312,8 +312,8 @@ async def audit_changes(request, response):
 
 ```python
 # admin.py
-from vidyut.contrib.admin import AdminSite, ModelAdmin
-from vidyut.permissions import BasePermission
+from aksara.contrib.admin import AdminSite, ModelAdmin
+from aksara.permissions import BasePermission
 from myapp.models import Post, Author, Category, Tag, User, Settings
 
 

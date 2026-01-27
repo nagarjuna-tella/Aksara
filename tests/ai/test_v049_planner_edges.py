@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - Planner Dependency Graph & Failure Modes
+Aksara v0.4.10 - Planner Dependency Graph & Failure Modes
 
 Tests for:
 1. Circular dependency detection
@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from vidyut.ai.planner import (
+from aksara.ai.planner import (
     AiPlan,
     AiPlanStep,
     AiPlanExecutionResult,
@@ -25,7 +25,7 @@ from vidyut.ai.planner import (
     validate_plan,
     execute_plan,
 )
-from vidyut import ConfigurationError
+from aksara import ConfigurationError
 
 
 # =============================================================================
@@ -392,7 +392,7 @@ class TestExecutionFailureHandling:
         # If a step fails, overall success should be False
         
         # Create a mock step result with failure
-        from vidyut.ai.planner import AiPlanStepResult
+        from aksara.ai.planner import AiPlanStepResult
         
         # Test that step result with success=False can be created
         failed_step = AiPlanStepResult(
@@ -421,7 +421,7 @@ class TestExecutionFailureHandling:
         
         mock_app = MagicMock()
         
-        with patch("vidyut.ai.planner._handle_analyze_context", new_callable=AsyncMock) as mock_handler:
+        with patch("aksara.ai.planner._handle_analyze_context", new_callable=AsyncMock) as mock_handler:
             mock_handler.return_value = AiPlanStepResult(
                 id="test",
                 type="analyze_context",

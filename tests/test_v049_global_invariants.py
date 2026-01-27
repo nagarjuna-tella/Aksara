@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - Global Invariants & Sanity Checks
+Aksara v0.4.10 - Global Invariants & Sanity Checks
 
 Tests that validate high-level invariants:
 1. Imports & Public API
@@ -28,11 +28,11 @@ class TestImportsAndPublicAPI:
     """Test that all public imports work correctly."""
     
     def test_star_import_works(self):
-        """from vidyut import * should work and not raise."""
-        # We can't actually do `from vidyut import *` in a function,
+        """from aksara import * should work and not raise."""
+        # We can't actually do `from aksara import *` in a function,
         # so we test via exec
         namespace: dict[str, Any] = {}
-        exec("from vidyut import *", namespace)
+        exec("from aksara import *", namespace)
         
         # Should have imported things
         assert "Model" in namespace
@@ -41,8 +41,8 @@ class TestImportsAndPublicAPI:
     
     def test_core_orm_imports(self):
         """Core ORM exports should import cleanly."""
-        from vidyut import Model, fields, Database, ModelRegistry
-        from vidyut import DoesNotExist, MultipleObjectsReturned
+        from aksara import Model, fields, Database, ModelRegistry
+        from aksara import DoesNotExist, MultipleObjectsReturned
         
         assert Model is not None
         assert fields is not None
@@ -51,7 +51,7 @@ class TestImportsAndPublicAPI:
     
     def test_on_delete_constants(self):
         """on_delete constants should be importable."""
-        from vidyut import CASCADE, SET_NULL, RESTRICT, PROTECT
+        from aksara import CASCADE, SET_NULL, RESTRICT, PROTECT
         
         # These are string constants, not enums
         assert CASCADE == "CASCADE"
@@ -61,7 +61,7 @@ class TestImportsAndPublicAPI:
     
     def test_settings_imports(self):
         """Settings & Configuration should import."""
-        from vidyut import Settings, settings, configure
+        from aksara import Settings, settings, configure
         
         assert Settings is not None
         assert settings is not None
@@ -69,8 +69,8 @@ class TestImportsAndPublicAPI:
     
     def test_exception_imports(self):
         """All exceptions should import cleanly."""
-        from vidyut import (
-            VidyutError,
+        from aksara import (
+            AksaraError,
             DatabaseError,
             ConnectionError,
             QueryError,
@@ -84,13 +84,13 @@ class TestImportsAndPublicAPI:
         )
         
         # Check inheritance
-        assert issubclass(DatabaseError, VidyutError)
+        assert issubclass(DatabaseError, AksaraError)
         assert issubclass(QueryError, DatabaseError)
-        assert issubclass(RestrictedError, VidyutError)
+        assert issubclass(RestrictedError, AksaraError)
     
     def test_api_layer_imports(self):
         """v0.3 API layer exports should import."""
-        from vidyut import (
+        from aksara import (
             ModelViewSet,
             include_viewset,
             generate_create_schema,
@@ -106,14 +106,14 @@ class TestImportsAndPublicAPI:
     
     def test_migration_imports(self):
         """Migration exports should import."""
-        from vidyut import Migration, migration_operations
+        from aksara import Migration, migration_operations
         
         assert Migration is not None
         assert migration_operations is not None
     
     def test_discovery_imports(self):
         """Discovery utilities should import."""
-        from vidyut import (
+        from aksara import (
             discover_viewsets_from_module,
             auto_discover_viewsets,
             load_app_models,
@@ -127,15 +127,15 @@ class TestImportsAndPublicAPI:
         assert callable(load_app_models)
         assert callable(auto_discover_viewsets)
     
-    def test_vidyut_app_import(self):
-        """Vidyut App should import."""
-        from vidyut import Vidyut
+    def test_aksara_app_import(self):
+        """Aksara App should import."""
+        from aksara import Aksara
         
-        assert Vidyut is not None
+        assert Aksara is not None
     
     def test_fastapi_reexports(self):
         """FastAPI re-exports should work."""
-        from vidyut import (
+        from aksara import (
             FastAPI,
             APIRouter,
             Request,
@@ -152,7 +152,7 @@ class TestImportsAndPublicAPI:
     
     def test_relationship_imports(self):
         """v0.3.8 relationship exports should import."""
-        from vidyut import (
+        from aksara import (
             OnDelete,
             RelationRegistry,
             RelationMeta,
@@ -164,8 +164,8 @@ class TestImportsAndPublicAPI:
     
     def test_identity_permission_imports(self):
         """v0.3.10 identity & permission exports should import."""
-        from vidyut import (
-            VidyutUserProtocol,
+        from aksara import (
+            AksaraUserProtocol,
             AnonymousUser,
             BasePermission,
             AllowAny,
@@ -182,14 +182,14 @@ class TestImportsAndPublicAPI:
     
     def test_ai_context_imports(self):
         """AI context exports should import (v0.4.3+)."""
-        from vidyut.ai import build_full_ai_context, AiFullContext
+        from aksara.ai import build_full_ai_context, AiFullContext
         
         assert callable(build_full_ai_context)
         assert AiFullContext is not None
     
     def test_ai_patch_imports(self):
         """AI patch exports should import (v0.4.4+)."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AiPatchRequest,
             AiPatchOperation,
             AiPatchResult,
@@ -202,7 +202,7 @@ class TestImportsAndPublicAPI:
     
     def test_ai_planner_imports(self):
         """AI planner exports should import (v0.4.5+)."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AiPlan,
             AiPlanStep,
             AiPlanExecutionResult,
@@ -215,7 +215,7 @@ class TestImportsAndPublicAPI:
     
     def test_ai_agent_imports(self):
         """AI agent exports should import (v0.4.6+)."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AgentIntent,
             AgentContextBundle,
             build_agent_context_bundle,
@@ -227,7 +227,7 @@ class TestImportsAndPublicAPI:
     
     def test_ai_schema_doctor_imports(self):
         """AI schema doctor exports should import (v0.4.7+)."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AiSchemaHealth,
             AiSchemaIssue,
             analyze_schema_health,
@@ -238,7 +238,7 @@ class TestImportsAndPublicAPI:
     
     def test_import_cost_is_reasonable(self):
         """
-        Importing vidyut should be reasonably fast.
+        Importing aksara should be reasonably fast.
         
         This tests that we haven't accidentally added heavy
         initialization or eager database connections.
@@ -247,7 +247,7 @@ class TestImportsAndPublicAPI:
         code = '''
 import time
 start = time.perf_counter()
-import vidyut
+import aksara
 end = time.perf_counter()
 print(f"{end - start:.3f}")
 '''
@@ -272,10 +272,10 @@ class TestVersionConsistency:
     """Test that all version strings match."""
     
     def test_init_version_format(self):
-        """vidyut.__version__ should be a valid semver string."""
-        import vidyut
+        """aksara.__version__ should be a valid semver string."""
+        import aksara
         
-        version = vidyut.__version__
+        version = aksara.__version__
         assert version is not None
         
         # Should be x.y.z format
@@ -287,24 +287,24 @@ class TestVersionConsistency:
             assert part.isdigit(), f"Non-numeric version part: {part}"
     
     def test_init_version_is_049(self):
-        """vidyut.__version__ should be 0.4.9."""
-        import vidyut
+        """aksara.__version__ should be 0.4.10."""
+        import aksara
         
-        assert vidyut.__version__ == "0.4.9"
+        assert aksara.__version__ == "0.4.10"
     
     def test_cli_version_matches(self):
-        """CLI --version should match vidyut.__version__."""
-        from vidyut.cli.main import CLI_VERSION
-        import vidyut
+        """CLI --version should match aksara.__version__."""
+        from aksara.cli.main import CLI_VERSION
+        import aksara
         
-        assert CLI_VERSION == vidyut.__version__, (
-            f"CLI version ({CLI_VERSION}) != __version__ ({vidyut.__version__})"
+        assert CLI_VERSION == aksara.__version__, (
+            f"CLI version ({CLI_VERSION}) != __version__ ({aksara.__version__})"
         )
     
     def test_pyproject_version_matches(self):
-        """pyproject.toml version should match vidyut.__version__."""
+        """pyproject.toml version should match aksara.__version__."""
         import tomllib
-        import vidyut
+        import aksara
         
         # Find pyproject.toml
         project_root = Path(__file__).parent.parent
@@ -315,20 +315,20 @@ class TestVersionConsistency:
         
         pyproject_version = pyproject["project"]["version"]
         
-        assert pyproject_version == vidyut.__version__, (
-            f"pyproject.toml version ({pyproject_version}) != __version__ ({vidyut.__version__})"
+        assert pyproject_version == aksara.__version__, (
+            f"pyproject.toml version ({pyproject_version}) != __version__ ({aksara.__version__})"
         )
     
     def test_version_command_outputs_version(self):
-        """vidyut --version should output the version."""
+        """aksara --version should output the version."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         
         assert result.exit_code == 0
-        assert "0.4.9" in result.output
+        assert "0.4.10" in result.output
 
 
 # =============================================================================
@@ -339,9 +339,9 @@ class TestMinimalProjectSmokeTest:
     """Test that basic project operations work."""
     
     def test_startproject_creates_structure(self, tmp_path: Path):
-        """vidyut startproject should create a project structure."""
+        """aksara startproject should create a project structure."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -354,20 +354,20 @@ class TestMinimalProjectSmokeTest:
             assert (tmp_path / "myproject").exists() or Path("myproject").exists()
     
     def test_cli_help_works(self):
-        """vidyut --help should work."""
+        """aksara --help should work."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["--help"])
         
         assert result.exit_code == 0
-        assert "Vidyut CLI" in result.output or "vidyut" in result.output.lower()
+        assert "Aksara CLI" in result.output or "aksara" in result.output.lower()
     
     def test_ai_cli_group_exists(self):
-        """vidyut ai --help should work."""
+        """aksara ai --help should work."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["ai", "--help"])
@@ -378,10 +378,10 @@ class TestMinimalProjectSmokeTest:
         assert "plan" in result.output
     
     def test_plan_template_generates_valid_json(self):
-        """vidyut ai plan template should generate valid JSON."""
+        """aksara ai plan template should generate valid JSON."""
         import json
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, [
@@ -398,9 +398,9 @@ class TestMinimalProjectSmokeTest:
         assert "steps" in data["plan"]
     
     def test_migrate_help_works(self):
-        """vidyut migrate --help should work."""
+        """aksara migrate --help should work."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["migrate", "--help"])
@@ -408,9 +408,9 @@ class TestMinimalProjectSmokeTest:
         assert result.exit_code == 0
     
     def test_info_command_works(self):
-        """vidyut info should work without crashing."""
+        """aksara info should work without crashing."""
         from click.testing import CliRunner
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["info"])
@@ -428,41 +428,41 @@ class TestMinimalProjectSmokeTest:
 class TestModuleStructure:
     """Test that module structure is correct."""
     
-    def test_vidyut_has_py_typed(self):
-        """vidyut should have py.typed marker for type checking."""
-        import vidyut
+    def test_aksara_has_py_typed(self):
+        """aksara should have py.typed marker for type checking."""
+        import aksara
         
-        package_dir = Path(vidyut.__file__).parent
+        package_dir = Path(aksara.__file__).parent
         py_typed = package_dir / "py.typed"
         
         assert py_typed.exists(), "Missing py.typed marker"
     
-    def test_vidyut_ai_submodule(self):
-        """vidyut.ai submodule should be importable."""
-        import vidyut.ai
+    def test_aksara_ai_submodule(self):
+        """aksara.ai submodule should be importable."""
+        import aksara.ai
         
         # Should have main exports
-        assert hasattr(vidyut.ai, "build_full_ai_context")
+        assert hasattr(aksara.ai, "build_full_ai_context")
     
-    def test_vidyut_cli_submodule(self):
-        """vidyut.cli submodule should be importable."""
-        import vidyut.cli
-        from vidyut.cli.main import cli as cli_cmd
+    def test_aksara_cli_submodule(self):
+        """aksara.cli submodule should be importable."""
+        import aksara.cli
+        from aksara.cli.main import cli as cli_cmd
         
-        assert hasattr(vidyut.cli, "cli")
+        assert hasattr(aksara.cli, "cli")
         assert callable(cli_cmd)
     
-    def test_vidyut_db_submodule(self):
-        """vidyut.db submodule should be importable."""
-        import vidyut.db
+    def test_aksara_db_submodule(self):
+        """aksara.db submodule should be importable."""
+        import aksara.db
         
-        assert hasattr(vidyut.db, "Database")
+        assert hasattr(aksara.db, "Database")
     
-    def test_vidyut_api_submodule(self):
-        """vidyut.api submodule should be importable."""
-        import vidyut.api
+    def test_aksara_api_submodule(self):
+        """aksara.api submodule should be importable."""
+        import aksara.api
         
-        assert hasattr(vidyut.api, "ModelViewSet")
+        assert hasattr(aksara.api, "ModelViewSet")
 
 
 # =============================================================================
@@ -472,10 +472,10 @@ class TestModuleStructure:
 class TestExceptionHierarchy:
     """Test that exception hierarchy is correct."""
     
-    def test_all_exceptions_inherit_from_vidyut_error(self):
-        """All Vidyut exceptions should inherit from VidyutError."""
-        from vidyut import (
-            VidyutError,
+    def test_all_exceptions_inherit_from_aksara_error(self):
+        """All Aksara exceptions should inherit from AksaraError."""
+        from aksara import (
+            AksaraError,
             DatabaseError,
             ConnectionError,
             QueryError,
@@ -502,13 +502,13 @@ class TestExceptionHierarchy:
         ]
         
         for exc_class in exceptions:
-            assert issubclass(exc_class, VidyutError), (
-                f"{exc_class.__name__} does not inherit from VidyutError"
+            assert issubclass(exc_class, AksaraError), (
+                f"{exc_class.__name__} does not inherit from AksaraError"
             )
     
     def test_database_exceptions_inherit_from_database_error(self):
         """Database-related exceptions should inherit from DatabaseError."""
-        from vidyut import (
+        from aksara import (
             DatabaseError,
             ConnectionError,
             QueryError,
@@ -534,9 +534,9 @@ class TestExceptionHierarchy:
     
     def test_exceptions_have_message_attribute(self):
         """All exceptions should have a message attribute."""
-        from vidyut import VidyutError, DatabaseError, ValidationError
+        from aksara import AksaraError, DatabaseError, ValidationError
         
-        exc1 = VidyutError("test message")
+        exc1 = AksaraError("test message")
         assert exc1.message == "test message"
         
         exc2 = DatabaseError("db error")
@@ -547,7 +547,7 @@ class TestExceptionHierarchy:
     
     def test_restricted_error_has_model_info(self):
         """RestrictedError should have model information attributes."""
-        from vidyut import RestrictedError
+        from aksara import RestrictedError
         
         exc = RestrictedError(
             "Cannot delete",

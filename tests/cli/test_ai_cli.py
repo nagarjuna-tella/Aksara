@@ -2,12 +2,12 @@
 Tests for AI CLI Commands (v0.4.8)
 
 Comprehensive test coverage for:
-- vidyut ai context
-- vidyut ai schema-health
-- vidyut ai schema-issues
-- vidyut ai plan preview
-- vidyut ai plan apply
-- vidyut ai plan template
+- aksara ai context
+- aksara ai schema-health
+- aksara ai schema-issues
+- aksara ai plan preview
+- aksara ai plan apply
+- aksara ai plan template
 """
 
 import json
@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from vidyut.cli.main import (
+from aksara.cli.main import (
     cli,
     ai,
     ai_context,
@@ -75,7 +75,7 @@ def sample_plan_json():
 @pytest.fixture
 def mock_context_bundle():
     """Create a mock context bundle."""
-    from vidyut.ai.agent import AgentIntent, AgentContextBundle
+    from aksara.ai.agent import AgentIntent, AgentContextBundle
     
     return AgentContextBundle(
         intent=AgentIntent(user_message="Test intent", mode="modify"),
@@ -97,7 +97,7 @@ def mock_context_bundle():
 @pytest.fixture
 def mock_schema_health():
     """Create a mock schema health result."""
-    from vidyut.ai.schema_doctor import AiSchemaHealth
+    from aksara.ai.schema_doctor import AiSchemaHealth
     
     return AiSchemaHealth(
         status="healthy",
@@ -113,7 +113,7 @@ def mock_schema_health():
 @pytest.fixture
 def mock_schema_health_with_issues():
     """Create a mock schema health result with issues."""
-    from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+    from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
     
     return AiSchemaHealth(
         status="danger",
@@ -152,7 +152,7 @@ def mock_schema_health_with_issues():
 @pytest.fixture
 def mock_plan_execution_success():
     """Create a mock successful plan execution result."""
-    from vidyut.ai.planner import AiPlanExecutionResult, AiPlanStepResult
+    from aksara.ai.planner import AiPlanExecutionResult, AiPlanStepResult
     
     return AiPlanExecutionResult(
         success=True,
@@ -171,7 +171,7 @@ def mock_plan_execution_success():
 @pytest.fixture
 def mock_plan_execution_failure():
     """Create a mock failed plan execution result."""
-    from vidyut.ai.planner import AiPlanExecutionResult, AiPlanStepResult
+    from aksara.ai.planner import AiPlanExecutionResult, AiPlanStepResult
     
     return AiPlanExecutionResult(
         success=False,
@@ -215,7 +215,7 @@ class TestAiCommandGroup:
 # =============================================================================
 
 class TestAiContextCommand:
-    """Tests for vidyut ai context."""
+    """Tests for aksara ai context."""
     
     def test_context_requires_intent(self, runner):
         """context command should require --intent or --stdin."""
@@ -225,11 +225,11 @@ class TestAiContextCommand:
     
     def test_context_with_intent_summary(self, runner, mock_context_bundle):
         """context command with --intent should output summary."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -244,11 +244,11 @@ class TestAiContextCommand:
     
     def test_context_with_intent_json(self, runner, mock_context_bundle):
         """context command with --format json should output valid JSON."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -265,11 +265,11 @@ class TestAiContextCommand:
     
     def test_context_with_mode(self, runner, mock_context_bundle):
         """context command should accept --mode option."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -284,11 +284,11 @@ class TestAiContextCommand:
     
     def test_context_with_scope(self, runner, mock_context_bundle):
         """context command should accept --scope option."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -302,11 +302,11 @@ class TestAiContextCommand:
     
     def test_context_with_stdin(self, runner, mock_context_bundle):
         """context command should read intent from stdin."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -332,15 +332,15 @@ class TestAiContextCommand:
 # =============================================================================
 
 class TestAiSchemaHealthCommand:
-    """Tests for vidyut ai schema-health."""
+    """Tests for aksara ai schema-health."""
     
     def test_schema_health_table_format(self, runner, mock_schema_health):
         """schema-health should output table format by default."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health
                     
                     result = runner.invoke(cli, ["ai", "schema-health"])
@@ -351,11 +351,11 @@ class TestAiSchemaHealthCommand:
     
     def test_schema_health_json_format(self, runner, mock_schema_health):
         """schema-health with --format json should output valid JSON."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health
                     
                     result = runner.invoke(cli, ["ai", "schema-health", "--format", "json"])
@@ -367,11 +367,11 @@ class TestAiSchemaHealthCommand:
     
     def test_schema_health_danger_exit_code(self, runner, mock_schema_health_with_issues):
         """schema-health should exit with code 1 if status is danger."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-health"])
@@ -381,11 +381,11 @@ class TestAiSchemaHealthCommand:
     
     def test_schema_health_shows_counts(self, runner, mock_schema_health_with_issues):
         """schema-health should display issue counts."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-health"])
@@ -399,15 +399,15 @@ class TestAiSchemaHealthCommand:
 # =============================================================================
 
 class TestAiSchemaIssuesCommand:
-    """Tests for vidyut ai schema-issues."""
+    """Tests for aksara ai schema-issues."""
     
     def test_schema_issues_no_issues(self, runner, mock_schema_health):
         """schema-issues should show no issues message."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health
                     
                     result = runner.invoke(cli, ["ai", "schema-issues"])
@@ -417,11 +417,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_with_issues(self, runner, mock_schema_health_with_issues):
         """schema-issues should list issues."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues"])
@@ -431,11 +431,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_filter_severity(self, runner, mock_schema_health_with_issues):
         """schema-issues should filter by severity."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues", "--severity", "danger"])
@@ -445,11 +445,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_filter_kind(self, runner, mock_schema_health_with_issues):
         """schema-issues should filter by kind."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues", "--kind", "missing_column"])
@@ -459,11 +459,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_json_format(self, runner, mock_schema_health_with_issues):
         """schema-issues with --format json should output valid JSON."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues", "--format", "json"])
@@ -482,11 +482,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_filter_by_table(self, runner, mock_schema_health_with_issues):
         """schema-issues should filter by table name."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues", "--table", "blog_articles"])
@@ -496,11 +496,11 @@ class TestAiSchemaIssuesCommand:
     
     def test_schema_issues_filter_by_app_label(self, runner, mock_schema_health_with_issues):
         """schema-issues should filter by app label."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, ["ai", "schema-issues", "--app-label", "auth"])
@@ -530,18 +530,18 @@ class TestAiPlanCommandGroup:
 # =============================================================================
 
 class TestAiPlanPreviewCommand:
-    """Tests for vidyut ai plan preview."""
+    """Tests for aksara ai plan preview."""
     
     def test_plan_preview_from_file(self, runner, sample_plan_json, mock_plan_execution_success, tmp_path):
         """plan preview should read from file."""
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, ["ai", "plan", "preview", str(plan_file)])
@@ -551,11 +551,11 @@ class TestAiPlanPreviewCommand:
     
     def test_plan_preview_from_stdin(self, runner, sample_plan_json, mock_plan_execution_success):
         """plan preview should read from stdin with -."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(
@@ -571,11 +571,11 @@ class TestAiPlanPreviewCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, [
@@ -592,11 +592,11 @@ class TestAiPlanPreviewCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_failure
                     
                     result = runner.invoke(cli, ["ai", "plan", "preview", str(plan_file)])
@@ -636,11 +636,11 @@ class TestAiPlanPreviewCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, ["ai", "plan", "preview", str(plan_file)])
@@ -654,7 +654,7 @@ class TestAiPlanPreviewCommand:
 # =============================================================================
 
 class TestAiPlanApplyCommand:
-    """Tests for vidyut ai plan apply."""
+    """Tests for aksara ai plan apply."""
     
     def test_plan_apply_requires_confirmation(self, runner, sample_plan_json, tmp_path):
         """plan apply should require confirmation without --yes."""
@@ -670,11 +670,11 @@ class TestAiPlanApplyCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, ["ai", "plan", "apply", str(plan_file), "--yes"])
@@ -687,11 +687,11 @@ class TestAiPlanApplyCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, ["ai", "plan", "apply", str(plan_file), "--yes"])
@@ -705,11 +705,11 @@ class TestAiPlanApplyCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_failure
                     
                     result = runner.invoke(cli, ["ai", "plan", "apply", str(plan_file), "--yes"])
@@ -722,11 +722,11 @@ class TestAiPlanApplyCommand:
         plan_file = tmp_path / "plan.json"
         plan_file.write_text(json.dumps(sample_plan_json))
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, [
@@ -739,11 +739,11 @@ class TestAiPlanApplyCommand:
     
     def test_plan_apply_from_stdin(self, runner, sample_plan_json, mock_plan_execution_success):
         """plan apply should read from stdin with -."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(
@@ -760,7 +760,7 @@ class TestAiPlanApplyCommand:
 # =============================================================================
 
 class TestAiPlanTemplateCommand:
-    """Tests for vidyut ai plan template."""
+    """Tests for aksara ai plan template."""
     
     def test_plan_template_requires_intent(self, runner):
         """plan template should require --intent."""
@@ -837,7 +837,7 @@ class TestSetupAppForCli:
     
     def test_setup_returns_fastapi_app(self):
         """_setup_app_for_cli should return a FastAPI instance."""
-        with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.conf.settings") as mock_settings:
             mock_settings.apps = []
             
             app = _setup_app_for_cli()
@@ -847,7 +847,7 @@ class TestSetupAppForCli:
     
     def test_setup_discovers_models(self):
         """_setup_app_for_cli should attempt to discover models."""
-        with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.conf.settings") as mock_settings:
             mock_settings.apps = ["myapp"]
             
             with patch("importlib.import_module") as mock_import:
@@ -867,15 +867,15 @@ class TestCliVersion:
     """Tests for CLI version."""
     
     def test_version_matches_init(self):
-        """CLI version should match vidyut.__version__."""
-        from vidyut import __version__
-        from vidyut.cli.main import CLI_VERSION
+        """CLI version should match aksara.__version__."""
+        from aksara import __version__
+        from aksara.cli.main import CLI_VERSION
         
         assert CLI_VERSION == __version__
     
     def test_version_command(self, runner):
         """--version should show version."""
-        from vidyut import __version__
+        from aksara import __version__
         
         result = runner.invoke(cli, ["--version"])
         
@@ -892,7 +892,7 @@ class TestEdgeCases:
     
     def test_ai_context_handles_exception(self, runner):
         """ai context should handle exceptions gracefully."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.side_effect = Exception("Setup failed")
             
             result = runner.invoke(cli, ["ai", "context", "--intent", "test"])
@@ -902,7 +902,7 @@ class TestEdgeCases:
     
     def test_ai_schema_health_handles_exception(self, runner):
         """ai schema-health should handle exceptions gracefully."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.side_effect = Exception("Setup failed")
             
             result = runner.invoke(cli, ["ai", "schema-health"])
@@ -932,11 +932,11 @@ class TestEdgeCases:
     
     def test_context_short_options(self, runner, mock_context_bundle):
         """ai context should accept short option flags."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_context_bundle
                     
                     result = runner.invoke(cli, [
@@ -950,11 +950,11 @@ class TestEdgeCases:
     
     def test_schema_issues_multiple_filters(self, runner, mock_schema_health_with_issues):
         """schema-issues should combine multiple filters."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     result = runner.invoke(cli, [
@@ -990,11 +990,11 @@ class TestIntegrationFlows:
         plan_file.write_text(json.dumps(template))
         
         # Step 3: Preview
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_plan_execution_success
                     
                     result = runner.invoke(cli, ["ai", "plan", "preview", str(plan_file)])
@@ -1008,11 +1008,11 @@ class TestIntegrationFlows:
     
     def test_schema_health_to_issues_flow(self, runner, mock_schema_health_with_issues):
         """Test flow from schema-health to schema-issues."""
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.schema_doctor.analyze_schema_health", new_callable=AsyncMock) as mock_analyze:
                     mock_analyze.return_value = mock_schema_health_with_issues
                     
                     # Check health first

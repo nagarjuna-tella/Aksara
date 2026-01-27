@@ -1,19 +1,19 @@
 """
-Basic Vidyut Example Application (v0.3.4)
+Basic Aksara Example Application (v0.3.4)
 
-A simple FastAPI application demonstrating Vidyut ORM usage.
-All imports come from vidyut - clean and unified!
+A simple FastAPI application demonstrating Aksara ORM usage.
+All imports come from aksara - clean and unified!
 
 New in v0.3.4:
-- vidyut startproject <name> for scaffolded project creation
+- aksara startproject <name> for scaffolded project creation
 - Clean project structure: app/, settings.py, migrations/
 - No more manual get_create_table_sql - use migrations!
 
 New in v0.3.3:
 - Operation-based Python migrations (CreateTable, AddField, etc.)
 - RunSQL escape hatch for raw SQL with safety controls
-- vidyut makemigrations generates Python migration files
-- vidyut migrate runs operations, not raw SQL
+- aksara makemigrations generates Python migration files
+- aksara migrate runs operations, not raw SQL
 
 New in v0.3.2:
 - ModelSerializer for DRF-style validation and serialization
@@ -42,15 +42,15 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-# Import settings module first - this configures Vidyut!
+# Import settings module first - this configures Aksara!
 from . import settings as app_settings  # noqa: F401 - import for side effects
 
 # Import models from models.py (single source of truth)
 from .models import User, Post, Article
 
-# Everything imported from vidyut - clean and unified!
-from vidyut import (
-    Vidyut,
+# Everything imported from aksara - clean and unified!
+from aksara import (
+    Aksara,
     Database,
     Request,
     HTTPException,
@@ -365,12 +365,12 @@ async def lifespan(app):
     yield
 
 
-# Create the Vidyut app - database connection is automatic!
+# Create the Aksara app - database connection is automatic!
 # Uses settings.database_url by default, or pass explicit URL
-app = Vidyut(
+app = Aksara(
     database_url=settings.database_url,
-    title="Vidyut Example App",
-    description="Demo application using Vidyut async ORM (v0.3.4)",
+    title="Aksara Example App",
+    description="Demo application using Aksara async ORM (v0.3.4)",
     version="0.3.4",
     lifespan=lifespan,
 )
@@ -430,7 +430,7 @@ async def list_users(
 @app.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: str):
     """Get a user by ID. (Legacy - see GET /api/users/{id} for v0.3 way)"""
-    # With Vidyut app, DoesNotExist automatically returns 404!
+    # With Aksara app, DoesNotExist automatically returns 404!
     user = await User.objects.get(id=user_id)
     return _user_to_response(user)
 
@@ -582,6 +582,6 @@ async def health_check():
 
 
 # =============================================================================
-# Run with: vidyut run main:app --reload
+# Run with: aksara run main:app --reload
 # Or: DATABASE_URL="postgresql://..." uvicorn main:app --reload
 # =============================================================================

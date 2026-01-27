@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - Schema Doctor Edge Cases
+Aksara v0.4.10 - Schema Doctor Edge Cases
 
 Tests for:
 1. System tables/schemas handling
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from vidyut.ai.schema_doctor import (
+from aksara.ai.schema_doctor import (
     AiSchemaHealth,
     AiSchemaIssue,
     analyze_schema_health,
@@ -61,13 +61,13 @@ class TestSystemTablesHandling:
         for table in migration_tables:
             assert table in ["alembic_version"]
     
-    def test_vidyut_migrations_table_ignored(self):
-        """vidyut_migrations table should not be flagged."""
-        # Internal Vidyut migration tracking
-        internal_tables = ["vidyut_migrations"]
+    def test_aksara_migrations_table_ignored(self):
+        """aksara_migrations table should not be flagged."""
+        # Internal Aksara migration tracking
+        internal_tables = ["aksara_migrations"]
         
         for table in internal_tables:
-            assert table in ["vidyut_migrations"]
+            assert table in ["aksara_migrations"]
     
     def test_system_table_names_are_excluded_by_convention(self):
         """System tables should be excluded by naming convention."""
@@ -98,7 +98,7 @@ class TestCaseSensitivity:
     """Tests for case sensitivity handling."""
     
     def test_lowercase_identifier_standard(self):
-        """Lowercase identifiers are the standard in Vidyut."""
+        """Lowercase identifiers are the standard in Aksara."""
         valid_names = [
             "users",
             "blog_posts",
@@ -132,7 +132,7 @@ class TestCaseSensitivity:
         """
         Quoted identifiers preserve case but are tricky.
         
-        Vidyut should either:
+        Aksara should either:
         - Support them correctly
         - Reject them with helpful message
         """
@@ -219,7 +219,7 @@ class TestAiSchemaHealth:
             inspected_at="2026-01-26T12:00:00Z",
             db_version="PostgreSQL 16.1",
             db_name="test_db",
-            app_version="0.4.9"
+            app_version="0.4.10"
         )
         
         assert health.status == "healthy"
@@ -248,7 +248,7 @@ class TestAiSchemaHealth:
             inspected_at="2026-01-26T12:00:00Z",
             db_version="PostgreSQL 16.1",
             db_name="test_db",
-            app_version="0.4.9"
+            app_version="0.4.10"
         )
         
         assert health.status == "degraded"
@@ -275,7 +275,7 @@ class TestAiSchemaHealth:
             inspected_at="2026-01-26T12:00:00Z",
             db_version="PostgreSQL 16.1",
             db_name="test_db",
-            app_version="0.4.9"
+            app_version="0.4.10"
         )
         
         assert health.status == "danger"
@@ -363,7 +363,7 @@ class TestAiSchemaIssue:
             table="blog_articles",
             column="slug",
             message="Column 'slug' is missing",
-            hint="Run: vidyut migrate"
+            hint="Run: aksara migrate"
         )
         
         d = issue.model_dump()

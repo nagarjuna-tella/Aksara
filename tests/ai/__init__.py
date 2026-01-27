@@ -1,3 +1,3 @@
 """
-Tests for vidyut.ai package.
+Tests for aksara.ai package.
 """

@@ -5,7 +5,7 @@ These tests require a real PostgreSQL database.
 Set DATABASE_URL environment variable to run.
 
 Example:
-    DATABASE_URL=postgresql://postgres:postgres@localhost/vidyut_test pytest tests/test_integration_m2m.py -v
+    DATABASE_URL=postgresql://postgres:postgres@localhost/aksara_test pytest tests/test_integration_m2m.py -v
 """
 
 import os
@@ -22,8 +22,8 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 async def db():
     """Create database connection and clean up tables."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     
@@ -50,7 +50,7 @@ async def db():
 @pytest.fixture
 def models():
     """Create test models with relationships."""
-    from vidyut import Model, fields
+    from aksara import Model, fields
     
     class TestTag(Model):
         __tablename__ = "test_tags"

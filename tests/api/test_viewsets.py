@@ -16,10 +16,10 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, Request
 
-from vidyut import Model, fields
-from vidyut.manager import DoesNotExist
-from vidyut.api.viewsets import ModelViewSet
-from vidyut.api.schemas import clear_schema_cache
+from aksara import Model, fields
+from aksara.manager import DoesNotExist
+from aksara.api.viewsets import ModelViewSet
+from aksara.api.schemas import clear_schema_cache
 
 
 # =============================================================================

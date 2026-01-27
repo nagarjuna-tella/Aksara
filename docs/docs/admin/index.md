@@ -1,15 +1,15 @@
 # Admin Interface
 
-Automatic admin panels for your Vidyut models.
+Automatic admin panels for your Aksara models.
 
 ---
 
 ## Overview
 
-Vidyut provides a built-in admin interface for managing your data:
+Aksara provides a built-in admin interface for managing your data:
 
 ```python
-from vidyut.contrib.admin import AdminSite, ModelAdmin
+from aksara.contrib.admin import AdminSite, ModelAdmin
 from myapp.models import Post, Author
 
 admin = AdminSite()
@@ -31,7 +31,7 @@ app.mount("/admin", admin)
 
 ```python
 # admin.py
-from vidyut.contrib.admin import AdminSite
+from aksara.contrib.admin import AdminSite
 
 admin = AdminSite(
     title="My Admin",
@@ -42,7 +42,7 @@ admin = AdminSite(
 ### 2. Register Models
 
 ```python
-from vidyut.contrib.admin import ModelAdmin
+from aksara.contrib.admin import ModelAdmin
 from myapp.models import Post, Author, Category
 
 @admin.register(Post)
@@ -61,10 +61,10 @@ admin.register(Category)
 
 ```python
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.admin import admin
 
-app = Vidyut()
+app = Aksara()
 app.mount("/admin", admin)
 ```
 
@@ -108,8 +108,8 @@ Navigate to `http://localhost:8000/admin/`
 
 ```python
 # admin.py
-from vidyut.contrib.admin import AdminSite, ModelAdmin
-from vidyut.permissions import IsAdminUser
+from aksara.contrib.admin import AdminSite, ModelAdmin
+from aksara.permissions import IsAdminUser
 from myapp.models import Post, Author, Category, Tag
 
 
@@ -166,11 +166,11 @@ admin.register(Tag)
 
 ```python
 # main.py
-from vidyut import Vidyut
-from vidyut.contrib.auth.middleware import AuthenticationMiddleware
+from aksara import Aksara
+from aksara.contrib.auth.middleware import AuthenticationMiddleware
 from myapp.admin import admin
 
-app = Vidyut()
+app = Aksara()
 
 # Auth middleware (required for admin)
 app.add_middleware(AuthenticationMiddleware)

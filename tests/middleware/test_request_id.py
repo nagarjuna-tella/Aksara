@@ -11,8 +11,8 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.testclient import TestClient
 
-from vidyut import Vidyut
-from vidyut.middleware import RequestIDMiddleware, request_id_var
+from aksara import Aksara
+from aksara.middleware import RequestIDMiddleware, request_id_var
 
 
 class TestRequestIDMiddleware:
@@ -20,7 +20,7 @@ class TestRequestIDMiddleware:
     
     def test_generates_request_id_when_not_provided(self):
         """Test that a request ID is generated when not in headers."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -43,7 +43,7 @@ class TestRequestIDMiddleware:
     
     def test_uses_provided_request_id(self):
         """Test that a provided request ID is used."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -64,7 +64,7 @@ class TestRequestIDMiddleware:
     
     def test_request_id_in_request_state(self):
         """Test that request ID is available in request.state."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -90,7 +90,7 @@ class TestRequestIDMiddleware:
     
     def test_request_id_in_contextvar(self):
         """Test that request ID is available via contextvar."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -115,7 +115,7 @@ class TestRequestIDMiddleware:
     
     def test_custom_header_name(self):
         """Test using a custom header name."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -138,7 +138,7 @@ class TestRequestIDMiddleware:
     
     def test_contextvar_reset_after_request(self):
         """Test that contextvar is reset after request completes."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -161,11 +161,11 @@ class TestRequestIDMiddleware:
 
 
 class TestRequestIDMiddlewareIntegration:
-    """Integration tests for RequestIDMiddleware with Vidyut app."""
+    """Integration tests for RequestIDMiddleware with Aksara app."""
     
-    def test_middleware_registered_via_vidyut(self):
-        """Test that middleware is correctly registered via Vidyut constructor."""
-        app = Vidyut(
+    def test_middleware_registered_via_aksara(self):
+        """Test that middleware is correctly registered via Aksara constructor."""
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -185,7 +185,7 @@ class TestRequestIDMiddlewareIntegration:
     
     def test_multiple_requests_get_different_ids(self):
         """Test that different requests get different IDs."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[

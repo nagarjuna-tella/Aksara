@@ -1,12 +1,12 @@
 """
-Tests for Vidyut Models
+Tests for Aksara Models
 
 Unit tests for model definition, registry, and SQL generation.
 """
 
 import pytest
-from vidyut import Model, fields
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields
+from aksara.registry import ModelRegistry
 
 
 # Clear registry before tests

@@ -7,7 +7,7 @@ Tests for the capture_queries() context manager and QueryLog class.
 import os
 import pytest
 
-from vidyut.db.debug import (
+from aksara.db.debug import (
     QueryEvent,
     QueryLog,
     capture_queries,
@@ -125,7 +125,7 @@ class TestLogQuery:
         log = QueryLog()
         
         # Manually set active log
-        import vidyut.db.debug as debug_module
+        import aksara.db.debug as debug_module
         debug_module._active_query_log = log
         
         try:
@@ -141,7 +141,7 @@ class TestGetActiveQueryLog:
     """Tests for get_active_query_log function."""
     
     def test_returns_none_when_no_active_log(self):
-        import vidyut.db.debug as debug_module
+        import aksara.db.debug as debug_module
         debug_module._active_query_log = None
         
         assert get_active_query_log() is None
@@ -157,8 +157,8 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 async def db():
     """Create database connection."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     
@@ -184,8 +184,8 @@ async def db():
 @pytest.fixture
 def perf_models():
     """Create models for perf tests."""
-    from vidyut import Model, fields
-    from vidyut.registry import ModelRegistry
+    from aksara import Model, fields
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     

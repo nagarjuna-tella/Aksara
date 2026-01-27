@@ -7,13 +7,13 @@ Rate limiting for API endpoints.
 ## Overview
 
 !!! note "Coming Soon"
-    Throttling is planned for Vidyut v0.5.x. This page outlines the planned API.
+    Throttling is planned for Aksara v0.5.x. This page outlines the planned API.
 
 Throttling prevents API abuse by limiting request rates:
 
 ```python
-from vidyut.api import ModelViewSet
-from vidyut.throttling import UserRateThrottle
+from aksara.api import ModelViewSet
+from aksara.throttling import UserRateThrottle
 
 class PostViewSet(ModelViewSet):
     model = Post

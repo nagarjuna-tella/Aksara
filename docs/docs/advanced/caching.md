@@ -6,7 +6,7 @@ Speed up your application with caching.
 
 ## Overview
 
-Vidyut provides a flexible caching system:
+Aksara provides a flexible caching system:
 
 - **Query caching** — Cache database query results
 - **Response caching** — Cache API responses
@@ -21,7 +21,7 @@ Vidyut provides a flexible caching system:
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "memory",
@@ -34,7 +34,7 @@ VIDYUT = {
 ### Redis Backend
 
 ```python
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "redis",
@@ -48,7 +48,7 @@ VIDYUT = {
 ### Multiple Caches
 
 ```python
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "redis",
@@ -76,7 +76,7 @@ VIDYUT = {
 ### Basic Usage
 
 ```python
-from vidyut.cache import cached
+from aksara.cache import cached
 
 @cached(ttl=300)
 async def get_popular_posts():
@@ -132,7 +132,7 @@ async def search_posts(query: str):
 ### Cache QuerySet Results
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 # Manual caching
 cache_key = "active_users"
@@ -166,7 +166,7 @@ posts = await Post.objects.filter(
 ### Cache Single Objects
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 async def get_user(user_id: str) -> User:
     cache_key = f"user:{user_id}"
@@ -182,7 +182,7 @@ async def get_user(user_id: str) -> User:
 ### Cache Mixin
 
 ```python
-from vidyut.cache import CacheMixin
+from aksara.cache import CacheMixin
 
 class User(CacheMixin, Model):
     email = fields.EmailField(unique=True)
@@ -205,8 +205,8 @@ await user.save()  # Auto-invalidates cache
 ### Cache API Responses
 
 ```python
-from vidyut.api import ViewSet, action
-from vidyut.cache import cache_response
+from aksara.api import ViewSet, action
+from aksara.cache import cache_response
 
 class PostViewSet(ViewSet):
     @cache_response(ttl=60)
@@ -246,7 +246,7 @@ async def list(self, request):
 ### Manual Invalidation
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 # Delete specific key
 await cache.delete("user:abc123")
@@ -264,8 +264,8 @@ await cache.clear()
 ### Signal-Based Invalidation
 
 ```python
-from vidyut.signals import post_save, post_delete
-from vidyut.cache import cache
+from aksara.signals import post_save, post_delete
+from aksara.cache import cache
 
 @post_save(Post)
 async def invalidate_post_cache(sender, instance, **kwargs):
@@ -282,7 +282,7 @@ async def invalidate_on_delete(sender, instance, **kwargs):
 ### Decorator-Based Invalidation
 
 ```python
-from vidyut.cache import invalidates
+from aksara.cache import invalidates
 
 @invalidates("posts:all", "post:{post_id}")
 async def update_post(post_id: str, data: dict):
@@ -300,7 +300,7 @@ async def update_post(post_id: str, data: dict):
 ### Memory Backend
 
 ```python
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "memory",
@@ -317,7 +317,7 @@ VIDYUT = {
 ### Redis Backend
 
 ```python
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "redis",
@@ -332,7 +332,7 @@ VIDYUT = {
 ### Custom Backend
 
 ```python
-from vidyut.cache import CacheBackend
+from aksara.cache import CacheBackend
 
 class MyBackend(CacheBackend):
     async def get(self, key: str):
@@ -352,7 +352,7 @@ class MyBackend(CacheBackend):
         pass
 
 # Register
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "myapp.cache.MyBackend",
@@ -369,7 +369,7 @@ VIDYUT = {
 ### Cache Object
 
 ```python
-from vidyut.cache import cache, get_cache
+from aksara.cache import cache, get_cache
 
 # Default cache
 await cache.set("key", "value")
@@ -403,7 +403,7 @@ was_set = await cache.set_nx("lock:task", "1", ttl=60)
 ### Lock
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 # Distributed lock
 async with cache.lock("process:task", timeout=30):
@@ -451,7 +451,7 @@ async def update_user(user_id: str, data: dict) -> User:
 ### Cache Stampede Prevention
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 async def get_expensive_data():
     cache_key = "expensive_data"
@@ -506,7 +506,7 @@ async def get_expensive_data():
 ### Cache Statistics
 
 ```python
-from vidyut.cache import cache
+from aksara.cache import cache
 
 stats = await cache.stats()
 print(f"Hits: {stats['hits']}")
@@ -519,7 +519,7 @@ print(f"Hit ratio: {stats['hit_ratio']:.2%}")
 ```python
 import logging
 
-logging.getLogger("vidyut.cache").setLevel(logging.DEBUG)
+logging.getLogger("aksara.cache").setLevel(logging.DEBUG)
 
 # Logs:
 # DEBUG - Cache HIT: user:abc123

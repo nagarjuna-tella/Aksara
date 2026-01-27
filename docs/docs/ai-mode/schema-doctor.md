@@ -15,7 +15,7 @@ Schema Doctor examines your models and database for:
 - **Performance anti-patterns** — Problematic designs
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 ---
@@ -25,7 +25,7 @@ vidyut ai doctor
 ### Run Analysis
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 Output:
@@ -42,19 +42,19 @@ Issues:
   4. [LOW] Tag.name exceeds recommended length (255 vs 100)
   5. [INFO] Order uses BigInteger PK instead of UUID
 
-Run `vidyut ai doctor --fix` to auto-fix issues.
+Run `aksara ai doctor --fix` to auto-fix issues.
 ```
 
 ### Auto-Fix Issues
 
 ```bash
-vidyut ai doctor --fix
+aksara ai doctor --fix
 ```
 
 ### Python API
 
 ```python
-from vidyut.ai import SchemaDoctor
+from aksara.ai import SchemaDoctor
 
 doctor = SchemaDoctor()
 report = await doctor.analyze()
@@ -147,7 +147,7 @@ Suggestion: Consider separate fields for frequently queried data
 ### Specific Models
 
 ```bash
-vidyut ai doctor --models User,Post,Comment
+aksara ai doctor --models User,Post,Comment
 ```
 
 ```python
@@ -157,7 +157,7 @@ report = await doctor.analyze(models=["User", "Post", "Comment"])
 ### Severity Filter
 
 ```bash
-vidyut ai doctor --min-severity medium
+aksara ai doctor --min-severity medium
 ```
 
 ```python
@@ -167,7 +167,7 @@ report = await doctor.analyze(min_severity="medium")
 ### Category Filter
 
 ```bash
-vidyut ai doctor --categories indexes,constraints
+aksara ai doctor --categories indexes,constraints
 ```
 
 ```python
@@ -183,7 +183,7 @@ report = await doctor.analyze(
 ### Interactive Fix
 
 ```bash
-vidyut ai doctor --fix --interactive
+aksara ai doctor --fix --interactive
 
 Issue 1/5: Post.author_id has no index
   Fix: CREATE INDEX idx_posts_author_id ON posts(author_id)
@@ -195,13 +195,13 @@ Apply this fix? [y/N/a(ll)/s(kip)]
 
 ```bash
 # Only fix high and critical
-vidyut ai doctor --fix --min-severity high
+aksara ai doctor --fix --min-severity high
 ```
 
 ### Dry Run
 
 ```bash
-vidyut ai doctor --fix --dry-run
+aksara ai doctor --fix --dry-run
 
 Would apply these fixes:
   1. Add index on posts.author_id
@@ -233,13 +233,13 @@ await doctor.fix_all(report)
 ### Console Output
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 ### JSON Report
 
 ```bash
-vidyut ai doctor --output report.json
+aksara ai doctor --output report.json
 ```
 
 ```json
@@ -270,7 +270,7 @@ vidyut ai doctor --output report.json
 ### HTML Report
 
 ```bash
-vidyut ai doctor --output report.html
+aksara ai doctor --output report.html
 ```
 
 ### Python Report Object
@@ -301,7 +301,7 @@ for issue in report.issues:
 ### Define Custom Rule
 
 ```python
-from vidyut.ai.doctor import Rule, register_rule
+from aksara.ai.doctor import Rule, register_rule
 
 @register_rule
 class RequireUUIDPrimaryKey(Rule):
@@ -331,7 +331,7 @@ class RequireUUIDPrimaryKey(Rule):
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_DOCTOR": {
         "disabled_rules": [
             "idx-fk-without-index",  # We handle this differently
@@ -344,7 +344,7 @@ VIDYUT = {
 ### Rule Configuration
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_DOCTOR": {
         "rules": {
             "max-string-length": {
@@ -377,7 +377,7 @@ jobs:
       
       - name: Run Schema Doctor
         run: |
-          vidyut ai doctor --min-severity medium --exit-code
+          aksara ai doctor --min-severity medium --exit-code
         
       # Fails if medium+ issues found
 ```
@@ -391,7 +391,7 @@ repos:
     hooks:
       - id: schema-doctor
         name: Schema Doctor
-        entry: vidyut ai doctor --min-severity high --exit-code
+        entry: aksara ai doctor --min-severity high --exit-code
         language: system
         pass_filenames: false
 ```
@@ -400,7 +400,7 @@ repos:
 
 ```python
 import pytest
-from vidyut.ai import SchemaDoctor
+from aksara.ai import SchemaDoctor
 
 @pytest.mark.asyncio
 async def test_no_critical_schema_issues():
@@ -474,7 +474,7 @@ post = fields.ForeignKey("Post", on_delete="CASCADE")
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_DOCTOR": {
         # Analysis
         "include_models": None,      # None = all models

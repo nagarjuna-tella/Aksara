@@ -1,6 +1,6 @@
 # ORM Reference
 
-Complete reference for Vidyut's ORM.
+Complete reference for Aksara's ORM.
 
 ---
 
@@ -9,7 +9,7 @@ Complete reference for Vidyut's ORM.
 ### Model Definition
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Post(Model):
     title = fields.StringField(max_length=200)
@@ -217,7 +217,7 @@ exists = await Post.objects.filter(title="Test").exists()
 ### Complex Filters
 
 ```python
-from vidyut.db import Q
+from aksara.db import Q
 
 # OR conditions
 posts = await Post.objects.filter(
@@ -272,7 +272,7 @@ posts = await Post.objects[10:20].all()
 ### Aggregations
 
 ```python
-from vidyut.db import Count, Sum, Avg, Min, Max
+from aksara.db import Count, Sum, Avg, Min, Max
 
 # Single aggregation
 total = await Post.objects.aggregate(count=Count("id"))
@@ -338,7 +338,7 @@ ids = await Post.objects.values_list("id", flat=True).all()
 await Post.objects.filter(author=user).update(is_published=False)
 
 # Bulk update with F expressions
-from vidyut.db import F
+from aksara.db import F
 await Post.objects.filter(id=post_id).update(views=F("views") + 1)
 
 # Delete
@@ -397,7 +397,7 @@ result = await Post.objects.execute(
 ### Custom Manager
 
 ```python
-from vidyut.manager import Manager
+from aksara.manager import Manager
 
 class PublishedManager(Manager):
     def get_queryset(self):
@@ -423,7 +423,7 @@ featured_posts = await Post.published.featured()
 ## Transactions
 
 ```python
-from vidyut.db import transaction
+from aksara.db import transaction
 
 # Context manager
 async with transaction():
@@ -457,23 +457,23 @@ async with transaction():
 
 ```bash
 # Create migrations
-vidyut makemigrations
+aksara makemigrations
 
 # Apply migrations
-vidyut migrate
+aksara migrate
 
 # Show status
-vidyut migrate --list
+aksara migrate --list
 
 # Rollback
-vidyut migrate myapp 0005
+aksara migrate myapp 0005
 ```
 
 ### Migration File
 
 ```python
 # migrations/0001_initial.py
-from vidyut.migrations import Migration, operations
+from aksara.migrations import Migration, operations
 
 class Migration(Migration):
     dependencies = []

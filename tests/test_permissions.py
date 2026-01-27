@@ -1,5 +1,5 @@
 """
-Tests for vidyut.permissions module.
+Tests for aksara.permissions module.
 
 Tests the DRF-inspired permission system including:
 - BasePermission
@@ -21,7 +21,7 @@ class TestBasePermission:
     
     def test_base_permission_defaults(self):
         """BasePermission should have correct defaults."""
-        from vidyut.permissions import BasePermission
+        from aksara.permissions import BasePermission
         
         # Create a concrete subclass
         class TestPermission(BasePermission):
@@ -35,7 +35,7 @@ class TestBasePermission:
     
     def test_get_user_from_state(self):
         """get_user should extract user from request.state.user."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         
         perm = AllowAny()
         
@@ -47,7 +47,7 @@ class TestBasePermission:
     
     def test_get_user_from_request_user(self):
         """get_user should extract user from request.user (Django-style)."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         
         perm = AllowAny()
         
@@ -59,7 +59,7 @@ class TestBasePermission:
     
     def test_get_user_none(self):
         """get_user should return None if no user found."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         
         perm = AllowAny()
         
@@ -69,7 +69,7 @@ class TestBasePermission:
     
     def test_is_safe_method(self):
         """is_safe_method should identify read-only methods."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         
         perm = AllowAny()
         
@@ -95,7 +95,7 @@ class TestAllowAny:
     
     def test_allows_everything(self):
         """AllowAny should always return True."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         
         perm = AllowAny()
         request = MagicMock()
@@ -109,7 +109,7 @@ class TestIsAuthenticated:
     
     def test_allows_authenticated_user(self):
         """IsAuthenticated should allow authenticated users."""
-        from vidyut.permissions import IsAuthenticated
+        from aksara.permissions import IsAuthenticated
         
         perm = IsAuthenticated()
         
@@ -123,7 +123,7 @@ class TestIsAuthenticated:
     
     def test_denies_unauthenticated(self):
         """IsAuthenticated should deny unauthenticated requests."""
-        from vidyut.permissions import IsAuthenticated
+        from aksara.permissions import IsAuthenticated
         
         perm = IsAuthenticated()
         
@@ -133,7 +133,7 @@ class TestIsAuthenticated:
     
     def test_denies_anonymous_user(self):
         """IsAuthenticated should deny anonymous users."""
-        from vidyut.permissions import IsAuthenticated
+        from aksara.permissions import IsAuthenticated
         
         perm = IsAuthenticated()
         
@@ -151,7 +151,7 @@ class TestIsAdminUser:
     
     def test_allows_staff(self):
         """IsAdminUser should allow staff users."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         
         perm = IsAdminUser()
         
@@ -166,7 +166,7 @@ class TestIsAdminUser:
     
     def test_allows_superuser(self):
         """IsAdminUser should allow superusers."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         
         perm = IsAdminUser()
         
@@ -181,7 +181,7 @@ class TestIsAdminUser:
     
     def test_denies_regular_user(self):
         """IsAdminUser should deny regular users."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         
         perm = IsAdminUser()
         
@@ -200,7 +200,7 @@ class TestIsActiveUser:
     
     def test_allows_active_authenticated(self):
         """IsActiveUser should allow active authenticated users."""
-        from vidyut.permissions import IsActiveUser
+        from aksara.permissions import IsActiveUser
         
         perm = IsActiveUser()
         
@@ -215,7 +215,7 @@ class TestIsActiveUser:
     
     def test_denies_inactive(self):
         """IsActiveUser should deny inactive users."""
-        from vidyut.permissions import IsActiveUser
+        from aksara.permissions import IsActiveUser
         
         perm = IsActiveUser()
         
@@ -234,7 +234,7 @@ class TestIsOwnerOrReadOnly:
     
     def test_allows_read_for_anyone(self):
         """IsOwnerOrReadOnly should allow read access for anyone."""
-        from vidyut.permissions import IsOwnerOrReadOnly
+        from aksara.permissions import IsOwnerOrReadOnly
         
         perm = IsOwnerOrReadOnly()
         
@@ -248,7 +248,7 @@ class TestIsOwnerOrReadOnly:
     
     def test_allows_owner_write(self):
         """IsOwnerOrReadOnly should allow owners to write."""
-        from vidyut.permissions import IsOwnerOrReadOnly
+        from aksara.permissions import IsOwnerOrReadOnly
         
         perm = IsOwnerOrReadOnly()
         
@@ -266,7 +266,7 @@ class TestIsOwnerOrReadOnly:
     
     def test_denies_non_owner_write(self):
         """IsOwnerOrReadOnly should deny non-owners from writing."""
-        from vidyut.permissions import IsOwnerOrReadOnly
+        from aksara.permissions import IsOwnerOrReadOnly
         
         perm = IsOwnerOrReadOnly()
         
@@ -288,7 +288,7 @@ class TestDenyAI:
     
     def test_allows_regular_request(self):
         """DenyAI should allow regular (non-AI) requests."""
-        from vidyut.permissions import DenyAI
+        from aksara.permissions import DenyAI
         
         perm = DenyAI()
         
@@ -306,7 +306,7 @@ class TestDenyAI:
     
     def test_denies_ai_header(self):
         """DenyAI should deny requests with X-AI-Agent header."""
-        from vidyut.permissions import DenyAI
+        from aksara.permissions import DenyAI
         
         perm = DenyAI()
         
@@ -317,7 +317,7 @@ class TestDenyAI:
     
     def test_denies_ai_state(self):
         """DenyAI should deny requests with is_ai_agent state."""
-        from vidyut.permissions import DenyAI
+        from aksara.permissions import DenyAI
         
         perm = DenyAI()
         
@@ -329,7 +329,7 @@ class TestDenyAI:
     
     def test_ai_allow_is_false(self):
         """DenyAI should have ai_allow=False."""
-        from vidyut.permissions import DenyAI
+        from aksara.permissions import DenyAI
         
         perm = DenyAI()
         
@@ -341,7 +341,7 @@ class TestOperationPermission:
     
     def test_allows_specified_operations(self):
         """OperationPermission should allow specified operations."""
-        from vidyut.permissions import OperationPermission
+        from aksara.permissions import OperationPermission
         
         perm = OperationPermission(allow=["read", "create"])
         
@@ -356,7 +356,7 @@ class TestOperationPermission:
     
     def test_denies_unspecified_operations(self):
         """OperationPermission should deny unspecified operations."""
-        from vidyut.permissions import OperationPermission
+        from aksara.permissions import OperationPermission
         
         perm = OperationPermission(allow=["read"])
         
@@ -375,7 +375,7 @@ class TestAND:
     
     def test_and_all_pass(self):
         """AND should pass only if all permissions pass."""
-        from vidyut.permissions import AND, AllowAny, IsAuthenticated
+        from aksara.permissions import AND, AllowAny, IsAuthenticated
         
         mock_user = MagicMock()
         mock_user.is_authenticated = True
@@ -389,7 +389,7 @@ class TestAND:
     
     def test_and_one_fails(self):
         """AND should fail if any permission fails."""
-        from vidyut.permissions import AND, AllowAny, IsAdminUser
+        from aksara.permissions import AND, AllowAny, IsAdminUser
         
         mock_user = MagicMock()
         mock_user.is_staff = False
@@ -404,12 +404,12 @@ class TestAND:
     
     def test_and_operator(self):
         """& operator should create AND permission."""
-        from vidyut.permissions import IsAuthenticated, IsAdminUser
+        from aksara.permissions import IsAuthenticated, IsAdminUser
         
         perm = IsAuthenticated() & IsAdminUser()
         
         # Should create AND instance
-        from vidyut.permissions import AND
+        from aksara.permissions import AND
         assert isinstance(perm, AND)
 
 
@@ -418,7 +418,7 @@ class TestOR:
     
     def test_or_one_passes(self):
         """OR should pass if any permission passes."""
-        from vidyut.permissions import OR, IsAdminUser, IsAuthenticated
+        from aksara.permissions import OR, IsAdminUser, IsAuthenticated
         
         mock_user = MagicMock()
         mock_user.is_authenticated = True
@@ -434,7 +434,7 @@ class TestOR:
     
     def test_or_all_fail(self):
         """OR should fail if all permissions fail."""
-        from vidyut.permissions import OR, IsAdminUser, IsAuthenticated
+        from aksara.permissions import OR, IsAdminUser, IsAuthenticated
         
         mock_user = MagicMock()
         mock_user.is_authenticated = False
@@ -450,12 +450,12 @@ class TestOR:
     
     def test_or_operator(self):
         """| operator should create OR permission."""
-        from vidyut.permissions import IsAuthenticated, IsAdminUser
+        from aksara.permissions import IsAuthenticated, IsAdminUser
         
         perm = IsAuthenticated() | IsAdminUser()
         
         # Should create OR instance
-        from vidyut.permissions import OR
+        from aksara.permissions import OR
         assert isinstance(perm, OR)
 
 
@@ -468,7 +468,7 @@ class TestCheckPermissions:
     
     def test_check_permissions_all_pass(self):
         """check_permissions should return (True, None) if all pass."""
-        from vidyut.permissions import check_permissions, AllowAny
+        from aksara.permissions import check_permissions, AllowAny
         
         request = MagicMock()
         
@@ -479,7 +479,7 @@ class TestCheckPermissions:
     
     def test_check_permissions_one_fails(self):
         """check_permissions should return (False, message) if any fails."""
-        from vidyut.permissions import check_permissions, IsAuthenticated
+        from aksara.permissions import check_permissions, IsAuthenticated
         
         request = MagicMock(spec=[])
         
@@ -490,7 +490,7 @@ class TestCheckPermissions:
     
     def test_check_permissions_with_instances(self):
         """check_permissions should work with permission instances."""
-        from vidyut.permissions import check_permissions, AllowAny
+        from aksara.permissions import check_permissions, AllowAny
         
         request = MagicMock()
         
@@ -501,7 +501,7 @@ class TestCheckPermissions:
     
     def test_check_permissions_with_object(self):
         """check_permissions should check object permissions."""
-        from vidyut.permissions import check_permissions, IsOwnerOrReadOnly
+        from aksara.permissions import check_permissions, IsOwnerOrReadOnly
         
         mock_user = MagicMock()
         mock_user.id = 1
@@ -526,17 +526,17 @@ class TestPermissionsExports:
     """Tests for permissions module exports."""
     
     def test_main_module_exports(self):
-        """vidyut main module should export permission classes."""
-        import vidyut
+        """aksara main module should export permission classes."""
+        import aksara
         
-        assert hasattr(vidyut, "BasePermission")
-        assert hasattr(vidyut, "AllowAny")
-        assert hasattr(vidyut, "IsAuthenticated")
-        assert hasattr(vidyut, "IsAdminUser")
-        assert hasattr(vidyut, "IsActiveUser")
-        assert hasattr(vidyut, "IsOwnerOrReadOnly")
-        assert hasattr(vidyut, "DenyAI")
-        assert hasattr(vidyut, "OperationPermission")
-        assert hasattr(vidyut, "AND")
-        assert hasattr(vidyut, "OR")
-        assert hasattr(vidyut, "check_permissions")
+        assert hasattr(aksara, "BasePermission")
+        assert hasattr(aksara, "AllowAny")
+        assert hasattr(aksara, "IsAuthenticated")
+        assert hasattr(aksara, "IsAdminUser")
+        assert hasattr(aksara, "IsActiveUser")
+        assert hasattr(aksara, "IsOwnerOrReadOnly")
+        assert hasattr(aksara, "DenyAI")
+        assert hasattr(aksara, "OperationPermission")
+        assert hasattr(aksara, "AND")
+        assert hasattr(aksara, "OR")
+        assert hasattr(aksara, "check_permissions")

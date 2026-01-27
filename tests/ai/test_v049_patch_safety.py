@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - AI Patch Engine Safety & Edge Cases
+Aksara v0.4.10 - AI Patch Engine Safety & Edge Cases
 
 Tests for:
 1. Dangerous content detection (eval, exec, os.system, etc.)
@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from vidyut.ai.patch import (
+from aksara.ai.patch import (
     AiPatchOperation,
     AiPatchRequest,
     AiPatchResult,
@@ -140,7 +140,7 @@ os.unlink("/important/file")
     def test_safe_code_passes(self):
         """Safe code should not be flagged as dangerous."""
         safe_content = '''
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class User(Model):
     __tablename__ = "users"
@@ -479,7 +479,7 @@ class TestSyntaxPreservation:
         test_file = tmp_path / "app" / "models.py"
         test_file.parent.mkdir(parents=True, exist_ok=True)
         original_content = '''
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class User(Model):
     __tablename__ = "users"

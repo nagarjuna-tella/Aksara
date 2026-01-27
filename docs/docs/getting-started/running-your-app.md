@@ -1,6 +1,6 @@
 # Running Your App
 
-Start, debug, and deploy your Vidyut application.
+Start, debug, and deploy your Aksara application.
 
 ---
 
@@ -11,7 +11,7 @@ Start, debug, and deploy your Vidyut application.
 The recommended way to run your app during development:
 
 ```bash
-vidyut run main:app --reload
+aksara run main:app --reload
 ```
 
 Options:
@@ -27,16 +27,16 @@ Examples:
 
 ```bash
 # Development with auto-reload
-vidyut run main:app --reload
+aksara run main:app --reload
 
 # Custom port
-vidyut run main:app --port 3000 --reload
+aksara run main:app --port 3000 --reload
 
 # Bind to all interfaces
-vidyut run main:app --host 0.0.0.0 --port 8000
+aksara run main:app --host 0.0.0.0 --port 8000
 
 # Multiple workers (production-like)
-vidyut run main:app --workers 4
+aksara run main:app --workers 4
 ```
 
 ### Using Uvicorn Directly
@@ -60,7 +60,7 @@ python -m uvicorn main:app --reload
 Access the interactive Python shell with your app context:
 
 ```bash
-vidyut shell
+aksara shell
 ```
 
 The shell automatically:
@@ -100,13 +100,13 @@ Enable debug mode for development:
 ### Via Environment
 
 ```bash
-VIDYUT_DEBUG=true vidyut run main:app --reload
+AKSARA_DEBUG=true aksara run main:app --reload
 ```
 
 ### Via Settings
 
 ```python
-from vidyut import configure
+from aksara import configure
 
 configure(debug=True)
 ```
@@ -114,7 +114,7 @@ configure(debug=True)
 ### Via Constructor
 
 ```python
-app = Vidyut(
+app = Aksara(
     database_url="...",
     debug=True,
 )
@@ -128,7 +128,7 @@ Debug mode enables:
 - **Auto-reload** (when using `--reload`)
 
 !!! danger "Never Use Debug Mode in Production"
-    Debug mode exposes sensitive information. Always set `VIDYUT_DEBUG=false` in production.
+    Debug mode exposes sensitive information. Always set `AKSARA_DEBUG=false` in production.
 
 ---
 
@@ -186,8 +186,8 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/myapp
-      - VIDYUT_DEBUG=false
-      - VIDYUT_LOG_JSON=true
+      - AKSARA_DEBUG=false
+      - AKSARA_LOG_JSON=true
     depends_on:
       - db
   
@@ -231,11 +231,11 @@ workers = (2 × CPU cores) + 1
 DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
 
 # Recommended
-VIDYUT_DEBUG=false
-VIDYUT_LOG_LEVEL=INFO
-VIDYUT_LOG_JSON=true
-VIDYUT_POOL_MIN_SIZE=10
-VIDYUT_POOL_MAX_SIZE=50
+AKSARA_DEBUG=false
+AKSARA_LOG_LEVEL=INFO
+AKSARA_LOG_JSON=true
+AKSARA_POOL_MIN_SIZE=10
+AKSARA_POOL_MAX_SIZE=50
 ```
 
 ---
@@ -245,7 +245,7 @@ VIDYUT_POOL_MAX_SIZE=50
 Add health check endpoints for container orchestration:
 
 ```python
-from vidyut.db import Database
+from aksara.db import Database
 
 @app.get("/health")
 async def health():
@@ -269,11 +269,11 @@ async def readiness():
 
 ### Using systemd
 
-Create `/etc/systemd/system/vidyut-app.service`:
+Create `/etc/systemd/system/aksara-app.service`:
 
 ```ini
 [Unit]
-Description=Vidyut Application
+Description=Aksara Application
 After=network.target postgresql.service
 
 [Service]
@@ -281,11 +281,11 @@ User=www-data
 Group=www-data
 WorkingDirectory=/opt/myapp
 Environment="DATABASE_URL=postgresql://..."
-Environment="VIDYUT_DEBUG=false"
+Environment="AKSARA_DEBUG=false"
 ExecStart=/opt/myapp/venv/bin/gunicorn main:app \
     --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
-    --bind unix:/run/vidyut/app.sock
+    --bind unix:/run/aksara/app.sock
 Restart=always
 RestartSec=5
 
@@ -296,24 +296,24 @@ WantedBy=multi-user.target
 Enable and start:
 
 ```bash
-sudo systemctl enable vidyut-app
-sudo systemctl start vidyut-app
+sudo systemctl enable aksara-app
+sudo systemctl start aksara-app
 ```
 
 ### Using Supervisor
 
-Create `/etc/supervisor/conf.d/vidyut.conf`:
+Create `/etc/supervisor/conf.d/aksara.conf`:
 
 ```ini
-[program:vidyut]
+[program:aksara]
 command=/opt/myapp/venv/bin/gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 directory=/opt/myapp
 user=www-data
 autostart=true
 autorestart=true
 redirect_stderr=true
-stdout_logfile=/var/log/vidyut/app.log
-environment=DATABASE_URL="postgresql://...",VIDYUT_DEBUG="false"
+stdout_logfile=/var/log/aksara/app.log
+environment=DATABASE_URL="postgresql://...",AKSARA_DEBUG="false"
 ```
 
 ---
@@ -323,7 +323,7 @@ environment=DATABASE_URL="postgresql://...",VIDYUT_DEBUG="false"
 ### Nginx Configuration
 
 ```nginx
-upstream vidyut {
+upstream aksara {
     server 127.0.0.1:8000;
     keepalive 32;
 }
@@ -333,7 +333,7 @@ server {
     server_name example.com;
     
     location / {
-        proxy_pass http://vidyut;
+        proxy_pass http://aksara;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";

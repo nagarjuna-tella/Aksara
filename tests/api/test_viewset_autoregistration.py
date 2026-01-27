@@ -15,15 +15,15 @@ from unittest.mock import patch, MagicMock
 from fastapi import APIRouter
 from starlette.testclient import TestClient
 
-from vidyut import Vidyut, Model, fields
-from vidyut.api import (
+from aksara import Aksara, Model, fields
+from aksara.api import (
     ModelViewSet,
     discover_viewsets,
     include_app_viewsets,
     include_all_app_viewsets,
     include_viewset,
 )
-from vidyut.registry import ModelRegistry
+from aksara.registry import ModelRegistry
 
 
 class TestDiscoverViewsets:
@@ -168,7 +168,7 @@ class TestIncludeAllAppViewsets:
         fake_blog_api.PostViewSet = PostViewSet
         
         # Patch settings.apps and sys.modules
-        with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.conf.settings") as mock_settings:
             mock_settings.apps = ["users", "blog"]
             
             with patch.dict(sys.modules, {
@@ -185,7 +185,7 @@ class TestIncludeAllAppViewsets:
 
 
 class TestViewsetAutoRegistrationIntegration:
-    """Integration tests for ViewSet auto-registration with Vidyut app."""
+    """Integration tests for ViewSet auto-registration with Aksara app."""
     
     def setup_method(self):
         """Clear registry before each test."""
@@ -206,8 +206,8 @@ class TestViewsetAutoRegistrationIntegration:
         fake_module = ModuleType("widgets.api")
         fake_module.WidgetViewSet = WidgetViewSet
         
-        # Create Vidyut app without auto-discover
-        app = Vidyut(
+        # Create Aksara app without auto-discover
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
         )

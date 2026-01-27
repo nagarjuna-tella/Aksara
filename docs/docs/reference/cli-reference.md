@@ -1,13 +1,13 @@
 # CLI Reference
 
-Complete reference for Vidyut CLI commands.
+Complete reference for Aksara CLI commands.
 
 ---
 
 ## Usage
 
 ```bash
-vidyut [OPTIONS] COMMAND [ARGS]...
+aksara [OPTIONS] COMMAND [ARGS]...
 ```
 
 ### Global Options
@@ -25,10 +25,10 @@ vidyut [OPTIONS] COMMAND [ARGS]...
 
 ### startproject
 
-Create a new Vidyut project.
+Create a new Aksara project.
 
 ```bash
-vidyut startproject NAME [OPTIONS]
+aksara startproject NAME [OPTIONS]
 ```
 
 | Option | Description |
@@ -39,8 +39,8 @@ vidyut startproject NAME [OPTIONS]
 **Example:**
 
 ```bash
-vidyut startproject myproject
-vidyut startproject myproject --directory /path/to/dir
+aksara startproject myproject
+aksara startproject myproject --directory /path/to/dir
 ```
 
 ### startapp
@@ -48,7 +48,7 @@ vidyut startproject myproject --directory /path/to/dir
 Create a new application.
 
 ```bash
-vidyut startapp NAME [OPTIONS]
+aksara startapp NAME [OPTIONS]
 ```
 
 | Option | Description |
@@ -58,8 +58,8 @@ vidyut startapp NAME [OPTIONS]
 **Example:**
 
 ```bash
-vidyut startapp users
-vidyut startapp blog --directory apps/
+aksara startapp users
+aksara startapp blog --directory apps/
 ```
 
 ---
@@ -71,7 +71,7 @@ vidyut startapp blog --directory apps/
 Create new migrations.
 
 ```bash
-vidyut makemigrations [APP] [OPTIONS]
+aksara makemigrations [APP] [OPTIONS]
 ```
 
 | Option | Description |
@@ -84,9 +84,9 @@ vidyut makemigrations [APP] [OPTIONS]
 **Example:**
 
 ```bash
-vidyut makemigrations
-vidyut makemigrations users --name add_bio_field
-vidyut makemigrations --check
+aksara makemigrations
+aksara makemigrations users --name add_bio_field
+aksara makemigrations --check
 ```
 
 ### migrate
@@ -94,7 +94,7 @@ vidyut makemigrations --check
 Apply migrations.
 
 ```bash
-vidyut migrate [APP] [MIGRATION] [OPTIONS]
+aksara migrate [APP] [MIGRATION] [OPTIONS]
 ```
 
 | Option | Description |
@@ -106,10 +106,10 @@ vidyut migrate [APP] [MIGRATION] [OPTIONS]
 **Example:**
 
 ```bash
-vidyut migrate
-vidyut migrate users
-vidyut migrate users 0005
-vidyut migrate --list
+aksara migrate
+aksara migrate users
+aksara migrate users 0005
+aksara migrate --list
 ```
 
 ### dbshell
@@ -117,13 +117,13 @@ vidyut migrate --list
 Open database shell.
 
 ```bash
-vidyut dbshell [OPTIONS]
+aksara dbshell [OPTIONS]
 ```
 
 **Example:**
 
 ```bash
-vidyut dbshell
+aksara dbshell
 ```
 
 ### inspectdb
@@ -131,7 +131,7 @@ vidyut dbshell
 Generate models from existing database.
 
 ```bash
-vidyut inspectdb [TABLE] [OPTIONS]
+aksara inspectdb [TABLE] [OPTIONS]
 ```
 
 | Option | Description |
@@ -141,9 +141,9 @@ vidyut inspectdb [TABLE] [OPTIONS]
 **Example:**
 
 ```bash
-vidyut inspectdb
-vidyut inspectdb users
-vidyut inspectdb --output models.py
+aksara inspectdb
+aksara inspectdb users
+aksara inspectdb --output models.py
 ```
 
 ---
@@ -155,7 +155,7 @@ vidyut inspectdb --output models.py
 Start development server.
 
 ```bash
-vidyut runserver [OPTIONS]
+aksara runserver [OPTIONS]
 ```
 
 | Option | Default | Description |
@@ -168,10 +168,10 @@ vidyut runserver [OPTIONS]
 **Example:**
 
 ```bash
-vidyut runserver
-vidyut runserver --port 3000
-vidyut runserver --host 0.0.0.0 --port 8080
-vidyut runserver --no-reload
+aksara runserver
+aksara runserver --port 3000
+aksara runserver --host 0.0.0.0 --port 8080
+aksara runserver --no-reload
 ```
 
 ---
@@ -183,7 +183,7 @@ vidyut runserver --no-reload
 Start interactive Python shell.
 
 ```bash
-vidyut shell [OPTIONS]
+aksara shell [OPTIONS]
 ```
 
 | Option | Description |
@@ -195,8 +195,8 @@ vidyut shell [OPTIONS]
 **Example:**
 
 ```bash
-vidyut shell
-vidyut shell --ipython
+aksara shell
+aksara shell --ipython
 ```
 
 ---
@@ -208,7 +208,7 @@ vidyut shell --ipython
 List all routes.
 
 ```bash
-vidyut routes [OPTIONS]
+aksara routes [OPTIONS]
 ```
 
 | Option | Description |
@@ -218,8 +218,8 @@ vidyut routes [OPTIONS]
 **Example:**
 
 ```bash
-vidyut routes
-vidyut routes --format json
+aksara routes
+aksara routes --format json
 ```
 
 **Output:**
@@ -239,13 +239,13 @@ DELETE  /api/users/{id}/        users-delete        UserViewSet.destroy
 Show project information.
 
 ```bash
-vidyut info [OPTIONS]
+aksara info [OPTIONS]
 ```
 
 **Output:**
 
 ```
-Vidyut Project Information
+Aksara Project Information
 ==========================
 Version: 0.4.9
 Python: 3.11.0
@@ -266,7 +266,7 @@ Models:
 Run system checks.
 
 ```bash
-vidyut check [OPTIONS]
+aksara check [OPTIONS]
 ```
 
 | Option | Description |
@@ -277,8 +277,8 @@ vidyut check [OPTIONS]
 **Example:**
 
 ```bash
-vidyut check
-vidyut check --deploy
+aksara check
+aksara check --deploy
 ```
 
 ### test
@@ -286,7 +286,7 @@ vidyut check --deploy
 Run tests.
 
 ```bash
-vidyut test [PATH] [OPTIONS]
+aksara test [PATH] [OPTIONS]
 ```
 
 | Option | Description |
@@ -299,10 +299,10 @@ vidyut test [PATH] [OPTIONS]
 **Example:**
 
 ```bash
-vidyut test
-vidyut test tests/test_users.py
-vidyut test -v --cov=myapp
-vidyut test -k "test_create"
+aksara test
+aksara test tests/test_users.py
+aksara test -v --cov=myapp
+aksara test -k "test_create"
 ```
 
 ### collectstatic
@@ -310,7 +310,7 @@ vidyut test -k "test_create"
 Collect static files.
 
 ```bash
-vidyut collectstatic [OPTIONS]
+aksara collectstatic [OPTIONS]
 ```
 
 | Option | Description |
@@ -327,7 +327,7 @@ vidyut collectstatic [OPTIONS]
 Create admin user.
 
 ```bash
-vidyut createsuperuser [OPTIONS]
+aksara createsuperuser [OPTIONS]
 ```
 
 | Option | Description |
@@ -339,8 +339,8 @@ vidyut createsuperuser [OPTIONS]
 **Example:**
 
 ```bash
-vidyut createsuperuser
-vidyut createsuperuser --email admin@example.com
+aksara createsuperuser
+aksara createsuperuser --email admin@example.com
 ```
 
 ### changepassword
@@ -348,13 +348,13 @@ vidyut createsuperuser --email admin@example.com
 Change user password.
 
 ```bash
-vidyut changepassword USERNAME [OPTIONS]
+aksara changepassword USERNAME [OPTIONS]
 ```
 
 **Example:**
 
 ```bash
-vidyut changepassword admin
+aksara changepassword admin
 ```
 
 ---
@@ -366,7 +366,7 @@ vidyut changepassword admin
 Query data with natural language.
 
 ```bash
-vidyut ai query "QUERY" [OPTIONS]
+aksara ai query "QUERY" [OPTIONS]
 ```
 
 | Option | Description |
@@ -377,8 +377,8 @@ vidyut ai query "QUERY" [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai query "Show all active users"
-vidyut ai query "Posts created this week" --output json
+aksara ai query "Show all active users"
+aksara ai query "Posts created this week" --output json
 ```
 
 ### ai generate
@@ -386,7 +386,7 @@ vidyut ai query "Posts created this week" --output json
 Generate code.
 
 ```bash
-vidyut ai generate TYPE DESCRIPTION [OPTIONS]
+aksara ai generate TYPE DESCRIPTION [OPTIONS]
 ```
 
 | Option | Description |
@@ -397,9 +397,9 @@ vidyut ai generate TYPE DESCRIPTION [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai generate model "User with email, name, role"
-vidyut ai generate viewset User
-vidyut ai generate test User --output tests/test_users.py
+aksara ai generate model "User with email, name, role"
+aksara ai generate viewset User
+aksara ai generate test User --output tests/test_users.py
 ```
 
 ### ai doctor
@@ -407,7 +407,7 @@ vidyut ai generate test User --output tests/test_users.py
 Analyze schema for issues.
 
 ```bash
-vidyut ai doctor [OPTIONS]
+aksara ai doctor [OPTIONS]
 ```
 
 | Option | Description |
@@ -418,8 +418,8 @@ vidyut ai doctor [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai doctor
-vidyut ai doctor --fix --interactive
+aksara ai doctor
+aksara ai doctor --fix --interactive
 ```
 
 ### ai plan
@@ -427,7 +427,7 @@ vidyut ai doctor --fix --interactive
 Plan complex tasks.
 
 ```bash
-vidyut ai plan "TASK" [OPTIONS]
+aksara ai plan "TASK" [OPTIONS]
 ```
 
 | Option | Description |
@@ -438,8 +438,8 @@ vidyut ai plan "TASK" [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai plan "Add user profile feature with avatar upload"
-vidyut ai plan "Refactor auth to use JWT" --preview
+aksara ai plan "Add user profile feature with avatar upload"
+aksara ai plan "Refactor auth to use JWT" --preview
 ```
 
 ### ai agent
@@ -447,7 +447,7 @@ vidyut ai plan "Refactor auth to use JWT" --preview
 Run AI agent.
 
 ```bash
-vidyut ai agent "TASK" [OPTIONS]
+aksara ai agent "TASK" [OPTIONS]
 ```
 
 | Option | Description |
@@ -458,8 +458,8 @@ vidyut ai agent "TASK" [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai agent "Analyze the codebase and suggest improvements"
-vidyut ai agent "Fix failing tests" --max-steps 10
+aksara ai agent "Analyze the codebase and suggest improvements"
+aksara ai agent "Fix failing tests" --max-steps 10
 ```
 
 ### ai patch
@@ -467,7 +467,7 @@ vidyut ai agent "Fix failing tests" --max-steps 10
 Apply code changes.
 
 ```bash
-vidyut ai patch "CHANGE" [OPTIONS]
+aksara ai patch "CHANGE" [OPTIONS]
 ```
 
 | Option | Description |
@@ -478,7 +478,7 @@ vidyut ai patch "CHANGE" [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai patch "Add logging to all viewsets" --preview
+aksara ai patch "Add logging to all viewsets" --preview
 ```
 
 ### ai ask
@@ -486,14 +486,14 @@ vidyut ai patch "Add logging to all viewsets" --preview
 Ask questions about the codebase.
 
 ```bash
-vidyut ai ask "QUESTION"
+aksara ai ask "QUESTION"
 ```
 
 **Example:**
 
 ```bash
-vidyut ai ask "How is authentication implemented?"
-vidyut ai ask "What models have soft delete?"
+aksara ai ask "How is authentication implemented?"
+aksara ai ask "What models have soft delete?"
 ```
 
 ### ai config
@@ -501,7 +501,7 @@ vidyut ai ask "What models have soft delete?"
 Configure AI settings.
 
 ```bash
-vidyut ai config [OPTIONS]
+aksara ai config [OPTIONS]
 ```
 
 | Option | Description |
@@ -513,8 +513,8 @@ vidyut ai config [OPTIONS]
 **Example:**
 
 ```bash
-vidyut ai config --show
-vidyut ai config --provider openai --model gpt-4
+aksara ai config --show
+aksara ai config --provider openai --model gpt-4
 ```
 
 ---
@@ -525,7 +525,7 @@ vidyut ai config --provider openai --model gpt-4
 
 ```python
 # myapp/management/commands/mycommand.py
-from vidyut.cli import Command, argument, option
+from aksara.cli import Command, argument, option
 
 class MyCommand(Command):
     """Description of my command."""
@@ -542,7 +542,7 @@ class MyCommand(Command):
 ### Running Custom Commands
 
 ```bash
-vidyut mycommand World --count 3
+aksara mycommand World --count 3
 ```
 
 ---
@@ -551,8 +551,8 @@ vidyut mycommand World --count 3
 
 | Variable | Description |
 |----------|-------------|
-| `VIDYUT_SETTINGS_MODULE` | Settings module path |
-| `VIDYUT_DEBUG` | Enable debug mode |
+| `AKSARA_SETTINGS_MODULE` | Settings module path |
+| `AKSARA_DEBUG` | Enable debug mode |
 | `DATABASE_URL` | Database connection URL |
 
 ---

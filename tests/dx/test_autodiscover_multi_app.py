@@ -7,8 +7,8 @@ import types
 import pytest
 from unittest.mock import patch, MagicMock
 
-from vidyut.core.discovery import auto_discover_viewsets
-from vidyut.api.viewsets import ModelViewSet
+from aksara.core.discovery import auto_discover_viewsets
+from aksara.api.viewsets import ModelViewSet
 
 
 # Create mock models for testing
@@ -74,8 +74,8 @@ class TestMultiAppDiscovery:
             }
             return modules.get(path)
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["blog", "users", "orders"]
                 viewsets = auto_discover_viewsets()
         
@@ -91,8 +91,8 @@ class TestMultiAppDiscovery:
         admin_views.AdminUserViewSet = AdminUserViewSet
         admin_views.OrderViewSet = OrderViewSet
         
-        with patch("vidyut.core.discovery.import_module_safely", return_value=admin_views):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", return_value=admin_views):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["admin"]
                 viewsets = auto_discover_viewsets()
         
@@ -116,8 +116,8 @@ class TestMultiAppDiscovery:
                 return None  # Missing module
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["blog", "broken", "users"]
                 viewsets = auto_discover_viewsets()
         
@@ -140,8 +140,8 @@ class TestMultiAppDiscovery:
                 return users_views
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["blog", "users"]
                 viewsets = auto_discover_viewsets()
         
@@ -163,8 +163,8 @@ class TestAppNamingConventions:
                 return blog_views
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["apps.blog"]
                 viewsets = auto_discover_viewsets()
         
@@ -181,8 +181,8 @@ class TestAppNamingConventions:
                 return views
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["my_blog_app"]
                 viewsets = auto_discover_viewsets()
         
@@ -190,7 +190,7 @@ class TestAppNamingConventions:
 
 
 class TestSettingsIntegration:
-    """Tests for integration with Vidyut settings."""
+    """Tests for integration with Aksara settings."""
     
     def test_uses_default_app_when_not_configured(self):
         """Should use 'app' as default when apps not specified."""
@@ -202,8 +202,8 @@ class TestSettingsIntegration:
                 return app_views
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 # Default apps value
                 mock_settings.apps = ["app"]
                 viewsets = auto_discover_viewsets()

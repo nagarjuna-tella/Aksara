@@ -1,12 +1,12 @@
 # Settings
 
-Configure your Vidyut application using the settings system.
+Configure your Aksara application using the settings system.
 
 ---
 
 ## Overview
 
-Vidyut provides a flexible configuration system that supports:
+Aksara provides a flexible configuration system that supports:
 
 - **Environment variables** — For production deployments
 - **Explicit configuration** — For development and testing
@@ -23,19 +23,19 @@ The simplest approach for production:
 ```bash
 # .env file
 DATABASE_URL=postgresql://user:pass@localhost:5432/myapp
-VIDYUT_DEBUG=false
-VIDYUT_LOG_LEVEL=INFO
-VIDYUT_POOL_MAX_SIZE=20
+AKSARA_DEBUG=false
+AKSARA_LOG_LEVEL=INFO
+AKSARA_POOL_MAX_SIZE=20
 ```
 
-Vidyut automatically loads from environment variables prefixed with `VIDYUT_`.
+Aksara automatically loads from environment variables prefixed with `AKSARA_`.
 
 ### Method 2: Explicit Configuration
 
 For programmatic control, use `configure()`:
 
 ```python
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url="postgresql://localhost/myapp",
@@ -44,8 +44,8 @@ configure(
     pool_max_size=20,
     log_level="DEBUG",
     installed_apps=[
-        "vidyut.contrib.auth",
-        "vidyut.contrib.admin",
+        "aksara.contrib.auth",
+        "aksara.contrib.admin",
         "app",
     ],
 )
@@ -58,22 +58,22 @@ Create a `settings.py` file and import it early:
 ```python
 # settings.py
 import os
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url=os.getenv("DATABASE_URL"),
-    debug=os.getenv("VIDYUT_DEBUG", "false").lower() == "true",
-    pool_min_size=int(os.getenv("VIDYUT_POOL_MIN_SIZE", "5")),
-    pool_max_size=int(os.getenv("VIDYUT_POOL_MAX_SIZE", "20")),
+    debug=os.getenv("AKSARA_DEBUG", "false").lower() == "true",
+    pool_min_size=int(os.getenv("AKSARA_POOL_MIN_SIZE", "5")),
+    pool_max_size=int(os.getenv("AKSARA_POOL_MAX_SIZE", "20")),
 )
 ```
 
 ```python
 # main.py
 import settings  # Load configuration first
-from vidyut import Vidyut
+from aksara import Aksara
 
-app = Vidyut(title="My App")
+app = Aksara(title="My App")
 ```
 
 ---
@@ -153,8 +153,8 @@ configure(
 Default `installed_apps`:
 ```python
 [
-    "vidyut.contrib.auth",   # User authentication
-    "vidyut.contrib.admin",  # Admin interface
+    "aksara.contrib.auth",   # User authentication
+    "aksara.contrib.admin",  # Admin interface
     "app",                   # Default user app
 ]
 ```
@@ -184,17 +184,17 @@ All settings can be set via environment variables:
 | Environment Variable | Setting | Example |
 |---------------------|---------|---------|
 | `DATABASE_URL` | `database_url` | `postgresql://...` |
-| `VIDYUT_DATABASE_URL` | `database_url` (priority) | `postgresql://...` |
-| `VIDYUT_DEBUG` | `debug` | `true`, `false` |
-| `VIDYUT_LOG_LEVEL` | `log_level` | `DEBUG`, `INFO`, `WARNING` |
-| `VIDYUT_LOG_REQUESTS_DISABLED` | `log_requests` | `true` to disable |
-| `VIDYUT_LOG_JSON` | `log_json` | `true`, `false` |
-| `VIDYUT_POOL_MIN_SIZE` | `pool_min_size` | `5` |
-| `VIDYUT_POOL_SIZE` | `pool_max_size` | `20` |
-| `VIDYUT_POOL_MAX_SIZE` | `pool_max_size` | `20` |
-| `VIDYUT_APP_TITLE` | `app_title` | `My App` |
-| `VIDYUT_APP_VERSION` | `app_version` | `1.0.0` |
-| `VIDYUT_MIGRATIONS_DIR` | `migrations_dir` | `migrations` |
+| `AKSARA_DATABASE_URL` | `database_url` (priority) | `postgresql://...` |
+| `AKSARA_DEBUG` | `debug` | `true`, `false` |
+| `AKSARA_LOG_LEVEL` | `log_level` | `DEBUG`, `INFO`, `WARNING` |
+| `AKSARA_LOG_REQUESTS_DISABLED` | `log_requests` | `true` to disable |
+| `AKSARA_LOG_JSON` | `log_json` | `true`, `false` |
+| `AKSARA_POOL_MIN_SIZE` | `pool_min_size` | `5` |
+| `AKSARA_POOL_SIZE` | `pool_max_size` | `20` |
+| `AKSARA_POOL_MAX_SIZE` | `pool_max_size` | `20` |
+| `AKSARA_APP_TITLE` | `app_title` | `My App` |
+| `AKSARA_APP_VERSION` | `app_version` | `1.0.0` |
+| `AKSARA_MIGRATIONS_DIR` | `migrations_dir` | `migrations` |
 
 ---
 
@@ -203,7 +203,7 @@ All settings can be set via environment variables:
 After configuration, access settings via the `settings` object:
 
 ```python
-from vidyut import settings
+from aksara import settings
 
 # Access any setting
 print(settings.database_url)
@@ -219,19 +219,19 @@ print(settings.installed_apps)
 Settings are resolved in this order (highest priority first):
 
 1. **Explicit `configure()` call** — Programmatic settings
-2. **Environment variables** — `VIDYUT_*` prefixed
+2. **Environment variables** — `AKSARA_*` prefixed
 3. **Built-in defaults** — Sensible fallbacks
 
 Example:
 
 ```python
 # .env
-VIDYUT_DEBUG=false
+AKSARA_DEBUG=false
 
 # settings.py
 configure(debug=True)  # This wins - explicit configuration
 
-from vidyut import settings
+from aksara import settings
 print(settings.debug)  # True
 ```
 
@@ -243,7 +243,7 @@ print(settings.debug)  # True
 
 ```python
 # settings_dev.py
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url="postgresql://localhost/myapp_dev",
@@ -257,7 +257,7 @@ configure(
 
 ```python
 # settings_test.py
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url="postgresql://localhost/myapp_test",
@@ -272,7 +272,7 @@ configure(
 ```python
 # settings_prod.py
 import os
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url=os.environ["DATABASE_URL"],  # Required
@@ -286,14 +286,14 @@ configure(
 
 ---
 
-## Vidyut App Constructor Settings
+## Aksara App Constructor Settings
 
-The `Vidyut` class accepts additional settings at initialization:
+The `Aksara` class accepts additional settings at initialization:
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 
-app = Vidyut(
+app = Aksara(
     # Database (overrides configure())
     database_url="postgresql://localhost/myapp",
     min_pool_size=5,
@@ -344,7 +344,7 @@ Never commit secrets to version control:
 
 ```python
 import os
-from vidyut import configure
+from aksara import configure
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -356,7 +356,7 @@ configure(database_url=DATABASE_URL)
 ### Type Hints for IDE Support
 
 ```python
-from vidyut.conf import Settings
+from aksara.conf import Settings
 
 def get_database_url(settings: Settings) -> str:
     if settings.database_url is None:

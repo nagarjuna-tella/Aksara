@@ -48,7 +48,7 @@ AI Mode includes multiple safety layers to prevent:
 Destructive operations require explicit confirmation:
 
 ```bash
-vidyut ai query "Delete inactive users"
+aksara ai query "Delete inactive users"
 
 ⚠️  Destructive Operation Detected
 
@@ -60,7 +60,7 @@ Proceed? [y/N]
 ### Configuration
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "require_confirmation": True,
         "confirmation_for": [
@@ -76,7 +76,7 @@ VIDYUT = {
 ### Programmatic Confirmation
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 engine = QueryEngine()
 
@@ -108,7 +108,7 @@ result = await engine.query(
 ### Preview Before Executing
 
 ```bash
-vidyut ai patch models.py "Add phone field" --dry-run
+aksara ai patch models.py "Add phone field" --dry-run
 
 Dry Run - No changes will be made
 
@@ -126,7 +126,7 @@ Would modify: models.py
 ### Programmatic Dry Run
 
 ```python
-from vidyut.ai import PatchEngine
+from aksara.ai import PatchEngine
 
 engine = PatchEngine()
 
@@ -152,7 +152,7 @@ await engine.apply(patch)
 ### Query-Only Operations
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_QUERY_ENGINE": {
         "read_only": True,  # Default
     },
@@ -168,7 +168,7 @@ With `read_only=True`:
 
 ```python
 # settings/production.py
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "read_only_mode": True,  # No writes via AI in production
     },
@@ -182,7 +182,7 @@ VIDYUT = {
 ### Enable Audit Log
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "audit_log": True,
         "audit_log_file": "logs/ai_audit.log",
@@ -209,7 +209,7 @@ VIDYUT = {
 ### Custom Audit Handler
 
 ```python
-from vidyut.ai.safety import register_audit_handler
+from aksara.ai.safety import register_audit_handler
 
 @register_audit_handler
 async def my_audit_handler(event):
@@ -221,7 +221,7 @@ async def my_audit_handler(event):
 ### Query Audit Log
 
 ```python
-from vidyut.ai.safety import get_audit_log
+from aksara.ai.safety import get_audit_log
 
 # Get recent actions
 log = await get_audit_log(
@@ -241,7 +241,7 @@ for entry in log:
 ### Configuration
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "rate_limit_enabled": True,
         "rate_limit_requests": 100,   # Max requests
@@ -254,7 +254,7 @@ VIDYUT = {
 ### Per-User Limits
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "rate_limits": {
             "default": {"requests": 100, "window": 3600},
@@ -268,7 +268,7 @@ VIDYUT = {
 ### Handling Rate Limits
 
 ```python
-from vidyut.ai.exceptions import RateLimitError
+from aksara.ai.exceptions import RateLimitError
 
 try:
     result = await engine.query("...")
@@ -283,7 +283,7 @@ except RateLimitError as e:
 ### Restrict Available Tools
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_TOOLS": {
         # Disable dangerous tools
         "data_tools": True,
@@ -297,7 +297,7 @@ VIDYUT = {
 ### Require Approval for Specific Tools
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_AGENT_RUNTIME": {
         "require_approval_for": [
             "delete_record",
@@ -312,7 +312,7 @@ VIDYUT = {
 ### Custom Tool Permissions
 
 ```python
-from vidyut.ai.tools import Tool, register_tool
+from aksara.ai.tools import Tool, register_tool
 
 @register_tool(permissions=["admin"])
 class DangerousTool(Tool):
@@ -360,7 +360,7 @@ if not patch.is_valid:
 ### Isolated Execution
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_AGENT_RUNTIME": {
         "sandbox_mode": True,  # Run in isolated environment
     },
@@ -370,7 +370,7 @@ VIDYUT = {
 ### Resource Limits
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_AGENT_RUNTIME": {
         # Prevent runaway operations
         "max_iterations": 20,
@@ -388,10 +388,10 @@ VIDYUT = {
 ### Automatic Backups
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PATCH_ENGINE": {
         "create_backups": True,
-        "backup_dir": ".vidyut/backups",
+        "backup_dir": ".aksara/backups",
     },
 }
 ```
@@ -400,19 +400,19 @@ VIDYUT = {
 
 ```bash
 # Rollback last change
-vidyut ai rollback
+aksara ai rollback
 
 # Rollback specific patch
-vidyut ai rollback --patch-id abc123
+aksara ai rollback --patch-id abc123
 
 # List available rollbacks
-vidyut ai rollback --list
+aksara ai rollback --list
 ```
 
 ### Programmatic Rollback
 
 ```python
-from vidyut.ai import PatchEngine
+from aksara.ai import PatchEngine
 
 engine = PatchEngine()
 
@@ -431,7 +431,7 @@ await engine.rollback()
 
 ```python
 # settings/development.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_SAFETY": {
         "require_confirmation": False,  # Faster iteration
@@ -445,7 +445,7 @@ VIDYUT = {
 
 ```python
 # settings/staging.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_SAFETY": {
         "require_confirmation": True,
@@ -459,7 +459,7 @@ VIDYUT = {
 
 ```python
 # settings/production.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_SAFETY": {
         "require_confirmation": True,
@@ -526,7 +526,7 @@ class AdminOnlyTool(Tool):
 ### 7. Always Test with Dry Run First
 
 ```bash
-vidyut ai patch ... --dry-run
+aksara ai patch ... --dry-run
 ```
 
 ---
@@ -536,7 +536,7 @@ vidyut ai patch ... --dry-run
 ### Alert on Suspicious Activity
 
 ```python
-from vidyut.ai.safety import register_alert_handler
+from aksara.ai.safety import register_alert_handler
 
 @register_alert_handler
 async def alert_handler(event):
@@ -549,7 +549,7 @@ async def alert_handler(event):
 ### Metrics Integration
 
 ```python
-from vidyut.ai.safety import get_metrics
+from aksara.ai.safety import get_metrics
 
 metrics = await get_metrics()
 print(f"Total AI requests: {metrics.total_requests}")

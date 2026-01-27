@@ -1,12 +1,12 @@
 # Types
 
-Type definitions for Vidyut.
+Type definitions for Aksara.
 
 ---
 
 ## Overview
 
-Vidyut is fully typed and provides type stubs for IDE support.
+Aksara is fully typed and provides type stubs for IDE support.
 
 ```python
 # py.typed marker included
@@ -20,7 +20,7 @@ Vidyut is fully typed and provides type stubs for IDE support.
 ### Model Types
 
 ```python
-from vidyut import Model
+from aksara import Model
 from typing import TypeVar, Generic
 
 # Model type variable
@@ -70,7 +70,7 @@ class QuerySet(Generic[ModelT]):
 ### Basic Field Types
 
 ```python
-from vidyut.fields import (
+from aksara.fields import (
     StringField,
     IntegerField,
     FloatField,
@@ -107,7 +107,7 @@ class Post(Model):
 ### Relationship Types
 
 ```python
-from vidyut.fields import ForeignKey, ManyToManyField
+from aksara.fields import ForeignKey, ManyToManyField
 from typing import List
 
 class Post(Model):
@@ -123,7 +123,7 @@ class Post(Model):
 
 ```python
 from typing import Any, Dict, Optional
-from vidyut.api.request import Request
+from aksara.api.request import Request
 
 class Request:
     user: "User"
@@ -306,7 +306,7 @@ class AgentResult(TypedDict):
 ```python
 from typing import TypedDict, List, Dict, Any, Optional
 
-class VidyutSettings(TypedDict, total=False):
+class AksaraSettings(TypedDict, total=False):
     DEBUG: bool
     SECRET_KEY: str
     DATABASE_URL: str
@@ -349,7 +349,7 @@ mypy myapp/
 
 # Configuration in pyproject.toml
 [tool.mypy]
-plugins = ["vidyut.mypy"]
+plugins = ["aksara.mypy"]
 strict = true
 ```
 
@@ -372,7 +372,7 @@ pyright myapp/
 
 ## Type Stubs
 
-Vidyut includes inline type annotations and a `py.typed` marker. Type stubs are available for all public APIs.
+Aksara includes inline type annotations and a `py.typed` marker. Type stubs are available for all public APIs.
 
 ```python
 # Example stub (fields.pyi)

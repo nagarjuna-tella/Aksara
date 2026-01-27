@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - ORM / Query / Relationship Edge Cases
+Aksara v0.4.10 - ORM / Query / Relationship Edge Cases
 
 Tests for:
 1. Relationship deletion scenarios (CASCADE, SET_NULL, RESTRICT)
@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from vidyut import (
+from aksara import (
     CASCADE,
     SET_NULL,
     RESTRICT,
@@ -88,7 +88,7 @@ class TestOnDeleteCascade:
         
         This is a unit test - actual DB cascade is tested in integration.
         """
-        from vidyut.relations import OnDelete, RelationMeta
+        from aksara.relations import OnDelete, RelationMeta
         
         relation = RelationMeta(
             relation_type="fk",
@@ -108,7 +108,7 @@ class TestOnDeleteCascade:
         Grandparent -> Parent -> Child
         Deleting Grandparent should cascade to Parent, then to Child.
         """
-        from vidyut.relations import OnDelete
+        from aksara.relations import OnDelete
         
         # Both relations use CASCADE
         gp_to_parent = OnDelete.CASCADE
@@ -133,7 +133,7 @@ class TestOnDeleteSetNull:
         
         This is a design constraint - we test that the constant exists.
         """
-        from vidyut.relations import OnDelete
+        from aksara.relations import OnDelete
         
         # The constant exists and is distinct from CASCADE
         assert OnDelete.SET_NULL != OnDelete.CASCADE
@@ -141,7 +141,7 @@ class TestOnDeleteSetNull:
     
     def test_set_null_relation_metadata(self):
         """SET_NULL should be stored correctly in RelationMeta."""
-        from vidyut.relations import OnDelete, RelationMeta
+        from aksara.relations import OnDelete, RelationMeta
         
         # Use proper mock models with __name__ and __tablename__ attributes
         source_mock = MagicMock()
@@ -217,7 +217,7 @@ class TestRelationMetadataConsistency:
     
     def test_relation_meta_to_dict(self):
         """RelationMeta.to_dict() should include all fields."""
-        from vidyut.relations import RelationMeta
+        from aksara.relations import RelationMeta
         
         source = MagicMock()
         source.__name__ = "Post"
@@ -247,7 +247,7 @@ class TestRelationMetadataConsistency:
     
     def test_relation_registry_clear(self):
         """RelationRegistry.clear() should work for testing."""
-        from vidyut.relations import RelationRegistry
+        from aksara.relations import RelationRegistry
         
         # Store original count
         original = len(RelationRegistry.all())
@@ -274,7 +274,7 @@ class TestOrderByEdgeCases:
         It may be redundant but should be deterministic.
         """
         # Mock QuerySet to test order_by logic
-        from vidyut.manager import QuerySet
+        from aksara.manager import QuerySet
         
         qs = MagicMock(spec=QuerySet)
         qs._order_by = []
@@ -458,7 +458,7 @@ class TestQuerySetMethods:
     
     def test_get_on_multiple_raises(self):
         """get() with multiple matches should raise MultipleObjectsReturned."""
-        from vidyut import MultipleObjectsReturned
+        from aksara import MultipleObjectsReturned
         
         results = [{"id": 1}, {"id": 2}]
         
@@ -470,7 +470,7 @@ class TestQuerySetMethods:
     
     def test_get_on_empty_raises(self):
         """get() with no matches should raise DoesNotExist."""
-        from vidyut import DoesNotExist
+        from aksara import DoesNotExist
         
         results: List = []
         

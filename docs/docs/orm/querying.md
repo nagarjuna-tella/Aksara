@@ -1,12 +1,12 @@
 # Querying Data
 
-Query, filter, and retrieve data using Vidyut's intuitive QuerySet API.
+Query, filter, and retrieve data using Aksara's intuitive QuerySet API.
 
 ---
 
 ## Overview
 
-Every Vidyut model has an `objects` manager that provides access to the QuerySet API:
+Every Aksara model has an `objects` manager that provides access to the QuerySet API:
 
 ```python
 from myapp.models import Post
@@ -345,7 +345,7 @@ posts = await Post.objects.filter(tags__name="tutorial")
 ### Basic Aggregations
 
 ```python
-from vidyut.db import Count, Sum, Avg, Max, Min
+from aksara.db import Count, Sum, Avg, Max, Min
 
 # Count
 count = await Post.objects.count()
@@ -451,7 +451,7 @@ posts = await Post.objects.raw(
 )
 
 # Execute arbitrary SQL
-from vidyut.db import connection
+from aksara.db import connection
 result = await connection.execute(
     "SELECT category, COUNT(*) FROM posts GROUP BY category"
 )

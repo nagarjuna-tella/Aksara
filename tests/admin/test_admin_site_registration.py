@@ -10,8 +10,8 @@ Tests that:
 
 import pytest
 
-from vidyut import Model, fields
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields
+from aksara.registry import ModelRegistry
 
 
 class TestAdminSiteRegistration:
@@ -21,12 +21,12 @@ class TestAdminSiteRegistration:
         """Clear registries before each test."""
         ModelRegistry.clear()
         # Clear admin site
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_register_model_simple(self):
         """Test simple model registration."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Book(Model):
             title = fields.String()
@@ -41,7 +41,7 @@ class TestAdminSiteRegistration:
     
     def test_register_model_with_custom_admin(self):
         """Test model registration with custom ModelAdmin."""
-        from vidyut.contrib.admin import site, ModelAdmin
+        from aksara.contrib.admin import site, ModelAdmin
         
         class Article(Model):
             title = fields.String()
@@ -65,7 +65,7 @@ class TestAdminSiteRegistration:
     
     def test_double_registration_raises_error(self):
         """Test that registering same model twice raises ValueError."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Widget(Model):
             name = fields.String()
@@ -80,7 +80,7 @@ class TestAdminSiteRegistration:
     
     def test_unregister_model(self):
         """Test model unregistration."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Gadget(Model):
             name = fields.String()
@@ -96,7 +96,7 @@ class TestAdminSiteRegistration:
     
     def test_unregister_nonexistent_model(self):
         """Test that unregistering non-registered model doesn't raise."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Foo(Model):
             name = fields.String()
@@ -109,7 +109,7 @@ class TestAdminSiteRegistration:
     
     def test_get_model_admin_returns_none_for_unregistered(self):
         """Test get_model_admin returns None for unregistered model."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Bar(Model):
             name = fields.String()
@@ -121,7 +121,7 @@ class TestAdminSiteRegistration:
     
     def test_get_model_by_name(self):
         """Test looking up model by app_label and name."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Post(Model):
             title = fields.String()
@@ -149,7 +149,7 @@ class TestAdminSiteRegistration:
     
     def test_get_app_list(self):
         """Test getting models grouped by app_label."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Author(Model):
             name = fields.String()
@@ -185,7 +185,7 @@ class TestAdminSiteRegistration:
     
     def test_model_without_app_label_auto_detects_from_module(self):
         """Test that models without app_label auto-detect from module path."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class NoLabel(Model):
             name = fields.String()
@@ -203,7 +203,7 @@ class TestAdminSiteRegistration:
     
     def test_clear_site(self):
         """Test clearing all registrations."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Model1(Model):
             name = fields.String()

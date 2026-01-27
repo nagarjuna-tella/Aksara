@@ -1,1 +1,1 @@
-"""Vidyut example applications."""
+"""Aksara example applications."""

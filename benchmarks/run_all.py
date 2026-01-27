@@ -19,32 +19,32 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common import print_comparison
 
 
-def print_head_to_head(vidyut_suite, other_suite, other_name):
+def print_head_to_head(aksara_suite, other_suite, other_name):
     """Print head-to-head comparison table."""
     print(f"\n{'=' * 75}")
-    print(f"  Vidyut vs {other_name} - Head to Head")
+    print(f"  Aksara vs {other_name} - Head to Head")
     print(f"{'=' * 75}")
-    print(f"{'Benchmark':<40} {'Vidyut':>12} {other_name:>12} {'Winner':>8}")
+    print(f"{'Benchmark':<40} {'Aksara':>12} {other_name:>12} {'Winner':>8}")
     print("-" * 75)
     
-    vidyut_wins = 0
+    aksara_wins = 0
     other_wins = 0
     
-    vidyut_results = {r.name: r for r in vidyut_suite.results}
+    aksara_results = {r.name: r for r in aksara_suite.results}
     other_results = {r.name: r for r in other_suite.results}
     
-    for name, vidyut_r in vidyut_results.items():
+    for name, aksara_r in aksara_results.items():
         other_r = other_results.get(name)
         if not other_r:
             continue
         
-        v_ms = vidyut_r.duration_ms
+        v_ms = aksara_r.duration_ms
         o_ms = other_r.duration_ms
         
         if v_ms < o_ms:
-            winner = "Vidyut"
+            winner = "Aksara"
             speedup = o_ms / v_ms
-            vidyut_wins += 1
+            aksara_wins += 1
         else:
             winner = other_name[:8]
             speedup = v_ms / o_ms
@@ -53,7 +53,7 @@ def print_head_to_head(vidyut_suite, other_suite, other_name):
         print(f"{name:<40} {v_ms:>10.2f}ms {o_ms:>10.2f}ms {winner:>8} ({speedup:.1f}x)")
     
     print("-" * 75)
-    print(f"{'TOTAL WINS':<40} {vidyut_wins:>12} {other_wins:>12}")
+    print(f"{'TOTAL WINS':<40} {aksara_wins:>12} {other_wins:>12}")
     print(f"{'=' * 75}\n")
 
 
@@ -61,12 +61,12 @@ async def run_all():
     """Run all available benchmarks."""
     results = {}
     
-    # Run Vidyut benchmarks
+    # Run Aksara benchmarks
     try:
-        from vidyut_bench import run_benchmarks as run_vidyut
-        results["Vidyut"] = await run_vidyut()
+        from aksara_bench import run_benchmarks as run_aksara
+        results["Aksara"] = await run_aksara()
     except Exception as e:
-        print(f"Vidyut benchmark failed: {e}")
+        print(f"Aksara benchmark failed: {e}")
         import traceback
         traceback.print_exc()
     
@@ -93,11 +93,11 @@ async def run_all():
         traceback.print_exc()
     
     # Print head-to-head comparisons
-    if "Vidyut" in results:
+    if "Aksara" in results:
         if "SQLAlchemy" in results:
-            print_head_to_head(results["Vidyut"], results["SQLAlchemy"], "SQLAlchemy")
+            print_head_to_head(results["Aksara"], results["SQLAlchemy"], "SQLAlchemy")
         if "Tortoise" in results:
-            print_head_to_head(results["Vidyut"], results["Tortoise"], "Tortoise")
+            print_head_to_head(results["Aksara"], results["Tortoise"], "Tortoise")
     
     # Print summary table
     if len(results) > 1:

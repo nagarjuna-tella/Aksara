@@ -22,7 +22,7 @@ from pydantic import ValidationError
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from vidyut.ai.query import (
+from aksara.ai.query import (
     AiFilterCondition,
     AiSortField,
     AiQueryPagination,
@@ -36,8 +36,8 @@ from vidyut.ai.query import (
     _validate_lookup,
     _serialize_value,
 )
-from vidyut.ai.fastapi import router
-from vidyut.exceptions import ConfigurationError
+from aksara.ai.fastapi import router
+from aksara.exceptions import ConfigurationError
 
 
 # =============================================================================

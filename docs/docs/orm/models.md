@@ -1,14 +1,14 @@
 # Models
 
-Models are the foundation of your Vidyut application. They define your data structures and map to PostgreSQL tables.
+Models are the foundation of your Aksara application. They define your data structures and map to PostgreSQL tables.
 
 ---
 
 ## Overview
 
-A Vidyut model is a Python class that:
+A Aksara model is a Python class that:
 
-- Inherits from `vidyut.Model`
+- Inherits from `aksara.Model`
 - Defines fields as class attributes
 - Maps to a PostgreSQL table
 - Provides async methods for database operations
@@ -17,7 +17,7 @@ A Vidyut model is a Python class that:
 
 ## When to Use Models
 
-Use Vidyut models when you need to:
+Use Aksara models when you need to:
 
 - Store data in PostgreSQL
 - Define relationships between entities
@@ -30,7 +30,7 @@ Use Vidyut models when you need to:
 ## Defining a Model
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Article(Model):
     """A blog article."""
@@ -86,10 +86,10 @@ class Article(Model):
 
 ## Field Types
 
-Vidyut provides many field types. Here's a quick overview:
+Aksara provides many field types. Here's a quick overview:
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Product(Model):
     # Text fields
@@ -148,7 +148,7 @@ article = await Article.objects.get(id=article_id)
 article = await Article.objects.get(slug="hello-world")
 
 # Get or raise DoesNotExist
-from vidyut import DoesNotExist
+from aksara import DoesNotExist
 
 try:
     article = await Article.objects.get(id=invalid_id)
@@ -204,7 +204,7 @@ class Article(Model):
 
 ## AI Metadata
 
-Vidyut models support AI metadata for LLM integration:
+Aksara models support AI metadata for LLM integration:
 
 ### Model-Level AI Metadata
 
@@ -305,7 +305,7 @@ The `__abstract__ = True` prevents table creation for the base class.
 
 ## Model Validation
 
-Vidyut validates data before saving:
+Aksara validates data before saving:
 
 ```python
 class User(Model):
@@ -336,7 +336,7 @@ class Event(Model):
 ## Example: Complete Model
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 from enum import Enum
 
 

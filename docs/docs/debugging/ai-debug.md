@@ -6,7 +6,7 @@ AI-powered debugging suggestions on error pages.
 
 ## Overview
 
-When an error occurs in debug mode, Vidyut's AI Debug tab provides:
+When an error occurs in debug mode, Aksara's AI Debug tab provides:
 
 - **Root cause analysis** — What went wrong
 - **Fix suggestions** — How to fix it
@@ -14,7 +14,7 @@ When an error occurs in debug mode, Vidyut's AI Debug tab provides:
 - **Documentation links** — Relevant docs
 
 ```python
-app = Vidyut(debug=True)  # AI Debug tab enabled automatically
+app = Aksara(debug=True)  # AI Debug tab enabled automatically
 ```
 
 ---
@@ -22,7 +22,7 @@ app = Vidyut(debug=True)  # AI Debug tab enabled automatically
 ## How It Works
 
 1. Exception occurs in your application
-2. Vidyut collects error context:
+2. Aksara collects error context:
    - Exception type and message
    - Stack trace
    - Local variables
@@ -67,7 +67,7 @@ Each suggestion includes working code:
 
 ```python
 # Suggestion 1: Use get_or_404
-from vidyut.shortcuts import get_object_or_404
+from aksara.shortcuts import get_object_or_404
 
 @app.get("/api/users/{user_id}")
 async def get_user(request, user_id: str):
@@ -168,7 +168,7 @@ Suggestions:
 ### Enable/Disable AI Debug
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_ai_enabled=True,  # Default: True when debug=True
 )
@@ -177,7 +177,7 @@ app = Vidyut(
 ### Custom AI Provider
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_ai_provider="openai",  # or "anthropic", "local"
     debug_ai_model="gpt-4",
@@ -189,7 +189,7 @@ app = Vidyut(
 Limit data sent to AI:
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_ai_privacy=True,  # Don't send variable values
 )
@@ -315,7 +315,7 @@ Suggestions:
 For sensitive projects, use local AI:
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_ai_provider="local",
     debug_ai_endpoint="http://localhost:11434",  # Ollama

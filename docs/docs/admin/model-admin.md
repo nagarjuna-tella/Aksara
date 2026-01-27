@@ -9,7 +9,7 @@ Customize how models appear in the admin interface.
 `ModelAdmin` controls the admin interface for a specific model:
 
 ```python
-from vidyut.contrib.admin import ModelAdmin
+from aksara.contrib.admin import ModelAdmin
 
 @admin.register(Post)
 class PostAdmin(ModelAdmin):
@@ -77,7 +77,7 @@ class PostAdmin(ModelAdmin):
 #### Custom Filters
 
 ```python
-from vidyut.contrib.admin import SimpleListFilter
+from aksara.contrib.admin import SimpleListFilter
 
 class PublishedRecentlyFilter(SimpleListFilter):
     title = "Published Recently"
@@ -235,7 +235,7 @@ class PostAdmin(ModelAdmin):
 ### Custom Form
 
 ```python
-from vidyut.contrib.admin import ModelForm
+from aksara.contrib.admin import ModelForm
 
 class PostForm(ModelForm):
     class Meta:
@@ -421,7 +421,7 @@ class PostAdmin(ModelAdmin):
 ## Complete Example
 
 ```python
-from vidyut.contrib.admin import ModelAdmin, SimpleListFilter
+from aksara.contrib.admin import ModelAdmin, SimpleListFilter
 from myapp.models import Post
 
 

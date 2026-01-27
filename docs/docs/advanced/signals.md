@@ -22,8 +22,8 @@ Signals allow you to run code when specific events occur:
 ### Signal Decorators
 
 ```python
-from vidyut import Model, fields
-from vidyut.signals import pre_save, post_save, pre_delete, post_delete
+from aksara import Model, fields
+from aksara.signals import pre_save, post_save, pre_delete, post_delete
 
 class Post(Model):
     title = fields.StringField(max_length=200)
@@ -113,7 +113,7 @@ async def handle_delete(sender, instance, **kwargs):
 ### Using `connect()`
 
 ```python
-from vidyut.signals import pre_save
+from aksara.signals import pre_save
 
 async def my_handler(sender, instance, **kwargs):
     print(f"Saving {instance}")
@@ -128,7 +128,7 @@ pre_save.disconnect(my_handler, sender=Post)
 ### Multiple Models
 
 ```python
-from vidyut.signals import post_save
+from aksara.signals import post_save
 
 async def log_save(sender, instance, **kwargs):
     print(f"Saved {sender.__name__}: {instance.id}")
@@ -154,7 +154,7 @@ async def log_all_saves(sender, instance, **kwargs):
 ### Creating Custom Signals
 
 ```python
-from vidyut.signals import Signal
+from aksara.signals import Signal
 
 # Define signal
 user_activated = Signal()
@@ -194,8 +194,8 @@ await payment_processed.send(
 ### Audit Logging
 
 ```python
-from vidyut.signals import post_save, post_delete
-from vidyut import Model, fields
+from aksara.signals import post_save, post_delete
+from aksara import Model, fields
 import json
 
 class AuditLog(Model):
@@ -229,7 +229,7 @@ for model in AUDITED_MODELS:
 ### Search Index Updates
 
 ```python
-from vidyut.signals import post_save, post_delete
+from aksara.signals import post_save, post_delete
 
 class SearchService:
     @staticmethod
@@ -254,7 +254,7 @@ async def unindex_post(sender, instance, **kwargs):
 ### Automatic Timestamps
 
 ```python
-from vidyut.signals import pre_save
+from aksara.signals import pre_save
 from datetime import datetime
 
 @pre_save()  # All models
@@ -273,8 +273,8 @@ async def update_timestamps(sender, instance, **kwargs):
 ### Cache Invalidation
 
 ```python
-from vidyut.signals import post_save, post_delete
-from vidyut.cache import cache
+from aksara.signals import post_save, post_delete
+from aksara.cache import cache
 
 @post_save(Post)
 async def invalidate_post_cache(sender, instance, **kwargs):
@@ -294,7 +294,7 @@ async def invalidate_on_delete(sender, instance, **kwargs):
 ### Notification System
 
 ```python
-from vidyut.signals import post_save
+from aksara.signals import post_save
 
 @post_save(Comment)
 async def notify_post_author(sender, instance, created, **kwargs):
@@ -353,7 +353,7 @@ async def safe_handler(sender, instance, **kwargs):
 ### Disable Signals Temporarily
 
 ```python
-from vidyut.signals import SignalContext
+from aksara.signals import SignalContext
 
 # Disable all signals for a model
 async with SignalContext.disable_for(Post):

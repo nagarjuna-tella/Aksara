@@ -1,6 +1,6 @@
 # CLI Commands Reference
 
-Complete reference for all Vidyut CLI commands.
+Complete reference for all Aksara CLI commands.
 
 ---
 
@@ -8,10 +8,10 @@ Complete reference for all Vidyut CLI commands.
 
 ### startproject
 
-Create a new Vidyut project.
+Create a new Aksara project.
 
 ```bash
-vidyut startproject <name> [options]
+aksara startproject <name> [options]
 ```
 
 **Arguments:**
@@ -30,7 +30,7 @@ vidyut startproject <name> [options]
 
 **Example:**
 ```bash
-vidyut startproject myblog --template full
+aksara startproject myblog --template full
 ```
 
 ---
@@ -40,7 +40,7 @@ vidyut startproject myblog --template full
 Create a new app within a project.
 
 ```bash
-vidyut startapp <name> [options]
+aksara startapp <name> [options]
 ```
 
 **Arguments:**
@@ -53,7 +53,7 @@ vidyut startapp <name> [options]
 
 **Example:**
 ```bash
-vidyut startapp blog
+aksara startapp blog
 ```
 
 ---
@@ -65,7 +65,7 @@ vidyut startapp blog
 Generate migrations from model changes.
 
 ```bash
-vidyut makemigrations [options]
+aksara makemigrations [options]
 ```
 
 **Options:**
@@ -80,13 +80,13 @@ vidyut makemigrations [options]
 **Examples:**
 ```bash
 # All apps
-vidyut makemigrations
+aksara makemigrations
 
 # Specific app with custom name
-vidyut makemigrations --app blog --name add_post_views
+aksara makemigrations --app blog --name add_post_views
 
 # Check for pending changes (useful in CI)
-vidyut makemigrations --check
+aksara makemigrations --check
 ```
 
 ---
@@ -96,7 +96,7 @@ vidyut makemigrations --check
 Apply database migrations.
 
 ```bash
-vidyut migrate [app] [migration] [options]
+aksara migrate [app] [migration] [options]
 ```
 
 **Arguments:**
@@ -114,19 +114,19 @@ vidyut migrate [app] [migration] [options]
 **Examples:**
 ```bash
 # Apply all pending migrations
-vidyut migrate
+aksara migrate
 
 # Migrate specific app
-vidyut migrate blog
+aksara migrate blog
 
 # Migrate to specific version
-vidyut migrate blog 0003
+aksara migrate blog 0003
 
 # Rollback to zero
-vidyut migrate blog zero
+aksara migrate blog zero
 
 # Show plan without applying
-vidyut migrate --plan
+aksara migrate --plan
 ```
 
 ---
@@ -136,7 +136,7 @@ vidyut migrate --plan
 Open database shell.
 
 ```bash
-vidyut dbshell [options]
+aksara dbshell [options]
 ```
 
 **Options:**
@@ -153,7 +153,7 @@ Opens the appropriate shell for your database (psql, mysql, sqlite3).
 Generate models from existing database tables.
 
 ```bash
-vidyut inspectdb [table ...] [options]
+aksara inspectdb [table ...] [options]
 ```
 
 **Arguments:**
@@ -167,7 +167,7 @@ vidyut inspectdb [table ...] [options]
 
 **Example:**
 ```bash
-vidyut inspectdb users posts > models.py
+aksara inspectdb users posts > models.py
 ```
 
 ---
@@ -179,7 +179,7 @@ vidyut inspectdb users posts > models.py
 Start the development server.
 
 ```bash
-vidyut runserver [address] [options]
+aksara runserver [address] [options]
 ```
 
 **Arguments:**
@@ -196,16 +196,16 @@ vidyut runserver [address] [options]
 **Examples:**
 ```bash
 # Default
-vidyut runserver
+aksara runserver
 
 # Custom port
-vidyut runserver --port 3000
+aksara runserver --port 3000
 
 # All interfaces
-vidyut runserver --host 0.0.0.0
+aksara runserver --host 0.0.0.0
 
 # Production-like (no reload, multiple workers)
-vidyut runserver --no-reload --workers 4
+aksara runserver --no-reload --workers 4
 ```
 
 ---
@@ -215,7 +215,7 @@ vidyut runserver --no-reload --workers 4
 Interactive Python shell with project context.
 
 ```bash
-vidyut shell [options]
+aksara shell [options]
 ```
 
 **Options:**
@@ -229,10 +229,10 @@ vidyut shell [options]
 **Examples:**
 ```bash
 # Interactive shell
-vidyut shell
+aksara shell
 
 # Execute command
-vidyut shell -c "print(await User.objects.count())"
+aksara shell -c "print(await User.objects.count())"
 ```
 
 ---
@@ -242,7 +242,7 @@ vidyut shell -c "print(await User.objects.count())"
 List registered routes.
 
 ```bash
-vidyut routes [options]
+aksara routes [options]
 ```
 
 **Options:**
@@ -253,7 +253,7 @@ vidyut routes [options]
 
 **Example:**
 ```bash
-vidyut routes --filter api/posts
+aksara routes --filter api/posts
 ```
 
 ---
@@ -263,7 +263,7 @@ vidyut routes --filter api/posts
 Show project information.
 
 ```bash
-vidyut info [options]
+aksara info [options]
 ```
 
 **Options:**
@@ -274,7 +274,7 @@ vidyut info [options]
 
 **Example:**
 ```bash
-vidyut info --check
+aksara info --check
 ```
 
 ---
@@ -284,7 +284,7 @@ vidyut info --check
 Validate project configuration.
 
 ```bash
-vidyut check [options]
+aksara check [options]
 ```
 
 **Options:**
@@ -295,7 +295,7 @@ vidyut check [options]
 
 **Example:**
 ```bash
-vidyut check --deploy
+aksara check --deploy
 ```
 
 ---
@@ -307,7 +307,7 @@ vidyut check --deploy
 Run the test suite.
 
 ```bash
-vidyut test [path] [options]
+aksara test [path] [options]
 ```
 
 **Arguments:**
@@ -324,13 +324,13 @@ vidyut test [path] [options]
 **Examples:**
 ```bash
 # All tests
-vidyut test
+aksara test
 
 # Specific file
-vidyut test tests/test_models.py
+aksara test tests/test_models.py
 
 # With coverage
-vidyut test --coverage
+aksara test --coverage
 ```
 
 ---
@@ -342,7 +342,7 @@ vidyut test --coverage
 Collect static files.
 
 ```bash
-vidyut collectstatic [options]
+aksara collectstatic [options]
 ```
 
 **Options:**
@@ -361,7 +361,7 @@ vidyut collectstatic [options]
 Create an admin user.
 
 ```bash
-vidyut createsuperuser [options]
+aksara createsuperuser [options]
 ```
 
 **Options:**
@@ -378,7 +378,7 @@ vidyut createsuperuser [options]
 Change user password.
 
 ```bash
-vidyut changepassword <email>
+aksara changepassword <email>
 ```
 
 ---
@@ -389,11 +389,11 @@ See [AI Commands](ai-commands.md) for details.
 
 | Command | Description |
 |---------|-------------|
-| `vidyut ai query` | Natural language queries |
-| `vidyut ai generate` | Code generation |
-| `vidyut ai doctor` | Schema analysis |
-| `vidyut ai plan` | Task planning |
-| `vidyut ai agent` | AI agent execution |
+| `aksara ai query` | Natural language queries |
+| `aksara ai generate` | Code generation |
+| `aksara ai doctor` | Schema analysis |
+| `aksara ai plan` | Task planning |
+| `aksara ai agent` | AI agent execution |
 
 ---
 
@@ -412,7 +412,7 @@ These options work with all commands:
 
 **Example:**
 ```bash
-vidyut --settings myproject.settings migrate
+aksara --settings myproject.settings migrate
 ```
 
 ---
@@ -421,8 +421,8 @@ vidyut --settings myproject.settings migrate
 
 | Variable | Description |
 |----------|-------------|
-| `VIDYUT_SETTINGS` | Settings module path |
-| `VIDYUT_DEBUG` | Enable debug mode |
+| `AKSARA_SETTINGS` | Settings module path |
+| `AKSARA_DEBUG` | Enable debug mode |
 | `DATABASE_URL` | Database connection URL |
 
 ---

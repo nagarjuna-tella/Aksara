@@ -1,5 +1,5 @@
 """
-Vidyut v0.4.9 - Extended Debug Error Pages & CLI Tests
+Aksara v0.4.10 - Extended Debug Error Pages & CLI Tests
 
 Additional robustness tests for:
 1. Debug pages with huge request bodies
@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 import pytest
 from click.testing import CliRunner
 
-from vidyut.cli.main import cli
+from aksara.cli.main import cli
 
 
 # =============================================================================
@@ -25,7 +25,7 @@ class TestDebugHugeRequestBody:
     
     def test_debug_context_truncates_large_body(self):
         """Debug context should truncate very large request bodies."""
-        from vidyut.debug.handlers import DebugContext
+        from aksara.debug.handlers import DebugContext
         
         # Create a context with a huge body
         huge_body = "x" * (1024 * 1024)  # 1MB of 'x'
@@ -42,7 +42,7 @@ class TestDebugHugeRequestBody:
     
     def test_render_debug_page_handles_large_body(self):
         """render_debug_page should handle large bodies without blowing up."""
-        from vidyut.debug.handlers import render_debug_page, DebugContext
+        from aksara.debug.handlers import render_debug_page, DebugContext
         
         large_body = "y" * 100000  # 100KB
         
@@ -66,7 +66,7 @@ class TestDebugHugeRequestBody:
     
     def test_render_truncates_body_for_display(self):
         """Request body should be truncated for display."""
-        from vidyut.debug.handlers import _build_request_html, DebugContext
+        from aksara.debug.handlers import _build_request_html, DebugContext
         
         # 50KB body
         large_body = "data=" + "x" * 50000
@@ -94,7 +94,7 @@ class TestDebugNonASCIICharacters:
     
     def test_debug_context_with_unicode_message(self):
         """Debug context should handle Unicode exception messages."""
-        from vidyut.debug.handlers import DebugContext
+        from aksara.debug.handlers import DebugContext
         
         unicode_message = "Error: 日本語メッセージ with émojis 🔥🚀"
         
@@ -107,7 +107,7 @@ class TestDebugNonASCIICharacters:
     
     def test_render_debug_page_with_unicode(self):
         """render_debug_page should handle Unicode without encoding errors."""
-        from vidyut.debug.handlers import render_debug_page, DebugContext
+        from aksara.debug.handlers import render_debug_page, DebugContext
         
         ctx = DebugContext(
             exception_type="UnicodeError",
@@ -127,7 +127,7 @@ class TestDebugNonASCIICharacters:
     
     def test_render_debug_page_with_emoji(self):
         """render_debug_page should handle emoji."""
-        from vidyut.debug.handlers import render_debug_page, DebugContext
+        from aksara.debug.handlers import render_debug_page, DebugContext
         
         ctx = DebugContext(
             exception_type="EmojiError",
@@ -144,7 +144,7 @@ class TestDebugNonASCIICharacters:
     
     def test_debug_with_null_bytes(self):
         """Debug context should handle null bytes gracefully."""
-        from vidyut.debug.handlers import DebugContext, render_debug_page
+        from aksara.debug.handlers import DebugContext, render_debug_page
         
         # String with embedded null byte
         message_with_null = "Error with\x00null byte"
@@ -160,7 +160,7 @@ class TestDebugNonASCIICharacters:
     
     def test_debug_with_control_characters(self):
         """Debug context should handle control characters."""
-        from vidyut.debug.handlers import DebugContext, render_debug_page
+        from aksara.debug.handlers import DebugContext, render_debug_page
         
         # String with various control characters
         message_with_controls = "Error\t with\n newline\r\n and tab"
@@ -177,7 +177,7 @@ class TestDebugNonASCIICharacters:
     
     def test_debug_with_html_injection_attempt(self):
         """Debug context should escape HTML to prevent XSS."""
-        from vidyut.debug.handlers import render_debug_page, DebugContext
+        from aksara.debug.handlers import render_debug_page, DebugContext
         
         malicious_message = '<script>alert("XSS")</script>'
         
@@ -206,7 +206,7 @@ class TestDebugAITab:
     
     def test_ai_debug_context_with_unicode(self):
         """AI debug context should handle Unicode."""
-        from vidyut.ai.debug import AiDebugContext, AiExceptionInfo, AiRequestInfo, AiEnvInfo
+        from aksara.ai.debug import AiDebugContext, AiExceptionInfo, AiRequestInfo, AiEnvInfo
         from datetime import datetime
         
         # Create context with unicode content
@@ -225,7 +225,7 @@ class TestDebugAITab:
             ),
             environment=AiEnvInfo(
                 python_version="3.12.0",
-                vidyut_version="0.4.9",
+                aksara_version="0.4.10",
                 debug_mode=True,
             ),
         )
@@ -235,7 +235,7 @@ class TestDebugAITab:
     
     def test_ai_exception_info_handles_unicode(self):
         """AiExceptionInfo should handle Unicode messages."""
-        from vidyut.ai.debug import AiExceptionInfo
+        from aksara.ai.debug import AiExceptionInfo
         
         info = AiExceptionInfo(
             type="ValueError",
@@ -407,12 +407,12 @@ class TestCLIPlanApplyConfirmation:
             with open("plan.json", "w") as f:
                 json.dump(valid_plan, f)
             
-            with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+            with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
                 mock_setup.return_value = MagicMock()
                 
-                with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                    with patch("vidyut.ai.planner.execute_plan", new_callable=AsyncMock) as mock_exec:
-                        from vidyut.ai.planner import AiPlanExecutionResult
+                with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                    with patch("aksara.ai.planner.execute_plan", new_callable=AsyncMock) as mock_exec:
+                        from aksara.ai.planner import AiPlanExecutionResult
                         mock_exec.return_value = AiPlanExecutionResult(
                             success=True,
                             steps=[],
@@ -504,7 +504,7 @@ class TestCLIUnicodeHandling:
         """ai context should handle Unicode intent."""
         runner = CliRunner()
         
-        from vidyut.ai.agent import AgentContextBundle, AgentIntent
+        from aksara.ai.agent import AgentContextBundle, AgentIntent
         
         mock_bundle = AgentContextBundle(
             intent=AgentIntent(user_message="テスト意図", mode="read"),
@@ -514,14 +514,14 @@ class TestCLIUnicodeHandling:
             patch_schema={},
             query_plan_schema={},
             codegen_schema={},
-            version="0.4.9"
+            version="0.4.10"
         )
         
-        with patch("vidyut.cli.main._setup_app_for_cli") as mock_setup:
+        with patch("aksara.cli.main._setup_app_for_cli") as mock_setup:
             mock_setup.return_value = MagicMock()
             
-            with patch("vidyut.cli.main._connect_db_for_cli", new_callable=AsyncMock):
-                with patch("vidyut.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
+            with patch("aksara.cli.main._connect_db_for_cli", new_callable=AsyncMock):
+                with patch("aksara.ai.agent.build_agent_context_bundle", new_callable=AsyncMock) as mock_build:
                     mock_build.return_value = mock_bundle
                     
                     result = runner.invoke(cli, [

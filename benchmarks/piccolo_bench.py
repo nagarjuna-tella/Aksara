@@ -2,7 +2,7 @@
 Piccolo ORM Benchmark (Stub)
 
 This is a stub for Piccolo ORM benchmarks.
-Implement to compare against Vidyut.
+Implement to compare against Aksara.
 
 Usage:
     pip install piccolo asyncpg
@@ -50,7 +50,7 @@ async def run_benchmarks():
         author = ForeignKey(BenchUser)
         tags = M2M(BenchTag)
     
-    # Run the same benchmarks as Vidyut:
+    # Run the same benchmarks as Aksara:
     # - Single creates
     # - Single reads
     # - Filtered reads  
@@ -64,7 +64,7 @@ async def run_benchmarks():
     print("  Piccolo ORM Benchmarks (NOT IMPLEMENTED)")
     print("=" * 60)
     print("\n  This is a stub file. Implement Piccolo ORM")
-    print("  benchmarks to compare against Vidyut.\n")
+    print("  benchmarks to compare against Aksara.\n")
     
     suite = BenchmarkSuite(name="Piccolo")
     

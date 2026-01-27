@@ -1,5 +1,5 @@
 """
-Tests for Vidyut v0.3.5 Relationship Fields
+Tests for Aksara v0.3.5 Relationship Fields
 
 Unit tests for OneToOne and ManyToMany field types.
 """
@@ -7,11 +7,11 @@ Unit tests for OneToOne and ManyToMany field types.
 import pytest
 from uuid import uuid4
 
-from vidyut.fields import (
+from aksara.fields import (
     String, UUID, ForeignKey, OneToOne, ManyToMany,
     ManyToManyManager,
 )
-from vidyut.model.base import Model
+from aksara.model.base import Model
 
 
 # Mock models for testing

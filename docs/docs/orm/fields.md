@@ -6,7 +6,7 @@ Field types define how data is stored in PostgreSQL and validated in Python.
 
 ## Overview
 
-Every field in Vidyut maps to a PostgreSQL column type and provides:
+Every field in Aksara maps to a PostgreSQL column type and provides:
 
 - **Type validation** — Ensures correct Python types
 - **Database mapping** — Converts to/from PostgreSQL types
@@ -290,7 +290,7 @@ PostgreSQL type: `VARCHAR` (stores the string value)
 Many-to-one relationship.
 
 ```python
-from vidyut import fields, CASCADE
+from aksara import fields, CASCADE
 
 class Post(Model):
     author = fields.ForeignKey(
@@ -356,7 +356,7 @@ When a referenced object is deleted:
 | `PROTECT` | Alias for RESTRICT |
 
 ```python
-from vidyut import fields, CASCADE, SET_NULL, RESTRICT
+from aksara import fields, CASCADE, SET_NULL, RESTRICT
 
 class Post(Model):
     # Delete posts when author is deleted
@@ -411,7 +411,7 @@ class User(Model):
 Fields validate data automatically:
 
 ```python
-from vidyut.exceptions import ValidationError
+from aksara.exceptions import ValidationError
 
 class User(Model):
     email = fields.Email()
@@ -437,7 +437,7 @@ except ValidationError as e:
 ## Complete Example
 
 ```python
-from vidyut import Model, fields, CASCADE
+from aksara import Model, fields, CASCADE
 from enum import Enum
 from decimal import Decimal
 

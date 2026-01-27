@@ -30,7 +30,7 @@ await user.save()
 ### Custom Permission Class
 
 ```python
-from vidyut.permissions import BasePermission
+from aksara.permissions import BasePermission
 
 class IsSuperuser(BasePermission):
     def has_permission(self, request, view):
@@ -268,7 +268,7 @@ class ProjectAdmin(ModelAdmin):
 ### IsAuthenticated
 
 ```python
-from vidyut.permissions import IsAuthenticated
+from aksara.permissions import IsAuthenticated
 
 admin = AdminSite(permission_classes=[IsAuthenticated])
 ```
@@ -276,7 +276,7 @@ admin = AdminSite(permission_classes=[IsAuthenticated])
 ### IsAdminUser
 
 ```python
-from vidyut.permissions import IsAdminUser
+from aksara.permissions import IsAdminUser
 
 # Requires is_staff=True
 admin = AdminSite(permission_classes=[IsAdminUser])
@@ -285,7 +285,7 @@ admin = AdminSite(permission_classes=[IsAdminUser])
 ### Custom Classes
 
 ```python
-from vidyut.permissions import BasePermission
+from aksara.permissions import BasePermission
 
 class IsEditor(BasePermission):
     def has_permission(self, request, view):
@@ -327,8 +327,8 @@ class PostAdmin(ModelAdmin):
 ## Complete Example
 
 ```python
-from vidyut.contrib.admin import AdminSite, ModelAdmin
-from vidyut.permissions import BasePermission
+from aksara.contrib.admin import AdminSite, ModelAdmin
+from aksara.permissions import BasePermission
 from myapp.models import Post, Category, User
 
 

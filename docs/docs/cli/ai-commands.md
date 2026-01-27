@@ -6,7 +6,7 @@ AI-powered CLI commands for development.
 
 ## Overview
 
-Vidyut's AI commands help you:
+Aksara's AI commands help you:
 
 - **Query data** with natural language
 - **Generate code** from descriptions
@@ -14,7 +14,7 @@ Vidyut's AI commands help you:
 - **Plan complex tasks** automatically
 
 ```bash
-vidyut ai --help
+aksara ai --help
 ```
 
 ---
@@ -24,7 +24,7 @@ vidyut ai --help
 Query your database using natural language.
 
 ```bash
-vidyut ai query "Users who signed up this week"
+aksara ai query "Users who signed up this week"
 ```
 
 Output:
@@ -55,13 +55,13 @@ Found 23 results:
 
 ```bash
 # Export to CSV
-vidyut ai query "All orders from last month" --output orders.csv
+aksara ai query "All orders from last month" --output orders.csv
 
 # Just show SQL
-vidyut ai query "Users with posts" --sql-only
+aksara ai query "Users with posts" --sql-only
 
 # More results
-vidyut ai query "All products" --limit 100
+aksara ai query "All products" --limit 100
 ```
 
 ---
@@ -73,7 +73,7 @@ Generate code from natural language descriptions.
 ### Generate Model
 
 ```bash
-vidyut ai generate model "BlogPost with title, slug, content, author FK, tags M2M"
+aksara ai generate model "BlogPost with title, slug, content, author FK, tags M2M"
 ```
 
 Output:
@@ -94,19 +94,19 @@ class BlogPost(Model):
 ### Generate ViewSet
 
 ```bash
-vidyut ai generate viewset BlogPost
+aksara ai generate viewset BlogPost
 ```
 
 ### Generate Serializer
 
 ```bash
-vidyut ai generate serializer BlogPost
+aksara ai generate serializer BlogPost
 ```
 
 ### Generate Test
 
 ```bash
-vidyut ai generate test BlogPost --type crud
+aksara ai generate test BlogPost --type crud
 ```
 
 ### Generate CRUD
@@ -114,7 +114,7 @@ vidyut ai generate test BlogPost --type crud
 Generate model, serializer, viewset, and tests:
 
 ```bash
-vidyut ai generate crud "Product with name, price, description, category FK"
+aksara ai generate crud "Product with name, price, description, category FK"
 ```
 
 ### Options
@@ -132,7 +132,7 @@ vidyut ai generate crud "Product with name, price, description, category FK"
 Analyze your schema for issues and suggest fixes.
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 Output:
@@ -152,7 +152,7 @@ Issues:
   3. [LOW] Comment.created_at missing default
      Fix: Add auto_now_add=True
 
-Run `vidyut ai doctor --fix` to auto-fix issues.
+Run `aksara ai doctor --fix` to auto-fix issues.
 ```
 
 ### Options
@@ -169,19 +169,19 @@ Run `vidyut ai doctor --fix` to auto-fix issues.
 
 ```bash
 # Auto-fix all
-vidyut ai doctor --fix
+aksara ai doctor --fix
 
 # Interactive fixes
-vidyut ai doctor --fix-interactive
+aksara ai doctor --fix-interactive
 
 # Only high severity
-vidyut ai doctor --min-severity high
+aksara ai doctor --min-severity high
 
 # Specific models
-vidyut ai doctor --models User,Post
+aksara ai doctor --models User,Post
 
 # Save report
-vidyut ai doctor --output report.html
+aksara ai doctor --output report.html
 ```
 
 ---
@@ -191,7 +191,7 @@ vidyut ai doctor --output report.html
 Create a multi-step plan for complex tasks.
 
 ```bash
-vidyut ai plan "Add a commenting system to blog posts"
+aksara ai plan "Add a commenting system to blog posts"
 ```
 
 Output:
@@ -244,16 +244,16 @@ Execute plan? [y/N/i(nteractive)]
 
 ```bash
 # Execute immediately
-vidyut ai plan "Add user profiles" --execute
+aksara ai plan "Add user profiles" --execute
 
 # Step by step
-vidyut ai plan "Add ratings" --interactive
+aksara ai plan "Add ratings" --interactive
 
 # Save for later
-vidyut ai plan "Add search" --save search-plan.json
+aksara ai plan "Add search" --save search-plan.json
 
 # Load and execute
-vidyut ai plan --load search-plan.json --execute
+aksara ai plan --load search-plan.json --execute
 ```
 
 ---
@@ -263,7 +263,7 @@ vidyut ai plan --load search-plan.json --execute
 Run an AI agent for complex autonomous tasks.
 
 ```bash
-vidyut ai agent "Review the codebase and suggest improvements"
+aksara ai agent "Review the codebase and suggest improvements"
 ```
 
 Output:
@@ -306,13 +306,13 @@ Would you like me to fix these issues? [y/N]
 
 ```bash
 # Interactive mode
-vidyut ai agent "Improve test coverage" --interactive
+aksara ai agent "Improve test coverage" --interactive
 
 # Read-only analysis
-vidyut ai agent "Review code" --tools query_records,list_models,read_file
+aksara ai agent "Review code" --tools query_records,list_models,read_file
 
 # With timeout
-vidyut ai agent "Refactor models" --timeout 300
+aksara ai agent "Refactor models" --timeout 300
 ```
 
 ---
@@ -322,7 +322,7 @@ vidyut ai agent "Refactor models" --timeout 300
 Modify existing files with AI assistance.
 
 ```bash
-vidyut ai patch models.py "Add phone field to User model"
+aksara ai patch models.py "Add phone field to User model"
 ```
 
 Output:
@@ -356,7 +356,7 @@ Apply patch? [y/N]
 Ask questions about your codebase.
 
 ```bash
-vidyut ai ask "How do I add pagination to a ViewSet?"
+aksara ai ask "How do I add pagination to a ViewSet?"
 ```
 
 Output:
@@ -364,7 +364,7 @@ Output:
 To add pagination to a ViewSet, set the pagination_class:
 
 ```python
-from vidyut.api import ModelViewSet, PageNumberPagination
+from aksara.api import ModelViewSet, PageNumberPagination
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -387,7 +387,7 @@ Related files:
 Configure AI settings.
 
 ```bash
-vidyut ai config --show
+aksara ai config --show
 ```
 
 Output:
@@ -406,8 +406,8 @@ Settings:
 ### Set Configuration
 
 ```bash
-vidyut ai config set AI_PROVIDER anthropic
-vidyut ai config set AI_MODEL claude-3-opus
+aksara ai config set AI_PROVIDER anthropic
+aksara ai config set AI_MODEL claude-3-opus
 ```
 
 ---
@@ -418,36 +418,36 @@ vidyut ai config set AI_MODEL claude-3-opus
 
 ```bash
 # Generate model
-vidyut ai generate model "Comment with text, author, post" > comment.py
+aksara ai generate model "Comment with text, author, post" > comment.py
 
 # Review and add to models.py
 cat comment.py >> models.py
 
 # Generate migration
-vidyut makemigrations
+aksara makemigrations
 ```
 
 ### Analyze and Fix
 
 ```bash
 # Check for issues
-vidyut ai doctor
+aksara ai doctor
 
 # Fix interactively
-vidyut ai doctor --fix-interactive
+aksara ai doctor --fix-interactive
 
 # Verify fixes
-vidyut test
+aksara test
 ```
 
 ### Query and Export
 
 ```bash
 # Query data
-vidyut ai query "Orders over $100 this month" --output big_orders.csv
+aksara ai query "Orders over $100 this month" --output big_orders.csv
 
 # Analyze
-vidyut ai query "Average order value by customer" --output customer_value.json
+aksara ai query "Average order value by customer" --output customer_value.json
 ```
 
 ---
@@ -456,9 +456,9 @@ vidyut ai query "Average order value by customer" --output customer_value.json
 
 | Variable | Description |
 |----------|-------------|
-| `VIDYUT_AI_API_KEY` | API key for AI provider |
-| `VIDYUT_AI_PROVIDER` | AI provider (openai, anthropic) |
-| `VIDYUT_AI_MODEL` | Model to use |
+| `AKSARA_AI_API_KEY` | API key for AI provider |
+| `AKSARA_AI_PROVIDER` | AI provider (openai, anthropic) |
+| `AKSARA_AI_MODEL` | Model to use |
 
 ---
 

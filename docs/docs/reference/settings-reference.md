@@ -1,6 +1,6 @@
 # Settings Reference
 
-Complete reference for all Vidyut configuration options.
+Complete reference for all Aksara configuration options.
 
 ---
 
@@ -10,7 +10,7 @@ Settings are defined in `settings.py` as a `VIDYUT` dictionary:
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     "DATABASE_URL": "postgresql://localhost/myapp",
     # ... more settings
@@ -22,7 +22,7 @@ Or load from environment:
 ```python
 import os
 
-VIDYUT = {
+AKSARA = {
     "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
     "DATABASE_URL": os.environ["DATABASE_URL"],
 }
@@ -143,7 +143,7 @@ List of installed applications.
 "INSTALLED_APPS": [
     "users",
     "posts",
-    "vidyut.contrib.admin",
+    "aksara.contrib.admin",
 ]
 ```
 
@@ -156,8 +156,8 @@ Middleware classes.
 
 ```python
 "MIDDLEWARE": [
-    "vidyut.middleware.RequestIDMiddleware",
-    "vidyut.middleware.LoggingMiddleware",
+    "aksara.middleware.RequestIDMiddleware",
+    "aksara.middleware.LoggingMiddleware",
     "myapp.middleware.CustomMiddleware",
 ]
 ```
@@ -169,13 +169,13 @@ Middleware classes.
 ### DEFAULT_PERMISSION_CLASSES
 
 Type: `list[str]`
-Default: `["vidyut.api.permissions.AllowAny"]`
+Default: `["aksara.api.permissions.AllowAny"]`
 
 Default permissions for all ViewSets.
 
 ```python
 "DEFAULT_PERMISSION_CLASSES": [
-    "vidyut.api.permissions.IsAuthenticated",
+    "aksara.api.permissions.IsAuthenticated",
 ]
 ```
 
@@ -188,8 +188,8 @@ Authentication backends.
 
 ```python
 "DEFAULT_AUTHENTICATION_CLASSES": [
-    "vidyut.api.authentication.TokenAuthentication",
-    "vidyut.api.authentication.SessionAuthentication",
+    "aksara.api.authentication.TokenAuthentication",
+    "aksara.api.authentication.SessionAuthentication",
 ]
 ```
 
@@ -201,7 +201,7 @@ Default: `None`
 Default pagination class.
 
 ```python
-"DEFAULT_PAGINATION_CLASS": "vidyut.api.pagination.PageNumberPagination"
+"DEFAULT_PAGINATION_CLASS": "aksara.api.pagination.PageNumberPagination"
 ```
 
 ### PAGE_SIZE
@@ -576,7 +576,7 @@ Directory for collected static files.
 # settings.py
 import os
 
-VIDYUT = {
+AKSARA = {
     # Core
     "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
     "SECRET_KEY": os.environ["SECRET_KEY"],
@@ -593,15 +593,15 @@ VIDYUT = {
     "INSTALLED_APPS": [
         "users",
         "posts",
-        "vidyut.contrib.admin",
+        "aksara.contrib.admin",
     ],
     
     # API
     "DEFAULT_PERMISSION_CLASSES": [
-        "vidyut.api.permissions.IsAuthenticated",
+        "aksara.api.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "vidyut.api.authentication.TokenAuthentication",
+        "aksara.api.authentication.TokenAuthentication",
     ],
     "PAGE_SIZE": 20,
     

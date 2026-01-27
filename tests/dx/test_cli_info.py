@@ -1,5 +1,5 @@
 """
-Tests for vidyut CLI info command.
+Tests for aksara CLI info command.
 
 Tests the info command output and functionality.
 """
@@ -12,22 +12,22 @@ from unittest.mock import patch, MagicMock, AsyncMock
 
 
 class TestInfoCommand:
-    """Tests for vidyut info CLI command."""
+    """Tests for aksara info CLI command."""
     
     def test_info_command_exists(self):
         """Test that info command is registered."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["info", "--help"])
         
         assert result.exit_code == 0
-        assert "info" in result.output.lower() or "Show Vidyut environment" in result.output
+        assert "info" in result.output.lower() or "Show Aksara environment" in result.output
     
     def test_info_shows_version(self):
-        """Test that info shows Vidyut version."""
-        from vidyut.cli.main import cli
-        from vidyut import __version__
+        """Test that info shows Aksara version."""
+        from aksara.cli.main import cli
+        from aksara import __version__
         
         runner = CliRunner()
         result = runner.invoke(cli, ["info"])
@@ -37,7 +37,7 @@ class TestInfoCommand:
     
     def test_info_shows_cli_version(self):
         """Test that info shows CLI version."""
-        from vidyut.cli.main import cli, CLI_VERSION
+        from aksara.cli.main import cli, CLI_VERSION
         
         runner = CliRunner()
         result = runner.invoke(cli, ["info"])
@@ -46,12 +46,12 @@ class TestInfoCommand:
     
     def test_info_shows_database_not_configured(self):
         """Test that info shows database not configured message when no DB URL."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         
         # Patch settings at the conf module level
-        with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.conf.settings") as mock_settings:
             mock_settings.database_url = None
             mock_settings.debug = False
             mock_settings.migrations_dir = "migrations"
@@ -64,7 +64,7 @@ class TestInfoCommand:
     
     def test_info_shows_apps(self):
         """Test that info shows configured apps."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["info"])
@@ -78,7 +78,7 @@ class TestRedactDbUrl:
     
     def test_redact_password(self):
         """Test that password is redacted from URL."""
-        from vidyut.cli.main import _redact_db_url
+        from aksara.cli.main import _redact_db_url
         
         url = "postgresql://user:secret123@localhost:5432/mydb"
         redacted = _redact_db_url(url)
@@ -90,7 +90,7 @@ class TestRedactDbUrl:
     
     def test_redact_preserves_host_and_db(self):
         """Test that host and database name are preserved."""
-        from vidyut.cli.main import _redact_db_url
+        from aksara.cli.main import _redact_db_url
         
         url = "postgresql://admin:password@db.example.com:5432/production"
         redacted = _redact_db_url(url)
@@ -101,7 +101,7 @@ class TestRedactDbUrl:
     
     def test_redact_handles_asyncpg_driver(self):
         """Test redaction with asyncpg driver."""
-        from vidyut.cli.main import _redact_db_url
+        from aksara.cli.main import _redact_db_url
         
         url = "postgresql+asyncpg://user:secret@localhost/db"
         redacted = _redact_db_url(url)
@@ -111,7 +111,7 @@ class TestRedactDbUrl:
     
     def test_no_password_returns_original(self):
         """Test that URL without password is returned as-is."""
-        from vidyut.cli.main import _redact_db_url
+        from aksara.cli.main import _redact_db_url
         
         url = "postgresql://localhost/mydb"
         redacted = _redact_db_url(url)
@@ -125,7 +125,7 @@ class TestCliVersion:
     
     def test_version_option(self):
         """Test that --version shows version."""
-        from vidyut.cli.main import cli, CLI_VERSION
+        from aksara.cli.main import cli, CLI_VERSION
         
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
@@ -135,19 +135,19 @@ class TestCliVersion:
     
     def test_version_matches_init(self):
         """Test that CLI_VERSION matches module version."""
-        from vidyut.cli.main import CLI_VERSION
-        from vidyut import __version__
+        from aksara.cli.main import CLI_VERSION
+        from aksara import __version__
         
         # Both should be 0.3.12
         assert CLI_VERSION == __version__
 
 
 class TestShellCommand:
-    """Tests for vidyut shell CLI command."""
+    """Tests for aksara shell CLI command."""
     
     def test_shell_command_exists(self):
         """Test that shell command is registered."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["shell", "--help"])
@@ -157,7 +157,7 @@ class TestShellCommand:
     
     def test_shell_has_no_ipython_flag(self):
         """Test that shell has --no-ipython flag."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         result = runner.invoke(cli, ["shell", "--help"])
@@ -166,11 +166,11 @@ class TestShellCommand:
     
     def test_shell_calls_run_shell(self):
         """Test that shell command calls run_shell."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         
-        with patch("vidyut.shell.run_shell") as mock_run_shell:
+        with patch("aksara.shell.run_shell") as mock_run_shell:
             mock_run_shell.return_value = None
             
             result = runner.invoke(cli, ["shell"])
@@ -179,11 +179,11 @@ class TestShellCommand:
     
     def test_shell_passes_no_ipython_flag(self):
         """Test that --no-ipython flag is passed to run_shell."""
-        from vidyut.cli.main import cli
+        from aksara.cli.main import cli
         
         runner = CliRunner()
         
-        with patch("vidyut.shell.run_shell") as mock_run_shell:
+        with patch("aksara.shell.run_shell") as mock_run_shell:
             mock_run_shell.return_value = None
             
             runner.invoke(cli, ["shell", "--no-ipython"])

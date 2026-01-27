@@ -18,8 +18,8 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, ValidationError
 
-from vidyut import Model, fields
-from vidyut.api.schemas import (
+from aksara import Model, fields
+from aksara.api.schemas import (
     generate_create_schema,
     generate_update_schema,
     generate_read_schema,

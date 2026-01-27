@@ -9,10 +9,10 @@ Structured request and response logging.
 `LoggingMiddleware` provides automatic logging for all HTTP requests:
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import LoggingMiddleware
+from aksara import Aksara
+from aksara.middleware import LoggingMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(LoggingMiddleware)
 ```
 
@@ -31,7 +31,7 @@ INFO  | POST /api/users 201 | 45ms | request_id=abc-123
 app.add_middleware(
     LoggingMiddleware,
     log_level="INFO",          # Log level
-    logger_name="vidyut.http", # Logger name
+    logger_name="aksara.http", # Logger name
 )
 ```
 
@@ -40,7 +40,7 @@ app.add_middleware(
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `log_level` | `str` | `"INFO"` | Logging level |
-| `logger_name` | `str` | `"vidyut.http"` | Logger name |
+| `logger_name` | `str` | `"aksara.http"` | Logger name |
 | `log_request_body` | `bool` | `False` | Log request bodies |
 | `log_response_body` | `bool` | `False` | Log response bodies |
 | `exclude_paths` | `list` | `[]` | Paths to skip |
@@ -275,8 +275,8 @@ app.add_middleware(LoggingMiddleware)
 ```python
 import logging
 import structlog
-from vidyut import Vidyut
-from vidyut.middleware import (
+from aksara import Aksara
+from aksara.middleware import (
     RequestIDMiddleware,
     LoggingMiddleware,
     request_id_var,
@@ -298,7 +298,7 @@ structlog.configure(
 )
 
 # Create app
-app = Vidyut()
+app = Aksara()
 
 # Add middleware
 app.add_middleware(RequestIDMiddleware)

@@ -1,11 +1,11 @@
 """
-Vidyut Example App - Models
+Aksara Example App - Models
 
 All models for the basic_app example.
 Demonstrates v0.2+ features: AI metadata, ForeignKey relationships.
 """
 
-from vidyut import Model, fields
+from aksara import Model, fields
 
 
 class User(Model):

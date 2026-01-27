@@ -1,12 +1,12 @@
 # AI Tools
 
-AI-callable functions for interacting with your Vidyut application.
+AI-callable functions for interacting with your Aksara application.
 
 ---
 
 ## Overview
 
-Vidyut exposes a set of tools that AI models can call:
+Aksara exposes a set of tools that AI models can call:
 
 | Category | Tools |
 |----------|-------|
@@ -217,7 +217,7 @@ Generate a model class.
 ```python
 {
     "code": '''
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class BlogPost(Model):
     """A blog post."""
@@ -252,7 +252,7 @@ Generate a ViewSet class.
 ```python
 {
     "code": '''
-from vidyut.api import ModelViewSet, action
+from aksara.api import ModelViewSet, action
 from .models import BlogPost
 from .serializers import BlogPostSerializer
 
@@ -288,10 +288,10 @@ Generate test cases.
 {
     "code": '''
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 from .models import BlogPost
 
-class TestBlogPost(VidyutTestCase):
+class TestBlogPost(AksaraTestCase):
     async def test_create_blog_post(self):
         post = await BlogPost.objects.create(
             title="Test Post",
@@ -393,7 +393,7 @@ Get application settings.
 ### OpenAI Function Calling
 
 ```python
-from vidyut.ai.tools import get_openai_tools
+from aksara.ai.tools import get_openai_tools
 
 tools = get_openai_tools()
 # Returns OpenAI-formatted function definitions
@@ -408,7 +408,7 @@ response = await openai.chat.completions.create(
 ### Anthropic Tool Use
 
 ```python
-from vidyut.ai.tools import get_anthropic_tools
+from aksara.ai.tools import get_anthropic_tools
 
 tools = get_anthropic_tools()
 # Returns Anthropic-formatted tool definitions
@@ -423,7 +423,7 @@ response = await anthropic.messages.create(
 ### Executing Tool Calls
 
 ```python
-from vidyut.ai.tools import execute_tool
+from aksara.ai.tools import execute_tool
 
 # Parse tool call from LLM response
 tool_call = response.tool_calls[0]
@@ -442,7 +442,7 @@ result = await execute_tool(
 ### Register Custom Tools
 
 ```python
-from vidyut.ai.tools import register_tool, Tool
+from aksara.ai.tools import register_tool, Tool
 
 @register_tool
 class SendNotificationTool(Tool):
@@ -492,7 +492,7 @@ class DeleteAllDataTool(Tool):
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_TOOLS": {
         # Enable/disable built-in tools
         "data_tools": True,

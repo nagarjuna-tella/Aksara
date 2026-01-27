@@ -1,26 +1,26 @@
-# Vidyut Framework
+# Aksara Framework
 
 ## The AI-Native Async Backend Framework for Python
 
 <div class="hero-section" markdown>
 
-**Vidyut** is a modern, async-first backend framework built on FastAPI and PostgreSQL. It combines the developer experience of Django with the performance of async Python — and adds first-class AI integration that makes your application intelligible to LLMs.
+**Aksara** is a modern, async-first backend framework built on FastAPI and PostgreSQL. It combines the developer experience of Django with the performance of async Python — and adds first-class AI integration that makes your application intelligible to LLMs.
 
 [Get Started](quickstart.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/vidyut-orm/vidyut){ .md-button }
+[View on GitHub](https://github.com/aksara-orm/aksara){ .md-button }
 
 </div>
 
 ---
 
-## Why Vidyut?
+## Why Aksara?
 
 ### ⚡ Async-Native from Day One
 
-Vidyut is built entirely on async Python. Every database query, every API endpoint, every middleware — all async. No thread pools, no blocking calls, just pure `asyncio` performance.
+Aksara is built entirely on async Python. Every database query, every API endpoint, every middleware — all async. No thread pools, no blocking calls, just pure `asyncio` performance.
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Article(Model):
     title = fields.String(max_length=200)
@@ -34,16 +34,16 @@ articles = await Article.objects.filter(published=True).order_by("-created_at")
 
 ### 🧠 AI-Native Architecture
 
-Vidyut is the first backend framework designed for AI agents. Every model, every endpoint, every action is automatically exposed as structured AI tools with full type information.
+Aksara is the first backend framework designed for AI agents. Every model, every endpoint, every action is automatically exposed as structured AI tools with full type information.
 
 ```python
-from vidyut.ai import build_full_ai_context
+from aksara.ai import build_full_ai_context
 
 # Export your entire app as structured JSON for LLMs
 context = await build_full_ai_context(app)
 
 # Or let AI agents query your data directly
-from vidyut.ai import execute_ai_query_plan
+from aksara.ai import execute_ai_query_plan
 result = await execute_ai_query_plan(query_plan)
 ```
 
@@ -52,8 +52,8 @@ result = await execute_ai_query_plan(query_plan)
 If you've used Django, you'll feel right at home. Models, migrations, admin, viewsets — all the patterns you love, reimagined for async.
 
 ```python
-from vidyut.api import ModelViewSet, action
-from vidyut.permissions import IsAuthenticated
+from aksara.api import ModelViewSet, action
+from aksara.permissions import IsAuthenticated
 
 class ArticleViewSet(ModelViewSet):
     model = Article
@@ -136,9 +136,9 @@ Create a complete blog API in under 50 lines:
 
 ```python
 # main.py
-from vidyut import Vidyut, Model, fields
-from vidyut.api import ModelViewSet, include_viewset
-from vidyut.permissions import IsAuthenticated
+from aksara import Aksara, Model, fields
+from aksara.api import ModelViewSet, include_viewset
+from aksara.permissions import IsAuthenticated
 
 # Define your models
 class Author(Model):
@@ -163,7 +163,7 @@ class PostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 # Initialize app
-app = Vidyut(
+app = Aksara(
     database_url="postgresql://localhost/myapp",
     title="Blog API",
     enable_admin=True,
@@ -177,9 +177,9 @@ include_viewset(app, PostViewSet)
 Run it:
 
 ```bash
-vidyut makemigrations --app main
-vidyut migrate
-vidyut run main:app --reload
+aksara makemigrations --app main
+aksara migrate
+aksara run main:app --reload
 ```
 
 Visit `http://localhost:8000/docs` to see your auto-generated API documentation.
@@ -203,7 +203,7 @@ The latest release focuses on stability and AI capabilities:
 ## Installation
 
 ```bash
-pip install vidyut
+pip install aksara
 ```
 
 Requires Python 3.11+ and PostgreSQL 13+.
@@ -214,14 +214,14 @@ Requires Python 3.11+ and PostgreSQL 13+.
 
 ## Community & Support
 
-- **GitHub**: [vidyut-orm/vidyut](https://github.com/vidyut-orm/vidyut)
-- **Issues**: [Report bugs or request features](https://github.com/vidyut-orm/vidyut/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/vidyut-orm/vidyut/discussions)
+- **GitHub**: [aksara-orm/aksara](https://github.com/aksara-orm/aksara)
+- **Issues**: [Report bugs or request features](https://github.com/aksara-orm/aksara/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/aksara-orm/aksara/discussions)
 
 ---
 
 <div class="footer-tagline" markdown>
 
-**Vidyut** — *Lightning-fast async backends, AI-ready from the start.*
+**Aksara** — *Lightning-fast async backends, AI-ready from the start.*
 
 </div>

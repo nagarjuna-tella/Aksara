@@ -9,8 +9,8 @@ Control API access with permission classes.
 Permissions determine whether a request should be granted or denied access:
 
 ```python
-from vidyut.api import ModelViewSet
-from vidyut.permissions import IsAuthenticated
+from aksara.api import ModelViewSet
+from aksara.permissions import IsAuthenticated
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -26,7 +26,7 @@ class PostViewSet(ModelViewSet):
 Unrestricted access:
 
 ```python
-from vidyut.permissions import AllowAny
+from aksara.permissions import AllowAny
 
 class PublicViewSet(ModelViewSet):
     model = Post
@@ -38,7 +38,7 @@ class PublicViewSet(ModelViewSet):
 Only authenticated users:
 
 ```python
-from vidyut.permissions import IsAuthenticated
+from aksara.permissions import IsAuthenticated
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -50,7 +50,7 @@ class PostViewSet(ModelViewSet):
 Only staff/admin users:
 
 ```python
-from vidyut.permissions import IsAdminUser
+from aksara.permissions import IsAdminUser
 
 class AdminViewSet(ModelViewSet):
     model = Settings
@@ -62,7 +62,7 @@ class AdminViewSet(ModelViewSet):
 Authenticated for writes, anyone can read:
 
 ```python
-from vidyut.permissions import IsAuthenticatedOrReadOnly
+from aksara.permissions import IsAuthenticatedOrReadOnly
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -79,7 +79,7 @@ class PostViewSet(ModelViewSet):
 Override permissions for specific actions:
 
 ```python
-from vidyut.permissions import IsAuthenticated, IsAdminUser
+from aksara.permissions import IsAuthenticated, IsAdminUser
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -102,8 +102,8 @@ class PostViewSet(ModelViewSet):
 ### Using action Decorator
 
 ```python
-from vidyut.api import action
-from vidyut.permissions import IsAdminUser
+from aksara.api import action
+from aksara.permissions import IsAdminUser
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -121,7 +121,7 @@ class PostViewSet(ModelViewSet):
 ### Basic Custom Permission
 
 ```python
-from vidyut.permissions import BasePermission
+from aksara.permissions import BasePermission
 
 class IsOwner(BasePermission):
     """Only allow owners of an object to edit it."""
@@ -251,7 +251,7 @@ class PostViewSet(ModelViewSet):
 ### OR Logic (Any can pass)
 
 ```python
-from vidyut.permissions import BasePermission
+from aksara.permissions import BasePermission
 
 class IsOwnerOrAdmin(BasePermission):
     async def has_object_permission(self, request, view, obj):
@@ -303,7 +303,7 @@ class ComplexPermission(BasePermission):
 ### Custom Messages
 
 ```python
-from vidyut.permissions import BasePermission, PermissionDenied
+from aksara.permissions import BasePermission, PermissionDenied
 
 class IsOwner(BasePermission):
     message = "You can only modify your own content."
@@ -353,7 +353,7 @@ class PostViewSet(ModelViewSet):
 ### Using Permission Class
 
 ```python
-from vidyut.permissions import IsOwner
+from aksara.permissions import IsOwner
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -403,7 +403,7 @@ class CustomPermission(BasePermission):
 
 ```python
 # permissions.py
-from vidyut.permissions import BasePermission, PermissionDenied
+from aksara.permissions import BasePermission, PermissionDenied
 
 
 class IsAuthenticated(BasePermission):
@@ -454,7 +454,7 @@ class IsNotBanned(BasePermission):
 
 
 # viewsets.py
-from vidyut.api import ModelViewSet, action
+from aksara.api import ModelViewSet, action
 from myapp.permissions import IsAuthenticated, IsOwnerOrAdmin, CanPublish
 
 

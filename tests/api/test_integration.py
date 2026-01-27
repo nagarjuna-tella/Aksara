@@ -1,11 +1,11 @@
 """
-Integration Tests for Vidyut API Layer
+Integration Tests for Aksara API Layer
 
 These tests require a real PostgreSQL database.
 Set DATABASE_URL environment variable to run.
 
 Example:
-    DATABASE_URL=postgresql://postgres:postgres@localhost/vidyut_test pytest tests/api/test_integration.py -v
+    DATABASE_URL=postgresql://postgres:postgres@localhost/aksara_test pytest tests/api/test_integration.py -v
 """
 
 import os
@@ -23,8 +23,8 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 async def db():
     """Create database connection and clean up tables."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     
@@ -48,7 +48,7 @@ async def db():
 @pytest.fixture
 def user_model(db):
     """Create a test user model."""
-    from vidyut import Model, fields
+    from aksara import Model, fields
     
     class ApiTestUser(Model):
         email = fields.String(max_length=255, unique=True)
@@ -64,7 +64,7 @@ def user_model(db):
 @pytest.fixture
 def post_model(db, user_model):
     """Create a test post model with FK to user."""
-    from vidyut import Model, fields
+    from aksara import Model, fields
     
     class ApiTestPost(Model):
         title = fields.String(max_length=200)
@@ -116,7 +116,7 @@ async def tables_created(db, user_model, post_model):
 @pytest.fixture
 def user_viewset(user_model):
     """Create a ViewSet for the user model."""
-    from vidyut.api import ModelViewSet
+    from aksara.api import ModelViewSet
     
     class UserViewSet(ModelViewSet):
         model = user_model
@@ -131,7 +131,7 @@ def user_viewset(user_model):
 @pytest.fixture
 def post_viewset(post_model):
     """Create a ViewSet for the post model."""
-    from vidyut.api import ModelViewSet
+    from aksara.api import ModelViewSet
     
     class PostViewSet(ModelViewSet):
         model = post_model
@@ -145,7 +145,7 @@ def post_viewset(post_model):
 async def app(db, tables_created, user_viewset, post_viewset):
     """Create a FastAPI app with ViewSets registered."""
     from fastapi import FastAPI
-    from vidyut.api import include_viewset
+    from aksara.api import include_viewset
     
     app = FastAPI()
     include_viewset(app, user_viewset)

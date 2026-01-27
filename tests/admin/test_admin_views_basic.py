@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from starlette.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from vidyut import Model, fields, Vidyut
-from vidyut.registry import ModelRegistry
+from aksara import Model, fields, Aksara
+from aksara.registry import ModelRegistry
 
 
 def create_staff_middleware():
@@ -37,12 +37,12 @@ class TestAdminIndexView:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_admin_index_shows_registered_models(self):
         """Test that admin index shows registered models."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Author(Model):
             name = fields.String()
@@ -59,7 +59,7 @@ class TestAdminIndexView:
         site.register(Author)
         site.register(Post)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -76,7 +76,7 @@ class TestAdminIndexView:
     
     def test_admin_index_empty_when_no_models(self):
         """Test admin index shows empty state when no models registered."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -96,12 +96,12 @@ class TestAdminAppIndexView:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_app_index_shows_app_models(self):
         """Test that app index shows all models for an app."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Product(Model):
             name = fields.String()
@@ -118,7 +118,7 @@ class TestAdminAppIndexView:
         site.register(Product)
         site.register(Order)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -134,7 +134,7 @@ class TestAdminAppIndexView:
     
     def test_app_index_404_for_unknown_app(self):
         """Test that app index returns 404 for unknown app."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -153,12 +153,12 @@ class TestAdminModelListView:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_model_list_view_renders(self):
         """Test that model list view renders correctly."""
-        from vidyut.contrib.admin import site, ModelAdmin
+        from aksara.contrib.admin import site, ModelAdmin
         
         class Item(Model):
             name = fields.String()
@@ -172,7 +172,7 @@ class TestAdminModelListView:
         
         site.register(Item, ItemAdmin)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -194,7 +194,7 @@ class TestAdminModelListView:
     
     def test_model_list_404_for_unknown_model(self):
         """Test that model list returns 404 for unknown model."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class KnownModel(Model):
             name = fields.String()
@@ -204,7 +204,7 @@ class TestAdminModelListView:
         
         site.register(KnownModel)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -223,12 +223,12 @@ class TestAdminModelFormView:
     def setup_method(self):
         """Clear registries before each test."""
         ModelRegistry.clear()
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         site.clear()
     
     def test_model_add_form_renders(self):
         """Test that model add form renders correctly."""
-        from vidyut.contrib.admin import site
+        from aksara.contrib.admin import site
         
         class Article(Model):
             title = fields.String()
@@ -239,7 +239,7 @@ class TestAdminModelFormView:
         
         site.register(Article)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             debug=True,
             auto_discover_views=False,
@@ -264,7 +264,7 @@ class TestModelAdminConfiguration:
     
     def test_get_list_display_default(self):
         """Test default list_display auto-picks fields."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()
@@ -282,7 +282,7 @@ class TestModelAdminConfiguration:
     
     def test_get_list_display_custom(self):
         """Test custom list_display is used."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()
@@ -300,7 +300,7 @@ class TestModelAdminConfiguration:
     
     def test_get_form_fields_excludes_pk(self):
         """Test form_fields excludes primary key."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()
@@ -315,7 +315,7 @@ class TestModelAdminConfiguration:
     
     def test_get_form_fields_excludes_readonly(self):
         """Test form_fields excludes readonly fields."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             name = fields.String()
@@ -334,7 +334,7 @@ class TestModelAdminConfiguration:
     
     def test_get_field_type_mapping(self):
         """Test field type to HTML input type mapping."""
-        from vidyut.contrib.admin import ModelAdmin
+        from aksara.contrib.admin import ModelAdmin
         
         class TestModel(Model):
             email_field = fields.Email()

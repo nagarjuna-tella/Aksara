@@ -10,8 +10,8 @@ import logging
 import pytest
 from starlette.testclient import TestClient
 
-from vidyut import Vidyut
-from vidyut.middleware import (
+from aksara import Aksara
+from aksara.middleware import (
     LoggingMiddleware,
     RequestIDMiddleware,
     TenantMiddleware,
@@ -19,7 +19,7 @@ from vidyut.middleware import (
     tenant_id_var,
     user_id_var,
 )
-import vidyut.conf as conf
+import aksara.conf as conf
 
 
 class TestLoggingMiddleware:
@@ -38,7 +38,7 @@ class TestLoggingMiddleware:
     
     def test_logs_request(self, caplog):
         """Test that requests are logged."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -50,7 +50,7 @@ class TestLoggingMiddleware:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test")
         
@@ -59,14 +59,14 @@ class TestLoggingMiddleware:
         # Check log was emitted
         assert len(caplog.records) >= 1
         log_record = caplog.records[-1]
-        assert log_record.name == "vidyut.request"
+        assert log_record.name == "aksara.request"
         assert "GET" in log_record.message
         assert "/test" in log_record.message
         assert "200" in log_record.message
     
     def test_logs_timing(self, caplog):
         """Test that request timing is logged."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -80,7 +80,7 @@ class TestLoggingMiddleware:
             await asyncio.sleep(0.01)  # 10ms
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/slow")
         
@@ -92,7 +92,7 @@ class TestLoggingMiddleware:
     
     def test_logs_request_id(self, caplog):
         """Test that request ID is included in logs."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -105,7 +105,7 @@ class TestLoggingMiddleware:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test", headers={"X-Request-ID": "test-req-123"})
         
@@ -116,7 +116,7 @@ class TestLoggingMiddleware:
     
     def test_logs_tenant_id(self, caplog):
         """Test that tenant ID is included in logs."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -129,7 +129,7 @@ class TestLoggingMiddleware:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test", headers={"X-Tenant-Id": "acme"})
         
@@ -142,7 +142,7 @@ class TestLoggingMiddleware:
         """Test that logging can be disabled via settings."""
         conf.settings.log_requests = False
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -154,19 +154,19 @@ class TestLoggingMiddleware:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test")
         
         assert response.status_code == 200
         
         # No logs should be emitted
-        vidyut_logs = [r for r in caplog.records if r.name == "vidyut.request"]
-        assert len(vidyut_logs) == 0
+        aksara_logs = [r for r in caplog.records if r.name == "aksara.request"]
+        assert len(aksara_logs) == 0
     
     def test_logs_error_status(self, caplog):
         """Test that error status codes are logged appropriately."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -179,7 +179,7 @@ class TestLoggingMiddleware:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
         
-        with caplog.at_level(logging.WARNING, logger="vidyut.request"):
+        with caplog.at_level(logging.WARNING, logger="aksara.request"):
             client = TestClient(app, raise_server_exceptions=False)
             response = client.get("/error")
         
@@ -206,7 +206,7 @@ class TestLoggingMiddlewareJsonFormat:
     
     def test_json_format_logs_dict(self, caplog):
         """Test that JSON format logs a dict."""
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -218,7 +218,7 @@ class TestLoggingMiddlewareJsonFormat:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test")
         
@@ -264,7 +264,7 @@ class TestLoggingMiddlewareUserContext:
                 finally:
                     user_id_var.set(None)
         
-        app = Vidyut(
+        app = Aksara(
             database_url=None,
             auto_discover_views=False,
             middlewares=[
@@ -277,7 +277,7 @@ class TestLoggingMiddlewareUserContext:
         async def test_endpoint():
             return {"status": "ok"}
         
-        with caplog.at_level(logging.INFO, logger="vidyut.request"):
+        with caplog.at_level(logging.INFO, logger="aksara.request"):
             client = TestClient(app)
             response = client.get("/test")
         
@@ -292,7 +292,7 @@ class TestContextVariables:
     
     def test_context_vars_importable(self):
         """Test that context vars can be imported from middleware package."""
-        from vidyut.middleware import request_id_var, tenant_id_var, user_id_var
+        from aksara.middleware import request_id_var, tenant_id_var, user_id_var
         
         assert request_id_var is not None
         assert tenant_id_var is not None
@@ -300,7 +300,7 @@ class TestContextVariables:
     
     def test_context_vars_default_none(self):
         """Test that context vars default to None."""
-        from vidyut.middleware import request_id_var, tenant_id_var, user_id_var
+        from aksara.middleware import request_id_var, tenant_id_var, user_id_var
         
         # Outside of a request context
         assert request_id_var.get() is None
@@ -309,7 +309,7 @@ class TestContextVariables:
     
     def test_context_vars_can_be_set(self):
         """Test that context vars can be set and reset."""
-        from vidyut.middleware import request_id_var
+        from aksara.middleware import request_id_var
         
         token = request_id_var.set("test-123")
         assert request_id_var.get() == "test-123"

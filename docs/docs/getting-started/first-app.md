@@ -1,6 +1,6 @@
 # First App
 
-Build your first Vidyut application from scratch.
+Build your first Aksara application from scratch.
 
 ---
 
@@ -19,7 +19,7 @@ In this guide, you'll create a **Task Management API** with:
 
 Before starting, ensure you have:
 
-- Vidyut [installed](installation.md)
+- Aksara [installed](installation.md)
 - PostgreSQL [set up](database-setup.md) and running
 - A database created for your project
 
@@ -28,7 +28,7 @@ Before starting, ensure you have:
 ## Step 1: Create the Project
 
 ```bash
-vidyut startproject taskapi
+aksara startproject taskapi
 cd taskapi
 ```
 
@@ -42,7 +42,7 @@ Edit `.env` with your database connection:
 
 ```bash
 DATABASE_URL=postgresql://postgres:password@localhost:5432/taskapi
-VIDYUT_DEBUG=true
+AKSARA_DEBUG=true
 ```
 
 Create the database if it doesn't exist:
@@ -60,7 +60,7 @@ Open `app/models.py` and replace its contents:
 ```python
 """Task Management Models"""
 
-from vidyut import Model, fields
+from aksara import Model, fields
 
 
 class Task(Model):
@@ -121,10 +121,10 @@ Generate and apply the database schema:
 
 ```bash
 # Generate migration file
-vidyut makemigrations --app app.models
+aksara makemigrations --app app.models
 
 # Apply to database
-vidyut migrate
+aksara migrate
 ```
 
 You should see:
@@ -146,8 +146,8 @@ Open `app/views.py` and replace its contents:
 from uuid import UUID
 from fastapi import Request, HTTPException
 
-from vidyut.api import ModelViewSet, action
-from vidyut.permissions import IsAuthenticated, AllowAny
+from aksara.api import ModelViewSet, action
+from aksara.permissions import IsAuthenticated, AllowAny
 
 from app.models import Task
 
@@ -251,7 +251,7 @@ Open `app/urls.py`:
 """URL Configuration"""
 
 from fastapi import APIRouter
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 
 from app.views import TaskViewSet
 
@@ -268,15 +268,15 @@ Open `main.py` and update it:
 ```python
 """Task API Application"""
 
-from vidyut import Vidyut
+from aksara import Aksara
 from app.urls import router
 
-# Import settings to configure Vidyut
+# Import settings to configure Aksara
 import settings
 
-app = Vidyut(
+app = Aksara(
     title="Task Management API",
-    description="A simple task management API built with Vidyut",
+    description="A simple task management API built with Aksara",
     enable_admin=True,
     debug=True,
 )
@@ -291,7 +291,7 @@ Make sure `settings.py` exists and configures the database:
 """Application Settings"""
 
 import os
-from vidyut import configure
+from aksara import configure
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -300,10 +300,10 @@ DATABASE_URL = os.getenv(
 
 configure(
     database_url=DATABASE_URL,
-    debug=os.getenv("VIDYUT_DEBUG", "true").lower() == "true",
+    debug=os.getenv("AKSARA_DEBUG", "true").lower() == "true",
     installed_apps=[
-        "vidyut.contrib.auth",
-        "vidyut.contrib.admin",
+        "aksara.contrib.auth",
+        "aksara.contrib.admin",
         "app",
     ],
 )
@@ -314,13 +314,13 @@ configure(
 ## Step 8: Run the Application
 
 ```bash
-vidyut run main:app --reload
+aksara run main:app --reload
 ```
 
 You should see:
 
 ```
-⚡ Vidyut v0.4.9
+⚡ Aksara v0.4.9
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
 INFO:     Started server process
@@ -340,7 +340,7 @@ Open **http://localhost:8000/docs** in your browser to see the interactive API d
 curl -X POST http://localhost:8000/api/tasks/ \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Learn Vidyut",
+    "title": "Learn Aksara",
     "description": "Complete the getting started guide",
     "priority": 3
   }'
@@ -350,7 +350,7 @@ Response:
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
-  "title": "Learn Vidyut",
+  "title": "Learn Aksara",
   "description": "Complete the getting started guide",
   "status": "pending",
   "priority": 3,
@@ -393,8 +393,8 @@ Visit **http://localhost:8000/admin** to manage tasks through the admin interfac
 !!! note "Admin Login Required"
     Create a superuser to access admin:
     ```bash
-    vidyut shell
-    >>> from vidyut.contrib.auth import User
+    aksara shell
+    >>> from aksara.contrib.auth import User
     >>> await User.objects.create(
     ...     email="admin@example.com",
     ...     hashed_password=User.hash_password("admin123"),
@@ -409,7 +409,7 @@ Visit **http://localhost:8000/admin** to manage tasks through the admin interfac
 
 In this guide, you:
 
-1. ✅ Created a new Vidyut project
+1. ✅ Created a new Aksara project
 2. ✅ Defined a model with various field types
 3. ✅ Generated and applied migrations
 4. ✅ Created a ViewSet with custom actions

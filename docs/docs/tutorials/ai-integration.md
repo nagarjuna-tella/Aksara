@@ -1,6 +1,6 @@
 # Tutorial: AI Integration
 
-Add AI-powered features to your Vidyut application.
+Add AI-powered features to your Aksara application.
 
 ---
 
@@ -19,9 +19,9 @@ Enhance your application with AI features:
 
 ## Prerequisites
 
-- Existing Vidyut project (or complete the Blog API tutorial first)
+- Existing Aksara project (or complete the Blog API tutorial first)
 - OpenAI API key or Anthropic API key
-- Vidyut 0.4.0+
+- Aksara 0.4.0+
 
 ---
 
@@ -30,7 +30,7 @@ Enhance your application with AI features:
 ### Install AI Dependencies
 
 ```bash
-pip install vidyut[ai]
+pip install aksara[ai]
 ```
 
 ### Configure AI Provider
@@ -39,7 +39,7 @@ pip install vidyut[ai]
 # settings.py
 import os
 
-VIDYUT = {
+AKSARA = {
     # ... existing settings ...
     
     # AI Mode
@@ -66,23 +66,23 @@ Query your data with natural language:
 
 ```bash
 # Basic query
-vidyut ai query "Show all published posts"
+aksara ai query "Show all published posts"
 
 # Complex query
-vidyut ai query "Posts by John that have more than 5 comments"
+aksara ai query "Posts by John that have more than 5 comments"
 
 # Aggregations
-vidyut ai query "Average number of comments per post"
+aksara ai query "Average number of comments per post"
 
 # Time-based
-vidyut ai query "Users who signed up this week"
+aksara ai query "Users who signed up this week"
 ```
 
 ### Python API
 
 ```python
 # app/reports.py
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 async def generate_report():
     engine = QueryEngine()
@@ -111,9 +111,9 @@ async def generate_report():
 
 ```python
 # app/viewsets.py
-from vidyut.api import ViewSet, action
-from vidyut.api.permissions import IsAuthenticated
-from vidyut.ai import QueryEngine
+from aksara.api import ViewSet, action
+from aksara.api.permissions import IsAuthenticated
+from aksara.ai import QueryEngine
 
 class AIViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
@@ -167,7 +167,7 @@ Response:
 ### Generate Models via CLI
 
 ```bash
-vidyut ai generate model "Review with rating (1-5), comment text, user FK, product FK"
+aksara ai generate model "Review with rating (1-5), comment text, user FK, product FK"
 ```
 
 Output:
@@ -188,20 +188,20 @@ class Review(Model):
 ### Generate ViewSets
 
 ```bash
-vidyut ai generate viewset Review --features pagination,filtering,search
+aksara ai generate viewset Review --features pagination,filtering,search
 ```
 
 ### Generate Tests
 
 ```bash
-vidyut ai generate test Review --type crud,api
+aksara ai generate test Review --type crud,api
 ```
 
 ### Programmatic Generation
 
 ```python
 # scripts/scaffold.py
-from vidyut.ai import Codegen
+from aksara.ai import Codegen
 
 async def scaffold_feature(description: str):
     gen = Codegen()
@@ -232,8 +232,8 @@ Add natural language search to your admin:
 
 ```python
 # admin.py
-from vidyut.contrib.admin import AdminSite, ModelAdmin
-from vidyut.ai import QueryEngine
+from aksara.contrib.admin import AdminSite, ModelAdmin
+from aksara.ai import QueryEngine
 
 class SmartAdminSite(AdminSite):
     async def search(self, query: str):
@@ -266,7 +266,7 @@ class PostAdmin(ModelAdmin):
     
     async def get_filters(self):
         """AI-suggested filters based on data patterns."""
-        from vidyut.ai import ContextEngine
+        from aksara.ai import ContextEngine
         
         context = await ContextEngine().gather(f"Useful filters for {self.model.__name__}")
         
@@ -285,7 +285,7 @@ When errors occur in debug mode, get AI-powered suggestions:
 
 ```python
 # Automatically enabled when AI_MODE=True and DEBUG=True
-app = Vidyut(debug=True)
+app = Aksara(debug=True)
 ```
 
 On error, the debug page shows:
@@ -309,7 +309,7 @@ AI Analysis:
 ### Programmatic Debug Help
 
 ```python
-from vidyut.ai import get_debug_suggestion
+from aksara.ai import get_debug_suggestion
 
 try:
     post = await Post.objects.get(id=post_id)
@@ -329,7 +329,7 @@ except Post.DoesNotExist as e:
 ### Run Schema Doctor
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 Output:
@@ -346,19 +346,19 @@ Issues Found:
   3. [LOW] Comment model has no updated_at field
      Suggestion: Add updated_at = fields.DateTimeField(auto_now=True)
 
-Run `vidyut ai doctor --fix` to auto-fix issues.
+Run `aksara ai doctor --fix` to auto-fix issues.
 ```
 
 ### Auto-Fix Issues
 
 ```bash
-vidyut ai doctor --fix --interactive
+aksara ai doctor --fix --interactive
 ```
 
 ### Programmatic Analysis
 
 ```python
-from vidyut.ai import SchemaDoctor
+from aksara.ai import SchemaDoctor
 
 async def check_schema():
     doctor = SchemaDoctor()
@@ -378,7 +378,7 @@ async def check_schema():
 ### Generate Test Cases
 
 ```python
-from vidyut.ai import Codegen
+from aksara.ai import Codegen
 
 async def generate_tests_for_model(model_name: str):
     gen = Codegen()
@@ -396,9 +396,9 @@ async def generate_tests_for_model(model_name: str):
 
 ```python
 # In your test file
-from vidyut.ai import suggest_tests
+from aksara.ai import suggest_tests
 
-class TestPost(VidyutTestCase):
+class TestPost(AksaraTestCase):
     async def test_create_post(self):
         ...
     
@@ -421,8 +421,8 @@ class TestPost(VidyutTestCase):
 
 ```python
 # app/chat.py
-from vidyut.api import ViewSet, action
-from vidyut.ai import AgentRuntime
+from aksara.api import ViewSet, action
+from aksara.ai import AgentRuntime
 
 class ChatViewSet(ViewSet):
     @action(detail=False, methods=["post"])
@@ -492,7 +492,7 @@ engine = QueryEngine(read_only=True)
 Enable audit logging for all AI operations:
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "audit_log": True,
         "audit_log_file": "logs/ai_audit.log",
@@ -505,7 +505,7 @@ VIDYUT = {
 Limit AI API usage:
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         "rate_limit_requests": 100,
         "rate_limit_window": 3600,  # per hour
@@ -521,9 +521,9 @@ Here's a complete AI-enhanced ViewSet:
 
 ```python
 # app/ai_viewsets.py
-from vidyut.api import ViewSet, action
-from vidyut.api.permissions import IsAuthenticated
-from vidyut.ai import QueryEngine, Codegen, SchemaDoctor
+from aksara.api import ViewSet, action
+from aksara.api.permissions import IsAuthenticated
+from aksara.ai import QueryEngine, Codegen, SchemaDoctor
 
 class AIAssistantViewSet(ViewSet):
     """AI-powered assistant endpoints."""

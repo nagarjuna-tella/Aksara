@@ -1,5 +1,5 @@
 """
-Tests for Vidyut AI Patch Engine (v0.4.4)
+Tests for Aksara AI Patch Engine (v0.4.4)
 
 Comprehensive tests for the AI Patch module including:
 - Pydantic model validation
@@ -25,7 +25,7 @@ from typing import Optional, Dict, Any
 
 from pydantic import ValidationError
 
-from vidyut.ai.patch import (
+from aksara.ai.patch import (
     # Enums
     PatchOperationType,
     PatchValidationError,
@@ -84,7 +84,7 @@ def temp_project():
     
     # Create models.py
     models_content = '''"""Models for app."""
-from vidyut import Model, fields
+from aksara import Model, fields
 
 
 class User(Model):
@@ -99,7 +99,7 @@ class User(Model):
     
     # Create views.py
     views_content = '''"""ViewSets for app."""
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from app.models import User
 
 
@@ -587,7 +587,7 @@ class TestFileExecutors:
         op = AiPatchOperation(
             type="modify_file",
             path="app/models.py",
-            text='"""New models."""\nfrom vidyut import Model, fields\n'
+            text='"""New models."""\nfrom aksara import Model, fields\n'
         )
         
         success, change, error = apply_modify_file(op, temp_project, file_cache)
@@ -679,7 +679,7 @@ class TestFileExecutors:
         op = AiPatchOperation(
             type="add_import",
             path="app/models.py",
-            import_statement="from vidyut import Model, fields"
+            import_statement="from aksara import Model, fields"
         )
         
         success, change, error = apply_add_import(op, temp_project, file_cache)
@@ -1143,7 +1143,7 @@ class TestModuleExports:
     
     def test_patch_exports(self):
         """Test patch module exports are available."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AiPatchOperation,
             AiPatchRequest,
             AiPatchResult,
@@ -1157,7 +1157,7 @@ class TestModuleExports:
     
     def test_all_list_complete(self):
         """Test __all__ list is complete."""
-        from vidyut import ai
+        from aksara import ai
         
         # Check patch exports
         assert "AiPatchOperation" in ai.__all__

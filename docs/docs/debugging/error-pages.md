@@ -6,10 +6,10 @@ Rich error pages with context for faster debugging.
 
 ## Overview
 
-When `debug=True`, Vidyut displays detailed error pages instead of generic 500 errors:
+When `debug=True`, Aksara displays detailed error pages instead of generic 500 errors:
 
 ```python
-app = Vidyut(debug=True)
+app = Aksara(debug=True)
 ```
 
 ![Debug Error Page](../assets/images/debug-error-page.png)
@@ -61,16 +61,16 @@ Complete request details:
 
 ```python
 # Development
-app = Vidyut(debug=True)
+app = Aksara(debug=True)
 
 # Production (default)
-app = Vidyut(debug=False)
+app = Aksara(debug=False)
 ```
 
 ### Custom Error Template
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_error_template="myapp/custom_error.html",
 )
@@ -79,7 +79,7 @@ app = Vidyut(
 ### Hide Sensitive Data
 
 ```python
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_hide_vars=["password", "secret", "token", "api_key"],
 )
@@ -161,14 +161,14 @@ Search through the stack trace and variables.
 import os
 
 DEBUG = os.getenv("ENVIRONMENT") == "development"
-app = Vidyut(debug=DEBUG)
+app = Aksara(debug=DEBUG)
 ```
 
 ### Conditional Debug
 
 ```python
 # Even in debug mode, hide from non-staff
-app = Vidyut(
+app = Aksara(
     debug=True,
     debug_allowed_ips=["127.0.0.1", "::1"],  # Localhost only
 )
@@ -181,7 +181,7 @@ app = Vidyut(
 Override default error handling:
 
 ```python
-from vidyut.exceptions import HTTPException
+from aksara.exceptions import HTTPException
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
@@ -250,13 +250,13 @@ Click "AI Debug" for automated analysis and fix suggestions.
 ## Complete Example
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 import os
 
 # Environment-based debug mode
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
-app = Vidyut(
+app = Aksara(
     debug=DEBUG,
     debug_hide_vars=[
         "password",

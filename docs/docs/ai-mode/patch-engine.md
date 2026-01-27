@@ -14,7 +14,7 @@ The Patch Engine modifies existing code safely:
 - **Conflict detection** for concurrent changes
 
 ```python
-from vidyut.ai import PatchEngine
+from aksara.ai import PatchEngine
 
 engine = PatchEngine()
 patch = await engine.create_patch(
@@ -31,7 +31,7 @@ await engine.apply(patch)
 ### Create a Patch
 
 ```python
-from vidyut.ai import PatchEngine
+from aksara.ai import PatchEngine
 
 engine = PatchEngine()
 
@@ -375,19 +375,19 @@ async with engine.transaction() as tx:
 ### Create and Apply
 
 ```bash
-vidyut ai patch models.py "Add phone field to User"
+aksara ai patch models.py "Add phone field to User"
 ```
 
 ### Preview Only
 
 ```bash
-vidyut ai patch models.py "Add phone field" --dry-run
+aksara ai patch models.py "Add phone field" --dry-run
 ```
 
 ### Interactive Mode
 
 ```bash
-vidyut ai patch models.py "Add phone field" --interactive
+aksara ai patch models.py "Add phone field" --interactive
 
 Preview:
   + phone = fields.StringField(max_length=20, null=True)
@@ -399,7 +399,7 @@ Apply this change? [y/N/e(dit)]
 
 ```bash
 # Apply patch from file
-vidyut ai patch --file changes.patch
+aksara ai patch --file changes.patch
 ```
 
 ---
@@ -409,7 +409,7 @@ vidyut ai patch --file changes.patch
 ### With Codegen
 
 ```python
-from vidyut.ai import Codegen, PatchEngine
+from aksara.ai import Codegen, PatchEngine
 
 gen = Codegen()
 engine = PatchEngine()
@@ -430,7 +430,7 @@ await engine.apply(patch)
 ### With Planner
 
 ```python
-from vidyut.ai import Planner, PatchEngine
+from aksara.ai import Planner, PatchEngine
 
 planner = Planner()
 engine = PatchEngine()
@@ -454,7 +454,7 @@ for step in plan.steps:
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_PATCH_ENGINE": {
         # Validation
         "validate_syntax": True,
@@ -463,7 +463,7 @@ VIDYUT = {
         
         # Backups
         "create_backups": True,
-        "backup_dir": ".vidyut/backups",
+        "backup_dir": ".aksara/backups",
         "max_backup_age_days": 30,
         
         # Conflicts

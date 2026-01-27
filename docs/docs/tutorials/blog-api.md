@@ -25,11 +25,11 @@ A fully-featured blog API with:
 
 ```bash
 # Create project
-vidyut startproject blog_api
+aksara startproject blog_api
 cd blog_api
 
 # Install dependencies
-pip install vidyut[all]
+pip install aksara[all]
 ```
 
 ### Configure Database
@@ -38,7 +38,7 @@ pip install vidyut[all]
 # blog_api/settings.py
 import os
 
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     "DATABASE_URL": os.getenv(
         "DATABASE_URL",
@@ -51,7 +51,7 @@ VIDYUT = {
 ### Create App
 
 ```bash
-vidyut startapp blog
+aksara startapp blog
 ```
 
 ---
@@ -62,7 +62,7 @@ vidyut startapp blog
 
 ```python
 # blog/models.py
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class User(Model):
     """Blog user."""
@@ -144,8 +144,8 @@ class Post(Model):
 ### Create Migrations
 
 ```bash
-vidyut makemigrations
-vidyut migrate
+aksara makemigrations
+aksara migrate
 ```
 
 ---
@@ -154,7 +154,7 @@ vidyut migrate
 
 ```python
 # blog/serializers.py
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 from .models import User, Post, Comment, Tag
 
 class UserSerializer(ModelSerializer):
@@ -169,7 +169,7 @@ class UserCreateSerializer(ModelSerializer):
         extra_kwargs = {"password": {"write_only": True}}
     
     async def create(self, validated_data):
-        from vidyut.contrib.auth import hash_password
+        from aksara.contrib.auth import hash_password
         validated_data["password"] = hash_password(validated_data["password"])
         return await super().create(validated_data)
 
@@ -213,8 +213,8 @@ class PostDetailSerializer(PostListSerializer):
 
 ```python
 # blog/viewsets.py
-from vidyut.api import ModelViewSet, action
-from vidyut.api.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from aksara.api import ModelViewSet, action
+from aksara.api.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from .models import User, Post, Comment, Tag
 from .serializers import (
     UserSerializer, UserCreateSerializer,
@@ -310,7 +310,7 @@ class TagViewSet(ModelViewSet):
 
 ```python
 # blog/urls.py
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from .viewsets import UserViewSet, PostViewSet, CommentViewSet, TagViewSet
 
 routes = [
@@ -323,10 +323,10 @@ routes = [
 
 ```python
 # blog_api/app.py
-from vidyut import Vidyut
+from aksara import Aksara
 from blog.urls import routes
 
-app = Vidyut()
+app = Aksara()
 
 # Register routes
 for route in routes:
@@ -339,8 +339,8 @@ for route in routes:
 
 ```python
 # blog/viewsets.py (add auth endpoints)
-from vidyut.api import ViewSet, action
-from vidyut.contrib.auth import (
+from aksara.api import ViewSet, action
+from aksara.contrib.auth import (
     authenticate, create_token, hash_password, verify_password
 )
 
@@ -401,7 +401,7 @@ routes = [
 ### Start Server
 
 ```bash
-vidyut runserver
+aksara runserver
 ```
 
 ### Create User
@@ -470,9 +470,9 @@ curl -X POST http://localhost:8000/api/posts/POST_ID/add_comment/ \
 ```python
 # blog/tests/test_api.py
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 
-class TestBlogAPI(VidyutTestCase):
+class TestBlogAPI(AksaraTestCase):
     async def asyncSetUp(self):
         self.user = await User.objects.create(
             email="test@example.com",
@@ -509,7 +509,7 @@ class TestBlogAPI(VidyutTestCase):
 Run tests:
 
 ```bash
-vidyut test
+aksara test
 ```
 
 ---
@@ -529,7 +529,7 @@ You've built a complete blog API! Here's what you can add:
 ## Complete Code
 
 See the complete code on GitHub:
-[github.com/vidyut/examples/blog-api](https://github.com/vidyut/examples/blog-api)
+[github.com/aksara/examples/blog-api](https://github.com/aksara/examples/blog-api)
 
 ---
 

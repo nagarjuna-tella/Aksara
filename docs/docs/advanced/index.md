@@ -1,6 +1,6 @@
 # Advanced Topics
 
-Deep dives into advanced Vidyut features.
+Deep dives into advanced Aksara features.
 
 ---
 
@@ -36,8 +36,8 @@ These guides assume familiarity with:
 Hook into model lifecycle events:
 
 ```python
-from vidyut import Model, fields
-from vidyut.signals import pre_save, post_save
+from aksara import Model, fields
+from aksara.signals import pre_save, post_save
 
 class Post(Model):
     title = fields.StringField()
@@ -56,7 +56,7 @@ async def generate_slug(sender, instance, **kwargs):
 Create specialized field types:
 
 ```python
-from vidyut.fields import Field
+from aksara.fields import Field
 
 class PhoneField(Field):
     def __init__(self, region="US", **kwargs):
@@ -75,7 +75,7 @@ class PhoneField(Field):
 Complex validation patterns:
 
 ```python
-from vidyut.validation import validator, ValidationError
+from aksara.validation import validator, ValidationError
 
 class Order(Model):
     @validator("quantity")
@@ -92,7 +92,7 @@ class Order(Model):
 Speed up your application:
 
 ```python
-from vidyut.cache import cached, cache
+from aksara.cache import cached, cache
 
 # Cache query results
 @cached(ttl=300)
@@ -107,7 +107,7 @@ async def get_popular_posts():
 Comprehensive testing:
 
 ```python
-from vidyut.testing import VidyutTestCase, factory
+from aksara.testing import AksaraTestCase, factory
 
 class UserFactory(factory.Factory):
     class Meta:
@@ -128,7 +128,7 @@ Optimize your application:
 posts = await Post.objects.select_related("author").prefetch_related("comments").all()
 
 # Query profiling
-from vidyut.debug import profile_queries
+from aksara.debug import profile_queries
 
 @profile_queries
 async def my_view():

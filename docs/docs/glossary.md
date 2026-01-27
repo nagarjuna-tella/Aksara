@@ -1,6 +1,6 @@
 # Glossary
 
-Common terms used in Vidyut documentation.
+Common terms used in Aksara documentation.
 
 ---
 
@@ -10,7 +10,7 @@ Common terms used in Vidyut documentation.
 A custom endpoint on a ViewSet, defined with the `@action` decorator. Actions can be detail routes (operating on a single object) or list routes (operating on the collection).
 
 ### AI Mode
-Vidyut's integrated AI-powered development features including natural language queries, code generation, and intelligent debugging.
+Aksara's integrated AI-powered development features including natural language queries, code generation, and intelligent debugging.
 
 ### Agent
 An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](ai-mode/agent-runtime.md).
@@ -19,7 +19,7 @@ An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](a
 Adding computed values to queryset results, typically using aggregate functions like `Count`, `Sum`, `Avg`.
 
 ### Authentication
-The process of verifying user identity. Vidyut supports token-based and custom authentication backends.
+The process of verifying user identity. Aksara supports token-based and custom authentication backends.
 
 ---
 
@@ -36,7 +36,7 @@ Database operations that affect multiple records at once (`bulk_create`, `bulk_u
 ## C
 
 ### Cache
-Temporary storage for frequently accessed data to improve performance. Vidyut supports memory and Redis backends.
+Temporary storage for frequently accessed data to improve performance. Aksara supports memory and Redis backends.
 
 ### Codegen
 AI-powered code generation for models, viewsets, serializers, and tests.
@@ -52,7 +52,7 @@ Create, Read, Update, Delete — the four basic operations for persistent storag
 ## D
 
 ### Decorator
-A Python pattern that wraps functions or classes. Vidyut uses decorators for actions, caching, signals, etc.
+A Python pattern that wraps functions or classes. Aksara uses decorators for actions, caching, signals, etc.
 
 ### Defer
 Loading a model instance without specific fields, loading them on-demand when accessed.
@@ -114,7 +114,7 @@ A database structure that improves query performance on specific columns.
 A single object of a model class.
 
 ### Installed Apps
-The list of applications registered in Vidyut settings.
+The list of applications registered in Aksara settings.
 
 ---
 
@@ -288,7 +288,7 @@ A group of database operations that succeed or fail together.
 ## U
 
 ### UUID
-Universally Unique Identifier — Vidyut uses UUIDs as default primary keys.
+Universally Unique Identifier — Aksara uses UUIDs as default primary keys.
 
 ---
 

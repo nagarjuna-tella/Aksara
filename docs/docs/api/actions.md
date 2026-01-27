@@ -9,7 +9,7 @@ Add custom endpoints to ViewSets with the `@action` decorator.
 While ModelViewSet provides standard CRUD operations, the `@action` decorator lets you add custom endpoints:
 
 ```python
-from vidyut.api import ModelViewSet, action
+from aksara.api import ModelViewSet, action
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -147,7 +147,7 @@ url = app.url_path_for("post-stats", id=post_id)
 ### Override ViewSet Permissions
 
 ```python
-from vidyut.permissions import IsAdminUser
+from aksara.permissions import IsAdminUser
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -450,8 +450,8 @@ async def publish(self, request, id: str):
 ## Complete Example
 
 ```python
-from vidyut.api import ModelViewSet, action
-from vidyut.permissions import IsAuthenticated, IsAdminUser
+from aksara.api import ModelViewSet, action
+from aksara.permissions import IsAuthenticated, IsAdminUser
 from myapp.models import Post, Comment, Like
 
 

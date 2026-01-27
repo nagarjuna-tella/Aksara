@@ -1,6 +1,6 @@
 # Roadmap
 
-Future plans for Vidyut development.
+Future plans for Aksara development.
 
 ---
 
@@ -135,8 +135,8 @@ Production-ready stable release.
 
 Vote on features and submit requests:
 
-- [GitHub Discussions](https://github.com/vidyut/vidyut/discussions)
-- [Feature Requests](https://github.com/vidyut/vidyut/issues?q=label%3Aenhancement)
+- [GitHub Discussions](https://github.com/aksara/aksara/discussions)
+- [Feature Requests](https://github.com/aksara/aksara/issues?q=label%3Aenhancement)
 
 ---
 
@@ -193,7 +193,7 @@ Vote on features and submit requests:
 
 ### Contribution Guide
 
-See [CONTRIBUTING.md](https://github.com/vidyut/vidyut/blob/main/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/aksara/aksara/blob/main/CONTRIBUTING.md)
 
 ---
 
@@ -210,10 +210,10 @@ See [CONTRIBUTING.md](https://github.com/vidyut/vidyut/blob/main/CONTRIBUTING.md
 
 ## Stay Updated
 
-- [GitHub Releases](https://github.com/vidyut/vidyut/releases)
+- [GitHub Releases](https://github.com/aksara/aksara/releases)
 - [Changelog](changelog.md)
-- [Blog](https://vidyut.dev/blog)
-- [Twitter](https://twitter.com/vidyutframework)
+- [Blog](https://aksara.dev/blog)
+- [Twitter](https://twitter.com/aksaraframework)
 
 ---
 

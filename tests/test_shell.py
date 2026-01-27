@@ -1,5 +1,5 @@
 """
-Tests for vidyut.shell module.
+Tests for aksara.shell module.
 
 Tests the interactive shell helpers and utilities.
 """
@@ -16,7 +16,7 @@ class TestArun:
     
     def test_arun_runs_coroutine(self):
         """Test that arun() executes a coroutine and returns its result."""
-        from vidyut.shell import arun
+        from aksara.shell import arun
         
         async def async_func():
             return 42
@@ -26,7 +26,7 @@ class TestArun:
     
     def test_arun_returns_value(self):
         """Test that arun() returns the coroutine's return value."""
-        from vidyut.shell import arun
+        from aksara.shell import arun
         
         async def get_data():
             return {"name": "test", "value": 123}
@@ -36,7 +36,7 @@ class TestArun:
     
     def test_arun_handles_exceptions(self):
         """Test that arun() propagates exceptions from the coroutine."""
-        from vidyut.shell import arun
+        from aksara.shell import arun
         
         async def failing_func():
             raise ValueError("Test error")
@@ -46,7 +46,7 @@ class TestArun:
     
     def test_arun_with_async_iteration(self):
         """Test that arun() works with async iterables."""
-        from vidyut.shell import arun
+        from aksara.shell import arun
         
         async def collect_items():
             items = []
@@ -66,7 +66,7 @@ class TestLoadModelsFromApps:
     
     def test_load_models_returns_dict(self):
         """Test that load_models_from_apps returns a dictionary."""
-        from vidyut.shell import load_models_from_apps
+        from aksara.shell import load_models_from_apps
         
         # Should return empty dict if no models found
         result = load_models_from_apps([])
@@ -74,7 +74,7 @@ class TestLoadModelsFromApps:
     
     def test_load_models_with_nonexistent_app(self):
         """Test graceful handling of non-existent app modules."""
-        from vidyut.shell import load_models_from_apps
+        from aksara.shell import load_models_from_apps
         
         # Should not raise, just return what's already registered
         result = load_models_from_apps(["nonexistent_app"])
@@ -82,9 +82,9 @@ class TestLoadModelsFromApps:
     
     def test_load_models_includes_registered_models(self):
         """Test that registered models are included."""
-        from vidyut.shell import load_models_from_apps
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara.shell import load_models_from_apps
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         # Clear and register a test model
         ModelRegistry.clear()
@@ -105,8 +105,8 @@ class TestBuildShellNamespace:
     """Tests for build_shell_namespace() function."""
     
     def test_namespace_has_core_imports(self):
-        """Test that namespace includes core Vidyut imports."""
-        from vidyut.shell import build_shell_namespace
+        """Test that namespace includes core Aksara imports."""
+        from aksara.shell import build_shell_namespace
         
         namespace = build_shell_namespace(load_models=False)
         
@@ -129,7 +129,7 @@ class TestBuildShellNamespace:
     
     def test_namespace_arun_is_callable(self):
         """Test that arun in namespace is callable."""
-        from vidyut.shell import build_shell_namespace
+        from aksara.shell import build_shell_namespace
         
         namespace = build_shell_namespace(load_models=False)
         
@@ -141,7 +141,7 @@ class TestBuildShellNamespace:
     
     def test_namespace_with_database_url(self):
         """Test that namespace includes db when database_url is provided."""
-        from vidyut.shell import build_shell_namespace
+        from aksara.shell import build_shell_namespace
         
         # Note: We provide a URL but don't connect, so db will be created but not connected
         namespace = build_shell_namespace(
@@ -153,7 +153,7 @@ class TestBuildShellNamespace:
     
     def test_namespace_without_database_url(self):
         """Test that namespace has no db when database_url is not provided."""
-        from vidyut.shell import build_shell_namespace
+        from aksara.shell import build_shell_namespace
         
         namespace = build_shell_namespace(database_url=None, load_models=False)
         
@@ -164,19 +164,19 @@ class TestGetShellBanner:
     """Tests for get_shell_banner() function."""
     
     def test_banner_includes_version(self):
-        """Test that banner includes Vidyut version."""
-        from vidyut.shell import get_shell_banner
-        from vidyut import __version__
+        """Test that banner includes Aksara version."""
+        from aksara.shell import get_shell_banner
+        from aksara import __version__
         
         namespace = {"_loaded_models": []}
         banner = get_shell_banner(namespace)
         
         assert __version__ in banner
-        assert "Vidyut Shell" in banner
+        assert "Aksara Shell" in banner
     
     def test_banner_shows_arun_help(self):
         """Test that banner shows arun() helper documentation."""
-        from vidyut.shell import get_shell_banner
+        from aksara.shell import get_shell_banner
         
         namespace = {"_loaded_models": []}
         banner = get_shell_banner(namespace)
@@ -185,7 +185,7 @@ class TestGetShellBanner:
     
     def test_banner_shows_loaded_models(self):
         """Test that banner shows loaded model names."""
-        from vidyut.shell import get_shell_banner
+        from aksara.shell import get_shell_banner
         
         namespace = {"_loaded_models": ["User", "Post", "Comment"]}
         banner = get_shell_banner(namespace)
@@ -196,7 +196,7 @@ class TestGetShellBanner:
     
     def test_banner_truncates_many_models(self):
         """Test that banner truncates when many models are loaded."""
-        from vidyut.shell import get_shell_banner
+        from aksara.shell import get_shell_banner
         
         # More than 5 models
         models = [f"Model{i}" for i in range(10)]
@@ -208,7 +208,7 @@ class TestGetShellBanner:
     
     def test_banner_shows_db_connection(self):
         """Test that banner shows db connection when available."""
-        from vidyut.shell import get_shell_banner
+        from aksara.shell import get_shell_banner
         
         namespace = {"_loaded_models": [], "db": MagicMock()}
         banner = get_shell_banner(namespace)
@@ -221,7 +221,7 @@ class TestStartStandardShell:
     
     def test_standard_shell_uses_namespace(self):
         """Test that standard shell receives the namespace."""
-        from vidyut.shell import start_standard_shell
+        from aksara.shell import start_standard_shell
         
         namespace = {"test_var": 42}
         
@@ -245,7 +245,7 @@ class TestStartIpythonShell:
     
     def test_ipython_shell_import_error(self):
         """Test that ImportError is raised when IPython not installed."""
-        from vidyut.shell import start_ipython_shell
+        from aksara.shell import start_ipython_shell
         
         namespace = {"test_var": 42}
         
@@ -259,9 +259,9 @@ class TestRunShell:
     
     def test_run_shell_tries_ipython_first(self):
         """Test that run_shell tries IPython first when enabled."""
-        from vidyut.shell import run_shell
+        from aksara.shell import run_shell
         
-        with patch("vidyut.shell.start_ipython_shell") as mock_ipython:
+        with patch("aksara.shell.start_ipython_shell") as mock_ipython:
             mock_ipython.return_value = None
             
             run_shell(use_ipython=True)
@@ -270,12 +270,12 @@ class TestRunShell:
     
     def test_run_shell_falls_back_to_standard(self):
         """Test that run_shell falls back to standard shell when IPython unavailable."""
-        from vidyut.shell import run_shell
+        from aksara.shell import run_shell
         
-        with patch("vidyut.shell.start_ipython_shell") as mock_ipython:
+        with patch("aksara.shell.start_ipython_shell") as mock_ipython:
             mock_ipython.side_effect = ImportError("IPython not installed")
             
-            with patch("vidyut.shell.start_standard_shell") as mock_standard:
+            with patch("aksara.shell.start_standard_shell") as mock_standard:
                 mock_standard.return_value = None
                 
                 run_shell(use_ipython=True)
@@ -284,10 +284,10 @@ class TestRunShell:
     
     def test_run_shell_skips_ipython_when_disabled(self):
         """Test that run_shell skips IPython when use_ipython=False."""
-        from vidyut.shell import run_shell
+        from aksara.shell import run_shell
         
-        with patch("vidyut.shell.start_ipython_shell") as mock_ipython:
-            with patch("vidyut.shell.start_standard_shell") as mock_standard:
+        with patch("aksara.shell.start_ipython_shell") as mock_ipython:
+            with patch("aksara.shell.start_standard_shell") as mock_standard:
                 mock_standard.return_value = None
                 
                 run_shell(use_ipython=False)

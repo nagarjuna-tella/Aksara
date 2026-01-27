@@ -1,12 +1,12 @@
 # Database Setup
 
-Configure PostgreSQL for your Vidyut application.
+Configure PostgreSQL for your Aksara application.
 
 ---
 
 ## Overview
 
-Vidyut is designed exclusively for PostgreSQL. This design choice enables:
+Aksara is designed exclusively for PostgreSQL. This design choice enables:
 
 - **UUID primary keys** with `gen_random_uuid()`
 - **JSONB columns** for efficient JSON storage
@@ -82,12 +82,12 @@ The fastest way to get started:
 
 ```bash
 docker run -d \
-  --name vidyut-postgres \
+  --name aksara-postgres \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=password \
   -e POSTGRES_DB=myapp \
   -p 5432:5432 \
-  -v vidyut_pgdata:/var/lib/postgresql/data \
+  -v aksara_pgdata:/var/lib/postgresql/data \
   postgres:15
 ```
 
@@ -128,7 +128,7 @@ psql -U postgres -d myapp -c "SELECT version();"
 
 ## Connection String Format
 
-Vidyut uses standard PostgreSQL connection strings (also called DSNs):
+Aksara uses standard PostgreSQL connection strings (also called DSNs):
 
 ```
 postgresql://[user[:password]@][host][:port][/database]
@@ -154,12 +154,12 @@ postgresql://[user[:password]@][host][:port][/database]
 
 Example with parameters:
 ```
-postgresql://user:pass@host:5432/db?sslmode=require&connect_timeout=10&application_name=vidyut
+postgresql://user:pass@host:5432/db?sslmode=require&connect_timeout=10&application_name=aksara
 ```
 
 ---
 
-## Configure Vidyut
+## Configure Aksara
 
 ### Using Environment Variables
 
@@ -173,7 +173,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/myapp
 ### Using configure()
 
 ```python
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url="postgresql://postgres:password@localhost:5432/myapp",
@@ -182,12 +182,12 @@ configure(
 )
 ```
 
-### Using Vidyut Constructor
+### Using Aksara Constructor
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 
-app = Vidyut(
+app = Aksara(
     database_url="postgresql://postgres:password@localhost:5432/myapp",
     min_pool_size=5,
     max_pool_size=20,
@@ -198,7 +198,7 @@ app = Vidyut(
 
 ## Connection Pooling
 
-Vidyut uses connection pooling via `asyncpg` for optimal performance.
+Aksara uses connection pooling via `asyncpg` for optimal performance.
 
 ### Pool Settings
 
@@ -223,7 +223,7 @@ Vidyut uses connection pooling via `asyncpg` for optimal performance.
 
 ```python
 import os
-from vidyut import configure
+from aksara import configure
 
 # Production settings
 configure(
@@ -237,7 +237,7 @@ configure(
 
 ## Database Lifecycle
 
-Vidyut automatically manages database connections:
+Aksara automatically manages database connections:
 
 1. **Startup**: Connection pool is created when the app starts
 2. **Request**: Connections are borrowed from the pool
@@ -247,7 +247,7 @@ Vidyut automatically manages database connections:
 ### Manual Control (Advanced)
 
 ```python
-from vidyut.db import Database
+from aksara.db import Database
 
 # Get the database instance
 db = Database.get_instance()
@@ -269,9 +269,9 @@ await db.execute("UPDATE users SET active = false WHERE id = $1", user_id)
 For read replicas or multi-tenant setups:
 
 ```python
-from vidyut.db import Database
+from aksara.db import Database
 
-# Primary database (configured via Vidyut)
+# Primary database (configured via Aksara)
 primary = Database.get_instance()
 
 # Create additional connections
@@ -294,13 +294,13 @@ After configuring your database, create and apply migrations:
 
 ```bash
 # Generate migrations from models
-vidyut makemigrations --app app.models
+aksara makemigrations --app app.models
 
 # Apply migrations
-vidyut migrate
+aksara migrate
 
 # Check migration status
-vidyut migrate --check
+aksara migrate --check
 ```
 
 See [Migrations](../orm/migrations.md) for detailed documentation.
@@ -389,7 +389,7 @@ Never hardcode credentials:
 
 ```python
 import os
-from vidyut import configure
+from aksara import configure
 
 configure(
     database_url=os.environ["DATABASE_URL"],  # Required in production
@@ -417,7 +417,7 @@ max_pool_size <= (PostgreSQL max_connections - reserved) / number_of_app_instanc
 Add a health check endpoint:
 
 ```python
-from vidyut.db import Database
+from aksara.db import Database
 
 @app.get("/health")
 async def health_check():

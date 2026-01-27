@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
-from vidyut.debug.handlers import (
+from aksara.debug.handlers import (
     DebugContext,
     collect_debug_context,
     render_debug_page,
@@ -104,7 +104,7 @@ class TestHelperFunctions:
         """Test user code paths are not detected as library."""
         assert not _is_library_path("/home/user/project/app/main.py")
         assert not _is_library_path("/Users/dev/myapp/src/handlers.py")
-        assert not _is_library_path("/app/vidyut/models.py")
+        assert not _is_library_path("/app/aksara/models.py")
     
     def test_get_status_class_500(self):
         """Test status class for 500 errors."""
@@ -183,7 +183,7 @@ class TestRenderDebugPage:
             request_method="GET",
             request_url="http://localhost/test",
             python_version="3.12.0",
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -197,7 +197,7 @@ class TestRenderDebugPage:
             exception_type="KeyError",
             exception_message="missing_key",
             status_code=500,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -212,7 +212,7 @@ class TestRenderDebugPage:
         ctx = DebugContext(
             exception_type="TestError",
             status_code=500,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -227,7 +227,7 @@ class TestRenderDebugPage:
         ctx = DebugContext(
             exception_type="TestError",
             status_code=500,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -244,7 +244,7 @@ class TestRenderDebugPage:
             exception_type="XSSError",
             exception_message="<script>alert('xss')</script>",
             status_code=500,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -263,7 +263,7 @@ class TestRenderDebugPage:
             request_method="POST",
             request_url="http://localhost/api/users",
             request_headers={"content-type": "application/json"},
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -280,7 +280,7 @@ class TestRenderDebugPage:
             request_id="req-12345",
             tenant_id="tenant-abc",
             user_id="user-456",
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -653,7 +653,7 @@ class TestCollectDebugContext:
             context = await collect_debug_context(mock_request, e, 500)
         
         assert context.python_version != ""
-        assert context.vidyut_version != ""
+        assert context.aksara_version != ""
         assert context.timestamp != ""
         assert context.debug_mode is True
     
@@ -669,18 +669,18 @@ class TestCollectDebugContext:
 
 
 # ============================================================================
-# Test Integration with Vidyut App
+# Test Integration with Aksara App
 # ============================================================================
 
 class TestDebugExceptionHandlersIntegration:
-    """Tests for debug exception handlers with Vidyut app."""
+    """Tests for debug exception handlers with Aksara app."""
     
     @pytest.fixture
     def debug_app(self):
-        """Create a Vidyut app in debug mode."""
-        from vidyut.app import Vidyut
+        """Create a Aksara app in debug mode."""
+        from aksara.app import Aksara
         
-        app = Vidyut(debug=True)
+        app = Aksara(debug=True)
         
         @app.get("/error")
         async def raise_error():
@@ -699,10 +699,10 @@ class TestDebugExceptionHandlersIntegration:
     
     @pytest.fixture
     def prod_app(self):
-        """Create a Vidyut app in production mode."""
-        from vidyut.app import Vidyut
+        """Create a Aksara app in production mode."""
+        from aksara.app import Aksara
         
-        app = Vidyut(debug=False)
+        app = Aksara(debug=False)
         
         @app.get("/error")
         async def raise_error():
@@ -799,10 +799,10 @@ class TestValidationErrorHandling:
     @pytest.fixture
     def validation_app(self):
         """Create app with validation."""
-        from vidyut.app import Vidyut
+        from aksara.app import Aksara
         from pydantic import BaseModel
         
-        app = Vidyut(debug=True)
+        app = Aksara(debug=True)
         
         class UserCreate(BaseModel):
             name: str
@@ -874,7 +874,7 @@ class TestEdgeCases:
             exception_type="TestError",
             status_code=500,
             request_client=None,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -887,7 +887,7 @@ class TestEdgeCases:
             exception_type="TestError",
             exception_message="Error with 'quotes', \"double quotes\", and <tags>",
             status_code=500,
-            vidyut_version="0.3.17",
+            aksara_version="0.3.17",
         )
         
         response = render_debug_page(ctx)
@@ -907,7 +907,7 @@ class TestEmbeddedContent:
     
     def test_css_contains_required_classes(self):
         """Test that CSS contains all required classes."""
-        from vidyut.debug.handlers import _get_debug_css
+        from aksara.debug.handlers import _get_debug_css
         
         css = _get_debug_css()
         
@@ -920,7 +920,7 @@ class TestEmbeddedContent:
     
     def test_js_contains_tab_logic(self):
         """Test that JS contains tab switching logic."""
-        from vidyut.debug.handlers import _get_debug_js
+        from aksara.debug.handlers import _get_debug_js
         
         js = _get_debug_js()
         

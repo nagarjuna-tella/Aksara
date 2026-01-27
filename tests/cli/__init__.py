@@ -1,1 +1,1 @@
-"""Tests for Vidyut CLI commands."""
+"""Tests for Aksara CLI commands."""

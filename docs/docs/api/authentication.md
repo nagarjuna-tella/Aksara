@@ -1,12 +1,12 @@
 # Authentication
 
-Authenticate users in your Vidyut API.
+Authenticate users in your Aksara API.
 
 ---
 
 ## Overview
 
-Vidyut supports multiple authentication methods:
+Aksara supports multiple authentication methods:
 
 - **Session authentication** — Cookie-based sessions
 - **Token authentication** — Bearer tokens
@@ -14,10 +14,10 @@ Vidyut supports multiple authentication methods:
 - **Custom authentication** — Build your own
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import AuthenticationMiddleware
+from aksara import Aksara
+from aksara.middleware import AuthenticationMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(AuthenticationMiddleware)
 ```
 
@@ -25,10 +25,10 @@ app.add_middleware(AuthenticationMiddleware)
 
 ## User Model
 
-Vidyut provides a built-in User model:
+Aksara provides a built-in User model:
 
 ```python
-from vidyut.contrib.auth import User
+from aksara.contrib.auth import User
 
 # Create user
 user = await User.objects.create(
@@ -59,7 +59,7 @@ user = await User.objects.get(email="jane@example.com")
 ### Custom User Model
 
 ```python
-from vidyut.contrib.auth import AbstractUser
+from aksara.contrib.auth import AbstractUser
 
 class User(AbstractUser):
     """Custom user with additional fields."""
@@ -81,10 +81,10 @@ Cookie-based authentication for web apps:
 ### Setup
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import SessionMiddleware, AuthenticationMiddleware
+from aksara import Aksara
+from aksara.middleware import SessionMiddleware, AuthenticationMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(
     SessionMiddleware,
     secret_key="your-secret-key",
@@ -97,7 +97,7 @@ app.add_middleware(AuthenticationMiddleware)
 ### Login Endpoint
 
 ```python
-from vidyut.contrib.auth import authenticate, login
+from aksara.contrib.auth import authenticate, login
 
 @app.post("/auth/login")
 async def login_view(request):
@@ -124,7 +124,7 @@ async def login_view(request):
 ### Logout Endpoint
 
 ```python
-from vidyut.contrib.auth import logout
+from aksara.contrib.auth import logout
 
 @app.post("/auth/logout")
 async def logout_view(request):
@@ -155,7 +155,7 @@ Bearer token authentication for APIs:
 ### Setup
 
 ```python
-from vidyut.contrib.auth.tokens import TokenAuthentication
+from aksara.contrib.auth.tokens import TokenAuthentication
 
 app.add_middleware(TokenAuthentication)
 ```
@@ -163,7 +163,7 @@ app.add_middleware(TokenAuthentication)
 ### Token Model
 
 ```python
-from vidyut.contrib.auth.tokens import Token
+from aksara.contrib.auth.tokens import Token
 
 # Create token for user
 token = await Token.objects.create(user=user)
@@ -175,8 +175,8 @@ print(token.key)  # "abc123..."
 ### Login with Token
 
 ```python
-from vidyut.contrib.auth import authenticate
-from vidyut.contrib.auth.tokens import Token
+from aksara.contrib.auth import authenticate
+from aksara.contrib.auth.tokens import Token
 
 @app.post("/auth/token")
 async def get_token(request):
@@ -227,7 +227,7 @@ JWT_EXPIRATION = 3600  # 1 hour
 ```
 
 ```python
-from vidyut.contrib.auth.jwt import JWTAuthentication
+from aksara.contrib.auth.jwt import JWTAuthentication
 
 app.add_middleware(JWTAuthentication)
 ```
@@ -235,7 +235,7 @@ app.add_middleware(JWTAuthentication)
 ### Generate JWT
 
 ```python
-from vidyut.contrib.auth.jwt import create_access_token, create_refresh_token
+from aksara.contrib.auth.jwt import create_access_token, create_refresh_token
 
 @app.post("/auth/token")
 async def get_jwt(request):
@@ -259,7 +259,7 @@ async def get_jwt(request):
 ### Refresh Token
 
 ```python
-from vidyut.contrib.auth.jwt import verify_refresh_token, create_access_token
+from aksara.contrib.auth.jwt import verify_refresh_token, create_access_token
 
 @app.post("/auth/refresh")
 async def refresh_jwt(request):
@@ -305,7 +305,7 @@ def create_access_token(user):
 Create your own authentication backend:
 
 ```python
-from vidyut.contrib.auth import BaseAuthentication
+from aksara.contrib.auth import BaseAuthentication
 
 class APIKeyAuthentication(BaseAuthentication):
     """Authenticate with API key."""
@@ -338,7 +338,7 @@ app.add_middleware(APIKeyAuthentication)
 ### Multiple Authentication Methods
 
 ```python
-from vidyut.contrib.auth import MultiAuthentication
+from aksara.contrib.auth import MultiAuthentication
 
 app.add_middleware(
     MultiAuthentication,
@@ -358,7 +358,7 @@ app.add_middleware(
 ### Hashing
 
 ```python
-from vidyut.contrib.auth import hash_password, check_password
+from aksara.contrib.auth import hash_password, check_password
 
 # Hash a password
 hashed = hash_password("mypassword123")
@@ -370,7 +370,7 @@ is_valid = check_password("mypassword123", hashed)
 ### Password Reset
 
 ```python
-from vidyut.contrib.auth.tokens import PasswordResetToken
+from aksara.contrib.auth.tokens import PasswordResetToken
 
 @app.post("/auth/forgot-password")
 async def forgot_password(request):
@@ -424,7 +424,7 @@ async def reset_password(request):
 ## Registration
 
 ```python
-from vidyut.contrib.auth import User, hash_password
+from aksara.contrib.auth import User, hash_password
 
 @app.post("/auth/register")
 async def register(request):
@@ -457,7 +457,7 @@ async def register(request):
 ## Email Verification
 
 ```python
-from vidyut.contrib.auth.tokens import EmailVerificationToken
+from aksara.contrib.auth.tokens import EmailVerificationToken
 
 @app.post("/auth/send-verification")
 async def send_verification(request):
@@ -501,12 +501,12 @@ async def verify_email(request):
 
 ```python
 # auth/routes.py
-from vidyut.api import APIRouter
-from vidyut.contrib.auth import (
+from aksara.api import APIRouter
+from aksara.contrib.auth import (
     User, authenticate, login, logout,
     hash_password, check_password,
 )
-from vidyut.contrib.auth.jwt import (
+from aksara.contrib.auth.jwt import (
     create_access_token, create_refresh_token,
     verify_refresh_token,
 )

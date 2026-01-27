@@ -1,5 +1,5 @@
 """
-Tests for Vidyut @action decorator (v0.3.1)
+Tests for Aksara @action decorator (v0.3.1)
 
 Tests cover:
 - @action decorator metadata attachment
@@ -19,14 +19,14 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from vidyut.api.actions import (
+from aksara.api.actions import (
     action,
     get_action_metadata,
     is_action,
     extract_docstring_summary,
     extract_docstring_description,
 )
-from vidyut.api import ModelViewSet, include_viewset
+from aksara.api import ModelViewSet, include_viewset
 
 
 # =============================================================================
@@ -53,13 +53,13 @@ class TestActionDecorator:
     """Test the @action decorator itself."""
     
     def test_action_attaches_metadata(self):
-        """Test that @action attaches _vidyut_action metadata."""
+        """Test that @action attaches _aksara_action metadata."""
         @action(detail=True, methods=["post"])
         async def my_action(self, pk, request):
             pass
         
-        assert hasattr(my_action, "_vidyut_action")
-        meta = my_action._vidyut_action
+        assert hasattr(my_action, "_aksara_action")
+        meta = my_action._aksara_action
         assert meta["detail"] is True
         assert meta["methods"] == ["POST"]
         assert meta["path"] == "my_action"
@@ -71,7 +71,7 @@ class TestActionDecorator:
         async def multi_method(self, request):
             pass
         
-        meta = multi_method._vidyut_action
+        meta = multi_method._aksara_action
         assert meta["methods"] == ["GET", "POST", "DELETE"]
     
     def test_action_with_custom_path(self):
@@ -80,7 +80,7 @@ class TestActionDecorator:
         async def get_full_profile(self, pk, request):
             pass
         
-        meta = get_full_profile._vidyut_action
+        meta = get_full_profile._aksara_action
         assert meta["path"] == "full-profile"
         assert meta["name"] == "get_full_profile"
     
@@ -90,7 +90,7 @@ class TestActionDecorator:
         async def deactivate(self, pk, request):
             pass
         
-        meta = deactivate._vidyut_action
+        meta = deactivate._aksara_action
         assert meta["name"] == "user_deactivation"
     
     def test_action_with_summary_and_description(self):
@@ -104,7 +104,7 @@ class TestActionDecorator:
         async def deactivate(self, pk, request):
             pass
         
-        meta = deactivate._vidyut_action
+        meta = deactivate._aksara_action
         assert meta["summary"] == "Deactivate user"
         assert meta["description"] == "This will deactivate the user account permanently."
     
@@ -114,7 +114,7 @@ class TestActionDecorator:
         async def active(self, request):
             pass
         
-        meta = active._vidyut_action
+        meta = active._aksara_action
         assert meta["detail"] is False
     
     def test_action_preserves_function(self):

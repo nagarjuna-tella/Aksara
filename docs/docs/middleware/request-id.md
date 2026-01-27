@@ -13,10 +13,10 @@ Add unique identifiers to each request for tracing.
 - **Debugging** — Identify specific requests in error reports
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import RequestIDMiddleware
+from aksara import Aksara
+from aksara.middleware import RequestIDMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(RequestIDMiddleware)
 ```
 
@@ -65,7 +65,7 @@ app.add_middleware(
 ### In Views
 
 ```python
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 @app.get("/api/data")
 async def get_data(request):
@@ -86,7 +86,7 @@ async def get_data(request):
 ### In Services/Background Tasks
 
 ```python
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 async def background_task():
     # Context variable is automatically propagated
@@ -102,7 +102,7 @@ async def background_task():
 
 ```python
 import logging
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 class RequestIDFilter(logging.Filter):
     def filter(self, record):
@@ -124,7 +124,7 @@ logger.addHandler(handler)
 
 ```python
 import structlog
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 def add_request_id(logger, method_name, event_dict):
     event_dict["request_id"] = request_id_var.get()
@@ -150,7 +150,7 @@ logger.info("Processing data", user_id="123")
 
 ```python
 import httpx
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 async def call_external_service():
     request_id = request_id_var.get()
@@ -166,7 +166,7 @@ async def call_external_service():
 ### Message Queues
 
 ```python
-from vidyut.middleware import request_id_var
+from aksara.middleware import request_id_var
 
 async def publish_message(queue, message):
     request_id = request_id_var.get()
@@ -267,8 +267,8 @@ app.add_middleware(
 ```python
 import logging
 import uuid
-from vidyut import Vidyut
-from vidyut.middleware import RequestIDMiddleware, request_id_var
+from aksara import Aksara
+from aksara.middleware import RequestIDMiddleware, request_id_var
 
 # Configure logging with request ID
 class RequestIDFilter(logging.Filter):
@@ -286,7 +286,7 @@ for handler in logging.root.handlers:
 logger = logging.getLogger(__name__)
 
 # Create app
-app = Vidyut()
+app = Aksara()
 
 # Add middleware
 app.add_middleware(

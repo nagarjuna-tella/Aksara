@@ -16,11 +16,11 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.testclient import TestClient
 
-from vidyut import Model, fields
-from vidyut.api.viewsets import ModelViewSet
-from vidyut.api.router import include_viewset, _extract_filters, _handle_exception
-from vidyut.api.schemas import clear_schema_cache
-from vidyut.exceptions import UniqueConstraintError, ForeignKeyConstraintError, DatabaseError
+from aksara import Model, fields
+from aksara.api.viewsets import ModelViewSet
+from aksara.api.router import include_viewset, _extract_filters, _handle_exception
+from aksara.api.schemas import clear_schema_cache
+from aksara.exceptions import UniqueConstraintError, ForeignKeyConstraintError, DatabaseError
 
 
 # =============================================================================
@@ -137,7 +137,7 @@ class TestRouterIntegration:
     def test_list_endpoint(self, app, sample_item):
         """Test list endpoint integration."""
         # Patch at module level before include_viewset runs
-        with patch('vidyut.api.viewsets.ModelViewSet.list', new_callable=AsyncMock) as mock_list:
+        with patch('aksara.api.viewsets.ModelViewSet.list', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = {
                 "count": 1,
                 "limit": 20,
@@ -158,7 +158,7 @@ class TestRouterIntegration:
         """Test retrieve endpoint integration."""
         pk = str(uuid4())
         
-        with patch('vidyut.api.viewsets.ModelViewSet.retrieve', new_callable=AsyncMock) as mock_retrieve:
+        with patch('aksara.api.viewsets.ModelViewSet.retrieve', new_callable=AsyncMock) as mock_retrieve:
             mock_retrieve.return_value = {
                 "id": pk,
                 "name": "Test",
@@ -176,7 +176,7 @@ class TestRouterIntegration:
     
     def test_create_endpoint(self, app, sample_item):
         """Test create endpoint integration."""
-        with patch('vidyut.api.viewsets.ModelViewSet.create', new_callable=AsyncMock) as mock_create:
+        with patch('aksara.api.viewsets.ModelViewSet.create', new_callable=AsyncMock) as mock_create:
             mock_create.return_value = {
                 "id": str(uuid4()),
                 "name": "New Item",
@@ -196,7 +196,7 @@ class TestRouterIntegration:
         """Test update endpoint integration."""
         pk = str(uuid4())
         
-        with patch('vidyut.api.viewsets.ModelViewSet.update', new_callable=AsyncMock) as mock_update:
+        with patch('aksara.api.viewsets.ModelViewSet.update', new_callable=AsyncMock) as mock_update:
             mock_update.return_value = {
                 "id": pk,
                 "name": "Updated",
@@ -216,7 +216,7 @@ class TestRouterIntegration:
         """Test delete endpoint integration."""
         pk = str(uuid4())
         
-        with patch('vidyut.api.viewsets.ModelViewSet.delete', new_callable=AsyncMock) as mock_delete:
+        with patch('aksara.api.viewsets.ModelViewSet.delete', new_callable=AsyncMock) as mock_delete:
             mock_delete.return_value = {"deleted": True, "id": pk}
             
             include_viewset(app, ItemViewSet)

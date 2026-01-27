@@ -1,17 +1,17 @@
 # Getting Started
 
-Welcome to Vidyut! This section will guide you through setting up your development environment and creating your first application.
+Welcome to Aksara! This section will guide you through setting up your development environment and creating your first application.
 
 ---
 
 ## Overview
 
-Vidyut is designed to get you productive quickly while maintaining the flexibility to scale to complex applications. In this guide, you'll learn:
+Aksara is designed to get you productive quickly while maintaining the flexibility to scale to complex applications. In this guide, you'll learn:
 
-1. **[Installation](installation.md)** — Install Vidyut and its dependencies
+1. **[Installation](installation.md)** — Install Aksara and its dependencies
 2. **[Project Layout](project-layout.md)** — Understand the recommended project structure
 3. **[Settings](settings.md)** — Configure your application
-4. **[First App](first-app.md)** — Build your first Vidyut application
+4. **[First App](first-app.md)** — Build your first Aksara application
 5. **[Database Setup](database-setup.md)** — Connect to PostgreSQL
 6. **[Running Your App](running-your-app.md)** — Development and production deployment
 
@@ -19,7 +19,7 @@ Vidyut is designed to get you productive quickly while maintaining the flexibili
 
 ## Prerequisites
 
-Before starting with Vidyut, ensure you have:
+Before starting with Aksara, ensure you have:
 
 | Requirement | Minimum Version | Recommended |
 |-------------|-----------------|-------------|
@@ -27,7 +27,7 @@ Before starting with Vidyut, ensure you have:
 | PostgreSQL | 13 | 15+ |
 | pip/uv | Latest | Latest |
 
-Vidyut is **PostgreSQL-only** by design. This allows us to leverage PostgreSQL-specific features like:
+Aksara is **PostgreSQL-only** by design. This allows us to leverage PostgreSQL-specific features like:
 
 - UUID primary keys with `gen_random_uuid()`
 - JSON/JSONB columns
@@ -44,9 +44,9 @@ Vidyut is **PostgreSQL-only** by design. This allows us to leverage PostgreSQL-s
 
     ---
 
-    Get Vidyut installed in your environment.
+    Get Aksara installed in your environment.
 
-    [:octicons-arrow-right-24: Install Vidyut](installation.md)
+    [:octicons-arrow-right-24: Install Aksara](installation.md)
 
 -   :material-folder-outline:{ .lg .middle } **Project Layout**
 
@@ -68,7 +68,7 @@ Vidyut is **PostgreSQL-only** by design. This allows us to leverage PostgreSQL-s
 
     ---
 
-    Create your first Vidyut application.
+    Create your first Aksara application.
 
     [:octicons-arrow-right-24: Build Your App](first-app.md)
 
@@ -78,7 +78,7 @@ Vidyut is **PostgreSQL-only** by design. This allows us to leverage PostgreSQL-s
 
 ## Architecture Overview
 
-Vidyut applications follow a layered architecture:
+Aksara applications follow a layered architecture:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -110,4 +110,4 @@ Vidyut applications follow a layered architecture:
 
 ## Next Steps
 
-Start with [Installation](installation.md) to get Vidyut set up on your system.
+Start with [Installation](installation.md) to get Aksara set up on your system.

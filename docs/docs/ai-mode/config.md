@@ -10,7 +10,7 @@ AI Mode is configured through your `settings.py` file under the `VIDYUT` diction
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_PROVIDER": "openai",
     # ... more settings
@@ -24,7 +24,7 @@ VIDYUT = {
 ### Enable AI Mode
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,  # Enable AI features
 }
 ```
@@ -32,7 +32,7 @@ VIDYUT = {
 ### Provider Settings
 
 ```python
-VIDYUT = {
+AKSARA = {
     # Provider selection
     "AI_PROVIDER": "openai",  # "openai", "anthropic", "local"
     
@@ -56,7 +56,7 @@ VIDYUT = {
 ### OpenAI
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PROVIDER": "openai",
     "AI_API_KEY": os.getenv("OPENAI_API_KEY"),
     "AI_MODEL": "gpt-4",
@@ -69,7 +69,7 @@ VIDYUT = {
 ### Anthropic
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PROVIDER": "anthropic",
     "AI_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
     "AI_MODEL": "claude-3-opus-20240229",
@@ -79,7 +79,7 @@ VIDYUT = {
 ### Azure OpenAI
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PROVIDER": "azure",
     "AI_API_KEY": os.getenv("AZURE_OPENAI_KEY"),
     "AI_API_BASE": "https://your-resource.openai.azure.com/",
@@ -91,7 +91,7 @@ VIDYUT = {
 ### Local LLM (Ollama)
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PROVIDER": "local",
     "AI_API_BASE": "http://localhost:11434",
     "AI_MODEL": "codellama",
@@ -101,7 +101,7 @@ VIDYUT = {
 ### Custom Provider
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PROVIDER": "custom",
     "AI_PROVIDER_CLASS": "myapp.ai.MyCustomProvider",
 }
@@ -114,7 +114,7 @@ VIDYUT = {
 ### Context Engine
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_CONTEXT": {
         # What to include
         "include_models": True,
@@ -142,7 +142,7 @@ VIDYUT = {
 ### Query Engine
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_QUERY_ENGINE": {
         # Safety
         "read_only": True,
@@ -164,7 +164,7 @@ VIDYUT = {
 ### Codegen
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_CODEGEN": {
         # Style
         "docstring_style": "google",  # "google", "numpy", "sphinx"
@@ -187,7 +187,7 @@ VIDYUT = {
 ### Patch Engine
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PATCH_ENGINE": {
         # Validation
         "validate_syntax": True,
@@ -196,7 +196,7 @@ VIDYUT = {
         
         # Backups
         "create_backups": True,
-        "backup_dir": ".vidyut/backups",
+        "backup_dir": ".aksara/backups",
         "max_backup_age_days": 30,
         
         # Conflicts
@@ -212,7 +212,7 @@ VIDYUT = {
 ### Planner
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_PLANNER": {
         # Execution
         "rollback_on_failure": True,
@@ -233,7 +233,7 @@ VIDYUT = {
 ### Agent Runtime
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_AGENT_RUNTIME": {
         # Model
         "model": "gpt-4",
@@ -264,7 +264,7 @@ VIDYUT = {
 ### Schema Doctor
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_DOCTOR": {
         # Analysis
         "include_models": None,  # None = all
@@ -290,7 +290,7 @@ VIDYUT = {
 ### Tools
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_TOOLS": {
         # Enable/disable categories
         "data_tools": True,
@@ -313,7 +313,7 @@ VIDYUT = {
 ### Global Safety
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_SAFETY": {
         # Confirmations
         "require_confirmation": True,
@@ -337,7 +337,7 @@ VIDYUT = {
 
 ```python
 # settings/development.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_SAFETY": {
         "require_confirmation": False,
@@ -346,7 +346,7 @@ VIDYUT = {
 }
 
 # settings/production.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_SAFETY": {
         "require_confirmation": True,
@@ -364,20 +364,20 @@ All settings can be overridden via environment variables:
 
 ```bash
 # Provider
-export VIDYUT_AI_PROVIDER=openai
-export VIDYUT_AI_API_KEY=sk-...
-export VIDYUT_AI_MODEL=gpt-4
+export AKSARA_AI_PROVIDER=openai
+export AKSARA_AI_API_KEY=sk-...
+export AKSARA_AI_MODEL=gpt-4
 
 # Safety
-export VIDYUT_AI_READ_ONLY=true
-export VIDYUT_AI_REQUIRE_CONFIRMATION=true
+export AKSARA_AI_READ_ONLY=true
+export AKSARA_AI_REQUIRE_CONFIRMATION=true
 
 # Limits
-export VIDYUT_AI_MAX_TOKENS=4000
-export VIDYUT_AI_TIMEOUT=30
+export AKSARA_AI_MAX_TOKENS=4000
+export AKSARA_AI_TIMEOUT=30
 ```
 
-Naming convention: `VIDYUT_AI_` + setting name in SCREAMING_SNAKE_CASE.
+Naming convention: `AKSARA_AI_` + setting name in SCREAMING_SNAKE_CASE.
 
 ---
 
@@ -386,7 +386,7 @@ Naming convention: `VIDYUT_AI_` + setting name in SCREAMING_SNAKE_CASE.
 ### Check Configuration
 
 ```bash
-vidyut ai config --check
+aksara ai config --check
 
 ✓ AI_PROVIDER: openai
 ✓ AI_API_KEY: configured (sk-****)
@@ -397,7 +397,7 @@ vidyut ai config --check
 ### Show Current Config
 
 ```bash
-vidyut ai config --show
+aksara ai config --show
 
 AI Mode Configuration:
   Provider: openai
@@ -415,7 +415,7 @@ Context Engine:
 ## Programmatic Access
 
 ```python
-from vidyut.ai import get_ai_config
+from aksara.ai import get_ai_config
 
 config = get_ai_config()
 
@@ -428,7 +428,7 @@ print(config.safety.require_confirmation)
 ### Override at Runtime
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 # Override settings for specific instance
 engine = QueryEngine(
@@ -445,7 +445,7 @@ engine = QueryEngine(
 # settings.py
 import os
 
-VIDYUT = {
+AKSARA = {
     # Core
     "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
     "DATABASE_URL": os.getenv("DATABASE_URL"),

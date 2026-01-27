@@ -1,17 +1,17 @@
 # Project Layout
 
-Learn the recommended directory structure for Vidyut applications.
+Learn the recommended directory structure for Aksara applications.
 
 ---
 
 ## Standard Project Structure
 
-When you run `vidyut startproject myproject`, you get:
+When you run `aksara startproject myproject`, you get:
 
 ```
 myproject/
 ├── main.py                 # Application entry point
-├── settings.py             # Vidyut configuration
+├── settings.py             # Aksara configuration
 ├── pyproject.toml          # Project metadata & dependencies
 ├── requirements.txt        # Pip requirements
 ├── .env                    # Environment variables (gitignored)
@@ -35,16 +35,16 @@ myproject/
 
 ### `main.py`
 
-The application entry point. Initializes the `Vidyut` app and includes routers:
+The application entry point. Initializes the `Aksara` app and includes routers:
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 from app.urls import router
 
-app = Vidyut(
+app = Aksara(
     database_url="postgresql://localhost/myproject",
     title="My Project",
-    description="A Vidyut application",
+    description="A Aksara application",
     enable_admin=True,
     debug=True,
 )
@@ -58,10 +58,10 @@ Centralized configuration using environment variables:
 
 ```python
 import os
-from vidyut import configure
+from aksara import configure
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/myproject")
-DEBUG = os.getenv("VIDYUT_DEBUG", "false").lower() == "true"
+DEBUG = os.getenv("AKSARA_DEBUG", "false").lower() == "true"
 
 configure(
     database_url=DATABASE_URL,
@@ -69,8 +69,8 @@ configure(
     pool_min_size=5,
     pool_max_size=20,
     installed_apps=[
-        "vidyut.contrib.auth",
-        "vidyut.contrib.admin",
+        "aksara.contrib.auth",
+        "aksara.contrib.admin",
         "app",
     ],
 )
@@ -81,7 +81,7 @@ configure(
 Define your database models:
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Article(Model):
     title = fields.String(max_length=200)
@@ -96,7 +96,7 @@ class Article(Model):
 Define ViewSets for your API:
 
 ```python
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from app.models import Article
 
 class ArticleViewSet(ModelViewSet):
@@ -110,7 +110,7 @@ class ArticleViewSet(ModelViewSet):
 Register your ViewSets:
 
 ```python
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from fastapi import APIRouter
 from app.views import ArticleViewSet
 
@@ -123,7 +123,7 @@ include_viewset(router, ArticleViewSet)
 Custom serializers for complex validation:
 
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 from app.models import Article
 
 class ArticleSerializer(ModelSerializer):
@@ -177,8 +177,8 @@ Configure apps in `settings.py`:
 ```python
 configure(
     installed_apps=[
-        "vidyut.contrib.auth",
-        "vidyut.contrib.admin",
+        "aksara.contrib.auth",
+        "aksara.contrib.admin",
         "apps.blog",
         "apps.users",
         "apps.products",
@@ -189,8 +189,8 @@ configure(
 Create new apps using the CLI:
 
 ```bash
-vidyut startapp blog --directory apps
-vidyut startapp users --directory apps
+aksara startapp blog --directory apps
+aksara startapp users --directory apps
 ```
 
 ---
@@ -200,7 +200,7 @@ vidyut startapp users --directory apps
 Use the `startapp` command to create a new app:
 
 ```bash
-vidyut startapp myapp
+aksara startapp myapp
 ```
 
 This creates:
@@ -248,7 +248,7 @@ Each migration file contains:
 
 ```python
 # migrations/0001_initial.py
-from vidyut.migrations import Migration, operations
+from aksara.migrations import Migration, operations
 
 class Migration(Migration):
     dependencies = []
@@ -310,7 +310,7 @@ Example `conftest.py`:
 
 ```python
 import pytest
-from vidyut.testing import TestClient, setup_test_database
+from aksara.testing import TestClient, setup_test_database
 
 @pytest.fixture
 async def client():

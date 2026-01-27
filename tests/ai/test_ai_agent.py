@@ -19,7 +19,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from vidyut.ai.agent import (
+from aksara.ai.agent import (
     # Models
     AgentIntent,
     AgentContextBundle,
@@ -292,7 +292,7 @@ class TestBuildAgentContextBundle:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test request")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {
                 "models": [],
@@ -313,7 +313,7 @@ class TestBuildAgentContextBundle:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -329,7 +329,7 @@ class TestBuildAgentContextBundle:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -345,7 +345,7 @@ class TestBuildAgentContextBundle:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -361,7 +361,7 @@ class TestBuildAgentContextBundle:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -372,19 +372,19 @@ class TestBuildAgentContextBundle:
     
     @pytest.mark.asyncio
     async def test_build_bundle_includes_version(self):
-        """Test that bundle includes Vidyut version."""
+        """Test that bundle includes Aksara version."""
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
             
             bundle = await build_agent_context_bundle(app, intent)
         
-        import vidyut
-        assert bundle.version == vidyut.__version__
+        import aksara
+        assert bundle.version == aksara.__version__
     
     @pytest.mark.asyncio
     async def test_build_bundle_preserves_intent(self):
@@ -397,7 +397,7 @@ class TestBuildAgentContextBundle:
             hints={"key": "value"}
         )
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -424,7 +424,7 @@ class TestSchemaIntegration:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -441,7 +441,7 @@ class TestSchemaIntegration:
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
@@ -463,7 +463,7 @@ class TestAgentContextEndpoint:
     
     def test_context_endpoint_returns_bundle(self):
         """Test context endpoint returns bundle structure."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -471,7 +471,7 @@ class TestAgentContextEndpoint:
         client = TestClient(app)
         
         # Mock at the agent module where build_agent_context_bundle is defined
-        with patch("vidyut.ai.agent.build_agent_context_bundle") as mock_build:
+        with patch("aksara.ai.agent.build_agent_context_bundle") as mock_build:
             mock_bundle = AgentContextBundle(
                 intent=AgentIntent(user_message="Test"),
                 full_context={"models": []},
@@ -498,14 +498,14 @@ class TestAgentContextEndpoint:
     
     def test_context_endpoint_preserves_intent(self):
         """Test intent is preserved in response."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.agent.build_agent_context_bundle") as mock_build:
+        with patch("aksara.ai.agent.build_agent_context_bundle") as mock_build:
             mock_bundle = AgentContextBundle(
                 intent=AgentIntent(
                     id="req-456",
@@ -539,7 +539,7 @@ class TestAgentContextEndpoint:
     
     def test_context_endpoint_invalid_intent(self):
         """Test endpoint rejects invalid intent."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -559,7 +559,7 @@ class TestAgentPlanPreviewEndpoint:
     
     def test_preview_endpoint_dry_run(self):
         """Test preview always runs in dry_run mode."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -567,7 +567,7 @@ class TestAgentPlanPreviewEndpoint:
         client = TestClient(app)
         
         # Mock at source module where execute_plan is defined
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = []
@@ -596,14 +596,14 @@ class TestAgentPlanPreviewEndpoint:
     
     def test_preview_endpoint_returns_summary(self):
         """Test preview returns summary."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = [
@@ -634,7 +634,7 @@ class TestAgentPlanPreviewEndpoint:
     
     def test_preview_endpoint_invalid_plan(self):
         """Test preview rejects invalid plan."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -660,7 +660,7 @@ class TestAgentPlanApplyEndpoint:
     
     def test_apply_missing_header_rejected(self):
         """Test apply without X-AI-Apply header is rejected."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -687,7 +687,7 @@ class TestAgentPlanApplyEndpoint:
     
     def test_apply_confirm_false_rejected(self):
         """Test apply with confirm=False is rejected."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -713,14 +713,14 @@ class TestAgentPlanApplyEndpoint:
     
     def test_apply_with_header_and_confirm(self):
         """Test apply succeeds with both header and confirm."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = []
@@ -750,14 +750,14 @@ class TestAgentPlanApplyEndpoint:
     
     def test_apply_header_case_insensitive(self):
         """Test X-AI-Apply header is case-insensitive."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = []
@@ -792,14 +792,14 @@ class TestPlannerIntegration:
     
     def test_preview_with_analyze_context_step(self):
         """Test preview with analyze_context step."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = [MagicMock(id="s1", success=True)]
@@ -830,14 +830,14 @@ class TestPlannerIntegration:
     
     def test_preview_multi_step_plan(self):
         """Test preview with multi-step plan."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = True
             mock_result.steps = [
@@ -878,14 +878,14 @@ class TestPlannerIntegration:
     
     def test_fail_fast_behavior(self):
         """Test that failed steps result in overall failure."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.planner.execute_plan") as mock_execute:
+        with patch("aksara.ai.planner.execute_plan") as mock_execute:
             mock_result = MagicMock()
             mock_result.success = False
             mock_result.steps = [
@@ -927,14 +927,14 @@ class TestAgentSafety:
     
     def test_context_endpoint_is_read_only(self):
         """Test context endpoint doesn't modify anything."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
         client = TestClient(app)
         
-        with patch("vidyut.ai.agent.build_agent_context_bundle") as mock_build:
+        with patch("aksara.ai.agent.build_agent_context_bundle") as mock_build:
             mock_bundle = AgentContextBundle(
                 intent=AgentIntent(user_message="Test"),
                 full_context={},
@@ -957,7 +957,7 @@ class TestAgentSafety:
     
     def test_preview_never_modifies_disk(self):
         """Test preview endpoint always uses dry_run."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -974,7 +974,7 @@ class TestAgentSafety:
             mock_result.model_dump.return_value = {"success": True, "steps": [], "notes": [], "dry_run": dry_run}
             return mock_result
         
-        with patch("vidyut.ai.planner.execute_plan", side_effect=capture_execute):
+        with patch("aksara.ai.planner.execute_plan", side_effect=capture_execute):
             response = client.post(
                 "/ai/agent/plan/preview",
                 json={
@@ -992,7 +992,7 @@ class TestAgentSafety:
     
     def test_apply_requires_both_safeguards(self):
         """Test apply requires both confirm AND header."""
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
@@ -1101,18 +1101,18 @@ class TestVersionIntegration:
     """Tests for version integration."""
     
     @pytest.mark.asyncio
-    async def test_bundle_version_matches_vidyut(self):
-        """Test bundle version matches Vidyut version."""
-        import vidyut
+    async def test_bundle_version_matches_aksara(self):
+        """Test bundle version matches Aksara version."""
+        import aksara
         
         app = MagicMock(spec=FastAPI)
         intent = AgentIntent(user_message="Test")
         
-        with patch("vidyut.ai.context.build_full_ai_context") as mock_ctx:
+        with patch("aksara.ai.context.build_full_ai_context") as mock_ctx:
             mock_context = MagicMock()
             mock_context.model_dump.return_value = {}
             mock_ctx.return_value = mock_context
             
             bundle = await build_agent_context_bundle(app, intent)
         
-        assert bundle.version == vidyut.__version__
+        assert bundle.version == aksara.__version__

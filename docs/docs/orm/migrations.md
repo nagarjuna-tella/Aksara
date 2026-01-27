@@ -1,19 +1,19 @@
 # Migrations
 
-Manage database schema changes with Vidyut's migration system.
+Manage database schema changes with Aksara's migration system.
 
 ---
 
 ## Overview
 
-Vidyut uses a Python-based migration system similar to Django's, with automatic change detection and conflict resolution:
+Aksara uses a Python-based migration system similar to Django's, with automatic change detection and conflict resolution:
 
 ```bash
 # Create migrations for model changes
-vidyut makemigrations
+aksara makemigrations
 
 # Apply migrations to database
-vidyut migrate
+aksara migrate
 ```
 
 ---
@@ -26,13 +26,13 @@ Generate migration files from model changes:
 
 ```bash
 # Generate migrations for all apps
-vidyut makemigrations
+aksara makemigrations
 
 # Generate for specific app
-vidyut makemigrations myapp
+aksara makemigrations myapp
 
 # With custom name
-vidyut makemigrations --name add_email_verification
+aksara makemigrations --name add_email_verification
 ```
 
 This creates a migration file like:
@@ -46,9 +46,9 @@ myapp/migrations/0002_add_email_verification.py
 ```python
 """Add email verification fields."""
 
-from vidyut.migrations import Migration
-from vidyut.migrations.operations import AddField
-from vidyut import fields
+from aksara.migrations import Migration
+from aksara.migrations.operations import AddField
+from aksara import fields
 
 
 class Migration(Migration):
@@ -82,23 +82,23 @@ Apply pending migrations:
 
 ```bash
 # Apply all pending migrations
-vidyut migrate
+aksara migrate
 
 # Apply migrations for specific app
-vidyut migrate myapp
+aksara migrate myapp
 
 # Migrate to specific migration
-vidyut migrate myapp 0001_initial
+aksara migrate myapp 0001_initial
 
 # Roll back all migrations for an app
-vidyut migrate myapp zero
+aksara migrate myapp zero
 ```
 
 ### Check Migration Status
 
 ```bash
 # Show migration status
-vidyut showmigrations
+aksara showmigrations
 
 # Output:
 # myapp
@@ -111,15 +111,15 @@ vidyut showmigrations
 
 ## Migration Operations
 
-Vidyut provides Python-based operations for schema changes.
+Aksara provides Python-based operations for schema changes.
 
 ### CreateTable
 
 Create a new database table:
 
 ```python
-from vidyut.migrations.operations import CreateTable
-from vidyut import fields
+from aksara.migrations.operations import CreateTable
+from aksara import fields
 
 CreateTable(
     name="posts",
@@ -138,7 +138,7 @@ CreateTable(
 Remove a table:
 
 ```python
-from vidyut.migrations.operations import DropTable
+from aksara.migrations.operations import DropTable
 
 DropTable(name="old_posts")
 ```
@@ -148,7 +148,7 @@ DropTable(name="old_posts")
 Add a field to an existing table:
 
 ```python
-from vidyut.migrations.operations import AddField
+from aksara.migrations.operations import AddField
 
 AddField(
     model_name="User",
@@ -162,7 +162,7 @@ AddField(
 Remove a field:
 
 ```python
-from vidyut.migrations.operations import RemoveField
+from aksara.migrations.operations import RemoveField
 
 RemoveField(
     model_name="User",
@@ -175,7 +175,7 @@ RemoveField(
 Modify field properties:
 
 ```python
-from vidyut.migrations.operations import AlterField
+from aksara.migrations.operations import AlterField
 
 # Change max_length
 AlterField(
@@ -197,7 +197,7 @@ AlterField(
 Rename a field:
 
 ```python
-from vidyut.migrations.operations import RenameField
+from aksara.migrations.operations import RenameField
 
 RenameField(
     model_name="User",
@@ -211,7 +211,7 @@ RenameField(
 Create an index:
 
 ```python
-from vidyut.migrations.operations import AddIndex
+from aksara.migrations.operations import AddIndex
 
 AddIndex(
     model_name="Post",
@@ -232,7 +232,7 @@ AddIndex(
 Drop an index:
 
 ```python
-from vidyut.migrations.operations import RemoveIndex
+from aksara.migrations.operations import RemoveIndex
 
 RemoveIndex(
     model_name="Post",
@@ -245,7 +245,7 @@ RemoveIndex(
 Add a database constraint:
 
 ```python
-from vidyut.migrations.operations import AddConstraint
+from aksara.migrations.operations import AddConstraint
 
 # Unique constraint
 AddConstraint(
@@ -269,7 +269,7 @@ AddConstraint(
 Remove a constraint:
 
 ```python
-from vidyut.migrations.operations import RemoveConstraint
+from aksara.migrations.operations import RemoveConstraint
 
 RemoveConstraint(
     model_name="User",
@@ -288,8 +288,8 @@ Migrations can include data changes alongside schema changes.
 Execute Python code during migration:
 
 ```python
-from vidyut.migrations import Migration
-from vidyut.migrations.operations import RunPython
+from aksara.migrations import Migration
+from aksara.migrations.operations import RunPython
 
 def populate_slugs(apps, schema_editor):
     """Generate slugs for existing posts."""
@@ -316,7 +316,7 @@ class Migration(Migration):
 Execute raw SQL:
 
 ```python
-from vidyut.migrations.operations import RunSQL
+from aksara.migrations.operations import RunSQL
 
 RunSQL(
     sql="CREATE EXTENSION IF NOT EXISTS pg_trgm;",
@@ -368,7 +368,7 @@ class Migration(Migration):
 
 ## Conflict Detection
 
-Vidyut automatically detects migration conflicts when multiple developers create migrations from the same base.
+Aksara automatically detects migration conflicts when multiple developers create migrations from the same base.
 
 ### What is a Conflict?
 
@@ -383,7 +383,7 @@ Vidyut automatically detects migration conflicts when multiple developers create
 ### Detecting Conflicts
 
 ```bash
-vidyut makemigrations --check
+aksara makemigrations --check
 # Error: Conflicting migrations detected
 ```
 
@@ -392,7 +392,7 @@ vidyut makemigrations --check
 Option 1: **Merge migrations**
 
 ```bash
-vidyut makemigrations --merge
+aksara makemigrations --merge
 # Creates: 0003_merge_add_email_add_phone.py
 ```
 
@@ -431,8 +431,8 @@ AddField(model_name="User", name="avatar_url", ...)
 ### Name Migrations Descriptively
 
 ```bash
-vidyut makemigrations --name add_user_profile_fields
-vidyut makemigrations --name rename_username_to_handle
+aksara makemigrations --name add_user_profile_fields
+aksara makemigrations --name rename_username_to_handle
 ```
 
 ### Test Migrations
@@ -475,7 +475,7 @@ def forward(apps, schema_editor):
 Combine multiple migrations into one for a cleaner history:
 
 ```bash
-vidyut squashmigrations myapp 0001 0010
+aksara squashmigrations myapp 0001 0010
 # Creates: 0001_squashed_0010.py
 ```
 
@@ -488,10 +488,10 @@ The squashed migration:
 
 ## Migration Graph
 
-Vidyut maintains a directed acyclic graph (DAG) of migrations:
+Aksara maintains a directed acyclic graph (DAG) of migrations:
 
 ```bash
-vidyut showmigrations --graph
+aksara showmigrations --graph
 
 # Output:
 # myapp
@@ -514,30 +514,30 @@ vidyut showmigrations --graph
 
 ```bash
 # Force detection
-vidyut makemigrations --force
+aksara makemigrations --force
 
 # Check model registration
-vidyut info --models
+aksara info --models
 ```
 
 ### Migration Fails to Apply
 
 ```bash
 # Show SQL without applying
-vidyut sqlmigrate myapp 0002
+aksara sqlmigrate myapp 0002
 
 # Apply with verbose output
-vidyut migrate --verbosity=2
+aksara migrate --verbosity=2
 ```
 
 ### Database Out of Sync
 
 ```bash
 # Fake a migration (mark as applied without running)
-vidyut migrate --fake myapp 0002
+aksara migrate --fake myapp 0002
 
 # Fake initial migration
-vidyut migrate --fake-initial myapp
+aksara migrate --fake-initial myapp
 ```
 
 ---
@@ -556,16 +556,16 @@ class User(Model):
 
 ```bash
 # 2. Generate migration
-vidyut makemigrations --name add_avatar_url
+aksara makemigrations --name add_avatar_url
 # Created: myapp/migrations/0005_add_avatar_url.py
 ```
 
 ```python
 # 3. Review generated migration
 # myapp/migrations/0005_add_avatar_url.py
-from vidyut.migrations import Migration
-from vidyut.migrations.operations import AddField
-from vidyut import fields
+from aksara.migrations import Migration
+from aksara.migrations.operations import AddField
+from aksara import fields
 
 class Migration(Migration):
     dependencies = [("myapp", "0004_add_bio")]
@@ -581,7 +581,7 @@ class Migration(Migration):
 
 ```bash
 # 4. Apply migration
-vidyut migrate
+aksara migrate
 
 # Output:
 # Applying myapp.0005_add_avatar_url... OK
@@ -589,7 +589,7 @@ vidyut migrate
 
 ```bash
 # 5. Verify
-vidyut showmigrations myapp
+aksara showmigrations myapp
 # [X] 0005_add_avatar_url
 ```
 

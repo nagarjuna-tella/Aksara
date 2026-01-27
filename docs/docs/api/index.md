@@ -1,12 +1,12 @@
 # API Layer
 
-Build REST APIs rapidly with Vidyut's ModelViewSet and action system.
+Build REST APIs rapidly with Aksara's ModelViewSet and action system.
 
 ---
 
 ## Overview
 
-Vidyut's API layer provides Django REST Framework-like patterns optimized for FastAPI:
+Aksara's API layer provides Django REST Framework-like patterns optimized for FastAPI:
 
 - **ModelViewSet** — Full CRUD with minimal code
 - **Actions** — Custom endpoints beyond CRUD
@@ -15,7 +15,7 @@ Vidyut's API layer provides Django REST Framework-like patterns optimized for Fa
 - **Routing** — Auto-registration and discovery
 
 ```python
-from vidyut.api import ModelViewSet, action
+from aksara.api import ModelViewSet, action
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -36,7 +36,7 @@ class PostViewSet(ModelViewSet):
 
 ```python
 # myapp/viewsets.py
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from myapp.models import Post
 
 class PostViewSet(ModelViewSet):
@@ -58,7 +58,7 @@ This automatically creates:
 
 ```python
 # myapp/routes.py
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from myapp.viewsets import PostViewSet
 
 routes = include_viewset(PostViewSet, prefix="/posts")
@@ -68,10 +68,10 @@ routes = include_viewset(PostViewSet, prefix="/posts")
 
 ```python
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.routes import routes
 
-app = Vidyut()
+app = Aksara()
 app.include_router(routes)
 ```
 
@@ -154,7 +154,7 @@ GET /posts/?is_published=true&author_id=abc&page=1&limit=20
 
 ```python
 # models.py
-from vidyut import Model, fields, CASCADE
+from aksara import Model, fields, CASCADE
 
 class Author(Model):
     name = fields.String(max_length=100)
@@ -168,8 +168,8 @@ class Post(Model):
     created_at = fields.DateTime(auto_now_add=True)
 
 # viewsets.py
-from vidyut.api import ModelViewSet, action
-from vidyut.permissions import IsAuthenticated, IsAdminUser
+from aksara.api import ModelViewSet, action
+from aksara.permissions import IsAuthenticated, IsAdminUser
 
 class AuthorViewSet(ModelViewSet):
     model = Author
@@ -200,15 +200,15 @@ class PostViewSet(ModelViewSet):
         return [self.serialize(p) for p in posts]
 
 # routes.py
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 
 author_routes = include_viewset(AuthorViewSet, prefix="/authors")
 post_routes = include_viewset(PostViewSet, prefix="/posts")
 
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 
-app = Vidyut()
+app = Aksara()
 app.include_router(author_routes)
 app.include_router(post_routes)
 ```

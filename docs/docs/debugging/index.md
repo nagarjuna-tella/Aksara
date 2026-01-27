@@ -1,12 +1,12 @@
 # Debugging
 
-Developer tools for debugging Vidyut applications.
+Developer tools for debugging Aksara applications.
 
 ---
 
 ## Overview
 
-Vidyut provides powerful debugging tools for development:
+Aksara provides powerful debugging tools for development:
 
 - **Debug Error Pages** — Rich error pages with context
 - **AI Debug Tab** — AI-powered fix suggestions
@@ -14,9 +14,9 @@ Vidyut provides powerful debugging tools for development:
 - **Request Inspector** — Request/response details
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 
-app = Vidyut(debug=True)  # Enable debug mode
+app = Aksara(debug=True)  # Enable debug mode
 ```
 
 !!! warning "Production Warning"
@@ -29,7 +29,7 @@ app = Vidyut(debug=True)  # Enable debug mode
 ### Via Constructor
 
 ```python
-app = Vidyut(debug=True)
+app = Aksara(debug=True)
 ```
 
 ### Via Settings
@@ -39,10 +39,10 @@ app = Vidyut(debug=True)
 DEBUG = True
 
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.settings import DEBUG
 
-app = Vidyut(debug=DEBUG)
+app = Aksara(debug=DEBUG)
 ```
 
 ### Via Environment
@@ -50,7 +50,7 @@ app = Vidyut(debug=DEBUG)
 ```python
 import os
 
-app = Vidyut(debug=os.getenv("DEBUG", "false").lower() == "true")
+app = Aksara(debug=os.getenv("DEBUG", "false").lower() == "true")
 ```
 
 ---
@@ -81,7 +81,7 @@ View complete request and response data:
 Track database queries:
 
 ```python
-from vidyut.debug import query_profiler
+from aksara.debug import query_profiler
 
 @app.get("/api/posts")
 async def list_posts(request):
@@ -123,7 +123,7 @@ async def list_posts(request):
 ### Print Debugging
 
 ```python
-from vidyut.debug import debug_print
+from aksara.debug import debug_print
 
 @app.get("/api/data")
 async def get_data(request):

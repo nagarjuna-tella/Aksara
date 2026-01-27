@@ -13,9 +13,9 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from vidyut.ai.models import AiTool
-from vidyut.ai.registry import AiToolRegistry
-from vidyut.ai.fastapi import router
+from aksara.ai.models import AiTool
+from aksara.ai.registry import AiToolRegistry
+from aksara.ai.fastapi import router
 
 
 # =============================================================================

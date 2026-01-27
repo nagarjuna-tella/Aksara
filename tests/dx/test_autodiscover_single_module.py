@@ -7,12 +7,12 @@ import types
 import pytest
 from unittest.mock import patch, MagicMock
 
-from vidyut.core.discovery import (
+from aksara.core.discovery import (
     discover_viewsets_from_module,
     import_module_safely,
     auto_discover_viewsets,
 )
-from vidyut.api.viewsets import ModelViewSet
+from aksara.api.viewsets import ModelViewSet
 
 
 class DummyModel:
@@ -139,7 +139,7 @@ class TestAutoDiscoverViewsets:
         fake_module.DummyViewSet = DummyViewSet
         
         with patch.dict(sys.modules, {"myapp.views": fake_module}):
-            with patch("vidyut.core.discovery.import_module_safely", return_value=fake_module):
+            with patch("aksara.core.discovery.import_module_safely", return_value=fake_module):
                 viewsets = auto_discover_viewsets(views_module="myapp.views")
         
         assert len(viewsets) == 1
@@ -160,8 +160,8 @@ class TestAutoDiscoverViewsets:
                 return fake_views_2
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["blog", "users"]
                 viewsets = auto_discover_viewsets()
         
@@ -180,8 +180,8 @@ class TestAutoDiscoverViewsets:
             # users.views doesn't exist
             return None
         
-        with patch("vidyut.core.discovery.import_module_safely", side_effect=mock_import):
-            with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.core.discovery.import_module_safely", side_effect=mock_import):
+            with patch("aksara.conf.settings") as mock_settings:
                 mock_settings.apps = ["blog", "users"]
                 viewsets = auto_discover_viewsets()
         
@@ -191,7 +191,7 @@ class TestAutoDiscoverViewsets:
     
     def test_empty_apps_returns_empty_list(self):
         """Should return empty list when no apps configured."""
-        with patch("vidyut.conf.settings") as mock_settings:
+        with patch("aksara.conf.settings") as mock_settings:
             mock_settings.apps = []
             viewsets = auto_discover_viewsets()
         
@@ -203,7 +203,7 @@ class TestAutoDiscoverViewsets:
         fake_views.DummyViewSet = DummyViewSet
         fake_views.DuplicateDummyViewSet = DummyViewSet  # Same class, different name
         
-        with patch("vidyut.core.discovery.import_module_safely", return_value=fake_views):
+        with patch("aksara.core.discovery.import_module_safely", return_value=fake_views):
             viewsets = auto_discover_viewsets(views_module="app.views")
         
         # Should have unique classes only - same class with different names should be deduplicated

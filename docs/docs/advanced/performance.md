@@ -1,6 +1,6 @@
 # Performance
 
-Optimize your Vidyut application for speed.
+Optimize your Aksara application for speed.
 
 ---
 
@@ -80,7 +80,7 @@ Always paginate large queries:
 posts = await Post.objects.limit(20).offset(40).all()
 
 # Or use built-in pagination
-from vidyut.api.pagination import PageNumberPagination
+from aksara.api.pagination import PageNumberPagination
 
 class PostViewSet(ModelViewSet):
     pagination_class = PageNumberPagination
@@ -95,7 +95,7 @@ class PostViewSet(ModelViewSet):
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     "LOG_QUERIES": True,
 }
@@ -104,7 +104,7 @@ VIDYUT = {
 ### Profile Decorator
 
 ```python
-from vidyut.debug import profile_queries
+from aksara.debug import profile_queries
 
 @profile_queries
 async def get_posts():
@@ -122,7 +122,7 @@ async def get_posts():
 ### Query Capture
 
 ```python
-from vidyut.debug import capture_queries
+from aksara.debug import capture_queries
 
 async with capture_queries() as queries:
     posts = await Post.objects.all()
@@ -137,7 +137,7 @@ for q in queries:
 ### N+1 Detection
 
 ```python
-from vidyut.debug import detect_n_plus_one
+from aksara.debug import detect_n_plus_one
 
 @detect_n_plus_one
 async def list_posts(request):
@@ -292,7 +292,7 @@ await User.objects.filter(
 ### Cache Expensive Queries
 
 ```python
-from vidyut.cache import cached
+from aksara.cache import cached
 
 @cached(ttl=300)
 async def get_popular_posts():
@@ -320,7 +320,7 @@ class Post(Model):
 ### Response Caching
 
 ```python
-from vidyut.cache import cache_response
+from aksara.cache import cache_response
 
 class PostViewSet(ModelViewSet):
     @cache_response(ttl=60)
@@ -338,7 +338,7 @@ See [Caching Guide](caching.md) for more.
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "DATABASE_URL": "postgresql://localhost/myapp",
     "DATABASE_POOL": {
         "min_size": 5,
@@ -352,7 +352,7 @@ VIDYUT = {
 ### Redis Pool
 
 ```python
-VIDYUT = {
+AKSARA = {
     "CACHE": {
         "default": {
             "backend": "redis",
@@ -370,7 +370,7 @@ VIDYUT = {
 ### Compression
 
 ```python
-from vidyut.middleware import GZipMiddleware
+from aksara.middleware import GZipMiddleware
 
 app.add_middleware(GZipMiddleware, minimum_size=500)
 ```

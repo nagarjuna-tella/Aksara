@@ -1,5 +1,5 @@
 """
-Vidyut ORM Tests
+Aksara ORM Tests
 
-Unit tests for the Vidyut async ORM.
+Unit tests for the Aksara async ORM.
 """

@@ -3,8 +3,8 @@ Migration: v033_initial
 Generated: 2025-11-29T23:02:54.409467
 """
 
-from vidyut.migrations import Migration
-from vidyut.migrations import operations as op
+from aksara.migrations import Migration
+from aksara.migrations import operations as op
 
 
 class Migration(Migration):

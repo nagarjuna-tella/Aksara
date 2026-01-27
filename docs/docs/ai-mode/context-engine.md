@@ -14,7 +14,7 @@ The Context Engine analyzes your codebase to provide AI with relevant informatio
 - **Documentation** — Docstrings and comments
 
 ```python
-from vidyut.ai import ContextEngine
+from aksara.ai import ContextEngine
 
 engine = ContextEngine()
 context = await engine.gather("Add a featured flag to Post model")
@@ -27,7 +27,7 @@ context = await engine.gather("Add a featured flag to Post model")
 ### Basic Context Gathering
 
 ```python
-from vidyut.ai import ContextEngine
+from aksara.ai import ContextEngine
 
 engine = ContextEngine()
 
@@ -295,7 +295,7 @@ engine = ContextEngine(
 ### With Query Engine
 
 ```python
-from vidyut.ai import ContextEngine, QueryEngine
+from aksara.ai import ContextEngine, QueryEngine
 
 context_engine = ContextEngine()
 query_engine = QueryEngine()
@@ -311,7 +311,7 @@ result = await query_engine.query(
 ### With Codegen
 
 ```python
-from vidyut.ai import ContextEngine, Codegen
+from aksara.ai import ContextEngine, Codegen
 
 context_engine = ContextEngine()
 codegen = Codegen()
@@ -327,7 +327,7 @@ code = await codegen.model(
 ### With Agent Runtime
 
 ```python
-from vidyut.ai import AgentRuntime
+from aksara.ai import AgentRuntime
 
 runtime = AgentRuntime()
 
@@ -348,7 +348,7 @@ result = await runtime.execute(
 ### Register Source
 
 ```python
-from vidyut.ai.context import register_source, ContextSource
+from aksara.ai.context import register_source, ContextSource
 
 @register_source
 class EnvVarsSource(ContextSource):
@@ -380,7 +380,7 @@ context = await engine.gather(
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_CONTEXT": {
         # Default includes
         "include_models": True,

@@ -128,7 +128,7 @@ def benchmark(name: str, operations: int = 1):
 
 
 # Database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/vidyut_bench")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/aksara_bench")
 
 
 # Common table names used by all benchmarks

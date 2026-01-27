@@ -6,14 +6,14 @@ Configure URLs and auto-register ViewSets.
 
 ## Overview
 
-Vidyut provides multiple ways to register API routes:
+Aksara provides multiple ways to register API routes:
 
 - **include_viewset** — Register a single ViewSet
 - **discover_viewsets** — Auto-discover ViewSets from modules
 - **Manual registration** — Fine-grained control
 
 ```python
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from myapp.viewsets import PostViewSet
 
 routes = include_viewset(PostViewSet, prefix="/posts")
@@ -26,7 +26,7 @@ routes = include_viewset(PostViewSet, prefix="/posts")
 Register a ViewSet with all its routes:
 
 ```python
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 from myapp.viewsets import PostViewSet
 
 # Basic usage
@@ -66,7 +66,7 @@ Plus custom actions:
 Auto-discover and register all ViewSets from a module:
 
 ```python
-from vidyut.api import discover_viewsets
+from aksara.api import discover_viewsets
 
 # Discover from a module
 routes = discover_viewsets("myapp.viewsets")
@@ -84,7 +84,7 @@ ViewSets are discovered if they:
 
 ```python
 # myapp/viewsets.py
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from myapp.models import Post, Author
 
 class PostViewSet(ModelViewSet):
@@ -119,10 +119,10 @@ class PostViewSet(ModelViewSet):
 
 ```python
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.routes import routes
 
-app = Vidyut()
+app = Aksara()
 app.include_router(routes)
 ```
 
@@ -130,13 +130,13 @@ app.include_router(routes)
 
 ```python
 # main.py
-from vidyut import Vidyut
-from vidyut.api import include_viewset
+from aksara import Aksara
+from aksara.api import include_viewset
 from users.viewsets import UserViewSet
 from posts.viewsets import PostViewSet
 from comments.viewsets import CommentViewSet
 
-app = Vidyut()
+app = Aksara()
 
 # Add each router
 app.include_router(include_viewset(UserViewSet, prefix="/users"))
@@ -147,10 +147,10 @@ app.include_router(include_viewset(CommentViewSet, prefix="/comments"))
 ### With API Prefix
 
 ```python
-from vidyut import Vidyut
-from vidyut.api import include_viewset
+from aksara import Aksara
+from aksara.api import include_viewset
 
-app = Vidyut()
+app = Aksara()
 
 # All API routes under /api/v1/
 api_v1 = include_viewset(PostViewSet, prefix="/posts")
@@ -162,12 +162,12 @@ app.include_router(api_v1, prefix="/api/v1")
 ### Versioned APIs
 
 ```python
-from vidyut import Vidyut
-from vidyut.api import include_viewset
+from aksara import Aksara
+from aksara.api import include_viewset
 from myapp.viewsets.v1 import PostViewSetV1
 from myapp.viewsets.v2 import PostViewSetV2
 
-app = Vidyut()
+app = Aksara()
 
 # Version 1
 v1_routes = include_viewset(PostViewSetV1, prefix="/posts")
@@ -218,7 +218,7 @@ url = request.url_for("post-publish", id=post_id)
 For fine-grained control, bypass ViewSets entirely:
 
 ```python
-from vidyut import Vidyut
+from aksara import Aksara
 from starlette.routing import Route
 
 async def list_posts(request):
@@ -230,7 +230,7 @@ async def get_post(request):
     post = await Post.objects.get(id=post_id)
     return JSONResponse({...})
 
-app = Vidyut()
+app = Aksara()
 app.add_route("/posts/", list_posts, methods=["GET"])
 app.add_route("/posts/{id}/", get_post, methods=["GET"])
 ```
@@ -238,7 +238,7 @@ app.add_route("/posts/{id}/", get_post, methods=["GET"])
 ### Using APIRouter
 
 ```python
-from vidyut.api import APIRouter
+from aksara.api import APIRouter
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -331,7 +331,7 @@ app.include_router(comment_routes)
 
 ```python
 # routes.py
-from vidyut.api import include_viewset, discover_viewsets, APIRouter
+from aksara.api import include_viewset, discover_viewsets, APIRouter
 from myapp.viewsets import (
     PostViewSet,
     AuthorViewSet,
@@ -362,10 +362,10 @@ async def site_stats():
 
 
 # main.py
-from vidyut import Vidyut
+from aksara import Aksara
 from myapp.routes import post_routes, author_routes, misc_router
 
-app = Vidyut()
+app = Aksara()
 
 # Register all routes under /api/v1
 app.include_router(post_routes, prefix="/api/v1")
@@ -373,7 +373,7 @@ app.include_router(author_routes, prefix="/api/v1")
 app.include_router(misc_router, prefix="/api/v1")
 
 # Or use discover_viewsets for automatic registration
-# from vidyut.api import discover_viewsets
+# from aksara.api import discover_viewsets
 # app.include_router(discover_viewsets("myapp"), prefix="/api/v1")
 ```
 

@@ -1,8 +1,8 @@
-site_name: Vidyut Framework
+site_name: Aksara Framework
 site_description: AI-Native Async Backend Framework for Python
-site_url: https://vidyut.dev
-repo_url: https://github.com/vidyut-orm/vidyut
-repo_name: vidyut-orm/vidyut
+site_url: https://aksara.dev
+repo_url: https://github.com/aksara-framework/aksara
+repo_name: aksara-framework/aksara
 
 theme:
   name: material

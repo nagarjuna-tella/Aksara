@@ -6,7 +6,7 @@ Create custom commands for your project.
 
 ## Overview
 
-Extend Vidyut's CLI with custom commands:
+Extend Aksara's CLI with custom commands:
 
 - **Project commands** — Specific to your project
 - **Reusable commands** — Packaged for distribution
@@ -20,7 +20,7 @@ Extend Vidyut's CLI with custom commands:
 
 ```python
 # myapp/commands/greet.py
-from vidyut.cli import Command, argument, option
+from aksara.cli import Command, argument, option
 
 class GreetCommand(Command):
     """Greet a user."""
@@ -40,7 +40,7 @@ class GreetCommand(Command):
 
 ```python
 # myapp/__init__.py
-from vidyut.cli import register_command
+from aksara.cli import register_command
 from .commands.greet import GreetCommand
 
 register_command(GreetCommand)
@@ -49,7 +49,7 @@ register_command(GreetCommand)
 ### Use Command
 
 ```bash
-vidyut greet World --excited
+aksara greet World --excited
 # Hello, World!
 ```
 
@@ -60,7 +60,7 @@ vidyut greet World --excited
 ### Basic Command
 
 ```python
-from vidyut.cli import Command
+from aksara.cli import Command
 
 class MyCommand(Command):
     """Command description shown in --help."""
@@ -75,7 +75,7 @@ class MyCommand(Command):
 ### With Arguments
 
 ```python
-from vidyut.cli import Command, argument
+from aksara.cli import Command, argument
 
 class ProcessCommand(Command):
     name = "process"
@@ -89,7 +89,7 @@ class ProcessCommand(Command):
 ### With Options
 
 ```python
-from vidyut.cli import Command, option
+from aksara.cli import Command, option
 
 class ExportCommand(Command):
     name = "export"
@@ -105,7 +105,7 @@ class ExportCommand(Command):
 ### Combined
 
 ```python
-from vidyut.cli import Command, argument, option
+from aksara.cli import Command, argument, option
 
 class MigrateDataCommand(Command):
     name = "migrate-data"
@@ -283,7 +283,7 @@ class ListUsersCommand(Command):
 ### Settings Access
 
 ```python
-from vidyut.conf import settings
+from aksara.conf import settings
 
 class ShowConfigCommand(Command):
     name = "show-config"
@@ -314,7 +314,7 @@ class MyCommand(Command):
 ### Create a Group
 
 ```python
-from vidyut.cli import CommandGroup
+from aksara.cli import CommandGroup
 
 class DataCommands(CommandGroup):
     """Data management commands."""
@@ -338,8 +338,8 @@ class ImportCommand(Command):
 
 Usage:
 ```bash
-vidyut data export
-vidyut data import
+aksara data export
+aksara data import
 ```
 
 ---
@@ -349,7 +349,7 @@ vidyut data import
 ### Test Command Output
 
 ```python
-from vidyut.testing import CommandTestCase
+from aksara.testing import CommandTestCase
 
 class TestGreetCommand(CommandTestCase):
     async def test_greet(self):
@@ -388,7 +388,7 @@ class TestExportCommand(CommandTestCase):
 
 ```python
 # setup.py or pyproject.toml
-[project.entry-points."vidyut.commands"]
+[project.entry-points."aksara.commands"]
 mycommand = "mypackage.commands:MyCommand"
 ```
 
@@ -412,7 +412,7 @@ myapp/
 ### Data Export Command
 
 ```python
-from vidyut.cli import Command, option
+from aksara.cli import Command, option
 from myapp.models import User
 import json
 
@@ -445,7 +445,7 @@ class ExportUsersCommand(Command):
 ### Database Cleanup Command
 
 ```python
-from vidyut.cli import Command, option
+from aksara.cli import Command, option
 from datetime import datetime, timedelta
 from myapp.models import Session
 
@@ -476,7 +476,7 @@ class CleanupSessionsCommand(Command):
 ### Sync Command
 
 ```python
-from vidyut.cli import Command, option
+from aksara.cli import Command, option
 
 class SyncProductsCommand(Command):
     """Sync products from external API."""

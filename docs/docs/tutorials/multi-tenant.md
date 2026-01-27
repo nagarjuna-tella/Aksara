@@ -36,9 +36,9 @@ This tutorial uses **Shared Database** with row-level filtering.
 ### Create Project
 
 ```bash
-vidyut startproject saas_app
+aksara startproject saas_app
 cd saas_app
-pip install vidyut[all]
+pip install aksara[all]
 ```
 
 ### Configure Settings
@@ -47,7 +47,7 @@ pip install vidyut[all]
 # saas_app/settings.py
 import os
 
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     "DATABASE_URL": os.getenv("DATABASE_URL", "postgresql://localhost/saas_app"),
     "INSTALLED_APPS": ["tenants", "core"],
@@ -63,8 +63,8 @@ VIDYUT = {
 ### Create Apps
 
 ```bash
-vidyut startapp tenants
-vidyut startapp core
+aksara startapp tenants
+aksara startapp core
 ```
 
 ---
@@ -73,7 +73,7 @@ vidyut startapp core
 
 ```python
 # tenants/models.py
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Tenant(Model):
     """A tenant (organization) in the SaaS application."""
@@ -122,8 +122,8 @@ class TenantUser(Model):
 
 ```python
 # core/models.py
-from vidyut import Model, fields
-from vidyut.middleware import get_current_tenant
+from aksara import Model, fields
+from aksara.middleware import get_current_tenant
 
 class TenantModel(Model):
     """Base model for tenant-scoped data."""
@@ -202,7 +202,7 @@ class Task(TenantModel):
 
 ```python
 # saas_app/middleware.py
-from vidyut.middleware import TenantMiddleware
+from aksara.middleware import TenantMiddleware
 
 class SubdomainTenantMiddleware(TenantMiddleware):
     """Resolve tenant from subdomain."""
@@ -228,10 +228,10 @@ class SubdomainTenantMiddleware(TenantMiddleware):
 
 ```python
 # saas_app/app.py
-from vidyut import Vidyut
+from aksara import Aksara
 from .middleware import SubdomainTenantMiddleware
 
-app = Vidyut()
+app = Aksara()
 
 # Add tenant middleware
 app.add_middleware(SubdomainTenantMiddleware)
@@ -243,7 +243,7 @@ app.add_middleware(SubdomainTenantMiddleware)
 
 ```python
 # core/serializers.py
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 from .models import User, Project, Task
 
 class UserSerializer(ModelSerializer):
@@ -285,9 +285,9 @@ class ProjectDetailSerializer(ProjectSerializer):
 
 ```python
 # core/viewsets.py
-from vidyut.api import ModelViewSet, action
-from vidyut.api.permissions import IsAuthenticated
-from vidyut.middleware import get_current_tenant
+from aksara.api import ModelViewSet, action
+from aksara.api.permissions import IsAuthenticated
+from aksara.middleware import get_current_tenant
 from .models import Project, Task
 from .serializers import (
     ProjectSerializer, ProjectDetailSerializer, TaskSerializer
@@ -382,8 +382,8 @@ class TaskViewSet(TenantViewSetMixin, ModelViewSet):
 
 ```python
 # tenants/viewsets.py
-from vidyut.api import ModelViewSet, action
-from vidyut.api.permissions import IsAuthenticated
+from aksara.api import ModelViewSet, action
+from aksara.api.permissions import IsAuthenticated
 from .models import Tenant, TenantUser
 from .serializers import TenantSerializer, TenantUserSerializer
 
@@ -450,8 +450,8 @@ class TenantViewSet(ModelViewSet):
 
 ```python
 # tenants/permissions.py
-from vidyut.api.permissions import BasePermission
-from vidyut.middleware import get_current_tenant
+from aksara.api.permissions import BasePermission
+from aksara.middleware import get_current_tenant
 
 class PlanPermission(BasePermission):
     """Check if tenant plan allows this feature."""
@@ -498,7 +498,7 @@ class AdvancedReportsViewSet(ModelViewSet):
 
 ```python
 # tenants/settings.py
-from vidyut.middleware import get_current_tenant
+from aksara.middleware import get_current_tenant
 
 def get_tenant_setting(key, default=None):
     """Get a setting for the current tenant."""
@@ -550,11 +550,11 @@ def get_plan_limit(key):
 ```python
 # tenants/tests/test_isolation.py
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 from tenants.models import Tenant, TenantUser
 from core.models import User, Project
 
-class TestTenantIsolation(VidyutTestCase):
+class TestTenantIsolation(AksaraTestCase):
     async def asyncSetUp(self):
         # Create two tenants
         self.tenant1 = await Tenant.objects.create(
@@ -614,7 +614,7 @@ class TestTenantIsolation(VidyutTestCase):
 ### Run Tests
 
 ```bash
-vidyut test
+aksara test
 ```
 
 ---
@@ -633,7 +633,7 @@ Add to `/etc/hosts`:
 ### Start Server
 
 ```bash
-vidyut runserver --host 0.0.0.0
+aksara runserver --host 0.0.0.0
 ```
 
 ### Test Endpoints

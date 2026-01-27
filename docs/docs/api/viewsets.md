@@ -9,7 +9,7 @@ Create full CRUD APIs with ModelViewSet.
 A ViewSet is a class-based view that provides CRUD operations for a model:
 
 ```python
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from myapp.models import Post
 
 class PostViewSet(ModelViewSet):
@@ -282,7 +282,7 @@ By default, ModelViewSet serializes all model fields:
 ### Custom Serializer
 
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 
 class PostSerializer(ModelSerializer):
     model = Post
@@ -434,7 +434,7 @@ class PostViewSet(ModelViewSet):
 ### ViewSet-Level Permissions
 
 ```python
-from vidyut.permissions import IsAuthenticated, IsAdminUser
+from aksara.permissions import IsAuthenticated, IsAdminUser
 
 class PostViewSet(ModelViewSet):
     model = Post
@@ -501,8 +501,8 @@ return self.serialize(obj)
 ## Complete Example
 
 ```python
-from vidyut.api import ModelViewSet, ModelSerializer, action
-from vidyut.permissions import IsAuthenticated, IsAdminUser
+from aksara.api import ModelViewSet, ModelSerializer, action
+from aksara.permissions import IsAuthenticated, IsAdminUser
 from myapp.models import Post, Comment
 
 

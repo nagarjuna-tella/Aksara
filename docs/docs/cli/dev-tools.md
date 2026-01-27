@@ -6,7 +6,7 @@ Development utilities and productivity features.
 
 ## Overview
 
-Vidyut includes developer tools for:
+Aksara includes developer tools for:
 
 - **Code generation** — Models, viewsets, tests
 - **Debugging** — Error pages, query profiling
@@ -20,7 +20,7 @@ Vidyut includes developer tools for:
 ### Generate Model
 
 ```bash
-vidyut generate model Post --fields "title:string:200 content:text author:fk:User"
+aksara generate model Post --fields "title:string:200 content:text author:fk:User"
 ```
 
 Creates:
@@ -55,12 +55,12 @@ name:type[:options]
 ### Generate ViewSet
 
 ```bash
-vidyut generate viewset Post
+aksara generate viewset Post
 ```
 
 Creates:
 ```python
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 from .models import Post
 from .serializers import PostSerializer
 
@@ -71,9 +71,9 @@ class PostViewSet(ModelViewSet):
 
 **Options:**
 ```bash
-vidyut generate viewset Post --actions list,create,retrieve
-vidyut generate viewset Post --pagination
-vidyut generate viewset Post --search title,content
+aksara generate viewset Post --actions list,create,retrieve
+aksara generate viewset Post --pagination
+aksara generate viewset Post --search title,content
 ```
 
 ---
@@ -81,12 +81,12 @@ vidyut generate viewset Post --search title,content
 ### Generate Serializer
 
 ```bash
-vidyut generate serializer Post
+aksara generate serializer Post
 ```
 
 Creates:
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 from .models import Post
 
 class PostSerializer(ModelSerializer):
@@ -100,16 +100,16 @@ class PostSerializer(ModelSerializer):
 ### Generate Test
 
 ```bash
-vidyut generate test Post
+aksara generate test Post
 ```
 
 Creates:
 ```python
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 from .models import Post
 
-class TestPost(VidyutTestCase):
+class TestPost(AksaraTestCase):
     async def test_create_post(self):
         post = await Post.objects.create(
             title="Test Post",
@@ -126,9 +126,9 @@ class TestPost(VidyutTestCase):
 
 **Options:**
 ```bash
-vidyut generate test Post --type api    # API tests
-vidyut generate test Post --type model  # Model tests (default)
-vidyut generate test Post --type full   # Both
+aksara generate test Post --type api    # API tests
+aksara generate test Post --type model  # Model tests (default)
+aksara generate test Post --type full   # Both
 ```
 
 ---
@@ -138,7 +138,7 @@ vidyut generate test Post --type full   # Both
 Generate model, serializer, viewset, and tests together:
 
 ```bash
-vidyut generate crud Post --fields "title:string:200 content:text"
+aksara generate crud Post --fields "title:string:200 content:text"
 ```
 
 Creates:
@@ -154,7 +154,7 @@ Creates:
 ### List Routes
 
 ```bash
-vidyut routes
+aksara routes
 ```
 
 Output:
@@ -171,9 +171,9 @@ POST      /api/posts/{id}/publish/  posts-publish     PostViewSet
 
 **Filtering:**
 ```bash
-vidyut routes --filter posts
-vidyut routes --method GET
-vidyut routes --format json
+aksara routes --filter posts
+aksara routes --method GET
+aksara routes --format json
 ```
 
 ---
@@ -181,7 +181,7 @@ vidyut routes --format json
 ### List Models
 
 ```bash
-vidyut models
+aksara models
 ```
 
 Output:
@@ -197,7 +197,7 @@ users    Profile    6         1 FK
 
 **Detailed view:**
 ```bash
-vidyut models --app blog --detail
+aksara models --app blog --detail
 ```
 
 Output:
@@ -222,7 +222,7 @@ blog.Post
 ### Show Settings
 
 ```bash
-vidyut settings
+aksara settings
 ```
 
 Output:
@@ -236,7 +236,7 @@ Current Settings:
 
 **Filter by prefix:**
 ```bash
-vidyut settings --prefix AI_
+aksara settings --prefix AI_
 ```
 
 ---
@@ -244,7 +244,7 @@ vidyut settings --prefix AI_
 ### Check Project
 
 ```bash
-vidyut check
+aksara check
 ```
 
 Output:
@@ -262,7 +262,7 @@ Errors: 0
 
 **Deployment checks:**
 ```bash
-vidyut check --deploy
+aksara check --deploy
 ```
 
 Checks for:
@@ -279,7 +279,7 @@ Checks for:
 ### Enhanced Runserver
 
 ```bash
-vidyut runserver
+aksara runserver
 ```
 
 Features:
@@ -290,10 +290,10 @@ Features:
 
 **Options:**
 ```bash
-vidyut runserver --port 3000
-vidyut runserver --host 0.0.0.0
-vidyut runserver --no-reload
-vidyut runserver --log-level debug
+aksara runserver --port 3000
+aksara runserver --host 0.0.0.0
+aksara runserver --no-reload
+aksara runserver --log-level debug
 ```
 
 ---
@@ -303,15 +303,15 @@ vidyut runserver --log-level debug
 Separate file watcher with custom commands:
 
 ```bash
-vidyut watch --command "pytest tests/"
+aksara watch --command "pytest tests/"
 ```
 
 Runs pytest whenever Python files change.
 
 **Multiple commands:**
 ```bash
-vidyut watch \
-  --command "vidyut check" \
+aksara watch \
+  --command "aksara check" \
   --command "pytest tests/ -x"
 ```
 
@@ -322,7 +322,7 @@ vidyut watch \
 ### Show Migrations
 
 ```bash
-vidyut showmigrations
+aksara showmigrations
 ```
 
 Output:
@@ -341,7 +341,7 @@ users
 ### SQL for Migration
 
 ```bash
-vidyut sqlmigrate blog 0002
+aksara sqlmigrate blog 0002
 ```
 
 Output:
@@ -357,14 +357,14 @@ COMMIT;
 ### Dump Data
 
 ```bash
-vidyut dumpdata blog.Post --output posts.json
+aksara dumpdata blog.Post --output posts.json
 ```
 
 **Options:**
 ```bash
-vidyut dumpdata --all --output backup.json
-vidyut dumpdata blog --indent 2
-vidyut dumpdata --format yaml
+aksara dumpdata --all --output backup.json
+aksara dumpdata blog --indent 2
+aksara dumpdata --format yaml
 ```
 
 ---
@@ -372,7 +372,7 @@ vidyut dumpdata --format yaml
 ### Load Data
 
 ```bash
-vidyut loaddata fixtures.json
+aksara loaddata fixtures.json
 ```
 
 ---
@@ -382,7 +382,7 @@ vidyut loaddata fixtures.json
 ### Enhanced Shell
 
 ```bash
-vidyut shell
+aksara shell
 ```
 
 Pre-loaded:
@@ -399,7 +399,7 @@ Pre-loaded:
 ### Shell Plus
 
 ```bash
-vidyut shell_plus
+aksara shell_plus
 ```
 
 Additional features:
@@ -417,7 +417,7 @@ Additional features:
 Enable detailed SQL logging:
 
 ```bash
-vidyut runserver --sql-log
+aksara runserver --sql-log
 ```
 
 Output:
@@ -433,7 +433,7 @@ Output:
 Profile a specific endpoint:
 
 ```bash
-vidyut profile /api/posts/
+aksara profile /api/posts/
 ```
 
 Output:
@@ -459,7 +459,7 @@ Slowest queries:
 Check query count for endpoints:
 
 ```bash
-vidyut querycount /api/posts/
+aksara querycount /api/posts/
 ```
 
 Output:
@@ -482,7 +482,7 @@ Potential N+1: Yes (12 similar queries to users table)
 ### New App
 
 ```bash
-vidyut startapp blog
+aksara startapp blog
 ```
 
 Creates:
@@ -505,7 +505,7 @@ blog/
 ### New Migration
 
 ```bash
-vidyut makemigrations --empty --name populate_data
+aksara makemigrations --empty --name populate_data
 ```
 
 Creates empty migration for data operations:
@@ -534,7 +534,7 @@ class Migration:
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "DEV_TOOLS": {
         "SQL_LOGGING": True,
         "SQL_LOG_LEVEL": "DEBUG",

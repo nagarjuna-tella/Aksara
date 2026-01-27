@@ -6,7 +6,7 @@ Advanced validation patterns for models and APIs.
 
 ## Overview
 
-Vidyut provides multiple layers of validation:
+Aksara provides multiple layers of validation:
 
 1. **Field-level** — Single field validation
 2. **Model-level** — Cross-field validation
@@ -20,8 +20,8 @@ Vidyut provides multiple layers of validation:
 ### Built-in Validators
 
 ```python
-from vidyut import Model, fields
-from vidyut.validation import (
+from aksara import Model, fields
+from aksara.validation import (
     MinLength, MaxLength, MinValue, MaxValue,
     Regex, Email, URL, In, NotIn
 )
@@ -46,7 +46,7 @@ class User(Model):
 ### Custom Validators
 
 ```python
-from vidyut.validation import Validator, ValidationError
+from aksara.validation import Validator, ValidationError
 
 class NoSpaces(Validator):
     """Ensure no spaces in value."""
@@ -143,8 +143,8 @@ class Subscription(Model):
 ### Field Validators
 
 ```python
-from vidyut.api import ModelSerializer
-from vidyut.validation import ValidationError
+from aksara.api import ModelSerializer
+from aksara.validation import ValidationError
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -221,7 +221,7 @@ class UserSerializer(ModelSerializer):
 ### Validator Classes
 
 ```python
-from vidyut.validation import Validator, ValidationError
+from aksara.validation import Validator, ValidationError
 
 class PasswordStrength(Validator):
     """Validate password strength."""
@@ -262,7 +262,7 @@ class UserSerializer(ModelSerializer):
 ### Validator Functions
 
 ```python
-from vidyut.validation import validator
+from aksara.validation import validator
 
 @validator
 def validate_slug(value):
@@ -350,7 +350,7 @@ class OrderSerializer(ModelSerializer):
 ### Error Format
 
 ```python
-from vidyut.validation import ValidationError
+from aksara.validation import ValidationError
 
 # Single field error
 raise ValidationError("Invalid value")
@@ -383,8 +383,8 @@ class User(Model):
 ### Handling Validation Errors
 
 ```python
-from vidyut.api import ViewSet, action
-from vidyut.validation import ValidationError
+from aksara.api import ViewSet, action
+from aksara.validation import ValidationError
 
 class UserViewSet(ViewSet):
     @action(detail=False, methods=["post"])

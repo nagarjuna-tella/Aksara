@@ -1,5 +1,5 @@
 """
-Tests for vidyut.testing module.
+Tests for aksara.testing module.
 
 Tests the testing utilities and helpers.
 """
@@ -11,27 +11,27 @@ import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 
-class TestVidyutTestClient:
-    """Tests for VidyutTestClient."""
+class TestAksaraTestClient:
+    """Tests for AksaraTestClient."""
     
     def test_client_creation(self):
-        """Test that VidyutTestClient can be created."""
-        from vidyut.testing import VidyutTestClient
+        """Test that AksaraTestClient can be created."""
+        from aksara.testing import AksaraTestClient
         
         app = MagicMock()
         
         with patch("starlette.testclient.TestClient"):
-            client = VidyutTestClient(app)
+            client = AksaraTestClient(app)
             assert client._app is app
     
     def test_with_user_returns_new_client(self):
         """Test that with_user() returns a new client with user set."""
-        from vidyut.testing import VidyutTestClient, create_test_user
+        from aksara.testing import AksaraTestClient, create_test_user
         
         app = MagicMock()
         
         with patch("starlette.testclient.TestClient"):
-            client = VidyutTestClient(app)
+            client = AksaraTestClient(app)
             user = create_test_user(username="alice")
             
             authenticated_client = client.with_user(user)
@@ -41,12 +41,12 @@ class TestVidyutTestClient:
     
     def test_with_user_preserves_app(self):
         """Test that with_user() preserves the app reference."""
-        from vidyut.testing import VidyutTestClient, create_test_user
+        from aksara.testing import AksaraTestClient, create_test_user
         
         app = MagicMock()
         
         with patch("starlette.testclient.TestClient"):
-            client = VidyutTestClient(app)
+            client = AksaraTestClient(app)
             user = create_test_user()
             
             authenticated_client = client.with_user(user)
@@ -55,13 +55,13 @@ class TestVidyutTestClient:
     
     def test_context_manager(self):
         """Test that client works as context manager."""
-        from vidyut.testing import VidyutTestClient
+        from aksara.testing import AksaraTestClient
         
         app = MagicMock()
         mock_test_client = MagicMock()
         
         with patch("starlette.testclient.TestClient", return_value=mock_test_client):
-            with VidyutTestClient(app) as client:
+            with AksaraTestClient(app) as client:
                 assert client is not None
             
             mock_test_client.close.assert_called_once()
@@ -72,7 +72,7 @@ class TestCreateTestUser:
     
     def test_default_user_values(self):
         """Test that create_test_user has sensible defaults."""
-        from vidyut.testing import create_test_user
+        from aksara.testing import create_test_user
         
         user = create_test_user()
         
@@ -85,7 +85,7 @@ class TestCreateTestUser:
     
     def test_custom_user_values(self):
         """Test that create_test_user accepts custom values."""
-        from vidyut.testing import create_test_user
+        from aksara.testing import create_test_user
         
         user = create_test_user(
             id=42,
@@ -103,7 +103,7 @@ class TestCreateTestUser:
     
     def test_extra_attributes(self):
         """Test that create_test_user accepts extra attributes."""
-        from vidyut.testing import create_test_user
+        from aksara.testing import create_test_user
         
         user = create_test_user(
             custom_field="custom_value",
@@ -115,7 +115,7 @@ class TestCreateTestUser:
     
     def test_user_repr(self):
         """Test that test user has a readable repr."""
-        from vidyut.testing import create_test_user
+        from aksara.testing import create_test_user
         
         user = create_test_user(id=5, username="bob")
         
@@ -125,8 +125,8 @@ class TestCreateTestUser:
         assert "bob" in repr_str
     
     def test_user_implements_protocol(self):
-        """Test that test user matches VidyutUserProtocol."""
-        from vidyut.testing import create_test_user
+        """Test that test user matches AksaraUserProtocol."""
+        from aksara.testing import create_test_user
         
         user = create_test_user()
         
@@ -141,30 +141,30 @@ class TestCreateTestApp:
     """Tests for create_test_app() helper."""
     
     @pytest.mark.asyncio
-    async def test_create_test_app_returns_vidyut_app(self):
-        """Test that create_test_app returns a Vidyut app."""
-        from vidyut.testing import create_test_app
-        from vidyut.app import Vidyut
+    async def test_create_test_app_returns_aksara_app(self):
+        """Test that create_test_app returns a Aksara app."""
+        from aksara.testing import create_test_app
+        from aksara.app import Aksara
         
         with patch.dict("os.environ", {"DATABASE_URL": ""}):
             app = await create_test_app(database_url=None)
             
-            assert isinstance(app, Vidyut)
+            assert isinstance(app, Aksara)
     
     @pytest.mark.asyncio
     async def test_create_test_app_defaults(self):
         """Test that create_test_app has sensible defaults."""
-        from vidyut.testing import create_test_app
+        from aksara.testing import create_test_app
         
         app = await create_test_app(database_url=None)
         
-        assert app.title == "Vidyut Test App"
+        assert app.title == "Aksara Test App"
         assert app.debug is True
     
     @pytest.mark.asyncio
     async def test_create_test_app_custom_title(self):
         """Test that create_test_app accepts custom app settings."""
-        from vidyut.testing import create_test_app
+        from aksara.testing import create_test_app
         
         app = await create_test_app(
             database_url=None,
@@ -178,7 +178,7 @@ class TestCreateTestApp:
     @pytest.mark.asyncio
     async def test_create_test_app_disables_autodiscovery(self):
         """Test that create_test_app disables view auto-discovery by default."""
-        from vidyut.testing import create_test_app
+        from aksara.testing import create_test_app
         
         app = await create_test_app(database_url=None)
         
@@ -193,7 +193,7 @@ class TestTestDatabase:
         """Test that test_database yields a database instance."""
         # This test verifies the basic structure of test_database
         # Actual database connection testing is done in integration tests
-        from vidyut.testing import test_database
+        from aksara.testing import test_database
         
         # We can't easily test this without a real DB,
         # but we can verify it's a context manager
@@ -207,32 +207,32 @@ class TestTestDatabase:
         assert "cleanup" in params
 
 
-class TestVidyutTestCase:
-    """Tests for VidyutTestCase base class."""
+class TestAksaraTestCase:
+    """Tests for AksaraTestCase base class."""
     
     def test_test_case_attributes(self):
-        """Test that VidyutTestCase has expected attributes."""
-        from vidyut.testing import VidyutTestCase
+        """Test that AksaraTestCase has expected attributes."""
+        from aksara.testing import AksaraTestCase
         
-        assert hasattr(VidyutTestCase, "database_url")
-        assert hasattr(VidyutTestCase, "apply_migrations")
-        assert hasattr(VidyutTestCase, "db")
-        assert hasattr(VidyutTestCase, "app")
-        assert hasattr(VidyutTestCase, "client")
+        assert hasattr(AksaraTestCase, "database_url")
+        assert hasattr(AksaraTestCase, "apply_migrations")
+        assert hasattr(AksaraTestCase, "db")
+        assert hasattr(AksaraTestCase, "app")
+        assert hasattr(AksaraTestCase, "client")
     
     def test_test_case_defaults(self):
-        """Test that VidyutTestCase has sensible defaults."""
-        from vidyut.testing import VidyutTestCase
+        """Test that AksaraTestCase has sensible defaults."""
+        from aksara.testing import AksaraTestCase
         
-        assert VidyutTestCase.database_url is None
-        assert VidyutTestCase.apply_migrations is False
+        assert AksaraTestCase.database_url is None
+        assert AksaraTestCase.apply_migrations is False
     
     @pytest.mark.asyncio
     async def test_async_setup_without_db(self):
         """Test asyncSetUp when no database URL is configured."""
-        from vidyut.testing import VidyutTestCase
+        from aksara.testing import AksaraTestCase
         
-        test_case = VidyutTestCase()
+        test_case = AksaraTestCase()
         
         with patch.dict("os.environ", {"DATABASE_URL": ""}):
             await test_case.asyncSetUp()
@@ -242,9 +242,9 @@ class TestVidyutTestCase:
     @pytest.mark.asyncio
     async def test_async_teardown(self):
         """Test asyncTearDown cleans up resources."""
-        from vidyut.testing import VidyutTestCase
+        from aksara.testing import AksaraTestCase
         
-        test_case = VidyutTestCase()
+        test_case = AksaraTestCase()
         
         mock_client = MagicMock()
         mock_client._client = MagicMock()
@@ -266,14 +266,14 @@ class TestCreateAuthTestUser:
     @pytest.mark.asyncio
     async def test_import_error_when_auth_not_installed(self):
         """Test that ImportError is raised when auth module not available."""
-        from vidyut.testing import create_auth_test_user
+        from aksara.testing import create_auth_test_user
         
         mock_db = MagicMock()
         
         # Simulate auth module not being installed
-        with patch.dict("sys.modules", {"vidyut.contrib.auth.models": None}):
-            with patch("vidyut.testing.create_auth_test_user") as mock_create:
-                mock_create.side_effect = ImportError("vidyut.contrib.auth is not available")
+        with patch.dict("sys.modules", {"aksara.contrib.auth.models": None}):
+            with patch("aksara.testing.create_auth_test_user") as mock_create:
+                mock_create.side_effect = ImportError("aksara.contrib.auth is not available")
                 
                 with pytest.raises(ImportError):
                     await mock_create(mock_db)
@@ -284,25 +284,25 @@ class TestModuleExports:
     
     def test_all_exports_exist(self):
         """Test that all __all__ exports are importable."""
-        from vidyut import testing
+        from aksara import testing
         
         for name in testing.__all__:
             assert hasattr(testing, name), f"Missing export: {name}"
     
     def test_main_imports(self):
         """Test that main functions can be imported."""
-        from vidyut.testing import (
-            VidyutTestClient,
+        from aksara.testing import (
+            AksaraTestClient,
             create_test_app,
             test_database,
             create_test_user,
             create_auth_test_user,
-            VidyutTestCase,
+            AksaraTestCase,
         )
         
-        assert VidyutTestClient is not None
+        assert AksaraTestClient is not None
         assert create_test_app is not None
         assert test_database is not None
         assert create_test_user is not None
         assert create_auth_test_user is not None
-        assert VidyutTestCase is not None
+        assert AksaraTestCase is not None

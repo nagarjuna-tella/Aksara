@@ -6,7 +6,7 @@ Define relationships between models using ForeignKey, ManyToMany, and OneToOne f
 
 ## Overview
 
-Vidyut supports three types of relationships:
+Aksara supports three types of relationships:
 
 | Type | Relationship | Example |
 |------|--------------|---------|
@@ -29,7 +29,7 @@ A ForeignKey creates a many-to-one relationship where multiple objects can refer
 ### Definition
 
 ```python
-from vidyut import Model, fields, CASCADE
+from aksara import Model, fields, CASCADE
 
 class Author(Model):
     name = fields.String(max_length=100)
@@ -156,11 +156,11 @@ await author.delete()  # Raises ForeignKeyConstraintError
 ### Import on_delete Constants
 
 ```python
-from vidyut import CASCADE, SET_NULL, RESTRICT, PROTECT
+from aksara import CASCADE, SET_NULL, RESTRICT, PROTECT
 # or
-from vidyut.fields import CASCADE, SET_NULL, RESTRICT, PROTECT
+from aksara.fields import CASCADE, SET_NULL, RESTRICT, PROTECT
 # or use the enum
-from vidyut.relations import OnDelete
+from aksara.relations import OnDelete
 author = fields.ForeignKey(User, on_delete=OnDelete.CASCADE)
 ```
 
@@ -277,7 +277,7 @@ recent = await tag.posts.filter(created_at__gt=last_week)
 
 ### Junction Table
 
-Vidyut automatically creates a junction table:
+Aksara automatically creates a junction table:
 
 ```sql
 -- Auto-generated for Post.tags -> Tag
@@ -408,7 +408,7 @@ for post in posts:
 ## Complete Example
 
 ```python
-from vidyut import Model, fields, CASCADE, SET_NULL
+from aksara import Model, fields, CASCADE, SET_NULL
 
 class User(Model):
     email = fields.Email(unique=True)

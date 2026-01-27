@@ -1,17 +1,17 @@
-# Vidyut ORM Benchmarks
+# Aksara ORM Benchmarks
 
-Performance benchmark suite comparing Vidyut against other async Python ORMs.
+Performance benchmark suite comparing Aksara against other async Python ORMs.
 
 ## Running Benchmarks
 
-### Vidyut Only
+### Aksara Only
 
 ```bash
 # Set database URL
-export DATABASE_URL="postgresql://user:pass@localhost/vidyut_bench"
+export DATABASE_URL="postgresql://user:pass@localhost/aksara_bench"
 
-# Run Vidyut benchmarks
-python vidyut_bench.py
+# Run Aksara benchmarks
+python aksara_bench.py
 ```
 
 ### All ORMs
@@ -61,7 +61,7 @@ The most important benchmarks show the difference between:
 
 ## Adding New Benchmarks
 
-1. Create a new benchmark function in `vidyut_bench.py`:
+1. Create a new benchmark function in `aksara_bench.py`:
 
 ```python
 async def bench_your_operation(db: Database) -> BenchmarkResult:

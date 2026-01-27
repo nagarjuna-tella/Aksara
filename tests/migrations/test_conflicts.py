@@ -9,13 +9,13 @@ import os
 import tempfile
 from pathlib import Path
 
-from vidyut.migrations.graph import (
+from aksara.migrations.graph import (
     MigrationNode,
     MigrationGraph,
     find_conflicts,
     format_conflict_message,
 )
-from vidyut.migrations.executor import (
+from aksara.migrations.executor import (
     build_migration_graph,
     check_migration_conflicts,
     discover_migrations,
@@ -366,7 +366,7 @@ class TestFormatConflictMessage:
         assert "blog" in message
         assert "0003_add_title" in message
         assert "0003_add_status" in message
-        assert "vidyut makemigrations --merge" in message
+        assert "aksara makemigrations --merge" in message
     
     def test_multiple_apps_conflict_message(self):
         conflicts = {
@@ -403,7 +403,7 @@ class TestBuildMigrationGraph:
     def test_build_from_single_migration(self, tmp_path):
         # Create a migration file
         migration_code = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
@@ -425,7 +425,7 @@ class Migration(Migration):
         
         # Create migration 1
         mig1 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
@@ -435,7 +435,7 @@ class Migration(Migration):
         
         # Create migration 2 with dependency
         mig2 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
@@ -463,28 +463,28 @@ class Migration(Migration):
         
         # Create branching migrations
         mig1 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
     operations = []
 '''
         mig2 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
     operations = []
 '''
         mig3a = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0002_add_body")]
     operations = []
 '''
         mig3b = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0002_add_body")]
@@ -517,21 +517,21 @@ class TestCheckMigrationConflicts:
         mig_dir.mkdir(parents=True)
         
         mig1 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
     operations = []
 '''
         mig2a = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
     operations = []
 '''
         mig2b = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
@@ -571,21 +571,21 @@ class TestMergeMigration:
         
         # Create conflicting migrations
         mig1 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
     operations = []
 '''
         mig2a = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
     operations = []
 '''
         mig2b = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("blog", "0001_initial")]
@@ -606,7 +606,7 @@ class Migration(Migration):
         
         # Create merge migration manually (simulating CLI)
         merge_code = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [
@@ -643,14 +643,14 @@ class TestEdgeCases:
     def test_cross_app_dependencies(self, tmp_path):
         """Test migrations depending on other apps."""
         mig1 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = []
     operations = []
 '''
         mig2 = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     dependencies = [("users", "0001_initial")]  # Cross-app dependency
@@ -697,7 +697,7 @@ class Migration(Migration):
     def test_migration_without_dependencies_attr(self, tmp_path):
         """Migration without dependencies attribute."""
         mig = '''
-from vidyut.migrations import Migration
+from aksara.migrations import Migration
 
 class Migration(Migration):
     operations = []

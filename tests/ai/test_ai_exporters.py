@@ -11,8 +11,8 @@ Tests:
 import pytest
 from typing import List
 
-from vidyut.ai.models import AiTool
-from vidyut.ai.exporters import (
+from aksara.ai.models import AiTool
+from aksara.ai.exporters import (
     export_tools_as_generic,
     export_tools_as_mcp,
     export_tools_as_openai_functions,

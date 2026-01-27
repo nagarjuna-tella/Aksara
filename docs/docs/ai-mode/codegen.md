@@ -9,7 +9,7 @@ Generate models, viewsets, serializers, and tests with AI.
 Codegen generates boilerplate code that matches your project's patterns:
 
 ```python
-from vidyut.ai import Codegen
+from aksara.ai import Codegen
 
 gen = Codegen()
 code = await gen.model("BlogPost with title, content, author FK")
@@ -23,7 +23,7 @@ print(code)
 ### Generate a Model
 
 ```python
-from vidyut.ai import Codegen
+from aksara.ai import Codegen
 
 gen = Codegen()
 
@@ -261,7 +261,7 @@ code = await gen.test(
 )
 
 # Output:
-# class TestProduct(VidyutTestCase):
+# class TestProduct(AksaraTestCase):
 #     async def test_create_product(self):
 #         product = await Product.objects.create(
 #             name="Test Product",
@@ -367,7 +367,7 @@ code = await gen.migration(
 ### Using Project Context
 
 ```python
-from vidyut.ai import Codegen, ContextEngine
+from aksara.ai import Codegen, ContextEngine
 
 context_engine = ContextEngine()
 gen = Codegen()
@@ -398,25 +398,25 @@ Codegen analyzes your existing code to match:
 ### Generate Model
 
 ```bash
-vidyut ai generate model "Product with name, price, category FK"
+aksara ai generate model "Product with name, price, category FK"
 ```
 
 ### Generate ViewSet
 
 ```bash
-vidyut ai generate viewset Product --features pagination,search
+aksara ai generate viewset Product --features pagination,search
 ```
 
 ### Generate Test
 
 ```bash
-vidyut ai generate test Product --types crud,validation
+aksara ai generate test Product --types crud,validation
 ```
 
 ### Interactive Mode
 
 ```bash
-vidyut ai generate
+aksara ai generate
 
 ? What would you like to generate? Model
 ? Describe the model: BlogPost with title, slug, content, author FK, tags M2M
@@ -467,7 +467,7 @@ print(result.file_path)  # Suggested file path
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_CODEGEN": {
         # Style preferences
         "docstring_style": "google",  # or "numpy", "sphinx"

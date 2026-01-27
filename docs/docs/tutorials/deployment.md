@@ -1,6 +1,6 @@
 # Tutorial: Deployment
 
-Deploy your Vidyut application to production.
+Deploy your Aksara application to production.
 
 ---
 
@@ -38,7 +38,7 @@ Before deploying, ensure:
 # settings/production.py
 import os
 
-VIDYUT = {
+AKSARA = {
     # Core
     "DEBUG": False,
     "SECRET_KEY": os.environ["SECRET_KEY"],
@@ -110,7 +110,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Collect static files
-RUN vidyut collectstatic --no-input
+RUN aksara collectstatic --no-input
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
@@ -138,7 +138,7 @@ services:
     depends_on:
       - db
     command: >
-      sh -c "vidyut migrate && uvicorn myapp.app:app --host 0.0.0.0 --port 8000"
+      sh -c "aksara migrate && uvicorn myapp.app:app --host 0.0.0.0 --port 8000"
 
   db:
     image: postgres:15
@@ -199,7 +199,7 @@ events {
 }
 
 http {
-    upstream vidyut {
+    upstream aksara {
         server web:8000;
     }
 
@@ -223,7 +223,7 @@ http {
         }
 
         location / {
-            proxy_pass http://vidyut;
+            proxy_pass http://aksara;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -241,7 +241,7 @@ http {
 
 ```bash
 # Run migrations before starting the app
-vidyut migrate --no-input
+aksara migrate --no-input
 ```
 
 ### Migration Script
@@ -253,10 +253,10 @@ vidyut migrate --no-input
 set -e
 
 echo "Running migrations..."
-vidyut migrate --no-input
+aksara migrate --no-input
 
 echo "Collecting static files..."
-vidyut collectstatic --no-input
+aksara collectstatic --no-input
 
 echo "Starting server..."
 exec uvicorn myapp.app:app --host 0.0.0.0 --port 8000 --workers 4
@@ -268,7 +268,7 @@ exec uvicorn myapp.app:app --host 0.0.0.0 --port 8000 --workers 4
 # .github/workflows/deploy.yml
 - name: Check migrations
   run: |
-    vidyut makemigrations --check --dry-run
+    aksara makemigrations --check --dry-run
 ```
 
 ---
@@ -279,7 +279,7 @@ exec uvicorn myapp.app:app --host 0.0.0.0 --port 8000 --workers 4
 
 ```python
 # settings/production.py
-VIDYUT = {
+AKSARA = {
     # ... other settings ...
     
     # Security
@@ -323,7 +323,7 @@ openssl rand -base64 50
 
 ```python
 # app/health.py
-from vidyut.api import ViewSet, action
+from aksara.api import ViewSet, action
 
 class HealthViewSet(ViewSet):
     @action(detail=False, methods=["get"])
@@ -384,7 +384,7 @@ readinessProbe:
 # settings/production.py
 import logging
 
-VIDYUT = {
+AKSARA = {
     # ... other settings ...
     
     "LOGGING": {
@@ -422,7 +422,7 @@ LOGGING = {
 
 ```python
 # Add request logging middleware
-from vidyut.middleware import LoggingMiddleware
+from aksara.middleware import LoggingMiddleware
 
 app.add_middleware(
     LoggingMiddleware,
@@ -440,7 +440,7 @@ app.add_middleware(
 
 ```python
 # app/metrics.py
-from vidyut.api import ViewSet, action
+from aksara.api import ViewSet, action
 
 class MetricsViewSet(ViewSet):
     @action(detail=False, methods=["get"])
@@ -539,16 +539,16 @@ See AWS documentation for ECS deployment with Fargate.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vidyut-app
+  name: aksara-app
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: vidyut
+      app: aksara
   template:
     metadata:
       labels:
-        app: vidyut
+        app: aksara
     spec:
       containers:
       - name: web
@@ -557,7 +557,7 @@ spec:
         - containerPort: 8000
         envFrom:
         - secretRef:
-            name: vidyut-secrets
+            name: aksara-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -587,7 +587,7 @@ docker tag myapp:latest myregistry/myapp:$(git rev-parse --short HEAD)
 docker push myregistry/myapp:$(git rev-parse --short HEAD)
 
 # Deploy
-kubectl set image deployment/vidyut-app web=myregistry/myapp:$(git rev-parse --short HEAD)
+kubectl set image deployment/aksara-app web=myregistry/myapp:$(git rev-parse --short HEAD)
 
 echo "✅ Deployment complete!"
 ```
@@ -602,10 +602,10 @@ docker-compose -f docker-compose.prod.yml down
 docker-compose -f docker-compose.prod.yml up -d --build
 
 # Kubernetes
-kubectl rollout undo deployment/vidyut-app
+kubectl rollout undo deployment/aksara-app
 
 # Database (if needed)
-vidyut migrate myapp 0005  # Roll back to migration 0005
+aksara migrate myapp 0005  # Roll back to migration 0005
 ```
 
 ---

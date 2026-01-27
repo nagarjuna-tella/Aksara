@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from typing import List, Type
 from uuid import uuid4
 
-from vidyut.ai.models import AiTool, AiToolParam, ToolKind
-from vidyut.ai.registry import (
+from aksara.ai.models import AiTool, AiToolParam, ToolKind
+from aksara.ai.registry import (
     AiToolRegistry,
     discover_tools_from_viewset,
     get_ai_tools_for_request,
@@ -214,7 +214,7 @@ class TestAiToolRegistry:
         
         registry.register_tool(tool1)
         
-        with patch("vidyut.ai.registry.logger") as mock_logger:
+        with patch("aksara.ai.registry.logger") as mock_logger:
             registry.register_tool(tool2)
             mock_logger.warning.assert_called_once()
         
@@ -256,7 +256,7 @@ class TestDetermineToolKind:
     
     def test_admin_only_is_admin(self):
         """Action with IsAdminUser should be admin kind."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         
         kind = _determine_tool_kind("custom", "GET", False, [IsAdminUser])
         assert kind == "admin"
@@ -296,17 +296,17 @@ class TestCheckRequiresAuth:
     
     def test_allow_any_returns_false(self):
         """AllowAny doesn't require auth."""
-        from vidyut.permissions import AllowAny
+        from aksara.permissions import AllowAny
         assert _check_requires_auth([AllowAny]) is False
     
     def test_is_authenticated_returns_true(self):
         """IsAuthenticated requires auth."""
-        from vidyut.permissions import IsAuthenticated
+        from aksara.permissions import IsAuthenticated
         assert _check_requires_auth([IsAuthenticated]) is True
     
     def test_is_admin_returns_true(self):
         """IsAdminUser requires auth."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         assert _check_requires_auth([IsAdminUser]) is True
 
 
@@ -319,12 +319,12 @@ class TestCheckRequiresAdmin:
     
     def test_is_authenticated_returns_false(self):
         """IsAuthenticated doesn't require admin."""
-        from vidyut.permissions import IsAuthenticated
+        from aksara.permissions import IsAuthenticated
         assert _check_requires_admin([IsAuthenticated]) is False
     
     def test_is_admin_returns_true(self):
         """IsAdminUser requires admin."""
-        from vidyut.permissions import IsAdminUser
+        from aksara.permissions import IsAdminUser
         assert _check_requires_admin([IsAdminUser]) is True
 
 
@@ -337,9 +337,9 @@ class TestDiscoverToolsFromViewSet:
     
     def test_discover_from_ai_exposed_viewset(self):
         """Tools are discovered from ai_exposed=True ViewSets."""
-        from vidyut.api.viewsets import ModelViewSet
-        from vidyut.model.base import Model
-        from vidyut import fields
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.model.base import Model
+        from aksara import fields
         
         # Create a test model
         class TestUser(Model):
@@ -367,9 +367,9 @@ class TestDiscoverToolsFromViewSet:
     
     def test_no_tools_from_non_exposed_viewset(self):
         """No tools from ai_exposed=False ViewSets."""
-        from vidyut.api.viewsets import ModelViewSet
-        from vidyut.model.base import Model
-        from vidyut import fields
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.model.base import Model
+        from aksara import fields
         
         class HiddenModel(Model):
             __tablename__ = "hidden"
@@ -386,10 +386,10 @@ class TestDiscoverToolsFromViewSet:
     
     def test_discover_actions_from_viewset(self):
         """Custom @action methods are discovered."""
-        from vidyut.api.viewsets import ModelViewSet
-        from vidyut.api import action
-        from vidyut.model.base import Model
-        from vidyut import fields
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.api import action
+        from aksara.model.base import Model
+        from aksara import fields
         
         class ActionModel(Model):
             __tablename__ = "action_models"
@@ -419,10 +419,10 @@ class TestDiscoverToolsFromViewSet:
     
     def test_action_ai_exposed_false_skipped(self):
         """Actions with ai_exposed=False are skipped."""
-        from vidyut.api.viewsets import ModelViewSet
-        from vidyut.api import action
-        from vidyut.model.base import Model
-        from vidyut import fields
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.api import action
+        from aksara.model.base import Model
+        from aksara import fields
         
         class SecretModel(Model):
             __tablename__ = "secrets"
@@ -451,10 +451,10 @@ class TestDiscoverToolsFromViewSet:
     
     def test_tool_permissions_captured(self):
         """Permission classes are captured in tool metadata."""
-        from vidyut.api.viewsets import ModelViewSet
-        from vidyut.permissions import IsAuthenticated, IsAdminUser
-        from vidyut.model.base import Model
-        from vidyut import fields
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.permissions import IsAuthenticated, IsAdminUser
+        from aksara.model.base import Model
+        from aksara import fields
         
         class AdminModel(Model):
             __tablename__ = "admin_items"
@@ -485,7 +485,7 @@ class TestGetAiToolsForRequest:
     @pytest.mark.asyncio
     async def test_anonymous_user_gets_public_tools(self):
         """Anonymous users only get tools without auth requirements."""
-        from vidyut.ai.registry import AiToolRegistry
+        from aksara.ai.registry import AiToolRegistry
         
         registry = AiToolRegistry()
         
@@ -526,7 +526,7 @@ class TestGetAiToolsForRequest:
     @pytest.mark.asyncio
     async def test_authenticated_user_gets_auth_tools(self):
         """Authenticated users get auth-required tools."""
-        from vidyut.ai.registry import AiToolRegistry
+        from aksara.ai.registry import AiToolRegistry
         
         registry = AiToolRegistry()
         
@@ -558,7 +558,7 @@ class TestGetAiToolsForRequest:
     @pytest.mark.asyncio
     async def test_admin_user_gets_admin_tools(self):
         """Admin users get admin-required tools."""
-        from vidyut.ai.registry import AiToolRegistry
+        from aksara.ai.registry import AiToolRegistry
         
         registry = AiToolRegistry()
         
@@ -592,7 +592,7 @@ class TestGetAiToolsForRequest:
     @pytest.mark.asyncio
     async def test_non_admin_user_blocked_from_admin_tools(self):
         """Non-admin users don't get admin-required tools."""
-        from vidyut.ai.registry import AiToolRegistry
+        from aksara.ai.registry import AiToolRegistry
         
         registry = AiToolRegistry()
         
@@ -627,7 +627,7 @@ class TestGetAiToolsForRequest:
     @pytest.mark.asyncio
     async def test_deny_ai_permission_blocks_tool(self):
         """Tools with DenyAI permission are not exposed."""
-        from vidyut.ai.registry import AiToolRegistry
+        from aksara.ai.registry import AiToolRegistry
         
         registry = AiToolRegistry()
         

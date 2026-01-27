@@ -23,7 +23,7 @@ from pydantic import ValidationError
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from vidyut.ai.codegen import (
+from aksara.ai.codegen import (
     AiFieldSpec,
     AiModelSpec,
     AiCodegenRequest,
@@ -39,7 +39,7 @@ from vidyut.ai.codegen import (
     generate_code,
     get_codegen_schemas,
 )
-from vidyut.ai.fastapi import router
+from aksara.ai.fastapi import router
 
 
 # =============================================================================
@@ -354,7 +354,7 @@ class TestGenerateModelCode:
         files = generate_model_code(spec)
         code = files["blog/models.py"]
         
-        assert "from vidyut import Model, fields" in code
+        assert "from aksara import Model, fields" in code
     
     def test_model_with_fk(self):
         """Test model with ForeignKey."""
@@ -417,7 +417,7 @@ class TestGenerateViewsetCode:
         files = generate_viewset_code(spec)
         code = files["blog/views.py"]
         
-        assert "from vidyut.api import ModelViewSet" in code
+        assert "from aksara.api import ModelViewSet" in code
 
 
 class TestGenerateSerializerCode:

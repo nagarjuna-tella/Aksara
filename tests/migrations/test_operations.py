@@ -1,11 +1,11 @@
 """
 Tests for Migration Operations
 
-Tests all Operation classes in vidyut.migrations.operations.
+Tests all Operation classes in aksara.migrations.operations.
 """
 
 import pytest
-from vidyut.migrations import operations as op
+from aksara.migrations import operations as op
 
 
 # =============================================================================
@@ -491,7 +491,7 @@ class TestMigrationClass:
     """Tests for Migration base class."""
     
     def test_empty_migration(self):
-        from vidyut.migrations.base import Migration
+        from aksara.migrations.base import Migration
         
         class EmptyMigration(Migration):
             pass
@@ -501,7 +501,7 @@ class TestMigrationClass:
         assert m.dependencies == []
     
     def test_migration_with_operations(self):
-        from vidyut.migrations.base import Migration
+        from aksara.migrations.base import Migration
         
         class TestMigration(Migration):
             operations = [
@@ -516,7 +516,7 @@ class TestMigrationClass:
         assert isinstance(m.operations[0], op.CreateTable)
     
     def test_migration_with_dependencies(self):
-        from vidyut.migrations.base import Migration
+        from aksara.migrations.base import Migration
         
         class TestMigration(Migration):
             dependencies = [("app", "0001_initial")]

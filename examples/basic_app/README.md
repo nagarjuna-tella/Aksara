@@ -1,6 +1,6 @@
-# Vidyut Basic Example (v0.3.1)
+# Aksara Basic Example (v0.3.1)
 
-A FastAPI application demonstrating Vidyut ORM with all v0.2-v0.3.1 features.
+A FastAPI application demonstrating Aksara ORM with all v0.2-v0.3.1 features.
 
 ## Project Structure
 
@@ -9,7 +9,7 @@ basic_app/
 ├── __init__.py          # Package init
 ├── main.py              # FastAPI application with ViewSets
 ├── models.py            # Model definitions (single source of truth)
-├── settings.py          # Vidyut settings configuration
+├── settings.py          # Aksara settings configuration
 ├── migrations/          # Database migrations
 │   ├── __init__.py
 │   ├── 0001_initial.sql
@@ -23,35 +23,35 @@ basic_app/
 1. Make sure you have PostgreSQL running locally
 2. Create a database:
    ```bash
-   createdb vidyut_example
+   createdb aksara_example
    ```
 
 3. Install dependencies:
    ```bash
-   cd /path/to/vidyut
+   cd /path/to/aksara
    pip install -e ".[dev]"
    ```
 
 4. Set database URL:
    ```bash
-   export DATABASE_URL="postgresql://postgres:password@localhost:5432/vidyut_example"
+   export DATABASE_URL="postgresql://postgres:password@localhost:5432/aksara_example"
    ```
 
-5. Apply migrations using Vidyut CLI:
+5. Apply migrations using Aksara CLI:
    ```bash
    cd examples/basic_app
-   vidyut migrate --migrations-dir migrations
+   aksara migrate --migrations-dir migrations
    ```
 
    Or generate new migrations from models:
    ```bash
-   vidyut makemigrations --app models --name initial --output migrations
-   vidyut migrate --migrations-dir migrations
+   aksara makemigrations --app models --name initial --output migrations
+   aksara migrate --migrations-dir migrations
    ```
 
    Check migration status:
    ```bash
-   vidyut status
+   aksara status
    ```
 
 ## Running the App

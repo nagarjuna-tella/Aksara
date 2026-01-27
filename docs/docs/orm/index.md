@@ -1,12 +1,12 @@
 # ORM
 
-Vidyut's Object-Relational Mapping layer provides a Django-like API that's fully async and PostgreSQL-native.
+Aksara's Object-Relational Mapping layer provides a Django-like API that's fully async and PostgreSQL-native.
 
 ---
 
 ## Overview
 
-The Vidyut ORM is designed with three core principles:
+The Aksara ORM is designed with three core principles:
 
 1. **Async-Native** — Every operation is async, no blocking calls
 2. **Django-Like API** — Familiar patterns if you've used Django
@@ -17,7 +17,7 @@ The Vidyut ORM is designed with three core principles:
 ## Quick Example
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 # Define a model
 class Article(Model):
@@ -154,7 +154,7 @@ articles: list[Article] = await Article.objects.filter(published=True)
 
 ## Comparison with Other ORMs
 
-| Feature | Vidyut | Django ORM | SQLAlchemy | Tortoise ORM |
+| Feature | Aksara | Django ORM | SQLAlchemy | Tortoise ORM |
 |---------|--------|------------|------------|--------------|
 | Async Native | ✅ | ❌ | ⚠️ (2.0+) | ✅ |
 | Django-like API | ✅ | ✅ | ❌ | ⚠️ |

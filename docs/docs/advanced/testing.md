@@ -1,12 +1,12 @@
 # Testing
 
-Comprehensive testing patterns for Vidyut applications.
+Comprehensive testing patterns for Aksara applications.
 
 ---
 
 ## Overview
 
-Vidyut provides testing utilities built on pytest:
+Aksara provides testing utilities built on pytest:
 
 - **Test client** — Make API requests
 - **Database fixtures** — Clean database per test
@@ -20,7 +20,7 @@ Vidyut provides testing utilities built on pytest:
 ### Install Test Dependencies
 
 ```bash
-pip install vidyut[test]
+pip install aksara[test]
 # or
 pip install pytest pytest-asyncio httpx
 ```
@@ -53,10 +53,10 @@ testpaths = ["tests"]
 ```python
 # tests/test_users.py
 import pytest
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 from myapp.models import User
 
-class TestUserModel(VidyutTestCase):
+class TestUserModel(AksaraTestCase):
     async def asyncSetUp(self):
         """Run before each test."""
         self.user = await User.objects.create(
@@ -86,7 +86,7 @@ class TestUserModel(VidyutTestCase):
 
 ```python
 import pytest
-from vidyut.testing import async_test, db_session
+from aksara.testing import async_test, db_session
 from myapp.models import User
 
 @pytest.fixture
@@ -108,9 +108,9 @@ async def test_user_exists(user):
 ### Test Client
 
 ```python
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 
-class TestPostAPI(VidyutTestCase):
+class TestPostAPI(AksaraTestCase):
     async def asyncSetUp(self):
         self.user = await User.objects.create(
             email="test@example.com",
@@ -149,7 +149,7 @@ class TestPostAPI(VidyutTestCase):
 ### Authentication Helpers
 
 ```python
-class TestAuthenticatedAPI(VidyutTestCase):
+class TestAuthenticatedAPI(AksaraTestCase):
     async def asyncSetUp(self):
         self.user = await User.objects.create(
             email="test@example.com",
@@ -192,7 +192,7 @@ async def test_post_detail(self):
 
 ```python
 # tests/factories.py
-from vidyut.testing import Factory, Faker
+from aksara.testing import Factory, Faker
 from myapp.models import User, Post
 
 class UserFactory(Factory):
@@ -219,7 +219,7 @@ class PostFactory(Factory):
 ```python
 from tests.factories import UserFactory, PostFactory
 
-class TestPosts(VidyutTestCase):
+class TestPosts(AksaraTestCase):
     async def test_with_factories(self):
         # Create single instance
         user = await UserFactory.create()
@@ -279,9 +279,9 @@ inactive = await UserFactory.create(inactive=True)
 ### Automatic Rollback
 
 ```python
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 
-class TestDatabase(VidyutTestCase):
+class TestDatabase(AksaraTestCase):
     # Database is automatically rolled back after each test
     
     async def test_creates_data(self):
@@ -299,7 +299,7 @@ class TestDatabase(VidyutTestCase):
 
 ```python
 import pytest
-from vidyut.testing import db_session
+from aksara.testing import db_session
 
 @pytest.fixture(scope="module")
 async def test_data(db_session):
@@ -325,7 +325,7 @@ async def test_second(test_data):
 ```python
 from unittest.mock import AsyncMock, patch
 
-class TestPayment(VidyutTestCase):
+class TestPayment(AksaraTestCase):
     @patch("myapp.services.payment.process_payment")
     async def test_checkout(self, mock_payment):
         mock_payment.return_value = {"status": "success", "transaction_id": "123"}
@@ -342,9 +342,9 @@ class TestPayment(VidyutTestCase):
 ### Mock AI Services
 
 ```python
-from vidyut.testing import mock_ai
+from aksara.testing import mock_ai
 
-class TestAIFeatures(VidyutTestCase):
+class TestAIFeatures(AksaraTestCase):
     async def test_ai_query(self):
         with mock_ai(response="SELECT * FROM users"):
             response = await self.client.post(
@@ -384,8 +384,8 @@ async def test_async_function():
     result = await some_async_function()
     assert result == expected
 
-# With VidyutTestCase, async is automatic
-class TestAsync(VidyutTestCase):
+# With AksaraTestCase, async is automatic
+class TestAsync(AksaraTestCase):
     async def test_no_decorator_needed(self):
         result = await some_async_function()
         assert result == expected
@@ -394,9 +394,9 @@ class TestAsync(VidyutTestCase):
 ### Testing Background Tasks
 
 ```python
-from vidyut.testing import capture_tasks
+from aksara.testing import capture_tasks
 
-class TestBackgroundTasks(VidyutTestCase):
+class TestBackgroundTasks(AksaraTestCase):
     async def test_creates_background_task(self):
         with capture_tasks() as tasks:
             response = await self.client.post("/api/send-email/")
@@ -412,10 +412,10 @@ class TestBackgroundTasks(VidyutTestCase):
 ### ViewSet Testing
 
 ```python
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 from myapp.viewsets import PostViewSet
 
-class TestPostViewSet(VidyutTestCase):
+class TestPostViewSet(AksaraTestCase):
     async def test_list_action(self):
         await PostFactory.create_batch(5)
         
@@ -440,7 +440,7 @@ class TestPostViewSet(VidyutTestCase):
 ### Permission Testing
 
 ```python
-class TestPermissions(VidyutTestCase):
+class TestPermissions(AksaraTestCase):
     async def test_admin_only_endpoint(self):
         user = await UserFactory.create(is_admin=False)
         self.authenticate(user)
@@ -464,7 +464,7 @@ class TestPermissions(VidyutTestCase):
 ## Testing Migrations
 
 ```python
-from vidyut.testing import MigrationTestCase
+from aksara.testing import MigrationTestCase
 
 class TestMigrations(MigrationTestCase):
     async def test_migration_0003(self):
@@ -491,7 +491,7 @@ class TestMigrations(MigrationTestCase):
 ```python
 # tests/conftest.py
 import pytest
-from vidyut.testing import setup_test_database
+from aksara.testing import setup_test_database
 
 @pytest.fixture(scope="session")
 def test_settings():
@@ -535,26 +535,26 @@ async def test_integration():
 
 ```bash
 # Run all tests
-vidyut test
+aksara test
 
 # Run specific file
-vidyut test tests/test_users.py
+aksara test tests/test_users.py
 
 # Run specific test
-vidyut test tests/test_users.py::TestUserAPI::test_create
+aksara test tests/test_users.py::TestUserAPI::test_create
 
 # Run with coverage
-vidyut test --cov=myapp
+aksara test --cov=myapp
 
 # Run with verbose output
-vidyut test -v
+aksara test -v
 ```
 
 ### Test Coverage
 
 ```bash
 # Generate coverage report
-vidyut test --cov=myapp --cov-report=html
+aksara test --cov=myapp --cov-report=html
 
 # View report
 open htmlcov/index.html

@@ -1,5 +1,5 @@
 """
-Tests for Vidyut AI Context Engine (v0.4.3)
+Tests for Aksara AI Context Engine (v0.4.3)
 
 Comprehensive tests for the AI Context module including:
 - Pydantic model validation
@@ -24,9 +24,9 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from vidyut import Model, fields, Vidyut, ModelViewSet, include_viewset, action
-from vidyut.registry import ModelRegistry
-from vidyut.conf import settings, configure, reset_settings
+from aksara import Model, fields, Aksara, ModelViewSet, include_viewset, action
+from aksara.registry import ModelRegistry
+from aksara.conf import settings, configure, reset_settings
 
 
 # =============================================================================
@@ -86,7 +86,7 @@ def sample_model_with_fk():
 @pytest.fixture
 def sample_viewset(sample_model):
     """Create a sample ViewSet."""
-    from vidyut.permissions import IsAuthenticated
+    from aksara.permissions import IsAuthenticated
     
     class ArticleViewSet(ModelViewSet):
         model = sample_model
@@ -110,8 +110,8 @@ def sample_viewset(sample_model):
 
 @pytest.fixture
 def sample_app(sample_model, sample_viewset):
-    """Create a minimal Vidyut app for testing."""
-    app = Vidyut(
+    """Create a minimal Aksara app for testing."""
+    app = Aksara(
         title="Test App",
         version="1.0.0",
         ai_enabled=True,
@@ -135,7 +135,7 @@ class TestAiModelFieldInfo:
     
     def test_basic_field_info(self):
         """Test basic field info creation."""
-        from vidyut.ai.context import AiModelFieldInfo
+        from aksara.ai.context import AiModelFieldInfo
         
         field = AiModelFieldInfo(
             name="title",
@@ -152,7 +152,7 @@ class TestAiModelFieldInfo:
     
     def test_field_with_fk(self):
         """Test field info with foreign key."""
-        from vidyut.ai.context import AiModelFieldInfo
+        from aksara.ai.context import AiModelFieldInfo
         
         field = AiModelFieldInfo(
             name="author",
@@ -168,7 +168,7 @@ class TestAiModelFieldInfo:
     
     def test_field_with_ai_metadata(self):
         """Test field info with AI metadata."""
-        from vidyut.ai.context import AiModelFieldInfo
+        from aksara.ai.context import AiModelFieldInfo
         
         field = AiModelFieldInfo(
             name="password",
@@ -190,7 +190,7 @@ class TestAiModelInfo:
     
     def test_basic_model_info(self):
         """Test basic model info creation."""
-        from vidyut.ai.context import AiModelInfo, AiModelFieldInfo
+        from aksara.ai.context import AiModelInfo, AiModelFieldInfo
         
         model = AiModelInfo(
             name="User",
@@ -213,7 +213,7 @@ class TestAiModelInfo:
     
     def test_model_with_ai_metadata(self):
         """Test model info with AI metadata."""
-        from vidyut.ai.context import AiModelInfo
+        from aksara.ai.context import AiModelInfo
         
         model = AiModelInfo(
             name="Article",
@@ -233,7 +233,7 @@ class TestAiRelationInfo:
     
     def test_foreign_key_relation(self):
         """Test FK relation info."""
-        from vidyut.ai.context import AiRelationInfo
+        from aksara.ai.context import AiRelationInfo
         
         rel = AiRelationInfo(
             name="author",
@@ -248,7 +248,7 @@ class TestAiRelationInfo:
     
     def test_m2m_relation(self):
         """Test M2M relation info."""
-        from vidyut.ai.context import AiRelationInfo
+        from aksara.ai.context import AiRelationInfo
         
         rel = AiRelationInfo(
             name="tags",
@@ -267,7 +267,7 @@ class TestAiViewSetInfo:
     
     def test_basic_viewset_info(self):
         """Test basic ViewSet info."""
-        from vidyut.ai.context import AiViewSetInfo
+        from aksara.ai.context import AiViewSetInfo
         
         vs = AiViewSetInfo(
             name="ArticleViewSet",
@@ -283,7 +283,7 @@ class TestAiViewSetInfo:
     
     def test_viewset_with_actions(self):
         """Test ViewSet with custom actions."""
-        from vidyut.ai.context import AiViewSetInfo, AiActionInfo
+        from aksara.ai.context import AiViewSetInfo, AiActionInfo
         
         vs = AiViewSetInfo(
             name="ArticleViewSet",
@@ -308,7 +308,7 @@ class TestAiActionInfo:
     
     def test_collection_action(self):
         """Test collection action (detail=False)."""
-        from vidyut.ai.context import AiActionInfo
+        from aksara.ai.context import AiActionInfo
         
         action = AiActionInfo(
             name="featured",
@@ -323,7 +323,7 @@ class TestAiActionInfo:
     
     def test_detail_action(self):
         """Test detail action (detail=True)."""
-        from vidyut.ai.context import AiActionInfo
+        from aksara.ai.context import AiActionInfo
         
         action = AiActionInfo(
             name="approve",
@@ -340,7 +340,7 @@ class TestAiRouteInfo:
     
     def test_basic_route(self):
         """Test basic route info."""
-        from vidyut.ai.context import AiRouteInfo
+        from aksara.ai.context import AiRouteInfo
         
         route = AiRouteInfo(
             path="/api/users",
@@ -354,7 +354,7 @@ class TestAiRouteInfo:
     
     def test_route_with_source(self):
         """Test route with source type."""
-        from vidyut.ai.context import AiRouteInfo
+        from aksara.ai.context import AiRouteInfo
         
         route = AiRouteInfo(
             path="/admin/users",
@@ -370,7 +370,7 @@ class TestAiMigrationInfo:
     
     def test_migration_info(self):
         """Test migration info."""
-        from vidyut.ai.context import AiMigrationInfo
+        from aksara.ai.context import AiMigrationInfo
         
         mig = AiMigrationInfo(
             name="0001_initial",
@@ -390,7 +390,7 @@ class TestAiAdminInfo:
     
     def test_admin_disabled(self):
         """Test admin when disabled."""
-        from vidyut.ai.context import AiAdminInfo
+        from aksara.ai.context import AiAdminInfo
         
         admin = AiAdminInfo(enabled=False)
         
@@ -399,7 +399,7 @@ class TestAiAdminInfo:
     
     def test_admin_with_models(self):
         """Test admin with registered models."""
-        from vidyut.ai.context import AiAdminInfo, AiAdminModelInfo
+        from aksara.ai.context import AiAdminInfo, AiAdminModelInfo
         
         admin = AiAdminInfo(
             enabled=True,
@@ -422,7 +422,7 @@ class TestAiSettingsInfo:
     
     def test_settings_info(self):
         """Test settings info."""
-        from vidyut.ai.context import AiSettingsInfo
+        from aksara.ai.context import AiSettingsInfo
         
         settings = AiSettingsInfo(
             app_title="My App",
@@ -437,7 +437,7 @@ class TestAiSettingsInfo:
     
     def test_settings_no_credentials(self):
         """Verify settings don't expose credentials."""
-        from vidyut.ai.context import AiSettingsInfo
+        from aksara.ai.context import AiSettingsInfo
         
         settings = AiSettingsInfo(
             database_configured=True,
@@ -453,11 +453,11 @@ class TestAiMiddlewareInfo:
     
     def test_middleware_info(self):
         """Test middleware info."""
-        from vidyut.ai.context import AiMiddlewareInfo
+        from aksara.ai.context import AiMiddlewareInfo
         
         mw = AiMiddlewareInfo(
             name="RequestIDMiddleware",
-            module="vidyut.middleware.request_id",
+            module="aksara.middleware.request_id",
             order=0,
             config={"header_name": "X-Request-ID"},
         )
@@ -471,7 +471,7 @@ class TestAiToolSummary:
     
     def test_tool_summary(self):
         """Test tool summary."""
-        from vidyut.ai.context import AiToolSummary
+        from aksara.ai.context import AiToolSummary
         
         tool = AiToolSummary(
             name="users_list",
@@ -490,7 +490,7 @@ class TestAiSchemaInfo:
     
     def test_schema_info(self):
         """Test schema info."""
-        from vidyut.ai.context import AiSchemaInfo
+        from aksara.ai.context import AiSchemaInfo
         
         schema = AiSchemaInfo(
             name="AiQueryPlan",
@@ -508,7 +508,7 @@ class TestAiFullContext:
     
     def test_full_context(self):
         """Test full context creation."""
-        from vidyut.ai.context import AiFullContext
+        from aksara.ai.context import AiFullContext
         
         context = AiFullContext(
             framework_version="0.4.3",
@@ -516,13 +516,13 @@ class TestAiFullContext:
             checksum="abc123",
         )
         
-        assert context.framework == "vidyut"
+        assert context.framework == "aksara"
         assert context.framework_version == "0.4.3"
         assert context.context_version == "1.0.0"
     
     def test_full_context_with_data(self):
         """Test full context with all data."""
-        from vidyut.ai.context import (
+        from aksara.ai.context import (
             AiFullContext, AiModelInfo, AiViewSetInfo,
             AiSettingsInfo, AiAdminInfo
         )
@@ -551,7 +551,7 @@ class TestModelExtraction:
     
     def test_extract_model_info(self, sample_model):
         """Test extracting model info."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         info = _extract_model_info(sample_model)
         
@@ -563,7 +563,7 @@ class TestModelExtraction:
     
     def test_extract_model_fields(self, sample_model):
         """Test extracting model fields."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         info = _extract_model_info(sample_model)
         
@@ -580,7 +580,7 @@ class TestModelExtraction:
     
     def test_extract_model_with_fk(self, sample_model_with_fk):
         """Test extracting model with FK."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         Author, Post = sample_model_with_fk
         
@@ -602,7 +602,7 @@ class TestViewSetExtraction:
     
     def test_extract_viewset_info(self, sample_viewset):
         """Test extracting ViewSet info."""
-        from vidyut.ai.context import _extract_viewset_info
+        from aksara.ai.context import _extract_viewset_info
         
         info = _extract_viewset_info(sample_viewset)
         
@@ -614,7 +614,7 @@ class TestViewSetExtraction:
     
     def test_extract_viewset_actions(self, sample_viewset):
         """Test extracting ViewSet actions."""
-        from vidyut.ai.context import _extract_viewset_info
+        from aksara.ai.context import _extract_viewset_info
         
         info = _extract_viewset_info(sample_viewset)
         
@@ -633,7 +633,7 @@ class TestViewSetExtraction:
     
     def test_extract_viewset_permissions(self, sample_viewset):
         """Test extracting ViewSet permissions."""
-        from vidyut.ai.context import _extract_viewset_info
+        from aksara.ai.context import _extract_viewset_info
         
         info = _extract_viewset_info(sample_viewset)
         
@@ -645,7 +645,7 @@ class TestRouteExtraction:
     
     def test_extract_routes(self, sample_app):
         """Test extracting routes from app."""
-        from vidyut.ai.context import _extract_routes_from_app
+        from aksara.ai.context import _extract_routes_from_app
         
         routes = _extract_routes_from_app(sample_app)
         
@@ -655,7 +655,7 @@ class TestRouteExtraction:
     
     def test_routes_sorted(self, sample_app):
         """Test that routes are sorted deterministically."""
-        from vidyut.ai.context import _extract_routes_from_app
+        from aksara.ai.context import _extract_routes_from_app
         
         routes = _extract_routes_from_app(sample_app)
         
@@ -669,7 +669,7 @@ class TestSettingsExtraction:
     
     def test_extract_settings(self):
         """Test extracting settings."""
-        from vidyut.ai.context import _extract_settings_info
+        from aksara.ai.context import _extract_settings_info
         
         info = _extract_settings_info()
         
@@ -679,7 +679,7 @@ class TestSettingsExtraction:
     
     def test_settings_no_secrets(self):
         """Test that settings don't expose secrets."""
-        from vidyut.ai.context import _extract_settings_info
+        from aksara.ai.context import _extract_settings_info
         
         info = _extract_settings_info()
         
@@ -694,8 +694,8 @@ class TestAdminExtraction:
     
     def test_extract_admin_disabled(self):
         """Test extracting admin when none registered."""
-        from vidyut.ai.context import _extract_admin_info
-        from vidyut.contrib.admin import site
+        from aksara.ai.context import _extract_admin_info
+        from aksara.contrib.admin import site
         
         # Clear admin registry
         site.clear()
@@ -711,7 +711,7 @@ class TestMiddlewareExtraction:
     
     def test_extract_middleware(self, sample_app):
         """Test extracting middleware."""
-        from vidyut.ai.context import _extract_middleware_info
+        from aksara.ai.context import _extract_middleware_info
         
         middleware = _extract_middleware_info(sample_app)
         
@@ -724,7 +724,7 @@ class TestAiToolsExtraction:
     
     def test_extract_ai_tools_empty(self, sample_app):
         """Test extracting AI tools when none registered."""
-        from vidyut.ai.context import _extract_ai_tools_info
+        from aksara.ai.context import _extract_ai_tools_info
         
         tools = _extract_ai_tools_info(sample_app)
         
@@ -737,7 +737,7 @@ class TestAiSchemasExtraction:
     
     def test_extract_ai_schemas(self):
         """Test extracting AI schemas."""
-        from vidyut.ai.context import _extract_ai_schemas_info
+        from aksara.ai.context import _extract_ai_schemas_info
         
         schemas = _extract_ai_schemas_info()
         
@@ -760,11 +760,11 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_build_full_context(self, sample_app):
         """Test building full context."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
-        assert context.framework == "vidyut"
+        assert context.framework == "aksara"
         assert context.framework_version is not None
         assert context.checksum is not None
         assert context.generated_at is not None
@@ -772,7 +772,7 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_context_includes_models(self, sample_app, sample_model):
         """Test that context includes models."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -786,7 +786,7 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_context_includes_viewsets(self, sample_app):
         """Test that context includes ViewSets."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -797,7 +797,7 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_context_includes_routes(self, sample_app):
         """Test that context includes routes."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -806,7 +806,7 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_context_includes_settings(self, sample_app):
         """Test that context includes settings."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -816,7 +816,7 @@ class TestBuildFullContext:
     @pytest.mark.asyncio
     async def test_context_includes_schemas(self, sample_app):
         """Test that context includes AI schemas."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -829,7 +829,7 @@ class TestContextDeterminism:
     @pytest.mark.asyncio
     async def test_checksum_stable(self, sample_app, sample_model):
         """Test that checksum is stable for same state."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context1 = await build_full_ai_context(sample_app)
         context2 = await build_full_ai_context(sample_app)
@@ -840,7 +840,7 @@ class TestContextDeterminism:
     @pytest.mark.asyncio
     async def test_models_sorted(self, sample_app):
         """Test that models are sorted deterministically."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -851,7 +851,7 @@ class TestContextDeterminism:
     @pytest.mark.asyncio
     async def test_fields_included(self, sample_app, sample_model):
         """Test that fields are included in deterministic order."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -869,7 +869,7 @@ class TestContextSerialization:
     @pytest.mark.asyncio
     async def test_json_serializable(self, sample_app):
         """Test that context is JSON serializable."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -879,12 +879,12 @@ class TestContextSerialization:
         
         # Should parse back
         parsed = json.loads(json_str)
-        assert parsed["framework"] == "vidyut"
+        assert parsed["framework"] == "aksara"
     
     @pytest.mark.asyncio
     async def test_no_circular_refs(self, sample_app):
         """Test that there are no circular references."""
-        from vidyut.ai.context import build_full_ai_context
+        from aksara.ai.context import build_full_ai_context
         
         context = await build_full_ai_context(sample_app)
         
@@ -906,7 +906,7 @@ class TestContextEndpoints:
     def test_full_context_endpoint(self, sample_app):
         """Test GET /ai/context/full endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -915,13 +915,13 @@ class TestContextEndpoints:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["framework"] == "vidyut"
+        assert data["framework"] == "aksara"
         assert "checksum" in data
     
     def test_models_endpoint(self, sample_app, sample_model):
         """Test GET /ai/context/models endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -936,7 +936,7 @@ class TestContextEndpoints:
     def test_viewsets_endpoint(self, sample_app):
         """Test GET /ai/context/viewsets endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -951,7 +951,7 @@ class TestContextEndpoints:
     def test_settings_endpoint(self, sample_app):
         """Test GET /ai/context/settings endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -966,7 +966,7 @@ class TestContextEndpoints:
     def test_routes_endpoint(self, sample_app):
         """Test GET /ai/context/routes endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -981,7 +981,7 @@ class TestContextEndpoints:
     def test_admin_endpoint(self, sample_app):
         """Test GET /ai/context/admin endpoint."""
         from fastapi.testclient import TestClient
-        from vidyut.ai import ai_router
+        from aksara.ai import ai_router
         
         sample_app.include_router(ai_router)
         client = TestClient(sample_app)
@@ -1003,7 +1003,7 @@ class TestEdgeCases:
     
     def test_empty_model(self):
         """Test model with minimal fields."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         class MinimalModel(Model):
             name = fields.String(max_length=50)
@@ -1018,7 +1018,7 @@ class TestEdgeCases:
     
     def test_model_no_ai_meta(self):
         """Test model without AiMeta class."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         class SimpleModel(Model):
             name = fields.String(max_length=100)
@@ -1034,7 +1034,7 @@ class TestEdgeCases:
     
     def test_viewset_no_actions(self, sample_model):
         """Test ViewSet with no custom actions."""
-        from vidyut.ai.context import _extract_viewset_info
+        from aksara.ai.context import _extract_viewset_info
         
         class BasicViewSet(ModelViewSet):
             model = sample_model
@@ -1052,7 +1052,7 @@ class TestFieldTypes:
     
     def test_all_field_types(self):
         """Test extraction of all field types."""
-        from vidyut.ai.context import _extract_model_info
+        from aksara.ai.context import _extract_model_info
         
         class AllFieldsModel(Model):
             name = fields.String(max_length=100)
@@ -1085,7 +1085,7 @@ class TestAiFieldType:
     
     def test_field_type_values(self):
         """Test AiFieldType enum values."""
-        from vidyut.ai.context import AiFieldType
+        from aksara.ai.context import AiFieldType
         
         assert AiFieldType.INTEGER.value == "integer"
         assert AiFieldType.STRING.value == "string"
@@ -1103,7 +1103,7 @@ class TestModuleExports:
     
     def test_context_exports(self):
         """Test that context module exports are available."""
-        from vidyut.ai import (
+        from aksara.ai import (
             AiFieldType,
             AiModelFieldInfo,
             AiModelInfo,
@@ -1126,7 +1126,7 @@ class TestModuleExports:
     
     def test_all_list_complete(self):
         """Test that __all__ includes context exports."""
-        from vidyut.ai import __all__
+        from aksara.ai import __all__
         
         context_exports = [
             "AiFieldType",

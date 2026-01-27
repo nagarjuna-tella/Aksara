@@ -31,14 +31,14 @@ class TestValidationError:
     """Tests for ValidationError exception."""
     
     def test_validation_error_basic(self):
-        from vidyut.exceptions import ValidationError
+        from aksara.exceptions import ValidationError
         
         error = ValidationError("Invalid data")
         assert str(error) == "Invalid data"
         assert error.errors == {}
     
     def test_validation_error_with_errors(self):
-        from vidyut.exceptions import ValidationError
+        from aksara.exceptions import ValidationError
         
         errors = {"email": "Invalid email", "name": "Name required"}
         error = ValidationError("Validation failed", errors=errors)
@@ -48,7 +48,7 @@ class TestValidationError:
         assert "name: Name required" in str(error)
     
     def test_validation_error_with_field_name(self):
-        from vidyut.exceptions import ValidationError
+        from aksara.exceptions import ValidationError
         
         error = ValidationError("Invalid value", field_name="email")
         assert error.field_name == "email"
@@ -58,7 +58,7 @@ class TestFieldValidation:
     """Tests for field validation methods."""
     
     def test_email_validation_valid(self):
-        from vidyut.fields import Email
+        from aksara.fields import Email
         
         field = Email()
         # Should not raise
@@ -66,7 +66,7 @@ class TestFieldValidation:
         field.validate("test.user+tag@subdomain.example.co.uk")
     
     def test_email_validation_invalid(self):
-        from vidyut.fields import Email
+        from aksara.fields import Email
         
         field = Email()
         
@@ -80,7 +80,7 @@ class TestFieldValidation:
             field.validate("@nodomain.com")
     
     def test_url_validation_valid(self):
-        from vidyut.fields import URL
+        from aksara.fields import URL
         
         field = URL()
         # Should not raise
@@ -89,7 +89,7 @@ class TestFieldValidation:
         field.validate("https://subdomain.example.com:8080/path")
     
     def test_url_validation_invalid(self):
-        from vidyut.fields import URL
+        from aksara.fields import URL
         
         field = URL()
         
@@ -100,7 +100,7 @@ class TestFieldValidation:
             field.validate("ftp://invalid-scheme.com")
     
     def test_decimal_validation_valid(self):
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         
         field = DecimalField(max_digits=10, decimal_places=2)
         # Should not raise
@@ -109,7 +109,7 @@ class TestFieldValidation:
         field.validate(Decimal("99999999.99"))
     
     def test_decimal_validation_too_many_digits(self):
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         
         field = DecimalField(max_digits=5, decimal_places=2)
         
@@ -118,7 +118,7 @@ class TestFieldValidation:
     
     def test_decimal_validation_too_many_decimal_places(self):
         """Decimal places exceeding limit are handled by database (no Python error)."""
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         
         field = DecimalField(max_digits=10, decimal_places=2)
         
@@ -133,8 +133,8 @@ class TestSerializerReadOnlyFields:
     
     def test_read_only_fields_not_in_input_model(self):
         """Read-only fields should be excluded from input model."""
-        from vidyut import Model, fields
-        from vidyut.api.serializers import ModelSerializer, clear_serializer_cache
+        from aksara import Model, fields
+        from aksara.api.serializers import ModelSerializer, clear_serializer_cache
         
         clear_serializer_cache()
         
@@ -163,8 +163,8 @@ class TestSerializerReadOnlyFields:
     
     def test_read_only_fields_ignored_in_validation(self):
         """Read-only fields passed in data should be silently ignored."""
-        from vidyut import Model, fields
-        from vidyut.api.serializers import ModelSerializer, clear_serializer_cache
+        from aksara import Model, fields
+        from aksara.api.serializers import ModelSerializer, clear_serializer_cache
         
         clear_serializer_cache()
         
@@ -201,8 +201,8 @@ class TestSerializerReadOnlyFields:
 @pytest.fixture
 async def db():
     """Create database connection and clean up tables."""
-    from vidyut.db import Database
-    from vidyut.registry import ModelRegistry
+    from aksara.db import Database
+    from aksara.registry import ModelRegistry
     
     ModelRegistry.clear()
     
@@ -231,8 +231,8 @@ class TestNonNullableValidation:
     @pytest.mark.asyncio
     async def test_non_nullable_field_fails_on_none(self, db):
         """Non-nullable field without default should fail if None."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         
         class V037User(Model):
             __tablename__ = "v037_test_users"
@@ -250,7 +250,7 @@ class TestNonNullableValidation:
     @pytest.mark.asyncio
     async def test_non_nullable_with_default_passes(self, db):
         """Non-nullable field with default should pass."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         
         class V037User(Model):
             __tablename__ = "v037_test_users"
@@ -269,7 +269,7 @@ class TestNonNullableValidation:
     @pytest.mark.asyncio
     async def test_nullable_field_allows_none(self, db):
         """Nullable field should allow None."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         
         class V037User(Model):
             __tablename__ = "v037_test_users"
@@ -293,8 +293,8 @@ class TestFieldValidationIntegration:
     @pytest.mark.asyncio
     async def test_invalid_email_fails_save(self, db):
         """Invalid email should fail validation on save."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         
         class V037Profile(Model):
             __tablename__ = "v037_test_profiles"
@@ -310,7 +310,7 @@ class TestFieldValidationIntegration:
     @pytest.mark.asyncio
     async def test_valid_email_passes_save(self, db):
         """Valid email should pass validation on save."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         
         class V037Profile(Model):
             __tablename__ = "v037_test_profiles"
@@ -326,8 +326,8 @@ class TestFieldValidationIntegration:
     @pytest.mark.asyncio
     async def test_invalid_url_fails_save(self, db):
         """Invalid URL should fail validation on save."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         
         class V037Profile(Model):
             __tablename__ = "v037_test_profiles"
@@ -348,8 +348,8 @@ class TestUniqueConstraintError:
     @pytest.mark.asyncio
     async def test_duplicate_raises_unique_error(self, db):
         """Duplicate unique field should raise UniqueConstraintError."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import UniqueConstraintError
+        from aksara import Model, fields
+        from aksara.exceptions import UniqueConstraintError
         
         class V037User(Model):
             __tablename__ = "v037_test_users"
@@ -375,9 +375,9 @@ class TestExpandNullRelations:
     @pytest.mark.asyncio
     async def test_expand_null_fk_returns_null(self, db):
         """Expanding a null FK should return null, not error."""
-        from vidyut import Model, fields
-        from vidyut.api.serializers import ModelSerializer, clear_serializer_cache
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.api.serializers import ModelSerializer, clear_serializer_cache
+        from aksara.registry import ModelRegistry
         
         clear_serializer_cache()
         
@@ -422,16 +422,16 @@ class TestExpandNullRelations:
 # =============================================================================
 
 class TestAPIExceptionHandlers:
-    """Tests for API exception handlers in Vidyut app."""
+    """Tests for API exception handlers in Aksara app."""
     
     def test_exception_handlers_registered(self):
         """Test that exception handlers are registered for our errors."""
-        from vidyut import Vidyut
-        from vidyut.manager import DoesNotExist
-        from vidyut.exceptions import ValidationError, UniqueConstraintError
+        from aksara import Aksara
+        from aksara.manager import DoesNotExist
+        from aksara.exceptions import ValidationError, UniqueConstraintError
         
         # Create app without DB (just for testing handlers)
-        app = Vidyut(database_url=None, auto_discover_views=False)
+        app = Aksara(database_url=None, auto_discover_views=False)
         
         # Check handlers are registered
         assert DoesNotExist in app.exception_handlers
@@ -444,11 +444,11 @@ class TestManyToManyIdempotent:
     
     def test_add_sql_has_on_conflict(self):
         """Verify ManyToMany.add() uses ON CONFLICT DO NOTHING."""
-        from vidyut.fields import ManyToMany
+        from aksara.fields import ManyToMany
         
         # The ManyToMany.add() implementation uses ON CONFLICT DO NOTHING
         # This is verified by reading the source - just a sanity check here
-        import vidyut.fields as f
+        import aksara.fields as f
         import inspect
         
         source = inspect.getsource(f.ManyToManyManager.add)
@@ -463,7 +463,7 @@ class TestEnumValidation:
     """Tests for Enum field validation."""
     
     def test_enum_validation_valid_name(self):
-        from vidyut.fields import Enum
+        from aksara.fields import Enum
         from enum import Enum as PyEnum
         
         class Status(PyEnum):
@@ -475,7 +475,7 @@ class TestEnumValidation:
         assert result == Status.ACTIVE
     
     def test_enum_validation_valid_value(self):
-        from vidyut.fields import Enum
+        from aksara.fields import Enum
         from enum import Enum as PyEnum
         
         class Status(PyEnum):
@@ -487,7 +487,7 @@ class TestEnumValidation:
         assert result == Status.ACTIVE
     
     def test_enum_validation_invalid(self):
-        from vidyut.fields import Enum
+        from aksara.fields import Enum
         from enum import Enum as PyEnum
         
         class Status(PyEnum):
@@ -504,7 +504,7 @@ class TestValidationErrorDetails:
     
     def test_multiple_errors_collected(self):
         """All validation errors should be collected, not just the first."""
-        from vidyut.exceptions import ValidationError
+        from aksara.exceptions import ValidationError
         
         errors = {
             "email": "Invalid email format",
@@ -524,7 +524,7 @@ class TestValidationEdgeCases:
     """Tests for edge cases in field validation."""
     
     def test_email_with_special_characters(self):
-        from vidyut.fields import Email
+        from aksara.fields import Email
         
         field = Email()
         # Valid emails with special chars
@@ -533,14 +533,14 @@ class TestValidationEdgeCases:
         field.validate("user_name@example.com")
     
     def test_url_with_port(self):
-        from vidyut.fields import URL
+        from aksara.fields import URL
         
         field = URL()
         field.validate("http://localhost:8000")
         field.validate("https://example.com:443/path")
     
     def test_url_with_query_and_fragment(self):
-        from vidyut.fields import URL
+        from aksara.fields import URL
         
         field = URL()
         field.validate("https://example.com/path?query=1&foo=bar")
@@ -548,7 +548,7 @@ class TestValidationEdgeCases:
         field.validate("https://example.com/path?q=1#section")
     
     def test_decimal_negative_values(self):
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         from decimal import Decimal
         
         field = DecimalField(max_digits=10, decimal_places=2)
@@ -556,7 +556,7 @@ class TestValidationEdgeCases:
         assert result == Decimal("-123.45")
     
     def test_decimal_zero(self):
-        from vidyut.fields import Decimal as DecimalField
+        from aksara.fields import Decimal as DecimalField
         from decimal import Decimal
         
         field = DecimalField(max_digits=10, decimal_places=2)
@@ -564,7 +564,7 @@ class TestValidationEdgeCases:
         assert result == Decimal("0")
     
     def test_nullable_field_validate_none(self):
-        from vidyut.fields import Email, URL, Decimal as DecimalField
+        from aksara.fields import Email, URL, Decimal as DecimalField
         from decimal import Decimal
         
         # Nullable fields should accept None
@@ -578,7 +578,7 @@ class TestValidationEdgeCases:
         assert decimal_field.validate(None) is None
     
     def test_non_nullable_field_validate_none_raises(self):
-        from vidyut.fields import Email, URL, Decimal as DecimalField
+        from aksara.fields import Email, URL, Decimal as DecimalField
         
         # Non-nullable fields should raise on None
         with pytest.raises(ValueError):
@@ -596,7 +596,7 @@ class TestManagerCreateValidation:
     
     def test_manager_create_calls_save(self):
         """Manager.create() should call save() which triggers validation."""
-        import vidyut.manager as m
+        import aksara.manager as m
         import inspect
         
         # Verify create method calls save
@@ -609,8 +609,8 @@ class TestSerializerValidationIntegration:
     
     def test_serializer_validates_field_types(self):
         """Serializer should validate field values using Pydantic."""
-        from vidyut import Model, fields
-        from vidyut.api.serializers import ModelSerializer, clear_serializer_cache
+        from aksara import Model, fields
+        from aksara.api.serializers import ModelSerializer, clear_serializer_cache
         
         clear_serializer_cache()
         
@@ -632,14 +632,14 @@ class TestSerializerValidationIntegration:
 class TestExceptionInheritance:
     """Tests for exception class hierarchy."""
     
-    def test_validation_error_is_vidyut_error(self):
-        from vidyut.exceptions import ValidationError, VidyutError
+    def test_validation_error_is_aksara_error(self):
+        from aksara.exceptions import ValidationError, AksaraError
         
         error = ValidationError("test")
-        assert isinstance(error, VidyutError)
+        assert isinstance(error, AksaraError)
     
     def test_unique_constraint_error_is_database_error(self):
-        from vidyut.exceptions import UniqueConstraintError, DatabaseError
+        from aksara.exceptions import UniqueConstraintError, DatabaseError
         
         error = UniqueConstraintError("test")
         assert isinstance(error, DatabaseError)
@@ -656,8 +656,8 @@ class TestMultipleValidationErrors:
     @pytest.mark.asyncio
     async def test_multiple_errors_reported(self, db):
         """Multiple validation failures should all be in errors dict."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         
         class V037MultiError(Model):
             __tablename__ = "v037_test_users"
@@ -685,8 +685,8 @@ class TestUpdateValidation:
     @pytest.mark.asyncio
     async def test_validation_on_update(self, db):
         """Validation should run when updating existing records."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         
         class V037User(Model):
             __tablename__ = "v037_test_users"
@@ -713,8 +713,8 @@ class TestManyToManyIdempotentIntegration:
     @pytest.mark.asyncio
     async def test_add_same_item_twice_no_error(self, db):
         """Adding the same item twice should not raise an error."""
-        from vidyut import Model, fields
-        from vidyut.registry import ModelRegistry
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
         
         class V037Tag(Model):
             __tablename__ = "v037_test_tags"
@@ -762,8 +762,8 @@ class TestDecimalValidationIntegration:
     @pytest.mark.asyncio
     async def test_decimal_too_many_digits_fails(self, db):
         """Decimal with too many digits should fail validation."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         from decimal import Decimal
         
         class V037Product(Model):
@@ -781,7 +781,7 @@ class TestDecimalValidationIntegration:
     @pytest.mark.asyncio
     async def test_valid_decimal_saves(self, db):
         """Valid decimal should save successfully."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         from decimal import Decimal
         
         class V037Product(Model):
@@ -803,8 +803,8 @@ class TestEnumValidationIntegration:
     @pytest.mark.asyncio
     async def test_invalid_enum_fails_save(self, db):
         """Invalid enum value should fail validation on save."""
-        from vidyut import Model, fields
-        from vidyut.exceptions import ValidationError
+        from aksara import Model, fields
+        from aksara.exceptions import ValidationError
         from enum import Enum as PyEnum
         
         class Status(PyEnum):
@@ -825,7 +825,7 @@ class TestEnumValidationIntegration:
     @pytest.mark.asyncio
     async def test_valid_enum_saves(self, db):
         """Valid enum should save successfully."""
-        from vidyut import Model, fields
+        from aksara import Model, fields
         from enum import Enum as PyEnum
         
         class Status(PyEnum):

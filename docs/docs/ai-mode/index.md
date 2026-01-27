@@ -1,12 +1,12 @@
 # AI Mode
 
-AI-powered development tools built into Vidyut.
+AI-powered development tools built into Aksara.
 
 ---
 
 ## Overview
 
-Vidyut's AI Mode provides developer tools that understand your codebase:
+Aksara's AI Mode provides developer tools that understand your codebase:
 
 | Tool | Purpose |
 |------|---------|
@@ -27,7 +27,7 @@ Vidyut's AI Mode provides developer tools that understand your codebase:
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_MODE": True,
     "AI_PROVIDER": "openai",  # or "anthropic", "local"
 }
@@ -37,19 +37,19 @@ VIDYUT = {
 
 ```bash
 # Generate a model
-vidyut ai generate "User model with email and name fields"
+aksara ai generate "User model with email and name fields"
 
 # Query data
-vidyut ai query "Find all users who signed up this week"
+aksara ai query "Find all users who signed up this week"
 
 # Fix schema issues  
-vidyut ai doctor --fix
+aksara ai doctor --fix
 ```
 
 ### Integrate in Code
 
 ```python
-from vidyut.ai import query_natural_language
+from aksara.ai import query_natural_language
 
 # Natural language queries
 users = await query_natural_language(
@@ -76,7 +76,7 @@ users = await query_natural_language(
 ├─────────────────────────────────────────────────────────────┤
 │                    Safety Layer                              │
 ├─────────────────────────────────────────────────────────────┤
-│                   Vidyut Core (ORM, API, Admin)              │
+│                   Aksara Core (ORM, API, Admin)              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -89,7 +89,7 @@ users = await query_natural_language(
 Functions that AI can call to interact with your app:
 
 ```python
-from vidyut.ai.tools import get_tools
+from aksara.ai.tools import get_tools
 
 tools = get_tools()
 # Returns: create_record, update_record, query_records, 
@@ -103,7 +103,7 @@ See [Tools](tools.md) for the full list.
 Automatically gathers relevant context for AI:
 
 ```python
-from vidyut.ai import ContextEngine
+from aksara.ai import ContextEngine
 
 engine = ContextEngine()
 context = await engine.gather(
@@ -120,7 +120,7 @@ See [Context Engine](context-engine.md).
 Natural language to database queries:
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 engine = QueryEngine()
 result = await engine.query(
@@ -135,7 +135,7 @@ See [Query Engine](query-engine.md).
 Generate boilerplate code:
 
 ```python
-from vidyut.ai import Codegen
+from aksara.ai import Codegen
 
 gen = Codegen()
 code = await gen.model("BlogPost with title, content, author FK")
@@ -149,7 +149,7 @@ See [Codegen](codegen.md).
 Safe code modifications:
 
 ```python
-from vidyut.ai import PatchEngine
+from aksara.ai import PatchEngine
 
 engine = PatchEngine()
 patch = await engine.create_patch(
@@ -166,7 +166,7 @@ See [Patch Engine](patch-engine.md).
 Multi-step task planning:
 
 ```python
-from vidyut.ai import Planner
+from aksara.ai import Planner
 
 planner = Planner()
 plan = await planner.create(
@@ -182,7 +182,7 @@ See [Planner](planner.md).
 Execute AI agents:
 
 ```python
-from vidyut.ai import AgentRuntime
+from aksara.ai import AgentRuntime
 
 runtime = AgentRuntime()
 result = await runtime.execute(
@@ -197,7 +197,7 @@ See [Agent Runtime](agent-runtime.md).
 Analyze and fix schema issues:
 
 ```bash
-vidyut ai doctor
+aksara ai doctor
 ```
 
 ```
@@ -209,7 +209,7 @@ vidyut ai doctor
   3. Comment.created_at has no default
 
 💡 Suggested Fixes:
-  vidyut ai doctor --fix
+  aksara ai doctor --fix
 ```
 
 See [Schema Doctor](schema-doctor.md).
@@ -222,37 +222,37 @@ See [Schema Doctor](schema-doctor.md).
 
 ```bash
 # "How do I..." questions
-vidyut ai ask "How do I add pagination to my viewset?"
+aksara ai ask "How do I add pagination to my viewset?"
 
 # Generate code
-vidyut ai generate "UserProfile model linked to User"
+aksara ai generate "UserProfile model linked to User"
 ```
 
 ### Data Exploration
 
 ```bash
 # Query data naturally
-vidyut ai query "Users who registered but never made a purchase"
+aksara ai query "Users who registered but never made a purchase"
 
 # Analyze patterns
-vidyut ai analyze "What's the most common user flow?"
+aksara ai analyze "What's the most common user flow?"
 ```
 
 ### Code Review
 
 ```bash
 # Review recent changes
-vidyut ai review
+aksara ai review
 
 # Check for issues
-vidyut ai doctor
+aksara ai doctor
 ```
 
 ### Automated Tasks
 
 ```python
 # In CI/CD
-from vidyut.ai import SchemaDoctor
+from aksara.ai import SchemaDoctor
 
 doctor = SchemaDoctor()
 issues = await doctor.analyze()
@@ -271,7 +271,7 @@ AI Mode includes multiple safety layers:
 Destructive operations require confirmation:
 
 ```bash
-vidyut ai query "Delete all inactive users"
+aksara ai query "Delete all inactive users"
 
 ⚠️ This will delete 1,234 records.
 Proceed? [y/N]
@@ -282,7 +282,7 @@ Proceed? [y/N]
 Preview changes before applying:
 
 ```bash
-vidyut ai patch --dry-run "Add status field to Order"
+aksara ai patch --dry-run "Add status field to Order"
 
 Would modify:
   models.py: +3 lines
@@ -294,7 +294,7 @@ Would modify:
 Queries run in read-only transactions by default:
 
 ```python
-from vidyut.ai import QueryEngine
+from aksara.ai import QueryEngine
 
 engine = QueryEngine(read_only=True)  # Default
 ```
@@ -304,7 +304,7 @@ engine = QueryEngine(read_only=True)  # Default
 All AI operations are logged:
 
 ```python
-VIDYUT = {
+AKSARA = {
     "AI_AUDIT_LOG": True,  # Log all AI operations
 }
 ```
@@ -317,7 +317,7 @@ See [Safety](safety.md) for details.
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     # Enable AI Mode
     "AI_MODE": True,
     
@@ -345,10 +345,10 @@ See [Configuration](config.md) for all options.
 
 - Python 3.10+
 - OpenAI API key (or Anthropic, or local LLM)
-- Vidyut 0.4.0+
+- Aksara 0.4.0+
 
 ```bash
-pip install vidyut[ai]
+pip install aksara[ai]
 ```
 
 ---

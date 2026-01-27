@@ -1,6 +1,6 @@
 # Reference
 
-Complete API reference for Vidyut.
+Complete API reference for Aksara.
 
 ---
 
@@ -22,7 +22,7 @@ Complete API reference for Vidyut.
 ### Settings
 
 ```python
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     "DATABASE_URL": "postgresql://localhost/myapp",
     "SECRET_KEY": "...",
@@ -35,7 +35,7 @@ VIDYUT = {
 ### Models
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class User(Model):
     email = fields.EmailField(unique=True)
@@ -47,7 +47,7 @@ class User(Model):
 ### ViewSets
 
 ```python
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 
 class UserViewSet(ModelViewSet):
     model = User
@@ -59,10 +59,10 @@ class UserViewSet(ModelViewSet):
 ### CLI
 
 ```bash
-vidyut startproject myproject
-vidyut makemigrations
-vidyut migrate
-vidyut runserver
+aksara startproject myproject
+aksara makemigrations
+aksara migrate
+aksara runserver
 ```
 
 → [CLI Reference](cli-reference.md)
@@ -74,8 +74,8 @@ vidyut runserver
 Current version: **0.4.9**
 
 ```python
-import vidyut
-print(vidyut.__version__)  # 0.4.9
+import aksara
+print(aksara.__version__)  # 0.4.9
 ```
 
 ---

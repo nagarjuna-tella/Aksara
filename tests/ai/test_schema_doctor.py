@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # Import test utilities
-from vidyut.testing import VidyutTestCase
+from aksara.testing import AksaraTestCase
 
 
 # =============================================================================
@@ -32,14 +32,14 @@ class TestDriftKindLiteral:
     
     def test_drift_kind_import(self):
         """DriftKind can be imported."""
-        from vidyut.ai.schema_doctor import DriftKind
+        from aksara.ai.schema_doctor import DriftKind
         
         # Type checking only - no runtime validation for Literal
         assert DriftKind is not None
     
     def test_drift_kind_values(self):
         """All expected drift kinds should be defined."""
-        from vidyut.ai.schema_doctor import DriftKind
+        from aksara.ai.schema_doctor import DriftKind
         from typing import get_args
         
         expected_kinds = {
@@ -65,13 +65,13 @@ class TestIssueSeverityLiteral:
     
     def test_issue_severity_import(self):
         """IssueSeverity can be imported."""
-        from vidyut.ai.schema_doctor import IssueSeverity
+        from aksara.ai.schema_doctor import IssueSeverity
         
         assert IssueSeverity is not None
     
     def test_issue_severity_values(self):
         """All expected severity levels should be defined."""
-        from vidyut.ai.schema_doctor import IssueSeverity
+        from aksara.ai.schema_doctor import IssueSeverity
         from typing import get_args
         
         expected_severities = {"info", "warning", "danger"}
@@ -89,7 +89,7 @@ class TestAiSchemaIssue:
     
     def test_create_minimal_issue(self):
         """Create issue with only required fields."""
-        from vidyut.ai.schema_doctor import AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssue
         
         issue = AiSchemaIssue(
             id="test.issue",
@@ -107,7 +107,7 @@ class TestAiSchemaIssue:
     
     def test_create_full_issue(self):
         """Create issue with all fields."""
-        from vidyut.ai.schema_doctor import AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssue
         
         issue = AiSchemaIssue(
             id="blog.Article.slug.missing_column",
@@ -134,7 +134,7 @@ class TestAiSchemaIssue:
     
     def test_issue_serialization(self):
         """Issue can be serialized to dict."""
-        from vidyut.ai.schema_doctor import AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssue
         
         issue = AiSchemaIssue(
             id="test.issue",
@@ -154,7 +154,7 @@ class TestAiSchemaIssue:
     
     def test_issue_json_serialization(self):
         """Issue can be serialized to JSON."""
-        from vidyut.ai.schema_doctor import AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssue
         import json
         
         issue = AiSchemaIssue(
@@ -172,7 +172,7 @@ class TestAiSchemaIssue:
     
     def test_issue_forbids_extra_fields(self):
         """Issue should reject unknown fields."""
-        from vidyut.ai.schema_doctor import AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssue
         from pydantic import ValidationError
         
         with pytest.raises(ValidationError):
@@ -195,7 +195,7 @@ class TestAiSchemaHealth:
     
     def test_create_healthy_status(self):
         """Create health with healthy status."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth
+        from aksara.ai.schema_doctor import AiSchemaHealth
         
         health = AiSchemaHealth(
             status="healthy",
@@ -212,7 +212,7 @@ class TestAiSchemaHealth:
     
     def test_create_degraded_status(self):
         """Create health with degraded status."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
         
         health = AiSchemaHealth(
             status="degraded",
@@ -241,7 +241,7 @@ class TestAiSchemaHealth:
     
     def test_create_danger_status(self):
         """Create health with danger status."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
         
         health = AiSchemaHealth(
             status="danger",
@@ -269,7 +269,7 @@ class TestAiSchemaHealth:
     
     def test_health_with_db_metadata(self):
         """Health can include database metadata."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth
+        from aksara.ai.schema_doctor import AiSchemaHealth
         
         health = AiSchemaHealth(
             status="healthy",
@@ -286,7 +286,7 @@ class TestAiSchemaHealth:
     
     def test_health_serialization(self):
         """Health can be serialized to dict."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth
+        from aksara.ai.schema_doctor import AiSchemaHealth
         
         health = AiSchemaHealth(
             status="healthy",
@@ -313,7 +313,7 @@ class TestDbColumnInfo:
     
     def test_create_column_info(self):
         """Create basic column info."""
-        from vidyut.ai.schema_doctor import DbColumnInfo
+        from aksara.ai.schema_doctor import DbColumnInfo
         
         col = DbColumnInfo(
             name="id",
@@ -330,7 +330,7 @@ class TestDbColumnInfo:
     
     def test_create_column_with_default(self):
         """Create column info with default value."""
-        from vidyut.ai.schema_doctor import DbColumnInfo
+        from aksara.ai.schema_doctor import DbColumnInfo
         
         col = DbColumnInfo(
             name="created_at",
@@ -344,7 +344,7 @@ class TestDbColumnInfo:
     
     def test_create_nullable_column(self):
         """Create nullable column info."""
-        from vidyut.ai.schema_doctor import DbColumnInfo
+        from aksara.ai.schema_doctor import DbColumnInfo
         
         col = DbColumnInfo(
             name="bio",
@@ -361,7 +361,7 @@ class TestDbTableInfo:
     
     def test_create_table_info(self):
         """Create basic table info."""
-        from vidyut.ai.schema_doctor import DbTableInfo
+        from aksara.ai.schema_doctor import DbTableInfo
         
         table = DbTableInfo(name="users")
         
@@ -370,7 +370,7 @@ class TestDbTableInfo:
     
     def test_create_table_with_columns(self):
         """Create table info with columns."""
-        from vidyut.ai.schema_doctor import DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import DbTableInfo, DbColumnInfo
         
         table = DbTableInfo(
             name="users",
@@ -406,77 +406,77 @@ class TestClassifySeverity:
     
     def test_missing_table_is_danger(self):
         """Missing table should be danger severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("missing_table")
         assert severity == "danger"
     
     def test_missing_column_is_danger(self):
         """Missing column should be danger severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("missing_column")
         assert severity == "danger"
     
     def test_extra_table_is_warning(self):
         """Extra table should be warning severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("extra_table")
         assert severity == "warning"
     
     def test_extra_column_is_warning(self):
         """Extra column should be warning severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("extra_column")
         assert severity == "warning"
     
     def test_type_mismatch_is_danger(self):
         """Type mismatch should be danger severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("type_mismatch")
         assert severity == "danger"
     
     def test_nullability_mismatch_is_warning(self):
         """Nullability mismatch should be warning by default."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("nullability_mismatch")
         assert severity == "warning"
     
     def test_pk_mismatch_is_danger(self):
         """Primary key mismatch should be danger severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("pk_mismatch")
         assert severity == "danger"
     
     def test_index_mismatch_is_info(self):
         """Index mismatch should be info severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("index_mismatch")
         assert severity == "info"
     
     def test_fk_mismatch_is_warning(self):
         """Foreign key mismatch should be warning severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("fk_mismatch")
         assert severity == "warning"
     
     def test_unique_mismatch_is_warning(self):
         """Unique constraint mismatch should be warning severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("unique_mismatch")
         assert severity == "warning"
     
     def test_default_mismatch_is_warning(self):
         """Default value mismatch should be warning severity."""
-        from vidyut.ai.schema_doctor import classify_severity
+        from aksara.ai.schema_doctor import classify_severity
         
         severity = classify_severity("default_mismatch")
         assert severity == "warning"
@@ -492,7 +492,7 @@ class TestTypesCompatible:
     
     def test_exact_match(self):
         """Exact type matches should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("integer", "integer") is True
         assert _types_compatible("uuid", "uuid") is True
@@ -500,7 +500,7 @@ class TestTypesCompatible:
     
     def test_varchar_variations(self):
         """Varchar variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("varchar(255)", "varchar(255)") is True
         assert _types_compatible("varchar", "varchar(100)") is True
@@ -508,7 +508,7 @@ class TestTypesCompatible:
     
     def test_integer_variations(self):
         """Integer variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("integer", "int4") is True
         assert _types_compatible("int", "integer") is True
@@ -516,21 +516,21 @@ class TestTypesCompatible:
     
     def test_bigint_variations(self):
         """Bigint variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("bigint", "int8") is True
         assert _types_compatible("bigserial", "bigint") is True
     
     def test_boolean_variations(self):
         """Boolean variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("boolean", "bool") is True
         assert _types_compatible("bool", "boolean") is True
     
     def test_timestamp_variations(self):
         """Timestamp variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible(
             "timestamp with time zone",
@@ -539,21 +539,21 @@ class TestTypesCompatible:
     
     def test_json_variations(self):
         """JSON variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("json", "jsonb") is True
         assert _types_compatible("jsonb", "json") is True
     
     def test_float_variations(self):
         """Float/double variations should be compatible."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("float", "double precision") is True
         assert _types_compatible("real", "float4") is True
     
     def test_incompatible_types(self):
         """Incompatible types should return False."""
-        from vidyut.ai.schema_doctor import _types_compatible
+        from aksara.ai.schema_doctor import _types_compatible
         
         assert _types_compatible("integer", "text") is False
         assert _types_compatible("varchar", "uuid") is False
@@ -570,14 +570,14 @@ class TestDetectSchemaDrift:
     
     def test_no_drift_empty_schemas(self):
         """Empty schemas should have no drift."""
-        from vidyut.ai.schema_doctor import detect_schema_drift
+        from aksara.ai.schema_doctor import detect_schema_drift
         
         issues = detect_schema_drift({}, {})
         assert issues == []
     
     def test_detect_missing_table(self):
         """Detect table in models but not in DB."""
-        from vidyut.ai.schema_doctor import detect_schema_drift
+        from aksara.ai.schema_doctor import detect_schema_drift
         
         models_map = {
             "users": {
@@ -600,7 +600,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_extra_table(self):
         """Detect table in DB but not in models."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {}
         db_map = {
@@ -626,7 +626,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_missing_column(self):
         """Detect column in model but not in DB table."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -663,7 +663,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_extra_column(self):
         """Detect column in DB but not in model."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -695,7 +695,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_type_mismatch(self):
         """Detect type mismatch between model and DB."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -730,7 +730,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_nullability_mismatch(self):
         """Detect nullability mismatch."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -764,7 +764,7 @@ class TestDetectSchemaDrift:
     
     def test_detect_pk_mismatch(self):
         """Detect primary key mismatch."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -795,7 +795,7 @@ class TestDetectSchemaDrift:
     
     def test_skip_system_tables(self):
         """System tables should be skipped."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {}
         db_map = {
@@ -805,8 +805,8 @@ class TestDetectSchemaDrift:
                     "version_num": DbColumnInfo(name="version_num", type="varchar", is_nullable=False, is_primary_key=True),
                 },
             ),
-            "vidyut_migrations": DbTableInfo(
-                name="vidyut_migrations",
+            "aksara_migrations": DbTableInfo(
+                name="aksara_migrations",
                 columns={},
             ),
         }
@@ -818,7 +818,7 @@ class TestDetectSchemaDrift:
     
     def test_multiple_issues_in_single_table(self):
         """Multiple issues can be detected in a single table."""
-        from vidyut.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import detect_schema_drift, DbTableInfo, DbColumnInfo
         
         models_map = {
             "users": {
@@ -863,7 +863,7 @@ class TestIssueIdGeneration:
     
     def test_issue_id_includes_app_label(self):
         """Issue ID should include app_label when present."""
-        from vidyut.ai.schema_doctor import _create_issue
+        from aksara.ai.schema_doctor import _create_issue
         
         issue = _create_issue(
             kind="missing_column",
@@ -879,7 +879,7 @@ class TestIssueIdGeneration:
     
     def test_issue_id_includes_model(self):
         """Issue ID should include model when present."""
-        from vidyut.ai.schema_doctor import _create_issue
+        from aksara.ai.schema_doctor import _create_issue
         
         issue = _create_issue(
             kind="missing_column",
@@ -895,7 +895,7 @@ class TestIssueIdGeneration:
     
     def test_issue_id_includes_column(self):
         """Issue ID should include column when present."""
-        from vidyut.ai.schema_doctor import _create_issue
+        from aksara.ai.schema_doctor import _create_issue
         
         issue = _create_issue(
             kind="type_mismatch",
@@ -909,7 +909,7 @@ class TestIssueIdGeneration:
     
     def test_issue_id_includes_kind(self):
         """Issue ID should include kind."""
-        from vidyut.ai.schema_doctor import _create_issue
+        from aksara.ai.schema_doctor import _create_issue
         
         issue = _create_issue(
             kind="extra_table",
@@ -922,7 +922,7 @@ class TestIssueIdGeneration:
     
     def test_issue_id_is_deterministic(self):
         """Same inputs should produce same issue ID."""
-        from vidyut.ai.schema_doctor import _create_issue
+        from aksara.ai.schema_doctor import _create_issue
         
         issue1 = _create_issue(
             kind="missing_column",
@@ -955,7 +955,7 @@ class TestBuildModelSchemaMap:
     
     def test_build_model_schema_map_returns_dict(self):
         """build_model_schema_map should return a dict."""
-        from vidyut.ai.schema_doctor import build_model_schema_map
+        from aksara.ai.schema_doctor import build_model_schema_map
         
         result = build_model_schema_map()
         
@@ -963,7 +963,7 @@ class TestBuildModelSchemaMap:
     
     def test_model_schema_map_structure(self):
         """Schema map should have expected structure."""
-        from vidyut.ai.schema_doctor import build_model_schema_map
+        from aksara.ai.schema_doctor import build_model_schema_map
         
         result = build_model_schema_map()
         
@@ -985,7 +985,7 @@ class TestFieldTypeMapping:
     
     def test_map_uuid_field(self):
         """UUID field should map to uuid type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockUUIDField:
             pass
@@ -998,7 +998,7 @@ class TestFieldTypeMapping:
     
     def test_map_string_field(self):
         """String field should map to varchar type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockStringField:
             max_length = 100
@@ -1011,7 +1011,7 @@ class TestFieldTypeMapping:
     
     def test_map_string_field_no_length(self):
         """String field without max_length should map to varchar."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockStringField:
             pass
@@ -1024,7 +1024,7 @@ class TestFieldTypeMapping:
     
     def test_map_text_field(self):
         """Text field should map to text type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockTextField:
             pass
@@ -1037,7 +1037,7 @@ class TestFieldTypeMapping:
     
     def test_map_integer_field(self):
         """Integer field should map to integer type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockIntField:
             pass
@@ -1050,7 +1050,7 @@ class TestFieldTypeMapping:
     
     def test_map_boolean_field(self):
         """Boolean field should map to boolean type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockBoolField:
             pass
@@ -1063,7 +1063,7 @@ class TestFieldTypeMapping:
     
     def test_map_json_field(self):
         """JSON field should map to jsonb type."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockJSONField:
             pass
@@ -1076,7 +1076,7 @@ class TestFieldTypeMapping:
     
     def test_map_datetime_field(self):
         """DateTime field should map to timestamp with time zone."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockDateTimeField:
             pass
@@ -1089,7 +1089,7 @@ class TestFieldTypeMapping:
     
     def test_map_unknown_field(self):
         """Unknown field should map to 'unknown'."""
-        from vidyut.ai.schema_doctor import _map_field_to_pg_type
+        from aksara.ai.schema_doctor import _map_field_to_pg_type
         
         class MockCustomField:
             pass
@@ -1111,7 +1111,7 @@ class TestFieldDefaultMapping:
     
     def test_get_none_default(self):
         """Field with no default should return None."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         
         class MockField:
             pass
@@ -1123,7 +1123,7 @@ class TestFieldDefaultMapping:
     
     def test_get_bool_default_true(self):
         """Boolean True default should be 'true'."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         
         class MockField:
             default = True
@@ -1135,7 +1135,7 @@ class TestFieldDefaultMapping:
     
     def test_get_bool_default_false(self):
         """Boolean False default should be 'false'."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         
         class MockField:
             default = False
@@ -1147,7 +1147,7 @@ class TestFieldDefaultMapping:
     
     def test_get_int_default(self):
         """Integer default should be string representation."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         
         class MockField:
             default = 42
@@ -1159,7 +1159,7 @@ class TestFieldDefaultMapping:
     
     def test_get_string_default(self):
         """String default should be quoted."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         
         class MockField:
             default = "hello"
@@ -1171,7 +1171,7 @@ class TestFieldDefaultMapping:
     
     def test_get_uuid4_callable_default(self):
         """UUID4 callable should map to gen_random_uuid()."""
-        from vidyut.ai.schema_doctor import _get_field_default
+        from aksara.ai.schema_doctor import _get_field_default
         from uuid import uuid4
         
         class MockField:
@@ -1193,7 +1193,7 @@ class TestJunctionTableDetection:
     
     def test_detect_junction_table(self):
         """Table with 2 FK-like columns should be detected as junction."""
-        from vidyut.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
         
         table = DbTableInfo(
             name="article_tags",
@@ -1207,7 +1207,7 @@ class TestJunctionTableDetection:
     
     def test_detect_junction_table_with_id(self):
         """Junction table with explicit id column."""
-        from vidyut.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
         
         table = DbTableInfo(
             name="user_roles",
@@ -1222,7 +1222,7 @@ class TestJunctionTableDetection:
     
     def test_not_junction_table(self):
         """Regular table should not be detected as junction."""
-        from vidyut.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
         
         table = DbTableInfo(
             name="users",
@@ -1238,7 +1238,7 @@ class TestJunctionTableDetection:
     
     def test_single_column_not_junction(self):
         """Table with single column should not be junction."""
-        from vidyut.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
+        from aksara.ai.schema_doctor import _is_likely_junction_table, DbTableInfo, DbColumnInfo
         
         table = DbTableInfo(
             name="settings",
@@ -1260,7 +1260,7 @@ class TestAiSchemaIssuesResponse:
     
     def test_create_response(self):
         """Create issues response."""
-        from vidyut.ai.schema_doctor import AiSchemaIssuesResponse, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaIssuesResponse, AiSchemaIssue
         
         response = AiSchemaIssuesResponse(
             status="degraded",
@@ -1279,7 +1279,7 @@ class TestAiSchemaIssuesResponse:
     
     def test_empty_response(self):
         """Create empty issues response."""
-        from vidyut.ai.schema_doctor import AiSchemaIssuesResponse
+        from aksara.ai.schema_doctor import AiSchemaIssuesResponse
         
         response = AiSchemaIssuesResponse(
             status="healthy",
@@ -1301,17 +1301,17 @@ class TestAnalyzeSchemaHealthWithMocking:
     @pytest.mark.asyncio
     async def test_analyze_returns_health_object(self):
         """analyze_schema_health should return AiSchemaHealth."""
-        from vidyut.ai.schema_doctor import analyze_schema_health, AiSchemaHealth
+        from aksara.ai.schema_doctor import analyze_schema_health, AiSchemaHealth
         
         mock_app = MagicMock()
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             mock_instance.fetchval.side_effect = ["PostgreSQL 16.1", "test_db"]
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 result = await analyze_schema_health(mock_app)
@@ -1321,17 +1321,17 @@ class TestAnalyzeSchemaHealthWithMocking:
     @pytest.mark.asyncio
     async def test_analyze_healthy_when_no_issues(self):
         """Status should be healthy when no issues."""
-        from vidyut.ai.schema_doctor import analyze_schema_health
+        from aksara.ai.schema_doctor import analyze_schema_health
         
         mock_app = MagicMock()
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             mock_instance.fetchval.side_effect = ["PostgreSQL 16.1", "test_db"]
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 result = await analyze_schema_health(mock_app)
@@ -1343,11 +1343,11 @@ class TestAnalyzeSchemaHealthWithMocking:
     @pytest.mark.asyncio
     async def test_analyze_danger_when_db_not_configured(self):
         """Status should be danger when DB not configured."""
-        from vidyut.ai.schema_doctor import analyze_schema_health
+        from aksara.ai.schema_doctor import analyze_schema_health
         
         mock_app = MagicMock()
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             MockDb.get_instance.side_effect = RuntimeError("No database")
             
             result = await analyze_schema_health(mock_app)
@@ -1360,17 +1360,17 @@ class TestAnalyzeSchemaHealthWithMocking:
     @pytest.mark.asyncio
     async def test_analyze_includes_db_metadata(self):
         """Result should include db_version and db_name."""
-        from vidyut.ai.schema_doctor import analyze_schema_health
+        from aksara.ai.schema_doctor import analyze_schema_health
         
         mock_app = MagicMock()
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             mock_instance.fetchval.side_effect = ["PostgreSQL 16.1", "my_database"]
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 result = await analyze_schema_health(mock_app)
@@ -1381,17 +1381,17 @@ class TestAnalyzeSchemaHealthWithMocking:
     @pytest.mark.asyncio
     async def test_analyze_includes_timestamp(self):
         """Result should include inspected_at timestamp."""
-        from vidyut.ai.schema_doctor import analyze_schema_health
+        from aksara.ai.schema_doctor import analyze_schema_health
         
         mock_app = MagicMock()
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             mock_instance.fetchval.side_effect = ["PostgreSQL 16.1", "test_db"]
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 result = await analyze_schema_health(mock_app)
@@ -1412,7 +1412,7 @@ class TestIntrospectDbSchema:
     @pytest.mark.asyncio
     async def test_introspect_empty_database(self):
         """Empty database should return empty dict."""
-        from vidyut.ai.schema_doctor import introspect_db_schema
+        from aksara.ai.schema_doctor import introspect_db_schema
         
         mock_db = AsyncMock()
         mock_db.fetch.return_value = []
@@ -1424,7 +1424,7 @@ class TestIntrospectDbSchema:
     @pytest.mark.asyncio
     async def test_introspect_single_table(self):
         """Introspect a single table with columns."""
-        from vidyut.ai.schema_doctor import introspect_db_schema
+        from aksara.ai.schema_doctor import introspect_db_schema
         
         mock_db = AsyncMock()
         
@@ -1468,7 +1468,7 @@ class TestIntrospectDbSchema:
     @pytest.mark.asyncio
     async def test_introspect_varchar_type_normalization(self):
         """Varchar types should be normalized."""
-        from vidyut.ai.schema_doctor import introspect_db_schema
+        from aksara.ai.schema_doctor import introspect_db_schema
         
         mock_db = AsyncMock()
         
@@ -1493,7 +1493,7 @@ class TestIntrospectDbSchema:
     @pytest.mark.asyncio
     async def test_introspect_nullable_detection(self):
         """Nullability should be correctly detected."""
-        from vidyut.ai.schema_doctor import introspect_db_schema
+        from aksara.ai.schema_doctor import introspect_db_schema
         
         mock_db = AsyncMock()
         
@@ -1536,7 +1536,7 @@ class TestStatusCalculation:
     
     def test_healthy_status_rules(self):
         """healthy = 0 danger AND 0 warning."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
         
         # With only info issues -> healthy
         health = AiSchemaHealth(
@@ -1555,7 +1555,7 @@ class TestStatusCalculation:
     
     def test_degraded_status_rules(self):
         """degraded = at least 1 warning AND 0 danger."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
         
         health = AiSchemaHealth(
             status="degraded",
@@ -1572,7 +1572,7 @@ class TestStatusCalculation:
     
     def test_danger_status_rules(self):
         """danger = at least 1 danger issue."""
-        from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
         
         health = AiSchemaHealth(
             status="danger",
@@ -1596,66 +1596,66 @@ class TestStatusCalculation:
 
 
 class TestSchemaDocorExports:
-    """Test that all exports are available from vidyut.ai."""
+    """Test that all exports are available from aksara.ai."""
     
     def test_import_drift_kind(self):
-        """DriftKind can be imported from vidyut.ai."""
-        from vidyut.ai import DriftKind
+        """DriftKind can be imported from aksara.ai."""
+        from aksara.ai import DriftKind
         assert DriftKind is not None
     
     def test_import_issue_severity(self):
-        """IssueSeverity can be imported from vidyut.ai."""
-        from vidyut.ai import IssueSeverity
+        """IssueSeverity can be imported from aksara.ai."""
+        from aksara.ai import IssueSeverity
         assert IssueSeverity is not None
     
     def test_import_ai_schema_issue(self):
-        """AiSchemaIssue can be imported from vidyut.ai."""
-        from vidyut.ai import AiSchemaIssue
+        """AiSchemaIssue can be imported from aksara.ai."""
+        from aksara.ai import AiSchemaIssue
         assert AiSchemaIssue is not None
     
     def test_import_ai_schema_health(self):
-        """AiSchemaHealth can be imported from vidyut.ai."""
-        from vidyut.ai import AiSchemaHealth
+        """AiSchemaHealth can be imported from aksara.ai."""
+        from aksara.ai import AiSchemaHealth
         assert AiSchemaHealth is not None
     
     def test_import_ai_schema_issues_response(self):
-        """AiSchemaIssuesResponse can be imported from vidyut.ai."""
-        from vidyut.ai import AiSchemaIssuesResponse
+        """AiSchemaIssuesResponse can be imported from aksara.ai."""
+        from aksara.ai import AiSchemaIssuesResponse
         assert AiSchemaIssuesResponse is not None
     
     def test_import_db_column_info(self):
-        """DbColumnInfo can be imported from vidyut.ai."""
-        from vidyut.ai import DbColumnInfo
+        """DbColumnInfo can be imported from aksara.ai."""
+        from aksara.ai import DbColumnInfo
         assert DbColumnInfo is not None
     
     def test_import_db_table_info(self):
-        """DbTableInfo can be imported from vidyut.ai."""
-        from vidyut.ai import DbTableInfo
+        """DbTableInfo can be imported from aksara.ai."""
+        from aksara.ai import DbTableInfo
         assert DbTableInfo is not None
     
     def test_import_introspect_db_schema(self):
-        """introspect_db_schema can be imported from vidyut.ai."""
-        from vidyut.ai import introspect_db_schema
+        """introspect_db_schema can be imported from aksara.ai."""
+        from aksara.ai import introspect_db_schema
         assert introspect_db_schema is not None
     
     def test_import_build_model_schema_map(self):
-        """build_model_schema_map can be imported from vidyut.ai."""
-        from vidyut.ai import build_model_schema_map
+        """build_model_schema_map can be imported from aksara.ai."""
+        from aksara.ai import build_model_schema_map
         assert build_model_schema_map is not None
     
     def test_import_detect_schema_drift(self):
-        """detect_schema_drift can be imported from vidyut.ai."""
-        from vidyut.ai import detect_schema_drift
+        """detect_schema_drift can be imported from aksara.ai."""
+        from aksara.ai import detect_schema_drift
         assert detect_schema_drift is not None
     
     def test_import_classify_severity(self):
-        """classify_severity can be imported from vidyut.ai."""
-        from vidyut.ai import classify_severity
+        """classify_severity can be imported from aksara.ai."""
+        from aksara.ai import classify_severity
         assert classify_severity is not None
     
     def test_import_analyze_schema_health(self):
-        """analyze_schema_health can be imported from vidyut.ai."""
-        from vidyut.ai import analyze_schema_health
+        """analyze_schema_health can be imported from aksara.ai."""
+        from aksara.ai import analyze_schema_health
         assert analyze_schema_health is not None
 
 
@@ -1672,13 +1672,13 @@ class TestSchemaHealthEndpoint:
         """Health endpoint should return 200."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="healthy",
@@ -1700,13 +1700,13 @@ class TestSchemaHealthEndpoint:
         """Health endpoint should return all issues."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="danger",
@@ -1740,13 +1740,13 @@ class TestSchemaIssuesEndpoint:
         """Issues endpoint should return 200."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="healthy",
@@ -1766,13 +1766,13 @@ class TestSchemaIssuesEndpoint:
         """Issues endpoint should filter by severity."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="danger",
@@ -1801,13 +1801,13 @@ class TestSchemaIssuesEndpoint:
         """Issues endpoint should filter by kind."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth, AiSchemaIssue
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="degraded",
@@ -1833,13 +1833,13 @@ class TestSchemaIssuesEndpoint:
         """Invalid severity filter should return 400."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="healthy",
@@ -1859,13 +1859,13 @@ class TestSchemaIssuesEndpoint:
         """Invalid kind filter should return 400."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.ai.schema_doctor.analyze_schema_health") as mock_analyze:
-            from vidyut.ai.schema_doctor import AiSchemaHealth
+        with patch("aksara.ai.schema_doctor.analyze_schema_health") as mock_analyze:
+            from aksara.ai.schema_doctor import AiSchemaHealth
             
             mock_analyze.return_value = AiSchemaHealth(
                 status="healthy",
@@ -1889,17 +1889,17 @@ class TestSchemaDiffEndpoint:
         """Diff endpoint should return 200."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 with TestClient(app) as client:
@@ -1916,12 +1916,12 @@ class TestSchemaDiffEndpoint:
         """Diff endpoint should return 503 if DB not configured."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             MockDb.get_instance.side_effect = RuntimeError("No database")
             
             with TestClient(app) as client:
@@ -1934,17 +1934,17 @@ class TestSchemaDiffEndpoint:
         """Diff endpoint should return 404 for unknown table."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from vidyut.ai.fastapi import router
+        from aksara.ai.fastapi import router
         
         app = FastAPI()
         app.include_router(router)
         
-        with patch("vidyut.db.engine.Database") as MockDb:
+        with patch("aksara.db.engine.Database") as MockDb:
             mock_instance = AsyncMock()
             MockDb.get_instance.return_value = mock_instance
             mock_instance.fetch.return_value = []
             
-            with patch("vidyut.ai.schema_doctor.build_model_schema_map") as mock_build:
+            with patch("aksara.ai.schema_doctor.build_model_schema_map") as mock_build:
                 mock_build.return_value = {}
                 
                 with TestClient(app) as client:

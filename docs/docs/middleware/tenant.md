@@ -9,10 +9,10 @@ Multi-tenant application support.
 `TenantMiddleware` enables multi-tenancy by identifying the current tenant from requests:
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import TenantMiddleware
+from aksara import Aksara
+from aksara.middleware import TenantMiddleware
 
-app = Vidyut()
+app = Aksara()
 app.add_middleware(
     TenantMiddleware,
     header_name="X-Tenant-ID",
@@ -117,7 +117,7 @@ app.add_middleware(
 ### Context Variable
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 @app.get("/api/data")
 async def get_data(request):
@@ -142,7 +142,7 @@ async def get_data(request):
 ### Automatic Filtering
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 class TenantManager:
     """Custom manager that filters by tenant."""
@@ -161,7 +161,7 @@ class Post(Model):
 ### Manual Filtering
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 @app.get("/api/posts")
 async def list_posts(request):
@@ -173,7 +173,7 @@ async def list_posts(request):
 ### Creating with Tenant
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 @app.post("/api/posts")
 async def create_post(request):
@@ -252,7 +252,7 @@ def get_current_tenant() -> Tenant:
 For complete isolation, use separate databases:
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 # Database URLs per tenant
 TENANT_DATABASES = {
@@ -277,7 +277,7 @@ async def get_tenant_connection():
 For PostgreSQL schema-based isolation:
 
 ```python
-from vidyut.middleware import tenant_id_var
+from aksara.middleware import tenant_id_var
 
 class TenantMiddleware:
     async def __call__(self, scope, receive, send):
@@ -316,8 +316,8 @@ app.add_middleware(
 ## Complete Example
 
 ```python
-from vidyut import Vidyut
-from vidyut.middleware import TenantMiddleware, tenant_id_var
+from aksara import Aksara
+from aksara.middleware import TenantMiddleware, tenant_id_var
 from myapp.models import Tenant, Post
 
 
@@ -343,7 +343,7 @@ async def resolve_and_validate_tenant(request):
 
 
 # Create app
-app = Vidyut()
+app = Aksara()
 
 # Add tenant middleware
 app.add_middleware(

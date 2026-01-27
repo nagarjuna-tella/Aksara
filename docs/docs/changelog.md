@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Vidyut.
+All notable changes to Aksara.
 
 ---
 
@@ -205,7 +205,7 @@ All notable changes to Vidyut.
 
 ## Version Numbering
 
-Vidyut follows [Semantic Versioning](https://semver.org/):
+Aksara follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR**: Breaking changes
 - **MINOR**: New features (backwards compatible)
@@ -220,10 +220,10 @@ Vidyut follows [Semantic Versioning](https://semver.org/):
 1. Update ViewSet imports:
 ```python
 # Old
-from vidyut.views import ViewSet
+from aksara.views import ViewSet
 
 # New
-from vidyut.api import ViewSet, ModelViewSet
+from aksara.api import ViewSet, ModelViewSet
 ```
 
 2. Update serializer definitions:
@@ -253,18 +253,18 @@ router.register("users", UserViewSet)
 
 1. Create initial migration:
 ```bash
-vidyut makemigrations --initial
+aksara makemigrations --initial
 ```
 
 2. Apply migrations:
 ```bash
-vidyut migrate
+aksara migrate
 ```
 
 ---
 
 ## Links
 
-- [GitHub Releases](https://github.com/vidyut/vidyut/releases)
+- [GitHub Releases](https://github.com/aksara/aksara/releases)
 - [Roadmap](roadmap.md)
 - [Migration Guides](getting-started/index.md)

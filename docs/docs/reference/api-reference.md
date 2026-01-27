@@ -1,6 +1,6 @@
 # API Reference
 
-Complete reference for Vidyut's API layer.
+Complete reference for Aksara's API layer.
 
 ---
 
@@ -11,7 +11,7 @@ Complete reference for Vidyut's API layer.
 Full CRUD ViewSet for a model.
 
 ```python
-from vidyut.api import ModelViewSet
+from aksara.api import ModelViewSet
 
 class UserViewSet(ModelViewSet):
     model = User
@@ -65,7 +65,7 @@ class UserViewSet(ModelViewSet):
 Base ViewSet without default actions.
 
 ```python
-from vidyut.api import ViewSet, action
+from aksara.api import ViewSet, action
 
 class CustomViewSet(ViewSet):
     @action(detail=False, methods=["get"])
@@ -82,7 +82,7 @@ class CustomViewSet(ViewSet):
 Read-only ViewSet (list and retrieve only).
 
 ```python
-from vidyut.api import ReadOnlyModelViewSet
+from aksara.api import ReadOnlyModelViewSet
 
 class PostViewSet(ReadOnlyModelViewSet):
     model = Post
@@ -96,7 +96,7 @@ class PostViewSet(ReadOnlyModelViewSet):
 ### @action Decorator
 
 ```python
-from vidyut.api import action
+from aksara.api import action
 
 @action(
     detail=True,           # True for /items/{id}/action
@@ -128,7 +128,7 @@ async def my_action(self, request, pk=None):
 ### ModelSerializer
 
 ```python
-from vidyut.api import ModelSerializer
+from aksara.api import ModelSerializer
 
 class UserSerializer(ModelSerializer):
     full_name = SerializerMethodField()
@@ -171,7 +171,7 @@ class UserSerializer(ModelSerializer):
 Base serializer for non-model data.
 
 ```python
-from vidyut.api import Serializer, StringField, IntegerField
+from aksara.api import Serializer, StringField, IntegerField
 
 class LoginSerializer(Serializer):
     email = StringField()
@@ -226,7 +226,7 @@ StringField(
 ### Built-in Permissions
 
 ```python
-from vidyut.api.permissions import (
+from aksara.api.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAdminUser,
@@ -244,7 +244,7 @@ from vidyut.api.permissions import (
 ### Custom Permission
 
 ```python
-from vidyut.api.permissions import BasePermission
+from aksara.api.permissions import BasePermission
 
 class IsOwner(BasePermission):
     async def has_object_permission(self, request, view, obj):
@@ -269,18 +269,18 @@ class HasSubscription(BasePermission):
 ### Token Authentication
 
 ```python
-from vidyut.api.authentication import TokenAuthentication
+from aksara.api.authentication import TokenAuthentication
 
 # In settings
 "DEFAULT_AUTHENTICATION_CLASSES": [
-    "vidyut.api.authentication.TokenAuthentication",
+    "aksara.api.authentication.TokenAuthentication",
 ]
 ```
 
 ### Custom Authentication
 
 ```python
-from vidyut.api.authentication import BaseAuthentication
+from aksara.api.authentication import BaseAuthentication
 
 class APIKeyAuthentication(BaseAuthentication):
     async def authenticate(self, request):
@@ -301,7 +301,7 @@ class APIKeyAuthentication(BaseAuthentication):
 ### PageNumberPagination
 
 ```python
-from vidyut.api.pagination import PageNumberPagination
+from aksara.api.pagination import PageNumberPagination
 
 class CustomPagination(PageNumberPagination):
     page_size = 20
@@ -323,7 +323,7 @@ Response format:
 ### LimitOffsetPagination
 
 ```python
-from vidyut.api.pagination import LimitOffsetPagination
+from aksara.api.pagination import LimitOffsetPagination
 
 class CustomPagination(LimitOffsetPagination):
     default_limit = 20
@@ -333,7 +333,7 @@ class CustomPagination(LimitOffsetPagination):
 ### CursorPagination
 
 ```python
-from vidyut.api.pagination import CursorPagination
+from aksara.api.pagination import CursorPagination
 
 class CustomPagination(CursorPagination):
     ordering = "-created_at"
@@ -347,7 +347,7 @@ class CustomPagination(CursorPagination):
 ### FilterSet
 
 ```python
-from vidyut.api.filters import FilterSet, Filter
+from aksara.api.filters import FilterSet, Filter
 
 class PostFilterSet(FilterSet):
     author = Filter(field_name="author_id")
@@ -384,7 +384,7 @@ class PostViewSet(ModelViewSet):
 ### Router
 
 ```python
-from vidyut.api import Router
+from aksara.api import Router
 
 router = Router()
 router.register("users", UserViewSet)
@@ -397,7 +397,7 @@ routes = router.routes
 ### Include ViewSet
 
 ```python
-from vidyut.api import include_viewset
+from aksara.api import include_viewset
 
 # In urls.py
 routes = [
@@ -409,7 +409,7 @@ routes = [
 ### Manual Routes
 
 ```python
-from vidyut.api import APIRouter
+from aksara.api import APIRouter
 
 router = APIRouter()
 
@@ -448,7 +448,7 @@ async def my_view(request):
 ### Response Formats
 
 ```python
-from vidyut.api import Response
+from aksara.api import Response
 
 # JSON response (default)
 return {"data": "value"}
@@ -471,7 +471,7 @@ return Response(
 ### Built-in Throttles
 
 ```python
-from vidyut.api.throttling import AnonRateThrottle, UserRateThrottle
+from aksara.api.throttling import AnonRateThrottle, UserRateThrottle
 
 class PostViewSet(ModelViewSet):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
@@ -480,7 +480,7 @@ class PostViewSet(ModelViewSet):
 ### Custom Throttle
 
 ```python
-from vidyut.api.throttling import BaseThrottle
+from aksara.api.throttling import BaseThrottle
 
 class BurstThrottle(BaseThrottle):
     rate = "60/minute"

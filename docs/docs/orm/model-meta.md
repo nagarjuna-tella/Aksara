@@ -6,7 +6,7 @@ Access model metadata and schema information programmatically.
 
 ## Overview
 
-Vidyut models expose metadata through the `_meta` attribute, enabling introspection for:
+Aksara models expose metadata through the `_meta` attribute, enabling introspection for:
 
 - Building admin interfaces
 - Generating API schemas
@@ -29,7 +29,7 @@ print(Post._meta.fields)         # List of field objects
 Configure model behavior using the inner `Meta` class:
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Post(Model):
     title = fields.String(max_length=200)
@@ -152,7 +152,7 @@ field.ai_visible           # True
 ### Checking Field Types
 
 ```python
-from vidyut.fields import String, ForeignKey, ManyToMany
+from aksara.fields import String, ForeignKey, ManyToMany
 
 field = Post._meta.get_field("author")
 
@@ -301,7 +301,7 @@ def model_to_form_fields(model_class):
 
 ## AI Metadata
 
-Vidyut models support AI-specific metadata for LLM integration.
+Aksara models support AI-specific metadata for LLM integration.
 
 ### Field-Level AI Metadata
 
@@ -376,7 +376,7 @@ for field in Post._meta.fields:
 ## Complete Example
 
 ```python
-from vidyut import Model, fields
+from aksara import Model, fields
 
 class Article(Model):
     """Blog article model with full metadata."""

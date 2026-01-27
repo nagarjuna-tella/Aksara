@@ -1,12 +1,12 @@
 """
-Tests for Vidyut AI Debug Assistant (v0.4.1).
+Tests for Aksara AI Debug Assistant (v0.4.1).
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
-from vidyut.ai.debug import (
+from aksara.ai.debug import (
     AiDebugContext,
     AiDebugSuggestion,
     AiExceptionInfo,
@@ -165,7 +165,7 @@ class TestAiDebugModels:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
             suggestions=[
@@ -214,7 +214,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -243,7 +243,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -272,7 +272,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -300,7 +300,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -328,7 +328,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -356,7 +356,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -386,7 +386,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -414,7 +414,7 @@ class TestRuleBasedAdvisor:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
         )
@@ -562,7 +562,7 @@ class TestDebugPageIntegration:
     
     def test_build_ai_debug_html_with_context(self):
         """Test _build_ai_debug_html generates proper HTML."""
-        from vidyut.debug.handlers import _build_ai_debug_html
+        from aksara.debug.handlers import _build_ai_debug_html
         
         context = AiDebugContext(
             timestamp="2024-01-01T00:00:00Z",
@@ -580,7 +580,7 @@ class TestDebugPageIntegration:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
             suggestions=[
@@ -607,14 +607,14 @@ class TestDebugPageIntegration:
     
     def test_build_ai_debug_html_none_context(self):
         """Test _build_ai_debug_html with None context returns empty."""
-        from vidyut.debug.handlers import _build_ai_debug_html
+        from aksara.debug.handlers import _build_ai_debug_html
         
         html = _build_ai_debug_html(None)
         assert html == ""
     
     def test_build_ai_debug_html_no_suggestions(self):
         """Test _build_ai_debug_html with no suggestions."""
-        from vidyut.debug.handlers import _build_ai_debug_html
+        from aksara.debug.handlers import _build_ai_debug_html
         
         context = AiDebugContext(
             timestamp="2024-01-01T00:00:00Z",
@@ -631,7 +631,7 @@ class TestDebugPageIntegration:
             ),
             environment=AiEnvInfo(
                 python_version="3.11.0",
-                vidyut_version="0.4.1",
+                aksara_version="0.4.1",
                 debug_mode=True,
             ),
             suggestions=[],
@@ -652,14 +652,14 @@ class TestAiDebugSettings:
     
     def test_ai_debug_enabled_default(self):
         """Test ai_debug_enabled defaults to True."""
-        from vidyut.conf import Settings
+        from aksara.conf import Settings
         
         settings = Settings()
         assert settings.ai_debug_enabled is True
     
     def test_ai_debug_advisor_class_default(self):
         """Test ai_debug_advisor_class defaults to None."""
-        from vidyut.conf import Settings
+        from aksara.conf import Settings
         
         settings = Settings()
         assert settings.ai_debug_advisor_class is None

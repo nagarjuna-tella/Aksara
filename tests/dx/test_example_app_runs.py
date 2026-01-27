@@ -15,7 +15,7 @@ import shutil
 from pathlib import Path
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from vidyut.cli.scaffold import create_project_scaffold, write_scaffold_files
+from aksara.cli.scaffold import create_project_scaffold, write_scaffold_files
 
 
 class TestGeneratedAppImports:
@@ -100,53 +100,53 @@ class TestGeneratedAppStructure:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_models_use_vidyut_imports(self):
-        """Models should import from Vidyut with examples in comments."""
+    def test_models_use_aksara_imports(self):
+        """Models should import from Aksara with examples in comments."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         models_path = self.base_path / "testapp" / "app" / "models.py"
         content = models_path.read_text()
         
-        assert "from vidyut import Model, fields" in content
+        assert "from aksara import Model, fields" in content
         # Example should be in comments
         assert "# class" in content or "Example" in content.lower()
     
-    def test_views_use_vidyut_viewset(self):
-        """Views should import Vidyut ModelViewSet with examples."""
+    def test_views_use_aksara_viewset(self):
+        """Views should import Aksara ModelViewSet with examples."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         views_path = self.base_path / "testapp" / "app" / "views.py"
         content = views_path.read_text()
         
-        assert "from vidyut import" in content
+        assert "from aksara import" in content
         assert "ModelViewSet" in content
         # Example should be in comments
         assert "# class" in content
     
-    def test_serializers_use_vidyut_serializer(self):
-        """Serializers should import Vidyut ModelSerializer with examples."""
+    def test_serializers_use_aksara_serializer(self):
+        """Serializers should import Aksara ModelSerializer with examples."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         serializers_path = self.base_path / "testapp" / "app" / "serializers.py"
         content = serializers_path.read_text()
         
-        assert "from vidyut import ModelSerializer" in content
+        assert "from aksara import ModelSerializer" in content
         # Example should be in comments
         assert "# class" in content
     
-    def test_main_uses_vidyut_app(self):
-        """Main should use Vidyut app, not FastAPI."""
+    def test_main_uses_aksara_app(self):
+        """Main should use Aksara app, not FastAPI."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         main_path = self.base_path / "testapp" / "main.py"
         content = main_path.read_text()
         
-        assert "from vidyut import Vidyut" in content
-        assert "app = Vidyut(" in content
+        assert "from aksara import Aksara" in content
+        assert "app = Aksara(" in content
         assert "from fastapi import" not in content
 
 
@@ -211,16 +211,16 @@ class TestSettingsConfiguration:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_settings_extends_vidyut_settings(self):
-        """Settings should extend VidyutSettings."""
+    def test_settings_extends_aksara_settings(self):
+        """Settings should extend AksaraSettings."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         settings_path = self.base_path / "testapp" / "settings.py"
         content = settings_path.read_text()
         
-        assert "from vidyut.conf import Settings as VidyutSettings" in content
-        assert "class Settings(VidyutSettings):" in content
+        assert "from aksara.conf import Settings as AksaraSettings" in content
+        assert "class Settings(AksaraSettings):" in content
     
     def test_env_has_required_vars(self):
         """Env file should have all required variables."""
@@ -232,8 +232,8 @@ class TestSettingsConfiguration:
         
         required_vars = [
             "DATABASE_URL=",
-            "VIDYUT_DEBUG=",
-            "VIDYUT_LOG_LEVEL=",
+            "AKSARA_DEBUG=",
+            "AKSARA_LOG_LEVEL=",
         ]
         
         for var in required_vars:
@@ -280,8 +280,8 @@ class TestMigrationReadiness:
         readme_path = self.base_path / "testapp" / "README.md"
         content = readme_path.read_text()
         
-        assert "vidyut makemigrations" in content
-        assert "vidyut migrate" in content
+        assert "aksara makemigrations" in content
+        assert "aksara migrate" in content
 
 
 class TestProjectDocumentation:
@@ -314,7 +314,7 @@ class TestProjectDocumentation:
         
         assert "Quick Start" in content
         assert "pip install" in content
-        assert "vidyut run main:app" in content
+        assert "aksara run main:app" in content
     
     def test_readme_has_api_docs_reference(self):
         """README should reference API documentation."""

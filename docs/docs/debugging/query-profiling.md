@@ -6,7 +6,7 @@ Analyze and optimize database queries.
 
 ## Overview
 
-Vidyut's Query Profiler helps you:
+Aksara's Query Profiler helps you:
 
 - **Identify slow queries** — Find queries that take too long
 - **Detect N+1 problems** — Catch relationship loading issues
@@ -22,7 +22,7 @@ Vidyut's Query Profiler helps you:
 Query profiling is automatic in debug mode:
 
 ```python
-app = Vidyut(debug=True)
+app = Aksara(debug=True)
 ```
 
 ### Production Profiling
@@ -30,7 +30,7 @@ app = Vidyut(debug=True)
 For selective profiling in production:
 
 ```python
-from vidyut.debug import QueryProfiler
+from aksara.debug import QueryProfiler
 
 @app.get("/api/posts")
 async def list_posts(request):
@@ -71,7 +71,7 @@ Click any query to see:
 Track total queries per request:
 
 ```python
-from vidyut.debug import get_query_log
+from aksara.debug import get_query_log
 
 @app.middleware("http")
 async def log_queries(request, call_next):
@@ -92,7 +92,7 @@ async def log_queries(request, call_next):
 Identify queries over a threshold:
 
 ```python
-from vidyut.debug import get_query_log
+from aksara.debug import get_query_log
 
 query_log = get_query_log()
 slow_queries = [q for q in query_log.queries if q.time_ms > 100]
@@ -106,7 +106,7 @@ for query in slow_queries:
 Automatic detection of N+1 patterns:
 
 ```python
-from vidyut.debug import get_query_log
+from aksara.debug import get_query_log
 
 query_log = get_query_log()
 for pattern in query_log.n_plus_one_patterns:
@@ -175,7 +175,7 @@ Suggestion: Use .select_related('author') on the Post query
 ### View Query Plans
 
 ```python
-from vidyut.debug import explain_query
+from aksara.debug import explain_query
 
 # Get EXPLAIN output
 plan = await explain_query(
@@ -216,7 +216,7 @@ Suggested: CREATE INDEX idx_posts_created_at ON posts(created_at);
 ### Basic Usage
 
 ```python
-from vidyut.debug import QueryProfiler
+from aksara.debug import QueryProfiler
 
 async with QueryProfiler() as profiler:
     users = await User.objects.filter(is_active=True).all()
@@ -256,7 +256,7 @@ for query in profiler.queries:
 ### Query Logging Middleware
 
 ```python
-from vidyut.middleware import QueryLoggingMiddleware
+from aksara.middleware import QueryLoggingMiddleware
 
 app.add_middleware(
     QueryLoggingMiddleware,
@@ -282,7 +282,7 @@ WARNING: Slow query (150ms): SELECT * FROM posts WHERE ...
 ### Assert Query Count
 
 ```python
-from vidyut.testing import QueryCounter
+from aksara.testing import QueryCounter
 
 async def test_list_posts_efficient():
     async with QueryCounter() as counter:
@@ -294,7 +294,7 @@ async def test_list_posts_efficient():
 ### Capture Queries in Tests
 
 ```python
-from vidyut.testing import capture_queries
+from aksara.testing import capture_queries
 
 async def test_select_related_works():
     async with capture_queries() as queries:
@@ -315,7 +315,7 @@ async def test_select_related_works():
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "DEBUG": True,
     
     # Query profiling settings
@@ -331,7 +331,7 @@ VIDYUT = {
 ### Per-Request Control
 
 ```python
-from vidyut.debug import enable_profiling, disable_profiling
+from aksara.debug import enable_profiling, disable_profiling
 
 @app.get("/api/debug/posts")
 async def debug_posts(request):
@@ -384,7 +384,7 @@ async def enforce_query_limits(request):
 
 ```python
 # Metrics integration
-from vidyut.debug import get_query_log
+from aksara.debug import get_query_log
 
 @app.middleware("http")
 async def report_query_metrics(request, call_next):
@@ -408,7 +408,7 @@ async def report_query_metrics(request, call_next):
 
 ```python
 # Ensure profiling is enabled
-app = Vidyut(debug=True)  # or
+app = Aksara(debug=True)  # or
 enable_profiling()
 ```
 
@@ -416,7 +416,7 @@ enable_profiling()
 
 ```python
 # Enable detailed stack traces
-VIDYUT = {
+AKSARA = {
     "QUERY_PROFILING": True,
     "QUERY_STACK_TRACES": True,  # May impact performance
 }
@@ -426,7 +426,7 @@ VIDYUT = {
 
 ```python
 # Limit query log size
-VIDYUT = {
+AKSARA = {
     "MAX_LOGGED_QUERIES": 100,  # Keep last 100 queries
 }
 ```

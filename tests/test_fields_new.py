@@ -1,5 +1,5 @@
 """
-Tests for Vidyut v0.3.5 New Field Types
+Tests for Aksara v0.3.5 New Field Types
 
 Unit tests for Email, URL, Text, Decimal, and Enum fields.
 """
@@ -8,7 +8,7 @@ import pytest
 from decimal import Decimal as D
 from enum import Enum
 
-from vidyut.fields import (
+from aksara.fields import (
     Email, URL, Text, Decimal, EnumField,
 )
 

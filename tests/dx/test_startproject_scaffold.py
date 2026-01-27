@@ -1,11 +1,11 @@
 """
-Tests for vidyut startproject scaffold generation.
+Tests for aksara startproject scaffold generation.
 
 Tests that:
 - startproject creates the correct directory structure
 - All required files are generated
 - Generated files have correct content
-- main.py imports Vidyut, not FastAPI
+- main.py imports Aksara, not FastAPI
 """
 
 import pytest
@@ -13,7 +13,7 @@ import tempfile
 import shutil
 from pathlib import Path
 
-from vidyut.cli.scaffold import (
+from aksara.cli.scaffold import (
     create_project_scaffold,
     write_scaffold_files,
     get_main_py_template,
@@ -32,19 +32,19 @@ from vidyut.cli.scaffold import (
 class TestScaffoldTemplates:
     """Test individual template generation."""
     
-    def test_main_py_template_imports_vidyut(self):
-        """Main.py should import Vidyut, not FastAPI directly."""
+    def test_main_py_template_imports_aksara(self):
+        """Main.py should import Aksara, not FastAPI directly."""
         content = get_main_py_template("testproject")
         
-        # Should import from vidyut
-        assert "from vidyut import Vidyut" in content
+        # Should import from aksara
+        assert "from aksara import Aksara" in content
         
         # Should NOT import FastAPI directly
         assert "from fastapi import" not in content
         assert "import fastapi" not in content.lower()
         
-        # Should create Vidyut app
-        assert "app = Vidyut(" in content
+        # Should create Aksara app
+        assert "app = Aksara(" in content
     
     def test_main_py_template_has_health_endpoint(self):
         """Main.py should include a health check endpoint."""
@@ -65,11 +65,11 @@ class TestScaffoldTemplates:
         assert "load_installed_apps" in content
     
     def test_settings_py_template(self):
-        """Settings.py should extend VidyutSettings."""
+        """Settings.py should extend AksaraSettings."""
         content = get_settings_py_template("testproject")
         
-        assert "from vidyut.conf import Settings as VidyutSettings" in content
-        assert "class Settings(VidyutSettings):" in content
+        assert "from aksara.conf import Settings as AksaraSettings" in content
+        assert "class Settings(AksaraSettings):" in content
         assert "settings = Settings()" in content
     
     def test_settings_has_installed_apps(self):
@@ -77,15 +77,15 @@ class TestScaffoldTemplates:
         content = get_settings_py_template("testproject")
         
         assert "INSTALLED_APPS = [" in content
-        assert '"vidyut.contrib.auth"' in content
-        assert '"vidyut.contrib.admin"' in content
+        assert '"aksara.contrib.auth"' in content
+        assert '"aksara.contrib.admin"' in content
         assert '"app"' in content
     
     def test_models_template_has_commented_example(self):
         """Models.py should have commented example code."""
         content = get_models_template("testproject")
         
-        assert "from vidyut import Model, fields" in content
+        assert "from aksara import Model, fields" in content
         # Example should be in comments
         assert "# class User(Model):" in content or "# Example model" in content
     
@@ -93,7 +93,7 @@ class TestScaffoldTemplates:
         """Views.py should have commented example code."""
         content = get_views_template("testproject")
         
-        assert "from vidyut import" in content
+        assert "from aksara import" in content
         assert "ModelViewSet" in content
         # Example should be in comments
         assert "# class" in content
@@ -102,7 +102,7 @@ class TestScaffoldTemplates:
         """Urls.py should include register_routes function."""
         content = get_urls_template("testproject")
         
-        assert "from vidyut import" in content
+        assert "from aksara import" in content
         assert "include_viewset" in content
         assert "urlpatterns = [" in content
         assert "def register_routes(app):" in content
@@ -117,7 +117,7 @@ class TestScaffoldTemplates:
         """Serializers.py should have commented example code."""
         content = get_serializers_template("testproject")
         
-        assert "from vidyut import ModelSerializer" in content
+        assert "from aksara import ModelSerializer" in content
         # Example should be in comments
         assert "# class" in content
     
@@ -125,7 +125,7 @@ class TestScaffoldTemplates:
         """Admin.py should import site and have example."""
         content = get_admin_template("testproject")
         
-        assert "from vidyut.contrib.admin import site" in content
+        assert "from aksara.contrib.admin import site" in content
         assert "site.register" in content
     
     def test_env_template(self):
@@ -133,17 +133,17 @@ class TestScaffoldTemplates:
         content = get_env_template("testproject")
         
         assert "DATABASE_URL=" in content
-        assert "VIDYUT_DEBUG=" in content
-        assert "VIDYUT_LOG_LEVEL=" in content
+        assert "AKSARA_DEBUG=" in content
+        assert "AKSARA_LOG_LEVEL=" in content
     
     def test_readme_template(self):
         """README should include project name and instructions."""
         content = get_readme_template("testproject")
         
         assert "# testproject" in content
-        assert "vidyut makemigrations" in content
-        assert "vidyut migrate" in content
-        assert "vidyut run main:app" in content
+        assert "aksara makemigrations" in content
+        assert "aksara migrate" in content
+        assert "aksara run main:app" in content
     
     def test_requirements_template(self):
         """Requirements should include uvicorn."""
@@ -212,16 +212,16 @@ class TestScaffoldCreation:
         assert (project_path / "migrations").is_dir()
         assert (project_path / "migrations" / "__init__.py").exists()
     
-    def test_generated_main_imports_vidyut_not_fastapi(self):
-        """Generated main.py should import Vidyut, not FastAPI."""
+    def test_generated_main_imports_aksara_not_fastapi(self):
+        """Generated main.py should import Aksara, not FastAPI."""
         files = create_project_scaffold("myproject", self.base_path)
         write_scaffold_files(files)
         
         main_path = self.base_path / "myproject" / "main.py"
         content = main_path.read_text()
         
-        # Should import Vidyut
-        assert "from vidyut import Vidyut" in content
+        # Should import Aksara
+        assert "from aksara import Aksara" in content
         
         # Should NOT import FastAPI
         assert "from fastapi import" not in content

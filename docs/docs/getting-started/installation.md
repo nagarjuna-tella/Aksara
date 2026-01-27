@@ -1,6 +1,6 @@
 # Installation
 
-This guide covers installing Vidyut and its dependencies.
+This guide covers installing Aksara and its dependencies.
 
 ---
 
@@ -9,19 +9,19 @@ This guide covers installing Vidyut and its dependencies.
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | Python | 3.11+ | Required for modern async features |
-| PostgreSQL | 13+ | Vidyut is PostgreSQL-only |
+| PostgreSQL | 13+ | Aksara is PostgreSQL-only |
 | asyncpg | 0.29+ | Async PostgreSQL driver (auto-installed) |
 | FastAPI | 0.104+ | Web framework (auto-installed) |
 | Pydantic | 2.0+ | Data validation (auto-installed) |
 
 ---
 
-## Install Vidyut
+## Install Aksara
 
 ### Using pip
 
 ```bash
-pip install vidyut
+pip install aksara
 ```
 
 ### Using uv (Recommended)
@@ -29,13 +29,13 @@ pip install vidyut
 [uv](https://github.com/astral-sh/uv) is a fast Python package installer:
 
 ```bash
-uv pip install vidyut
+uv pip install aksara
 ```
 
 ### Using Poetry
 
 ```bash
-poetry add vidyut
+poetry add aksara
 ```
 
 ### From Source
@@ -43,8 +43,8 @@ poetry add vidyut
 For development or the latest unreleased features:
 
 ```bash
-git clone https://github.com/vidyut-orm/vidyut.git
-cd vidyut
+git clone https://github.com/aksara-orm/aksara.git
+cd aksara
 pip install -e ".[dev]"
 ```
 
@@ -52,22 +52,22 @@ pip install -e ".[dev]"
 
 ## Verify Installation
 
-After installation, verify Vidyut is available:
+After installation, verify Aksara is available:
 
 ```bash
-vidyut --version
+aksara --version
 ```
 
 Expected output:
 ```
-vidyut, version 0.4.9
+aksara, version 0.4.9
 ```
 
 You can also check the Python package:
 
 ```python
->>> import vidyut
->>> vidyut.__version__
+>>> import aksara
+>>> aksara.__version__
 '0.4.9'
 ```
 
@@ -78,7 +78,7 @@ You can also check the Python package:
 For development, testing, and code quality tools:
 
 ```bash
-pip install vidyut[dev]
+pip install aksara[dev]
 ```
 
 This includes:
@@ -97,7 +97,7 @@ This includes:
 
 ## PostgreSQL Setup
 
-Vidyut requires PostgreSQL. Here are common setup methods:
+Aksara requires PostgreSQL. Here are common setup methods:
 
 ### macOS (Homebrew)
 
@@ -120,7 +120,7 @@ sudo -u postgres createdb myapp
 
 ```bash
 docker run -d \
-  --name vidyut-postgres \
+  --name aksara-postgres \
   -e POSTGRES_PASSWORD=password \
   -e POSTGRES_DB=myapp \
   -p 5432:5432 \
@@ -129,7 +129,7 @@ docker run -d \
 
 ### Connection String Format
 
-Vidyut uses standard PostgreSQL connection strings:
+Aksara uses standard PostgreSQL connection strings:
 
 ```
 postgresql://user:password@host:port/database
@@ -151,23 +151,23 @@ postgresql://user:secret@db.example.com:5432/production
 
 ## Environment Variables
 
-Vidyut reads configuration from environment variables:
+Aksara reads configuration from environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | None |
-| `VIDYUT_DATABASE_URL` | Alternative DB URL (higher priority) | None |
-| `VIDYUT_DEBUG` | Enable debug mode | `false` |
-| `VIDYUT_LOG_LEVEL` | Logging level | `INFO` |
-| `VIDYUT_POOL_MIN_SIZE` | Min connection pool size | `5` |
-| `VIDYUT_POOL_MAX_SIZE` | Max connection pool size | `20` |
+| `AKSARA_DATABASE_URL` | Alternative DB URL (higher priority) | None |
+| `AKSARA_DEBUG` | Enable debug mode | `false` |
+| `AKSARA_LOG_LEVEL` | Logging level | `INFO` |
+| `AKSARA_POOL_MIN_SIZE` | Min connection pool size | `5` |
+| `AKSARA_POOL_MAX_SIZE` | Max connection pool size | `20` |
 
 Create a `.env` file in your project root:
 
 ```bash
 DATABASE_URL=postgresql://postgres:password@localhost:5432/myapp
-VIDYUT_DEBUG=true
-VIDYUT_LOG_LEVEL=DEBUG
+AKSARA_DEBUG=true
+AKSARA_LOG_LEVEL=DEBUG
 ```
 
 ---
@@ -242,19 +242,19 @@ If imports fail after installation:
 ```bash
 # Ensure you're using the correct Python
 which python
-pip show vidyut
+pip show aksara
 
 # Reinstall if needed
-pip uninstall vidyut
-pip install vidyut
+pip uninstall aksara
+pip install aksara
 ```
 
 ---
 
 ## Next Steps
 
-With Vidyut installed, proceed to:
+With Aksara installed, proceed to:
 
 - [Project Layout](project-layout.md) — Understand the recommended structure
 - [Settings](settings.md) — Configure your application
-- [First App](first-app.md) — Build your first Vidyut application
+- [First App](first-app.md) — Build your first Aksara application

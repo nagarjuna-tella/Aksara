@@ -19,14 +19,14 @@ from typing import Optional
 
 from pydantic import ValidationError
 
-from vidyut import Model, fields
-from vidyut.api.serializers import (
+from aksara import Model, fields
+from aksara.api.serializers import (
     ModelSerializer,
     serialize_instance,
     serialize_many,
     clear_serializer_cache,
 )
-from vidyut.api.schemas import clear_schema_cache
+from aksara.api.schemas import clear_schema_cache
 
 
 # =============================================================================
@@ -771,7 +771,7 @@ class TestClearCache:
         clear_serializer_cache()
         
         # Re-generate should create new model
-        from vidyut.api.serializers import _serializer_model_cache
+        from aksara.api.serializers import _serializer_model_cache
         assert len(_serializer_model_cache) == 0
 
 
@@ -789,7 +789,7 @@ class TestViewSetIntegration:
                 model = Category
                 fields = ["id", "name"]
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         
         class CategoryViewSet(ModelViewSet):
             model = Category
@@ -809,7 +809,7 @@ class TestViewSetIntegration:
                 model = Category
                 fields = "__all__"
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         
         class CategoryViewSet(ModelViewSet):
             model = Category
@@ -828,7 +828,7 @@ class TestViewSetIntegration:
                 model = Category
                 fields = "__all__"
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         
         class CategoryViewSet(ModelViewSet):
             model = Category
@@ -844,7 +844,7 @@ class TestViewSetIntegration:
     
     def test_viewset_get_serializer_returns_none(self):
         """get_serializer() should return None when no serializer defined."""
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         
         class CategoryViewSet(ModelViewSet):
             model = Category
@@ -866,7 +866,7 @@ class TestViewSetIntegration:
             def validate_name(self, value):
                 return value.upper()
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         from fastapi import Request
         from unittest.mock import MagicMock
         
@@ -900,7 +900,7 @@ class TestViewSetIntegration:
                 model = Category
                 fields = ["name", "description"]
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         from fastapi import Request
         from unittest.mock import MagicMock
         
@@ -935,7 +935,7 @@ class TestViewSetIntegration:
                 model = Category
                 fields = ["id", "name"]  # Only id and name
         
-        from vidyut.api import ModelViewSet
+        from aksara.api import ModelViewSet
         
         class CategoryViewSet(ModelViewSet):
             model = Category

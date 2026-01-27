@@ -14,7 +14,7 @@ The Agent Runtime executes AI agents that can:
 - **Handle errors** and recover
 
 ```python
-from vidyut.ai import AgentRuntime
+from aksara.ai import AgentRuntime
 
 runtime = AgentRuntime()
 result = await runtime.execute("Review the User model and suggest improvements")
@@ -27,7 +27,7 @@ result = await runtime.execute("Review the User model and suggest improvements")
 ### Basic Execution
 
 ```python
-from vidyut.ai import AgentRuntime
+from aksara.ai import AgentRuntime
 
 runtime = AgentRuntime()
 
@@ -155,7 +155,7 @@ runtime = AgentRuntime(
 ### Custom Tools
 
 ```python
-from vidyut.ai.tools import Tool, register_tool
+from aksara.ai.tools import Tool, register_tool
 
 @register_tool
 class DeployTool(Tool):
@@ -389,13 +389,13 @@ runtime = AgentRuntime(
 ### Execute Task
 
 ```bash
-vidyut ai agent "Review code for issues"
+aksara ai agent "Review code for issues"
 ```
 
 ### Interactive Session
 
 ```bash
-vidyut ai agent --interactive
+aksara ai agent --interactive
 
 > What models exist?
 Agent: I found 5 models: User, Post, Comment, Tag, Category...
@@ -411,7 +411,7 @@ Agent: I'll add a slug field to the Post model...
 ### With Tool Restrictions
 
 ```bash
-vidyut ai agent "Analyze models" --tools query_records,list_models,describe_model
+aksara ai agent "Analyze models" --tools query_records,list_models,describe_model
 ```
 
 ---
@@ -420,7 +420,7 @@ vidyut ai agent "Analyze models" --tools query_records,list_models,describe_mode
 
 ```python
 # settings.py
-VIDYUT = {
+AKSARA = {
     "AI_AGENT_RUNTIME": {
         # Model
         "model": "gpt-4",
