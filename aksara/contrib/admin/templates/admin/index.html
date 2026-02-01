@@ -1,35 +1,47 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_new.html" %}
 
 {% block title %}Dashboard - {{ site_name }}{% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
+<div class="page-header">
+    <h1>Admin Dashboard</h1>
+</div>
 
 {% if apps %}
-    {% for app_label, models in apps.items() %}
-    <div class="card">
-        <h2>{{ app_label }}</h2>
-        <ul class="model-list">
-            {% for model in models %}
-            <li>
-                <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}">
-                    {{ model.__name__ }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="grid">
+        {% for app_label, models in apps.items() %}
+        <div class="card">
+            <div class="card-header">
+                <h2>{{ app_label }}</h2>
+            </div>
+            <div class="card-body">
+                <ul class="model-list">
+                    {% for model in models %}
+                    <li class="model-item">
+                        <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}" class="model-link">
+                            <span class="model-icon">📄</span>
+                            <span class="model-name">{{ model.__name__ }}</span>
+                            <span class="model-arrow">→</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 {% else %}
     <div class="card">
         <div class="empty-state">
-            <p>No models registered with admin.</p>
-            <p>Register models using:</p>
-            <pre style="text-align: left; display: inline-block; background: var(--bg); padding: 1rem; border-radius: 6px; margin-top: 1rem;">
-from vidyut.contrib.admin import site
+            <div class="empty-state-icon">📦</div>
+            <h3>No models registered</h3>
+            <p>Register models with the admin to get started.</p>
+            <div class="code-block">
+                <pre><code>from aksara.contrib.admin import site
 from myapp.models import MyModel
 
-site.register(MyModel)</pre>
+site.register(MyModel)</code></pre>
+            </div>
         </div>
     </div>
 {% endif %}

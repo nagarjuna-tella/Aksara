@@ -1,44 +1,55 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_new.html" %}
 
 {% block title %}{% if is_add %}Add{% else %}Change{% endif %} {{ model_name }} - {{ site_name }}{% endblock %}
 
 {% block breadcrumb %}
-<div class="breadcrumb">
+<nav class="breadcrumb">
     <a href="{{ request.url_for('admin:index') }}">Home</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}">{{ app_label }}</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}">{{ model_name }}</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <span>{% if is_add %}Add{% else %}Change{% endif %}</span>
-</div>
+</nav>
 {% endblock %}
 
 {% block content %}
-<h1>{% if is_add %}Add {{ model_name }}{% else %}Change {{ model_name }}{% endif %}</h1>
+<div class="page-header">
+    <h1>{% if is_add %}Add {{ model_name }}{% else %}Change {{ model_name }}{% endif %}</h1>
+</div>
 
 {% if errors and errors.__all__ %}
-<div class="error-message">
+<div class="alert alert-danger">
     {{ errors.__all__ }}
 </div>
 {% endif %}
 
 <div class="card">
-    <form method="post">
+    <form method="post" class="admin-form">
         {% for field in fields %}
-        <div class="form-group">
-            <label for="{{ field.name }}" {% if field.required %}class="required"{% endif %}>
+        <div class="form-group {% if errors and field.name in errors %}has-error{% endif %}">
+            <label for="{{ field.name }}" class="form-label {% if field.required %}required{% endif %}">
                 {{ field.label }}
             </label>
             
-            {% if field.type == "checkbox" %}
-                <input 
-                    type="checkbox" 
-                    id="{{ field.name }}" 
-                    name="{{ field.name }}"
-                    {% if field.value %}checked{% endif %}
-                    {% if field.readonly %}disabled{% endif %}
-                >
+            {% if field.widget_html %}
+                {# Use custom widget HTML if provided #}
+                {{ field.widget_html|safe }}
+            {% elif field.type == "checkbox" %}
+                <div class="checkbox-wrapper">
+                    <input 
+                        type="checkbox" 
+                        id="{{ field.name }}" 
+                        name="{{ field.name }}"
+                        {% if field.value %}checked{% endif %}
+                        {% if field.readonly %}disabled{% endif %}
+                        class="form-checkbox"
+                    >
+                    {% if field.help_text %}
+                    <small class="form-help">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
             {% elif field.type == "textarea" %}
                 <textarea 
                     id="{{ field.name }}" 
@@ -46,7 +57,11 @@
                     class="form-control"
                     {% if field.readonly %}readonly{% endif %}
                     {% if field.required %}required{% endif %}
+                    rows="{{ field.rows|default(5) }}"
                 >{{ field.value }}</textarea>
+                {% if field.help_text %}
+                <small class="form-help">{{ field.help_text }}</small>
+                {% endif %}
             {% elif field.type == "select" %}
                 <select
                     id="{{ field.name }}"
@@ -62,6 +77,9 @@
                     </option>
                     {% endfor %}
                 </select>
+                {% if field.help_text %}
+                <small class="form-help">{{ field.help_text }}</small>
+                {% endif %}
             {% elif field.type == "multiselect" %}
                 <select
                     id="{{ field.name }}"
@@ -88,11 +106,20 @@
                     {% if field.required %}required{% endif %}
                     {% if field.type == "number" %}step="any"{% endif %}
                 >
+                {% if field.help_text %}
+                <small class="form-help">{{ field.help_text }}</small>
+                {% endif %}
+            {% endif %}
+            
+            {% if errors and field.name in errors %}
+            <div class="form-error">
+                {{ errors[field.name] }}
+            </div>
             {% endif %}
         </div>
         {% endfor %}
         
-        <div class="actions" style="margin-top: 1.5rem;">
+        <div class="form-actions">
             <button type="submit" class="btn btn-primary">
                 {% if is_add %}Create{% else %}Save{% endif %}
             </button>
@@ -101,27 +128,44 @@
             </a>
             
             {% if not is_add and can_delete %}
-            <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: inline; margin-left: auto;">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this {{ model_name }}?')">
-                    Delete
-                </button>
-            </form>
+            <button 
+                type="button" 
+                class="btn btn-danger ml-auto"
+                onclick="if(confirm('Are you sure you want to delete this {{ model_name }}?')) { document.getElementById('delete-form').submit(); }"
+            >
+                Delete
+            </button>
             {% endif %}
         </div>
     </form>
+    
+    {% if not is_add and can_delete %}
+    <form id="delete-form" method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: none;">
+    </form>
+    {% endif %}
 </div>
 
 {% if not is_add and can_delete %}
-<div class="card" style="margin-top: 1rem;">
-    <h2 style="color: var(--danger);">Danger Zone</h2>
-    <p style="margin-bottom: 1rem; color: var(--text-muted);">
+<div class="card danger-zone">
+    <h2>Danger Zone</h2>
+    <p class="text-muted">
         Permanently delete this {{ model_name }}. This action cannot be undone.
     </p>
     <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this {{ model_name }}?')">
+        <button 
+            type="submit" 
+            class="btn btn-danger" 
+            onclick="return confirm('Are you sure you want to delete this {{ model_name }}? This action cannot be undone.')"
+        >
             Delete {{ model_name }}
         </button>
     </form>
 </div>
 {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/admin/static/admin/js/json_widget.js"></script>
+<script src="/admin/static/admin/js/array_widget.js"></script>
 {% endblock %}

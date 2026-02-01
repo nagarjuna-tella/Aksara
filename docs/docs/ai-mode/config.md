@@ -6,7 +6,7 @@ Settings and options for AI Mode features.
 
 ## Overview
 
-AI Mode is configured through your `settings.py` file under the `VIDYUT` dictionary.
+AI Mode is configured through your `settings.py` file under the `AKSARA` dictionary.
 
 ```python
 # settings.py

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.4.10"
+CLI_VERSION = "0.4.11"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:

@@ -1,5 +1,4 @@
-"""
-Type stub file for Vidyut fields module.
+"""Type stub file for Aksara fields module.
 
 This provides better IDE support for field types.
 """

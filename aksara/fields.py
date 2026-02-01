@@ -532,6 +532,131 @@ class JSON(Field):
         return value
 
 
+class Array(Field):
+    """
+    Array field mapping to PostgreSQL ARRAY type.
+    
+    Supports arrays of primitive types (text, integer, float, boolean, uuid).
+    Use this for multi-valued fields like tags, labels, or lists.
+    
+    Args:
+        item_type: Python type for array items (str, int, float, bool, uuid_lib.UUID)
+        nullable: Whether the field can be NULL
+        default: Default value (list or callable)
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+        
+    Example:
+        tags = Array(item_type=str)
+        scores = Array(item_type=int)
+        flags = Array(item_type=bool, default=list)
+    """
+    
+    # Map Python types to PostgreSQL array types
+    TYPE_MAP = {
+        str: "TEXT[]",
+        int: "INTEGER[]",
+        float: "DOUBLE PRECISION[]",
+        bool: "BOOLEAN[]",
+        uuid_lib.UUID: "UUID[]",
+    }
+    
+    def __init__(
+        self,
+        *,
+        item_type: Type = str,
+        nullable: bool = True,
+        default: Any = None,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        self.item_type = item_type
+        
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+    
+    @property
+    def sql_type(self) -> str:
+        """Return the PostgreSQL array type."""
+        return self.TYPE_MAP.get(self.item_type, "TEXT[]")
+    
+    def _format_default(self) -> str:
+        """Format the default value for SQL."""
+        if self.default is None:
+            return "NULL"
+        if isinstance(self.default, list):
+            # Format as PostgreSQL array literal
+            if not self.default:
+                return "'{}'"
+            
+            # Format items based on type
+            if self.item_type == str:
+                formatted_items = [f"'{item}'" if item else 'NULL' for item in self.default]
+            elif self.item_type == bool:
+                formatted_items = [str(item).upper() for item in self.default]
+            else:
+                formatted_items = [str(item) for item in self.default]
+            
+            return f"ARRAY[{','.join(formatted_items)}]"
+        return "'{}'"
+    
+    def to_python(self, value: Any) -> Any:
+        """Convert database array to Python list."""
+        if value is None:
+            return None
+        # asyncpg returns lists directly from ARRAY columns
+        if isinstance(value, list):
+            return value
+        # Handle string representation
+        if isinstance(value, str):
+            # Simple parsing for array strings like {1,2,3}
+            if value.startswith('{') and value.endswith('}'):
+                items = value[1:-1].split(',')
+                if not items or items == ['']:
+                    return []
+                # Convert items based on type
+                if self.item_type == int:
+                    return [int(i.strip()) for i in items if i.strip()]
+                elif self.item_type == float:
+                    return [float(i.strip()) for i in items if i.strip()]
+                elif self.item_type == bool:
+                    return [i.strip().lower() == 'true' for i in items if i.strip()]
+                else:
+                    return [i.strip().strip('"') for i in items if i.strip()]
+            return []
+        return value
+    
+    def to_db(self, value: Any) -> Any:
+        """Convert Python list to database array."""
+        if value is None:
+            return None
+        # asyncpg handles Python lists directly for ARRAY columns
+        if isinstance(value, list):
+            return value
+        # Handle comma-separated strings
+        if isinstance(value, str):
+            if not value.strip():
+                return []
+            # Split by comma and convert types
+            items = [item.strip() for item in value.split(',')]
+            if self.item_type == int:
+                return [int(i) for i in items if i]
+            elif self.item_type == float:
+                return [float(i) for i in items if i]
+            elif self.item_type == bool:
+                return [i.lower() in ('true', '1', 'yes') for i in items if i]
+            else:
+                return items
+        return value
+
+
 # Convenience aliases
 StringField = String
 IntegerField = Integer
@@ -539,6 +664,7 @@ BooleanField = Boolean
 DateTimeField = DateTime
 UUIDField = UUID
 JSONField = JSON
+ArrayField = Array
 
 
 # =============================================================================

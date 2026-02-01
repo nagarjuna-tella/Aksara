@@ -6,7 +6,7 @@ Complete reference for all Aksara configuration options.
 
 ## Configuration
 
-Settings are defined in `settings.py` as a `VIDYUT` dictionary:
+Settings are defined in `settings.py` as an `AKSARA` dictionary:
 
 ```python
 # settings.py

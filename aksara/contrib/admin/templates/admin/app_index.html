@@ -1,27 +1,33 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_new.html" %}
 
 {% block title %}{{ app_label }} - {{ site_name }}{% endblock %}
 
 {% block breadcrumb %}
-<div class="breadcrumb">
+<nav class="breadcrumb">
     <a href="{{ request.url_for('admin:index') }}">Home</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <span>{{ app_label }}</span>
-</div>
+</nav>
 {% endblock %}
 
 {% block content %}
-<h1>{{ app_label }}</h1>
+<div class="page-header">
+    <h1>{{ app_label }}</h1>
+</div>
 
 <div class="card">
-    <ul class="model-list">
-        {% for model in models %}
-        <li>
-            <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}">
-                {{ model.__name__ }}
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
+    <div class="card-body">
+        <ul class="model-list">
+            {% for model in models %}
+            <li class="model-item">
+                <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}" class="model-link">
+                    <span class="model-icon">📄</span>
+                    <span class="model-name">{{ model.__name__ }}</span>
+                    <span class="model-arrow">→</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 {% endblock %}

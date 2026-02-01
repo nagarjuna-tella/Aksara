@@ -676,7 +676,20 @@ async def _get_fields_info(
             "readonly": field_name in readonly,
             "required": not nullable,
             "choices": None,
+            "widget_html": None,  # Will be set if custom widget exists
         }
+        
+        # Check for custom widget (for non-M2M fields)
+        if not is_m2m and field:
+            widget = model_admin.get_widget(field_name, field)
+            if widget:
+                # Render the widget and store HTML
+                field_info["widget_html"] = widget.render(field_name, value, attrs={
+                    "id": field_name,
+                    "class": "form-control",
+                    "required": field_info["required"],
+                    "readonly": field_info["readonly"],
+                })
         
         # Fetch choices for FK and M2M fields
         if field_type in ("select", "multiselect"):

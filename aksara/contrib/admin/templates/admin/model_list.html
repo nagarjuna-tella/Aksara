@@ -1,87 +1,96 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_new.html" %}
 
 {% block title %}{{ model_name }} - {{ site_name }}{% endblock %}
 
 {% block breadcrumb %}
-<div class="breadcrumb">
+<nav class="breadcrumb">
     <a href="{{ request.url_for('admin:index') }}">Home</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}">{{ app_label }}</a>
-    <span>›</span>
+    <span class="breadcrumb-separator">›</span>
     <span>{{ model_name }}</span>
-</div>
+</nav>
 {% endblock %}
 
 {% block content %}
-<h1>{{ model_name }}</h1>
-
-<div class="list-header">
-    <div class="actions">
+<div class="page-header">
+    <h1>{{ model_name }}</h1>
+    <div class="page-actions">
         {% if can_add %}
         <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
             + Add {{ model_name }}
         </a>
         {% endif %}
     </div>
-    
-    {% if search_fields %}
-    <form method="get" class="search-form">
-        <input 
-            type="search" 
-            name="q" 
-            value="{{ search_query }}" 
-            placeholder="Search {{ model_name }}..." 
-            class="form-control search-input"
-        >
-        <button type="submit" class="btn btn-secondary">Search</button>
-        {% if search_query %}
-        <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-secondary">Clear</a>
-        {% endif %}
-    </form>
-    {% endif %}
 </div>
 
-{% if search_query %}
-<p class="search-results-info">
-    Showing {{ objects|length }} result(s) for "{{ search_query }}"
-</p>
+{% if search_fields %}
+<div class="card">
+    <form method="get" class="search-form">
+        <div class="form-row">
+            <input 
+                type="search" 
+                name="q" 
+                value="{{ search_query }}" 
+                placeholder="Search {{ model_name }}..." 
+                class="form-control"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            {% if search_query %}
+            <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-secondary">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
 {% endif %}
 
-<div class="card" style="padding: 0; overflow: hidden;">
+{% if search_query %}
+<div class="alert alert-info">
+    Showing {{ objects|length }} result(s) for "{{ search_query }}"
+</div>
+{% endif %}
+
+<div class="card">
     {% if objects %}
-    <table>
-        <thead>
-            <tr>
-                {% for field_name in list_display %}
-                <th>{{ field_name.replace('_', ' ').title() }}</th>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for field_name in list_display %}
+                    <th>{{ field_name.replace('_', ' ').title() }}</th>
+                    {% endfor %}
+                    <th class="actions-column">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in objects %}
+                <tr>
+                    {% for value in row["values"] %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                    <td class="actions-cell">
+                        <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row['obj'].id|string) }}" class="btn btn-sm btn-secondary">
+                            Edit
+                        </a>
+                    </td>
+                </tr>
                 {% endfor %}
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in objects %}
-            <tr>
-                {% for value in row["values"] %}
-                <td>{{ value }}</td>
-                {% endfor %}
-                <td>
-                    <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row['obj'].id|string) }}" class="btn btn-secondary btn-sm">
-                        Edit
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <div class="empty-state">
         {% if search_query %}
-        <p>No {{ model_name }} objects found matching "{{ search_query }}".</p>
+        <div class="empty-state-icon">🔍</div>
+        <h3>No results found</h3>
+        <p>No {{ model_name }} objects match "{{ search_query }}".</p>
         <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-secondary">
             Clear Search
         </a>
         {% else %}
-        <p>No {{ model_name }} objects found.</p>
+        <div class="empty-state-icon">📭</div>
+        <h3>No {{ model_name }} objects yet</h3>
+        <p>Get started by creating your first {{ model_name }}.</p>
         {% if can_add %}
         <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
             + Add {{ model_name }}

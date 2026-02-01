@@ -162,13 +162,13 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/vidyut-orm/vidyut
+      link: https://github.com/nagarjuna-tella/aksara
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/vidyut/
+      link: https://pypi.org/project/aksara/
   version:
     provider: mike
 
 extra_css:
   - stylesheets/extra.css
 
-copyright: Copyright &copy; 2024-2026 Vidyut Framework
+copyright: Copyright &copy; 2024-2026 Aksara Framework

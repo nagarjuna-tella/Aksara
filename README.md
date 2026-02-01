@@ -352,6 +352,20 @@ myapi/
 
 ## 📜 Changelog
 
+### v0.4.11 — Admin UI/UX Overhaul (In Progress)
+- 🎨 **Modern Admin UI**: Complete redesign with clean, professional interface
+- 🧩 **Widget System**: New centralized widget architecture
+- 📝 **JSON Widget**: Enhanced JSON editor with formatting, validation, syntax highlighting
+- 📋 **Array Widget**: Dynamic repeater interface for array fields with add/remove functionality
+- 🎨 **New CSS Framework**: 1200+ lines of modern, responsive styles
+- 🌓 **Dark Mode**: Full dark mode support with auto-detection
+- 📱 **Mobile Responsive**: Collapsible sidebar, optimized layouts
+- ⚡ **No Dependencies**: Pure HTML/CSS/vanilla JS, no bloat
+- 🎯 **Better UX**: Modern forms, improved tables, clear action buttons
+- 📊 **Professional Design**: Inspired by Django Jet, Laravel Nova, Supabase
+
+**Status**: Core infrastructure complete (~40%), templates and integration pending
+
 ### v0.4.10 — Aksara (Rename Release)
 - 🔄 **Renamed**: Framework renamed from Vidyut to Aksara
 - 📦 **New Package**: `pip install aksara`

@@ -45,6 +45,7 @@ class ModelAdmin:
     # Form configuration
     readonly_fields: List[str] = []
     form_fields: Optional[List[str]] = None  # None means auto-infer
+    formfield_overrides: Dict[str, Any] = {}  # Map field_name -> widget instance
     
     def __init__(self, model: Type["Model"], site: "AdminSite"):
         """
@@ -289,6 +290,36 @@ class ModelAdmin:
         }
         
         return type_map.get(field_type, "text")
+    
+    def get_widget(self, field_name: str, field: Any) -> Optional[Any]:
+        """
+        Get custom widget for a field if configured.
+        
+        Checks formfield_overrides for explicit widget assignment,
+        then auto-selects widgets for JSON and Array fields.
+        
+        Args:
+            field_name: Name of the field
+            field: The field instance
+            
+        Returns:
+            Widget instance or None for default rendering
+        """
+        # Check for explicit override
+        if field_name in self.formfield_overrides:
+            return self.formfield_overrides[field_name]
+        
+        # Auto-select widgets for known field types
+        field_type = field.__class__.__name__
+        
+        if field_type == "JSON":
+            from aksara.contrib.admin.widgets.json import JSONAdminWidget
+            return JSONAdminWidget()
+        elif field_type == "Array":
+            from aksara.contrib.admin.widgets.array import ArrayAdminWidget
+            return ArrayAdminWidget()
+        
+        return None
     
     async def get_field_choices(
         self,

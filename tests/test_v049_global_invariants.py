@@ -287,10 +287,10 @@ class TestVersionConsistency:
             assert part.isdigit(), f"Non-numeric version part: {part}"
     
     def test_init_version_is_049(self):
-        """aksara.__version__ should be 0.4.10."""
+        """aksara.__version__ should be 0.4.11."""
         import aksara
         
-        assert aksara.__version__ == "0.4.10"
+        assert aksara.__version__ == "0.4.11"
     
     def test_cli_version_matches(self):
         """CLI --version should match aksara.__version__."""
@@ -323,12 +323,13 @@ class TestVersionConsistency:
         """aksara --version should output the version."""
         from click.testing import CliRunner
         from aksara.cli.main import cli
+        import aksara
         
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         
         assert result.exit_code == 0
-        assert "0.4.10" in result.output
+        assert aksara.__version__ in result.output
 
 
 # =============================================================================
