@@ -4,6 +4,42 @@ All notable changes to Aksara.
 
 ---
 
+## [0.4.11] — 2026-01-31
+
+### Added
+- **Admin UI/UX Overhaul**: Modern, responsive admin interface
+- **JSONAdminWidget**: Interactive JSON editor with syntax highlighting
+- **ArrayAdminWidget**: Dynamic list editor for array fields
+- **Array Field**: Native PostgreSQL array support (`TEXT[]`, `INTEGER[]`, etc.)
+- Auto-detection of JSON and Array fields for widget assignment
+- Dark mode support in admin interface
+- Mobile-responsive admin sidebar
+
+### Changed
+- Redesigned admin templates with modern CSS
+- Improved admin navigation with collapsible sidebar
+- Enhanced form field rendering with specialized widgets
+
+### Fixed
+- Template syntax errors in admin base template
+- Widget render method signature consistency
+- Admin URL generation for model list views
+
+---
+
+## [0.4.10] — 2026-01-20
+
+### Added
+- Aksara rename release (formerly Vidyut)
+- Updated all package references and imports
+
+### Changed
+- Package name from `vidyut` to `aksara`
+- CLI command from `vidyut` to `aksara`
+- All internal module references updated
+
+---
+
 ## [0.4.9] — 2025-01-14
 
 ### Fixed

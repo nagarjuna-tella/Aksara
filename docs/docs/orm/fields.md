@@ -281,6 +281,53 @@ class Article(Model):
 
 PostgreSQL type: `VARCHAR` (stores the string value)
 
+### Array
+
+PostgreSQL array columns for storing lists of values.
+
+```python
+tags = fields.Array(base_type="text", default=list)
+scores = fields.Array(base_type="integer", nullable=True)
+ratings = fields.Array(base_type="float")
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `base_type` | `str` | `"text"` | Element type: `text`, `integer`, `float`, `boolean`, `uuid` |
+
+PostgreSQL types:
+
+| `base_type` | PostgreSQL Type |
+|-------------|----------------|
+| `text` | `TEXT[]` |
+| `integer` | `INTEGER[]` |
+| `float` | `DOUBLE PRECISION[]` |
+| `boolean` | `BOOLEAN[]` |
+| `uuid` | `UUID[]` |
+
+Example usage:
+
+```python
+class Article(Model):
+    tags = fields.Array(base_type="text", default=list)
+    view_counts = fields.Array(base_type="integer", default=list)
+
+article = await Article.objects.create(
+    tags=["python", "async", "orm"],
+    view_counts=[100, 250, 180],
+)
+
+# Access as Python lists
+print(article.tags)  # ['python', 'async', 'orm']
+article.tags.append("database")
+await article.save()
+```
+
+!!! tip "When to Use Array vs JSON"
+    - Use `Array` for homogeneous lists (all same type) that need indexing
+    - Use `JSON` for heterogeneous data or nested structures
+    - PostgreSQL array operators work with `Array` fields
+
 ---
 
 ## Relationship Fields

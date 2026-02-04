@@ -232,6 +232,69 @@ class PostAdmin(ModelAdmin):
 
 ## Form Customization
 
+### formfield_overrides
+
+Customize widgets for specific fields:
+
+```python
+from aksara.contrib.admin import ModelAdmin
+from aksara.contrib.admin.widgets import JSONAdminWidget, ArrayAdminWidget
+
+class ProductAdmin(ModelAdmin):
+    formfield_overrides = {
+        "metadata": JSONAdminWidget(),
+        "tags": ArrayAdminWidget(),
+    }
+```
+
+### Built-in Widgets
+
+Aksara provides specialized widgets for complex field types:
+
+#### JSONAdminWidget
+
+Interactive JSON editor with syntax highlighting and validation:
+
+```python
+from aksara.contrib.admin.widgets import JSONAdminWidget
+
+class SettingsAdmin(ModelAdmin):
+    formfield_overrides = {
+        "config": JSONAdminWidget(),
+    }
+```
+
+Features:
+
+- Syntax-highlighted JSON editing
+- Real-time validation
+- Pretty-print formatting
+- Collapsible tree view
+
+#### ArrayAdminWidget
+
+Dynamic list editor for array fields:
+
+```python
+from aksara.contrib.admin.widgets import ArrayAdminWidget
+
+class ArticleAdmin(ModelAdmin):
+    formfield_overrides = {
+        "tags": ArrayAdminWidget(),
+    }
+```
+
+Features:
+
+- Add/remove items dynamically
+- Drag-and-drop reordering
+- Individual item validation
+- Empty state handling
+
+!!! tip "Auto-Detection"
+    JSON and Array fields automatically use their respective widgets.
+    Use `formfield_overrides` only when you need custom configuration.
+
 ### Custom Form
 
 ```python
