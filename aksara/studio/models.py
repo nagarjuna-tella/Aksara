@@ -4,6 +4,8 @@ Aksara Studio Models
 Pydantic models for Studio API responses.
 
 v0.5.0: Studio Core & Handshake
+v0.5.1: Studio Core Polish - richer summaries, migration endpoint
+v0.5.2: Runtime & DX - runtime info, routes endpoint
 """
 
 from __future__ import annotations
@@ -73,6 +75,130 @@ class StudioDatabaseStatus(BaseModel):
     last_error: Optional[str] = Field(
         default=None,
         description="Last database error message if any"
+    )
+
+
+# =============================================================================
+# v0.5.1: Migration Summary Models
+# =============================================================================
+
+class StudioMigrationStatus(BaseModel):
+    """
+    Migration status summary for context endpoint.
+    
+    v0.5.1: Provides quick migration health overview.
+    """
+    
+    total: int = Field(
+        default=0,
+        description="Total number of migrations discovered"
+    )
+    applied: int = Field(
+        default=0,
+        description="Number of applied migrations"
+    )
+    pending: int = Field(
+        default=0,
+        description="Number of pending migrations"
+    )
+    has_conflicts: bool = Field(
+        default=False,
+        description="Whether migration conflicts exist"
+    )
+    last_applied: Optional[str] = Field(
+        default=None,
+        description="Name of the last applied migration"
+    )
+
+
+class StudioAppMigrationSummary(BaseModel):
+    """
+    Per-app migration statistics.
+    
+    v0.5.1: Used in /studio/migrations/summary endpoint.
+    """
+    
+    app_label: str = Field(
+        ...,
+        description="Application label (e.g., 'auth', 'blog')"
+    )
+    total: int = Field(
+        default=0,
+        description="Total migrations for this app"
+    )
+    applied: int = Field(
+        default=0,
+        description="Applied migrations for this app"
+    )
+    pending: int = Field(
+        default=0,
+        description="Pending migrations for this app"
+    )
+    has_conflicts: bool = Field(
+        default=False,
+        description="Whether this app has migration conflicts"
+    )
+    head_migrations: List[str] = Field(
+        default_factory=list,
+        description="Current head migrations (should be 1 if no conflicts)"
+    )
+
+
+class StudioMigrationConflict(BaseModel):
+    """
+    Migration conflict details.
+    
+    v0.5.1: Describes a detected migration conflict.
+    """
+    
+    app_label: str = Field(
+        ...,
+        description="Application with conflict"
+    )
+    heads: List[str] = Field(
+        default_factory=list,
+        description="Conflicting head migration names"
+    )
+    message: str = Field(
+        ...,
+        description="Human-readable conflict description"
+    )
+
+
+class StudioMigrationSummary(BaseModel):
+    """
+    Complete migration summary response.
+    
+    v0.5.1: New endpoint response model for /studio/migrations/summary.
+    """
+    
+    total_migrations: int = Field(
+        default=0,
+        description="Total migrations across all apps"
+    )
+    applied_migrations: int = Field(
+        default=0,
+        description="Total applied migrations"
+    )
+    pending_migrations: int = Field(
+        default=0,
+        description="Total pending migrations"
+    )
+    apps: List[StudioAppMigrationSummary] = Field(
+        default_factory=list,
+        description="Per-app migration summaries"
+    )
+    conflicts: List[StudioMigrationConflict] = Field(
+        default_factory=list,
+        description="Detected migration conflicts"
+    )
+    migrations_checksum: str = Field(
+        ...,
+        description="SHA-256 of migration file list"
+    )
+    last_applied: Optional[str] = Field(
+        default=None,
+        description="Name of the most recently applied migration"
     )
 
 
@@ -149,8 +275,15 @@ class StudioContextSummary(BaseModel):
     Lightweight context summary (no full schema).
     
     Used for quick status checks without transferring full context.
+    
+    v0.5.1: Added app_count, database_status, migration_status, schema_checksum.
     """
     
+    # v0.5.1: New app count field
+    app_count: int = Field(
+        default=1,
+        description="Number of installed/configured apps"
+    )
     model_count: int = Field(
         ...,
         description="Total number of registered models"
@@ -175,6 +308,17 @@ class StudioContextSummary(BaseModel):
         default=0,
         description="Number of unapplied migrations"
     )
+    
+    # v0.5.1: New database and migration status fields
+    database_status: StudioDatabaseStatus = Field(
+        default_factory=lambda: StudioDatabaseStatus(connected=False),
+        description="Current database connection status"
+    )
+    migration_status: StudioMigrationStatus = Field(
+        default_factory=StudioMigrationStatus,
+        description="Migration health summary"
+    )
+    
     models: List[StudioModelSummary] = Field(
         default_factory=list,
         description="Summary of all models"
@@ -183,6 +327,12 @@ class StudioContextSummary(BaseModel):
         ...,
         description="Checksums for change detection"
     )
+    
+    # v0.5.1: Convenience accessor for schema_checksum
+    @property
+    def schema_checksum(self) -> str:
+        """SHA-256 checksum of the model schema."""
+        return self.checksums.schema_checksum
 
 
 class StudioHandshake(BaseModel):
@@ -280,4 +430,102 @@ class StudioHealthResponse(BaseModel):
     timestamp: str = Field(
         ...,
         description="ISO 8601 timestamp"
+    )
+
+
+# =============================================================================
+# v0.5.2: Runtime Info Models
+# =============================================================================
+
+class StudioRuntimeInfo(BaseModel):
+    """
+    Runtime diagnostics information.
+    
+    v0.5.2: Read-only runtime info for Studio and CLI.
+    """
+    
+    app_version: str = Field(
+        ...,
+        description="Aksara framework version"
+    )
+    python_version: str = Field(
+        ...,
+        description="Python interpreter version"
+    )
+    debug: bool = Field(
+        default=False,
+        description="Whether debug mode is enabled"
+    )
+    env: Optional[str] = Field(
+        default=None,
+        description="Environment name (e.g., development, production)"
+    )
+    pid: int = Field(
+        ...,
+        description="Process ID of the running server"
+    )
+    start_time: datetime = Field(
+        ...,
+        description="When the server process started"
+    )
+    uptime_seconds: float = Field(
+        default=0.0,
+        description="Seconds since process started"
+    )
+    database_status: str = Field(
+        default="disconnected",
+        description="Database status: 'ok', 'degraded', or 'disconnected'"
+    )
+    pending_migrations: int = Field(
+        default=0,
+        description="Number of pending migrations"
+    )
+    installed_apps: List[str] = Field(
+        default_factory=list,
+        description="List of installed app labels"
+    )
+    studio_enabled: bool = Field(
+        default=True,
+        description="Whether Studio endpoints are enabled"
+    )
+    studio_base_path: str = Field(
+        default="/studio",
+        description="Base path for Studio endpoints"
+    )
+
+
+class StudioRouteInfo(BaseModel):
+    """
+    Route metadata for a single API route.
+    
+    v0.5.2: Read-only route info for Studio.
+    """
+    
+    path: str = Field(
+        ...,
+        description="Route path pattern"
+    )
+    methods: List[str] = Field(
+        default_factory=list,
+        description="HTTP methods this route handles"
+    )
+    name: Optional[str] = Field(
+        default=None,
+        description="Route name if set"
+    )
+    app_label: Optional[str] = Field(
+        default=None,
+        description="App label if derivable"
+    )
+    is_studio: bool = Field(
+        default=False,
+        description="Whether this is a Studio endpoint"
+    )
+    is_admin: bool = Field(
+        default=False,
+        description="Whether this is an Admin endpoint"
+    )
+    is_ai: bool = Field(
+        default=False,
+        description="Whether this is an AI endpoint"
     )

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.0"
+CLI_VERSION = "0.5.2"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1204,6 +1204,106 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
         access_log=True,
         app_dir=cwd,  # Ensure uvicorn can find the app module
     )
+
+
+# =============================================================================
+# v0.5.2: Enhanced Dev Command
+# =============================================================================
+
+def _check_studio_enabled() -> bool:
+    """Check if Studio endpoints will be enabled."""
+    try:
+        from aksara.conf import settings
+        if not getattr(settings, 'enable_studio', True):
+            return False
+        if not settings.debug and not getattr(settings, 'studio_expose_in_production', False):
+            return False
+        return True
+    except Exception:
+        return True  # Default to enabled in debug
+
+
+@cli.command()
+@click.argument("app_path")
+@click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
+@click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
+@click.option("--reload", "-r", is_flag=True, default=True, help="Enable auto-reload (default: True)")
+@click.option("--no-reload", is_flag=True, help="Disable auto-reload")
+@click.option("--log-level", "-l", default="info", 
+              type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
+              help="Uvicorn log level")
+def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_level: str):
+    """
+    Run Aksara in development mode with enhanced DX.
+    
+    v0.5.2: Improved developer experience with richer banner, 
+    log-level control, and clean shutdown.
+    
+    APP_PATH: Import path to the app (e.g., 'main:app' or 'myproject.main:app')
+    
+    Examples:
+        aksara dev main:app
+        aksara dev myproject.main:app --log-level debug
+        aksara dev main:app --no-reload --port 3000
+    """
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo("❌ uvicorn not installed. Run: pip install uvicorn")
+        return
+    
+    # Ensure current directory is in Python path for module imports
+    cwd = str(Path.cwd())
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+    
+    # Determine actual reload state
+    actual_reload = reload and not no_reload
+    
+    # Build URLs
+    base_url = f"http://{host}:{port}"
+    studio_enabled = _check_studio_enabled()
+    
+    # Print enhanced banner
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara Dev Server\033[0m ({CLI_VERSION})")
+    click.echo()
+    click.echo(f"  \033[36mApp:\033[0m      {app_path}")
+    click.echo(f"  \033[36mURL:\033[0m      {base_url}/")
+    
+    if studio_enabled:
+        click.echo(f"  \033[36mStudio:\033[0m   {base_url}/studio/handshake   \033[32m[enabled]\033[0m")
+    else:
+        click.echo(f"  \033[36mStudio:\033[0m   \033[90m[disabled]\033[0m")
+    
+    click.echo(f"  \033[36mDocs:\033[0m     {base_url}/docs")
+    click.echo()
+    
+    if actual_reload:
+        click.echo(f"  \033[90mReload: enabled | Log: {log_level}\033[0m")
+    else:
+        click.echo(f"  \033[90mReload: disabled | Log: {log_level}\033[0m")
+    
+    click.echo()
+    click.echo("  \033[90m" + "─" * 45 + "\033[0m")
+    click.echo()
+    
+    try:
+        # Configure and run uvicorn
+        uvicorn.run(
+            app_path,
+            host=host,
+            port=port,
+            reload=actual_reload,
+            workers=1,  # Always 1 in dev mode
+            log_level=log_level.lower(),
+            access_log=True,
+            app_dir=cwd,
+        )
+    except KeyboardInterrupt:
+        click.echo()
+        click.echo("  \033[33mShutting down Aksara dev server… Bye 👋\033[0m")
+        click.echo()
 
 
 # =============================================================================

@@ -9,6 +9,27 @@ This page documents the HTTP API endpoints for Aksara Studio integration.
 | `/studio/handshake` | GET | Complete project handshake |
 | `/studio/context/summary` | GET | Lightweight schema summary |
 | `/studio/health` | GET | Health check with DB status |
+| `/studio/migrations/summary` | GET | Per-app migration statistics (v0.5.1) |
+| `/studio/schema/handshake` | GET | JSON Schema for handshake model (v0.5.1) |
+
+---
+
+## Security (v0.5.1)
+
+All Studio endpoints validate the incoming `Origin` header against `studio_allowed_origins` setting.
+
+- **Allowed origin**: Request proceeds normally
+- **No origin header**: Request allowed (same-origin, CLI, server-to-server)
+- **Disallowed origin**: 403 Forbidden response
+
+```python
+# In aksara.conf
+settings.studio_allowed_origins = [
+    "https://studio.aksara.dev",
+    "http://localhost:3000",
+]
+# Use ["*"] to allow all origins (development only!)
+```
 
 ---
 
@@ -140,12 +161,28 @@ Lightweight context summary without full schema. Use this for quick status check
 
 ```json
 {
+  "app_count": 3,
   "model_count": 5,
   "viewset_count": 3,
   "route_count": 25,
   "ai_tool_count": 15,
   "migration_count": 10,
   "pending_migrations": 0,
+  "database_status": {
+    "connected": true,
+    "dialect": "postgresql",
+    "pool_size": 10,
+    "pool_available": 8,
+    "latency_ms": null,
+    "last_error": null
+  },
+  "migration_status": {
+    "total": 10,
+    "applied": 10,
+    "pending": 0,
+    "has_conflicts": false,
+    "last_applied": "0010_add_tags"
+  },
   "models": [
     {
       "name": "User",
@@ -173,12 +210,15 @@ Lightweight context summary without full schema. Use this for quick status check
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `app_count` | integer | Number of installed apps (v0.5.1) |
 | `model_count` | integer | Total registered models |
 | `viewset_count` | integer | Total registered viewsets |
 | `route_count` | integer | Total API routes |
 | `ai_tool_count` | integer | Total AI tools |
 | `migration_count` | integer | Total migrations |
 | `pending_migrations` | integer | Unapplied migrations |
+| `database_status` | object | Live database status (v0.5.1) |
+| `migration_status` | object | Migration health overview (v0.5.1) |
 | `models` | array | List of model summaries |
 | `checksums` | object | Checksums for caching |
 
@@ -215,6 +255,119 @@ Simple health check endpoint.
 
 ---
 
+## GET /studio/migrations/summary (v0.5.1)
+
+Detailed migration statistics with per-app breakdown and conflict detection.
+
+### Response
+
+```json
+{
+  "total_migrations": 15,
+  "applied_migrations": 12,
+  "pending_migrations": 3,
+  "apps": [
+    {
+      "app_label": "auth",
+      "total": 5,
+      "applied": 5,
+      "pending": 0,
+      "has_conflicts": false,
+      "head_migrations": ["0005_add_last_login"]
+    },
+    {
+      "app_label": "blog",
+      "total": 10,
+      "applied": 7,
+      "pending": 3,
+      "has_conflicts": false,
+      "head_migrations": ["0010_add_tags"]
+    }
+  ],
+  "conflicts": [],
+  "migrations_checksum": "abc123def456789",
+  "last_applied": "0005_add_last_login"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_migrations` | integer | Total migrations across all apps |
+| `applied_migrations` | integer | Number of applied migrations |
+| `pending_migrations` | integer | Number of pending migrations |
+| `apps` | array | Per-app migration summaries |
+| `conflicts` | array | Detected migration conflicts |
+| `migrations_checksum` | string | Checksum for caching |
+| `last_applied` | string | Name of last applied migration |
+
+### Conflict Detection
+
+When migrations have branched (e.g., two developers created separate migrations from the same parent), the `conflicts` array will contain details:
+
+```json
+{
+  "conflicts": [
+    {
+      "app_label": "blog",
+      "heads": ["0008_feature_a", "0008_feature_b"],
+      "message": "App 'blog' has 2 conflicting head migrations that need to be merged."
+    }
+  ]
+}
+```
+
+---
+
+## GET /studio/schema/handshake (v0.5.1)
+
+Returns the JSON Schema for the `StudioHandshake` model. Useful for:
+
+- TypeScript type generation
+- API documentation
+- Client-side validation
+
+### Response
+
+```json
+{
+  "$defs": {
+    "StudioDatabaseStatus": {
+      "properties": {
+        "connected": { "type": "boolean" },
+        "dialect": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "protocol_version": {
+      "default": "1.0",
+      "description": "Studio protocol version",
+      "type": "string"
+    },
+    "project": { "$ref": "#/$defs/StudioProjectInfo" },
+    "database": { "$ref": "#/$defs/StudioDatabaseStatus" }
+  },
+  "required": ["project", "database", "capabilities", "checksums"],
+  "title": "StudioHandshake",
+  "type": "object"
+}
+```
+
+### Usage Example (TypeScript)
+
+```typescript
+// Generate types from JSON Schema
+import { compile } from 'json-schema-to-typescript';
+
+const response = await fetch('/studio/schema/handshake');
+const schema = await response.json();
+const types = await compile(schema, 'StudioHandshake');
+```
+
+---
+
 ## Using with curl
 
 ### Test Handshake
@@ -233,6 +386,18 @@ curl http://localhost:8000/studio/health | jq
 
 ```bash
 curl http://localhost:8000/studio/context/summary | jq
+```
+
+### Get Migration Summary (v0.5.1)
+
+```bash
+curl http://localhost:8000/studio/migrations/summary | jq
+```
+
+### Get JSON Schema (v0.5.1)
+
+```bash
+curl http://localhost:8000/studio/schema/handshake | jq
 ```
 
 ---

@@ -4,6 +4,64 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.2] — 2026-02-15
+
+### Added
+- **Runtime Diagnostics Endpoints**: Real-time server introspection
+  - `GET /studio/runtime/info` - Process info, uptime, database status, pending migrations
+  - `GET /studio/runtime/routes` - Complete route listing with metadata (studio/admin/ai flags)
+- **New Pydantic Models**:
+  - `StudioRuntimeInfo` - Runtime diagnostics (version, python, debug, env, pid, uptime, etc.)
+  - `StudioRouteInfo` - Route metadata (path, methods, name, app_label, is_studio, is_admin, is_ai)
+- **Enhanced `aksara dev` Command**:
+  - Beautiful startup banner showing App name, URL, Studio URL, Docs URL
+  - `--log-level` option (default: info)
+  - Clean shutdown message on Ctrl+C
+- **Smarter `aksara shell`**:
+  - `aquery(Model, **filters)` - Async query helper for quick lookups
+  - `run()` - Alias for `arun()` (simpler)
+  - Auto-imports app and settings
+  - Improved banner showing preloaded objects
+
+### Changed
+- Version bump from 0.5.1 to 0.5.2
+- Shell now automatically connects to database from settings
+
+---
+
+## [0.5.1] — 2026-02-10
+
+### Added
+- **Studio Core Polish**: Richer summaries and security improvements
+- **New Endpoints**:
+  - `GET /studio/migrations/summary` - Per-app migration statistics with conflict detection
+  - `GET /studio/schema/handshake` - JSON Schema for StudioHandshake model (TypeScript generation)
+- **Enhanced Context Summary**: 
+  - `app_count` - Number of installed/configured apps
+  - `database_status` - Live database connection status
+  - `migration_status` - Quick migration health overview
+  - `schema_checksum` - Convenience property accessor
+- **New Pydantic Models**:
+  - `StudioMigrationStatus` - Migration health summary
+  - `StudioAppMigrationSummary` - Per-app migration stats
+  - `StudioMigrationConflict` - Conflict details
+  - `StudioMigrationSummary` - Complete migration summary response
+- **Origin-based Security**: 
+  - Request `Origin` header validation against `studio_allowed_origins`
+  - Wildcard (`*`) support for development
+  - Missing origin allowed for same-origin/CLI requests
+
+### Security
+- Studio endpoints now validate incoming `Origin` header
+- Requests from non-allowed origins receive 403 Forbidden
+- Clear separation between development and production security
+
+### Changed
+- Improved migration discovery to include Python migrations (not just .sql)
+- Studio router now applies origin check dependency to all endpoints
+
+---
+
 ## [0.5.0] — 2026-02-01
 
 ### Added

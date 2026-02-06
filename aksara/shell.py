@@ -2,6 +2,8 @@
 Aksara Shell Utilities
 
 Interactive shell helpers for async development.
+
+v0.5.2: Enhanced shell DX with auto-imports and helpers.
 """
 
 from __future__ import annotations
@@ -110,6 +112,8 @@ def build_shell_namespace(
     Creates a namespace with commonly used Aksara imports and
     optionally connects to the database and loads models.
     
+    v0.5.2: Added aquery helper and run() function.
+    
     Args:
         database_url: Database URL to connect to
         load_models: Whether to load and include models in namespace
@@ -121,6 +125,27 @@ def build_shell_namespace(
         Model, fields, Database, ModelRegistry,
         settings, configure, DoesNotExist, MultipleObjectsReturned,
     )
+    
+    # v0.5.2: Helper functions for async queries
+    async def aquery(model, **filters):
+        """
+        Quick async query helper.
+        
+        Usage:
+            users = arun(aquery(User, is_active=True))
+            posts = arun(aquery(Post, author_id=user.id))
+        """
+        return await model.objects.filter(**filters).all()
+    
+    def run(coro):
+        """
+        Run an async coroutine (alias for arun).
+        
+        Usage:
+            run(User.objects.all())
+            run(db.execute("SELECT 1"))
+        """
+        return arun(coro)
     
     namespace: dict[str, Any] = {
         # Core imports
@@ -134,14 +159,24 @@ def build_shell_namespace(
         # Exceptions
         "DoesNotExist": DoesNotExist,
         "MultipleObjectsReturned": MultipleObjectsReturned,
-        # Async helper
+        # Async helpers
         "arun": arun,
+        "run": run,  # v0.5.2: Alias
+        "aquery": aquery,  # v0.5.2: Query helper
     }
     
     # Add database connection if URL provided
     if database_url:
         db = Database(database_url)
         namespace["db"] = db
+    
+    # Also try to get db from settings
+    if "db" not in namespace and settings.database_url:
+        try:
+            db = Database(settings.database_url)
+            namespace["db"] = db
+        except Exception:
+            pass
     
     # Load models from configured apps
     if load_models:
@@ -159,6 +194,8 @@ def get_shell_banner(namespace: dict[str, Any]) -> str:
     """
     Generate a welcome banner for the Aksara shell.
     
+    v0.5.2: Enhanced banner with preloaded objects list.
+    
     Args:
         namespace: The shell namespace (to show loaded models)
         
@@ -169,30 +206,32 @@ def get_shell_banner(namespace: dict[str, Any]) -> str:
     
     lines = [
         "",
-        f"  \033[33m⚡\033[0m \033[1mAksara Shell\033[0m v{__version__}",
+        f"  \033[33m⚡\033[0m \033[1mAksara Shell\033[0m ({__version__})",
         "",
-        "  Available objects:",
-        "    • Model, fields, Database, ModelRegistry",
-        "    • settings, configure",
-        "    • arun() - run async code: arun(User.objects.all())",
+        "  \033[36mPreloaded:\033[0m settings, db, arun, run, aquery",
+        "",
     ]
     
     # Show database status
     if "db" in namespace:
-        lines.append("    • db - Database connection")
+        lines.append("  \033[32m✓\033[0m Database connection ready")
+    else:
+        lines.append("  \033[33m!\033[0m No database connection (use --database-url)")
     
     # Show loaded models
     loaded_models = namespace.get("_loaded_models", [])
     if loaded_models:
         model_list = ", ".join(sorted(loaded_models)[:5])
         if len(loaded_models) > 5:
-            model_list += f", ... ({len(loaded_models)} total)"
-        lines.append(f"    • Models: {model_list}")
+            model_list += f", ... (+{len(loaded_models) - 5} more)"
+        lines.append(f"  \033[32m✓\033[0m Models: {model_list}")
     
     lines.extend([
         "",
-        "  \033[90mTip: Use arun() to run async queries\033[0m",
-        "  \033[90mExample: users = arun(User.objects.all())\033[0m",
+        "  \033[90mAsync helper:\033[0m run(awaitable)",
+        "  \033[90mExample:\033[0m     users = run(User.objects.all())",
+        "",
+        "  Type \033[1mhelp()\033[0m or \033[1mdir()\033[0m to explore.",
         "",
     ])
     

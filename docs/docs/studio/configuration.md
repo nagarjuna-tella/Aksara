@@ -79,6 +79,32 @@ Or via environment (comma-separated):
 export AKSARA_STUDIO_ALLOWED_ORIGINS="https://studio.mycompany.com,http://localhost:3000"
 ```
 
+#### Origin Security (v0.5.1)
+
+Starting in v0.5.1, Studio endpoints validate the `Origin` header on incoming requests:
+
+| Scenario | Result |
+|----------|--------|
+| Origin in allowed list | ✅ Request proceeds |
+| No Origin header | ✅ Request proceeds (CLI, same-origin, server-to-server) |
+| Origin not in allowed list | ❌ 403 Forbidden |
+| `*` in allowed origins | ✅ All origins allowed |
+| Empty allowed origins list | ✅ All origins allowed |
+
+```python
+# Development: Allow all origins
+configure(Settings(
+    studio_allowed_origins=["*"],
+))
+
+# Production: Strict whitelist
+configure(Settings(
+    studio_allowed_origins=[
+        "https://studio.aksara.dev",
+    ],
+))
+```
+
 ---
 
 ## Environment Variables
