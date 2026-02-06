@@ -569,15 +569,45 @@ class Aksara(FastAPI):
         Initialize AI tool registry and mount AI endpoints.
         
         v0.4.0: AI Mode - exposes models and ViewSets as AI tools.
+        v0.5.0: Also mounts Studio endpoints for IDE integration.
         """
         from aksara.ai import AiToolRegistry
         from aksara.ai.fastapi import router as ai_router
+        from aksara.conf import settings
         
         # Initialize the registry
         self.ai_registry = AiToolRegistry()
         
         # Include AI endpoints
         self.include_router(ai_router)
+        
+        # v0.5.0: Include Studio endpoints
+        if self._should_enable_studio():
+            from aksara.studio.fastapi import router as studio_router
+            self.include_router(studio_router)
+    
+    def _should_enable_studio(self) -> bool:
+        """
+        Determine whether to enable Studio endpoints.
+        
+        v0.5.0: Studio endpoint rules:
+        - If settings.enable_studio is False → never enable
+        - If in production (debug=False):
+          - Only enable if settings.studio_expose_in_production is True
+        - Otherwise → enable
+        """
+        from aksara.conf import settings
+        
+        # Respect explicit disable
+        if not settings.enable_studio:
+            return False
+        
+        # In production, require explicit flag
+        is_debug = self._debug or settings.debug
+        if not is_debug and not settings.studio_expose_in_production:
+            return False
+        
+        return True
     
     def _discover_ai_tools_from_viewsets(self, viewsets: list) -> None:
         """

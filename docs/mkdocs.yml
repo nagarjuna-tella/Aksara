@@ -93,6 +93,11 @@ nav:
       - Agent Runtime: ai/agent-runtime.md
       - Schema Doctor: ai/schema-doctor.md
       - Best Practices: ai/best-practices.md
+  - Studio:
+      - studio/index.md
+      - Studio API: studio/api.md
+      - CLI Commands: studio/cli.md
+      - Configuration: studio/configuration.md
   - CLI:
       - cli/index.md
       - Overview: cli/overview.md

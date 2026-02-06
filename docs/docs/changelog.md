@@ -4,6 +4,40 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.0] — 2026-02-01
+
+### Added
+- **Studio Core & Handshake**: Complete IDE integration foundation
+- **Studio Endpoints**:
+  - `GET /studio/handshake` - Complete project handshake for Studio IDE
+  - `GET /studio/context/summary` - Lightweight schema summary
+  - `GET /studio/health` - Health check with database status
+- **Studio CLI Commands**:
+  - `aksara studio handshake` - Test handshake locally
+  - `aksara studio url` - Show Studio endpoint URLs
+- **Studio Settings**:
+  - `enable_studio` - Enable/disable Studio endpoints (default: True)
+  - `studio_expose_in_production` - Allow Studio in non-debug mode
+  - `studio_allowed_origins` - CORS origins for Studio access
+- Pydantic models for Studio responses:
+  - `StudioHandshake`, `StudioCapability`, `StudioDatabaseStatus`
+  - `StudioProjectInfo`, `StudioChecksums`, `StudioContextSummary`
+  - `StudioHealthResponse`, `StudioModelSummary`
+- Checksum utilities for cache invalidation
+- Comprehensive Studio documentation in `docs/docs/studio/`
+- 21 new Studio unit tests
+
+### Changed
+- Version bump from 0.4.11 to 0.5.0
+- Studio endpoints automatically enabled in debug mode
+- AI registry setup now also mounts Studio router
+
+### Security
+- Studio endpoints disabled in production by default
+- Requires explicit `studio_expose_in_production=True` to enable in production
+
+---
+
 ## [0.4.11] — 2026-01-31
 
 ### Added

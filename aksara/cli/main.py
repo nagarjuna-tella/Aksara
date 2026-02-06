@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.4.11"
+CLI_VERSION = "0.5.0"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2141,6 +2141,137 @@ def plan_template(intent: str, mode: str, include_schema: bool):
     except Exception as e:
         click.echo(f"❌ Error: {e}", err=True)
         sys.exit(1)
+
+
+# =============================================================================
+# Studio Commands (v0.5.0)
+# =============================================================================
+
+
+@cli.group()
+def studio():
+    """Studio IDE integration commands.
+    
+    Commands for testing and managing Aksara Studio integration.
+    
+    v0.5.0: Studio Core & Handshake
+    """
+    pass
+
+
+@studio.command("handshake")
+@click.option("--app", "-a", default="main:app", help="App path (e.g., main:app)")
+@click.option("--format", "-f", "output_format", type=click.Choice(["json", "pretty"]), default="pretty", help="Output format")
+def studio_handshake(app: str, output_format: str):
+    """Test the Studio handshake locally.
+    
+    Simulates what Aksara Studio would receive when connecting to your app.
+    Useful for debugging integration issues.
+    
+    Examples:
+        aksara studio handshake
+        aksara studio handshake --app myapp:app
+        aksara studio handshake --format json
+    """
+    import json as json_module
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - Handshake Test")
+    click.echo()
+    
+    # Try to load the app
+    try:
+        module_path, app_name = app.split(":")
+        module = __import__(module_path, fromlist=[app_name])
+        app_instance = getattr(module, app_name)
+    except (ValueError, ImportError, AttributeError) as e:
+        click.echo(f"  \033[31m✗\033[0m Failed to load app '{app}': {e}")
+        click.echo()
+        click.echo("  Make sure your app path is correct (e.g., main:app)")
+        sys.exit(1)
+    
+    # Build handshake
+    try:
+        from aksara.studio.utils import build_studio_handshake
+        
+        # Run async function
+        handshake = asyncio.get_event_loop().run_until_complete(
+            build_studio_handshake(app_instance)
+        )
+        
+        if output_format == "json":
+            click.echo(json_module.dumps(handshake.model_dump(), indent=2))
+        else:
+            # Pretty print
+            click.echo("  \033[32m✓\033[0m Handshake successful!")
+            click.echo()
+            click.echo("  \033[1mProject:\033[0m")
+            click.echo(f"    Name:           {handshake.project.name}")
+            click.echo(f"    Version:        {handshake.project.version}")
+            click.echo(f"    Aksara:         {handshake.project.aksara_version}")
+            click.echo(f"    Python:         {handshake.project.python_version}")
+            click.echo(f"    Environment:    {handshake.project.environment}")
+            click.echo(f"    Debug:          {handshake.project.debug_mode}")
+            click.echo()
+            click.echo("  \033[1mDatabase:\033[0m")
+            click.echo(f"    Connected:      {handshake.database.connected}")
+            click.echo(f"    Pool Size:      {handshake.database.pool_size}")
+            click.echo(f"    Available:      {handshake.database.pool_available}")
+            click.echo()
+            click.echo("  \033[1mCapabilities:\033[0m")
+            for cap in handshake.capabilities:
+                click.echo(f"    • {cap.value}")
+            click.echo()
+            click.echo("  \033[1mChecksums:\033[0m")
+            click.echo(f"    Schema:         {handshake.checksums.schema_checksum}")
+            click.echo(f"    Migrations:     {handshake.checksums.migrations_checksum}")
+            click.echo(f"    Settings:       {handshake.checksums.settings_checksum}")
+            click.echo(f"    Routes:         {handshake.checksums.routes_checksum}")
+            click.echo()
+        
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Handshake failed: {e}")
+        import traceback
+        if output_format == "pretty":
+            click.echo()
+            click.echo("  \033[90mStacktrace:\033[0m")
+            for line in traceback.format_exc().split('\n'):
+                click.echo(f"    {line}")
+        sys.exit(1)
+
+
+@studio.command("url")
+@click.option("--host", "-h", default="localhost", help="Server host")
+@click.option("--port", "-p", default=8000, type=int, help="Server port")
+@click.option("--https/--no-https", default=False, help="Use HTTPS")
+def studio_url(host: str, port: int, https: bool):
+    """Show Studio endpoint URLs.
+    
+    Displays the URLs for Studio integration endpoints.
+    
+    Examples:
+        aksara studio url
+        aksara studio url --port 8080
+        aksara studio url --https
+    """
+    protocol = "https" if https else "http"
+    base_url = f"{protocol}://{host}:{port}"
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - Endpoint URLs")
+    click.echo()
+    click.echo("  \033[1mStudio Endpoints:\033[0m")
+    click.echo(f"    Handshake:       {base_url}/studio/handshake")
+    click.echo(f"    Context Summary: {base_url}/studio/context/summary")
+    click.echo(f"    Health:          {base_url}/studio/health")
+    click.echo()
+    click.echo("  \033[1mAI Endpoints (full context):\033[0m")
+    click.echo(f"    Full Context:    {base_url}/ai/context/full")
+    click.echo(f"    Tools:           {base_url}/ai/tools")
+    click.echo(f"    MCP Tools:       {base_url}/ai/tools/mcp")
+    click.echo()
+    click.echo("  \033[90mTip: Use --https for production URLs\033[0m")
+    click.echo()
 
 
 def main():

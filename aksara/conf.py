@@ -81,6 +81,14 @@ class Settings:
     ai_debug_enabled: bool = True  # Enabled by default in debug mode
     ai_debug_advisor_class: Optional[str] = None  # Custom advisor class path
     
+    # v0.5.0: Studio integration
+    enable_studio: bool = True  # Enable Studio endpoints by default
+    studio_expose_in_production: bool = False  # Require explicit flag in production
+    studio_allowed_origins: List[str] = field(default_factory=lambda: [
+        "https://studio.aksara.dev",
+        "http://localhost:3000",  # Local Studio dev
+    ])
+    
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     
@@ -153,6 +161,17 @@ class Settings:
         
         if not self.mcp_enabled:
             self.mcp_enabled = _get_bool_env("AKSARA_MCP_ENABLED", False)
+        
+        # v0.5.0: Studio settings
+        if self.enable_studio:
+            self.enable_studio = not _get_bool_env("AKSARA_STUDIO_DISABLED", False)
+        if not self.studio_expose_in_production:
+            self.studio_expose_in_production = _get_bool_env("AKSARA_STUDIO_EXPOSE_IN_PRODUCTION", False)
+        
+        # Studio allowed origins from env (comma-separated)
+        env_origins = os.environ.get("AKSARA_STUDIO_ALLOWED_ORIGINS")
+        if env_origins:
+            self.studio_allowed_origins = [o.strip() for o in env_origins.split(",")]
     
     @property
     def DATABASE_URL(self) -> Optional[str]:
@@ -183,6 +202,11 @@ class Settings:
     def MCP_ENABLED(self) -> bool:
         """Alias for mcp_enabled (uppercase convention)."""
         return self.mcp_enabled
+    
+    @property
+    def STUDIO_ENABLED(self) -> bool:
+        """Alias for enable_studio (uppercase convention)."""
+        return self.enable_studio
     
     @property
     def APPS(self) -> List[str]:
