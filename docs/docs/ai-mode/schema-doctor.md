@@ -90,7 +90,7 @@ unique constraint.
 Fix: Add unique constraint
 
 Model change:
-  email = fields.EmailField(unique=True)  # Add unique=True
+  email = fields.Email(unique=True)  # Add unique=True
 ```
 
 ### Naming Inconsistencies
@@ -118,7 +118,7 @@ Fix: Add on_delete="CASCADE" or "PROTECT"
 ### Performance Anti-Patterns
 
 ```
-[HIGH] User.metadata uses JSONField for structured data
+[HIGH] User.metadata uses JSON field for structured data
 
 The metadata field appears to store predictable keys that
 could be separate columns.
@@ -427,7 +427,7 @@ Post.author_id (FK to User) has no index
 # models.py
 author = fields.ForeignKey(
     "User",
-    on_delete="CASCADE",
+    on_delete=fields.CASCADE,
     db_index=True,  # Add this
 )
 ```
@@ -441,7 +441,7 @@ User.email should be unique
 
 **Fix:**
 ```python
-email = fields.EmailField(unique=True)
+email = fields.Email(unique=True)
 ```
 
 ### No Default for Timestamp
@@ -453,7 +453,7 @@ Comment.created_at has no default
 
 **Fix:**
 ```python
-created_at = fields.DateTimeField(auto_now_add=True)
+created_at = fields.DateTime(auto_now_add=True)
 ```
 
 ### Missing on_delete
@@ -465,7 +465,7 @@ Comment.post FK has no on_delete
 
 **Fix:**
 ```python
-post = fields.ForeignKey("Post", on_delete="CASCADE")
+post = fields.ForeignKey("Post", on_delete=fields.CASCADE)
 ```
 
 ---

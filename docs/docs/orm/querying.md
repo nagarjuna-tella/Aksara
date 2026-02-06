@@ -1,229 +1,353 @@
 # Querying Data
 
-Query, filter, and retrieve data using Aksara's intuitive QuerySet API.
+Retrieve, filter, and manipulate data using Aksara's QuerySet API.
 
 ---
 
-## Overview
+## What is a QuerySet?
 
-Every Aksara model has an `objects` manager that provides access to the QuerySet API:
+A **QuerySet** is a way to request data from your database without writing SQL. It's like asking questions:
+
+- "Give me all posts" → `Post.objects.all()`
+- "Give me posts that are published" → `Post.objects.filter(published=True)`
+- "Give me the newest post" → `Post.objects.order_by("-created_at").first()`
+
+QuerySets are:
+
+- **Lazy** — They don't hit the database until you need the data
+- **Chainable** — You can add conditions one after another
+- **Async** — Use `await` when you actually want the results
 
 ```python
 from myapp.models import Post
 
+# Build the query (no database call yet)
+query = Post.objects.filter(published=True).order_by("-created_at")
+
+# Execute the query (hits the database)
+posts = await query
+```
+
+---
+
+## The `objects` Manager
+
+Every model has an `objects` attribute that gives you access to QuerySet methods:
+
+```python
 # Get all posts
 posts = await Post.objects.all()
 
 # Filter posts
-python_posts = await Post.objects.filter(category="python")
+published = await Post.objects.filter(published=True)
 
-# Get single post
-post = await Post.objects.get(id=post_id)
+# Get a single post
+post = await Post.objects.get(id=some_id)
 ```
-
-!!! note "Async by Default"
-    All QuerySet operations are async. Use `await` for any operation that hits the database.
 
 ---
 
-## QuerySet Methods
+## Basic Operations
 
-### all()
+### Get All Records
 
-Retrieve all records:
+**`all()`** — Retrieve every record in the table.
 
 ```python
 posts = await Post.objects.all()
-# Returns: List[Post]
+# Returns: [Post, Post, Post, ...]
 ```
 
-### filter(**kwargs)
+**When to use**: When you need every record (be careful with large tables!).
 
-Retrieve records matching conditions:
+---
 
-```python
-# Simple equality
-published = await Post.objects.filter(is_published=True)
+### Get One Record
 
-# Multiple conditions (AND)
-featured = await Post.objects.filter(is_published=True, is_featured=True)
-
-# Field lookups
-recent = await Post.objects.filter(created_at__gt=last_week)
-```
-
-### exclude(**kwargs)
-
-Retrieve records NOT matching conditions:
+**`get(**kwargs)`** — Retrieve exactly ONE record matching your conditions.
 
 ```python
-# All non-draft posts
-posts = await Post.objects.exclude(status="draft")
-
-# Combine with filter
-active = await Post.objects.filter(is_published=True).exclude(is_archived=True)
-```
-
-### get(**kwargs)
-
-Retrieve exactly one record:
-
-```python
+# By ID
 post = await Post.objects.get(id=post_id)
+
+# By any field
+user = await User.objects.get(email="alice@example.com")
 ```
 
-!!! warning "Raises Exceptions"
-    - `DoesNotExist` — No matching record
-    - `MultipleObjectsReturned` — More than one match
+**What can go wrong**:
 
-### first()
+| Situation | What Happens |
+|-----------|--------------|
+| No match found | Raises `DoesNotExist` error |
+| Multiple matches | Raises `MultipleObjectsReturned` error |
 
-Get the first record or `None`:
-
-```python
-# Returns single Post or None
-oldest = await Post.objects.order_by("created_at").first()
-
-# With filter
-first_python = await Post.objects.filter(category="python").first()
-```
-
-### count()
-
-Count matching records:
+**Safe pattern** — Use `first()` if the record might not exist:
 
 ```python
-total = await Post.objects.count()
-published = await Post.objects.filter(is_published=True).count()
-```
-
-### exists()
-
-Check if any records exist:
-
-```python
-has_posts = await Post.objects.filter(author=user).exists()
-if has_posts:
-    print("User has posts")
+# Returns None instead of raising an error
+post = await Post.objects.filter(slug="hello-world").first()
+if post is None:
+    print("Post not found")
 ```
 
 ---
 
-## Field Lookups
+### Get First Record
 
-Lookups are specified using double underscores: `field__lookup=value`
+**`first()`** — Get the first matching record, or `None` if no match.
+
+```python
+# Oldest post
+oldest = await Post.objects.order_by("created_at").first()
+
+# First matching post (or None)
+draft = await Post.objects.filter(published=False).first()
+
+if draft:
+    print(f"Found draft: {draft.title}")
+else:
+    print("No drafts found")
+```
+
+---
+
+### Filter Records
+
+**`filter(**kwargs)`** — Get records matching your conditions.
+
+```python
+# Simple equality
+published_posts = await Post.objects.filter(published=True)
+
+# Multiple conditions (AND)
+featured = await Post.objects.filter(published=True, featured=True)
+```
+
+**How filters combine**: Multiple arguments use AND logic:
+
+```python
+# published=True AND author_id=123
+posts = await Post.objects.filter(published=True, author_id=author_id)
+```
+
+---
+
+### Exclude Records
+
+**`exclude(**kwargs)`** — Get records NOT matching conditions (opposite of filter).
+
+```python
+# All posts except drafts
+posts = await Post.objects.exclude(status="draft")
+
+# Combine with filter: published posts that aren't archived
+active = await Post.objects.filter(published=True).exclude(archived=True)
+```
+
+---
+
+### Count Records
+
+**`count()`** — Count matching records without loading them.
+
+```python
+total_posts = await Post.objects.count()
+published_count = await Post.objects.filter(published=True).count()
+```
+
+**Why use count()?** It's much faster than loading all records just to count them:
+
+```python
+# ❌ Bad: loads all records into memory
+count = len(await Post.objects.all())
+
+# ✅ Good: counts in the database
+count = await Post.objects.count()
+```
+
+---
+
+### Check if Records Exist
+
+**`exists()`** — Check if any matching records exist (returns True/False).
+
+```python
+has_posts = await Post.objects.exists()
+has_drafts = await Post.objects.filter(published=False).exists()
+
+if has_drafts:
+    print("You have unpublished drafts!")
+```
+
+**Why use exists()?** It stops as soon as it finds one match:
+
+```python
+# ❌ Loads all records just to check
+if await Post.objects.filter(published=False):
+    ...
+
+# ✅ Stops at first match
+if await Post.objects.filter(published=False).exists():
+    ...
+```
+
+---
+
+## Filtering with Lookups
+
+**Lookups** let you do more than just equality checks. Add them after the field name with double underscores (`__`).
 
 ### Comparison Lookups
 
-| Lookup | SQL | Example |
-|--------|-----|---------|
-| `exact` | `=` | `name__exact="John"` |
-| `gt` | `>` | `age__gt=18` |
-| `gte` | `>=` | `price__gte=10.00` |
-| `lt` | `<` | `created_at__lt=today` |
-| `lte` | `<=` | `score__lte=100` |
-
 ```python
-# Posts created after a date
-recent = await Post.objects.filter(created_at__gt=last_week)
+# Greater than
+recent = await Post.objects.filter(view_count__gt=1000)
 
-# Products in price range
-affordable = await Product.objects.filter(price__gte=10, price__lte=50)
+# Greater than or equal
+popular = await Post.objects.filter(view_count__gte=100)
+
+# Less than
+low_views = await Post.objects.filter(view_count__lt=10)
+
+# Less than or equal
+old_posts = await Post.objects.filter(created_at__lte=last_month)
 ```
 
-### String Lookups
+| Lookup | Meaning | SQL Equivalent |
+|--------|---------|----------------|
+| `__gt` | Greater than | `>` |
+| `__gte` | Greater than or equal | `>=` |
+| `__lt` | Less than | `<` |
+| `__lte` | Less than or equal | `<=` |
 
-| Lookup | Case | SQL | Example |
-|--------|------|-----|---------|
-| `contains` | Sensitive | `LIKE '%x%'` | `title__contains="Python"` |
-| `icontains` | Insensitive | `ILIKE '%x%'` | `title__icontains="python"` |
-| `startswith` | Sensitive | `LIKE 'x%'` | `email__startswith="admin"` |
-| `istartswith` | Insensitive | `ILIKE 'x%'` | `email__istartswith="admin"` |
-| `endswith` | Sensitive | `LIKE '%x'` | `email__endswith=".com"` |
-| `iendswith` | Insensitive | `ILIKE '%x'` | `email__iendswith=".com"` |
+### Text Lookups
 
 ```python
-# Case-insensitive search
-results = await Post.objects.filter(title__icontains="tutorial")
+# Contains (case-sensitive)
+posts = await Post.objects.filter(title__contains="Python")
 
-# Email domain filter
-gmail_users = await User.objects.filter(email__endswith="@gmail.com")
+# Contains (case-insensitive)
+posts = await Post.objects.filter(title__icontains="python")
+
+# Starts with
+posts = await Post.objects.filter(title__startswith="How to")
+
+# Ends with
+posts = await Post.objects.filter(slug__endswith="-tutorial")
 ```
 
-### Null & Empty Checks
+| Lookup | Meaning | Example Match |
+|--------|---------|---------------|
+| `__contains` | Contains substring | "Learn **Python** Today" |
+| `__icontains` | Contains (case-insensitive) | "learn **python** today" |
+| `__startswith` | Starts with | "**How to** code" |
+| `__istartswith` | Starts with (case-insensitive) | "**how to** code" |
+| `__endswith` | Ends with | "Python **Tutorial**" |
+| `__iendswith` | Ends with (case-insensitive) | "python **tutorial**" |
+| `__exact` | Exact match | (default behavior) |
+| `__iexact` | Exact match (case-insensitive) | "python" matches "Python" |
 
-| Lookup | Description | Example |
-|--------|-------------|---------|
-| `isnull` | Check NULL | `bio__isnull=True` |
+### List Lookups
 
 ```python
-# Users without profiles
-no_bio = await User.objects.filter(bio__isnull=True)
+# In a list of values
+featured = await Post.objects.filter(category__in=["tech", "news", "tutorial"])
 
-# Users with profiles
-has_bio = await User.objects.filter(bio__isnull=False)
+# Not in a list (use exclude)
+posts = await Post.objects.exclude(status__in=["draft", "archived"])
 ```
 
-### In Lookup
-
-Match against a list of values:
+### NULL Lookups
 
 ```python
-# Posts in multiple categories
-posts = await Post.objects.filter(category__in=["python", "javascript", "rust"])
+# Is NULL
+no_category = await Post.objects.filter(category__isnull=True)
 
-# Users by ID list
-users = await User.objects.filter(id__in=user_ids)
+# Is NOT NULL
+has_category = await Post.objects.filter(category__isnull=False)
 ```
+
+### Date Lookups
+
+```python
+from datetime import date
+
+# Posts from a specific year
+posts_2024 = await Post.objects.filter(created_at__year=2024)
+
+# Posts from January
+january = await Post.objects.filter(created_at__month=1)
+
+# Posts from a specific date
+today = await Post.objects.filter(created_at__date=date.today())
+```
+
+| Lookup | Extracts |
+|--------|----------|
+| `__year` | Year (2024) |
+| `__month` | Month (1-12) |
+| `__day` | Day (1-31) |
+| `__date` | Date part (ignores time) |
+| `__hour` | Hour (0-23) |
+| `__minute` | Minute (0-59) |
 
 ---
 
 ## Chaining QuerySets
 
-QuerySet methods can be chained for complex queries:
+QuerySets are **chainable** — you can add methods one after another:
 
 ```python
-posts = await (
-    Post.objects
-    .filter(is_published=True)
-    .filter(category="python")
-    .exclude(is_archived=True)
-    .order_by("-created_at")
+posts = await Post.objects \
+    .filter(published=True) \
+    .filter(category="tech") \
+    .exclude(archived=True) \
+    .order_by("-created_at") \
     .all()
-)
 ```
 
-!!! tip "Lazy Evaluation"
-    Queries aren't executed until you call a terminal method (`all()`, `first()`, `count()`, etc.).
+Each method returns a new QuerySet, so you can build queries step by step:
+
+```python
+# Start with all posts
+query = Post.objects.all()
+
+# Add filters conditionally
+if category:
+    query = query.filter(category=category)
+
+if search_term:
+    query = query.filter(title__icontains=search_term)
+
+if published_only:
+    query = query.filter(published=True)
+
+# Execute
+posts = await query
+```
 
 ---
 
 ## Ordering Results
 
-### order_by(*fields)
+**`order_by(*fields)`** — Sort results by one or more fields.
 
 ```python
-# Ascending order
-posts = await Post.objects.order_by("title").all()
+# Ascending (A-Z, oldest first)
+posts = await Post.objects.order_by("title")
 
-# Descending order (prefix with -)
-posts = await Post.objects.order_by("-created_at").all()
+# Descending (Z-A, newest first) — prefix with minus
+posts = await Post.objects.order_by("-created_at")
 
-# Multiple fields
-posts = await Post.objects.order_by("-is_featured", "-created_at").all()
+# Multiple fields: first by category, then by date
+posts = await Post.objects.order_by("category", "-created_at")
 ```
 
-### Default Ordering
-
-Define default ordering in the model's Meta:
+**Clear existing ordering**:
 
 ```python
-class Post(Model):
-    title = fields.String(max_length=200)
-    created_at = fields.DateTime(auto_now_add=True)
-    
-    class Meta:
-        ordering = ["-created_at"]  # Newest first by default
+# Remove any default ordering
+posts = await Post.objects.order_by()
 ```
 
 ---
@@ -232,376 +356,254 @@ class Post(Model):
 
 ### Slicing
 
+Use Python slice syntax to limit results:
+
 ```python
 # First 10 posts
-posts = await Post.objects.order_by("-created_at")[:10]
+top_10 = await Post.objects.all()[:10]
 
-# Posts 10-20 (pagination)
-posts = await Post.objects.order_by("-created_at")[10:20]
+# Posts 11-20 (skip first 10, get next 10)
+page_2 = await Post.objects.all()[10:20]
+
+# Single item by index
+first = await Post.objects.order_by("created_at")[0]
 ```
 
-### limit() and offset()
+### Pagination Pattern
 
 ```python
-# Alternative syntax
-posts = await Post.objects.limit(10).offset(20).all()
-```
+page = 1
+page_size = 20
 
----
-
-## Selecting Specific Fields
-
-### values(*fields)
-
-Return dictionaries instead of model instances:
-
-```python
-# Only fetch specific fields
-posts = await Post.objects.values("id", "title").all()
-# Returns: [{"id": "...", "title": "..."}, ...]
-```
-
-### values_list(*fields)
-
-Return tuples:
-
-```python
-# As tuples
-posts = await Post.objects.values_list("id", "title").all()
-# Returns: [("...", "..."), ...]
-
-# Single field as flat list
-titles = await Post.objects.values_list("title", flat=True).all()
-# Returns: ["Title 1", "Title 2", ...]
+offset = (page - 1) * page_size
+posts = await Post.objects.order_by("-created_at")[offset:offset + page_size]
 ```
 
 ---
 
-## Related Object Queries
+## Getting Specific Fields
 
-### select_related(*fields)
+### values()
 
-Eager load ForeignKey/OneToOne relations (JOIN query):
+**`values(*fields)`** — Get dictionaries instead of model instances.
 
 ```python
-# Without select_related: N+1 queries
-posts = await Post.objects.all()
-for post in posts:
-    author = await post.author  # Query per post!
+# Get all fields as dictionaries
+posts = await Post.objects.values()
+# [{"id": "...", "title": "...", "content": "..."}, ...]
 
-# With select_related: Single JOIN query
-posts = await Post.objects.select_related("author").all()
-for post in posts:
-    print(post.author.name)  # Already loaded!
+# Get specific fields only
+posts = await Post.objects.values("id", "title")
+# [{"id": "...", "title": "..."}, ...]
 ```
 
-Multiple relations:
+**When to use**: When you only need a few fields and want to avoid loading full objects.
+
+### values_list()
+
+**`values_list(*fields)`** — Get tuples instead of dictionaries.
 
 ```python
-posts = await Post.objects.select_related("author", "category").all()
-```
+# Get tuples
+posts = await Post.objects.values_list("id", "title")
+# [("id1", "Title 1"), ("id2", "Title 2"), ...]
 
-Nested relations:
-
-```python
-# Load author and author's profile
-posts = await Post.objects.select_related("author__profile").all()
-```
-
-### prefetch_related(*fields)
-
-Efficient loading for ManyToMany relations:
-
-```python
-# Load posts with their tags
-posts = await Post.objects.prefetch_related("tags").all()
-for post in posts:
-    for tag in post.tags:
-        print(tag.name)
-```
-
-### Filtering by Related Fields
-
-Use double underscores to traverse relations:
-
-```python
-# Posts by author name
-posts = await Post.objects.filter(author__name="Jane")
-
-# Posts by author email domain
-posts = await Post.objects.filter(author__email__endswith="@company.com")
-
-# Posts in a category by slug
-posts = await Post.objects.filter(category__slug="python")
-
-# Posts with a specific tag
-posts = await Post.objects.filter(tags__name="tutorial")
+# Get flat list (single field only)
+titles = await Post.objects.values_list("title", flat=True)
+# ["Title 1", "Title 2", "Title 3", ...]
 ```
 
 ---
 
-## Aggregations
+## Aggregation
 
-### Basic Aggregations
+Perform calculations across records:
 
 ```python
-from aksara.db import Count, Sum, Avg, Max, Min
+from aksara.db import Avg, Count, Max, Min, Sum
 
-# Count
-count = await Post.objects.count()
+# Average view count
+avg_views = await Post.objects.aggregate(Avg("view_count"))
 
-# With aggregation functions
+# Multiple aggregations
 stats = await Post.objects.aggregate(
     total=Count("id"),
     avg_views=Avg("view_count"),
     max_views=Max("view_count"),
 )
-# Returns: {"total": 100, "avg_views": 250.5, "max_views": 10000}
-```
-
-### Annotate
-
-Add computed fields to each object:
-
-```python
-# Annotate posts with comment count
-posts = await Post.objects.annotate(
-    comment_count=Count("comments")
-).all()
-
-for post in posts:
-    print(f"{post.title}: {post.comment_count} comments")
+# {"total": 150, "avg_views": 523.4, "max_views": 10000}
 ```
 
 ---
 
-## CRUD Operations
+## Filtering on Related Models
 
-### Create
-
-```python
-# Create and save
-post = await Post.objects.create(
-    title="My Post",
-    content="Content here",
-    author_id=user_id,
-)
-
-# Alternative: instantiate then save
-post = Post(title="My Post", content="Content here")
-await post.save()
-```
-
-### Read
+Use double underscores (`__`) to filter through relationships:
 
 ```python
-# Get by ID
-post = await Post.objects.get(id=post_id)
+# Posts by author named "Alice"
+posts = await Post.objects.filter(author__name="Alice")
 
-# Get or 404
-post = await Post.objects.get_or_404(id=post_id)
+# Posts by verified authors
+posts = await Post.objects.filter(author__is_verified=True)
 
-# Get or create
-post, created = await Post.objects.get_or_create(
-    slug="my-post",
-    defaults={"title": "My Post", "content": "..."},
-)
+# Posts in categories that are active
+posts = await Post.objects.filter(category__is_active=True)
 ```
 
-### Update
+**How it works**: `author__name` means "the `name` field of the related `author` model."
+
+---
+
+## Optimizing Queries
+
+### select_related()
+
+**Problem**: Loading related objects one by one (N+1 query problem):
 
 ```python
-# Update single object
-post = await Post.objects.get(id=post_id)
-post.title = "New Title"
-await post.save()
-
-# Bulk update
-await Post.objects.filter(is_draft=True).update(is_archived=True)
-
-# Update or create
-post, created = await Post.objects.update_or_create(
-    slug="my-post",
-    defaults={"title": "Updated Title"},
-)
+# ❌ Bad: 1 query for posts + 1 query per post to get author
+posts = await Post.objects.all()
+for post in posts:
+    author = await post.author  # Database call!
+    print(f"{post.title} by {author.name}")
 ```
 
-### Delete
+**Solution**: Load related objects in one query:
 
 ```python
-# Delete single object
-post = await Post.objects.get(id=post_id)
-await post.delete()
-
-# Bulk delete
-await Post.objects.filter(is_archived=True, is_old=True).delete()
+# ✅ Good: 1 query gets posts AND authors
+posts = await Post.objects.select_related("author").all()
+for post in posts:
+    print(f"{post.title} by {post.author.name}")  # No extra query!
 ```
+
+### prefetch_related()
+
+For **many-to-many** or **reverse foreign key** relationships:
+
+```python
+# Load posts and their tags efficiently
+posts = await Post.objects.prefetch_related("tags").all()
+for post in posts:
+    tag_names = [tag.name for tag in post.tags]  # No extra query!
+```
+
+### When to Use Which
+
+| Method | Use For | Example |
+|--------|---------|---------|
+| `select_related` | ForeignKey (single related object) | `post.author` |
+| `prefetch_related` | ManyToMany, reverse FK (multiple objects) | `post.tags`, `author.posts` |
 
 ---
 
 ## Raw SQL
 
-For complex queries that can't be expressed with the ORM:
+When you need full SQL control:
 
 ```python
-# Raw query
+# Execute raw SQL
 posts = await Post.objects.raw(
-    "SELECT * FROM posts WHERE EXTRACT(YEAR FROM created_at) = %s",
-    [2024]
+    "SELECT * FROM posts WHERE title ILIKE %s",
+    ["%python%"]
 )
 
-# Execute arbitrary SQL
-from aksara.db import connection
-result = await connection.execute(
-    "SELECT category, COUNT(*) FROM posts GROUP BY category"
-)
+# Or use the database connection directly
+from aksara.db import get_db
+
+async with get_db() as conn:
+    rows = await conn.fetch("SELECT COUNT(*) FROM posts WHERE published = true")
 ```
 
-!!! warning "SQL Injection"
-    Always use parameterized queries. Never interpolate user input directly into SQL strings.
+**When to use raw SQL**:
+
+- Complex queries that can't be expressed with the ORM
+- Performance-critical queries
+- Database-specific features
 
 ---
 
-## QuerySet Evaluation
+## Common Patterns
 
-QuerySets are lazy — they don't hit the database until evaluated.
-
-### Operations That Evaluate
-
-| Method | Returns | Hits DB |
-|--------|---------|---------|
-| `all()` | `List[Model]` | ✅ |
-| `first()` | `Model \| None` | ✅ |
-| `get()` | `Model` | ✅ |
-| `count()` | `int` | ✅ |
-| `exists()` | `bool` | ✅ |
-| `update()` | `int` | ✅ |
-| `delete()` | `int` | ✅ |
-
-### Operations That Don't Evaluate
-
-| Method | Returns |
-|--------|---------|
-| `filter()` | `QuerySet` |
-| `exclude()` | `QuerySet` |
-| `order_by()` | `QuerySet` |
-| `select_related()` | `QuerySet` |
-| `limit()` | `QuerySet` |
-
----
-
-## Complete Example
+### Get or Create
 
 ```python
-from datetime import datetime, timedelta
-from myapp.models import Post, User, Category
-
-async def get_dashboard_data(user_id: str):
-    """Example of complex querying for a dashboard."""
-    
-    # Get user with profile
-    user = await User.objects.select_related("profile").get(id=user_id)
-    
-    # Recent posts by user
-    recent_posts = await (
-        Post.objects
-        .filter(author=user)
-        .filter(is_published=True)
-        .order_by("-created_at")
-        .select_related("category")
-        .prefetch_related("tags")
-        [:5]
-    )
-    
-    # Post statistics
-    last_month = datetime.now() - timedelta(days=30)
-    stats = await Post.objects.filter(author=user).aggregate(
-        total=Count("id"),
-        published=Count("id", filter=Q(is_published=True)),
-        views=Sum("view_count"),
-    )
-    
-    # Popular posts this month
-    popular = await (
-        Post.objects
-        .filter(author=user)
-        .filter(created_at__gte=last_month)
-        .order_by("-view_count")
-        .values("id", "title", "view_count")
-        [:3]
-    )
-    
-    # Categories with post counts
-    categories = await (
-        Category.objects
-        .annotate(post_count=Count("posts"))
-        .filter(posts__author=user)
-        .order_by("-post_count")
-        .all()
-    )
-    
-    return {
-        "user": user,
-        "recent_posts": recent_posts,
-        "stats": stats,
-        "popular": popular,
-        "categories": categories,
+# Get existing record or create new one
+post, created = await Post.objects.get_or_create(
+    slug="hello-world",
+    defaults={
+        "title": "Hello World",
+        "content": "Welcome to my blog!",
     }
+)
+
+if created:
+    print("Created new post")
+else:
+    print("Found existing post")
+```
+
+### Update or Create
+
+```python
+# Update if exists, create if not
+post, created = await Post.objects.update_or_create(
+    slug="hello-world",
+    defaults={
+        "title": "Hello World (Updated)",
+        "content": "New content here",
+    }
+)
+```
+
+### Bulk Create
+
+```python
+# Create many records efficiently
+posts = await Post.objects.bulk_create([
+    Post(title="Post 1", content="Content 1"),
+    Post(title="Post 2", content="Content 2"),
+    Post(title="Post 3", content="Content 3"),
+])
+```
+
+### Bulk Update
+
+```python
+# Update many records at once
+updated_count = await Post.objects.filter(
+    published=False
+).update(
+    published=True,
+    published_at=datetime.now(),
+)
+print(f"Published {updated_count} posts")
 ```
 
 ---
 
-## Best Practices
+## Quick Reference
 
-### Use select_related Proactively
-
-```python
-# Bad: N+1 queries
-posts = await Post.objects.all()
-for post in posts:
-    print(post.author.name)  # Query per iteration
-
-# Good: Single query
-posts = await Post.objects.select_related("author").all()
-```
-
-### Filter Early
-
-```python
-# Bad: Filter in Python
-posts = await Post.objects.all()
-published = [p for p in posts if p.is_published]
-
-# Good: Filter in database
-published = await Post.objects.filter(is_published=True).all()
-```
-
-### Use values() for Read-Only Data
-
-```python
-# Bad: Full object when you only need ID and title
-posts = await Post.objects.all()
-data = [{"id": p.id, "title": p.title} for p in posts]
-
-# Good: Only fetch needed fields
-data = await Post.objects.values("id", "title").all()
-```
-
-### Limit Results
-
-```python
-# Bad: Fetch all, use first
-posts = await Post.objects.all()
-first_post = posts[0] if posts else None
-
-# Good: Only fetch one
-first_post = await Post.objects.first()
-```
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `all()` | List | All records |
+| `get(**kwargs)` | Instance | One record (error if 0 or 2+) |
+| `first()` | Instance or None | First matching record |
+| `filter(**kwargs)` | QuerySet | Records matching conditions |
+| `exclude(**kwargs)` | QuerySet | Records NOT matching conditions |
+| `count()` | int | Number of matching records |
+| `exists()` | bool | True if any records match |
+| `order_by(*fields)` | QuerySet | Sort results |
+| `values(*fields)` | List of dicts | Get specific fields as dicts |
+| `values_list(*fields)` | List of tuples | Get specific fields as tuples |
+| `select_related(*fields)` | QuerySet | Optimize ForeignKey loading |
+| `prefetch_related(*fields)` | QuerySet | Optimize M2M/reverse FK loading |
 
 ---
 
 ## Related Documentation
 
-- [Models](models.md) — Model definition
-- [Fields](fields.md) — Field types and options
-- [Relations](relations.md) — ForeignKey, ManyToMany
+- [Models](models.md) — Define your data structure
+- [Relations](relations.md) — Work with related models
+- [Fields](fields.md) — Field types and lookups

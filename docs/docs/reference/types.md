@@ -70,49 +70,36 @@ class QuerySet(Generic[ModelT]):
 ### Basic Field Types
 
 ```python
-from aksara.fields import (
-    StringField,
-    IntegerField,
-    FloatField,
-    BooleanField,
-    DateTimeField,
-    DateField,
-    UUIDField,
-    TextField,
-    EmailField,
-    JSONField,
-)
+from aksara import fields
 
-# Type inference
+# Fields use the pattern: fields.FieldType
 class User(Model):
-    name: str = StringField(max_length=100)
-    age: int = IntegerField()
-    score: float = FloatField()
-    is_active: bool = BooleanField(default=True)
-    email: str = EmailField()
-    metadata: dict = JSONField(default=dict)
+    name = fields.String(max_length=100)
+    age = fields.Integer()
+    score = fields.Float()
+    is_active = fields.Boolean(default=True)
+    email = fields.Email()
+    metadata = fields.JSON(default=dict)
 ```
 
 ### Optional Fields
 
 ```python
-from typing import Optional
 from datetime import datetime
 
 class Post(Model):
-    title: str = StringField(max_length=200)
-    published_at: Optional[datetime] = DateTimeField(null=True)
+    title = fields.String(max_length=200)
+    published_at = fields.DateTime(null=True)  # null=True makes it optional
 ```
 
 ### Relationship Types
 
 ```python
-from aksara.fields import ForeignKey, ManyToManyField
-from typing import List
+from aksara import fields
 
 class Post(Model):
-    author: "User" = ForeignKey("User", on_delete="CASCADE")
-    tags: List["Tag"] = ManyToManyField("Tag", related_name="posts")
+    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
+    tags = fields.ManyToMany("Tag", related_name="posts")
 ```
 
 ---
@@ -394,7 +381,7 @@ class Field(Generic[T]):
     def __get__(self, obj: Any, type: Any = None) -> T: ...
     def __set__(self, obj: Any, value: T) -> None: ...
 
-class StringField(Field[str]):
+class String(Field[str]):
     def __init__(
         self,
         max_length: int = ...,
@@ -402,9 +389,9 @@ class StringField(Field[str]):
         **kwargs: Any
     ) -> None: ...
 
-class IntegerField(Field[int]): ...
-class FloatField(Field[float]): ...
-class BooleanField(Field[bool]): ...
+class Integer(Field[int]): ...
+class Float(Field[float]): ...
+class Boolean(Field[bool]): ...
 ```
 
 ---

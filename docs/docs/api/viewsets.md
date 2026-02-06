@@ -1,94 +1,164 @@
 # ViewSets
 
-Create full CRUD APIs with ModelViewSet.
+Handle API requests for your models with minimal code.
 
 ---
 
-## Overview
+## What is a ViewSet?
 
-A ViewSet is a class-based view that provides CRUD operations for a model:
+A **ViewSet** is a class that handles all API requests for a specific type of data. Instead of writing separate functions for list, create, update, and delete, you write one class that handles everything.
+
+**Without ViewSets (manual approach):**
+```python
+# You'd have to write these separately:
+async def list_tasks(request): ...
+async def create_task(request): ...
+async def get_task(request, id): ...
+async def update_task(request, id): ...
+async def delete_task(request, id): ...
+```
+
+**With ViewSets:**
+```python
+class TaskViewSet(ModelViewSet):
+    model = Task
+# Done! All 6 endpoints are created automatically.
+```
+
+---
+
+## Creating a ViewSet
+
+### Basic ViewSet
 
 ```python
 from aksara.api import ModelViewSet
-from myapp.models import Post
+from myapp.models import Task
 
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    """API for managing tasks."""
+    model = Task
 ```
 
-This single class creates 6 endpoints automatically.
+**What you get:**
 
----
+| Endpoint | Method | What It Does |
+|----------|--------|--------------|
+| `/tasks/` | GET | List all tasks |
+| `/tasks/` | POST | Create a new task |
+| `/tasks/{id}/` | GET | Get one task |
+| `/tasks/{id}/` | PUT | Replace a task |
+| `/tasks/{id}/` | PATCH | Update some fields |
+| `/tasks/{id}/` | DELETE | Delete a task |
 
-## Basic Configuration
-
-### Required Attributes
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post  # Required: the model to expose
-```
-
-### Optional Attributes
+### With Options
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+from aksara.api import ModelViewSet
+from aksara.permissions import IsAuthenticated
+from myapp.models import Task
+from myapp.serializers import TaskSerializer
+
+class TaskViewSet(ModelViewSet):
+    """API for managing tasks."""
     
-    # Serialization
-    serializer_class = PostSerializer      # Custom serializer
-    list_serializer_class = PostListSerializer  # For list action
+    # Required
+    model = Task
     
-    # Permissions
+    # Serialization (how data is converted)
+    serializer_class = TaskSerializer
+    
+    # Security (who can access)
     permission_classes = [IsAuthenticated]
     
-    # Pagination
+    # Pagination (how many items per page)
     page_size = 20
-    max_page_size = 100
     
-    # Filtering
-    filterset_fields = ["is_published", "author_id", "category"]
-    search_fields = ["title", "content"]
-    ordering_fields = ["created_at", "title"]
-    ordering = ["-created_at"]
+    # Filtering (which fields can be filtered)
+    filterset_fields = ["completed", "priority"]
     
-    # Query optimization
-    select_related = ["author", "category"]
-    prefetch_related = ["tags"]
+    # Searching (which fields are searchable)
+    search_fields = ["title", "description"]
+    
+    # Ordering (default sort order)
+    ordering = ["-created_at"]  # Newest first
 ```
 
 ---
 
-## Generated Endpoints
+## ViewSet Options Reference
 
-### Default Actions
+### Data Options
 
-| Action | Method | Path | Handler |
-|--------|--------|------|---------|
-| List | GET | `/posts/` | `list()` |
-| Create | POST | `/posts/` | `create()` |
-| Retrieve | GET | `/posts/{id}/` | `retrieve()` |
-| Update | PUT | `/posts/{id}/` | `update()` |
-| Partial Update | PATCH | `/posts/{id}/` | `partial_update()` |
-| Delete | DELETE | `/posts/{id}/` | `destroy()` |
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `model` | Which model this ViewSet handles | `model = Task` |
+| `queryset` | Custom base query | `queryset = Task.objects.filter(active=True)` |
+| `serializer_class` | How to convert data | `serializer_class = TaskSerializer` |
+| `list_serializer_class` | Different serializer for lists | `list_serializer_class = TaskListSerializer` |
 
-### Disabling Actions
+### Security Options
+
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `permission_classes` | Who can access | `[IsAuthenticated]` |
+| `authentication_classes` | How to identify users | `[TokenAuthentication]` |
+
+### Filtering Options
+
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `filterset_fields` | Fields users can filter by | `["status", "priority"]` |
+| `search_fields` | Fields users can search | `["title", "description"]` |
+| `ordering_fields` | Fields users can sort by | `["created_at", "title"]` |
+| `ordering` | Default sort order | `["-created_at"]` |
+
+### Pagination Options
+
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `page_size` | Items per page | `20` |
+| `max_page_size` | Maximum items per page | `100` |
+
+### Query Optimization
+
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `select_related` | Load related objects in same query | `["author"]` |
+| `prefetch_related` | Load many-to-many efficiently | `["tags"]` |
+
+---
+
+## Controlling Which Actions Are Available
+
+### Only Allow Certain Actions
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
-    # Only allow read operations
+    # Only allow reading, not creating/updating/deleting
     allowed_actions = ["list", "retrieve"]
 ```
 
-Or exclude specific actions:
+**Available actions:**
+
+| Action | Endpoint | Method |
+|--------|----------|--------|
+| `"list"` | `/tasks/` | GET |
+| `"create"` | `/tasks/` | POST |
+| `"retrieve"` | `/tasks/{id}/` | GET |
+| `"update"` | `/tasks/{id}/` | PUT |
+| `"partial_update"` | `/tasks/{id}/` | PATCH |
+| `"destroy"` | `/tasks/{id}/` | DELETE |
+
+### Exclude Certain Actions
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
-    # Disable delete
+    # Allow everything except delete
     excluded_actions = ["destroy"]
 ```
 
@@ -96,514 +166,463 @@ class PostViewSet(ModelViewSet):
 
 ## Customizing Actions
 
-### Overriding List
+### Custom List Action
+
+Control what gets returned when listing items.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     async def list(self, request):
-        """Custom list with additional data."""
-        queryset = self.get_queryset()
+        """
+        List tasks for the current user only.
         
-        # Apply filters
+        GET /tasks/
+        """
+        # Get tasks for this user only
+        queryset = Task.objects.filter(user_id=request.user.id)
+        
+        # Apply any filters from the URL
         queryset = self.filter_queryset(queryset)
         
         # Paginate
         page = self.paginate_queryset(queryset)
         
-        # Serialize
-        data = [self.serialize(obj) for obj in page]
+        # Convert to JSON
+        data = [self.serialize(task) for task in page]
         
         return self.get_paginated_response(data)
 ```
 
-### Overriding Create
+### Custom Create Action
+
+Control how new items are created.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     async def create(self, request):
-        """Create with automatic author assignment."""
+        """
+        Create a task and assign it to the current user.
+        
+        POST /tasks/
+        """
+        # Get data from request
         data = await self.get_request_data(request)
         
-        # Auto-set author
-        data["author_id"] = str(request.user.id)
+        # Automatically set the owner
+        data["user_id"] = str(request.user.id)
         
-        # Validate
+        # Validate the data
         self.validate_data(data)
         
-        # Create
-        obj = await self.model.objects.create(**data)
+        # Create the task
+        task = await Task.objects.create(**data)
         
-        return self.serialize(obj), 201
+        # Return the created task
+        return self.serialize(task), 201  # 201 = Created
 ```
 
-### Overriding Retrieve
+### Custom Retrieve Action
+
+Control what happens when getting a single item.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     async def retrieve(self, request, id: str):
-        """Retrieve with view count increment."""
-        obj = await self.get_object(id)
+        """
+        Get a task and increment its view count.
+        
+        GET /tasks/{id}/
+        """
+        # Get the task
+        task = await self.get_object(id)
         
         # Increment view count
-        obj.view_count += 1
-        await obj.save()
+        task.view_count += 1
+        await task.save()
         
-        return self.serialize(obj)
+        # Return the task
+        return self.serialize(task)
 ```
 
-### Overriding Update
+### Custom Update Action
+
+Control how items are updated.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     async def update(self, request, id: str):
-        """Update with audit logging."""
-        obj = await self.get_object(id)
+        """
+        Update a task, but only if user owns it.
+        
+        PUT /tasks/{id}/
+        """
+        task = await self.get_object(id)
+        
+        # Check ownership
+        if task.user_id != request.user.id:
+            raise PermissionDenied("You can only edit your own tasks")
+        
+        # Get and validate data
         data = await self.get_request_data(request)
+        self.validate_data(data)
         
-        # Log changes
-        self.log_changes(obj, data)
-        
-        # Apply updates
+        # Update fields
         for key, value in data.items():
-            setattr(obj, key, value)
+            setattr(task, key, value)
         
-        await obj.save()
-        return self.serialize(obj)
+        await task.save()
+        return self.serialize(task)
 ```
 
-### Overriding Destroy
+### Custom Delete Action
+
+Control how items are deleted.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     async def destroy(self, request, id: str):
-        """Soft delete instead of hard delete."""
-        obj = await self.get_object(id)
+        """
+        Soft-delete a task instead of actually removing it.
         
-        # Soft delete
-        obj.is_deleted = True
-        obj.deleted_at = datetime.now()
-        await obj.save()
+        DELETE /tasks/{id}/
+        """
+        task = await self.get_object(id)
         
-        return None, 204
+        # Soft delete (mark as deleted instead of removing)
+        task.deleted = True
+        task.deleted_at = datetime.now()
+        await task.save()
+        
+        return None, 204  # 204 = No Content
 ```
 
 ---
 
-## QuerySet Customization
+## Custom Actions
 
-### get_queryset()
+Add endpoints beyond CRUD using the `@action` decorator.
 
-Control the base queryset for all operations:
+### Detail Actions (One Item)
+
+Operate on a specific item.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+from aksara.api import ModelViewSet, action
+
+class TaskViewSet(ModelViewSet):
+    model = Task
     
-    def get_queryset(self):
-        """Base queryset with eager loading."""
-        return (
-            self.model.objects
-            .select_related("author", "category")
-            .prefetch_related("tags")
-        )
-```
-
-### Dynamic QuerySet
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
+    @action(detail=True, methods=["POST"])
+    async def complete(self, request, id: str):
+        """
+        Mark a task as complete.
+        
+        POST /tasks/{id}/complete/
+        """
+        task = await self.get_object(id)
+        task.completed = True
+        task.completed_at = datetime.now()
+        await task.save()
+        return {"status": "completed", "completed_at": task.completed_at}
     
-    def get_queryset(self):
-        """Filter based on user permissions."""
-        qs = super().get_queryset()
+    @action(detail=True, methods=["POST"])
+    async def assign(self, request, id: str):
+        """
+        Assign this task to someone.
         
-        if self.request.user.is_anonymous:
-            # Anonymous users see only published
-            return qs.filter(is_published=True)
+        POST /tasks/{id}/assign/
+        Body: {"user_id": "abc123"}
+        """
+        task = await self.get_object(id)
+        data = await self.get_request_data(request)
         
-        if not self.request.user.is_staff:
-            # Regular users see published + their own
-            return qs.filter(
-                Q(is_published=True) | Q(author=self.request.user)
-            )
+        task.assigned_to_id = data["user_id"]
+        await task.save()
         
-        # Staff see everything
-        return qs
+        return {"assigned_to": task.assigned_to_id}
 ```
 
-### Action-Specific QuerySet
+### Collection Actions (All Items)
+
+Operate on the collection as a whole.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
-    def get_queryset(self):
-        """Different querysets per action."""
-        qs = super().get_queryset()
+    @action(detail=False, methods=["POST"])
+    async def complete_all(self, request):
+        """
+        Mark all tasks as complete.
         
-        if self.action == "list":
-            # List only shows published
-            return qs.filter(is_published=True)
+        POST /tasks/complete_all/
+        """
+        count = await Task.objects.filter(
+            user_id=request.user.id,
+            completed=False
+        ).update(completed=True)
         
-        # Other actions see all (with permission checks)
-        return qs
-```
-
----
-
-## Serialization
-
-### Default Serialization
-
-By default, ModelViewSet serializes all model fields:
-
-```python
-# GET /posts/1/
-{
-    "id": "uuid-string",
-    "title": "My Post",
-    "content": "...",
-    "author_id": "author-uuid",
-    "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-### Custom Serializer
-
-```python
-from aksara.api import ModelSerializer
-
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "author", "created_at"]
-    read_only_fields = ["id", "created_at"]
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    serializer_class = PostSerializer
-```
-
-### Different Serializers per Action
-
-```python
-class PostListSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "created_at"]  # Minimal for list
-
-class PostDetailSerializer(ModelSerializer):
-    model = Post
-    fields = "__all__"  # Full detail
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    serializer_class = PostDetailSerializer
-    list_serializer_class = PostListSerializer
+        return {"completed_count": count}
     
-    def get_serializer_class(self):
-        """Dynamic serializer selection."""
-        if self.action == "list":
-            return self.list_serializer_class
-        return self.serializer_class
+    @action(detail=False, methods=["GET"])
+    async def stats(self, request):
+        """
+        Get task statistics.
+        
+        GET /tasks/stats/
+        """
+        total = await Task.objects.filter(user_id=request.user.id).count()
+        completed = await Task.objects.filter(
+            user_id=request.user.id,
+            completed=True
+        ).count()
+        
+        return {
+            "total": total,
+            "completed": completed,
+            "remaining": total - completed,
+            "completion_rate": completed / total if total > 0 else 0
+        }
+```
+
+### Action Options
+
+```python
+@action(
+    detail=True,           # True = one item, False = collection
+    methods=["POST"],      # HTTP methods allowed
+    url_path="my-action",  # Custom URL (default: action name)
+    url_name="task-action", # Name for URL reversal
+    permission_classes=[IsAdminUser],  # Override ViewSet permissions
+)
+async def my_action(self, request, id: str):
+    ...
 ```
 
 ---
 
 ## Filtering
 
-### Simple Field Filtering
+Allow users to filter results with query parameters.
+
+### Basic Filtering
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    filterset_fields = ["is_published", "author_id", "category_id"]
-
-# Usage:
-# GET /posts/?is_published=true
-# GET /posts/?author_id=abc&category_id=xyz
+class TaskViewSet(ModelViewSet):
+    model = Task
+    filterset_fields = ["completed", "priority", "category"]
 ```
 
-### Custom Filter Method
+**Users can now filter:**
 
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    
-    def filter_queryset(self, queryset):
-        """Custom filtering logic."""
-        qs = super().filter_queryset(queryset)
-        
-        # Date range filter
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-        
-        if date_from:
-            qs = qs.filter(created_at__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__lte=date_to)
-        
-        return qs
+```
+GET /tasks/?completed=true
+GET /tasks/?priority=high
+GET /tasks/?completed=true&priority=high
 ```
 
 ### Search
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    search_fields = ["title", "content"]
-
-# GET /posts/?search=python
-# Searches title and content for "python"
+class TaskViewSet(ModelViewSet):
+    model = Task
+    search_fields = ["title", "description"]
 ```
 
----
+**Users can search:**
 
-## Ordering
-
-### Default Ordering
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    ordering = ["-created_at"]  # Newest first by default
+```
+GET /tasks/?search=meeting
+GET /tasks/?search=important deadline
 ```
 
-### Client-Controlled Ordering
+### Ordering
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    ordering_fields = ["created_at", "title", "view_count"]
-    ordering = ["-created_at"]
+class TaskViewSet(ModelViewSet):
+    model = Task
+    ordering_fields = ["created_at", "title", "priority"]
+    ordering = ["-created_at"]  # Default: newest first
+```
 
-# GET /posts/?ordering=title          # A-Z
-# GET /posts/?ordering=-title         # Z-A
-# GET /posts/?ordering=-view_count    # Most viewed first
+**Users can sort:**
+
+```
+GET /tasks/?ordering=title           # A to Z
+GET /tasks/?ordering=-title          # Z to A
+GET /tasks/?ordering=-created_at     # Newest first
+GET /tasks/?ordering=priority,-created_at  # By priority, then date
 ```
 
 ---
 
 ## Pagination
 
-### Configuration
+Control how many items are returned per request.
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    page_size = 20          # Default items per page
-    max_page_size = 100     # Maximum allowed
+class TaskViewSet(ModelViewSet):
+    model = Task
+    page_size = 20        # Items per page
+    max_page_size = 100   # Maximum items user can request
 ```
 
-### Response Format
+**Response format:**
 
-```python
-# GET /posts/?page=2&page_size=10
+```json
 {
-    "count": 156,
-    "page": 2,
-    "page_size": 10,
-    "total_pages": 16,
-    "next": "/posts/?page=3&page_size=10",
-    "previous": "/posts/?page=1&page_size=10",
-    "results": [...]
+  "count": 150,
+  "next": "http://api.example.com/tasks/?page=2",
+  "previous": null,
+  "results": [
+    {"id": "...", "title": "Task 1", ...},
+    {"id": "...", "title": "Task 2", ...}
+  ]
 }
 ```
 
-### Disable Pagination
+**Users can navigate:**
 
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    pagination_class = None  # No pagination
+```
+GET /tasks/?page=1
+GET /tasks/?page=2
+GET /tasks/?page=3&page_size=50
 ```
 
 ---
 
-## Permissions
+## Query Optimization
 
-### ViewSet-Level Permissions
+Avoid N+1 query problems when loading related data.
+
+### The Problem
 
 ```python
-from aksara.permissions import IsAuthenticated, IsAdminUser
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated]
+# ❌ Bad: This makes 1 query for tasks + 1 query per task for the author
+tasks = await Task.objects.all()
+for task in tasks:
+    print(task.author.name)  # Another database call!
 ```
 
-### Action-Specific Permissions
+### The Solution
 
 ```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated]
+class TaskViewSet(ModelViewSet):
+    model = Task
     
-    def get_permissions(self):
-        """Different permissions per action."""
-        if self.action in ["list", "retrieve"]:
-            # Anyone can read
-            return []
-        
-        if self.action == "destroy":
-            # Only admins can delete
-            return [IsAdminUser()]
-        
-        # Default: authenticated
-        return [IsAuthenticated()]
+    # For ForeignKey relationships (one related object)
+    select_related = ["author", "category"]
+    
+    # For ManyToMany relationships (multiple related objects)
+    prefetch_related = ["tags", "comments"]
 ```
+
+**Now one query fetches everything needed.**
 
 ---
 
-## Request Helpers
+## Helper Methods
 
-### get_object(id)
+Methods available inside your ViewSet:
 
-Get a single object with permission check:
-
-```python
-async def my_action(self, request, id: str):
-    obj = await self.get_object(id)  # Raises 404 if not found
-    ...
-```
-
-### get_request_data(request)
-
-Parse and validate request body:
-
-```python
-async def create(self, request):
-    data = await self.get_request_data(request)
-    # data is validated dict
-    ...
-```
-
-### serialize(obj)
-
-Serialize an object using the configured serializer:
-
-```python
-obj = await self.get_object(id)
-return self.serialize(obj)
-```
+| Method | What It Does |
+|--------|--------------|
+| `get_queryset()` | Get the base queryset |
+| `get_object(id)` | Get one object by ID |
+| `filter_queryset(qs)` | Apply filters to queryset |
+| `paginate_queryset(qs)` | Apply pagination |
+| `serialize(obj)` | Convert object to dict |
+| `get_request_data(request)` | Get data from request body |
+| `validate_data(data)` | Validate data with serializer |
+| `check_permissions(request)` | Check if request is allowed |
 
 ---
 
 ## Complete Example
 
 ```python
-from aksara.api import ModelViewSet, ModelSerializer, action
-from aksara.permissions import IsAuthenticated, IsAdminUser
-from myapp.models import Post, Comment
+from datetime import datetime
+from aksara.api import ModelViewSet, action
+from aksara.permissions import IsAuthenticated
+from myapp.models import Task
+from myapp.serializers import TaskSerializer, TaskListSerializer
 
-
-class PostListSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "author_id", "is_published", "created_at"]
-
-
-class PostDetailSerializer(ModelSerializer):
-    model = Post
-    fields = "__all__"
-    read_only_fields = ["id", "created_at", "updated_at"]
-
-
-class PostViewSet(ModelViewSet):
+class TaskViewSet(ModelViewSet):
     """
-    API for managing blog posts.
+    API endpoint for managing tasks.
     
-    Provides full CRUD operations plus custom actions for
-    publishing and featuring posts.
+    Provides CRUD operations plus custom actions for
+    task completion and statistics.
     """
-    model = Post
-    serializer_class = PostDetailSerializer
-    list_serializer_class = PostListSerializer
+    model = Task
+    serializer_class = TaskSerializer
+    list_serializer_class = TaskListSerializer
+    permission_classes = [IsAuthenticated]
     
     # Filtering
-    filterset_fields = ["is_published", "is_featured", "author_id"]
-    search_fields = ["title", "content"]
-    ordering_fields = ["created_at", "title", "view_count"]
+    filterset_fields = ["completed", "priority", "category"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at", "due_date", "priority"]
     ordering = ["-created_at"]
     
     # Pagination
     page_size = 20
     max_page_size = 100
     
-    # Query optimization
+    # Optimization
     select_related = ["author", "category"]
     prefetch_related = ["tags"]
     
     def get_queryset(self):
-        """Filter queryset based on user."""
-        qs = super().get_queryset()
-        
-        if self.request.user.is_anonymous:
-            return qs.filter(is_published=True)
-        
-        if not self.request.user.is_staff:
-            return qs.filter(
-                Q(is_published=True) | Q(author=self.request.user)
-            )
-        
-        return qs
-    
-    def get_permissions(self):
-        """Action-specific permissions."""
-        if self.action in ["list", "retrieve"]:
-            return []  # Public
-        if self.action == "destroy":
-            return [IsAdminUser()]
-        return [IsAuthenticated()]
+        """Only show tasks belonging to the current user."""
+        return Task.objects.filter(user_id=self.request.user.id)
     
     async def create(self, request):
-        """Create post with author auto-assignment."""
+        """Create a task for the current user."""
         data = await self.get_request_data(request)
-        data["author_id"] = str(request.user.id)
-        
-        obj = await self.model.objects.create(**data)
-        return self.serialize(obj), 201
+        data["user_id"] = str(request.user.id)
+        self.validate_data(data)
+        task = await Task.objects.create(**data)
+        return self.serialize(task), 201
     
     @action(detail=True, methods=["POST"])
-    async def publish(self, request, id: str):
-        """Publish a draft post."""
-        post = await self.get_object(id)
-        post.is_published = True
-        post.published_at = datetime.now()
-        await post.save()
-        return {"status": "published", "id": str(post.id)}
-    
-    @action(detail=True, methods=["POST"], permission_classes=[IsAdminUser])
-    async def feature(self, request, id: str):
-        """Mark post as featured (admin only)."""
-        post = await self.get_object(id)
-        post.is_featured = True
-        await post.save()
-        return {"status": "featured", "id": str(post.id)}
+    async def complete(self, request, id: str):
+        """Mark a task as complete."""
+        task = await self.get_object(id)
+        task.completed = True
+        task.completed_at = datetime.now()
+        await task.save()
+        return {"status": "completed"}
     
     @action(detail=False, methods=["GET"])
-    async def popular(self, request):
-        """Get most viewed posts."""
-        posts = await self.get_queryset().filter(
-            is_published=True
-        ).order_by("-view_count")[:10]
+    async def stats(self, request):
+        """Get task statistics for the current user."""
+        qs = self.get_queryset()
+        total = await qs.count()
+        completed = await qs.filter(completed=True).count()
         
-        return [self.serialize(p) for p in posts]
+        return {
+            "total": total,
+            "completed": completed,
+            "remaining": total - completed
+        }
 ```
 
 ---
 
 ## Related Documentation
 
-- [Actions](actions.md) — Custom endpoints
-- [Serializers](serializers.md) — Data transformation
+- [Serializers](serializers.md) — Data validation and transformation
+- [Actions](actions.md) — Custom endpoints in detail
 - [Permissions](permissions.md) — Access control
 - [Routing](routing.md) — URL configuration

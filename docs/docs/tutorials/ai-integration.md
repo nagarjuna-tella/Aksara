@@ -1,142 +1,217 @@
 # Tutorial: AI Integration
 
-Add AI-powered features to your Aksara application.
+Add AI-powered features to your Aksara application, letting users query data using natural language.
 
 ---
 
 ## What You'll Build
 
-Enhance your application with AI features:
+By the end of this tutorial, you'll add:
 
-- Natural language database queries
-- AI-generated API endpoints
-- Smart code suggestions
-- Automated testing
+- ✅ Natural language database queries ("Show me all posts from last week")
+- ✅ AI-powered API endpoints
+- ✅ Safe query execution with read-only mode
+- ✅ AI-generated insights
 
 **Time:** ~30 minutes
+
+**Difficulty:** Intermediate
+
+---
+
+## What is AI Mode?
+
+AI Mode lets you interact with your application using natural language instead of code.
+
+**Without AI Mode:**
+```python
+posts = await Post.objects.filter(
+    is_published=True,
+    created_at__gte=last_week
+).order_by("-view_count")[:10]
+```
+
+**With AI Mode:**
+```
+"Show me the top 10 published posts from this week"
+```
+
+Aksara converts natural language to database queries automatically.
 
 ---
 
 ## Prerequisites
 
-- Existing Aksara project (or complete the Blog API tutorial first)
-- OpenAI API key or Anthropic API key
-- Aksara 0.4.0+
+- An existing Aksara project (or complete the [Blog API tutorial](blog-api.md) first)
+- An API key from OpenAI or Anthropic
+- Aksara 0.4.0 or higher
 
 ---
 
-## Setup
-
-### Install AI Dependencies
+## Step 1: Install AI Dependencies
 
 ```bash
 pip install aksara[ai]
 ```
 
-### Configure AI Provider
+This installs the AI module and required dependencies.
+
+---
+
+## Step 2: Configure AI Provider
+
+### Get an API Key
+
+You need an API key from one of these providers:
+
+| Provider | Get Key | Model |
+|----------|---------|-------|
+| OpenAI | [platform.openai.com](https://platform.openai.com) | GPT-4 |
+| Anthropic | [console.anthropic.com](https://console.anthropic.com) | Claude |
+
+### Add to Settings
 
 ```python
 # settings.py
 import os
 
 AKSARA = {
-    # ... existing settings ...
+    # ... your existing settings ...
     
-    # AI Mode
+    # Enable AI features
     "AI_MODE": True,
+    
+    # Choose your provider
     "AI_PROVIDER": "openai",  # or "anthropic"
+    
+    # API key from environment variable
     "AI_API_KEY": os.getenv("OPENAI_API_KEY"),
-    "AI_MODEL": "gpt-4",
+    
+    # Which model to use
+    "AI_MODEL": "gpt-4",  # or "claude-3-opus" for Anthropic
 }
 ```
 
-### Set API Key
+### Set Your API Key
 
 ```bash
+# Add to your .env file
+OPENAI_API_KEY=sk-your-key-here
+
+# Or set in terminal
 export OPENAI_API_KEY=sk-your-key-here
 ```
 
 ---
 
-## Part 1: Natural Language Queries
+## Step 3: Use the CLI for Queries
 
-### CLI Queries
+The simplest way to use AI Mode is through the command line.
 
-Query your data with natural language:
+### Basic Queries
 
 ```bash
-# Basic query
+# Simple query
 aksara ai query "Show all published posts"
 
-# Complex query
-aksara ai query "Posts by John that have more than 5 comments"
+# With conditions
+aksara ai query "Posts by user alice@example.com"
 
-# Aggregations
-aksara ai query "Average number of comments per post"
-
-# Time-based
-aksara ai query "Users who signed up this week"
+# Complex queries
+aksara ai query "Top 5 posts with the most comments this month"
 ```
 
-### Python API
+### What Happens
 
-```python
-# app/reports.py
-from aksara.ai import QueryEngine
-
-async def generate_report():
-    engine = QueryEngine()
-    
-    # Query data naturally
-    active_users = await engine.query(
-        "Active users who logged in within the last 30 days"
-    )
-    
-    top_posts = await engine.query(
-        "Top 10 posts by view count this month"
-    )
-    
-    engagement = await engine.query(
-        "Average comments per post by author"
-    )
-    
-    return {
-        "active_users": active_users.data,
-        "top_posts": top_posts.data,
-        "engagement": engagement.data,
-    }
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Your Query: "Posts by Alice from this week"                │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  AI understands:                                             │
+│  - Model: Post                                               │
+│  - Filter: author.name = "Alice"                            │
+│  - Filter: created_at >= 7 days ago                         │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Generated Query:                                            │
+│  Post.objects.filter(                                        │
+│      author__name="Alice",                                   │
+│      created_at__gte=seven_days_ago                          │
+│  )                                                           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Results: [Post 1, Post 2, Post 3]                          │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Create a Query Endpoint
+---
+
+## Step 4: Add AI Query Endpoint
+
+Let your users query data through the API.
+
+### Create the ViewSet
 
 ```python
-# app/viewsets.py
+# myapp/views.py
 from aksara.api import ViewSet, action
-from aksara.api.permissions import IsAuthenticated
+from aksara.permissions import IsAuthenticated
 from aksara.ai import QueryEngine
 
-class AIViewSet(ViewSet):
+class AIQueryViewSet(ViewSet):
+    """
+    AI-powered query endpoint.
+    
+    Lets users ask questions in natural language.
+    """
     permission_classes = [IsAuthenticated]
     
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["POST"])
     async def query(self, request):
-        """Execute natural language query."""
+        """
+        Execute a natural language query.
+        
+        POST /api/ai/query/
+        Body: {"query": "Show me all posts from this week"}
+        
+        Returns: The query results and the generated SQL
+        """
         query_text = request.data.get("query")
         
         if not query_text:
             return {"error": "Query is required"}, 400
         
-        engine = QueryEngine(read_only=True)  # Safe mode
+        # Create query engine in read-only mode (safe!)
+        engine = QueryEngine(read_only=True)
         
         try:
             result = await engine.query(query_text)
+            
             return {
-                "data": result.data,
-                "count": result.count,
-                "sql": result.sql,  # Show generated SQL
+                "data": result.data,      # The actual results
+                "count": result.count,     # How many results
+                "sql": result.sql,         # The generated SQL (for transparency)
             }
         except Exception as e:
             return {"error": str(e)}, 400
+```
+
+### Register the Route
+
+```python
+# myapp/urls.py
+from aksara.api import Router
+from .views import AIQueryViewSet
+
+router = Router()
+router.register("ai", AIQueryViewSet, basename="ai")
 ```
 
 ### Test It
@@ -148,444 +223,307 @@ curl -X POST http://localhost:8000/api/ai/query/ \
   -d '{"query": "Posts published this week with at least 3 comments"}'
 ```
 
-Response:
+**Response:**
 ```json
 {
   "data": [
-    {"id": "abc-123", "title": "My Post", "comments_count": 5},
-    {"id": "def-456", "title": "Another Post", "comments_count": 3}
+    {"id": "...", "title": "My Post", "comment_count": 5},
+    {"id": "...", "title": "Another Post", "comment_count": 3}
   ],
   "count": 2,
-  "sql": "SELECT * FROM posts WHERE published_at >= '2024-01-08' AND (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id) >= 3"
+  "sql": "SELECT * FROM posts WHERE published_at >= '2024-01-08' AND comment_count >= 3"
 }
 ```
 
 ---
 
-## Part 2: AI-Generated Code
+## Step 5: Use QueryEngine in Python
 
-### Generate Models via CLI
-
-```bash
-aksara ai generate model "Review with rating (1-5), comment text, user FK, product FK"
-```
-
-Output:
-```python
-class Review(Model):
-    """Product review from a user."""
-    
-    rating = fields.IntegerField(validators=[MinValue(1), MaxValue(5)])
-    comment = fields.TextField()
-    user = fields.ForeignKey("User", on_delete="CASCADE", related_name="reviews")
-    product = fields.ForeignKey("Product", on_delete="CASCADE", related_name="reviews")
-    
-    class Meta:
-        table_name = "reviews"
-        unique_together = [("user", "product")]  # One review per user per product
-```
-
-### Generate ViewSets
-
-```bash
-aksara ai generate viewset Review --features pagination,filtering,search
-```
-
-### Generate Tests
-
-```bash
-aksara ai generate test Review --type crud,api
-```
-
-### Programmatic Generation
+### Basic Usage
 
 ```python
-# scripts/scaffold.py
-from aksara.ai import Codegen
-
-async def scaffold_feature(description: str):
-    gen = Codegen()
-    
-    # Generate model
-    model_code = await gen.model(description)
-    print("Model:\n", model_code)
-    
-    # Generate serializer
-    serializer_code = await gen.serializer(description.split()[0])
-    print("\nSerializer:\n", serializer_code)
-    
-    # Generate viewset
-    viewset_code = await gen.viewset(description.split()[0])
-    print("\nViewSet:\n", viewset_code)
-
-# Usage
-await scaffold_feature("Subscription with plan name, price, features JSON, user FK")
-```
-
----
-
-## Part 3: AI-Powered Admin
-
-### Smart Search
-
-Add natural language search to your admin:
-
-```python
-# admin.py
-from aksara.contrib.admin import AdminSite, ModelAdmin
 from aksara.ai import QueryEngine
 
-class SmartAdminSite(AdminSite):
-    async def search(self, query: str):
-        """Natural language search across all models."""
-        engine = QueryEngine()
-        results = {}
-        
-        for model_admin in self.registered_models:
-            model_name = model_admin.model.__name__
-            try:
-                result = await engine.query(
-                    f"{query} in {model_name}",
-                    limit=10
-                )
-                if result.data:
-                    results[model_name] = result.data
-            except:
-                pass
-        
-        return results
-
-admin = SmartAdminSite(title="Smart Admin")
-```
-
-### Auto-Generated Filters
-
-```python
-class PostAdmin(ModelAdmin):
-    model = Post
+async def get_report():
+    engine = QueryEngine()
     
-    async def get_filters(self):
-        """AI-suggested filters based on data patterns."""
-        from aksara.ai import ContextEngine
-        
-        context = await ContextEngine().gather(f"Useful filters for {self.model.__name__}")
-        
-        # Returns suggested filters like:
-        # ["is_published", "author", "created_at__gte", "tags"]
-        return context.suggestions.get("filters", [])
-```
-
----
-
-## Part 4: Smart Debugging
-
-### AI Debug Tab
-
-When errors occur in debug mode, get AI-powered suggestions:
-
-```python
-# Automatically enabled when AI_MODE=True and DEBUG=True
-app = Aksara(debug=True)
-```
-
-On error, the debug page shows:
-
-```
-Error: Post.DoesNotExist
-
-AI Analysis:
-  The query Post.objects.get(id="invalid") returned no results.
-  
-  Possible causes:
-  1. The ID doesn't exist in the database
-  2. The ID format is invalid (not a valid UUID)
-  
-  Suggestions:
-  1. Use get_or_404() for automatic 404 handling
-  2. Use filter().first() with a None check
-  3. Validate the ID format before querying
-```
-
-### Programmatic Debug Help
-
-```python
-from aksara.ai import get_debug_suggestion
-
-try:
-    post = await Post.objects.get(id=post_id)
-except Post.DoesNotExist as e:
-    suggestion = await get_debug_suggestion(e, context={
-        "post_id": post_id,
-        "model": "Post",
-    })
-    logger.info(f"Debug suggestion: {suggestion}")
-    raise
-```
-
----
-
-## Part 5: Schema Analysis
-
-### Run Schema Doctor
-
-```bash
-aksara ai doctor
-```
-
-Output:
-```
-🔍 Analyzing schema...
-
-Issues Found:
-  1. [HIGH] Post.author_id has no index
-     Suggestion: Add db_index=True to ForeignKey
-     
-  2. [MEDIUM] User.email should be unique
-     Suggestion: Add unique=True to EmailField
-     
-  3. [LOW] Comment model has no updated_at field
-     Suggestion: Add updated_at = fields.DateTimeField(auto_now=True)
-
-Run `aksara ai doctor --fix` to auto-fix issues.
-```
-
-### Auto-Fix Issues
-
-```bash
-aksara ai doctor --fix --interactive
-```
-
-### Programmatic Analysis
-
-```python
-from aksara.ai import SchemaDoctor
-
-async def check_schema():
-    doctor = SchemaDoctor()
-    report = await doctor.analyze()
+    # Query data naturally
+    result = await engine.query("Active users who logged in this week")
     
-    critical = [i for i in report.issues if i.severity == "critical"]
-    if critical:
-        raise Exception(f"Critical schema issues: {critical}")
-    
-    return report
+    return result.data
 ```
 
----
-
-## Part 6: AI-Powered Tests
-
-### Generate Test Cases
+### Multiple Queries
 
 ```python
-from aksara.ai import Codegen
-
-async def generate_tests_for_model(model_name: str):
-    gen = Codegen()
+async def generate_dashboard():
+    engine = QueryEngine()
     
-    # Generate comprehensive tests
-    tests = await gen.test(
-        model=model_name,
-        test_types=["crud", "validation", "edge_cases", "permissions"]
+    # Run multiple queries
+    active_users = await engine.query(
+        "Users who logged in within the last 30 days"
     )
     
-    return tests
+    top_posts = await engine.query(
+        "Top 10 posts by view count this month"
+    )
+    
+    engagement = await engine.query(
+        "Average comments per post by author"
+    )
+    
+    return {
+        "active_users": len(active_users.data),
+        "top_posts": top_posts.data,
+        "engagement": engagement.data,
+    }
 ```
 
-### AI Test Suggestions
+### With Context
+
+Provide additional context for better results:
 
 ```python
-# In your test file
-from aksara.ai import suggest_tests
-
-class TestPost(AksaraTestCase):
-    async def test_create_post(self):
-        ...
-    
-    # Get AI suggestions for missing tests
-    @classmethod
-    async def suggest_missing_tests(cls):
-        suggestions = await suggest_tests(
-            model="Post",
-            existing_tests=["test_create_post"]
-        )
-        print("Suggested tests:", suggestions)
-        # ["test_update_post", "test_delete_post", "test_publish_unpublished_post", ...]
+result = await engine.query(
+    "Posts by this user",
+    context={
+        "user_id": request.user.id,
+        "tenant_id": request.tenant.id,
+    }
+)
 ```
 
 ---
 
-## Part 7: Building a Chatbot Interface
+## Step 6: AI Safety Features
 
-### Create Chat Endpoint
+### Read-Only Mode
 
-```python
-# app/chat.py
-from aksara.api import ViewSet, action
-from aksara.ai import AgentRuntime
-
-class ChatViewSet(ViewSet):
-    @action(detail=False, methods=["post"])
-    async def message(self, request):
-        """Process a chat message."""
-        message = request.data.get("message")
-        session_id = request.data.get("session_id")
-        
-        runtime = AgentRuntime(
-            tools=["query_records", "list_models", "describe_model"],
-            read_only=True,
-        )
-        
-        result = await runtime.execute(
-            message,
-            session_id=session_id,
-        )
-        
-        return {
-            "response": result.output,
-            "session_id": result.session_id,
-        }
-```
-
-### Frontend Integration
-
-```javascript
-// chat.js
-async function sendMessage(message) {
-    const response = await fetch('/api/chat/message/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-            message,
-            session_id: currentSessionId,
-        }),
-    });
-    
-    const data = await response.json();
-    displayMessage(data.response);
-}
-
-// Example conversation:
-// User: "How many users signed up this week?"
-// AI: "There were 23 new users who signed up this week. Would you like to see the details?"
-// User: "Yes, show me the top 5 by activity"
-// AI: "Here are the top 5 most active new users: ..."
-```
-
----
-
-## Safety Considerations
-
-### Read-Only Queries
-
-Always use read-only mode for user-facing queries:
+Prevent AI from modifying data:
 
 ```python
+# Safe mode - can only read, not write
 engine = QueryEngine(read_only=True)
+
+# This will fail:
+await engine.query("Delete all posts")  # Error!
 ```
 
 ### Audit Logging
 
-Enable audit logging for all AI operations:
+Track all AI queries:
+
+```python
+# settings.py
+AKSARA = {
+    # ... other settings ...
+    
+    "AI_SAFETY": {
+        "read_only_mode": True,      # Only allow reads
+        "audit_log": True,           # Log all queries
+        "max_results": 1000,         # Limit result size
+        "timeout_seconds": 30,       # Query timeout
+    }
+}
+```
+
+### Model Restrictions
+
+Limit which models AI can access:
+
+```python
+engine = QueryEngine(
+    allowed_models=["Post", "Comment"],  # Only these models
+    denied_models=["User", "Payment"],   # Never these models
+)
+```
+
+---
+
+## Step 7: AI-Powered Insights
+
+Generate automatic insights from your data.
+
+### Create Insights Endpoint
+
+```python
+# myapp/views.py
+from aksara.ai import QueryEngine, InsightGenerator
+
+class InsightsViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=["GET"])
+    async def dashboard(self, request):
+        """
+        Generate AI-powered dashboard insights.
+        
+        GET /api/insights/dashboard/
+        """
+        engine = QueryEngine(read_only=True)
+        
+        # Gather data
+        total_users = await engine.query("Count of all users")
+        active_users = await engine.query("Count of users active this week")
+        total_posts = await engine.query("Count of published posts")
+        top_authors = await engine.query("Top 5 authors by post count")
+        
+        # Generate insights
+        insights = InsightGenerator()
+        summary = await insights.generate(
+            data={
+                "total_users": total_users.data,
+                "active_users": active_users.data,
+                "total_posts": total_posts.data,
+                "top_authors": top_authors.data,
+            },
+            prompt="Generate a brief summary of the blog's performance"
+        )
+        
+        return {
+            "metrics": {
+                "total_users": total_users.data,
+                "active_users": active_users.data,
+                "total_posts": total_posts.data,
+            },
+            "top_authors": top_authors.data,
+            "ai_summary": summary,
+        }
+```
+
+---
+
+## Step 8: Export App Context for AI
+
+Make your entire app understandable to external AI systems.
+
+```python
+from aksara.ai import build_full_ai_context
+
+# Export structured context
+context = await build_full_ai_context(app)
+
+# This includes:
+# - All models and their fields
+# - All API endpoints
+# - Field descriptions and types
+# - Relationships between models
+```
+
+This is useful for:
+
+- Connecting to external AI agents
+- Generating documentation
+- Building AI assistants that understand your app
+
+---
+
+## Query Examples
+
+Here are example queries that work with the Blog API:
+
+| Natural Language | What It Does |
+|-----------------|--------------|
+| "All posts" | List all posts |
+| "Published posts" | Posts where is_published=True |
+| "Posts by Alice" | Posts where author.name="Alice" |
+| "Posts from this week" | Posts created in last 7 days |
+| "Top 10 posts by views" | Order by view_count DESC, limit 10 |
+| "Posts with no comments" | Posts where comment_count=0 |
+| "Authors with most posts" | Group by author, count posts |
+| "Average views per post" | Aggregate average of view_count |
+
+---
+
+## Troubleshooting
+
+### "API key not found"
+
+**Problem:** AI features won't work without an API key.
+
+**Solution:** Set the environment variable:
+```bash
+export OPENAI_API_KEY=sk-your-key-here
+```
+
+### "Query too complex"
+
+**Problem:** AI can't understand the query.
+
+**Solution:** Simplify the query or break it into parts:
+```bash
+# Instead of:
+"Posts by verified authors in tech category with 5+ comments from last month"
+
+# Try:
+"Posts in tech category from last month"
+```
+
+### "Model not found"
+
+**Problem:** AI doesn't know about a model.
+
+**Solution:** Make sure the model is registered and has `ai_description`:
+```python
+class Post(Model):
+    """A blog post."""  # This docstring helps AI understand
+    
+    title = fields.String(
+        max_length=200,
+        ai_description="The title of the blog post"  # Field description
+    )
+```
+
+---
+
+## Best Practices
+
+### 1. Always Use Read-Only Mode in Production
+
+```python
+engine = QueryEngine(read_only=True)  # Safe!
+```
+
+### 2. Add Descriptions to Models
+
+```python
+class Post(Model):
+    """
+    A blog post that can be published.
+    
+    Posts belong to an author and can have multiple tags.
+    """
+    title = fields.String(
+        max_length=200,
+        ai_description="The post's headline"
+    )
+```
+
+### 3. Limit Result Sizes
+
+```python
+engine = QueryEngine(max_results=100)
+```
+
+### 4. Log All AI Queries
+
+For debugging and audit trails:
 
 ```python
 AKSARA = {
     "AI_SAFETY": {
         "audit_log": True,
-        "audit_log_file": "logs/ai_audit.log",
-    },
+    }
 }
-```
-
-### Rate Limiting
-
-Limit AI API usage:
-
-```python
-AKSARA = {
-    "AI_SAFETY": {
-        "rate_limit_requests": 100,
-        "rate_limit_window": 3600,  # per hour
-    },
-}
-```
-
----
-
-## Complete Example
-
-Here's a complete AI-enhanced ViewSet:
-
-```python
-# app/ai_viewsets.py
-from aksara.api import ViewSet, action
-from aksara.api.permissions import IsAuthenticated
-from aksara.ai import QueryEngine, Codegen, SchemaDoctor
-
-class AIAssistantViewSet(ViewSet):
-    """AI-powered assistant endpoints."""
-    
-    permission_classes = [IsAuthenticated]
-    
-    @action(detail=False, methods=["post"])
-    async def query(self, request):
-        """Natural language data query."""
-        engine = QueryEngine(read_only=True)
-        result = await engine.query(request.data.get("query"))
-        return {
-            "data": result.data,
-            "sql": result.sql,
-            "count": result.count,
-        }
-    
-    @action(detail=False, methods=["post"])
-    async def generate(self, request):
-        """Generate code from description."""
-        gen = Codegen()
-        code_type = request.data.get("type", "model")
-        description = request.data.get("description")
-        
-        if code_type == "model":
-            code = await gen.model(description)
-        elif code_type == "viewset":
-            code = await gen.viewset(description)
-        elif code_type == "test":
-            code = await gen.test(description)
-        else:
-            return {"error": "Unknown type"}, 400
-        
-        return {"code": code}
-    
-    @action(detail=False, methods=["get"])
-    async def schema_check(self, request):
-        """Check schema for issues."""
-        doctor = SchemaDoctor()
-        report = await doctor.analyze()
-        
-        return {
-            "issues": [
-                {
-                    "severity": i.severity,
-                    "message": i.message,
-                    "suggestion": i.fix_hint,
-                }
-                for i in report.issues
-            ],
-            "summary": report.summary,
-        }
 ```
 
 ---
 
 ## Next Steps
 
-1. **Custom AI tools** — Create domain-specific tools
-2. **Fine-tuned models** — Use custom models for better results
-3. **Caching** — Cache common AI responses
-4. **Webhooks** — Trigger AI actions on events
+- Explore the [AI Mode documentation](../ai-mode/index.md) for advanced features
+- Learn about [AI schema descriptions](../ai-mode/schema.md)
+- Set up [AI safety guardrails](../ai-mode/safety.md)
 
 ---
 
@@ -593,5 +531,5 @@ class AIAssistantViewSet(ViewSet):
 
 - [AI Mode Overview](../ai-mode/index.md)
 - [Query Engine](../ai-mode/query-engine.md)
-- [Codegen](../ai-mode/codegen.md)
-- [Safety](../ai-mode/safety.md)
+- [AI Safety](../ai-mode/safety.md)
+- [Models](../orm/models.md) — Adding AI descriptions to models

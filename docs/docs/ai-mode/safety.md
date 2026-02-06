@@ -118,9 +118,9 @@ Would modify: models.py
 +++ models.py (modified)
 @@ -10,6 +10,7 @@
  class User(Model):
-     email = fields.EmailField(unique=True)
-+    phone = fields.StringField(max_length=20, null=True)
-     name = fields.StringField(max_length=100)
+     email = fields.Email(unique=True)
++    phone = fields.String(max_length=20, null=True)
+     name = fields.String(max_length=100)
 ```
 
 ### Programmatic Dry Run

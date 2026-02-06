@@ -156,11 +156,11 @@ Get detailed model information.
     "name": "User",
     "table": "users",
     "fields": [
-        {"name": "id", "type": "UUIDField", "primary_key": True},
-        {"name": "email", "type": "EmailField", "unique": True},
-        {"name": "name", "type": "StringField", "max_length": 100},
-        {"name": "is_active", "type": "BooleanField", "default": True},
-        {"name": "created_at", "type": "DateTimeField", "auto_now_add": True}
+        {"name": "id", "type": "UUID", "primary_key": True},
+        {"name": "email", "type": "Email", "unique": True},
+        {"name": "name", "type": "String", "max_length": 100},
+        {"name": "is_active", "type": "Boolean", "default": True},
+        {"name": "created_at", "type": "DateTime", "auto_now_add": True}
     ],
     "relations": [
         {"name": "posts", "type": "reverse_fk", "related_model": "Post"}
@@ -189,7 +189,7 @@ Suggest a migration for a schema change.
 {
     "migration_code": "...",
     "operations": [
-        "AddField(User, phone_number, StringField(max_length=20, null=True))"
+        "AddField(User, phone_number, fields.String(max_length=20, null=True))"
     ],
     "preview": "ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);"
 }
@@ -222,10 +222,10 @@ from aksara import Model, fields
 class BlogPost(Model):
     """A blog post."""
     
-    title = fields.StringField(max_length=200)
-    content = fields.TextField()
-    author = fields.ForeignKey("User", on_delete="CASCADE")
-    tags = fields.ManyToManyField("Tag")
+    title = fields.String(max_length=200)
+    content = fields.Text()
+    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
+    tags = fields.ManyToMany("Tag")
     
     class Meta:
         table_name = "blog_posts"

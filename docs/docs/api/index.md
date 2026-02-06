@@ -1,222 +1,342 @@
 # API Layer
 
-Build REST APIs rapidly with Aksara's ModelViewSet and action system.
+Build REST APIs that let other applications (websites, mobile apps, AI agents) interact with your data.
 
 ---
 
-## Overview
+## What is an API?
 
-Aksara's API layer provides Django REST Framework-like patterns optimized for FastAPI:
+An **API** (Application Programming Interface) is how different programs talk to each other. When a mobile app shows you your tasks, it's calling an API to get that data.
 
-- **ModelViewSet** — Full CRUD with minimal code
-- **Actions** — Custom endpoints beyond CRUD
-- **Serializers** — Automatic validation and transformation
-- **Permissions** — Flexible access control
-- **Routing** — Auto-registration and discovery
+```
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   Mobile App    │  ────►  │    Your API     │  ────►  │    Database     │
+│                 │         │   (Aksara)      │         │                 │
+│  "Show my       │  ◄────  │                 │  ◄────  │   [Tasks...]    │
+│   tasks"        │         │                 │         │                 │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+     Request                   Process                      Fetch
+```
+
+**A REST API uses HTTP requests:**
+
+| HTTP Method | What It Does | Example |
+|-------------|--------------|---------|
+| `GET` | Read data | Get all tasks |
+| `POST` | Create data | Create a new task |
+| `PUT` | Replace data | Update a whole task |
+| `PATCH` | Modify data | Update part of a task |
+| `DELETE` | Remove data | Delete a task |
+
+---
+
+## What Aksara Gives You
+
+Aksara creates a complete REST API automatically. You define your data (Models), and Aksara creates the endpoints.
+
+```python
+from aksara.api import ModelViewSet
+from myapp.models import Task
+
+class TaskViewSet(ModelViewSet):
+    model = Task
+```
+
+**That's 4 lines. You get 6 endpoints:**
+
+| Method | URL | What It Does |
+|--------|-----|--------------|
+| `GET` | `/tasks/` | List all tasks |
+| `POST` | `/tasks/` | Create a task |
+| `GET` | `/tasks/{id}/` | Get one task |
+| `PUT` | `/tasks/{id}/` | Update a task |
+| `PATCH` | `/tasks/{id}/` | Partial update |
+| `DELETE` | `/tasks/{id}/` | Delete a task |
+
+---
+
+## Key Concepts
+
+### ViewSets
+
+**What they are:** Classes that handle API requests for a model.
+
+**What they do:** When someone calls `GET /tasks/`, the ViewSet decides what to return.
+
+```python
+class TaskViewSet(ModelViewSet):
+    model = Task  # Which model to expose
+    
+    # Optional: customize which fields are returned
+    serializer_class = TaskSerializer
+    
+    # Optional: who can access this?
+    permission_classes = [IsAuthenticated]
+```
+
+👉 **Learn more:** [ViewSets](viewsets.md)
+
+---
+
+### Serializers
+
+**What they are:** Classes that convert between Python objects and JSON.
+
+**What they do:** 
+
+- When receiving data: Validate it and convert JSON to Python
+- When sending data: Convert Python to JSON
+
+```python
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "completed"]
+        read_only_fields = ["id"]  # Can't be set by user
+```
+
+**The serializer automatically:**
+
+- Validates required fields are present
+- Checks data types (string, number, boolean)
+- Rejects extra fields
+- Formats the response
+
+👉 **Learn more:** [Serializers](serializers.md)
+
+---
+
+### Permissions
+
+**What they are:** Rules about who can do what.
+
+**What they do:** Check each request and allow or deny access.
+
+```python
+from aksara.permissions import IsAuthenticated, IsAdminUser
+
+class TaskViewSet(ModelViewSet):
+    model = Task
+    
+    # Only logged-in users can access
+    permission_classes = [IsAuthenticated]
+```
+
+**Common permission classes:**
+
+| Permission | Who Can Access |
+|------------|----------------|
+| `AllowAny` | Everyone (even anonymous) |
+| `IsAuthenticated` | Only logged-in users |
+| `IsAdminUser` | Only admin users |
+| `IsOwner` | Only the object's owner |
+
+👉 **Learn more:** [Permissions](permissions.md)
+
+---
+
+### Actions
+
+**What they are:** Custom endpoints beyond basic CRUD.
+
+**When to use:** When you need operations that aren't create/read/update/delete.
 
 ```python
 from aksara.api import ModelViewSet, action
 
-class PostViewSet(ModelViewSet):
-    model = Post
+class TaskViewSet(ModelViewSet):
+    model = Task
     
     @action(detail=True, methods=["POST"])
-    async def publish(self, request, id: str):
-        post = await self.get_object(id)
-        post.is_published = True
-        await post.save()
-        return {"status": "published"}
+    async def complete(self, request, id: str):
+        """
+        Mark a task as complete.
+        
+        URL: POST /tasks/{id}/complete/
+        """
+        task = await self.get_object(id)
+        task.completed = True
+        await task.save()
+        return {"status": "completed"}
 ```
+
+**Action options:**
+
+| Option | Meaning |
+|--------|---------|
+| `detail=True` | Operates on one item (`/tasks/{id}/complete/`) |
+| `detail=False` | Operates on the collection (`/tasks/complete_all/`) |
+| `methods=["POST"]` | Which HTTP methods to accept |
+
+👉 **Learn more:** [Actions](actions.md)
 
 ---
 
-## Quick Start
+### Routers
 
-### 1. Define a ViewSet
+**What they are:** Tools that connect URLs to ViewSets.
 
-```python
-# myapp/viewsets.py
-from aksara.api import ModelViewSet
-from myapp.models import Post
-
-class PostViewSet(ModelViewSet):
-    model = Post
-```
-
-This automatically creates:
-
-| Method | Path | Action |
-|--------|------|--------|
-| GET | `/posts/` | List all posts |
-| POST | `/posts/` | Create a post |
-| GET | `/posts/{id}/` | Retrieve a post |
-| PUT | `/posts/{id}/` | Update a post |
-| PATCH | `/posts/{id}/` | Partial update |
-| DELETE | `/posts/{id}/` | Delete a post |
-
-### 2. Register Routes
+**What they do:** Automatically create all the URL patterns.
 
 ```python
-# myapp/routes.py
-from aksara.api import include_viewset
-from myapp.viewsets import PostViewSet
+from aksara.api import Router
+from myapp.views import TaskViewSet, ProjectViewSet
 
-routes = include_viewset(PostViewSet, prefix="/posts")
+router = Router()
+router.register("tasks", TaskViewSet)      # → /api/tasks/
+router.register("projects", ProjectViewSet)  # → /api/projects/
 ```
 
-### 3. Include in App
-
-```python
-# main.py
-from aksara import Aksara
-from myapp.routes import routes
-
-app = Aksara()
-app.include_router(routes)
-```
+👉 **Learn more:** [Routing](routing.md)
 
 ---
 
-## Key Features
+## Quick Example
 
-### Type Safety
-
-Automatic request/response validation:
-
-```python
-# POST /posts/ with invalid data
-# Request: {"title": "Hi"} (content missing)
-# Response: 422 Validation Error
-```
-
-### OpenAPI Docs
-
-Auto-generated Swagger documentation at `/docs`:
-
-```python
-# ViewSet docstrings become API descriptions
-class PostViewSet(ModelViewSet):
-    """
-    API for managing blog posts.
-    
-    Supports creating, reading, updating, and deleting posts.
-    """
-    model = Post
-```
-
-### Query Parameters
-
-Built-in filtering and pagination:
-
-```python
-GET /posts/?is_published=true&author_id=abc&page=1&limit=20
-```
-
----
-
-## Section Contents
-
-<div class="grid cards" markdown>
-
--   :material-view-dashboard: **[ViewSets](viewsets.md)**
-    
-    ModelViewSet configuration and customization
-
--   :material-gesture-tap: **[Actions](actions.md)**
-    
-    Custom endpoints with the @action decorator
-
--   :material-code-json: **[Serializers](serializers.md)**
-    
-    Data validation and transformation
-
--   :material-routes: **[Routing](routing.md)**
-    
-    URL configuration and auto-discovery
-
--   :material-shield-lock: **[Permissions](permissions.md)**
-    
-    Access control for endpoints
-
--   :material-key: **[Authentication](authentication.md)**
-    
-    User authentication methods
-
--   :material-speedometer: **[Throttling](throttling.md)**
-    
-    Rate limiting (future)
-
-</div>
-
----
-
-## Example: Complete API
+Here's a complete API for a Task model:
 
 ```python
 # models.py
-from aksara import Model, fields, CASCADE
+from aksara import Model, fields
 
-class Author(Model):
-    name = fields.String(max_length=100)
-    email = fields.Email(unique=True)
-
-class Post(Model):
+class Task(Model):
     title = fields.String(max_length=200)
-    content = fields.Text()
-    is_published = fields.Boolean(default=False)
-    author = fields.ForeignKey(Author, on_delete=CASCADE)
+    description = fields.Text(nullable=True)
+    completed = fields.Boolean(default=False)
     created_at = fields.DateTime(auto_now_add=True)
+```
 
-# viewsets.py
+```python
+# serializers.py
+from aksara.api import ModelSerializer
+from myapp.models import Task
+
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "completed", "created_at"]
+        read_only_fields = ["id", "created_at"]
+```
+
+```python
+# views.py
 from aksara.api import ModelViewSet, action
-from aksara.permissions import IsAuthenticated, IsAdminUser
+from aksara.permissions import IsAuthenticated
+from myapp.models import Task
+from myapp.serializers import TaskSerializer
 
-class AuthorViewSet(ModelViewSet):
-    model = Author
+class TaskViewSet(ModelViewSet):
+    model = Task
+    serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
-
-class PostViewSet(ModelViewSet):
-    model = Post
     
-    def get_queryset(self):
-        qs = super().get_queryset()
-        if not self.request.user.is_staff:
-            # Non-staff only see published posts
-            qs = qs.filter(is_published=True)
-        return qs
+    # Filter options
+    filterset_fields = ["completed"]
+    search_fields = ["title", "description"]
+    ordering = ["-created_at"]
     
     @action(detail=True, methods=["POST"])
-    async def publish(self, request, id: str):
-        """Publish a draft post."""
-        post = await self.get_object(id)
-        post.is_published = True
-        await post.save()
-        return {"id": str(post.id), "is_published": True}
-    
-    @action(detail=False, methods=["GET"])
-    async def featured(self, request):
-        """Get featured posts."""
-        posts = await self.get_queryset().filter(is_featured=True)[:5]
-        return [self.serialize(p) for p in posts]
+    async def toggle(self, request, id: str):
+        """Toggle task completion status."""
+        task = await self.get_object(id)
+        task.completed = not task.completed
+        await task.save()
+        return {"completed": task.completed}
+```
 
-# routes.py
-from aksara.api import include_viewset
+```python
+# urls.py
+from aksara.api import Router
+from myapp.views import TaskViewSet
 
-author_routes = include_viewset(AuthorViewSet, prefix="/authors")
-post_routes = include_viewset(PostViewSet, prefix="/posts")
+router = Router()
+router.register("tasks", TaskViewSet)
+```
 
-# main.py
-from aksara import Aksara
+**This creates:**
 
-app = Aksara()
-app.include_router(author_routes)
-app.include_router(post_routes)
+| Endpoint | What It Does |
+|----------|--------------|
+| `GET /api/tasks/` | List all tasks |
+| `GET /api/tasks/?completed=true` | List completed tasks |
+| `GET /api/tasks/?search=groceries` | Search tasks |
+| `POST /api/tasks/` | Create a task |
+| `GET /api/tasks/{id}/` | Get one task |
+| `PUT /api/tasks/{id}/` | Update a task |
+| `DELETE /api/tasks/{id}/` | Delete a task |
+| `POST /api/tasks/{id}/toggle/` | Toggle completion |
+
+---
+
+## Testing Your API
+
+### Interactive Documentation
+
+Aksara automatically generates interactive docs at `/docs`:
+
+```
+http://localhost:8000/docs
+```
+
+You can try out every endpoint directly in the browser!
+
+### Using curl
+
+```bash
+# List tasks
+curl http://localhost:8000/api/tasks/
+
+# Create a task
+curl -X POST http://localhost:8000/api/tasks/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Buy milk"}'
+
+# Get one task
+curl http://localhost:8000/api/tasks/abc123/
+
+# Update a task
+curl -X PUT http://localhost:8000/api/tasks/abc123/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Buy milk", "completed": true}'
+
+# Delete a task
+curl -X DELETE http://localhost:8000/api/tasks/abc123/
+```
+
+### Using Python
+
+```python
+import httpx
+
+# Create a client
+client = httpx.Client(base_url="http://localhost:8000")
+
+# List tasks
+tasks = client.get("/api/tasks/").json()
+
+# Create a task
+new_task = client.post(
+    "/api/tasks/",
+    json={"title": "Learn Aksara"}
+).json()
+
+# Update a task
+client.put(
+    f"/api/tasks/{new_task['id']}/",
+    json={"title": "Learn Aksara", "completed": True}
+)
 ```
 
 ---
 
-## Related Documentation
+## What's Next?
 
-- [ORM](../orm/index.md) — Model definitions
-- [Permissions](permissions.md) — Access control
-- [Authentication](authentication.md) — User auth
+| Guide | What You'll Learn |
+|-------|-------------------|
+| [ViewSets](viewsets.md) | All ViewSet options and customization |
+| [Serializers](serializers.md) | Data validation and transformation |
+| [Actions](actions.md) | Custom endpoints beyond CRUD |
+| [Permissions](permissions.md) | Access control and security |
+| [Authentication](authentication.md) | User login and tokens |
+| [Routing](routing.md) | URL configuration |
+| [Throttling](throttling.md) | Rate limiting requests |

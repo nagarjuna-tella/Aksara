@@ -1,202 +1,238 @@
 # Aksara Framework
 
-## The AI-Native Async Backend Framework for Python
+## Build Web APIs in Python — Fast, Simple, AI-Ready
 
 <div class="hero-section" markdown>
 
-**Aksara** is a modern, async-first backend framework built on FastAPI and PostgreSQL. It combines the developer experience of Django with the performance of async Python — and adds first-class AI integration that makes your application intelligible to LLMs.
+**Aksara** is a Python framework for building web APIs that connect to databases. If you want to create a backend for a mobile app, website, or any application that stores data, Aksara helps you do it quickly.
 
-[Get Started](quickstart.md){ .md-button .md-button--primary }
+[Get Started →](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/aksara-orm/aksara){ .md-button }
 
 </div>
 
 ---
 
-## Why Aksara?
+## What is Aksara?
 
-### ⚡ Async-Native from Day One
+**Aksara is a backend framework.** It helps you:
 
-Aksara is built entirely on async Python. Every database query, every API endpoint, every middleware — all async. No thread pools, no blocking calls, just pure `asyncio` performance.
+| What You Need | How Aksara Helps |
+|---------------|------------------|
+| Store data | Define **Models** that create database tables |
+| Retrieve data | Use **QuerySets** to search without writing SQL |
+| Build an API | Create **ViewSets** that auto-generate REST endpoints |
+| Secure access | Set up **Permissions** to control who can do what |
+| Manage data | Use the **Admin** dashboard to view and edit data |
+| Work with AI | Use **AI Mode** so AI agents can interact with your data |
+
+---
+
+## Who is Aksara For?
+
+**Aksara is for Python developers who:**
+
+- ✅ Want to build APIs without writing repetitive code
+- ✅ Need a database but don't want to write raw SQL
+- ✅ Want modern async Python (not slow threads)
+- ✅ Like Django's patterns but want FastAPI's speed
+- ✅ Want their app to work with AI agents
+
+**You don't need:**
+
+- ❌ Previous Django experience
+- ❌ Deep database knowledge
+- ❌ To understand async internals
+
+---
+
+## How Does It Work?
+
+```
+You write this:                    You get this:
+
+┌──────────────────────┐           ┌──────────────────────┐
+│ class Task(Model):   │           │ Database table       │
+│   title = String()   │    ──►    │ with columns         │
+│   completed = Bool() │           │                      │
+└──────────────────────┘           └──────────────────────┘
+
+┌──────────────────────┐           ┌──────────────────────┐
+│ class TaskViewSet(   │           │ REST API endpoints:  │
+│   ModelViewSet):     │    ──►    │ GET  /tasks/         │
+│   model = Task       │           │ POST /tasks/         │
+└──────────────────────┘           │ GET  /tasks/{id}/    │
+                                   │ PUT  /tasks/{id}/    │
+                                   │ DELETE /tasks/{id}/  │
+                                   └──────────────────────┘
+```
+
+**In ~10 lines of code, you get:**
+
+- A database table
+- A complete REST API
+- Input validation
+- Interactive documentation
+- Admin interface
+
+---
+
+## Quick Example
+
+Here's a complete working API:
 
 ```python
-from aksara import Model, fields
+# main.py
+from aksara import Aksara, Model, fields
+from aksara.api import ModelViewSet
 
+# 1. Define your data structure
+class Task(Model):
+    """A task in a todo list."""
+    title = fields.String(max_length=200)
+    completed = fields.Boolean(default=False)
+    created_at = fields.DateTime(auto_now_add=True)
+
+# 2. Create the API
+class TaskViewSet(ModelViewSet):
+    model = Task
+
+# 3. Start the app
+app = Aksara(database_url="postgresql://localhost/myapp")
+app.include_viewset(TaskViewSet, prefix="/tasks")
+```
+
+**Run it:**
+
+```bash
+aksara migrate    # Create the database table
+aksara run        # Start the server
+```
+
+**Test it:**
+
+```bash
+# Create a task
+curl -X POST http://localhost:8000/tasks/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Learn Aksara"}'
+
+# List all tasks
+curl http://localhost:8000/tasks/
+```
+
+---
+
+## Key Features
+
+### 🗄️ Database Without SQL
+
+Define your data as Python classes. Aksara handles the SQL.
+
+```python
 class Article(Model):
     title = fields.String(max_length=200)
     content = fields.Text()
     published = fields.Boolean(default=False)
     created_at = fields.DateTime(auto_now_add=True)
 
-# Fully async queries
+# Query without SQL
 articles = await Article.objects.filter(published=True).order_by("-created_at")
 ```
 
-### 🧠 AI-Native Architecture
+**What this means:** You work with Python objects, not database queries.
 
-Aksara is the first backend framework designed for AI agents. Every model, every endpoint, every action is automatically exposed as structured AI tools with full type information.
+👉 [Learn about Models](orm/models.md)
+
+---
+
+### ⚡ Fast Async Performance
+
+Every database call is non-blocking. Your app can handle many requests at once.
+
+```python
+# All database calls use await
+article = await Article.objects.get(id=article_id)
+articles = await Article.objects.filter(published=True)
+```
+
+**What this means:** Your server doesn't freeze while waiting for the database.
+
+---
+
+### 🔌 Automatic API Creation
+
+One class creates a complete REST API with all standard operations.
+
+```python
+class ArticleViewSet(ModelViewSet):
+    model = Article
+    permission_classes = [IsAuthenticated]
+```
+
+**What you get automatically:**
+
+| Method | URL | What It Does |
+|--------|-----|--------------|
+| GET | `/articles/` | List all articles |
+| POST | `/articles/` | Create an article |
+| GET | `/articles/{id}/` | Get one article |
+| PUT | `/articles/{id}/` | Update an article |
+| DELETE | `/articles/{id}/` | Delete an article |
+
+👉 [Learn about ViewSets](api/viewsets.md)
+
+---
+
+### 🔒 Built-in Security
+
+Control who can access what with simple permission classes.
+
+```python
+from aksara.permissions import IsAuthenticated, IsAdminUser
+
+class ArticleViewSet(ModelViewSet):
+    model = Article
+    permission_classes = [IsAuthenticated]  # Must be logged in
+```
+
+**What this means:** Unauthorized requests are automatically rejected.
+
+👉 [Learn about Permissions](api/permissions.md)
+
+---
+
+### 🤖 AI Agent Integration
+
+Make your application accessible to AI assistants like ChatGPT.
 
 ```python
 from aksara.ai import build_full_ai_context
 
-# Export your entire app as structured JSON for LLMs
+# Export your entire app as structured data for AI
 context = await build_full_ai_context(app)
-
-# Or let AI agents query your data directly
-from aksara.ai import execute_ai_query_plan
-result = await execute_ai_query_plan(query_plan)
 ```
 
-### 🎯 Django-like Developer Experience
+**What this means:** AI agents can understand and interact with your data.
 
-If you've used Django, you'll feel right at home. Models, migrations, admin, viewsets — all the patterns you love, reimagined for async.
-
-```python
-from aksara.api import ModelViewSet, action
-from aksara.permissions import IsAuthenticated
-
-class ArticleViewSet(ModelViewSet):
-    model = Article
-    prefix = "/articles"
-    permission_classes = [IsAuthenticated]
-    
-    @action(detail=True, methods=["post"])
-    async def publish(self, pk: UUID, request: Request):
-        article = await self.get_object(pk)
-        article.published = True
-        await article.save()
-        return {"status": "published"}
-```
-
-### 🔒 Production-Ready
-
-Built-in authentication, permissions, middleware, request tracing, multi-tenancy support, and beautiful debug pages. Everything you need to ship to production.
+👉 [Learn about AI Mode](ai-mode/index.md)
 
 ---
 
-## Feature Highlights
+### 🛠️ Admin Dashboard
 
-<div class="grid cards" markdown>
-
--   :material-database:{ .lg .middle } **Async ORM**
-
-    ---
-
-    PostgreSQL-native ORM with relations, migrations, and Django-style QuerySet API — all fully async.
-
-    [:octicons-arrow-right-24: Learn about Models](orm/models.md)
-
--   :material-api:{ .lg .middle } **REST API Layer**
-
-    ---
-
-    Auto-generated CRUD endpoints, custom actions, serializers, and permissions — built on FastAPI.
-
-    [:octicons-arrow-right-24: Explore ViewSets](api/viewsets.md)
-
--   :material-robot:{ .lg .middle } **AI Mode**
-
-    ---
-
-    First-class AI integration: tools, context engine, query engine, patch engine, and agent runtime.
-
-    [:octicons-arrow-right-24: Discover AI Mode](ai/overview.md)
-
--   :material-cog:{ .lg .middle } **Admin Interface**
-
-    ---
-
-    Django-style admin for managing your data with customizable list views and permissions.
-
-    [:octicons-arrow-right-24: Configure Admin](admin/admin-site.md)
-
--   :material-bug:{ .lg .middle } **Debug Tools**
-
-    ---
-
-    Beautiful dark-mode error pages with AI-powered debugging suggestions.
-
-    [:octicons-arrow-right-24: Debug Your App](debugging/error-pages.md)
-
--   :material-console:{ .lg .middle } **CLI Tools**
-
-    ---
-
-    Project scaffolding, migrations, development tools, and AI commands.
-
-    [:octicons-arrow-right-24: CLI Reference](cli/overview.md)
-
-</div>
-
----
-
-## Quick Example
-
-Create a complete blog API in under 50 lines:
+A built-in interface to view and manage your data.
 
 ```python
-# main.py
-from aksara import Aksara, Model, fields
-from aksara.api import ModelViewSet, include_viewset
-from aksara.permissions import IsAuthenticated
-
-# Define your models
-class Author(Model):
-    name = fields.String(max_length=100)
-    email = fields.Email(unique=True)
-
-class Post(Model):
-    title = fields.String(max_length=200)
-    content = fields.Text()
-    author = fields.ForeignKey(Author, on_delete=fields.CASCADE)
-    published = fields.Boolean(default=False)
-    created_at = fields.DateTime(auto_now_add=True)
-
-# Create ViewSets
-class AuthorViewSet(ModelViewSet):
-    model = Author
-    prefix = "/authors"
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    prefix = "/posts"
-    permission_classes = [IsAuthenticated]
-
-# Initialize app
 app = Aksara(
     database_url="postgresql://localhost/myapp",
-    title="Blog API",
-    enable_admin=True,
+    enable_admin=True,  # Enable admin at /admin/
 )
-
-# Register routes
-include_viewset(app, AuthorViewSet)
-include_viewset(app, PostViewSet)
 ```
 
-Run it:
+**What you get:** A web interface to browse, create, edit, and delete data.
 
-```bash
-aksara makemigrations --app main
-aksara migrate
-aksara run main:app --reload
-```
-
-Visit `http://localhost:8000/docs` to see your auto-generated API documentation.
-
----
-
-## What's New in v0.4.9
-
-The latest release focuses on stability and AI capabilities:
-
-- **AI Schema Doctor** — Detect schema drift and health issues
-- **AI Agent Runtime** — Mini agent loop for external AI coordination
-- **AI Planner** — Multi-step execution plans for complex operations
-- **Enhanced Debug Pages** — AI-powered debugging suggestions
-- **2000+ Tests** — Comprehensive test coverage for production reliability
-
-[View Full Changelog](changelog.md){ .md-button }
+👉 [Learn about Admin](admin/index.md)
 
 ---
 
@@ -206,22 +242,81 @@ The latest release focuses on stability and AI capabilities:
 pip install aksara
 ```
 
-Requires Python 3.11+ and PostgreSQL 13+.
+**Requirements:**
 
-[Full Installation Guide](getting-started/installation.md){ .md-button }
+| Tool | Minimum Version | What It's For |
+|------|-----------------|---------------|
+| Python | 3.11 | Running Aksara |
+| PostgreSQL | 13 | Storing your data |
+
+👉 [Full Installation Guide](getting-started/installation.md)
 
 ---
 
-## Community & Support
+## Next Steps
 
-- **GitHub**: [aksara-orm/aksara](https://github.com/aksara-orm/aksara)
-- **Issues**: [Report bugs or request features](https://github.com/aksara-orm/aksara/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/aksara-orm/aksara/discussions)
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch:{ .lg .middle } **Quickstart**
+
+    ---
+
+    Build your first API in 5 minutes.
+
+    [:octicons-arrow-right-24: Start Building](quickstart.md)
+
+-   :material-school:{ .lg .middle } **Getting Started Guide**
+
+    ---
+
+    Detailed walkthrough for beginners.
+
+    [:octicons-arrow-right-24: Learn Step by Step](getting-started/index.md)
+
+-   :material-database:{ .lg .middle } **Models & ORM**
+
+    ---
+
+    Learn how to define and query data.
+
+    [:octicons-arrow-right-24: Learn about Data](orm/index.md)
+
+-   :material-api:{ .lg .middle } **API Layer**
+
+    ---
+
+    Build REST APIs with ViewSets.
+
+    [:octicons-arrow-right-24: Learn about APIs](api/index.md)
+
+</div>
+
+---
+
+## What's New in v0.4.11
+
+The latest release includes:
+
+- **Admin UI Overhaul** — New modern widget system with JSON and Array field widgets
+- **AI Schema Doctor** — Detect schema drift and health issues
+- **AI Agent Runtime** — Mini agent loop for external AI coordination
+- **Enhanced Debug Pages** — AI-powered debugging suggestions
+- **1920+ Tests** — Comprehensive test coverage
+
+[View Full Changelog](changelog.md){ .md-button }
+
+---
+
+## Getting Help
+
+- **Documentation** — You're reading it!
+- **GitHub Issues** — [Report bugs or request features](https://github.com/aksara-orm/aksara/issues)
+- **Discussions** — [Ask questions](https://github.com/aksara-orm/aksara/discussions)
 
 ---
 
 <div class="footer-tagline" markdown>
 
-**Aksara** — *Lightning-fast async backends, AI-ready from the start.*
+**Aksara** — *Simple, fast, AI-ready backends for Python.*
 
 </div>

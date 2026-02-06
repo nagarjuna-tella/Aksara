@@ -150,12 +150,12 @@ aksara inspectdb --output models.py
 
 ## Server Commands
 
-### runserver
+### run
 
 Start development server.
 
 ```bash
-aksara runserver [OPTIONS]
+aksara run APP_PATH [OPTIONS]
 ```
 
 | Option | Default | Description |
@@ -168,10 +168,10 @@ aksara runserver [OPTIONS]
 **Example:**
 
 ```bash
-aksara runserver
-aksara runserver --port 3000
-aksara runserver --host 0.0.0.0 --port 8080
-aksara runserver --no-reload
+aksara run main:app
+aksara run main:app --port 3000
+aksara run main:app --host 0.0.0.0 --port 8080
+aksara run myproject.main:app --reload
 ```
 
 ---
@@ -247,7 +247,7 @@ aksara info [OPTIONS]
 ```
 Aksara Project Information
 ==========================
-Version: 0.4.9
+Version: 0.4.11
 Python: 3.11.0
 Settings: myproject.settings
 

@@ -1,72 +1,107 @@
 # Models
 
-Models are the foundation of your Aksara application. They define your data structures and map to PostgreSQL tables.
+Define your data structure using Python classes that map directly to PostgreSQL tables.
 
 ---
 
-## Overview
+## What is a Model?
 
-A Aksara model is a Python class that:
+A **model** is a Python class that represents a table in your database. Each model:
 
-- Inherits from `aksara.Model`
-- Defines fields as class attributes
-- Maps to a PostgreSQL table
-- Provides async methods for database operations
+- Defines what data you want to store (fields like title, email, price)
+- Maps to a PostgreSQL table automatically
+- Provides methods to create, read, update, and delete records
+- Validates data before saving
 
----
-
-## When to Use Models
-
-Use Aksara models when you need to:
-
-- Store data in PostgreSQL
-- Define relationships between entities
-- Validate data before saving
-- Expose data through APIs
-- Generate migrations automatically
-
----
-
-## Defining a Model
+Think of a model as a blueprint: it describes what a "Post" or "User" looks like, and Aksara handles all the database work.
 
 ```python
 from aksara import Model, fields
 
 class Article(Model):
-    """A blog article."""
+    """A blog article stored in the 'articles' table."""
     
     title = fields.String(max_length=200)
-    slug = fields.String(max_length=200, unique=True)
     content = fields.Text()
-    excerpt = fields.Text(nullable=True)
     published = fields.Boolean(default=False)
-    view_count = fields.Integer(default=0)
     created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
 ```
 
-This creates a table named `articles` with all specified columns plus an auto-generated `id` column.
+**What this creates**:
+```
+PostgreSQL table: articles
+┌──────────────┬─────────────────┬─────────────┐
+│ Column       │ Type            │ Constraints │
+├──────────────┼─────────────────┼─────────────┤
+│ id           │ UUID            │ PRIMARY KEY │
+│ title        │ VARCHAR(200)    │ NOT NULL    │
+│ content      │ TEXT            │ NOT NULL    │
+│ published    │ BOOLEAN         │ DEFAULT false│
+│ created_at   │ TIMESTAMPTZ     │ AUTO        │
+└──────────────┴─────────────────┴─────────────┘
+```
 
 ---
 
-## Automatic Features
+## Creating a Model
 
-### Primary Key
+### Step 1: Import the Base Class and Fields
 
-Every model automatically gets a UUID primary key:
+```python
+from aksara import Model, fields
+```
+
+- `Model` — The base class all your models inherit from
+- `fields` — Contains all field types (String, Integer, Boolean, etc.)
+
+### Step 2: Define Your Class
+
+```python
+class Task(Model):
+    """A task that users can complete."""
+    
+    title = fields.String(max_length=200)
+    description = fields.Text(nullable=True)
+    completed = fields.Boolean(default=False)
+    due_date = fields.DateTime(nullable=True)
+```
+
+### Step 3: Create the Table
+
+Run migrations to create the actual PostgreSQL table:
+
+```bash
+aksara makemigrations
+aksara migrate
+```
+
+---
+
+## What You Get Automatically
+
+### Primary Key (`id`)
+
+Every model automatically gets a UUID primary key. You don't need to define it:
 
 ```python
 class User(Model):
     email = fields.Email(unique=True)
-    # `id` field is automatically added
+    # 'id' is automatically added as a UUID
 
-user = await User.objects.create(email="test@example.com")
+user = await User.objects.create(email="alice@example.com")
 print(user.id)  # UUID('550e8400-e29b-41d4-a716-446655440000')
 ```
 
+**Why UUID instead of auto-increment?**
+
+- Globally unique (safe for distributed systems)
+- Can be generated client-side
+- No sequential pattern (better security)
+- PostgreSQL-native with `gen_random_uuid()`
+
 ### Table Name
 
-The table name is automatically derived from the model name:
+The table name is derived from your class name:
 
 | Model Name | Table Name |
 |------------|------------|
@@ -75,413 +110,394 @@ The table name is automatically derived from the model name:
 | `Category` | `categories` |
 | `UserProfile` | `user_profiles` |
 
-Override with `__tablename__`:
+**Override the table name** if needed:
 
 ```python
 class Article(Model):
-    __tablename__ = "blog_articles"
+    __tablename__ = "blog_posts"  # Custom table name
+    
+    title = fields.String(max_length=200)
+```
+
+### Timestamps
+
+Add automatic timestamps with `auto_now` and `auto_now_add`:
+
+```python
+class Article(Model):
+    title = fields.String(max_length=200)
+    
+    # Set once when created, never changes
+    created_at = fields.DateTime(auto_now_add=True)
+    
+    # Updated every time you save
+    updated_at = fields.DateTime(auto_now=True)
+```
+
+---
+
+## Working with Models
+
+### Creating Records
+
+```python
+# Method 1: Create and save in one step
+article = await Article.objects.create(
+    title="Hello World",
+    content="My first article!",
+    published=True,
+)
+
+# Method 2: Create an instance, then save
+article = Article(
+    title="Hello World",
+    content="My first article!",
+)
+await article.save()
+```
+
+### Reading Records
+
+```python
+# Get one record by ID
+article = await Article.objects.get(id=article_id)
+
+# Get one record by any field
+article = await Article.objects.get(title="Hello World")
+
+# Get all records
+articles = await Article.objects.all()
+
+# Filter records
+published = await Article.objects.filter(published=True)
+```
+
+### Updating Records
+
+```python
+# Method 1: Modify and save
+article = await Article.objects.get(id=article_id)
+article.title = "New Title"
+await article.save()
+
+# Method 2: Update multiple at once
+await Article.objects.filter(published=False).update(published=True)
+```
+
+### Deleting Records
+
+```python
+# Delete one record
+article = await Article.objects.get(id=article_id)
+await article.delete()
+
+# Delete multiple records
+await Article.objects.filter(published=False).delete()
 ```
 
 ---
 
 ## Field Types
 
-Aksara provides many field types. Here's a quick overview:
+Here's a quick reference of common fields:
+
+### Text Fields
 
 ```python
-from aksara import Model, fields
-
-class Product(Model):
-    # Text fields
+class Example(Model):
+    # Short text with max length
     name = fields.String(max_length=100)
-    description = fields.Text()
-    sku = fields.String(max_length=50, unique=True)
     
-    # Numeric fields
-    price = fields.Decimal(precision=10, scale=2)
+    # Unlimited text
+    bio = fields.Text()
+    
+    # Email with validation
+    email = fields.Email(unique=True)
+    
+    # URL with validation
+    website = fields.URL(nullable=True)
+```
+
+### Numeric Fields
+
+```python
+class Product(Model):
+    # Whole numbers
     quantity = fields.Integer(default=0)
-    weight = fields.Float(nullable=True)
     
-    # Boolean
+    # Decimal numbers (for money)
+    price = fields.Decimal(max_digits=10, decimal_places=2)
+    
+    # Floating point (for calculations)
+    rating = fields.Float(nullable=True)
+```
+
+### Date and Time
+
+```python
+class Event(Model):
+    # Date only (no time)
+    date = fields.Date()
+    
+    # Time only (no date)
+    start_time = fields.Time()
+    
+    # Full timestamp with timezone
+    created_at = fields.DateTime(auto_now_add=True)
+```
+
+### Other Types
+
+```python
+class Settings(Model):
+    # True/False
     is_active = fields.Boolean(default=True)
     
-    # Date/Time
-    created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
-    launch_date = fields.Date(nullable=True)
+    # JSON data (dictionaries, lists)
+    preferences = fields.JSON(default=dict)
     
-    # Special types
-    metadata = fields.JSON(default=dict)
-    category = fields.Enum(enum_class=CategoryType)
+    # PostgreSQL arrays
+    tags = fields.Array(base_type="text", default=list)
+    
+    # UUID
+    external_id = fields.UUID(nullable=True)
 ```
 
-See [Fields](fields.md) for complete documentation.
+See [Fields Reference](fields.md) for complete documentation.
 
 ---
 
-## Model Methods
+## Field Options
 
-### Create
+All fields accept these common options:
 
-```python
-# Method 1: Create and save in one step
-article = await Article.objects.create(
-    title="Hello World",
-    content="My first article",
-)
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `nullable` | Allow NULL values | `fields.String(nullable=True)` |
+| `default` | Default value | `fields.Boolean(default=False)` |
+| `unique` | Ensure uniqueness | `fields.Email(unique=True)` |
+| `db_index` | Create database index | `fields.String(db_index=True)` |
+| `primary_key` | Mark as primary key | `fields.UUID(primary_key=True)` |
 
-# Method 2: Instantiate then save
-article = Article(
-    title="Hello World",
-    content="My first article",
-)
-await article.save()
-```
-
-### Read
+### Examples
 
 ```python
-# Get by ID
-article = await Article.objects.get(id=article_id)
-
-# Get with filters
-article = await Article.objects.get(slug="hello-world")
-
-# Get or raise DoesNotExist
-from aksara import DoesNotExist
-
-try:
-    article = await Article.objects.get(id=invalid_id)
-except DoesNotExist:
-    print("Article not found")
-```
-
-### Update
-
-```python
-# Method 1: Modify and save
-article.title = "Updated Title"
-await article.save()
-
-# Method 2: Update via queryset
-await Article.objects.filter(id=article_id).update(title="Updated Title")
-```
-
-### Delete
-
-```python
-# Method 1: Delete instance
-await article.delete()
-
-# Method 2: Delete via queryset
-await Article.objects.filter(published=False).delete()
+class User(Model):
+    # Required, must be unique
+    email = fields.Email(unique=True)
+    
+    # Optional (can be empty)
+    phone = fields.String(max_length=20, nullable=True)
+    
+    # Has a default value
+    is_active = fields.Boolean(default=True)
+    
+    # Indexed for fast lookups
+    username = fields.String(max_length=50, unique=True, db_index=True)
 ```
 
 ---
 
-## Model Meta
+## Model Meta Options
 
-Customize model behavior with a `Meta` class:
+Configure model-wide settings using the `Meta` class:
 
 ```python
 class Article(Model):
     title = fields.String(max_length=200)
-    content = fields.Text()
+    created_at = fields.DateTime(auto_now_add=True)
     
     class Meta:
-        app_label = "blog"
+        # Custom table name
+        table_name = "blog_articles"
+        
+        # Default ordering (newest first)
         ordering = ["-created_at"]
+        
+        # Database indexes for performance
+        indexes = [
+            ("title",),  # Single column index
+            ("created_at", "title"),  # Composite index
+        ]
+        
+        # Unique together constraints
+        unique_together = [
+            ("author_id", "slug"),  # Same author can't have duplicate slugs
+        ]
+        
+        # App label for admin grouping
+        app_label = "blog"
 ```
 
-### Available Meta Options
+### Meta Options Reference
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `app_label` | `str` | Application namespace |
-| `ordering` | `list[str]` | Default ordering |
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `table_name` | Custom database table name | `"blog_posts"` |
+| `ordering` | Default sort order | `["-created_at"]` |
+| `indexes` | Database indexes | `[("field1", "field2")]` |
+| `unique_together` | Multi-column uniqueness | `[("user_id", "slug")]` |
+| `app_label` | Group in admin | `"blog"` |
 
 ---
 
 ## AI Metadata
 
-Aksara models support AI metadata for LLM integration:
-
-### Model-Level AI Metadata
+Aksara models can include metadata that helps AI agents understand your data:
 
 ```python
-class User(Model):
-    """User account for the application."""
+class Product(Model):
+    name = fields.String(
+        max_length=200,
+        ai_description="The product's display name shown to customers",
+    )
     
-    email = fields.Email(unique=True)
+    price = fields.Decimal(
+        max_digits=10,
+        decimal_places=2,
+        ai_description="Price in USD, excluding tax",
+    )
+    
+    internal_cost = fields.Decimal(
+        max_digits=10,
+        decimal_places=2,
+        ai_sensitive=True,  # Hide from AI context
+    )
+    
+    class Meta:
+        ai_description = "Products available for purchase in the store"
+```
+
+| Option | What It Does |
+|--------|--------------|
+| `ai_description` | Human-readable description for AI |
+| `ai_sensitive` | Hide field from AI context |
+| `ai_agent_writable` | Allow/prevent AI from modifying |
+
+---
+
+## Relationships
+
+Models can reference other models:
+
+```python
+from aksara import Model, fields, CASCADE
+
+class Author(Model):
     name = fields.String(max_length=100)
-    
-    class AIMeta:
-        ai_name = "User Account"
-        ai_description = "Represents a registered user in the system"
-        ai_agent_exposed = True
-        ai_permissions = ["read", "write"]
-```
 
-### Field-Level AI Metadata
-
-```python
-class User(Model):
-    email = fields.Email(
-        unique=True,
-        ai_description="User's email address for authentication",
-        ai_sensitive=False,
-        ai_agent_writable=True,
-    )
-    
-    hashed_password = fields.String(
-        ai_description="Bcrypt-hashed password",
-        ai_sensitive=True,       # Hidden from AI context
-        ai_agent_writable=False, # AI cannot modify
-    )
-    
-    is_active = fields.Boolean(
-        default=True,
-        ai_description="Whether the user can log in",
-        ai_agent_writable=True,
-    )
-```
-
-### AI Metadata Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `ai_description` | `str` | `""` | Human-readable description |
-| `ai_sensitive` | `bool` | `False` | Hide from AI context |
-| `ai_agent_writable` | `bool` | `True` | Allow AI modifications |
-
----
-
-## Timestamps
-
-Automatic timestamp handling:
-
-```python
-class Article(Model):
+class Post(Model):
     title = fields.String(max_length=200)
     
-    # Set once on creation
-    created_at = fields.DateTime(auto_now_add=True)
-    
-    # Updated on every save
-    updated_at = fields.DateTime(auto_now=True)
+    # Many posts can have one author
+    author = fields.ForeignKey(Author, on_delete=CASCADE, related_name="posts")
 ```
 
-Behavior:
-
-| Field Option | On Create | On Update |
-|--------------|-----------|-----------|
-| `auto_now_add=True` | Current time | Unchanged |
-| `auto_now=True` | Current time | Current time |
+See [Relations](relations.md) for complete documentation.
 
 ---
 
-## Abstract Models
-
-Create reusable base models:
+## Complete Example
 
 ```python
-class TimestampMixin(Model):
-    """Mixin for automatic timestamps."""
-    __abstract__ = True
+from aksara import Model, fields, CASCADE
+from decimal import Decimal
+
+class Category(Model):
+    """Product categories like Electronics, Clothing, etc."""
     
-    created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
-
-
-class Article(TimestampMixin):
-    title = fields.String(max_length=200)
-    content = fields.Text()
-    # Inherits created_at and updated_at
-```
-
-The `__abstract__ = True` prevents table creation for the base class.
-
----
-
-## Model Validation
-
-Aksara validates data before saving:
-
-```python
-class User(Model):
-    email = fields.Email(unique=True)  # Validates email format
-    age = fields.Integer()
-
-# This raises ValidationError
-user = User(email="invalid-email", age="not-a-number")
-await user.save()  # ValidationError
-```
-
-### Custom Validation
-
-Override `clean()` for custom validation:
-
-```python
-class Event(Model):
-    start_date = fields.DateTime()
-    end_date = fields.DateTime()
+    name = fields.String(max_length=100, unique=True)
+    slug = fields.String(max_length=100, unique=True)
+    description = fields.Text(nullable=True)
     
-    async def clean(self):
-        if self.end_date <= self.start_date:
-            raise ValidationError("End date must be after start date")
-```
-
----
-
-## Example: Complete Model
-
-```python
-from aksara import Model, fields
-from enum import Enum
+    class Meta:
+        ordering = ["name"]
+        app_label = "store"
 
 
-class ArticleStatus(str, Enum):
-    DRAFT = "draft"
-    REVIEW = "review"
-    PUBLISHED = "published"
-    ARCHIVED = "archived"
-
-
-class Article(Model):
-    """
-    A blog article with full content management features.
-    """
+class Product(Model):
+    """Items available for purchase."""
     
-    # Core content
-    title = fields.String(
-        max_length=200,
-        ai_description="Article headline",
-    )
-    slug = fields.String(
-        max_length=200,
-        unique=True,
-        ai_description="URL-friendly identifier",
-    )
-    content = fields.Text(
-        ai_description="Full article content in Markdown",
-    )
-    excerpt = fields.Text(
-        nullable=True,
-        ai_description="Short summary for previews",
+    # Basic info
+    name = fields.String(max_length=200)
+    slug = fields.String(max_length=200, unique=True)
+    description = fields.Text()
+    
+    # Pricing
+    price = fields.Decimal(max_digits=10, decimal_places=2)
+    sale_price = fields.Decimal(max_digits=10, decimal_places=2, nullable=True)
+    
+    # Inventory
+    sku = fields.String(max_length=50, unique=True)
+    stock_quantity = fields.Integer(default=0)
+    
+    # Status
+    is_active = fields.Boolean(default=True)
+    is_featured = fields.Boolean(default=False)
+    
+    # Relationships
+    category = fields.ForeignKey(
+        Category,
+        on_delete=CASCADE,
+        related_name="products",
     )
     
     # Metadata
-    status = fields.Enum(
-        enum_class=ArticleStatus,
-        default=ArticleStatus.DRAFT,
-        ai_description="Publication status",
-    )
-    featured = fields.Boolean(
-        default=False,
-        ai_description="Show in featured section",
-    )
-    view_count = fields.Integer(
-        default=0,
-        ai_agent_writable=False,
-        ai_description="Number of page views",
-    )
-    
-    # SEO
-    meta_title = fields.String(max_length=60, nullable=True)
-    meta_description = fields.String(max_length=160, nullable=True)
+    tags = fields.Array(base_type="text", default=list)
+    attributes = fields.JSON(default=dict)  # e.g., {"color": "red", "size": "M"}
     
     # Timestamps
     created_at = fields.DateTime(auto_now_add=True)
     updated_at = fields.DateTime(auto_now=True)
-    published_at = fields.DateTime(nullable=True)
     
     class Meta:
-        app_label = "blog"
+        ordering = ["-created_at"]
+        app_label = "store"
+        indexes = [
+            ("category_id", "is_active"),
+            ("sku",),
+        ]
+
+
+# Using the models
+async def example():
+    # Create a category
+    electronics = await Category.objects.create(
+        name="Electronics",
+        slug="electronics",
+        description="Gadgets and devices",
+    )
     
-    class AIMeta:
-        ai_name = "Blog Article"
-        ai_description = "A blog post with content and metadata"
-        ai_permissions = ["read", "write"]
+    # Create a product
+    phone = await Product.objects.create(
+        name="Smartphone X",
+        slug="smartphone-x",
+        description="Latest smartphone with amazing features",
+        price=Decimal("999.99"),
+        sku="PHONE-001",
+        stock_quantity=100,
+        category=electronics,
+        tags=["smartphone", "mobile", "5g"],
+        attributes={"color": "black", "storage": "256GB"},
+    )
     
-    def __str__(self) -> str:
-        return self.title
+    # Query products
+    active_products = await Product.objects.filter(
+        is_active=True,
+        stock_quantity__gt=0,
+    ).order_by("-created_at")
     
-    async def publish(self):
-        """Publish the article."""
-        from datetime import datetime, timezone
-        self.status = ArticleStatus.PUBLISHED
-        self.published_at = datetime.now(timezone.utc)
-        await self.save()
-```
-
----
-
-## Best Practices
-
-### Use Descriptive Names
-
-```python
-# Good
-class UserSubscription(Model):
-    plan_type = fields.String(max_length=50)
-    expires_at = fields.DateTime()
-
-# Avoid
-class Sub(Model):
-    type = fields.String(max_length=50)
-    exp = fields.DateTime()
-```
-
-### Add AI Metadata for Sensitive Fields
-
-```python
-class User(Model):
-    email = fields.Email(ai_sensitive=False)
-    ssn = fields.String(ai_sensitive=True)  # Hidden from AI
-    password = fields.String(ai_sensitive=True, ai_agent_writable=False)
-```
-
-### Use Abstract Models for Shared Fields
-
-```python
-class AuditMixin(Model):
-    __abstract__ = True
-    created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
-    created_by = fields.ForeignKey("User", nullable=True)
-
-class Article(AuditMixin):
-    title = fields.String(max_length=200)
-```
-
-### Keep Models Focused
-
-Each model should represent one entity:
-
-```python
-# Good: Separate models
-class User(Model):
-    email = fields.Email(unique=True)
-
-class UserProfile(Model):
-    user = fields.OneToOne(User)
-    bio = fields.Text()
-    avatar_url = fields.URL(nullable=True)
-
-# Avoid: Everything in one model
-class User(Model):
-    email = fields.Email()
-    bio = fields.Text()
-    avatar_url = fields.URL()
-    # ... 50 more fields
+    # Access relationship
+    for product in active_products:
+        category = await product.category
+        print(f"{product.name} in {category.name}")
 ```
 
 ---
 
 ## Related Documentation
 
-- [Fields](fields.md) — All available field types
-- [Relations](relations.md) — Model relationships
-- [Querying](querying.md) — Query API
-- [Migrations](migrations.md) — Schema management
-- [Model Meta](model-meta.md) — Introspection API
+- [Fields](fields.md) — All field types and options
+- [Querying](querying.md) — Filter, sort, and retrieve data
+- [Relations](relations.md) — ForeignKey, ManyToMany, OneToOne
+- [Migrations](migrations.md) — Create and update tables

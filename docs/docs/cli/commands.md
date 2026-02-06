@@ -174,16 +174,16 @@ aksara inspectdb users posts > models.py
 
 ## Development Commands
 
-### runserver
+### run
 
 Start the development server.
 
 ```bash
-aksara runserver [address] [options]
+aksara run APP_PATH [options]
 ```
 
 **Arguments:**
-- `address` — Host:port (optional)
+- `APP_PATH` — Import path to the app (e.g., 'main:app')
 
 **Options:**
 | Option | Description | Default |
@@ -196,16 +196,16 @@ aksara runserver [address] [options]
 **Examples:**
 ```bash
 # Default
-aksara runserver
+aksara run main:app
 
 # Custom port
-aksara runserver --port 3000
+aksara run main:app --port 3000
 
 # All interfaces
-aksara runserver --host 0.0.0.0
+aksara run main:app --host 0.0.0.0
 
-# Production-like (no reload, multiple workers)
-aksara runserver --no-reload --workers 4
+# Production-like (multiple workers)
+aksara run myproject.main:app --workers 4
 ```
 
 ---

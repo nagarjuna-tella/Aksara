@@ -157,10 +157,10 @@ async def list_posts(request):
 
 ```python
 class Post(Model):
-    title = fields.StringField(max_length=200)
-    slug = fields.StringField(max_length=200, db_index=True)  # Index
-    author = fields.ForeignKey(User)  # FK auto-indexed
-    created_at = fields.DateTimeField(auto_now_add=True, db_index=True)
+    title = fields.String(max_length=200)
+    slug = fields.String(max_length=200, db_index=True)  # Index
+    author = fields.ForeignKey(User, on_delete=fields.CASCADE)  # FK auto-indexed
+    created_at = fields.DateTime(auto_now_add=True, db_index=True)
     
     class Meta:
         indexes = [
@@ -209,8 +209,8 @@ class PostSerializer(ModelSerializer):
 
 # ✅ Good: Use select_related and annotations
 class PostSerializer(ModelSerializer):
-    author_name = StringField(source="author.name")
-    comment_count = IntegerField()
+    author_name = serializers.String(source="author.name")
+    comment_count = serializers.Integer()
 
 # In viewset:
 def get_queryset(self):

@@ -26,10 +26,10 @@ from aksara import Model, fields
 from aksara.signals import pre_save, post_save, pre_delete, post_delete
 
 class Post(Model):
-    title = fields.StringField(max_length=200)
-    slug = fields.StringField(max_length=200)
-    content = fields.TextField()
-    view_count = fields.IntegerField(default=0)
+    title = fields.String(max_length=200)
+    slug = fields.String(max_length=200)
+    content = fields.Text()
+    view_count = fields.Integer(default=0)
 
 # Pre-save: generate slug
 @pre_save(Post)
@@ -199,10 +199,10 @@ from aksara import Model, fields
 import json
 
 class AuditLog(Model):
-    model_name = fields.StringField(max_length=100)
-    record_id = fields.StringField(max_length=36)
-    action = fields.StringField(max_length=20)
-    data = fields.JSONField()
+    model_name = fields.String(max_length=100)
+    record_id = fields.String(max_length=36)
+    action = fields.String(max_length=20)
+    data = fields.JSON()
 
 async def audit_handler(sender, instance, action, **kwargs):
     await AuditLog.objects.create(

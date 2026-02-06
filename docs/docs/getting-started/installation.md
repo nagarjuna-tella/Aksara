@@ -60,7 +60,7 @@ aksara --version
 
 Expected output:
 ```
-aksara, version 0.4.9
+aksara, version 0.4.11
 ```
 
 You can also check the Python package:
@@ -68,7 +68,7 @@ You can also check the Python package:
 ```python
 >>> import aksara
 >>> aksara.__version__
-'0.4.9'
+'0.4.11'
 ```
 
 ---

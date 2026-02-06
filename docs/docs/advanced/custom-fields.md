@@ -67,7 +67,7 @@ class PercentageField(Field):
 
 ```python
 class Product(Model):
-    name = fields.StringField(max_length=100)
+    name = fields.String(max_length=100)
     discount = PercentageField(default=0)
 
 # Usage
@@ -142,7 +142,7 @@ class PhoneField(Field):
 
 # Usage
 class Contact(Model):
-    name = fields.StringField(max_length=100)
+    name = fields.String(max_length=100)
     phone = PhoneField()
     alt_phone = PhoneField(null=True)
 ```
@@ -241,7 +241,7 @@ class EncryptedField(Field):
 
 # Usage
 class User(Model):
-    email = fields.EmailField()
+    email = fields.Email()
     ssn = EncryptedField()  # Encrypted at rest
 ```
 
@@ -295,7 +295,7 @@ class Status(Enum):
     COMPLETED = "completed"
 
 class Task(Model):
-    title = fields.StringField(max_length=200)
+    title = fields.String(max_length=200)
     status = EnumField(Status, default=Status.PENDING)
 ```
 
@@ -346,7 +346,7 @@ class SlugField(Field):
 
 # Usage
 class Post(Model):
-    title = fields.StringField(max_length=200)
+    title = fields.String(max_length=200)
     slug = SlugField(source_field="title", unique=True)
 ```
 
@@ -394,7 +394,7 @@ class ArrayField(Field):
 
 # Usage
 class Article(Model):
-    title = fields.StringField(max_length=200)
+    title = fields.String(max_length=200)
     tags = ArrayField(base_type="text", default=list)
 ```
 

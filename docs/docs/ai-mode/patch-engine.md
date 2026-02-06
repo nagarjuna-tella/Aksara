@@ -92,9 +92,9 @@ patch = await engine.create_patch(
 ```python
 patch = await engine.create_patch_from_diff(
     file="models.py",
-    old_code="email = fields.EmailField()",
-    new_code="""email = fields.EmailField()
-    phone = fields.StringField(max_length=20, null=True)"""
+    old_code="email = fields.Email()",
+    new_code="""email = fields.Email()
+    phone = fields.String(max_length=20, null=True)"""
 )
 ```
 
@@ -107,7 +107,7 @@ patch = await engine.create_patch_from_template(
     params={
         "model": "User",
         "field_name": "phone",
-        "field_type": "StringField",
+        "field_type": "String",
         "field_args": {"max_length": 20, "null": True},
     }
 )
@@ -155,9 +155,9 @@ print(patch.diff)
 # +++ models.py (modified)
 # @@ -10,6 +10,7 @@
 #  class User(Model):
-#      email = fields.EmailField(unique=True)
-# +    phone = fields.StringField(max_length=20, null=True)
-#      name = fields.StringField(max_length=100)
+#      email = fields.Email(unique=True)
+# +    phone = fields.String(max_length=20, null=True)
+#      name = fields.String(max_length=100)
 ```
 
 ### Hunks
@@ -390,7 +390,7 @@ aksara ai patch models.py "Add phone field" --dry-run
 aksara ai patch models.py "Add phone field" --interactive
 
 Preview:
-  + phone = fields.StringField(max_length=20, null=True)
+  + phone = fields.String(max_length=20, null=True)
 
 Apply this change? [y/N/e(dit)]
 ```

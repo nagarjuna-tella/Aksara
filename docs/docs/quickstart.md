@@ -1,273 +1,435 @@
 # Quickstart
 
-Get Aksara running in under 5 minutes.
+Build a working API in 5 minutes. No prior framework experience needed.
+
+---
+
+## What We're Building
+
+A simple **Task Manager API** that lets you:
+
+- Create tasks
+- List all tasks
+- Mark tasks as complete
+- Delete tasks
+
+By the end, you'll have a real API you can call from any frontend or tool.
 
 ---
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+Before you start, make sure you have:
 
-- **Python 3.11+** installed
-- **PostgreSQL 13+** running locally or remotely
-- **pip** or **uv** for package management
+| Tool | How to Check | What It's For |
+|------|--------------|---------------|
+| Python 3.11+ | `python --version` | Running Aksara |
+| PostgreSQL | `psql --version` | Storing your data |
+| pip | `pip --version` | Installing packages |
+
+**Don't have PostgreSQL?** You can use Docker:
+```bash
+docker run -d --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 postgres:15
+```
 
 ---
 
 ## Step 1: Install Aksara
 
-=== "pip"
+Open your terminal and run:
 
-    ```bash
-    pip install aksara
-    ```
+```bash
+pip install aksara
+```
 
-=== "uv"
+**What this does:** Downloads Aksara and its dependencies (FastAPI, Pydantic, asyncpg, etc.).
 
-    ```bash
-    uv pip install aksara
-    ```
+Verify it worked:
 
-=== "poetry"
-
-    ```bash
-    poetry add aksara
-    ```
+```bash
+aksara --version
+# Output: aksara, version 0.4.11
+```
 
 ---
 
-## Step 2: Create a New Project
+## Step 2: Create Your Project
 
-Use the CLI to scaffold a new project:
+Run the scaffolding command:
 
 ```bash
-aksara startproject myproject
-cd myproject
+aksara startproject taskmanager
+cd taskmanager
 ```
 
-This creates the following structure:
+**What this does:** Creates a folder with all the files you need to start.
+
+You'll see this structure:
 
 ```
-myproject/
-├── main.py           # Application entry point
-├── settings.py       # Configuration
+taskmanager/
+├── main.py           ← Starts your application
+├── settings.py       ← Configuration (database URL, etc.)
+├── .env              ← Secret settings (not committed to git)
 ├── app/
-│   ├── models.py     # Your models
-│   ├── views.py      # ViewSets
-│   ├── urls.py       # Route registration
-│   └── serializers.py
-├── migrations/       # Database migrations
-├── .env              # Environment variables
-├── pyproject.toml    # Project metadata
-└── README.md
+│   ├── models.py     ← Define your data structure
+│   ├── views.py      ← Handle API requests
+│   ├── serializers.py ← Convert data to/from JSON
+│   └── urls.py       ← Map URLs to views
+└── migrations/       ← Database schema changes
 ```
 
 ---
 
 ## Step 3: Configure Your Database
 
-Edit the `.env` file with your PostgreSQL connection:
+### Option A: Using a `.env` File (Recommended)
+
+Edit `.env`:
 
 ```bash
-DATABASE_URL=postgresql://postgres:password@localhost:5432/myproject
+DATABASE_URL=postgresql://postgres:password@localhost:5432/taskmanager
 AKSARA_DEBUG=true
 ```
 
-Or set it directly in `settings.py`:
+### Option B: Environment Variables
 
-```python
-from aksara import configure
+Set them in your shell:
 
-configure(
-    database_url="postgresql://postgres:password@localhost:5432/myproject",
-    debug=True,
-)
+```bash
+export DATABASE_URL=postgresql://postgres:password@localhost:5432/taskmanager
+export AKSARA_DEBUG=true
+```
+
+### Create the Database
+
+If the database doesn't exist yet:
+
+```bash
+# Using psql
+createdb taskmanager
+
+# Or connect to PostgreSQL and create it
+psql -U postgres -c "CREATE DATABASE taskmanager;"
 ```
 
 ---
 
-## Step 4: Define Your First Model
+## Step 4: Define Your Data Model
 
-Open `app/models.py` and add a model:
+Open `app/models.py` and add:
 
 ```python
 from aksara import Model, fields
 
 class Task(Model):
-    """A simple task model."""
+    """
+    A task in our todo list.
+    
+    This creates a database table with these columns:
+    - id: UUID (created automatically)
+    - title: Text up to 200 characters
+    - description: Optional longer text
+    - completed: True or False
+    - created_at: When the task was created (automatic)
+    """
     title = fields.String(max_length=200)
     description = fields.Text(nullable=True)
     completed = fields.Boolean(default=False)
-    priority = fields.Integer(default=1)
     created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
 ```
+
+**What this does:** Defines what a "Task" looks like. Aksara will create a database table matching this structure.
+
+**Understanding the code:**
+
+| Line | What It Means |
+|------|---------------|
+| `class Task(Model)` | "Task" is a type of data we store |
+| `fields.String(max_length=200)` | Text that can't exceed 200 characters |
+| `fields.Text(nullable=True)` | Optional long text (`nullable=True` means it can be empty) |
+| `fields.Boolean(default=False)` | True/False value, starts as False |
+| `fields.DateTime(auto_now_add=True)` | Timestamp, automatically set when created |
 
 ---
 
-## Step 5: Create and Run Migrations
+## Step 5: Create Your API
 
-Generate and apply migrations:
+### Serializer (Data Converter)
 
-```bash
-# Generate migration files
-aksara makemigrations --app app.models
+Open `app/serializers.py`:
 
-# Apply migrations to the database
-aksara migrate
+```python
+from aksara.api import ModelSerializer
+from app.models import Task
+
+class TaskSerializer(ModelSerializer):
+    """
+    Converts Task objects to/from JSON.
+    
+    When someone sends JSON to your API, the serializer:
+    1. Validates the data
+    2. Converts it to a Task object
+    
+    When you return a Task, the serializer converts it to JSON.
+    """
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "completed", "created_at"]
+        read_only_fields = ["id", "created_at"]  # Users can't set these
 ```
 
----
+**What this does:** Tells Aksara how to convert between Python objects and JSON.
 
-## Step 6: Create a ViewSet
+### ViewSet (Request Handler)
 
 Open `app/views.py`:
 
 ```python
-from aksara.api import ModelViewSet, action
-from fastapi import Request
-from uuid import UUID
-
+from aksara.api import ModelViewSet
 from app.models import Task
+from app.serializers import TaskSerializer
 
 class TaskViewSet(ModelViewSet):
-    model = Task
-    prefix = "/tasks"
-    tags = ["Tasks"]
+    """
+    Handles all API requests for tasks.
     
-    @action(detail=True, methods=["post"], summary="Mark task complete")
-    async def complete(self, pk: UUID, request: Request):
-        task = await self.get_object(pk)
-        task.completed = True
-        await task.save()
-        return {"status": "completed", "task_id": str(pk)}
+    ModelViewSet automatically creates these endpoints:
+    - GET    /tasks/      → List all tasks
+    - POST   /tasks/      → Create a task
+    - GET    /tasks/{id}/ → Get one task
+    - PUT    /tasks/{id}/ → Update a task
+    - DELETE /tasks/{id}/ → Delete a task
+    """
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
 ```
 
----
+**What this does:** Creates a complete REST API for tasks with just 4 lines of code.
 
-## Step 7: Register Routes
+### URLs (Route Mapping)
 
 Open `app/urls.py`:
 
 ```python
-from aksara.api import include_viewset
-from fastapi import APIRouter
-
+from aksara.api import Router
 from app.views import TaskViewSet
 
-router = APIRouter()
-include_viewset(router, TaskViewSet)
+router = Router()
+router.register("tasks", TaskViewSet)
+
+# This creates these URLs:
+# - /api/tasks/
+# - /api/tasks/{id}/
 ```
 
-Then in `main.py`, include the router:
-
-```python
-from aksara import Aksara
-from app.urls import router
-
-app = Aksara(
-    database_url="postgresql://postgres:password@localhost:5432/myproject",
-    title="My Task API",
-    enable_admin=True,
-)
-
-app.include_router(router, prefix="/api")
-```
+**What this does:** Maps URLs to your ViewSet.
 
 ---
 
-## Step 8: Run the Application
+## Step 6: Create the Database Table
+
+Run migrations to create your table:
 
 ```bash
-aksara run main:app --reload
+# Generate a migration file (like a recipe for changing the database)
+aksara makemigrations
+
+# Apply the migration (actually create the table)
+aksara migrate
 ```
 
-Your API is now running at `http://localhost:8000`.
+**What this does:**
+
+1. `makemigrations` looks at your models and creates instructions for the database
+2. `migrate` runs those instructions to create the actual tables
 
 ---
 
-## Step 9: Explore
-
-### API Documentation
-
-Visit **http://localhost:8000/docs** for interactive Swagger UI.
-
-### Admin Interface
-
-Visit **http://localhost:8000/admin** to manage your data.
-
-!!! note "Admin Login"
-    Create a superuser first:
-    ```bash
-    aksara shell
-    >>> from aksara.contrib.auth import User
-    >>> await User.objects.create(
-    ...     email="admin@example.com",
-    ...     hashed_password=User.hash_password("secret"),
-    ...     is_staff=True,
-    ...     is_superuser=True
-    ... )
-    ```
-
-### Test the API
+## Step 7: Start Your Server
 
 ```bash
-# Create a task
+aksara run
+```
+
+**What you'll see:**
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process
+```
+
+**Your API is now running!**
+
+---
+
+## Step 8: Test Your API
+
+### Using the Interactive Docs
+
+Open your browser to: **http://localhost:8000/docs**
+
+You'll see Swagger UI with all your endpoints. Try them out!
+
+### Using curl (Command Line)
+
+**Create a task:**
+
+```bash
 curl -X POST http://localhost:8000/api/tasks/ \
   -H "Content-Type: application/json" \
-  -d '{"title": "Learn Aksara", "priority": 1}'
+  -d '{"title": "Buy groceries", "description": "Milk, eggs, bread"}'
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread",
+  "completed": false,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**List all tasks:**
+
+```bash
+curl http://localhost:8000/api/tasks/
+```
+
+**Mark a task complete:**
+
+```bash
+curl -X PUT http://localhost:8000/api/tasks/{id}/ \
+  -H "Content-Type: application/json" \
+  -d '{"completed": true}'
+```
+
+**Delete a task:**
+
+```bash
+curl -X DELETE http://localhost:8000/api/tasks/{id}/
+```
+
+### Using Python
+
+```python
+import httpx
+
+# Create a task
+response = httpx.post(
+    "http://localhost:8000/api/tasks/",
+    json={"title": "Learn Aksara", "description": "Read the docs"}
+)
+task = response.json()
+print(f"Created task: {task['id']}")
 
 # List tasks
-curl http://localhost:8000/api/tasks/
-
-# Complete a task
-curl -X POST http://localhost:8000/api/tasks/{task_id}/complete
+tasks = httpx.get("http://localhost:8000/api/tasks/").json()
+print(f"You have {len(tasks)} tasks")
 ```
 
 ---
 
-## What's Next?
+## What You Built
 
-<div class="grid cards" markdown>
+Congratulations! You created:
 
--   :material-book-open-variant:{ .lg .middle } **Full Tutorial**
+✅ A **database table** to store tasks  
+✅ A **REST API** with full CRUD operations  
+✅ **Interactive documentation** at `/docs`  
+✅ **Automatic validation** of incoming data  
 
-    ---
-
-    Build a complete blog application step by step.
-
-    [:octicons-arrow-right-24: Build a Blog](tutorials/build-a-blog.md)
-
--   :material-database:{ .lg .middle } **Learn the ORM**
-
-    ---
-
-    Master models, fields, relations, and queries.
-
-    [:octicons-arrow-right-24: ORM Guide](orm/models.md)
-
--   :material-robot:{ .lg .middle } **Explore AI Mode**
-
-    ---
-
-    Make your app AI-native with tools and agents.
-
-    [:octicons-arrow-right-24: AI Overview](ai/overview.md)
-
--   :material-cog:{ .lg .middle } **Configuration**
-
-    ---
-
-    Learn all available settings and options.
-
-    [:octicons-arrow-right-24: Settings Reference](reference/settings-reference.md)
-
-</div>
+**In about 20 lines of code.**
 
 ---
 
-## Need Help?
+## Next Steps
 
-- Check the [Glossary](glossary.md) for terminology
-- Browse the [API Reference](reference/model-api-reference.md)
-- Open an issue on [GitHub](https://github.com/aksara-orm/aksara/issues)
+Now that you have a working app, learn more:
+
+| Want to... | Read This |
+|------------|-----------|
+| Add more fields to your model | [Fields Reference](orm/fields.md) |
+| Filter and search tasks | [Querying Data](orm/querying.md) |
+| Add user authentication | [Authentication](api/authentication.md) |
+| Protect your endpoints | [Permissions](api/permissions.md) |
+| Add an admin dashboard | [Admin Guide](admin/index.md) |
+| Use AI to query your data | [AI Mode](ai-mode/index.md) |
+
+---
+
+## Common Issues
+
+### "Connection refused" when running migrate
+
+**Problem:** PostgreSQL isn't running.
+
+**Solution:**
+```bash
+# macOS
+brew services start postgresql
+
+# Linux  
+sudo systemctl start postgresql
+
+# Docker
+docker start postgres
+```
+
+### "Database does not exist"
+
+**Problem:** You need to create the database first.
+
+**Solution:**
+```bash
+createdb taskmanager
+```
+
+### "Module not found" errors
+
+**Problem:** Aksara isn't installed in your current environment.
+
+**Solution:**
+```bash
+pip install aksara
+# or if using a virtual environment, activate it first
+source venv/bin/activate
+pip install aksara
+```
+
+---
+
+## Quick Reference Card
+
+```bash
+# Create a new project
+aksara startproject <name>
+
+# Create migrations
+aksara makemigrations
+
+# Apply migrations
+aksara migrate
+
+# Start development server
+aksara run
+
+# Start with specific port
+aksara run --port 8080
+
+# Start the admin panel
+aksara admin
+```
+
+**API Endpoints (automatic with ModelViewSet):**
+
+| Method | URL | Action |
+|--------|-----|--------|
+| GET | `/api/{resource}/` | List all |
+| POST | `/api/{resource}/` | Create new |
+| GET | `/api/{resource}/{id}/` | Get one |
+| PUT | `/api/{resource}/{id}/` | Update |
+| PATCH | `/api/{resource}/{id}/` | Partial update |
+| DELETE | `/api/{resource}/{id}/` | Delete |

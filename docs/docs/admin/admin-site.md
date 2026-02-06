@@ -1,19 +1,24 @@
 # AdminSite
 
-Configure the admin interface.
+The main container for your admin interface—where you configure how the admin looks and which models it manages.
 
 ---
 
-## Overview
+## What is AdminSite?
 
-`AdminSite` is the main entry point for the admin interface:
+An **AdminSite** is like the headquarters of your admin interface. It:
+
+- Holds all the models you want to manage
+- Controls the appearance (title, header, theme)
+- Manages authentication (who can access)
+- Gets mounted to your app at a URL like `/admin/`
 
 ```python
 from aksara.contrib.admin import AdminSite
 
 admin = AdminSite(
-    title="My Admin",
-    site_header="My Application",
+    title="My Admin",            # Browser tab text
+    site_header="My Application", # Header shown on every page
 )
 ```
 
@@ -21,41 +26,45 @@ admin = AdminSite(
 
 ## Configuration Options
 
-### Basic Options
+### Basic Setup
 
 ```python
 admin = AdminSite(
-    # Display settings
-    title="Admin",              # Browser tab title
-    site_header="Site Admin",   # Header text
-    index_title="Dashboard",    # Index page title
+    # What users see
+    title="Admin",              # Browser tab: "Admin"
+    site_header="Site Admin",   # Top of page: "Site Admin"
+    index_title="Dashboard",    # Homepage heading: "Dashboard"
     
-    # URL configuration
-    url_prefix="/admin",        # Base URL path
+    # Where admin lives
+    url_prefix="/admin",        # URL: yoursite.com/admin/
     
-    # Theme
-    theme="default",            # "default", "dark", or custom
+    # Look and feel
+    theme="default",            # "default" or "dark"
 )
 ```
 
-### All Options
+### All Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `title` | `str` | `"Admin"` | Browser title |
-| `site_header` | `str` | `"Site Admin"` | Page header |
-| `index_title` | `str` | `"Dashboard"` | Index page heading |
-| `url_prefix` | `str` | `"/admin"` | URL prefix |
-| `login_url` | `str` | `"/admin/login/"` | Login page URL |
-| `logout_url` | `str` | `"/admin/logout/"` | Logout URL |
-| `theme` | `str` | `"default"` | UI theme |
-| `permission_classes` | `list` | `[IsAdminUser]` | Access permissions |
+| Option | What It Does | Default | Example |
+|--------|--------------|---------|---------|
+| `title` | Browser tab text | `"Admin"` | `"Blog Admin"` |
+| `site_header` | Header at top of every page | `"Site Admin"` | `"My Blog"` |
+| `index_title` | Heading on dashboard page | `"Dashboard"` | `"Welcome"` |
+| `url_prefix` | Base URL path | `"/admin"` | `"/manage"` |
+| `login_url` | Where to go to log in | `"/admin/login/"` | `"/auth/login"` |
+| `logout_url` | Where to go after logout | `"/admin/logout/"` | `"/auth/logout"` |
+| `theme` | Visual theme | `"default"` | `"dark"` |
+| `permission_classes` | Who can access | `[IsAdminUser]` | `[IsSuperuser]` |
 
 ---
 
 ## Registering Models
 
-### Decorator Style
+**Registering** tells the admin: "I want to manage this model." There are several ways to do it.
+
+### Method 1: Decorator (Recommended)
+
+The `@admin.register()` decorator is clean and keeps the model and its admin config together:
 
 ```python
 from aksara.contrib.admin import ModelAdmin
@@ -65,7 +74,9 @@ class PostAdmin(ModelAdmin):
     list_display = ["title", "author"]
 ```
 
-### Method Style
+### Method 2: Register Method
+
+Call `admin.register()` directly—useful when the admin class is defined elsewhere:
 
 ```python
 from aksara.contrib.admin import ModelAdmin
@@ -73,114 +84,173 @@ from aksara.contrib.admin import ModelAdmin
 class PostAdmin(ModelAdmin):
     list_display = ["title", "author"]
 
+# Register separately
 admin.register(Post, PostAdmin)
 ```
 
-### Simple Registration
+### Method 3: Simple Registration
 
-For default admin (no customization):
+For basic models that don't need customization, just pass the model:
 
 ```python
-admin.register(Post)
+admin.register(Post)      # Uses default settings
 admin.register(Author)
 admin.register(Category)
 ```
 
-### Multiple Models
+### Method 4: Multiple Models, Same Config
+
+When several models should share the same admin configuration:
 
 ```python
-@admin.register(Post, Draft)
+@admin.register(Post, Draft, Archive)
 class ContentAdmin(ModelAdmin):
-    """Same admin for multiple similar models."""
+    """Same admin for all content-type models."""
     list_display = ["title", "created_at"]
+    search_fields = ["title"]
 ```
 
 ---
 
-## Mounting Admin
+## Mounting the Admin
 
-### On Aksara App
+**Mounting** connects your admin to your application so it's accessible via a URL.
+
+### Basic Mount
 
 ```python
 from aksara import Aksara
 from myapp.admin import admin
 
 app = Aksara()
-app.mount("/admin", admin)
+app.mount("/admin", admin)  # Admin at: http://localhost:8000/admin/
 ```
 
-### With Custom Path
+### Custom URL Path
 
 ```python
-app.mount("/manage", admin)
-# Admin at: http://localhost:8000/manage/
+app.mount("/manage", admin)    # Admin at: http://localhost:8000/manage/
+app.mount("/backend", admin)   # Admin at: http://localhost:8000/backend/
 ```
 
 ### Multiple Admin Sites
 
+You can have separate admin interfaces for different purposes:
+
 ```python
-# Public admin
-public_admin = AdminSite(title="Content Admin")
-public_admin.register(Post, PostAdmin)
+# Public admin: for content editors
+public_admin = AdminSite(
+    title="Content Admin",
+    site_header="Content Management",
+)
+public_admin.register(Post)
+public_admin.register(Category)
 
-# Private admin (more models)
-private_admin = AdminSite(title="Full Admin")
-private_admin.register(Post, PostAdmin)
-private_admin.register(User, UserAdmin)
-private_admin.register(Settings, SettingsAdmin)
+# Private admin: for superusers with full access
+private_admin = AdminSite(
+    title="Full Admin",
+    site_header="System Administration",
+)
+private_admin.register(Post)
+private_admin.register(User)
+private_admin.register(Settings)
+private_admin.register(AuditLog)
 
-# Mount both
-app.mount("/admin", public_admin)
-app.mount("/superadmin", private_admin)
+# Mount both at different URLs
+app.mount("/admin", public_admin)        # /admin/ for editors
+app.mount("/superadmin", private_admin)  # /superadmin/ for admins
 ```
 
 ---
 
-## Customizing the Index
+## Customizing the Dashboard
 
-### Custom Index Template
+The **dashboard** (index page) is the first thing users see when they open the admin.
 
-```python
-admin = AdminSite(
-    index_template="admin/custom_index.html",
-)
-```
+### Custom Dashboard with Statistics
 
-### Dashboard Widgets
+Override the index view to show custom data:
 
 ```python
 admin = AdminSite()
 
 @admin.index_view
-async def custom_index(request):
-    """Custom dashboard with statistics."""
+async def custom_dashboard(request):
+    """Show statistics on the dashboard."""
     return {
+        # These become available in the template
         "recent_posts": await Post.objects.order_by("-created_at")[:5],
         "total_users": await User.objects.count(),
         "pending_reviews": await Post.objects.filter(status="pending").count(),
+        "today_signups": await User.objects.filter(created_at__date=today).count(),
     }
+```
+
+### Custom Dashboard Template
+
+Use your own HTML template for complete control:
+
+```python
+admin = AdminSite(
+    index_template="admin/my_dashboard.html",
+)
+```
+
+Then create `templates/admin/my_dashboard.html`:
+
+```html
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Welcome, {{ user.name }}!</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ total_users }}</h3>
+            <p>Total Users</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ pending_reviews }}</h3>
+            <p>Pending Reviews</p>
+        </div>
+    </div>
+    
+    <h2>Recent Posts</h2>
+    <ul>
+    {% for post in recent_posts %}
+        <li>{{ post.title }} by {{ post.author.name }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}
 ```
 
 ---
 
 ## Authentication
 
-### Default Authentication
+The admin must know who's logged in and whether they're allowed access.
 
-By default, admin requires `is_staff=True`:
+### Default: Staff Users Only
+
+By default, only users with `is_staff=True` can access the admin:
 
 ```python
-# User must have is_staff=True to access admin
+# Give a user admin access
 user.is_staff = True
 await user.save()
 ```
 
-### Custom Permission
+### Require Superuser
+
+To restrict to superusers only:
 
 ```python
 from aksara.permissions import BasePermission
 
-class IsSuperAdmin(BasePermission):
+class IsSuperuser(BasePermission):
+    """Only allow superusers."""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
@@ -188,122 +258,92 @@ class IsSuperAdmin(BasePermission):
         )
 
 admin = AdminSite(
-    permission_classes=[IsSuperAdmin],
+    permission_classes=[IsSuperuser],
 )
 ```
 
-### Custom Login View
+### Use Your App's Login
+
+If your app already has login/logout pages, use those instead of the admin's:
 
 ```python
 admin = AdminSite(
-    login_url="/auth/login",  # Use app's login
-    logout_url="/auth/logout",
+    login_url="/auth/login",    # Redirect here to log in
+    logout_url="/auth/logout",  # Redirect here to log out
 )
 ```
 
----
+### Multiple Permission Requirements
 
-## Theming
-
-### Built-in Themes
-
-```python
-# Default light theme
-admin = AdminSite(theme="default")
-
-# Dark theme
-admin = AdminSite(theme="dark")
-```
-
-### Custom Theme
+All permissions must pass (AND logic):
 
 ```python
 admin = AdminSite(
-    theme="custom",
-    theme_config={
-        "primary_color": "#3498db",
-        "secondary_color": "#2ecc71",
-        "background": "#ffffff",
-        "sidebar_bg": "#2c3e50",
-        "font_family": "Inter, sans-serif",
-    },
-)
-```
-
-### Custom CSS
-
-```python
-admin = AdminSite(
-    extra_css=[
-        "/static/admin/custom.css",
+    permission_classes=[
+        IsAuthenticated,  # Must be logged in
+        IsStaff,          # AND must be staff
+        IsNotBanned,      # AND must not be banned
     ],
 )
 ```
 
 ---
 
-## Admin Actions
+## Themes
 
-### Global Actions
+### Built-in Themes
 
 ```python
-admin = AdminSite()
+# Light theme (default)
+admin = AdminSite(theme="default")
 
-@admin.action(name="Export All Data")
-async def export_all(request):
-    """Export all data as JSON."""
-    data = {
-        "posts": [p.to_dict() for p in await Post.objects.all()],
-        "authors": [a.to_dict() for a in await Author.objects.all()],
-    }
-    return JSONResponse(data)
+# Dark theme
+admin = AdminSite(theme="dark")
 ```
 
-### Dashboard Links
+### Custom CSS
+
+Add your own styles:
 
 ```python
-admin = AdminSite()
-
-admin.add_link(
-    name="View Site",
-    url="/",
-    icon="external-link",
-)
-
-admin.add_link(
-    name="API Docs",
-    url="/docs",
-    icon="code",
+admin = AdminSite(
+    extra_css=["/static/admin/custom.css"],
 )
 ```
 
 ---
 
-## Hooks
+## Unregistering Models
 
-### Before Request
+Remove a model from the admin (useful for overriding third-party admin configs):
 
 ```python
-admin = AdminSite()
+# Remove if previously registered
+admin.unregister(Post)
 
-@admin.before_request
-async def log_admin_access(request):
-    """Log all admin accesses."""
-    logger.info(f"Admin access: {request.user.email} -> {request.url}")
+# Then re-register with your own config
+@admin.register(Post)
+class MyPostAdmin(ModelAdmin):
+    list_display = ["title", "custom_field"]
 ```
 
-### After Request
+---
+
+## Getting Registered Models
+
+Access the list of registered models:
 
 ```python
-@admin.after_request
-async def audit_changes(request, response):
-    """Audit admin changes."""
-    if request.method in ["POST", "PUT", "DELETE"]:
-        await AuditLog.objects.create(
-            user=request.user,
-            action=request.method,
-            path=request.url.path,
-        )
+# Get all registered models
+for model, model_admin in admin.registry.items():
+    print(f"{model.__name__}: {model_admin.__class__.__name__}")
+
+# Check if a model is registered
+if Post in admin.registry:
+    print("Post is registered")
+
+# Get the ModelAdmin for a model
+post_admin = admin.registry.get(Post)
 ```
 
 ---
@@ -314,25 +354,34 @@ async def audit_changes(request, response):
 # admin.py
 from aksara.contrib.admin import AdminSite, ModelAdmin
 from aksara.permissions import BasePermission
-from myapp.models import Post, Author, Category, Tag, User, Settings
+from myapp.models import Post, Author, Category, Settings
 
 
-class IsStaffOrSuperuser(BasePermission):
+# Custom permission
+class IsEditorOrAdmin(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            (request.user.is_staff or request.user.is_superuser)
-        )
+        if not request.user.is_authenticated:
+            return False
+        return request.user.role in ["editor", "admin", "superuser"]
 
 
 # Create admin site
 admin = AdminSite(
     title="Blog Admin",
-    site_header="Blog Administration",
+    site_header="Blog Content Management",
     index_title="Dashboard",
-    theme="default",
-    permission_classes=[IsStaffOrSuperuser],
+    permission_classes=[IsEditorOrAdmin],
 )
+
+
+# Custom dashboard
+@admin.index_view
+async def dashboard(request):
+    return {
+        "post_count": await Post.objects.count(),
+        "draft_count": await Post.objects.filter(is_published=False).count(),
+        "author_count": await Author.objects.count(),
+    }
 
 
 # Register models
@@ -345,51 +394,29 @@ class PostAdmin(ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(ModelAdmin):
-    list_display = ["name", "email"]
+    list_display = ["name", "email", "post_count"]
     search_fields = ["name", "email"]
 
 
-@admin.register(Category)
-class CategoryAdmin(ModelAdmin):
-    list_display = ["name", "slug"]
+# Simple registration
+admin.register(Category)
+```
 
+```python
+# main.py
+from aksara import Aksara
+from aksara.contrib.auth.middleware import AuthenticationMiddleware
+from myapp.admin import admin
 
-admin.register(Tag)  # Simple registration
-
-
-# Custom dashboard
-@admin.index_view
-async def dashboard(request):
-    return {
-        "stats": {
-            "total_posts": await Post.objects.count(),
-            "published_posts": await Post.objects.filter(is_published=True).count(),
-            "total_authors": await Author.objects.count(),
-        },
-        "recent_posts": await Post.objects.order_by("-created_at")[:5],
-    }
-
-
-# Audit logging
-@admin.after_request
-async def audit_log(request, response):
-    if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
-        from myapp.models import AuditLog
-        await AuditLog.objects.create(
-            user_id=str(request.user.id),
-            action=f"{request.method} {request.url.path}",
-        )
-
-
-# Add useful links
-admin.add_link("View Site", "/", icon="home")
-admin.add_link("API Docs", "/docs", icon="book")
+app = Aksara()
+app.add_middleware(AuthenticationMiddleware)
+app.mount("/admin", admin)
 ```
 
 ---
 
 ## Related Documentation
 
-- [ModelAdmin](model-admin.md) — Model customization
-- [Admin Permissions](admin-permissions.md) — Access control
-- [Authentication](../api/authentication.md) — User auth
+- [ModelAdmin](model-admin.md) — Customize how models appear
+- [Permissions](admin-permissions.md) — Fine-grained access control
+- [Models](../orm/models.md) — Define your data structure

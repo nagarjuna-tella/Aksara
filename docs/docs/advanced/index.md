@@ -40,8 +40,8 @@ from aksara import Model, fields
 from aksara.signals import pre_save, post_save
 
 class Post(Model):
-    title = fields.StringField()
-    slug = fields.StringField()
+    title = fields.String(max_length=200)
+    slug = fields.String(max_length=200)
 
 @pre_save(Post)
 async def generate_slug(sender, instance, **kwargs):

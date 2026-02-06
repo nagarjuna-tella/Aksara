@@ -1,627 +1,587 @@
 # Serializers
 
-Transform and validate data for API requests and responses.
+Convert data between Python objects and JSON, and validate incoming requests.
 
 ---
 
-## Overview
+## What is a Serializer?
 
-Serializers handle:
+A **Serializer** is like a translator between two languages:
 
-- **Request validation** — Validate incoming JSON data
-- **Response transformation** — Format model data for output
-- **Field selection** — Control which fields are exposed
-- **Nested serialization** — Handle related objects
+- **Python** ↔ **JSON**
 
-```python
-from aksara.api import ModelSerializer
-from myapp.models import Post
+When your API receives data, the serializer:
 
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "author", "created_at"]
-    read_only_fields = ["id", "created_at"]
+1. **Validates** — Is this data correct?
+2. **Converts** — Turn JSON into Python objects
+
+When your API sends data, the serializer:
+
+1. **Selects** — Which fields should be included?
+2. **Converts** — Turn Python objects into JSON
+
+```
+                         SERIALIZER
+                             │
+    ┌──────────────┐         │         ┌──────────────┐
+    │   JSON       │ ───────►│────────►│   Python     │
+    │   Request    │         │         │   Object     │
+    │              │         │         │              │
+    │ {"title":    │  Input  │ Output  │ task.title   │
+    │  "Buy milk"} │         │         │ = "Buy milk" │
+    └──────────────┘         │         └──────────────┘
+                             │
 ```
 
 ---
 
-## ModelSerializer
+## Basic Usage
 
-The most common serializer type, automatically maps to a model:
+### Creating a Serializer
 
 ```python
 from aksara.api import ModelSerializer
+from myapp.models import Task
 
-class PostSerializer(ModelSerializer):
-    model = Post
+class TaskSerializer(ModelSerializer):
+    """
+    Converts Task objects to/from JSON.
+    """
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "completed", "created_at"]
 ```
 
-### Specifying Fields
-
-#### All Fields
+### Using a Serializer
 
 ```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = "__all__"
+# Serialize: Python → JSON
+task = await Task.objects.get(id=task_id)
+serializer = TaskSerializer(task)
+json_data = serializer.data
+# {"id": "abc123", "title": "Buy milk", "completed": false, ...}
+
+# Deserialize: JSON → Python
+data = {"title": "Buy eggs", "description": "Get a dozen"}
+serializer = TaskSerializer(data=data)
+serializer.is_valid(raise_exception=True)  # Validates
+task = await serializer.save()  # Creates the object
 ```
 
-#### Specific Fields
+---
+
+## Specifying Fields
+
+### Include Specific Fields
 
 ```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "author_id", "created_at"]
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "completed"]  # Only these fields
 ```
 
-#### Exclude Fields
+**Result:**
+```json
+{"id": "abc123", "title": "Buy milk", "completed": false}
+```
+
+### Include All Fields
 
 ```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    exclude = ["internal_notes", "deleted_at"]
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = "__all__"  # Every field on the model
 ```
+
+### Exclude Fields
+
+```python
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        exclude = ["internal_notes", "deleted_at"]  # Everything except these
+```
+
+---
+
+## Field Access Control
 
 ### Read-Only Fields
 
-Fields that can be read but not set via API:
+**What it means:** Users can see these fields but can't change them.
 
 ```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = "__all__"
-    read_only_fields = ["id", "created_at", "updated_at", "author_id"]
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "completed", "created_at"]
+        read_only_fields = ["id", "created_at"]  # Can't be set by user
 ```
+
+**Use case:** IDs, timestamps, calculated values.
 
 ### Write-Only Fields
 
-Fields that can be set but not read (e.g., passwords):
+**What it means:** Users can send these fields but won't see them in responses.
 
 ```python
 class UserSerializer(ModelSerializer):
-    model = User
-    fields = ["id", "email", "password", "name"]
-    write_only_fields = ["password"]
+    class Meta:
+        model = User
+        fields = ["id", "email", "password", "name"]
+        write_only_fields = ["password"]  # Hidden in responses
 ```
 
----
-
-## Field Options
-
-### Custom Field Configuration
-
-```python
-from aksara.api import ModelSerializer, Field
-
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "summary"]
-    
-    # Custom field not on model
-    summary = Field(read_only=True)
-    
-    def get_summary(self, obj):
-        """Compute summary from content."""
-        return obj.content[:200] + "..." if len(obj.content) > 200 else obj.content
-```
-
-### Field Validation
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content"]
-    
-    def validate_title(self, value):
-        """Validate title field."""
-        if len(value) < 5:
-            raise ValidationError("Title must be at least 5 characters")
-        return value
-    
-    def validate_content(self, value):
-        """Validate content field."""
-        if not value.strip():
-            raise ValidationError("Content cannot be empty")
-        return value
-```
-
-### Object-Level Validation
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "slug", "content"]
-    
-    def validate(self, data):
-        """Validate the entire object."""
-        # Ensure slug is unique for this author
-        existing = await Post.objects.filter(
-            author_id=self.context["user_id"],
-            slug=data.get("slug"),
-        ).exclude(id=self.instance.id if self.instance else None).first()
-        
-        if existing:
-            raise ValidationError({"slug": "You already have a post with this slug"})
-        
-        return data
-```
-
----
-
-## Nested Serialization
-
-### Related Objects
-
-```python
-class AuthorSerializer(ModelSerializer):
-    model = Author
-    fields = ["id", "name", "email"]
-
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "author", "created_at"]
-    
-    # Nest the author
-    author = AuthorSerializer(read_only=True)
-```
-
-Output:
-```json
-{
-    "id": "post-uuid",
-    "title": "My Post",
-    "content": "...",
-    "author": {
-        "id": "author-uuid",
-        "name": "Jane Doe",
-        "email": "jane@example.com"
-    },
-    "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-### Nested Writable
-
-```python
-class CommentSerializer(ModelSerializer):
-    model = Comment
-    fields = ["id", "content", "author_id"]
-
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "comments"]
-    
-    # Writable nested serializer
-    comments = CommentSerializer(many=True)
-    
-    async def create(self, validated_data):
-        comments_data = validated_data.pop("comments", [])
-        post = await Post.objects.create(**validated_data)
-        
-        for comment_data in comments_data:
-            await Comment.objects.create(post=post, **comment_data)
-        
-        return post
-```
-
-### Many=True for Lists
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "tags"]
-    
-    # List of nested objects
-    tags = TagSerializer(many=True, read_only=True)
-```
-
----
-
-## Computed Fields
-
-### Method Fields
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "summary", "word_count", "is_long"]
-    
-    summary = Field(read_only=True)
-    word_count = Field(read_only=True)
-    is_long = Field(read_only=True)
-    
-    def get_summary(self, obj):
-        """First 200 characters."""
-        content = obj.content or ""
-        return content[:200] + "..." if len(content) > 200 else content
-    
-    def get_word_count(self, obj):
-        """Count words in content."""
-        return len((obj.content or "").split())
-    
-    def get_is_long(self, obj):
-        """True if over 1000 words."""
-        return self.get_word_count(obj) > 1000
-```
-
-### Context-Aware Fields
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "is_mine", "can_edit"]
-    
-    is_mine = Field(read_only=True)
-    can_edit = Field(read_only=True)
-    
-    def get_is_mine(self, obj):
-        """Check if current user owns this post."""
-        user = self.context.get("request").user
-        return str(obj.author_id) == str(user.id)
-    
-    def get_can_edit(self, obj):
-        """Check if current user can edit."""
-        user = self.context.get("request").user
-        return (
-            str(obj.author_id) == str(user.id) or
-            user.is_staff
-        )
-```
-
----
-
-## Serialization Context
-
-Pass context to serializers for dynamic behavior:
-
-```python
-# In ViewSet
-def serialize(self, obj):
-    serializer = self.get_serializer_class()(
-        obj,
-        context={
-            "request": self.request,
-            "view": self,
-            "user": self.request.user,
-        }
-    )
-    return serializer.data
-
-# In Serializer
-class PostSerializer(ModelSerializer):
-    model = Post
-    
-    def get_edit_url(self, obj):
-        request = self.context.get("request")
-        return request.url_for("post-edit", id=obj.id)
-```
-
----
-
-## Different Serializers per Action
-
-### List vs Detail
-
-```python
-class PostListSerializer(ModelSerializer):
-    """Minimal data for lists."""
-    model = Post
-    fields = ["id", "title", "author_id", "created_at"]
-
-class PostDetailSerializer(ModelSerializer):
-    """Full data for detail view."""
-    model = Post
-    fields = "__all__"
-    
-    author = AuthorSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    comments_count = Field(read_only=True)
-    
-    def get_comments_count(self, obj):
-        return len(obj.comments) if hasattr(obj, "comments") else 0
-
-# In ViewSet
-class PostViewSet(ModelViewSet):
-    model = Post
-    serializer_class = PostDetailSerializer
-    
-    def get_serializer_class(self):
-        if self.action == "list":
-            return PostListSerializer
-        return PostDetailSerializer
-```
-
-### Create vs Update
-
-```python
-class PostCreateSerializer(ModelSerializer):
-    """Fields for creation."""
-    model = Post
-    fields = ["title", "content", "category_id", "tags"]
-    
-class PostUpdateSerializer(ModelSerializer):
-    """Fields for update."""
-    model = Post
-    fields = ["title", "content", "category_id"]
-    # Cannot change tags during update
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    
-    def get_serializer_class(self):
-        if self.action == "create":
-            return PostCreateSerializer
-        if self.action in ["update", "partial_update"]:
-            return PostUpdateSerializer
-        return PostDetailSerializer
-```
+**Use case:** Passwords, secrets, internal codes.
 
 ---
 
 ## Validation
 
+### Automatic Validation
+
+Serializers automatically validate:
+
+| Check | What It Does |
+|-------|--------------|
+| Required fields | Ensures all required fields are present |
+| Data types | Ensures correct types (string, number, etc.) |
+| Max length | Ensures strings don't exceed limits |
+| Valid values | Ensures enum values are valid |
+
+```python
+# This will fail validation:
+data = {"title": ""}  # Title is required and can't be empty
+serializer = TaskSerializer(data=data)
+serializer.is_valid()  # Returns False
+print(serializer.errors)  # {"title": ["This field is required."]}
+```
+
 ### Field-Level Validation
 
+Add custom validation for a specific field.
+
 ```python
-class UserSerializer(ModelSerializer):
-    model = User
-    fields = ["email", "password", "name"]
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description"]
     
-    def validate_email(self, value):
-        """Validate email field."""
-        if not value.endswith("@company.com"):
-            raise ValidationError("Must use company email")
-        return value.lower()  # Normalize
-    
-    def validate_password(self, value):
-        """Validate password field."""
-        if len(value) < 8:
-            raise ValidationError("Password must be at least 8 characters")
-        if not any(c.isdigit() for c in value):
-            raise ValidationError("Password must contain a digit")
-        return value
+    def validate_title(self, value):
+        """
+        Custom validation for the title field.
+        
+        This runs when someone tries to set the title.
+        """
+        # Check minimum length
+        if len(value) < 3:
+            raise ValidationError("Title must be at least 3 characters")
+        
+        # Check for banned words
+        banned_words = ["spam", "test123"]
+        if any(word in value.lower() for word in banned_words):
+            raise ValidationError("Title contains banned words")
+        
+        return value  # Return the value (possibly modified)
 ```
 
-### Cross-Field Validation
+### Object-Level Validation
+
+Validate multiple fields together.
 
 ```python
-class EventSerializer(ModelSerializer):
-    model = Event
-    fields = ["title", "start_date", "end_date"]
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "due_date", "reminder_date"]
     
     def validate(self, data):
-        """Validate across fields."""
-        if data.get("end_date") and data.get("start_date"):
-            if data["end_date"] < data["start_date"]:
-                raise ValidationError({
-                    "end_date": "End date must be after start date"
-                })
+        """
+        Validate the entire object.
+        
+        Use this when validation depends on multiple fields.
+        """
+        due_date = data.get("due_date")
+        reminder_date = data.get("reminder_date")
+        
+        if reminder_date and due_date and reminder_date > due_date:
+            raise ValidationError({
+                "reminder_date": "Reminder must be before the due date"
+            })
+        
         return data
-```
-
-### Async Validation
-
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["title", "slug"]
-    
-    async def validate_slug(self, value):
-        """Check slug uniqueness."""
-        exists = await Post.objects.filter(slug=value).exists()
-        if exists:
-            raise ValidationError("This slug is already taken")
-        return value
 ```
 
 ---
 
-## Response Formatting
+## Custom Fields
 
-### Transform Output
+### Computed Fields
 
-```python
-class PostSerializer(ModelSerializer):
-    model = Post
-    fields = ["id", "title", "content", "created_at"]
-    
-    def to_representation(self, obj):
-        """Customize output format."""
-        data = super().to_representation(obj)
-        
-        # Format datetime
-        if data.get("created_at"):
-            data["created_at_human"] = humanize_datetime(data["created_at"])
-        
-        # Add computed fields
-        data["url"] = f"/posts/{data['id']}"
-        
-        return data
-```
-
-### Transform Input
+Add fields that don't exist on the model.
 
 ```python
-class PostSerializer(ModelSerializer):
-    model = Post
+from aksara.api import ModelSerializer, SerializerMethodField
+
+class TaskSerializer(ModelSerializer):
+    # Field computed from a method
+    summary = SerializerMethodField()
+    is_overdue = SerializerMethodField()
     
-    def to_internal_value(self, data):
-        """Transform input before validation."""
-        # Normalize title
-        if "title" in data:
-            data["title"] = data["title"].strip()
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "summary", "is_overdue", "due_date"]
+    
+    def get_summary(self, obj):
+        """
+        Create a short summary from the description.
         
-        # Auto-generate slug
-        if "title" in data and "slug" not in data:
-            data["slug"] = slugify(data["title"])
-        
-        return super().to_internal_value(data)
+        Method name must be `get_<field_name>`.
+        """
+        if not obj.description:
+            return ""
+        return obj.description[:100] + "..." if len(obj.description) > 100 else obj.description
+    
+    def get_is_overdue(self, obj):
+        """Check if task is past due date."""
+        if not obj.due_date:
+            return False
+        return obj.due_date < datetime.now() and not obj.completed
 ```
+
+**Result:**
+```json
+{
+  "id": "abc123",
+  "title": "Buy milk",
+  "description": "Get 2% milk from the store on Main Street...",
+  "summary": "Get 2% milk from the store on Main Street...",
+  "is_overdue": true,
+  "due_date": "2024-01-01T10:00:00Z"
+}
+```
+
+### Renamed Fields
+
+Expose a field with a different name.
+
+```python
+from aksara.api import ModelSerializer, Field
+
+class TaskSerializer(ModelSerializer):
+    # Expose "created_at" as "createdAt" for JavaScript
+    createdAt = Field(source="created_at", read_only=True)
+    
+    class Meta:
+        model = Task
+        fields = ["id", "title", "createdAt"]
+```
+
+---
+
+## Nested Serializers
+
+Include related objects in your response.
+
+### Basic Nesting
+
+```python
+class AuthorSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "name", "email"]
+
+class PostSerializer(ModelSerializer):
+    # Nest the author object
+    author = AuthorSerializer(read_only=True)
+    
+    class Meta:
+        model = Post
+        fields = ["id", "title", "content", "author"]
+```
+
+**Result:**
+```json
+{
+  "id": "post-123",
+  "title": "Hello World",
+  "content": "This is my first post...",
+  "author": {
+    "id": "user-456",
+    "name": "Alice",
+    "email": "alice@example.com"
+  }
+}
+```
+
+### Many Nested Objects
+
+For lists of related objects (like tags on a post).
+
+```python
+class TagSerializer(ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name"]
+
+class PostSerializer(ModelSerializer):
+    # many=True for lists
+    tags = TagSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Post
+        fields = ["id", "title", "tags"]
+```
+
+**Result:**
+```json
+{
+  "id": "post-123",
+  "title": "Python Tips",
+  "tags": [
+    {"id": "tag-1", "name": "python"},
+    {"id": "tag-2", "name": "programming"}
+  ]
+}
+```
+
+---
+
+## Different Serializers for Different Actions
+
+Use simple serializers for lists, detailed for single items.
+
+```python
+# Simple serializer for list view (less data = faster)
+class TaskListSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "completed"]
+
+# Detailed serializer for detail view (all the info)
+class TaskDetailSerializer(ModelSerializer):
+    author = UserSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "completed", 
+                  "author", "tags", "created_at", "updated_at"]
+```
+
+**Use in ViewSet:**
+```python
+class TaskViewSet(ModelViewSet):
+    model = Task
+    serializer_class = TaskDetailSerializer      # For single item
+    list_serializer_class = TaskListSerializer   # For list view
+```
+
+---
+
+## Context
+
+Pass extra information to the serializer.
+
+```python
+# In ViewSet
+class TaskViewSet(ModelViewSet):
+    model = Task
+    
+    def get_serializer_context(self):
+        """Add the current user to serializer context."""
+        return {
+            "user": self.request.user,
+            "request": self.request,
+        }
+
+# In Serializer
+class TaskSerializer(ModelSerializer):
+    is_owner = SerializerMethodField()
+    
+    class Meta:
+        model = Task
+        fields = ["id", "title", "is_owner"]
+    
+    def get_is_owner(self, obj):
+        """Check if current user owns this task."""
+        user = self.context.get("user")
+        return user and obj.user_id == user.id
+```
+
+---
+
+## Creating and Updating
+
+### Creating Objects
+
+```python
+# Data from request
+data = {"title": "New Task", "description": "Do something"}
+
+# Validate
+serializer = TaskSerializer(data=data)
+serializer.is_valid(raise_exception=True)
+
+# Create
+task = await serializer.save()
+```
+
+### Updating Objects
+
+```python
+# Get existing object
+task = await Task.objects.get(id=task_id)
+
+# Partial update (PATCH) - only provided fields
+data = {"completed": True}
+serializer = TaskSerializer(task, data=data, partial=True)
+serializer.is_valid(raise_exception=True)
+updated_task = await serializer.save()
+
+# Full update (PUT) - all fields required
+data = {"title": "Updated Task", "description": "New description", "completed": True}
+serializer = TaskSerializer(task, data=data)
+serializer.is_valid(raise_exception=True)
+updated_task = await serializer.save()
+```
+
+### Custom Create/Update Logic
+
+```python
+class TaskSerializer(ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description"]
+    
+    async def create(self, validated_data):
+        """Custom create logic."""
+        # Add extra data
+        validated_data["user_id"] = self.context["user"].id
+        
+        # Create the object
+        return await Task.objects.create(**validated_data)
+    
+    async def update(self, instance, validated_data):
+        """Custom update logic."""
+        # Track what changed
+        old_title = instance.title
+        
+        # Update fields
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        
+        await instance.save()
+        
+        # Log if title changed
+        if old_title != instance.title:
+            print(f"Task renamed: {old_title} → {instance.title}")
+        
+        return instance
+```
+
+---
+
+## Quick Reference
+
+### Meta Options
+
+| Option | What It Does | Example |
+|--------|--------------|---------|
+| `model` | The model to serialize | `model = Task` |
+| `fields` | Which fields to include | `["id", "title"]` or `"__all__"` |
+| `exclude` | Which fields to exclude | `["internal_notes"]` |
+| `read_only_fields` | Can read, can't write | `["id", "created_at"]` |
+| `write_only_fields` | Can write, can't read | `["password"]` |
+
+### Field Types
+
+| Type | Use Case |
+|------|----------|
+| `Field()` | Basic field with options |
+| `SerializerMethodField()` | Computed from a method |
+| `PrimaryKeyRelatedField()` | Return ID of related object |
+| `StringRelatedField()` | Return str() of related object |
+| `NestedSerializer()` | Full nested object |
+
+### Validation Methods
+
+| Method | When It Runs |
+|--------|--------------|
+| `validate_<field>(value)` | For one field |
+| `validate(data)` | For entire object |
 
 ---
 
 ## Complete Example
 
 ```python
-from aksara.api import ModelSerializer, Field, ValidationError
-from myapp.models import Post, Author, Tag, Comment
+from datetime import datetime
+from aksara.api import ModelSerializer, SerializerMethodField
+from aksara.api.validators import ValidationError
+from myapp.models import Task, User, Tag
 
-
-class AuthorSerializer(ModelSerializer):
-    """Serializer for Author model."""
-    model = Author
-    fields = ["id", "name", "email", "avatar_url"]
-
+class UserBriefSerializer(ModelSerializer):
+    """Minimal user info for nesting."""
+    class Meta:
+        model = User
+        fields = ["id", "name"]
 
 class TagSerializer(ModelSerializer):
-    """Serializer for Tag model."""
-    model = Tag
-    fields = ["id", "name", "slug"]
+    class Meta:
+        model = Tag
+        fields = ["id", "name"]
 
-
-class CommentSerializer(ModelSerializer):
-    """Serializer for Comment model."""
-    model = Comment
-    fields = ["id", "content", "author_id", "created_at"]
-    read_only_fields = ["id", "created_at"]
-
-
-class PostListSerializer(ModelSerializer):
-    """Minimal serializer for post lists."""
-    model = Post
-    fields = ["id", "title", "is_published", "author_id", "created_at"]
-
-
-class PostDetailSerializer(ModelSerializer):
-    """Full serializer for post detail."""
-    model = Post
-    fields = [
-        "id", "title", "slug", "content", "is_published",
-        "author", "tags", "comments_count", "view_count",
-        "created_at", "updated_at", "published_at",
-        "reading_time", "is_editable",
-    ]
-    read_only_fields = [
-        "id", "created_at", "updated_at", "published_at",
-        "view_count", "comments_count",
-    ]
-    
-    # Nested serializers
-    author = AuthorSerializer(read_only=True)
+class TaskSerializer(ModelSerializer):
+    """
+    Full task serializer with related objects and computed fields.
+    """
+    # Nested objects
+    assigned_to = UserBriefSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     
     # Computed fields
-    comments_count = Field(read_only=True)
-    reading_time = Field(read_only=True)
-    is_editable = Field(read_only=True)
+    is_overdue = SerializerMethodField()
+    summary = SerializerMethodField()
     
-    def get_comments_count(self, obj):
-        """Get number of comments."""
-        if hasattr(obj, "_comments_count"):
-            return obj._comments_count
-        return 0
+    class Meta:
+        model = Task
+        fields = [
+            "id", "title", "description", "summary",
+            "completed", "is_overdue",
+            "due_date", "assigned_to", "tags",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
     
-    def get_reading_time(self, obj):
-        """Estimate reading time in minutes."""
-        words = len((obj.content or "").split())
-        return max(1, words // 200)
-    
-    def get_is_editable(self, obj):
-        """Check if current user can edit."""
-        user = self.context.get("request").user
-        if not user or user.is_anonymous:
+    def get_is_overdue(self, obj):
+        if not obj.due_date or obj.completed:
             return False
-        return str(obj.author_id) == str(user.id) or user.is_staff
-
-
-class PostCreateSerializer(ModelSerializer):
-    """Serializer for creating posts."""
-    model = Post
-    fields = ["title", "slug", "content", "category_id", "tag_ids"]
+        return obj.due_date < datetime.now()
     
-    tag_ids = Field(write_only=True, required=False)
+    def get_summary(self, obj):
+        if not obj.description:
+            return ""
+        return obj.description[:100] + "..." if len(obj.description) > 100 else obj.description
     
     def validate_title(self, value):
-        """Validate title."""
-        value = value.strip()
-        if len(value) < 5:
-            raise ValidationError("Title must be at least 5 characters")
-        if len(value) > 200:
-            raise ValidationError("Title must be at most 200 characters")
+        if len(value) < 3:
+            raise ValidationError("Title must be at least 3 characters")
         return value
     
-    def validate_slug(self, value):
-        """Validate slug format."""
-        import re
-        if not re.match(r"^[a-z0-9-]+$", value):
-            raise ValidationError("Slug must be lowercase letters, numbers, and hyphens")
-        return value
-    
-    async def validate(self, data):
-        """Cross-field validation."""
-        # Auto-generate slug if not provided
-        if not data.get("slug") and data.get("title"):
-            from slugify import slugify
-            data["slug"] = slugify(data["title"])
-        
-        # Check slug uniqueness
-        author_id = self.context.get("author_id")
-        exists = await Post.objects.filter(
-            author_id=author_id,
-            slug=data["slug"],
-        ).exists()
-        
-        if exists:
-            raise ValidationError({"slug": "You already have a post with this slug"})
-        
+    def validate(self, data):
+        due_date = data.get("due_date")
+        if due_date and due_date < datetime.now():
+            raise ValidationError({"due_date": "Due date cannot be in the past"})
         return data
-    
-    async def create(self, validated_data):
-        """Create post with tags."""
-        tag_ids = validated_data.pop("tag_ids", [])
-        
-        # Set author from context
-        validated_data["author_id"] = self.context.get("author_id")
-        
-        post = await Post.objects.create(**validated_data)
-        
-        # Add tags
-        if tag_ids:
-            tags = await Tag.objects.filter(id__in=tag_ids).all()
-            await post.tags.add(*tags)
-        
-        return post
-
-
-class PostUpdateSerializer(ModelSerializer):
-    """Serializer for updating posts."""
-    model = Post
-    fields = ["title", "slug", "content", "category_id", "is_published"]
-    
-    def validate_title(self, value):
-        """Validate title."""
-        if value and len(value) < 5:
-            raise ValidationError("Title must be at least 5 characters")
-        return value
-    
-    async def update(self, instance, validated_data):
-        """Update post."""
-        # If publishing, set published_at
-        if validated_data.get("is_published") and not instance.is_published:
-            from datetime import datetime
-            validated_data["published_at"] = datetime.now()
-        
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        
-        await instance.save()
-        return instance
 ```
 
 ---
 
 ## Related Documentation
 
-- [ViewSets](viewsets.md) — Using serializers in ViewSets
+- [ViewSets](viewsets.md) — Use serializers in API endpoints
+- [Validation](validation.md) — Advanced validation techniques
 - [Fields](../orm/fields.md) — Model field types
-- [Validation](../advanced/validation.md) — Advanced validation

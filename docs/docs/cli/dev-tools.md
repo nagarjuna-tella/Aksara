@@ -26,9 +26,9 @@ aksara generate model Post --fields "title:string:200 content:text author:fk:Use
 Creates:
 ```python
 class Post(Model):
-    title = fields.StringField(max_length=200)
-    content = fields.TextField()
-    author = fields.ForeignKey("User", on_delete="CASCADE")
+    title = fields.String(max_length=200)
+    content = fields.Text()
+    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
 ```
 
 **Field syntax:**
@@ -204,13 +204,13 @@ Output:
 ```
 blog.Post
   Fields:
-    - id: UUIDField (primary_key)
-    - title: StringField (max_length=200)
-    - content: TextField
+    - id: UUID (primary_key)
+    - title: String (max_length=200)
+    - content: Text
     - author: ForeignKey -> User
-    - tags: ManyToManyField -> Tag
-    - created_at: DateTimeField (auto_now_add)
-    - updated_at: DateTimeField (auto_now)
+    - tags: ManyToMany -> Tag
+    - created_at: DateTime (auto_now_add)
+    - updated_at: DateTime (auto_now)
   
   Indexes:
     - title (unique)
@@ -276,24 +276,24 @@ Checks for:
 
 ## Development Server
 
-### Enhanced Runserver
+### Enhanced Run
 
 ```bash
-aksara runserver
+aksara run main:app
 ```
 
 Features:
-- **Auto-reload** — Restarts on file changes
+- **Auto-reload** — Restarts on file changes (with `--reload`)
 - **Error overlay** — Rich error pages
 - **Query logging** — See SQL queries
 - **Request logging** — HTTP request details
 
 **Options:**
 ```bash
-aksara runserver --port 3000
-aksara runserver --host 0.0.0.0
-aksara runserver --no-reload
-aksara runserver --log-level debug
+aksara run main:app --port 3000
+aksara run main:app --host 0.0.0.0
+aksara run main:app --reload
+aksara run main:app --workers 4
 ```
 
 ---
@@ -414,10 +414,14 @@ Additional features:
 
 ### SQL Logging
 
-Enable detailed SQL logging:
+Enable detailed SQL logging by setting DEBUG=True in settings:
 
-```bash
-aksara runserver --sql-log
+```python
+# settings.py
+AKSARA = {
+    "DEBUG": True,
+    "SQL_LOG": True,  # Log all SQL queries
+}
 ```
 
 Output:

@@ -81,11 +81,11 @@ Output:
 class BlogPost(Model):
     """A blog post."""
     
-    title = fields.StringField(max_length=200)
-    slug = fields.StringField(max_length=200, unique=True)
-    content = fields.TextField()
-    author = fields.ForeignKey("User", on_delete="CASCADE")
-    tags = fields.ManyToManyField("Tag", related_name="posts")
+    title = fields.String(max_length=200)
+    slug = fields.String(max_length=200, unique=True)
+    content = fields.Text()
+    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
+    tags = fields.ManyToMany("Tag", related_name="posts")
     
     class Meta:
         table_name = "blog_posts"
@@ -147,7 +147,7 @@ Issues:
      Fix: Add db_index=True to ForeignKey
 
   2. [MEDIUM] User.email should be unique
-     Fix: Add unique=True to EmailField
+     Fix: Add unique=True to Email field
 
   3. [LOW] Comment.created_at missing default
      Fix: Add auto_now_add=True
@@ -334,9 +334,9 @@ Preview:
 +++ models.py (modified)
 @@ -10,6 +10,7 @@
  class User(Model):
-     email = fields.EmailField(unique=True)
-+    phone = fields.StringField(max_length=20, null=True)
-     name = fields.StringField(max_length=100)
+     email = fields.Email(unique=True)
++    phone = fields.String(max_length=20, null=True)
+     name = fields.String(max_length=100)
 
 Apply patch? [y/N]
 ```

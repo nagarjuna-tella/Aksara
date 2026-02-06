@@ -257,9 +257,9 @@ class Migration(Migration):
         operations.CreateTable(
             "articles",
             columns=[
-                operations.UUIDField(primary_key=True),
-                operations.StringField("title", max_length=200),
-                operations.TextField("content"),
+                operations.UUID(primary_key=True),
+                operations.String("title", max_length=200),
+                operations.Text("content"),
             ],
         ),
     ]

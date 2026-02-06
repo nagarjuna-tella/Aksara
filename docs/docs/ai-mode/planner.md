@@ -200,7 +200,7 @@ aksara ai plan "Add tagging" --interactive
 
 Step 1/5: Create Tag model
   + class Tag(Model):
-  +     name = fields.StringField(max_length=50, unique=True)
+  +     name = fields.String(max_length=50, unique=True)
 
 Execute this step? [y/N/s(kip)/q(uit)]
 ```

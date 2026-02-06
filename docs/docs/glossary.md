@@ -75,7 +75,7 @@ A URL path that accepts HTTP requests and returns responses.
 ## F
 
 ### Field
-A class that defines a database column and its behavior. Examples: `StringField`, `IntegerField`, `ForeignKey`.
+A class that defines a database column and its behavior. Examples: `String`, `Integer`, `ForeignKey`.
 
 ### Filter
 Constraining queryset results based on field values.

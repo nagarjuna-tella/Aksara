@@ -1,506 +1,535 @@
 # ORM Reference
 
-Complete reference for Aksara's ORM.
+Complete reference for Aksara's ORM — all field types, query methods, and model options.
 
 ---
 
-## Models
+## Field Types
 
-### Model Definition
+All fields are imported from `aksara.fields`:
 
 ```python
-from aksara import Model, fields
-
-class Post(Model):
-    title = fields.StringField(max_length=200)
-    content = fields.TextField()
-    author = fields.ForeignKey("User", on_delete="CASCADE")
-    
-    class Meta:
-        table_name = "posts"
-        ordering = ["-created_at"]
+from aksara import fields
 ```
-
-### Model Meta Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `table_name` | str | Database table name |
-| `ordering` | list | Default ordering |
-| `unique_together` | list | Unique constraints |
-| `indexes` | list | Database indexes |
-| `abstract` | bool | Abstract base model |
-
-### Model Methods
-
-| Method | Description |
-|--------|-------------|
-| `save(**kwargs)` | Save instance |
-| `delete()` | Delete instance |
-| `refresh_from_db()` | Reload from database |
-| `to_dict()` | Convert to dictionary |
-| `clean()` | Validation hook |
-
-### Model Properties
-
-| Property | Description |
-|----------|-------------|
-| `id` | Primary key (UUID) |
-| `created_at` | Creation timestamp |
-| `updated_at` | Last update timestamp |
-| `pk` | Alias for primary key |
-
----
-
-## Fields
 
 ### String Fields
 
+| Field | Description | Common Options |
+|-------|-------------|----------------|
+| `fields.String` | Text with maximum length | `max_length`, `default`, `null` |
+| `fields.Text` | Unlimited text | `default`, `null` |
+| `fields.Email` | Email addresses (validated) | `unique`, `default`, `null` |
+| `fields.URL` | Web URLs (validated) | `default`, `null` |
+| `fields.Slug` | URL-safe strings | `max_length`, `unique` |
+| `fields.UUID` | Unique identifiers | `default`, `primary_key` |
+
 ```python
-# Basic string
-name = fields.StringField(max_length=100)
-
-# Text (unlimited)
-content = fields.TextField()
-
-# Email
-email = fields.EmailField(unique=True)
-
-# URL
-website = fields.URLField(null=True)
-
-# UUID
-code = fields.UUIDField(default=uuid.uuid4)
-
-# Slug
-slug = fields.SlugField(max_length=100)
+# Example usage
+class Article(Model):
+    title = fields.String(max_length=200)      # Required, up to 200 chars
+    body = fields.Text()                        # Unlimited length
+    author_email = fields.Email(unique=True)   # Must be valid email
+    source_url = fields.URL(null=True)         # Optional URL
+    slug = fields.Slug(max_length=100)         # URL-safe: "my-article"
 ```
+
+---
 
 ### Numeric Fields
 
-```python
-# Integer
-count = fields.IntegerField(default=0)
-
-# Float
-price = fields.FloatField()
-
-# Decimal
-amount = fields.DecimalField(max_digits=10, decimal_places=2)
-
-# Boolean
-is_active = fields.BooleanField(default=True)
-```
-
-### Date/Time Fields
+| Field | Description | Common Options |
+|-------|-------------|----------------|
+| `fields.Integer` | Whole numbers | `default`, `null` |
+| `fields.BigInteger` | Large whole numbers | `default`, `null` |
+| `fields.Float` | Decimal numbers | `default`, `null` |
+| `fields.Decimal` | Precise decimals (money) | `max_digits`, `decimal_places` |
+| `fields.Boolean` | True/False | `default`, `null` |
 
 ```python
-# DateTime
-published_at = fields.DateTimeField(null=True)
-
-# Date
-birth_date = fields.DateField()
-
-# Time
-start_time = fields.TimeField()
-
-# Auto timestamps
-created_at = fields.DateTimeField(auto_now_add=True)
-updated_at = fields.DateTimeField(auto_now=True)
+class Product(Model):
+    quantity = fields.Integer(default=0)        # Stock count
+    price = fields.Decimal(                     # Precise money
+        max_digits=10,                          # Up to 10 total digits
+        decimal_places=2                        # 2 after decimal point
+    )
+    rating = fields.Float(null=True)            # Average rating
+    is_available = fields.Boolean(default=True) # In stock?
 ```
 
-### Complex Fields
+---
+
+### Date and Time Fields
+
+| Field | Description | Common Options |
+|-------|-------------|----------------|
+| `fields.DateTime` | Date and time | `auto_now`, `auto_now_add`, `default` |
+| `fields.Date` | Date only | `auto_now`, `auto_now_add` |
+| `fields.Time` | Time only | `default` |
+| `fields.Duration` | Time spans | `default` |
 
 ```python
-# JSON
-metadata = fields.JSONField(default=dict)
-
-# Binary
-file_data = fields.BinaryField()
+class Event(Model):
+    # Automatically set when created
+    created_at = fields.DateTime(auto_now_add=True)
+    
+    # Automatically updated on every save
+    updated_at = fields.DateTime(auto_now=True)
+    
+    # User-provided values
+    event_date = fields.Date()
+    start_time = fields.Time()
+    duration = fields.Duration()  # e.g., timedelta(hours=2)
 ```
+
+---
 
 ### Relationship Fields
 
+| Field | Description | Required Options |
+|-------|-------------|------------------|
+| `fields.ForeignKey` | Many-to-one relationship | `to`, `on_delete` |
+| `fields.OneToOne` | One-to-one relationship | `to`, `on_delete` |
+| `fields.ManyToMany` | Many-to-many relationship | `to` |
+
 ```python
-# Foreign Key
-author = fields.ForeignKey(
-    "User",
-    on_delete="CASCADE",
-    related_name="posts",
-    null=True
-)
+class Comment(Model):
+    # Many comments belong to one article
+    article = fields.ForeignKey(
+        to="Article",                           # Related model
+        on_delete=fields.CASCADE,               # Delete comment if article deleted
+        related_name="comments"                 # Access from article: article.comments
+    )
+    
+class Profile(Model):
+    # One profile per user
+    user = fields.OneToOne(
+        to="User",
+        on_delete=fields.CASCADE,
+        related_name="profile"                  # Access: user.profile
+    )
 
-# Many-to-Many
-tags = fields.ManyToManyField(
-    "Tag",
-    related_name="posts",
-    through="PostTag"  # Optional intermediate model
-)
-
-# Self-referential
-parent = fields.ForeignKey(
-    "self",
-    on_delete="CASCADE",
-    null=True,
-    related_name="children"
-)
+class Article(Model):
+    # Articles can have many tags, tags can be on many articles
+    tags = fields.ManyToMany(
+        to="Tag",
+        related_name="articles"                 # Access: tag.articles
+    )
 ```
-
-### Field Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `null` | bool | False | Allow NULL |
-| `default` | any | None | Default value |
-| `unique` | bool | False | Unique constraint |
-| `db_index` | bool | False | Create index |
-| `primary_key` | bool | False | Primary key |
-| `choices` | list | None | Allowed values |
-| `validators` | list | [] | Validator functions |
-| `error_messages` | dict | {} | Custom error messages |
-
-### on_delete Options
-
-| Option | Description |
-|--------|-------------|
-| `CASCADE` | Delete related objects |
-| `SET_NULL` | Set to NULL (requires null=True) |
-| `PROTECT` | Prevent deletion |
-| `SET_DEFAULT` | Set to default value |
-| `DO_NOTHING` | No action |
 
 ---
 
-## QuerySet
+### Special Fields
 
-### Basic Queries
+| Field | Description | Common Options |
+|-------|-------------|----------------|
+| `fields.JSON` | JSON data | `default`, `null` |
+| `fields.Array` | List of values | `base_field` |
+| `fields.File` | File uploads | `upload_to` |
+| `fields.Image` | Image uploads | `upload_to` |
+| `fields.IP` | IP addresses | `default`, `null` |
 
 ```python
-# Get all
-posts = await Post.objects.all()
-
-# Filter
-posts = await Post.objects.filter(is_published=True).all()
-
-# Get single
-post = await Post.objects.get(id=post_id)
-
-# First/Last
-first = await Post.objects.first()
-last = await Post.objects.last()
-
-# Count
-count = await Post.objects.count()
-
-# Exists
-exists = await Post.objects.filter(title="Test").exists()
+class Configuration(Model):
+    settings = fields.JSON(default=dict)        # {"theme": "dark", "lang": "en"}
+    tags = fields.Array(base_field=fields.String(max_length=50))  # ["python", "web"]
+    
+class Document(Model):
+    file = fields.File(upload_to="documents/")
+    thumbnail = fields.Image(upload_to="thumbnails/")
 ```
+
+---
+
+## Field Options
+
+Options that work on all (or most) field types:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `null` | bool | Allow NULL in database (default: False) |
+| `blank` | bool | Allow empty in forms (default: False) |
+| `default` | any | Default value when not provided |
+| `unique` | bool | Must be unique across all rows |
+| `primary_key` | bool | Use as primary key instead of auto `id` |
+| `db_index` | bool | Create database index for faster lookups |
+| `db_column` | str | Custom column name in database |
+| `choices` | list | Limit to specific values |
+| `validators` | list | Custom validation functions |
+| `verbose_name` | str | Human-readable name |
+| `help_text` | str | Description for forms/docs |
+
+```python
+class User(Model):
+    email = fields.Email(
+        unique=True,                            # No duplicates
+        db_index=True,                          # Fast lookups by email
+        verbose_name="Email Address",
+        help_text="User's primary email"
+    )
+    
+    status = fields.String(
+        max_length=20,
+        choices=[                               # Only these values allowed
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+            ("pending", "Pending"),
+        ],
+        default="pending"
+    )
+```
+
+---
+
+## on_delete Options
+
+When a ForeignKey target is deleted:
+
+| Option | What Happens |
+|--------|--------------|
+| `fields.CASCADE` | Delete this object too |
+| `fields.PROTECT` | Prevent deletion (raise error) |
+| `fields.SET_NULL` | Set to NULL (requires `null=True`) |
+| `fields.SET_DEFAULT` | Set to default value |
+| `fields.DO_NOTHING` | Do nothing (may break integrity) |
+
+```python
+class Comment(Model):
+    # If article deleted, delete all its comments
+    article = fields.ForeignKey(Article, on_delete=fields.CASCADE)
+    
+    # Can't delete author if they have comments
+    author = fields.ForeignKey(User, on_delete=fields.PROTECT)
+    
+    # If parent comment deleted, set to NULL (orphan)
+    parent = fields.ForeignKey(
+        "self",
+        on_delete=fields.SET_NULL,
+        null=True
+    )
+```
+
+---
+
+## QuerySet Methods
+
+### Retrieving Objects
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `.all()` | QuerySet | All objects |
+| `.get(**kwargs)` | Object | Single object matching criteria |
+| `.first()` | Object/None | First object or None |
+| `.last()` | Object/None | Last object or None |
+| `.filter(**kwargs)` | QuerySet | Objects matching criteria |
+| `.exclude(**kwargs)` | QuerySet | Objects NOT matching criteria |
+
+```python
+# Get all users
+users = await User.objects.all()
+
+# Get one specific user (raises DoesNotExist if not found)
+user = await User.objects.get(id=1)
+user = await User.objects.get(email="test@example.com")
+
+# Get first/last
+first_user = await User.objects.first()
+latest = await User.objects.order_by("-created_at").first()
+
+# Filter (returns QuerySet, can have multiple results)
+active_users = await User.objects.filter(is_active=True)
+```
+
+---
 
 ### Filter Lookups
 
-| Lookup | SQL | Example |
-|--------|-----|---------|
-| `exact` | `=` | `title="Hello"` |
-| `iexact` | `ILIKE` | `title__iexact="hello"` |
-| `contains` | `LIKE %x%` | `title__contains="world"` |
-| `icontains` | `ILIKE %x%` | `title__icontains="world"` |
-| `startswith` | `LIKE x%` | `title__startswith="Hello"` |
-| `endswith` | `LIKE %x` | `title__endswith="world"` |
-| `gt` | `>` | `views__gt=100` |
-| `gte` | `>=` | `views__gte=100` |
-| `lt` | `<` | `views__lt=100` |
-| `lte` | `<=` | `views__lte=100` |
-| `in` | `IN` | `status__in=["a", "b"]` |
-| `isnull` | `IS NULL` | `deleted_at__isnull=True` |
-| `range` | `BETWEEN` | `date__range=(start, end)` |
+Use double underscores for comparisons:
 
-### Complex Filters
+| Lookup | SQL Equivalent | Example |
+|--------|----------------|---------|
+| `field` | `=` | `name="John"` |
+| `field__exact` | `=` | `name__exact="John"` |
+| `field__iexact` | `ILIKE` | `name__iexact="john"` (case-insensitive) |
+| `field__contains` | `LIKE '%x%'` | `name__contains="oh"` |
+| `field__icontains` | `ILIKE '%x%'` | `name__icontains="oh"` |
+| `field__startswith` | `LIKE 'x%'` | `name__startswith="J"` |
+| `field__endswith` | `LIKE '%x'` | `name__endswith="n"` |
+| `field__gt` | `>` | `age__gt=18` |
+| `field__gte` | `>=` | `age__gte=18` |
+| `field__lt` | `<` | `age__lt=65` |
+| `field__lte` | `<=` | `age__lte=65` |
+| `field__in` | `IN (...)` | `status__in=["active", "pending"]` |
+| `field__isnull` | `IS NULL` | `deleted_at__isnull=True` |
+| `field__range` | `BETWEEN` | `age__range=(18, 65)` |
 
 ```python
-from aksara.db import Q
+# Users named John (case-insensitive)
+await User.objects.filter(name__iexact="john")
 
-# OR conditions
-posts = await Post.objects.filter(
-    Q(is_published=True) | Q(author=user)
-).all()
+# Users with gmail addresses
+await User.objects.filter(email__endswith="@gmail.com")
 
-# AND conditions (default)
-posts = await Post.objects.filter(
-    Q(is_published=True) & Q(views__gt=100)
-).all()
+# Users older than 18
+await User.objects.filter(age__gt=18)
 
-# NOT conditions
-posts = await Post.objects.filter(
-    ~Q(status="draft")
-).all()
+# Users in multiple statuses
+await User.objects.filter(status__in=["active", "pending"])
 
-# Combined
-posts = await Post.objects.filter(
-    Q(is_published=True) & (Q(views__gt=100) | Q(featured=True))
-).all()
+# Users created in date range
+from datetime import date
+await User.objects.filter(
+    created_at__range=(date(2024, 1, 1), date(2024, 12, 31))
+)
 ```
+
+---
 
 ### Ordering
 
-```python
-# Ascending
-posts = await Post.objects.order_by("created_at").all()
-
-# Descending
-posts = await Post.objects.order_by("-created_at").all()
-
-# Multiple fields
-posts = await Post.objects.order_by("-is_featured", "-created_at").all()
-```
-
-### Limiting
+| Method | Description |
+|--------|-------------|
+| `.order_by("field")` | Ascending order |
+| `.order_by("-field")` | Descending order (note the `-`) |
+| `.order_by("f1", "f2")` | Multiple fields |
 
 ```python
-# Limit
-posts = await Post.objects.limit(10).all()
+# Oldest first
+users = await User.objects.order_by("created_at")
 
-# Offset
-posts = await Post.objects.offset(20).all()
+# Newest first (note the minus sign)
+users = await User.objects.order_by("-created_at")
 
-# Combined (pagination)
-posts = await Post.objects.limit(10).offset(20).all()
-
-# Slice notation
-posts = await Post.objects[10:20].all()
+# Sort by status, then by name within each status
+users = await User.objects.order_by("status", "name")
 ```
+
+---
+
+### Limiting Results
+
+| Method | Description |
+|--------|-------------|
+| `[:n]` | First n results |
+| `[n:m]` | Results from n to m |
+| `.limit(n)` | First n results |
+| `.offset(n)` | Skip first n results |
+
+```python
+# First 10 users
+first_ten = await User.objects.all()[:10]
+
+# Skip first 10, get next 10 (pagination)
+page_two = await User.objects.all()[10:20]
+
+# Using methods
+await User.objects.limit(10).offset(20)  # Page 3
+```
+
+---
 
 ### Aggregations
 
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `.count()` | int | Number of objects |
+| `.exists()` | bool | True if any objects exist |
+| `.aggregate(...)` | dict | Computed values |
+| `.values("field")` | QuerySet | Dictionaries instead of objects |
+| `.values_list("field")` | QuerySet | Tuples instead of objects |
+| `.distinct()` | QuerySet | Remove duplicates |
+
 ```python
-from aksara.db import Count, Sum, Avg, Min, Max
+# How many users?
+total = await User.objects.count()
 
-# Single aggregation
-total = await Post.objects.aggregate(count=Count("id"))
+# Any active users?
+has_active = await User.objects.filter(is_active=True).exists()
 
-# Multiple
-stats = await Post.objects.aggregate(
-    count=Count("id"),
-    total_views=Sum("views"),
-    avg_views=Avg("views"),
+# Sum and average
+from aksara.db import Sum, Avg
+stats = await Order.objects.aggregate(
+    total=Sum("amount"),
+    average=Avg("amount")
+)
+# {"total": 50000, "average": 125.50}
+
+# Just the emails (as dictionaries)
+emails = await User.objects.values("email")
+# [{"email": "a@b.com"}, {"email": "c@d.com"}]
+
+# Just the emails (as tuples)
+emails = await User.objects.values_list("email", flat=True)
+# ["a@b.com", "c@d.com"]
+```
+
+---
+
+### Modifying Data
+
+| Method | Description |
+|--------|-------------|
+| `.create(**kwargs)` | Create and save new object |
+| `.update(**kwargs)` | Update all matching objects |
+| `.delete()` | Delete all matching objects |
+| `.get_or_create(**kwargs)` | Get existing or create new |
+| `.update_or_create(**kwargs)` | Update existing or create new |
+| `.bulk_create(objects)` | Create many objects at once |
+| `.bulk_update(objects, fields)` | Update many objects at once |
+
+```python
+# Create
+user = await User.objects.create(
+    email="new@example.com",
+    name="New User"
 )
 
-# Group by
-by_author = await Post.objects.values("author_id").annotate(
-    post_count=Count("id"),
-    total_views=Sum("views"),
-).all()
+# Update all matching objects
+await User.objects.filter(is_active=False).update(status="inactive")
+
+# Delete all matching objects
+await User.objects.filter(status="deleted").delete()
+
+# Get or create (won't duplicate)
+user, created = await User.objects.get_or_create(
+    email="test@example.com",
+    defaults={"name": "Test User"}  # Only used if creating
+)
+
+# Bulk create (efficient for many objects)
+users = [
+    User(email="a@b.com", name="A"),
+    User(email="c@d.com", name="C"),
+]
+await User.objects.bulk_create(users)
 ```
 
-### Related Objects
+---
+
+## Model Class Options
+
+Set in the `Meta` class inside your model:
 
 ```python
-# Select related (ForeignKey)
-posts = await Post.objects.select_related("author").all()
-# Access: post.author (already loaded)
-
-# Prefetch related (ManyToMany, reverse FK)
-posts = await Post.objects.prefetch_related("tags", "comments").all()
-# Access: post.tags, post.comments (already loaded)
-
-# Nested prefetch
-posts = await Post.objects.prefetch_related(
-    "comments",
-    "comments__author"
-).all()
+class Article(Model):
+    title = fields.String(max_length=200)
+    
+    class Meta:
+        table_name = "articles"          # Custom table name
+        ordering = ["-created_at"]       # Default ordering
+        unique_together = [              # Compound unique constraints
+            ("author", "slug")
+        ]
+        indexes = [                      # Database indexes
+            ["status", "created_at"]
+        ]
+        verbose_name = "Article"
+        verbose_name_plural = "Articles"
 ```
 
-### Field Selection
+| Option | Type | Description |
+|--------|------|-------------|
+| `table_name` | str | Custom database table name |
+| `ordering` | list | Default sort order |
+| `unique_together` | list | Compound uniqueness constraints |
+| `indexes` | list | Database indexes |
+| `verbose_name` | str | Human-readable name |
+| `verbose_name_plural` | str | Plural form of name |
+| `abstract` | bool | Don't create table (for inheritance) |
+
+---
+
+## Model Methods
+
+| Method | Description |
+|--------|-------------|
+| `await obj.save()` | Save to database |
+| `await obj.delete()` | Delete from database |
+| `await obj.refresh_from_db()` | Reload from database |
+| `obj.pk` | Primary key value |
 
 ```python
-# Only specific fields
-posts = await Post.objects.only("id", "title").all()
+# Create and save
+user = User(email="test@example.com", name="Test")
+await user.save()
 
-# Exclude fields
-posts = await Post.objects.defer("content").all()
-
-# Values (dict)
-posts = await Post.objects.values("id", "title").all()
-# Returns: [{"id": "...", "title": "..."}, ...]
-
-# Values list (tuple)
-posts = await Post.objects.values_list("id", "title").all()
-# Returns: [("...", "..."), ...]
-
-# Flat values list
-ids = await Post.objects.values_list("id", flat=True).all()
-# Returns: ["...", "...", ...]
-```
-
-### Update & Delete
-
-```python
-# Update
-await Post.objects.filter(author=user).update(is_published=False)
-
-# Bulk update with F expressions
-from aksara.db import F
-await Post.objects.filter(id=post_id).update(views=F("views") + 1)
+# Modify and save
+user.name = "Updated Name"
+await user.save()
 
 # Delete
-await Post.objects.filter(is_archived=True).delete()
-```
+await user.delete()
 
-### Create
-
-```python
-# Single create
-post = await Post.objects.create(
-    title="Hello",
-    content="World",
-    author=user
-)
-
-# Get or create
-post, created = await Post.objects.get_or_create(
-    slug="hello-world",
-    defaults={"title": "Hello World", "author": user}
-)
-
-# Update or create
-post, created = await Post.objects.update_or_create(
-    slug="hello-world",
-    defaults={"title": "Updated Title"}
-)
-
-# Bulk create
-posts = await Post.objects.bulk_create([
-    Post(title="Post 1", author=user),
-    Post(title="Post 2", author=user),
-])
-```
-
-### Raw Queries
-
-```python
-# Raw SQL
-posts = await Post.objects.raw(
-    "SELECT * FROM posts WHERE views > $1",
-    [100]
-)
-
-# Execute arbitrary SQL
-result = await Post.objects.execute(
-    "UPDATE posts SET views = views + 1 WHERE id = $1",
-    [post_id]
-)
+# Reload from database (if modified elsewhere)
+await user.refresh_from_db()
 ```
 
 ---
 
-## Manager
+## Related Objects
 
-### Custom Manager
+### Following Relationships
 
 ```python
-from aksara.manager import Manager
+# Forward: Comment → Article
+comment = await Comment.objects.get(id=1)
+article = await comment.article  # Get the article
 
+# Reverse: Article → Comments
+article = await Article.objects.get(id=1)
+comments = await article.comments.all()  # Get all comments
+```
+
+### Prefetching (Avoiding N+1 Queries)
+
+```python
+# BAD: N+1 queries
+articles = await Article.objects.all()
+for article in articles:
+    author = await article.author  # Query for each article!
+
+# GOOD: 2 queries total
+articles = await Article.objects.select_related("author").all()
+for article in articles:
+    author = article.author  # Already loaded!
+
+# For reverse relations (many), use prefetch_related
+articles = await Article.objects.prefetch_related("comments").all()
+```
+
+---
+
+## Manager Reference
+
+Every model has a `objects` manager:
+
+```python
+User.objects.all()      # Default manager
+User.objects.filter()   # Also on default manager
+```
+
+### Custom Managers
+
+```python
 class PublishedManager(Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(is_published=True)
-    
-    async def featured(self):
-        return await self.filter(is_featured=True).all()
+        return super().get_queryset().filter(status="published")
 
-class Post(Model):
-    # ... fields ...
+class Article(Model):
+    status = fields.String(max_length=20)
     
-    objects = Manager()  # Default
-    published = PublishedManager()  # Custom
+    objects = Manager()               # Default: all articles
+    published = PublishedManager()    # Only published articles
 
 # Usage
-all_posts = await Post.objects.all()
-published_posts = await Post.published.all()
-featured_posts = await Post.published.featured()
+all_articles = await Article.objects.all()
+published_only = await Article.published.all()
 ```
 
 ---
 
-## Transactions
+## See Also
 
-```python
-from aksara.db import transaction
-
-# Context manager
-async with transaction():
-    user = await User.objects.create(email="test@example.com")
-    await Profile.objects.create(user=user)
-
-# Decorator
-@transaction()
-async def create_user_with_profile(email):
-    user = await User.objects.create(email=email)
-    await Profile.objects.create(user=user)
-    return user
-
-# Savepoints
-async with transaction():
-    user = await User.objects.create(email="test@example.com")
-    
-    try:
-        async with transaction(savepoint=True):
-            # This can be rolled back independently
-            await send_welcome_email(user)
-    except EmailError:
-        pass  # Continue without email
-```
-
----
-
-## Migrations
-
-### Commands
-
-```bash
-# Create migrations
-aksara makemigrations
-
-# Apply migrations
-aksara migrate
-
-# Show status
-aksara migrate --list
-
-# Rollback
-aksara migrate myapp 0005
-```
-
-### Migration File
-
-```python
-# migrations/0001_initial.py
-from aksara.migrations import Migration, operations
-
-class Migration(Migration):
-    dependencies = []
-    
-    operations = [
-        operations.CreateTable(
-            name="posts",
-            fields=[
-                operations.Column("id", "UUID", primary_key=True),
-                operations.Column("title", "VARCHAR(200)"),
-                operations.Column("content", "TEXT"),
-                operations.Column("created_at", "TIMESTAMP"),
-            ]
-        ),
-        operations.CreateIndex(
-            name="posts_title_idx",
-            table="posts",
-            columns=["title"]
-        ),
-    ]
-```
-
----
-
-## Related Documentation
-
-- [Models Guide](../orm/models.md)
-- [Fields Guide](../orm/fields.md)
-- [Querying Guide](../orm/querying.md)
-- [Migrations Guide](../orm/migrations.md)
+- [Models Guide](../orm/models.md) — Step-by-step model creation
+- [Querying Guide](../orm/querying.md) — In-depth query examples
+- [Relations Guide](../orm/relations.md) — Working with relationships
+- [Migrations Guide](../orm/migrations.md) — Database schema changes

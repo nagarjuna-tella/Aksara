@@ -1,99 +1,163 @@
-# Tutorial: Deployment
+# Tutorial: Deploying to Production
 
-Deploy your Aksara application to production.
+Deploy your Aksara application so anyone can use it.
 
 ---
 
 ## What You'll Learn
 
-- Docker configuration
-- Environment setup
-- Database migrations in production
-- Security hardening
-- Monitoring basics
+- How to prepare your app for production
+- How to configure environment variables
+- How to use Docker for deployment
+- How to run database migrations safely
+- How to set up monitoring
 
 **Time:** ~20 minutes
 
----
-
-## Deployment Checklist
-
-Before deploying, ensure:
-
-- [ ] `DEBUG = False`
-- [ ] Secret key is secure and from environment
-- [ ] Database URL is configured
-- [ ] Allowed hosts is set
-- [ ] CORS is configured
-- [ ] SSL/TLS is enabled
-- [ ] Static files are collected
+**Difficulty:** Beginner
 
 ---
 
-## Step 1: Production Settings
+## What is Deployment?
 
-### Create Production Settings
+**Development** = Running on your computer for testing  
+**Production** = Running on a server for real users
+
+When you deploy, you need to:
+
+1. **Turn off debug mode** — Hide error details from users
+2. **Secure your secrets** — Keep passwords out of code
+3. **Configure the database** — Use a production database
+4. **Set up HTTPS** — Encrypt all traffic
+
+---
+
+## Pre-Deployment Checklist
+
+Before deploying, verify:
+
+| Item | Why It Matters |
+|------|----------------|
+| ☐ `DEBUG = False` | Debug mode shows sensitive info |
+| ☐ Secret key is random | Predictable keys can be hacked |
+| ☐ Database URL is set | Don't hardcode credentials |
+| ☐ Allowed hosts configured | Prevents host header attacks |
+| ☐ HTTPS enabled | Encrypts all traffic |
+
+---
+
+## Step 1: Create Production Settings
+
+### Separate Settings File
+
+Create `settings/production.py`:
 
 ```python
 # settings/production.py
 import os
 
 AKSARA = {
-    # Core
+    # NEVER set DEBUG = True in production
     "DEBUG": False,
+    
+    # Get secret key from environment (not hardcoded!)
     "SECRET_KEY": os.environ["SECRET_KEY"],
     
-    # Database
+    # Database URL from environment
     "DATABASE_URL": os.environ["DATABASE_URL"],
     
-    # Security
+    # Which domains can access your API
     "ALLOWED_HOSTS": os.environ.get("ALLOWED_HOSTS", "").split(","),
+    
+    # Which origins can make browser requests
     "CORS_ORIGINS": os.environ.get("CORS_ORIGINS", "").split(","),
     
-    # Apps
+    # Your apps
     "INSTALLED_APPS": ["myapp"],
-    
-    # AI (optional)
-    "AI_MODE": os.environ.get("AI_MODE", "false").lower() == "true",
-    "AI_API_KEY": os.environ.get("AI_API_KEY"),
-    "AI_SAFETY": {
-        "read_only_mode": True,  # Safe in production
-        "audit_log": True,
-    },
 }
 ```
 
-### Environment Variables
+**Why environment variables?**
 
-Create a `.env.example`:
+Environment variables keep secrets out of your code:
 
 ```bash
-# .env.example
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-ALLOWED_HOSTS=example.com,www.example.com
-CORS_ORIGINS=https://example.com
+# ❌ BAD: Secret in code (gets committed to git!)
+SECRET_KEY = "my-super-secret-key"
 
-# Optional
-AI_MODE=true
-AI_API_KEY=sk-...
+# ✅ GOOD: Secret from environment
+SECRET_KEY = os.environ["SECRET_KEY"]
+```
+
+### Generate a Secret Key
+
+```bash
+# Generate a secure random key
+python -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 
 ---
 
-## Step 2: Docker Configuration
+## Step 2: Create Environment File
 
-### Dockerfile
+Create `.env.example` (commit this to git as a template):
+
+```bash
+# .env.example - Copy to .env and fill in values
+# NEVER commit .env to git!
+
+# Required
+SECRET_KEY=generate-a-random-key-here
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+
+# Security
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+CORS_ORIGINS=https://yourdomain.com
+
+# Optional: AI features
+AI_MODE=false
+AI_API_KEY=
+```
+
+Create actual `.env` file (don't commit this!):
+
+```bash
+# .env
+SECRET_KEY=your-actual-secret-key-here
+DATABASE_URL=postgresql://prod_user:prod_password@db.example.com:5432/myapp_prod
+ALLOWED_HOSTS=myapp.com,www.myapp.com
+CORS_ORIGINS=https://myapp.com
+```
+
+Add to `.gitignore`:
+
+```bash
+# .gitignore
+.env
+*.env
+.env.local
+```
+
+---
+
+## Step 3: Docker Configuration
+
+Docker packages your app so it runs the same everywhere.
+
+### Create Dockerfile
 
 ```dockerfile
 # Dockerfile
+
+# Use official Python image
 FROM python:3.11-slim
 
-# Set environment variables
+# Don't write .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
+# Don't buffer output (see logs immediately)
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -106,27 +170,39 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy application code
 COPY . .
 
-# Collect static files
-RUN aksara collectstatic --no-input
-
-# Create non-root user
+# Create non-root user for security
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Run with uvicorn
-CMD ["uvicorn", "myapp.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port
+EXPOSE 8000
+
+# Start the server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### Docker Compose
+**What this does:**
+
+| Step | Purpose |
+|------|---------|
+| `FROM python:3.11-slim` | Use a small Python image |
+| `WORKDIR /app` | Set where our code lives |
+| `COPY requirements.txt` | Install dependencies first (caching) |
+| `COPY . .` | Copy our application |
+| `USER appuser` | Don't run as root (security) |
+| `CMD [...]` | Start the server |
+
+### Create docker-compose.yml
 
 ```yaml
 # docker-compose.yml
 version: '3.8'
 
 services:
+  # Your application
   web:
     build: .
     ports:
@@ -136,10 +212,13 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp
       - ALLOWED_HOSTS=localhost,127.0.0.1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: >
-      sh -c "aksara migrate && uvicorn myapp.app:app --host 0.0.0.0 --port 8000"
+      sh -c "aksara migrate && 
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
+  # PostgreSQL database
   db:
     image: postgres:15
     volumes:
@@ -148,470 +227,299 @@ services:
       - POSTGRES_DB=myapp
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
 ```
 
-### Production Compose
+### Run with Docker
 
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
+```bash
+# Build the image
+docker-compose build
 
-services:
-  web:
-    build: .
-    expose:
-      - "8000"
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=${DATABASE_URL}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    command: uvicorn myapp.app:app --host 0.0.0.0 --port 8000 --workers 4
-    restart: unless-stopped
+# Start the services
+docker-compose up
 
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - static_files:/app/static:ro
-    depends_on:
-      - web
-    restart: unless-stopped
+# Or run in background
+docker-compose up -d
 
-volumes:
-  static_files:
-```
+# View logs
+docker-compose logs -f web
 
----
-
-## Step 3: Nginx Configuration
-
-```nginx
-# nginx.conf
-events {
-    worker_connections 1024;
-}
-
-http {
-    upstream aksara {
-        server web:8000;
-    }
-
-    server {
-        listen 80;
-        server_name example.com;
-        return 301 https://$server_name$request_uri;
-    }
-
-    server {
-        listen 443 ssl http2;
-        server_name example.com;
-
-        ssl_certificate /etc/nginx/ssl/cert.pem;
-        ssl_certificate_key /etc/nginx/ssl/key.pem;
-
-        location /static/ {
-            alias /app/static/;
-            expires 30d;
-            add_header Cache-Control "public, immutable";
-        }
-
-        location / {
-            proxy_pass http://aksara;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-    }
-}
+# Stop everything
+docker-compose down
 ```
 
 ---
 
 ## Step 4: Database Migrations
 
-### Migrate on Deploy
+### Run Migrations Safely
+
+**Never** run migrations and the server at the same time on first deploy.
 
 ```bash
-# Run migrations before starting the app
-aksara migrate --no-input
+# Option 1: Separate command
+docker-compose run --rm web aksara migrate
+
+# Option 2: In the startup command (shown in docker-compose.yml)
+# aksara migrate && uvicorn ...
 ```
 
-### Migration Script
+### Backup Before Migrating
 
 ```bash
-#!/bin/bash
-# deploy.sh
+# Backup production database
+pg_dump -h db.example.com -U prod_user myapp_prod > backup_$(date +%Y%m%d).sql
 
-set -e
-
-echo "Running migrations..."
-aksara migrate --no-input
-
-echo "Collecting static files..."
-aksara collectstatic --no-input
-
-echo "Starting server..."
-exec uvicorn myapp.app:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-### Check Migrations in CI
-
-```yaml
-# .github/workflows/deploy.yml
-- name: Check migrations
-  run: |
-    aksara makemigrations --check --dry-run
+# Then run migrations
+aksara migrate
 ```
 
 ---
 
-## Step 5: Security Hardening
+## Step 5: Production Server
 
-### Security Settings
+### Use Gunicorn + Uvicorn
 
-```python
-# settings/production.py
-AKSARA = {
-    # ... other settings ...
+For production, use Gunicorn with Uvicorn workers:
+
+```bash
+# Install gunicorn
+pip install gunicorn
+
+# Run with multiple workers
+gunicorn app.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000
+```
+
+Update your Dockerfile:
+
+```dockerfile
+# Production CMD
+CMD ["gunicorn", "app.main:app", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8000"]
+```
+
+**How many workers?**
+
+Rule of thumb: `(2 × CPU cores) + 1`
+
+| CPU Cores | Workers |
+|-----------|---------|
+| 1 | 3 |
+| 2 | 5 |
+| 4 | 9 |
+
+---
+
+## Step 6: HTTPS Setup
+
+### Using a Reverse Proxy (Recommended)
+
+Put nginx or Caddy in front of your app:
+
+```nginx
+# nginx.conf
+server {
+    listen 80;
+    server_name myapp.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name myapp.com;
     
-    # Security
-    "SECURITY": {
-        "SECURE_SSL_REDIRECT": True,
-        "SECURE_HSTS_SECONDS": 31536000,
-        "SECURE_HSTS_INCLUDE_SUBDOMAINS": True,
-        "SECURE_CONTENT_TYPE_NOSNIFF": True,
-        "SECURE_BROWSER_XSS_FILTER": True,
-        "X_FRAME_OPTIONS": "DENY",
-    },
+    ssl_certificate /etc/ssl/certs/myapp.crt;
+    ssl_certificate_key /etc/ssl/private/myapp.key;
     
-    # CORS
-    "CORS": {
-        "ALLOW_ORIGINS": os.environ.get("CORS_ORIGINS", "").split(","),
-        "ALLOW_METHODS": ["GET", "POST", "PUT", "DELETE"],
-        "ALLOW_HEADERS": ["Authorization", "Content-Type"],
-        "ALLOW_CREDENTIALS": True,
-    },
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
 
-### Generate Secret Key
+### Using Caddy (Automatic HTTPS)
 
-```python
-import secrets
-print(secrets.token_urlsafe(50))
+```
+# Caddyfile
+myapp.com {
+    reverse_proxy localhost:8000
+}
 ```
 
-Or:
-
-```bash
-openssl rand -base64 50
-```
+Caddy automatically gets and renews SSL certificates!
 
 ---
 
-## Step 6: Health Checks
+## Step 7: Monitoring
 
-### Health Endpoint
+### Health Check Endpoint
+
+Add a health check to your app:
 
 ```python
-# app/health.py
-from aksara.api import ViewSet, action
+# app/main.py
+from aksara import Aksara
 
-class HealthViewSet(ViewSet):
-    @action(detail=False, methods=["get"])
-    async def live(self, request):
-        """Liveness probe."""
-        return {"status": "ok"}
-    
-    @action(detail=False, methods=["get"])
-    async def ready(self, request):
-        """Readiness probe."""
-        # Check database connection
-        try:
-            from myapp.models import User
-            await User.objects.count()
-            db_status = "ok"
-        except Exception as e:
-            db_status = f"error: {e}"
-        
-        return {
-            "status": "ok" if db_status == "ok" else "degraded",
-            "database": db_status,
-        }
+app = Aksara(...)
+
+@app.get("/health")
+async def health_check():
+    """Health check for load balancers."""
+    return {"status": "healthy"}
 ```
 
-### Docker Healthcheck
+### Logging
 
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/live/ || exit 1
-```
-
-### Kubernetes Probes
-
-```yaml
-# kubernetes/deployment.yaml
-livenessProbe:
-  httpGet:
-    path: /health/live/
-    port: 8000
-  initialDelaySeconds: 10
-  periodSeconds: 30
-
-readinessProbe:
-  httpGet:
-    path: /health/ready/
-    port: 8000
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
-
----
-
-## Step 7: Logging
-
-### Configure Logging
+Configure structured logging:
 
 ```python
 # settings/production.py
-import logging
-
 AKSARA = {
     # ... other settings ...
     
     "LOGGING": {
         "level": "INFO",
-        "format": "json",  # JSON for log aggregation
-        "handlers": ["console", "file"],
-        "file_path": "/var/log/myapp/app.log",
-    },
+        "format": "json",  # Structured logs for log aggregators
+    }
 }
-
-# Python logging config
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "json": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "json",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
-}
-```
-
-### Request Logging
-
-```python
-# Add request logging middleware
-from aksara.middleware import LoggingMiddleware
-
-app.add_middleware(
-    LoggingMiddleware,
-    log_request_body=False,  # Don't log sensitive data
-    log_response_body=False,
-    mask_headers=["Authorization", "Cookie"],
-)
 ```
 
 ---
 
-## Step 8: Monitoring
+## Deployment Options
 
-### Metrics Endpoint
+### Platform as a Service (Easy)
 
-```python
-# app/metrics.py
-from aksara.api import ViewSet, action
+| Platform | Pros | Cons |
+|----------|------|------|
+| **Railway** | Easy, free tier | Less control |
+| **Render** | Easy, auto-deploys | Limited free tier |
+| **Fly.io** | Fast, global | Learning curve |
+| **Heroku** | Established, add-ons | Expensive |
 
-class MetricsViewSet(ViewSet):
-    @action(detail=False, methods=["get"])
-    async def prometheus(self, request):
-        """Prometheus metrics."""
-        from myapp.models import User, Post
-        
-        user_count = await User.objects.count()
-        post_count = await Post.objects.count()
-        
-        metrics = f"""
-# HELP users_total Total number of users
-# TYPE users_total gauge
-users_total {user_count}
+### Virtual Private Server (More Control)
 
-# HELP posts_total Total number of posts
-# TYPE posts_total gauge
-posts_total {post_count}
-"""
-        return Response(metrics, media_type="text/plain")
-```
+| Provider | Pros | Cons |
+|----------|------|------|
+| **DigitalOcean** | Simple, good docs | Manual setup |
+| **Linode** | Affordable | Manual setup |
+| **AWS EC2** | Powerful, scalable | Complex |
 
-### Sentry Integration
+### Kubernetes (Scale)
 
-```python
-# settings/production.py
-import sentry_sdk
-
-sentry_sdk.init(
-    dsn=os.environ.get("SENTRY_DSN"),
-    environment="production",
-    traces_sample_rate=0.1,
-)
-```
-
----
-
-## Deployment Platforms
-
-### Railway
-
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login and deploy
-railway login
-railway init
-railway up
-```
-
-`railway.toml`:
-```toml
-[build]
-builder = "dockerfile"
-
-[deploy]
-healthcheckPath = "/health/live/"
-healthcheckTimeout = 30
-```
-
-### Fly.io
-
-```bash
-# Install Fly CLI
-curl -L https://fly.io/install.sh | sh
-
-# Launch
-fly launch
-fly deploy
-```
-
-`fly.toml`:
-```toml
-[build]
-  dockerfile = "Dockerfile"
-
-[http_service]
-  internal_port = 8000
-  force_https = true
-
-[[services.http_checks]]
-  interval = "10s"
-  timeout = "2s"
-  path = "/health/live/"
-```
-
-### AWS ECS
-
-See AWS documentation for ECS deployment with Fargate.
-
-### Kubernetes
+For large applications that need to scale:
 
 ```yaml
-# kubernetes/deployment.yaml
+# k8s/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aksara-app
+  name: myapp
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: aksara
+      app: myapp
   template:
     metadata:
       labels:
-        app: aksara
+        app: myapp
     spec:
       containers:
       - name: web
-        image: myregistry/myapp:latest
+        image: myapp:latest
         ports:
         - containerPort: 8000
         envFrom:
         - secretRef:
-            name: aksara-secrets
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "200m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+            name: myapp-secrets
 ```
 
 ---
 
-## Quick Deploy Script
+## Quick Deployment Checklist
 
 ```bash
-#!/bin/bash
-# deploy.sh
+# 1. Set environment variables
+export SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(50))")
+export DATABASE_URL=postgresql://...
+export ALLOWED_HOSTS=myapp.com
 
-set -e
-
-echo "🚀 Deploying to production..."
-
-# Build
+# 2. Build and push Docker image
 docker build -t myapp:latest .
+docker push myregistry.com/myapp:latest
 
-# Tag
-docker tag myapp:latest myregistry/myapp:$(git rev-parse --short HEAD)
-docker push myregistry/myapp:$(git rev-parse --short HEAD)
+# 3. Run migrations
+aksara migrate
 
-# Deploy
-kubectl set image deployment/aksara-app web=myregistry/myapp:$(git rev-parse --short HEAD)
+# 4. Start the server
+docker-compose up -d
 
-echo "✅ Deployment complete!"
+# 5. Verify it's running
+curl https://myapp.com/health
 ```
 
 ---
 
-## Rollback
+## Troubleshooting
+
+### "Connection refused" to database
+
+**Problem:** App can't connect to PostgreSQL.
+
+**Solution:** Check `DATABASE_URL` and ensure PostgreSQL is running and accessible.
+
+### Static files not loading
+
+**Problem:** CSS/JS files return 404.
+
+**Solution:** Collect static files and configure your web server to serve them:
 
 ```bash
-# Docker Compose
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml up -d --build
-
-# Kubernetes
-kubectl rollout undo deployment/aksara-app
-
-# Database (if needed)
-aksara migrate myapp 0005  # Roll back to migration 0005
+aksara collectstatic
 ```
+
+### "Not allowed host" error
+
+**Problem:** Request blocked by ALLOWED_HOSTS.
+
+**Solution:** Add your domain to ALLOWED_HOSTS:
+
+```bash
+ALLOWED_HOSTS=myapp.com,www.myapp.com
+```
+
+---
+
+## Next Steps
+
+- Set up CI/CD for automatic deployments
+- Configure monitoring and alerts
+- Set up database backups
+- Add rate limiting
+- Configure caching
 
 ---
 
 ## Related Documentation
 
-- [Settings Reference](../reference/settings-reference.md)
-- [Middleware](../middleware/index.md)
-- [Security](../ai-mode/safety.md)
+- [Settings](../getting-started/settings.md) — All configuration options
+- [Middleware](../middleware/index.md) — Request processing
+- [Security](../advanced/security.md) — Security best practices

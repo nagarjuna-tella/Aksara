@@ -6,7 +6,7 @@ Future plans for Aksara development.
 
 ## Current Version
 
-**v0.4.9** — Stable release with AI Mode, full ORM, API framework, and comprehensive tooling.
+**v0.4.11** — Stable release with AI Mode, full ORM, API framework, Admin UI/UX Overhaul, and comprehensive tooling.
 
 ---
 

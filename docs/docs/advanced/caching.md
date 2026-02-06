@@ -185,8 +185,8 @@ async def get_user(user_id: str) -> User:
 from aksara.cache import CacheMixin
 
 class User(CacheMixin, Model):
-    email = fields.EmailField(unique=True)
-    name = fields.StringField()
+    email = fields.Email(unique=True)
+    name = fields.String(max_length=100)
     
     class Meta:
         cache_ttl = 600

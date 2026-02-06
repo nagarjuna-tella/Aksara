@@ -1,250 +1,366 @@
 # Middleware
 
-Add request processing logic with Aksara middleware.
+Learn how middleware works in Aksara and how to use the built-in middleware.
 
 ---
 
-## Overview
+## What is Middleware?
 
-Middleware processes requests before they reach your views and responses before they're sent:
+**Middleware** is code that runs **before** and **after** every request to your application.
+
+Think of it like security checkpoints at an airport:
 
 ```
-Request → Middleware → View → Middleware → Response
+Request → [Middleware 1] → [Middleware 2] → [Your Code] → [Middleware 2] → [Middleware 1] → Response
 ```
 
-```python
-from aksara import Aksara
-from aksara.middleware import RequestIDMiddleware
+Each middleware can:
+- **Inspect** the request before it reaches your code
+- **Modify** the request or response
+- **Block** requests that shouldn't proceed
+- **Add** information to the request (like user identity)
 
-app = Aksara()
-app.add_middleware(RequestIDMiddleware)
-```
+---
+
+## Why Use Middleware?
+
+Common use cases:
+
+| Use Case | What It Does |
+|----------|--------------|
+| **Authentication** | Check if user is logged in |
+| **Request ID** | Add unique ID to track requests |
+| **Logging** | Record all requests and responses |
+| **CORS** | Allow cross-origin requests |
+| **Multi-tenancy** | Identify which tenant made the request |
+| **Rate Limiting** | Prevent too many requests |
 
 ---
 
 ## Built-in Middleware
 
-Aksara provides several production-ready middleware:
+Aksara includes these middleware out of the box:
 
 | Middleware | Purpose |
 |------------|---------|
-| `RequestIDMiddleware` | Add unique ID to each request |
-| `TenantMiddleware` | Multi-tenant support |
-| `LoggingMiddleware` | Structured request logging |
-| `AuthenticationMiddleware` | User authentication |
-| `CORSMiddleware` | Cross-origin requests |
+| [Request ID](request-id.md) | Adds a unique ID to every request |
+| [Logging](logging.md) | Logs request/response information |
+| [Tenant](tenant.md) | Multi-tenant support |
 
 ---
 
-## Adding Middleware
+## Using Middleware
 
-### Basic Usage
+### Enabling Middleware
 
-```python
-from aksara import Aksara
-from aksara.middleware import (
-    RequestIDMiddleware,
-    LoggingMiddleware,
-)
-
-app = Aksara()
-
-# Add middleware (order matters!)
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(LoggingMiddleware)
-```
-
-### With Configuration
+Add middleware to your app configuration:
 
 ```python
-app.add_middleware(
-    LoggingMiddleware,
-    log_request_body=True,
-    log_response_body=False,
-    exclude_paths=["/health", "/metrics"],
-)
+# settings.py
+AKSARA = {
+    "MIDDLEWARE": [
+        "aksara.middleware.RequestIDMiddleware",
+        "aksara.middleware.LoggingMiddleware",
+        "aksara.middleware.TenantMiddleware",
+    ]
+}
 ```
 
-### Middleware Order
-
-Middleware executes in reverse order on the way in, and forward order on the way out:
-
-```python
-app.add_middleware(A)  # 3rd in, 1st out
-app.add_middleware(B)  # 2nd in, 2nd out
-app.add_middleware(C)  # 1st in, 3rd out
-
-# Request flow:  C → B → A → View → A → B → C
-```
+**Order matters!** Middleware runs in the order listed for requests, and reverse order for responses.
 
 ---
 
-## Section Contents
+### Request ID Middleware
 
-<div class="grid cards" markdown>
+Adds a unique identifier to every request for tracking and debugging.
 
--   :material-identifier: **[Request ID](request-id.md)**
-    
-    Unique identifiers for request tracing
+```python
+"aksara.middleware.RequestIDMiddleware"
+```
 
--   :material-account-group: **[Tenant Middleware](tenant.md)**
-    
-    Multi-tenant application support
+**What it does:**
+- Generates a UUID for each request
+- Adds it to `request.state.request_id`
+- Includes it in response headers as `X-Request-ID`
 
--   :material-text-box: **[Logging](logging.md)**
-    
-    Structured request/response logging
+**Use it for:**
+- Tracking requests across services
+- Finding related log entries
+- Debugging production issues
 
-</div>
+```python
+# Access in your code
+@router.get("/test")
+async def test(request: Request):
+    request_id = request.state.request_id
+    return {"request_id": request_id}
+```
+
+👉 [Full Request ID Documentation](request-id.md)
 
 ---
 
-## Custom Middleware
+### Logging Middleware
 
-### Class-Based
+Automatically logs information about every request and response.
 
 ```python
-from starlette.middleware.base import BaseHTTPMiddleware
+"aksara.middleware.LoggingMiddleware"
+```
 
-class TimingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        import time
+**What it logs:**
+- Request method and path
+- Response status code
+- Request duration
+- Request ID (if enabled)
+
+**Example log output:**
+```
+INFO: GET /api/users - 200 OK - 45ms - request_id=abc-123
+```
+
+👉 [Full Logging Documentation](logging.md)
+
+---
+
+### Tenant Middleware
+
+Enables multi-tenant applications where one codebase serves multiple customers.
+
+```python
+"aksara.middleware.TenantMiddleware"
+```
+
+**What it does:**
+- Identifies the tenant from the request (subdomain, header, or path)
+- Sets `request.state.tenant`
+- Scopes database queries to that tenant
+
+**Tenant identification methods:**
+- **Subdomain**: `acme.yourapp.com` → tenant is "acme"
+- **Header**: `X-Tenant-ID: acme`
+- **Path**: `/acme/api/users` → tenant is "acme"
+
+👉 [Full Tenant Documentation](tenant.md)
+
+---
+
+## Writing Custom Middleware
+
+Create your own middleware for custom logic:
+
+```python
+from aksara.middleware import BaseMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class MyMiddleware(BaseMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        # Code that runs BEFORE your view
+        print(f"Request starting: {request.url}")
         
-        start = time.time()
+        # Call the next middleware or your view
         response = await call_next(request)
-        duration = time.time() - start
         
-        response.headers["X-Response-Time"] = f"{duration:.3f}s"
+        # Code that runs AFTER your view
+        print(f"Request finished: {response.status_code}")
+        
         return response
-
-app.add_middleware(TimingMiddleware)
 ```
 
-### Pure ASGI
+### Middleware Structure
 
 ```python
-class TimingMiddleware:
-    def __init__(self, app):
-        self.app = app
+class MyMiddleware(BaseMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        # 1. Pre-processing (runs before your view)
+        #    - Validate request
+        #    - Add data to request.state
+        #    - Reject request early if needed
+        
+        # 2. Call next middleware or view
+        response = await call_next(request)
+        
+        # 3. Post-processing (runs after your view)
+        #    - Modify response
+        #    - Add headers
+        #    - Log information
+        
+        return response
+```
+
+### Example: API Key Authentication
+
+```python
+from aksara.middleware import BaseMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+class APIKeyMiddleware(BaseMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip authentication for certain paths
+        if request.url.path in ["/health", "/docs"]:
+            return await call_next(request)
+        
+        # Check for API key
+        api_key = request.headers.get("X-API-Key")
+        
+        if not api_key:
+            return JSONResponse(
+                {"error": "API key required"},
+                status_code=401
+            )
+        
+        # Validate API key (you'd check against database)
+        if not await self.validate_api_key(api_key):
+            return JSONResponse(
+                {"error": "Invalid API key"},
+                status_code=403
+            )
+        
+        # Store user info on request for later use
+        request.state.api_key = api_key
+        
+        return await call_next(request)
     
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-        
-        import time
-        start = time.time()
-        
-        async def send_wrapper(message):
-            if message["type"] == "http.response.start":
-                duration = time.time() - start
-                headers = list(message.get("headers", []))
-                headers.append((b"x-response-time", f"{duration:.3f}s".encode()))
-                message["headers"] = headers
-            await send(message)
-        
-        await self.app(scope, receive, send_wrapper)
+    async def validate_api_key(self, key: str) -> bool:
+        # Check if key exists in database
+        from myapp.models import APIKey
+        return await APIKey.objects.filter(key=key, is_active=True).exists()
+```
 
-app.add_middleware(TimingMiddleware)
+### Example: Response Time Header
+
+```python
+import time
+from aksara.middleware import BaseMiddleware
+
+class ResponseTimeMiddleware(BaseMiddleware):
+    async def dispatch(self, request, call_next):
+        start_time = time.time()
+        
+        response = await call_next(request)
+        
+        # Calculate request duration
+        duration = time.time() - start_time
+        response.headers["X-Response-Time"] = f"{duration:.3f}s"
+        
+        return response
 ```
 
 ---
 
-## Context Variables
+## Middleware Order
 
-Aksara middleware uses context variables to share data:
+Middleware runs in **order** for requests and **reverse order** for responses:
 
 ```python
-from aksara.middleware import (
-    request_id_var,  # Current request ID
-    tenant_id_var,   # Current tenant ID
-    user_id_var,     # Current user ID
-)
-
-# In any async code
-current_request_id = request_id_var.get()
-current_tenant = tenant_id_var.get()
+MIDDLEWARE = [
+    "RequestIDMiddleware",    # 1st for request, last for response
+    "LoggingMiddleware",      # 2nd for request, 2nd-to-last for response
+    "AuthMiddleware",         # 3rd for request, 3rd-to-last for response
+]
 ```
 
-### Using in Views
+**Typical ordering:**
 
 ```python
-from aksara.middleware import request_id_var
-
-@app.get("/api/data")
-async def get_data(request):
-    request_id = request_id_var.get()
-    logger.info(f"Processing request {request_id}")
-    ...
-```
-
-### Using in Services
-
-```python
-from aksara.middleware import request_id_var, tenant_id_var
-
-class DataService:
-    async def fetch_data(self):
-        request_id = request_id_var.get()
-        tenant_id = tenant_id_var.get()
-        
-        logger.info(
-            "Fetching data",
-            extra={
-                "request_id": request_id,
-                "tenant_id": tenant_id,
-            }
-        )
-        
-        # Query with tenant filter
-        return await Data.objects.filter(tenant_id=tenant_id).all()
+MIDDLEWARE = [
+    # First: Request tracking
+    "aksara.middleware.RequestIDMiddleware",
+    
+    # Second: Logging (to capture everything)
+    "aksara.middleware.LoggingMiddleware",
+    
+    # Third: Authentication
+    "myapp.middleware.AuthMiddleware",
+    
+    # Last: Business logic middleware
+    "myapp.middleware.TenantMiddleware",
+]
 ```
 
 ---
 
-## Complete Example
+## Accessing Middleware Data
+
+Data added by middleware is available on `request.state`:
 
 ```python
-from aksara import Aksara
-from aksara.middleware import (
-    RequestIDMiddleware,
-    TenantMiddleware,
-    LoggingMiddleware,
-)
-from starlette.middleware.cors import CORSMiddleware
-
-app = Aksara()
-
-# CORS (first, so it handles preflight)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Request ID (adds X-Request-ID header)
-app.add_middleware(RequestIDMiddleware)
-
-# Tenant resolution
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-    default_tenant="default",
-)
-
-# Logging (logs with request ID and tenant)
-app.add_middleware(
-    LoggingMiddleware,
-    log_level="INFO",
-    exclude_paths=["/health"],
-)
+# In your view
+@router.get("/dashboard")
+async def dashboard(request: Request):
+    # From RequestIDMiddleware
+    request_id = request.state.request_id
+    
+    # From custom AuthMiddleware
+    user = request.state.user
+    
+    # From TenantMiddleware
+    tenant = request.state.tenant
+    
+    return {"user": user.id, "tenant": tenant.name}
 ```
 
 ---
 
-## Related Documentation
+## Middleware vs Dependencies
 
-- [Request ID](request-id.md) — Request tracing
-- [Tenant Middleware](tenant.md) — Multi-tenancy
-- [Logging](logging.md) — Request logging
+| Middleware | Dependencies |
+|------------|--------------|
+| Runs on **every** request | Runs only when declared |
+| Global scope | Route-specific scope |
+| Good for cross-cutting concerns | Good for route-specific logic |
+| Cannot access route parameters | Can access route parameters |
+
+**Use middleware for:**
+- Request ID, logging, authentication
+- Anything that should run on every request
+
+**Use dependencies for:**
+- Getting current user for a specific route
+- Validating permissions on specific endpoints
+- Parsing route-specific data
+
+---
+
+## Configuration Options
+
+Some middleware accepts configuration:
+
+```python
+# settings.py
+AKSARA = {
+    "MIDDLEWARE": [
+        "aksara.middleware.RequestIDMiddleware",
+    ],
+    
+    # Middleware-specific settings
+    "REQUEST_ID_HEADER": "X-Request-ID",    # Custom header name
+    "REQUEST_ID_GENERATOR": "uuid4",         # ID generation method
+    
+    "LOGGING_LEVEL": "INFO",                 # Logging verbosity
+    "LOGGING_INCLUDE_BODY": False,           # Log request bodies?
+    
+    "TENANT_HEADER": "X-Tenant-ID",          # Tenant identification
+    "TENANT_STRATEGY": "header",             # header, subdomain, or path
+}
+```
+
+---
+
+## Middleware Documentation
+
+| Guide | What You'll Learn |
+|-------|-------------------|
+| [Request ID](request-id.md) | Request tracking and debugging |
+| [Logging](logging.md) | Request/response logging |
+| [Tenant](tenant.md) | Multi-tenant applications |
+
+---
+
+## Reference
+
+For complete API documentation:
+
+👉 [API Reference](../reference/api-reference.md)

@@ -320,7 +320,7 @@ aksara run main:app --reload
 You should see:
 
 ```
-⚡ Aksara v0.4.9
+⚡ Aksara v0.4.11
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
 INFO:     Started server process

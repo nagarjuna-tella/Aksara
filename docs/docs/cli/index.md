@@ -12,7 +12,7 @@ The Aksara CLI provides commands for:
 |----------|----------|
 | **Project** | `startproject`, `startapp` |
 | **Database** | `makemigrations`, `migrate`, `shell` |
-| **Development** | `runserver`, `routes`, `info` |
+| **Development** | `run`, `routes`, `info` |
 | **AI** | `ai query`, `ai generate`, `ai doctor` |
 
 ---
@@ -37,7 +37,7 @@ aksara --help
 aksara --version
 
 # Run a command
-aksara runserver
+aksara run main:app
 ```
 
 ---
@@ -164,12 +164,12 @@ aksara shell --bpython    # Use bpython if available
 
 ## Development Commands
 
-### runserver
+### run
 
 Start the development server:
 
 ```bash
-aksara runserver
+aksara run main:app
 ```
 
 Output:
@@ -180,11 +180,10 @@ INFO:     Started reloader process
 
 Options:
 ```bash
-aksara runserver --port 3000
-aksara runserver --host 0.0.0.0
-aksara runserver --reload           # Auto-reload on changes (default)
-aksara runserver --no-reload        # Disable auto-reload
-aksara runserver --workers 4        # Multiple workers
+aksara run main:app --port 3000
+aksara run main:app --host 0.0.0.0
+aksara run main:app --reload           # Auto-reload on changes
+aksara run myproject.main:app --workers 4  # Multiple workers
 ```
 
 ### routes
@@ -225,7 +224,7 @@ Output:
 ```
 Aksara Project Information
 ==========================
-Version: 0.4.9
+Version: 0.4.11
 Python: 3.11.0
 Database: postgresql://localhost/mydb
 
@@ -361,7 +360,7 @@ Create shell aliases for common commands:
 
 ```bash
 # ~/.bashrc or ~/.zshrc
-alias vr='aksara runserver'
+alias vr='aksara run'
 alias vm='aksara migrate'
 alias vmm='aksara makemigrations'
 alias vs='aksara shell'

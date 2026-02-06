@@ -34,9 +34,9 @@ model_code = await gen.model(
 
 print(model_code)
 # class UserProfile(Model):
-#     bio = fields.TextField(null=True)
-#     avatar_url = fields.URLField(null=True)
-#     user = fields.ForeignKey("User", on_delete="CASCADE")
+#     bio = fields.Text(null=True)
+#     avatar_url = fields.URL(null=True)
+#     user = fields.ForeignKey("User", on_delete=fields.CASCADE)
 ```
 
 ### Generate a ViewSet
@@ -68,9 +68,9 @@ code = await gen.model("Product with name, price, description")
 
 # Output:
 # class Product(Model):
-#     name = fields.StringField(max_length=200)
-#     price = fields.DecimalField(max_digits=10, decimal_places=2)
-#     description = fields.TextField(null=True)
+#     name = fields.String(max_length=200)
+#     price = fields.Decimal(max_digits=10, decimal_places=2)
+#     description = fields.Text(null=True)
 #     
 #     class Meta:
 #         table_name = "products"
@@ -85,10 +85,10 @@ code = await gen.model(
 
 # Output:
 # class OrderItem(Model):
-#     order = fields.ForeignKey("Order", on_delete="CASCADE", related_name="items")
-#     product = fields.ForeignKey("Product", on_delete="PROTECT")
-#     quantity = fields.IntegerField()
-#     unit_price = fields.DecimalField(max_digits=10, decimal_places=2)
+#     order = fields.ForeignKey("Order", on_delete=fields.CASCADE, related_name="items")
+#     product = fields.ForeignKey("Product", on_delete=fields.PROTECT)
+#     quantity = fields.Integer()
+#     unit_price = fields.Decimal(max_digits=10, decimal_places=2)
 ```
 
 ### With Many-to-Many
@@ -100,9 +100,9 @@ code = await gen.model(
 
 # Output:
 # class Article(Model):
-#     title = fields.StringField(max_length=200)
-#     content = fields.TextField()
-#     tags = fields.ManyToManyField("Tag", related_name="articles")
+#     title = fields.String(max_length=200)
+#     content = fields.Text()
+#     tags = fields.ManyToMany("Tag", related_name="articles")
 ```
 
 ### With Constraints
@@ -114,9 +114,9 @@ code = await gen.model(
 
 # Output:
 # class User(Model):
-#     email = fields.EmailField(unique=True)
-#     username = fields.StringField(max_length=150, unique=True)
-#     password = fields.StringField(max_length=128)
+#     email = fields.Email(unique=True)
+#     username = fields.String(max_length=150, unique=True)
+#     password = fields.String(max_length=128)
 ```
 
 ### With Indexes
@@ -242,7 +242,7 @@ code = await gen.serializer(
 
 # Output includes:
 # full_name = serializers.SerializerMethodField()
-# post_count = serializers.IntegerField(read_only=True)
+# post_count = serializers.Integer(read_only=True)
 # 
 # def get_full_name(self, obj):
 #     return f"{obj.first_name} {obj.last_name}"
@@ -339,7 +339,7 @@ code = await gen.migration(
 #         AddField(
 #             model_name="user",
 #             name="phone",
-#             field=fields.StringField(max_length=20, null=True),
+#             field=fields.String(max_length=20, null=True),
 #         ),
 #     ]
 ```

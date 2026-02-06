@@ -168,55 +168,52 @@ class UserSerializer(ModelSerializer):
 
 ### Serializer
 
-Base serializer for non-model data.
+Aksara serializers use Pydantic under the hood, so fields are inferred from your model automatically:
 
 ```python
-from aksara.api import Serializer, StringField, IntegerField
+from aksara.api import ModelSerializer
 
-class LoginSerializer(Serializer):
-    email = StringField()
-    password = StringField(write_only=True)
+class UserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "email", "name", "is_active"]
+        read_only_fields = ["id", "created_at"]
+    
+    def validate_email(self, value):
+        # Custom field validation
+        return value.lower()
     
     async def validate(self, data):
-        # Custom validation
+        # Cross-field validation
         return data
 ```
 
-### Serializer Fields
+### Meta Class Options
 
-| Field | Description |
-|-------|-------------|
-| `StringField` | String values |
-| `IntegerField` | Integer values |
-| `FloatField` | Float values |
-| `BooleanField` | Boolean values |
-| `DateTimeField` | DateTime values |
-| `DateField` | Date values |
-| `UUIDField` | UUID values |
-| `EmailField` | Email addresses |
-| `URLField` | URLs |
-| `JSONField` | JSON data |
-| `ListField` | List of items |
-| `DictField` | Dictionary |
-| `SerializerMethodField` | Computed field |
-| `PrimaryKeyRelatedField` | FK by ID |
-| `SlugRelatedField` | FK by slug field |
+| Option | Type | Description |
+|--------|------|-------------|
+| `model` | Model class | The Aksara model to serialize |
+| `fields` | list or `"__all__"` | Fields to include |
+| `exclude` | list | Fields to exclude |
+| `read_only_fields` | list | Fields in output only |
+| `expand` | list or dict | FK expansion configuration |
 
-#### Field Options
+### SerializerMethodField
+
+For computed fields:
 
 ```python
-StringField(
-    required=True,
-    allow_null=False,
-    default=None,
-    read_only=False,
-    write_only=False,
-    source="field_name",
-    validators=[],
-    error_messages={},
-    max_length=None,
-    min_length=None,
-)
+class PostSerializer(ModelSerializer):
+    author_name = SerializerMethodField()
+    
+    class Meta:
+        model = Post
+        fields = ["id", "title", "author_name"]
+    
+    async def get_author_name(self, obj):
+        author = await obj.author
+        return author.name
+```
 ```
 
 ---

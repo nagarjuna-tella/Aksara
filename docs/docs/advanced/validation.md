@@ -27,18 +27,19 @@ from aksara.validation import (
 )
 
 class User(Model):
-    username = fields.StringField(
+    username = fields.String(
         max_length=50,
         validators=[
             MinLength(3),
             Regex(r'^[a-zA-Z0-9_]+$', message="Alphanumeric only"),
         ]
     )
-    email = fields.EmailField(validators=[Email()])
-    age = fields.IntegerField(
+    email = fields.Email(validators=[Email()])
+    age = fields.Integer(
         validators=[MinValue(13), MaxValue(120)]
     )
-    role = fields.StringField(
+    role = fields.String(
+        max_length=20,
         validators=[In(["user", "admin", "moderator"])]
     )
 ```
@@ -79,7 +80,8 @@ class Unique(Validator):
 
 # Usage
 class User(Model):
-    username = fields.StringField(
+    username = fields.String(
+        max_length=50,
         validators=[NoSpaces(), Unique(User, "username")]
     )
 ```
@@ -92,10 +94,10 @@ class User(Model):
 
 ```python
 class Order(Model):
-    start_date = fields.DateField()
-    end_date = fields.DateField()
-    quantity = fields.IntegerField()
-    unit_price = fields.DecimalField()
+    start_date = fields.Date()
+    end_date = fields.Date()
+    quantity = fields.Integer()
+    unit_price = fields.Decimal(max_digits=10, decimal_places=2)
     
     def clean(self):
         """Validate the entire model."""
@@ -119,8 +121,8 @@ class Order(Model):
 
 ```python
 class Subscription(Model):
-    plan = fields.StringField(choices=["free", "pro", "enterprise"])
-    max_users = fields.IntegerField()
+    plan = fields.String(max_length=20, choices=["free", "pro", "enterprise"])
+    max_users = fields.Integer()
     
     PLAN_LIMITS = {
         "free": 5,
@@ -172,9 +174,9 @@ class UserSerializer(ModelSerializer):
 
 ```python
 class PasswordChangeSerializer(Serializer):
-    old_password = StringField()
-    new_password = StringField()
-    confirm_password = StringField()
+    old_password = String()
+    new_password = String()
+    confirm_password = String()
     
     def validate(self, data):
         """Validate all fields together."""
@@ -256,7 +258,7 @@ class PasswordStrength(Validator):
 
 # Usage
 class UserSerializer(ModelSerializer):
-    password = StringField(validators=[PasswordStrength(min_length=10, require_special=True)])
+    password = String(validators=[PasswordStrength(min_length=10, require_special=True)])
 ```
 
 ### Validator Functions
@@ -282,8 +284,8 @@ def validate_future_date(value):
 
 # Usage
 class Event(Model):
-    slug = fields.StringField(validators=[validate_slug])
-    event_date = fields.DateField(validators=[validate_future_date])
+    slug = fields.String(validators=[validate_slug])
+    event_date = fields.Date(validators=[validate_future_date])
 ```
 
 ---
@@ -294,10 +296,10 @@ class Event(Model):
 
 ```python
 class PaymentSerializer(Serializer):
-    payment_type = StringField(choices=["card", "bank", "crypto"])
-    card_number = StringField(required=False)
-    bank_account = StringField(required=False)
-    wallet_address = StringField(required=False)
+    payment_type = String(choices=["card", "bank", "crypto"])
+    card_number = String(required=False)
+    bank_account = String(required=False)
+    wallet_address = String(required=False)
     
     def validate(self, data):
         payment_type = data.get("payment_type")
@@ -371,7 +373,7 @@ raise ValidationError({
 
 ```python
 class User(Model):
-    email = fields.EmailField(
+    email = fields.Email(
         error_messages={
             "required": "Email address is required",
             "invalid": "Please enter a valid email address",
@@ -408,11 +410,11 @@ class UserViewSet(ViewSet):
 
 ```python
 class User(Model):
-    email = fields.EmailField(unique=True)
+    email = fields.Email(unique=True)
 
 # Or with custom message
 class User(Model):
-    email = fields.EmailField(
+    email = fields.Email(
         unique=True,
         error_messages={"unique": "Email already exists"}
     )
@@ -422,8 +424,8 @@ class User(Model):
 
 ```python
 class Membership(Model):
-    user = fields.ForeignKey(User, on_delete="CASCADE")
-    organization = fields.ForeignKey(Organization, on_delete="CASCADE")
+    user = fields.ForeignKey(User, on_delete=fields.CASCADE)
+    organization = fields.ForeignKey(Organization, on_delete=fields.CASCADE)
     
     class Meta:
         unique_together = [("user", "organization")]
