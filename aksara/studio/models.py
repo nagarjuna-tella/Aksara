@@ -529,3 +529,194 @@ class StudioRouteInfo(BaseModel):
         default=False,
         description="Whether this is an AI endpoint"
     )
+
+
+# =============================================================================
+# v0.5.4: Studio ↔ AI Integration Models
+# =============================================================================
+
+class StudioAiProjectMeta(BaseModel):
+    """
+    Project metadata for AI context export.
+    
+    v0.5.4: Safe subset of project info for AI tools.
+    """
+    
+    name: str = Field(
+        ...,
+        description="Project/app name"
+    )
+    version: str = Field(
+        ...,
+        description="Aksara version"
+    )
+    environment: str = Field(
+        default="development",
+        description="Environment (development, staging, production)"
+    )
+    debug: bool = Field(
+        default=False,
+        description="Whether debug mode is enabled"
+    )
+
+
+class StudioAiModelSummary(BaseModel):
+    """
+    Lightweight model summary for AI context.
+    
+    v0.5.4: Contains only what AI needs to understand the schema.
+    """
+    
+    name: str = Field(..., description="Model class name")
+    table_name: str = Field(..., description="Database table name")
+    app_label: Optional[str] = Field(default=None, description="App label")
+    fields: List[str] = Field(default_factory=list, description="Field names")
+    primary_key: str = Field(default="id", description="Primary key field")
+    has_timestamps: bool = Field(default=False, description="Has created_at/updated_at")
+
+
+class StudioAiRouteSummary(BaseModel):
+    """
+    Lightweight route summary for AI context.
+    
+    v0.5.4: Contains only what AI needs to understand available routes.
+    """
+    
+    path: str = Field(..., description="Route path pattern")
+    methods: List[str] = Field(default_factory=list, description="HTTP methods")
+    name: Optional[str] = Field(default=None, description="Route name")
+    is_authenticated: bool = Field(default=False, description="Requires auth")
+
+
+class StudioAiToolInfo(BaseModel):
+    """
+    AI tool summary for context export.
+    
+    v0.5.4: Describes a tool/endpoint AI can use.
+    """
+    
+    name: str = Field(..., description="Tool name")
+    description: str = Field(..., description="What the tool does")
+    endpoint: Optional[str] = Field(default=None, description="API endpoint if applicable")
+    safe: bool = Field(default=True, description="Whether tool is read-only/safe")
+
+
+class StudioAiContextExport(BaseModel):
+    """
+    Complete AI context bundle for export.
+    
+    v0.5.4: Everything an external AI agent needs to understand the app.
+    This is a Studio-friendly, secrets-stripped version of the full AI context.
+    """
+    
+    project: StudioAiProjectMeta = Field(
+        ...,
+        description="Project metadata"
+    )
+    models: List[StudioAiModelSummary] = Field(
+        default_factory=list,
+        description="Model summaries"
+    )
+    routes: List[StudioAiRouteSummary] = Field(
+        default_factory=list,
+        description="Route summaries"
+    )
+    tools: List[StudioAiToolInfo] = Field(
+        default_factory=list,
+        description="Available AI tools"
+    )
+    apps: List[str] = Field(
+        default_factory=list,
+        description="Installed app labels"
+    )
+    migration_status: StudioMigrationStatus = Field(
+        default_factory=StudioMigrationStatus,
+        description="Migration health snapshot"
+    )
+    schema_checksum: str = Field(
+        default="",
+        description="Schema checksum for change detection"
+    )
+    exported_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Export timestamp"
+    )
+
+
+class StudioAiSchemas(BaseModel):
+    """
+    JSON schemas for AI operations.
+    
+    v0.5.4: Contains schemas AI agents can use to generate valid requests.
+    """
+    
+    plan_schema: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON Schema for AiPlan requests"
+    )
+    patch_schema: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON Schema for AiPatchRequest"
+    )
+    query_schema: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON Schema for AiQueryPlan"
+    )
+    codegen_schema: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON Schema for AiCodegenRequest"
+    )
+    context_schema: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON Schema for AiFullContext (reference)"
+    )
+
+
+class StudioAiPromptTemplate(BaseModel):
+    """
+    A reusable prompt template for AI interactions.
+    
+    v0.5.4: Templates contain placeholders like {context_json}, {plan_schema}.
+    """
+    
+    id: str = Field(
+        ...,
+        description="Unique template identifier (e.g., 'add-field')"
+    )
+    title: str = Field(
+        ...,
+        description="Human-friendly title"
+    )
+    description: str = Field(
+        ...,
+        description="What this prompt template is for"
+    )
+    template: str = Field(
+        ...,
+        description="The actual prompt text with placeholders"
+    )
+    placeholders: List[str] = Field(
+        default_factory=list,
+        description="List of placeholder names used in template"
+    )
+    category: str = Field(
+        default="general",
+        description="Category (general, schema, migration, query)"
+    )
+
+
+class StudioAiPrompts(BaseModel):
+    """
+    Container for multiple prompt templates.
+    
+    v0.5.4: Returns all available prompt templates.
+    """
+    
+    prompts: List[StudioAiPromptTemplate] = Field(
+        default_factory=list,
+        description="Available prompt templates"
+    )
+    version: str = Field(
+        default="1.0",
+        description="Prompt template version"
+    )

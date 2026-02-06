@@ -38,6 +38,15 @@ from aksara.studio.models import (
     # v0.5.2: Runtime models
     StudioRuntimeInfo,
     StudioRouteInfo,
+    # v0.5.4: AI Integration models
+    StudioAiProjectMeta,
+    StudioAiModelSummary,
+    StudioAiRouteSummary,
+    StudioAiToolInfo,
+    StudioAiContextExport,
+    StudioAiSchemas,
+    StudioAiPromptTemplate,
+    StudioAiPrompts,
 )
 
 if TYPE_CHECKING:
@@ -671,3 +680,411 @@ def build_routes_info(app: "FastAPI") -> List[StudioRouteInfo]:
     routes_info.sort(key=lambda r: r.path)
     
     return routes_info
+
+
+# =============================================================================
+# v0.5.4: Studio ↔ AI Integration Utilities
+# =============================================================================
+
+async def build_ai_context_export(app: "FastAPI") -> StudioAiContextExport:
+    """
+    Build AI context export bundle for Studio.
+    
+    v0.5.4: Creates a safe, secrets-stripped context bundle that external
+    AI tools can consume. Uses existing AI context functions internally.
+    
+    Args:
+        app: FastAPI application
+        
+    Returns:
+        StudioAiContextExport with project meta, models, routes, tools
+    """
+    import aksara
+    from aksara.conf import settings
+    from aksara.registry import ModelRegistry
+    
+    # Get project metadata
+    env = getattr(settings, 'env', None) or _get_environment()
+    project = StudioAiProjectMeta(
+        name=getattr(settings, 'app_title', 'Aksara App'),
+        version=aksara.__version__,
+        environment=env,
+        debug=settings.debug,
+    )
+    
+    # Build model summaries
+    models = []
+    all_models = ModelRegistry.all()
+    for name, model_cls in all_models.items():
+        try:
+            meta = getattr(model_cls, '_meta', None)
+            table_name = meta.table_name if meta else name.lower()
+            app_label = meta.app_label if meta else None
+            
+            # Get field names
+            field_names = []
+            if meta and hasattr(meta, 'fields'):
+                field_names = list(meta.fields.keys())
+            
+            # Check for timestamps
+            has_timestamps = 'created_at' in field_names or 'updated_at' in field_names
+            
+            # Get primary key
+            pk = 'id'
+            if meta and hasattr(meta, 'primary_key'):
+                pk = meta.primary_key
+            
+            models.append(StudioAiModelSummary(
+                name=name,
+                table_name=table_name,
+                app_label=app_label,
+                fields=field_names,
+                primary_key=pk,
+                has_timestamps=has_timestamps,
+            ))
+        except Exception:
+            # Skip models that fail to introspect
+            continue
+    
+    # Build route summaries (stripped down)
+    routes = []
+    for route in app.routes:
+        path = getattr(route, 'path', str(route))
+        methods = list(getattr(route, 'methods', ['GET']))
+        name = getattr(route, 'name', None)
+        
+        # Skip internal/static routes
+        if path.startswith('/openapi') or path.startswith('/docs') or path.startswith('/redoc'):
+            continue
+        
+        # Check if authenticated (heuristic: has dependencies)
+        is_authenticated = bool(getattr(route, 'dependencies', None))
+        
+        routes.append(StudioAiRouteSummary(
+            path=path,
+            methods=sorted(methods),
+            name=name,
+            is_authenticated=is_authenticated,
+        ))
+    
+    routes.sort(key=lambda r: r.path)
+    
+    # Build available AI tools
+    tools = _get_ai_tools_summary()
+    
+    # Get installed apps
+    apps = list(settings.installed_apps) if settings.installed_apps else list(settings.apps)
+    
+    # Get migration status
+    migration_status = StudioMigrationStatus()
+    try:
+        migrations_dir = getattr(settings, 'migrations_dir', 'migrations')
+        from aksara.migrations import discover_all_migrations
+        all_migrations = discover_all_migrations(Path(migrations_dir), include_internal=True)
+        migration_status = StudioMigrationStatus(
+            total=len(all_migrations),
+            pending=len(all_migrations),  # Approximation
+            applied=0,
+        )
+    except Exception:
+        pass
+    
+    # Compute schema checksum
+    checksum = compute_schema_checksum(list(all_models.values()))
+    
+    return StudioAiContextExport(
+        project=project,
+        models=models,
+        routes=routes,
+        tools=tools,
+        apps=apps,
+        migration_status=migration_status,
+        schema_checksum=checksum,
+    )
+
+
+def _get_ai_tools_summary() -> List[StudioAiToolInfo]:
+    """
+    Get summary of available AI tools/endpoints.
+    
+    v0.5.4: Returns info about AI operations available.
+    """
+    tools = [
+        StudioAiToolInfo(
+            name="ai_query",
+            description="Execute natural language queries against the database",
+            endpoint="/ai/query",
+            safe=True,  # Read-only
+        ),
+        StudioAiToolInfo(
+            name="ai_plan",
+            description="Generate structured plans for schema changes",
+            endpoint="/ai/plan",
+            safe=True,  # Planning is safe
+        ),
+        StudioAiToolInfo(
+            name="ai_patch_validate",
+            description="Validate patch operations before applying",
+            endpoint="/ai/patch/validate",
+            safe=True,  # Validation is safe
+        ),
+        StudioAiToolInfo(
+            name="ai_patch_apply",
+            description="Apply validated patches to the codebase",
+            endpoint="/ai/patch/apply",
+            safe=False,  # Modifies files
+        ),
+        StudioAiToolInfo(
+            name="ai_codegen",
+            description="Generate code from model specifications",
+            endpoint="/ai/codegen",
+            safe=True,  # Returns code, doesn't write
+        ),
+        StudioAiToolInfo(
+            name="studio_context",
+            description="Get full application context for AI",
+            endpoint="/studio/ai/context",
+            safe=True,
+        ),
+    ]
+    return tools
+
+
+def build_ai_schemas() -> StudioAiSchemas:
+    """
+    Build JSON schemas for AI operations.
+    
+    v0.5.4: Returns schemas AI agents can use to generate valid requests.
+    """
+    plan_schema = {}
+    patch_schema = {}
+    query_schema = {}
+    codegen_schema = {}
+    context_schema = {}
+    
+    try:
+        from aksara.ai.planner import AiPlan
+        plan_schema = AiPlan.model_json_schema()
+    except Exception:
+        pass
+    
+    try:
+        from aksara.ai.patch import AiPatchRequest
+        patch_schema = AiPatchRequest.model_json_schema()
+    except Exception:
+        pass
+    
+    try:
+        from aksara.ai.query import AiQueryPlan
+        query_schema = AiQueryPlan.model_json_schema()
+    except Exception:
+        pass
+    
+    try:
+        from aksara.ai.codegen import AiCodegenRequest
+        codegen_schema = AiCodegenRequest.model_json_schema()
+    except Exception:
+        pass
+    
+    try:
+        from aksara.ai.context import AiFullContext
+        context_schema = AiFullContext.model_json_schema()
+    except Exception:
+        pass
+    
+    return StudioAiSchemas(
+        plan_schema=plan_schema,
+        patch_schema=patch_schema,
+        query_schema=query_schema,
+        codegen_schema=codegen_schema,
+        context_schema=context_schema,
+    )
+
+
+def build_ai_prompts() -> StudioAiPrompts:
+    """
+    Build prompt templates for AI interactions.
+    
+    v0.5.4: Returns pre-built prompt templates with placeholders.
+    These are text templates only - no AI calls are made.
+    """
+    prompts = [
+        StudioAiPromptTemplate(
+            id="add-field",
+            title="Add Model Field",
+            description="Generate a plan to add a new field to an existing model",
+            category="schema",
+            placeholders=["context_json", "plan_schema", "model_name", "field_name", "field_type"],
+            template="""You are an expert in the Aksara framework. Given the application context and plan schema below, generate a valid AiPlan JSON to add a new field to a model.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Plan Schema (your response must conform to this)
+```json
+{plan_schema}
+```
+
+## Task
+Add a new field named "{field_name}" of type "{field_type}" to the "{model_name}" model.
+
+## Requirements
+1. Return ONLY valid JSON conforming to the plan schema
+2. Include steps for: analyzing current schema, adding the field, generating migration
+3. Set appropriate `depends_on` relationships between steps
+4. Add helpful descriptions for each step
+
+## Response
+Return the AiPlan JSON:""",
+        ),
+        StudioAiPromptTemplate(
+            id="refactor-model",
+            title="Refactor Model",
+            description="Generate a plan to refactor or split a model",
+            category="schema",
+            placeholders=["context_json", "plan_schema", "model_name", "refactor_description"],
+            template="""You are an expert in the Aksara framework. Given the application context and plan schema below, generate a valid AiPlan JSON to refactor a model.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Plan Schema (your response must conform to this)
+```json
+{plan_schema}
+```
+
+## Task
+Refactor the "{model_name}" model: {refactor_description}
+
+## Requirements
+1. Return ONLY valid JSON conforming to the plan schema
+2. Include steps for: analysis, structural changes, data migration, cleanup
+3. Ensure backward compatibility where possible
+4. Set appropriate `depends_on` relationships
+
+## Response
+Return the AiPlan JSON:""",
+        ),
+        StudioAiPromptTemplate(
+            id="fix-migrations",
+            title="Fix Migration Issues",
+            description="Generate a plan to resolve migration conflicts or drift",
+            category="migration",
+            placeholders=["context_json", "plan_schema", "migration_issues"],
+            template="""You are an expert in the Aksara framework. Given the application context and migration issues below, generate a valid AiPlan JSON to resolve them.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Plan Schema (your response must conform to this)
+```json
+{plan_schema}
+```
+
+## Migration Issues
+{migration_issues}
+
+## Requirements
+1. Return ONLY valid JSON conforming to the plan schema
+2. Start with diagnostic steps to understand the current state
+3. Propose safe, reversible changes where possible
+4. Include verification steps
+
+## Response
+Return the AiPlan JSON:""",
+        ),
+        StudioAiPromptTemplate(
+            id="natural-query",
+            title="Natural Language Query",
+            description="Convert natural language to a database query plan",
+            category="query",
+            placeholders=["context_json", "query_schema", "natural_query"],
+            template="""You are an expert in the Aksara framework. Given the application context and query schema below, convert a natural language query into a valid AiQueryPlan JSON.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Query Plan Schema (your response must conform to this)
+```json
+{query_schema}
+```
+
+## Natural Language Query
+"{natural_query}"
+
+## Requirements
+1. Return ONLY valid JSON conforming to the query schema
+2. Use only models and fields that exist in the context
+3. Apply appropriate filters, sorting, and pagination
+4. Use safe, read-only operations
+
+## Response
+Return the AiQueryPlan JSON:""",
+        ),
+        StudioAiPromptTemplate(
+            id="generate-model",
+            title="Generate New Model",
+            description="Generate code for a new model based on requirements",
+            category="codegen",
+            placeholders=["context_json", "codegen_schema", "model_requirements"],
+            template="""You are an expert in the Aksara framework. Given the application context and codegen schema below, generate a valid AiCodegenRequest JSON to create a new model.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Codegen Schema (your response must conform to this)
+```json
+{codegen_schema}
+```
+
+## Model Requirements
+{model_requirements}
+
+## Requirements
+1. Return ONLY valid JSON conforming to the codegen schema
+2. Follow Aksara model conventions (use `aksara.fields`, inherit from `AksaraModel`)
+3. Include appropriate field types, defaults, and validations
+4. Add timestamps if applicable
+
+## Response
+Return the AiCodegenRequest JSON:""",
+        ),
+        StudioAiPromptTemplate(
+            id="explain-schema",
+            title="Explain Schema",
+            description="Get an explanation of the current schema and relationships",
+            category="general",
+            placeholders=["context_json"],
+            template="""You are an expert in the Aksara framework. Given the application context below, provide a clear explanation of the schema.
+
+## Application Context
+```json
+{context_json}
+```
+
+## Task
+Analyze and explain:
+1. What models exist and their purposes
+2. Key relationships between models
+3. Notable patterns or conventions used
+4. Any potential issues or improvements
+
+## Response
+Provide a clear, structured explanation:""",
+        ),
+    ]
+    
+    return StudioAiPrompts(
+        prompts=prompts,
+        version="1.0",
+    )

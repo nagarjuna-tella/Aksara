@@ -951,6 +951,285 @@ code {
 }
 
 /* =============================================================================
+   v0.5.4: AI Helpers Section
+   ============================================================================= */
+
+/* Info Banner */
+.info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    background: var(--color-info-bg, rgba(59, 130, 246, 0.1));
+    border: 1px solid var(--color-info-border, rgba(59, 130, 246, 0.3));
+    border-radius: var(--radius-md);
+}
+
+.info-banner .info-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.info-banner p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+[data-theme="light"] {
+    --color-info-bg: rgba(59, 130, 246, 0.08);
+    --color-info-border: rgba(59, 130, 246, 0.2);
+}
+
+[data-theme="dark"] {
+    --color-info-bg: rgba(59, 130, 246, 0.15);
+    --color-info-border: rgba(59, 130, 246, 0.3);
+}
+
+/* JSON Container */
+.json-container {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.json-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.json-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.json-pre {
+    margin: 0;
+    padding: var(--spacing-md);
+    max-height: 400px;
+    overflow: auto;
+    background: var(--color-background);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.json-pre code {
+    color: var(--color-text);
+}
+
+.json-pre code.error {
+    color: var(--color-danger);
+}
+
+/* Copy Button */
+.btn-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-copy:hover {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.btn-copy svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Schema Tabs */
+.schema-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-xs);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+}
+
+.schema-tab {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.schema-tab:hover {
+    background: var(--color-background);
+    color: var(--color-text);
+}
+
+.schema-tab.active {
+    background: var(--color-primary);
+    color: white;
+}
+
+/* Prompt Templates */
+.prompt-templates-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.prompt-card {
+    padding: var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-fast);
+}
+
+.prompt-card:hover {
+    border-color: var(--color-primary);
+}
+
+.prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.prompt-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--color-text);
+}
+
+.prompt-category {
+    margin-left: var(--spacing-sm);
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-sm);
+}
+
+.prompt-description {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.prompt-details {
+    margin: var(--spacing-sm) 0;
+}
+
+.prompt-details summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    font-weight: 500;
+    padding: var(--spacing-xs) 0;
+}
+
+.prompt-details summary:hover {
+    text-decoration: underline;
+}
+
+.prompt-template {
+    margin: var(--spacing-sm) 0 0 0;
+    padding: var(--spacing-md);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.prompt-placeholders {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+}
+
+.placeholder-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.placeholder {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.prompt-loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-success);
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10000;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-error {
+    background: var(--color-danger);
+}
+
+/* Card Description */
+.card-description {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+/* =============================================================================
    Print Styles
    ============================================================================= */
 

@@ -75,6 +75,8 @@ def create_mock_settings():
     mock_settings.app_version = "1.0.0"
     mock_settings.enable_studio = True
     mock_settings.studio_expose_in_production = False
+    mock_settings.env = "development"  # v0.5.3: Required for runtime info
+    mock_settings.installed_apps = ["app"]  # v0.5.3: Required for runtime info
     return mock_settings
 
 
@@ -492,7 +494,7 @@ class TestStudioContextSummaryV051:
         with patch("aksara.conf.settings", mock_settings):
             with patch("aksara.registry.ModelRegistry") as mock_registry:
                 mock_registry.all.return_value = {}
-                with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.discover_all_migrations", return_value=[]):
                     response = client.get("/studio/context/summary")
         
         assert response.status_code == 200
@@ -509,7 +511,7 @@ class TestStudioContextSummaryV051:
         with patch("aksara.conf.settings", create_mock_settings()):
             with patch("aksara.registry.ModelRegistry") as mock_registry:
                 mock_registry.all.return_value = {}
-                with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.discover_all_migrations", return_value=[]):
                     response = client.get("/studio/context/summary")
         
         assert response.status_code == 200
@@ -529,7 +531,7 @@ class TestStudioContextSummaryV051:
         with patch("aksara.conf.settings", create_mock_settings()):
             with patch("aksara.registry.ModelRegistry") as mock_registry:
                 mock_registry.all.return_value = {}
-                with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.discover_all_migrations", return_value=[]):
                     response = client.get("/studio/context/summary")
         
         assert response.status_code == 200
@@ -557,10 +559,10 @@ class TestStudioMigrationsSummary:
         client = TestClient(app)
         
         with patch("aksara.conf.settings", create_mock_settings()):
-            with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
-                with patch("aksara.studio.utils.build_migration_graph") as mock_graph:
+            with patch("aksara.migrations.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.build_migration_graph") as mock_graph:
                     mock_graph.return_value.heads_for_app.return_value = []
-                    with patch("aksara.studio.utils.check_migration_conflicts", return_value={}):
+                    with patch("aksara.migrations.check_migration_conflicts", return_value={}):
                         response = client.get("/studio/migrations/summary")
         
         assert response.status_code == 200
@@ -576,10 +578,10 @@ class TestStudioMigrationsSummary:
         client = TestClient(app)
         
         with patch("aksara.conf.settings", create_mock_settings()):
-            with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
-                with patch("aksara.studio.utils.build_migration_graph") as mock_graph:
+            with patch("aksara.migrations.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.build_migration_graph") as mock_graph:
                     mock_graph.return_value.heads_for_app.return_value = []
-                    with patch("aksara.studio.utils.check_migration_conflicts", return_value={}):
+                    with patch("aksara.migrations.check_migration_conflicts", return_value={}):
                         response = client.get("/studio/migrations/summary")
         
         assert response.status_code == 200
@@ -594,10 +596,10 @@ class TestStudioMigrationsSummary:
         client = TestClient(app)
         
         with patch("aksara.conf.settings", create_mock_settings()):
-            with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
-                with patch("aksara.studio.utils.build_migration_graph") as mock_graph:
+            with patch("aksara.migrations.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.build_migration_graph") as mock_graph:
                     mock_graph.return_value.heads_for_app.return_value = []
-                    with patch("aksara.studio.utils.check_migration_conflicts", return_value={}):
+                    with patch("aksara.migrations.check_migration_conflicts", return_value={}):
                         response = client.get("/studio/migrations/summary")
         
         assert response.status_code == 200
@@ -612,10 +614,10 @@ class TestStudioMigrationsSummary:
         client = TestClient(app)
         
         with patch("aksara.conf.settings", create_mock_settings()):
-            with patch("aksara.studio.utils.discover_all_migrations", return_value=[]):
-                with patch("aksara.studio.utils.build_migration_graph") as mock_graph:
+            with patch("aksara.migrations.discover_all_migrations", return_value=[]):
+                with patch("aksara.migrations.build_migration_graph") as mock_graph:
                     mock_graph.return_value.heads_for_app.return_value = []
-                    with patch("aksara.studio.utils.check_migration_conflicts", return_value={}):
+                    with patch("aksara.migrations.check_migration_conflicts", return_value={}):
                         response = client.get("/studio/migrations/summary")
         
         assert response.status_code == 200

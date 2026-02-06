@@ -113,6 +113,108 @@ Static reference for commonly used endpoints:
 - AI endpoints
 - Documentation endpoints
 
+### AI Helpers
+
+*Added in v0.5.4*
+
+The AI Helpers panel provides tools for integrating external AI assistants with your Aksara project:
+
+#### AI Context Export
+
+Export a comprehensive JSON snapshot of your project for AI consumption:
+
+- **Project metadata** — Version, Python version, installed apps
+- **Models summary** — All models with field counts, relationships, table names
+- **Routes summary** — All endpoints with methods, paths, names
+- **AI tools inventory** — Available AI tools and their status
+
+Click "Copy Context JSON" to copy the entire context to your clipboard, ready to paste into ChatGPT, Claude, or any LLM.
+
+#### AI Schemas
+
+Browse Pydantic schemas used by Aksara's AI APIs:
+
+| Schema | Description |
+|--------|-------------|
+| `AiPlan` | Structured output from AI planners |
+| `AiPatchRequest` | Code modification requests |
+| `AiQueryPlan` | Natural language → SQL query plans |
+| `AiFullContext` | Complete project context for AI |
+| `AiCodegenRequest` | Code generation requests |
+
+These schemas help when building custom AI integrations or validating AI responses.
+
+#### Prompt Templates
+
+Pre-built prompt scaffolds for common tasks:
+
+- **add-field** — Add a new field to an existing model
+- **refactor-model** — Refactor a model (rename, split, merge)
+- **fix-migrations** — Fix migration conflicts or errors
+- **natural-query** — Convert natural language to database queries
+- **generate-model** — Generate a new model from description
+- **explain-schema** — Get an explanation of your schema
+
+Click on any template to view the full prompt text with placeholders.
+
+## Using Studio with AI Tools
+
+Studio's AI integration endpoints enable powerful workflows with external AI assistants.
+
+### Workflow: Context → AI → Code
+
+1. Open **AI Helpers** in Studio
+2. Click **Copy Context JSON** to grab your project snapshot
+3. Paste into your AI assistant (ChatGPT, Claude, Copilot, etc.)
+4. Ask questions or request changes
+5. The AI understands your models, routes, and schema
+
+### Endpoint Reference
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /studio/ai/context` | Full AI context export |
+| `GET /studio/ai/schemas` | AI API schemas |
+| `GET /studio/ai/prompts` | Prompt templates |
+
+### CLI Export
+
+Export context from the command line:
+
+```bash
+# Full JSON export
+aksara studio ai-context
+
+# Human-readable summary
+aksara studio ai-context --format summary
+```
+
+### For Editor Plugins / External Agents
+
+The endpoints return pure JSON with no authentication required by default. External tools can fetch context directly:
+
+```python
+import httpx
+
+# Fetch project context
+context = httpx.get("http://localhost:8000/studio/ai/context").json()
+
+# Use with any AI client
+messages = [
+    {"role": "system", "content": f"Project context: {context}"},
+    {"role": "user", "content": "Add an email field to the User model"}
+]
+```
+
+!!! info "LLM-Agnostic"
+    These endpoints provide **data only** — no actual LLM calls are made.
+    You bring your own AI provider (OpenAI, Anthropic, local models, etc.).
+
+!!! warning "Security Note"
+    AI context endpoints expose your schema and routes.
+    In production with `studio_expose_in_production=True`, ensure
+    proper authentication is in place.
+
 ## Configuration
 
 ### Settings

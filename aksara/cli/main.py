@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.3"
+CLI_VERSION = "0.5.4"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2450,6 +2450,136 @@ def studio_ui_path():
         click.echo("  \033[31m✗\033[0m Directory does not exist!")
     
     click.echo()
+
+
+@studio.command("ai-context")
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["json", "summary"]),
+    default="json",
+    help="Output format (default: json)"
+)
+def studio_ai_context(output_format):
+    """Export AI context for external AI tools.
+    
+    v0.5.4: Outputs the same JSON as GET /studio/ai/context.
+    Use this to pipe context to AI assistants or save for later use.
+    
+    Examples:
+        aksara studio ai-context
+        aksara studio ai-context --format summary
+        aksara studio ai-context > context.json
+    """
+    import json
+    import asyncio
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - AI Context Export")
+    click.echo()
+    
+    try:
+        # We need to create a minimal context without a full app
+        # Use the utils directly with mock data
+        import aksara
+        from aksara.conf import settings
+        from aksara.registry import ModelRegistry
+        from aksara.studio.models import (
+            StudioAiProjectMeta,
+            StudioAiModelSummary,
+            StudioAiContextExport,
+            StudioMigrationStatus,
+        )
+        from aksara.studio.utils import _get_ai_tools_summary, compute_schema_checksum
+        
+        # Get project metadata
+        env = getattr(settings, 'env', None) or 'development'
+        project = StudioAiProjectMeta(
+            name=getattr(settings, 'app_title', 'Aksara App'),
+            version=aksara.__version__,
+            environment=env,
+            debug=settings.debug,
+        )
+        
+        # Build model summaries
+        models = []
+        all_models = ModelRegistry.all()
+        for name, model_cls in all_models.items():
+            try:
+                meta = getattr(model_cls, '_meta', None)
+                table_name = meta.table_name if meta else name.lower()
+                app_label = meta.app_label if meta else None
+                
+                field_names = []
+                if meta and hasattr(meta, 'fields'):
+                    field_names = list(meta.fields.keys())
+                
+                has_timestamps = 'created_at' in field_names or 'updated_at' in field_names
+                pk = 'id'
+                if meta and hasattr(meta, 'primary_key'):
+                    pk = meta.primary_key
+                
+                models.append(StudioAiModelSummary(
+                    name=name,
+                    table_name=table_name,
+                    app_label=app_label,
+                    fields=field_names,
+                    primary_key=pk,
+                    has_timestamps=has_timestamps,
+                ))
+            except Exception:
+                continue
+        
+        # Get tools
+        tools = _get_ai_tools_summary()
+        
+        # Get apps
+        apps = list(settings.installed_apps) if settings.installed_apps else list(settings.apps)
+        
+        # Compute checksum
+        checksum = compute_schema_checksum(list(all_models.values()))
+        
+        # Build export
+        context_export = StudioAiContextExport(
+            project=project,
+            models=models,
+            routes=[],  # No routes without running app
+            tools=tools,
+            apps=apps,
+            migration_status=StudioMigrationStatus(),
+            schema_checksum=checksum,
+        )
+        
+        if output_format == "summary":
+            click.echo(f"  \033[1mProject:\033[0m {project.name} v{project.version}")
+            click.echo(f"  \033[1mEnvironment:\033[0m {project.environment}")
+            click.echo(f"  \033[1mDebug:\033[0m {project.debug}")
+            click.echo()
+            click.echo(f"  \033[1mModels:\033[0m {len(models)}")
+            for model in models[:5]:  # Show first 5
+                click.echo(f"    - {model.name} ({model.table_name})")
+            if len(models) > 5:
+                click.echo(f"    ... and {len(models) - 5} more")
+            click.echo()
+            click.echo(f"  \033[1mTools:\033[0m {len(tools)}")
+            for tool in tools[:3]:
+                safe_icon = "🔒" if tool.safe else "⚠️"
+                click.echo(f"    {safe_icon} {tool.name}")
+            click.echo()
+            click.echo(f"  \033[1mApps:\033[0m {', '.join(apps) if apps else 'None'}")
+            click.echo(f"  \033[1mSchema Checksum:\033[0m {checksum[:16]}...")
+        else:
+            # JSON output
+            output = context_export.model_dump(mode='json')
+            # Convert datetime to ISO string
+            if 'exported_at' in output:
+                output['exported_at'] = context_export.exported_at.isoformat()
+            click.echo(json.dumps(output, indent=2))
+        
+        click.echo()
+        
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
 
 
 def main():

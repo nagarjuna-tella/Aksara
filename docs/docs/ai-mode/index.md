@@ -353,6 +353,73 @@ pip install aksara[ai]
 
 ---
 
+## Studio Integration
+
+*Added in v0.5.4*
+
+Aksara Studio now includes an **AI Helpers** panel that bridges Studio with external AI assistants.
+
+### AI Context Export
+
+Export your entire project context as JSON for AI consumption:
+
+```bash
+# Via CLI
+aksara studio ai-context
+aksara studio ai-context --format summary
+```
+
+Or via REST API:
+
+```bash
+curl http://localhost:8000/studio/ai/context
+```
+
+### AI Schemas Endpoint
+
+Get Pydantic schemas for AI API integration:
+
+```bash
+curl http://localhost:8000/studio/ai/schemas
+```
+
+Returns schemas for `AiPlan`, `AiPatchRequest`, `AiQueryPlan`, `AiFullContext`, and `AiCodegenRequest`.
+
+### Prompt Templates
+
+Pre-built prompts for common AI tasks:
+
+```bash
+curl http://localhost:8000/studio/ai/prompts
+```
+
+Templates available: `add-field`, `refactor-model`, `fix-migrations`, `natural-query`, `generate-model`, `explain-schema`.
+
+### Use with External AI
+
+These endpoints are **LLM-agnostic** — no model calls are made by Aksara. Use them with any AI provider:
+
+```python
+import httpx
+import openai
+
+# Fetch project context from Studio
+context = httpx.get("http://localhost:8000/studio/ai/context").json()
+
+# Use with your preferred AI
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": f"Project context: {context}"},
+        {"role": "user", "content": "Add a 'tags' field to the Post model"}
+    ]
+)
+```
+
+See [Studio UI](../studio/ui.md#ai-helpers) for the visual interface.
+
+---
+
 ## Related Documentation
 
 - [Tools](tools.md) — AI-callable functions
@@ -365,3 +432,4 @@ pip install aksara[ai]
 - [Schema Doctor](schema-doctor.md) — Schema analysis
 - [Configuration](config.md) — AI Mode settings
 - [Safety](safety.md) — Safety features
+- [Studio AI Helpers](../studio/ui.md#ai-helpers) — Studio UI integration

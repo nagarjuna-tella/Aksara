@@ -4,7 +4,7 @@
  * Zero-dependency, zero-build JavaScript for Aksara Studio dashboard.
  * Uses vanilla JS with modern ES6+ features.
  * 
- * v0.5.3
+ * v0.5.4
  */
 
 // =============================================================================
@@ -20,6 +20,11 @@ const state = {
     currentSection: 'overview',
     isConnected: false,
     diagnosticsInterval: null,
+    // v0.5.4: AI Helpers state
+    aiContext: null,
+    aiSchemas: null,
+    aiPrompts: null,
+    currentSchemaTab: 'plan',
 };
 
 // =============================================================================
@@ -178,6 +183,9 @@ function renderSection(section) {
             break;
         case 'api':
             // Static content, no additional rendering needed
+            break;
+        case 'ai-helpers':
+            renderAiHelpers();
             break;
     }
 }
@@ -514,6 +522,200 @@ function updateDiagnosticsData() {
             `<span class="app-badge">${escapeHtml(app)}</span>`
         ).join('');
     }
+}
+
+// =============================================================================
+// v0.5.4: AI Helpers Section
+// =============================================================================
+
+function renderAiHelpers() {
+    // Fetch all AI data
+    fetchAiContext();
+    fetchAiSchemas();
+    fetchAiPrompts();
+    
+    // Set up event listeners
+    setupAiHelpersListeners();
+}
+
+async function fetchAiContext() {
+    const pre = document.getElementById('ai-context-json');
+    if (!pre) return;
+    
+    try {
+        state.aiContext = await jsonGet('/studio/ai/context');
+        pre.innerHTML = `<code>${escapeHtml(JSON.stringify(state.aiContext, null, 2))}</code>`;
+    } catch (err) {
+        pre.innerHTML = `<code class="error">Error loading context: ${escapeHtml(err.message)}</code>`;
+    }
+}
+
+async function fetchAiSchemas() {
+    const pre = document.getElementById('ai-schema-json');
+    if (!pre) return;
+    
+    try {
+        state.aiSchemas = await jsonGet('/studio/ai/schemas');
+        updateSchemaDisplay();
+    } catch (err) {
+        pre.innerHTML = `<code class="error">Error loading schemas: ${escapeHtml(err.message)}</code>`;
+    }
+}
+
+function updateSchemaDisplay() {
+    const pre = document.getElementById('ai-schema-json');
+    const label = document.getElementById('schema-label');
+    if (!pre || !state.aiSchemas) return;
+    
+    const schemaMap = {
+        'plan': { data: state.aiSchemas.plan_schema, name: 'Plan Schema' },
+        'patch': { data: state.aiSchemas.patch_schema, name: 'Patch Schema' },
+        'query': { data: state.aiSchemas.query_schema, name: 'Query Schema' },
+        'codegen': { data: state.aiSchemas.codegen_schema, name: 'Codegen Schema' },
+    };
+    
+    const current = schemaMap[state.currentSchemaTab] || schemaMap['plan'];
+    pre.innerHTML = `<code>${escapeHtml(JSON.stringify(current.data, null, 2))}</code>`;
+    if (label) label.textContent = current.name;
+}
+
+async function fetchAiPrompts() {
+    const list = document.getElementById('prompt-templates-list');
+    if (!list) return;
+    
+    try {
+        state.aiPrompts = await jsonGet('/studio/ai/prompts');
+        renderPromptTemplates();
+    } catch (err) {
+        list.innerHTML = `<div class="error-state">Error loading prompts: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function renderPromptTemplates() {
+    const list = document.getElementById('prompt-templates-list');
+    if (!list || !state.aiPrompts) return;
+    
+    const prompts = state.aiPrompts.prompts || [];
+    
+    if (prompts.length === 0) {
+        list.innerHTML = '<div class="empty-state">No prompt templates available</div>';
+        return;
+    }
+    
+    list.innerHTML = prompts.map((prompt, index) => `
+        <div class="prompt-card" data-prompt-id="${escapeHtml(prompt.id)}">
+            <div class="prompt-header">
+                <div>
+                    <span class="prompt-title">${escapeHtml(prompt.title)}</span>
+                    <span class="prompt-category">${escapeHtml(prompt.category)}</span>
+                </div>
+                <button class="btn btn-sm btn-copy copy-prompt-btn" data-index="${index}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                    </svg>
+                    Copy
+                </button>
+            </div>
+            <p class="prompt-description">${escapeHtml(prompt.description)}</p>
+            <details class="prompt-details">
+                <summary>View Template</summary>
+                <pre class="prompt-template"><code>${escapeHtml(prompt.template)}</code></pre>
+            </details>
+            <div class="prompt-placeholders">
+                <span class="placeholder-label">Placeholders:</span>
+                ${prompt.placeholders.map(p => `<code class="placeholder">{${escapeHtml(p)}}</code>`).join(' ')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function setupAiHelpersListeners() {
+    // Refresh buttons
+    document.getElementById('refresh-ai-context')?.addEventListener('click', fetchAiContext);
+    document.getElementById('refresh-ai-schemas')?.addEventListener('click', fetchAiSchemas);
+    document.getElementById('refresh-ai-prompts')?.addEventListener('click', fetchAiPrompts);
+    
+    // Copy context button
+    document.getElementById('copy-ai-context')?.addEventListener('click', () => {
+        if (state.aiContext) {
+            copyToClipboard(JSON.stringify(state.aiContext, null, 2), 'AI context copied!');
+        }
+    });
+    
+    // Copy schema button
+    document.getElementById('copy-ai-schema')?.addEventListener('click', () => {
+        if (state.aiSchemas) {
+            const schemaMap = {
+                'plan': state.aiSchemas.plan_schema,
+                'patch': state.aiSchemas.patch_schema,
+                'query': state.aiSchemas.query_schema,
+                'codegen': state.aiSchemas.codegen_schema,
+            };
+            const schema = schemaMap[state.currentSchemaTab] || schemaMap['plan'];
+            copyToClipboard(JSON.stringify(schema, null, 2), 'Schema copied!');
+        }
+    });
+    
+    // Schema tabs
+    document.querySelectorAll('.schema-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.schema-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            state.currentSchemaTab = tab.dataset.schema;
+            updateSchemaDisplay();
+        });
+    });
+    
+    // Prompt copy buttons (delegated)
+    document.getElementById('prompt-templates-list')?.addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('.copy-prompt-btn');
+        if (copyBtn && state.aiPrompts) {
+            const index = parseInt(copyBtn.dataset.index, 10);
+            const prompt = state.aiPrompts.prompts[index];
+            if (prompt) {
+                copyToClipboard(prompt.template, 'Prompt template copied!');
+            }
+        }
+    });
+}
+
+/**
+ * Copy text to clipboard with feedback.
+ * @param {string} text - Text to copy
+ * @param {string} message - Success message to show
+ */
+function copyToClipboard(text, message = 'Copied!') {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(message);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        showToast('Failed to copy', 'error');
+    });
+}
+
+/**
+ * Show a toast notification.
+ * @param {string} message - Message to show
+ * @param {string} type - 'success' or 'error'
+ */
+function showToast(message, type = 'success') {
+    // Remove existing toast
+    document.querySelector('.toast')?.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Remove after delay
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
 }
 
 // =============================================================================

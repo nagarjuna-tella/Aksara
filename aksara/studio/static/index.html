@@ -65,6 +65,14 @@
                     </svg>
                     <span>API Explorer</span>
                 </a>
+                <a href="#/ai-helpers" class="nav-item" data-section="ai-helpers">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                        <path d="M19 12a7 7 0 11-14 0 7 7 0 0114 0z" stroke-dasharray="2 2"></path>
+                    </svg>
+                    <span>AI Helpers</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -464,6 +472,21 @@
                         <code>/studio/runtime/routes</code>
                         <span class="endpoint-desc">All registered routes</span>
                     </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/ai/context</code>
+                        <span class="endpoint-desc">AI context export</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/ai/schemas</code>
+                        <span class="endpoint-desc">AI operation schemas</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/ai/prompts</code>
+                        <span class="endpoint-desc">Prompt templates</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -514,6 +537,89 @@
                         <code>/openapi.json</code>
                         <span class="endpoint-desc">OpenAPI schema (JSON)</span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- v0.5.4: AI Helpers Template -->
+    <template id="template-ai-helpers">
+        <div class="section-header">
+            <h1>AI Helpers</h1>
+            <p class="section-subtitle">Export context and schemas for external AI tools</p>
+        </div>
+        
+        <div class="info-banner">
+            <span class="info-icon">ℹ️</span>
+            <p>Aksara is LLM-agnostic. These tools help you use AI assistants like ChatGPT, Claude, or Copilot with your Aksara app. No AI providers are bundled or called.</p>
+        </div>
+        
+        <!-- AI Context Export Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>AI Context Export</h3>
+                <button class="btn btn-sm btn-secondary" id="refresh-ai-context">Refresh</button>
+            </div>
+            <div class="card-body">
+                <p class="card-description">A JSON bundle containing your project's models, routes, and available tools. Copy this to share with AI assistants.</p>
+                <div class="json-container">
+                    <div class="json-header">
+                        <span class="json-label">Context JSON</span>
+                        <button class="btn btn-sm btn-copy" id="copy-ai-context" data-target="ai-context-json">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <pre id="ai-context-json" class="json-pre"><code>Loading...</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Schemas Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>AI Operation Schemas</h3>
+                <button class="btn btn-sm btn-secondary" id="refresh-ai-schemas">Refresh</button>
+            </div>
+            <div class="card-body">
+                <p class="card-description">JSON Schemas that AI agents can use to generate valid requests for planning, patching, querying, and code generation.</p>
+                
+                <div class="schema-tabs">
+                    <button class="schema-tab active" data-schema="plan">Plan Schema</button>
+                    <button class="schema-tab" data-schema="patch">Patch Schema</button>
+                    <button class="schema-tab" data-schema="query">Query Schema</button>
+                    <button class="schema-tab" data-schema="codegen">Codegen Schema</button>
+                </div>
+                
+                <div class="json-container">
+                    <div class="json-header">
+                        <span class="json-label" id="schema-label">Plan Schema</span>
+                        <button class="btn btn-sm btn-copy" id="copy-ai-schema">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <pre id="ai-schema-json" class="json-pre"><code>Loading...</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prompt Templates Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Prompt Templates</h3>
+                <button class="btn btn-sm btn-secondary" id="refresh-ai-prompts">Refresh</button>
+            </div>
+            <div class="card-body">
+                <p class="card-description">Pre-built prompts with placeholders. Copy a template and paste it into your AI assistant.</p>
+                <div id="prompt-templates-list" class="prompt-templates-list">
+                    <div class="prompt-loading">Loading prompts...</div>
                 </div>
             </div>
         </div>

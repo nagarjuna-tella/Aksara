@@ -4,6 +4,39 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.4] — 2026-02-06
+
+### Added
+- **Studio ↔ AI Integration**: Connect Studio with AI tools (LLM-agnostic)
+- **New Endpoints**:
+  - `GET /studio/ai/context` - AI context export (models, routes, tools, checksums)
+  - `GET /studio/ai/schemas` - JSON Schemas for AI operations (plan, patch, query, codegen)
+  - `GET /studio/ai/prompts` - Prompt templates for external AI tools
+- **New Pydantic Models** (v0.5.4):
+  - `StudioAiProjectMeta` - Project metadata for AI context
+  - `StudioAiModelSummary` - Lightweight model info for AI
+  - `StudioAiRouteSummary` - Route info for AI context
+  - `StudioAiToolInfo` - Tool descriptions for AI agents
+  - `StudioAiContextExport` - Complete AI context bundle
+  - `StudioAiSchemas` - JSON schemas container
+  - `StudioAiPromptTemplate` - Single prompt template
+  - `StudioAiPrompts` - Prompt templates collection
+- **Studio UI "AI Helpers" Panel**:
+  - AI Context Export - Copy JSON context for AI assistants
+  - AI Schemas - Browse/copy schemas for plan, patch, query, codegen
+  - Prompt Templates - Pre-built prompts with placeholders
+  - Copy buttons with toast notifications
+- **New CLI Command**:
+  - `aksara studio ai-context` - Export AI context from CLI
+  - `--format json|summary` option
+
+### Important
+- **LLM-agnostic**: No AI providers bundled or called
+- **No secrets exposed**: AI context filters sensitive data
+- **Safe by default**: All new endpoints are read-only
+
+---
+
 ## [0.5.3] — 2026-02-06
 
 ### Added

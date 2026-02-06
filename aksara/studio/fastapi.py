@@ -20,6 +20,11 @@ v0.5.2 Additions:
 v0.5.3 Additions:
 - GET /studio/ui - Static dashboard UI
 - GET /studio/assets/* - Static assets (CSS, JS, icons)
+
+v0.5.4 Additions:
+- GET /studio/ai/context - AI context export for external AI tools
+- GET /studio/ai/schemas - JSON schemas for AI operations
+- GET /studio/ai/prompts - Prompt templates for AI interactions
 """
 
 from __future__ import annotations
@@ -39,6 +44,10 @@ from aksara.studio.models import (
     # v0.5.2: Runtime models
     StudioRuntimeInfo,
     StudioRouteInfo,
+    # v0.5.4: AI Integration models
+    StudioAiContextExport,
+    StudioAiSchemas,
+    StudioAiPrompts,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -48,6 +57,10 @@ from aksara.studio.utils import (
     # v0.5.2: Runtime utils
     build_runtime_info,
     build_routes_info,
+    # v0.5.4: AI Integration utils
+    build_ai_context_export,
+    build_ai_schemas,
+    build_ai_prompts,
 )
 
 # v0.5.3: Static files directory
@@ -388,6 +401,143 @@ async def studio_runtime_routes(request: Request) -> List[StudioRouteInfo]:
         ]
     """
     return build_routes_info(request.app)
+
+
+# =============================================================================
+# v0.5.4: Studio ↔ AI Integration Endpoints
+# =============================================================================
+
+@router.get("/studio/ai/context", response_model=StudioAiContextExport)
+async def studio_ai_context(request: Request) -> StudioAiContextExport:
+    """
+    Export AI-friendly context bundle.
+    
+    v0.5.4: Returns a secrets-stripped context bundle that external AI tools
+    can consume. Includes project metadata, models, routes, and available tools.
+    
+    This endpoint does NOT call any AI/LLM providers - it only formats
+    existing application context for use with external AI tools.
+    
+    Returns:
+        StudioAiContextExport with:
+        - project: Basic metadata (name, version, environment)
+        - models: Summarized model information
+        - routes: Available API routes
+        - tools: Available AI tools/operations
+        - apps: Installed app labels
+        - migration_status: Migration health snapshot
+        - schema_checksum: For change detection
+    
+    Example Response:
+        {
+            "project": {
+                "name": "My App",
+                "version": "0.5.4",
+                "environment": "development",
+                "debug": true
+            },
+            "models": [
+                {
+                    "name": "User",
+                    "table_name": "users",
+                    "fields": ["id", "email", "name", "created_at"]
+                }
+            ],
+            "routes": [
+                {"path": "/api/users", "methods": ["GET", "POST"]}
+            ],
+            "tools": [
+                {"name": "ai_query", "endpoint": "/ai/query", "safe": true}
+            ],
+            "schema_checksum": "abc123..."
+        }
+    """
+    return await build_ai_context_export(request.app)
+
+
+@router.get("/studio/ai/schemas", response_model=StudioAiSchemas)
+async def studio_ai_schemas(request: Request) -> StudioAiSchemas:
+    """
+    Get JSON schemas for AI operations.
+    
+    v0.5.4: Returns schemas AI agents can use to generate valid requests
+    for planning, patching, querying, and code generation.
+    
+    This endpoint does NOT call any AI/LLM providers - it returns
+    static JSON schemas defining the expected request/response formats.
+    
+    Returns:
+        StudioAiSchemas with:
+        - plan_schema: JSON Schema for AiPlan requests
+        - patch_schema: JSON Schema for AiPatchRequest
+        - query_schema: JSON Schema for AiQueryPlan
+        - codegen_schema: JSON Schema for AiCodegenRequest
+        - context_schema: JSON Schema for AiFullContext (reference)
+    
+    Usage:
+        External AI tools can:
+        1. Fetch these schemas
+        2. Use them to validate generated JSON
+        3. Generate code/plans that conform to Aksara's API
+    
+    Example Response:
+        {
+            "plan_schema": {
+                "type": "object",
+                "properties": {
+                    "goal": {"type": "string"},
+                    "steps": {"type": "array", ...}
+                }
+            },
+            "query_schema": {...},
+            ...
+        }
+    """
+    return build_ai_schemas()
+
+
+@router.get("/studio/ai/prompts", response_model=StudioAiPrompts)
+async def studio_ai_prompts(request: Request) -> StudioAiPrompts:
+    """
+    Get prompt templates for AI interactions.
+    
+    v0.5.4: Returns pre-built prompt templates with placeholders
+    that users can copy and use with external AI tools.
+    
+    This endpoint does NOT call any AI/LLM providers - it returns
+    static text templates with placeholders like {context_json}.
+    
+    Returns:
+        StudioAiPrompts with list of prompt templates, each containing:
+        - id: Unique identifier (e.g., "add-field")
+        - title: Human-friendly title
+        - description: What the prompt is for
+        - template: The prompt text with placeholders
+        - placeholders: List of placeholder names
+        - category: general, schema, migration, query, codegen
+    
+    Available Templates:
+        - add-field: Generate plan to add a field to a model
+        - refactor-model: Generate plan to refactor/split a model
+        - fix-migrations: Generate plan to fix migration issues
+        - natural-query: Convert natural language to query plan
+        - generate-model: Generate code for a new model
+        - explain-schema: Get explanation of current schema
+    
+    Example Response:
+        {
+            "prompts": [
+                {
+                    "id": "add-field",
+                    "title": "Add Model Field",
+                    "template": "Given this context: {context_json}...",
+                    "placeholders": ["context_json", "plan_schema"]
+                }
+            ],
+            "version": "1.0"
+        }
+    """
+    return build_ai_prompts()
 
 
 # =============================================================================

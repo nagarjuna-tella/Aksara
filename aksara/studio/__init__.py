@@ -4,6 +4,7 @@ Aksara Studio - Bridge for Aksara Studio IDE integration.
 v0.5.0: Studio Core & Handshake
 v0.5.1: Studio Core Polish - richer summaries, security, migrations endpoint
 v0.5.2: Runtime & DX - runtime info, routes endpoint
+v0.5.4: Studio ↔ AI Integration - AI context export, schemas, prompts
 
 This module provides the Studio API endpoints and utilities for
 integrating Aksara applications with Aksara Studio IDE.
@@ -16,10 +17,14 @@ Endpoints:
 - GET /studio/schema/handshake - JSON schema for handshake model (v0.5.1)
 - GET /studio/runtime/info - Runtime diagnostics (v0.5.2)
 - GET /studio/runtime/routes - Route metadata (v0.5.2)
+- GET /studio/ai/context - AI context export (v0.5.4)
+- GET /studio/ai/schemas - AI operation schemas (v0.5.4)
+- GET /studio/ai/prompts - Prompt templates (v0.5.4)
 
 CLI:
 - aksara studio handshake - Test handshake locally
 - aksara studio url - Show Studio URLs
+- aksara studio ai-context - Export AI context (v0.5.4)
 """
 
 from aksara.studio.models import (
@@ -38,6 +43,15 @@ from aksara.studio.models import (
     # v0.5.2: Runtime models
     StudioRuntimeInfo,
     StudioRouteInfo,
+    # v0.5.4: AI Integration models
+    StudioAiProjectMeta,
+    StudioAiModelSummary,
+    StudioAiRouteSummary,
+    StudioAiToolInfo,
+    StudioAiContextExport,
+    StudioAiSchemas,
+    StudioAiPromptTemplate,
+    StudioAiPrompts,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -49,6 +63,10 @@ from aksara.studio.utils import (
     # v0.5.2: Runtime utils
     build_runtime_info,
     build_routes_info,
+    # v0.5.4: AI Integration utils
+    build_ai_context_export,
+    build_ai_schemas,
+    build_ai_prompts,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -69,6 +87,15 @@ __all__ = [
     # v0.5.2: Runtime models
     "StudioRuntimeInfo",
     "StudioRouteInfo",
+    # v0.5.4: AI Integration models
+    "StudioAiProjectMeta",
+    "StudioAiModelSummary",
+    "StudioAiRouteSummary",
+    "StudioAiToolInfo",
+    "StudioAiContextExport",
+    "StudioAiSchemas",
+    "StudioAiPromptTemplate",
+    "StudioAiPrompts",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -77,6 +104,9 @@ __all__ = [
     "build_migration_summary",  # v0.5.1
     "build_runtime_info",  # v0.5.2
     "build_routes_info",  # v0.5.2
+    "build_ai_context_export",  # v0.5.4
+    "build_ai_schemas",  # v0.5.4
+    "build_ai_prompts",  # v0.5.4
     # Router
     "studio_router",
 ]
