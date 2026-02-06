@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara"
-version = "0.5.2"
+version = "0.5.3"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -57,6 +57,16 @@ Documentation = "https://github.com/aksara-framework/aksara#readme"
 
 [tool.hatch.build.targets.wheel]
 packages = ["aksara"]
+
+[tool.hatch.build.targets.wheel.sources]
+# Include static assets in the wheel
+"aksara" = "aksara"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/aksara",
+    "/aksara/studio/static/**/*",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

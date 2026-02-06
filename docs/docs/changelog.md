@@ -4,7 +4,46 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.3] — 2026-02-06
+
+### Added
+- **Studio UI (Phase 1: Static Dashboard)**
+  - Embedded zero-build, zero-dependency admin dashboard
+  - Clean HTML/CSS/Vanilla JS architecture
+  - Light and dark theme support
+  - Responsive layout (mobile-friendly)
+- **Dashboard Sections**:
+  - System Overview - Version info, uptime, environment status
+  - Models & Schema - Browse models with field types and relations
+  - Routes Explorer - All registered endpoints with filtering
+  - Migrations - Status, pending count, conflicts
+  - Diagnostics - Live monitoring with 5-second auto-refresh
+  - API Explorer - Quick endpoint reference
+- **New Endpoints**:
+  - `GET /studio/ui` - Serves the dashboard HTML
+  - `GET /studio/assets/*` - Serves static assets (CSS, JS, icons)
+- **New CLI Commands**:
+  - `aksara studio open` - Opens dashboard in browser
+  - `aksara studio ui-path` - Shows static assets path
+- **New Settings**:
+  - `studio_ui_enabled` - Enable/disable the UI (default: True)
+  - `studio_ui_auto_open` - Auto-open on server start (future)
+  - `studio_ui_title` - Customizable UI title
+
+### Changed
+- Version bump from 0.5.2 to 0.5.3
+- `aksara studio url` now includes dashboard URL
+- Static assets bundled with package
+
+### Security
+- UI respects `studio_allowed_origins` setting
+- UI disabled in production by default (requires `studio_expose_in_production`)
+- Directory traversal protection on assets endpoint
+
+---
+
 ## [0.5.2] — 2026-02-15
+
 
 ### Added
 - **Runtime Diagnostics Endpoints**: Real-time server introspection

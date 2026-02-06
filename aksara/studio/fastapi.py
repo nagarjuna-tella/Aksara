@@ -16,13 +16,20 @@ v0.5.1 Additions:
 v0.5.2 Additions:
 - GET /studio/runtime/info - Runtime diagnostics
 - GET /studio/runtime/routes - Route metadata
+
+v0.5.3 Additions:
+- GET /studio/ui - Static dashboard UI
+- GET /studio/assets/* - Static assets (CSS, JS, icons)
 """
 
 from __future__ import annotations
 
+import mimetypes
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse
 
 from aksara.studio.models import (
     StudioContextSummary,
@@ -42,6 +49,9 @@ from aksara.studio.utils import (
     build_runtime_info,
     build_routes_info,
 )
+
+# v0.5.3: Static files directory
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 # =============================================================================
@@ -378,3 +388,150 @@ async def studio_runtime_routes(request: Request) -> List[StudioRouteInfo]:
         ]
     """
     return build_routes_info(request.app)
+
+
+# =============================================================================
+# v0.5.3: Studio UI Endpoints
+# =============================================================================
+
+def _check_studio_ui_enabled() -> None:
+    """
+    Check if Studio UI is enabled.
+    
+    Raises HTTPException if:
+    - Studio is disabled (enable_studio=False)
+    - Studio UI is disabled (studio_ui_enabled=False)
+    - Production mode without explicit exposure
+    """
+    from aksara.conf import settings
+    
+    # Check if Studio is enabled at all
+    if not getattr(settings, 'enable_studio', True):
+        raise HTTPException(
+            status_code=404,
+            detail="Studio is disabled. Set enable_studio=True to enable.",
+        )
+    
+    # Check if Studio UI specifically is enabled
+    if not getattr(settings, 'studio_ui_enabled', True):
+        raise HTTPException(
+            status_code=404,
+            detail="Studio UI is disabled. Set studio_ui_enabled=True to enable.",
+        )
+    
+    # Check production mode
+    debug = getattr(settings, 'debug', False)
+    expose_in_prod = getattr(settings, 'studio_expose_in_production', False)
+    
+    if not debug and not expose_in_prod:
+        raise HTTPException(
+            status_code=403,
+            detail="Studio UI is not available in production mode. "
+                   "Set studio_expose_in_production=True to expose in production.",
+        )
+
+
+@router.get("/studio/ui", response_class=HTMLResponse, include_in_schema=False)
+async def studio_ui(request: Request) -> HTMLResponse:
+    """
+    Serve the Studio dashboard UI.
+    
+    v0.5.3: Static embedded dashboard.
+    
+    Returns:
+        HTML page for the Studio dashboard.
+    """
+    _check_studio_ui_enabled()
+    await verify_studio_origin(request)
+    
+    index_path = STATIC_DIR / "index.html"
+    
+    if not index_path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail="Studio UI files not found. Package may be incomplete.",
+        )
+    
+    # Read and return HTML
+    import aksara
+    content = index_path.read_text(encoding="utf-8")
+    
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Aksara-Studio-Version": aksara.__version__,
+        },
+    )
+
+
+@router.get("/studio/assets/{path:path}", include_in_schema=False)
+async def studio_assets(request: Request, path: str) -> FileResponse:
+    """
+    Serve static assets for Studio UI.
+    
+    v0.5.3: CSS, JS, fonts, icons.
+    
+    Args:
+        path: Asset path relative to static directory
+        
+    Returns:
+        Static file with appropriate Content-Type.
+    """
+    _check_studio_ui_enabled()
+    await verify_studio_origin(request)
+    
+    # Security: prevent directory traversal
+    safe_path = Path(path).as_posix()
+    if ".." in safe_path or safe_path.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    
+    file_path = STATIC_DIR / safe_path
+    
+    # Ensure file exists and is within STATIC_DIR
+    try:
+        file_path = file_path.resolve()
+        if not str(file_path).startswith(str(STATIC_DIR.resolve())):
+            raise HTTPException(status_code=403, detail="Access denied")
+    except (ValueError, OSError):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    # Determine MIME type
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    
+    # Override common types for accuracy
+    suffix = file_path.suffix.lower()
+    mime_overrides = {
+        ".css": "text/css",
+        ".js": "application/javascript",
+        ".svg": "image/svg+xml",
+        ".woff2": "font/woff2",
+        ".woff": "font/woff",
+        ".ttf": "font/ttf",
+        ".json": "application/json",
+    }
+    
+    media_type = mime_overrides.get(suffix, mime_type or "application/octet-stream")
+    
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "public, max-age=3600",
+        },
+    )
+
+
+def get_static_dir() -> Path:
+    """
+    Get the path to the Studio static assets directory.
+    
+    v0.5.3: For CLI ui-path command.
+    
+    Returns:
+        Path to the static directory
+    """
+    return STATIC_DIR

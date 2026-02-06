@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aksara Studio - Admin Dashboard for Aksara Framework">
+    <title>Aksara Studio</title>
+    <link rel="stylesheet" href="/studio/assets/styles.css">
+    <link rel="icon" href="/studio/assets/icons/aksara-logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div id="root">
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/studio/assets/icons/aksara-logo.svg" alt="Aksara" width="32" height="32">
+                    <span class="logo-text">Aksara Studio</span>
+                </div>
+                <span class="version-badge" id="version-badge">v0.0.0</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#/overview" class="nav-item active" data-section="overview">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Overview</span>
+                </a>
+                <a href="#/models" class="nav-item" data-section="models">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>Models & Schema</span>
+                </a>
+                <a href="#/routes" class="nav-item" data-section="routes">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16.5 9.4l-9-5.19"></path>
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path>
+                        <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
+                        <path d="M12 22.08V12"></path>
+                    </svg>
+                    <span>Routes Explorer</span>
+                </a>
+                <a href="#/migrations" class="nav-item" data-section="migrations">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path>
+                    </svg>
+                    <span>Migrations</span>
+                </a>
+                <a href="#/diagnostics" class="nav-item" data-section="diagnostics">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                    <span>Diagnostics</span>
+                </a>
+                <a href="#/api" class="nav-item" data-section="api">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path>
+                    </svg>
+                    <span>API Explorer</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+                    </svg>
+                </button>
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+        </aside>
+        
+        <main id="content">
+            <div class="loading-state" id="loading-state">
+                <div class="spinner"></div>
+                <p>Loading Aksara Studio...</p>
+            </div>
+            
+            <div class="error-state hidden" id="error-state">
+                <div class="error-icon">⚠️</div>
+                <h2>Connection Error</h2>
+                <p id="error-message">Unable to connect to Aksara backend.</p>
+                <button id="retry-button" class="btn btn-primary">Retry</button>
+            </div>
+            
+            <div class="content-area hidden" id="content-area"></div>
+        </main>
+    </div>
+    
+    <!-- Templates for each section -->
+    <template id="template-overview">
+        <div class="section-header">
+            <h1>System Overview</h1>
+            <p class="section-subtitle">Runtime status and system information</p>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Aksara Version</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric">
+                        <span class="metric-value" id="aksara-version">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Python Version</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric">
+                        <span class="metric-value" id="python-version">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Uptime</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric">
+                        <span class="metric-value" id="uptime">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Environment</h3>
+                </div>
+                <div class="card-body">
+                    <div class="metric">
+                        <span class="metric-value" id="environment">-</span>
+                        <span class="status" id="debug-badge">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card card-wide">
+                <div class="card-header">
+                    <h3>Database Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span>Connection</span>
+                        <span class="status" id="db-status">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Pool Size</span>
+                        <span id="db-pool-size">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Available</span>
+                        <span id="db-pool-available">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card card-wide">
+                <div class="card-header">
+                    <h3>Migration Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span>Total</span>
+                        <span id="migrations-total">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Applied</span>
+                        <span id="migrations-applied">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Pending</span>
+                        <span class="status" id="migrations-pending">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Quick Stats</h3>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="model-count">-</span>
+                        <span class="stat-label">Models</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="route-count">-</span>
+                        <span class="stat-label">Routes</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="viewset-count">-</span>
+                        <span class="stat-label">ViewSets</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="ai-tool-count">-</span>
+                        <span class="stat-label">AI Tools</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-models">
+        <div class="section-header">
+            <h1>Models & Schema</h1>
+            <p class="section-subtitle">Database models and their relationships</p>
+        </div>
+        
+        <div class="toolbar">
+            <input type="search" id="models-search" class="search-input" placeholder="Search models...">
+        </div>
+        
+        <div class="models-list" id="models-list">
+            <div class="empty-state">
+                <p>No models found</p>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-routes">
+        <div class="section-header">
+            <h1>Routes Explorer</h1>
+            <p class="section-subtitle">All registered API endpoints</p>
+        </div>
+        
+        <div class="toolbar">
+            <input type="search" id="routes-search" class="search-input" placeholder="Search routes...">
+            <div class="filter-group">
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-studio" checked> Studio
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-admin" checked> Admin
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-ai" checked> AI
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-api" checked> API
+                </label>
+            </div>
+        </div>
+        
+        <div class="routes-table-wrapper">
+            <table class="routes-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody id="routes-tbody">
+                </tbody>
+            </table>
+        </div>
+    </template>
+    
+    <template id="template-migrations">
+        <div class="section-header">
+            <h1>Migrations</h1>
+            <p class="section-subtitle">Database migration status and history</p>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Summary</h3>
+                </div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span>Total Migrations</span>
+                        <span id="mig-total">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Applied</span>
+                        <span id="mig-applied">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Pending</span>
+                        <span class="status" id="mig-pending">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Conflicts</span>
+                        <span class="status" id="mig-conflicts">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card card-wide">
+                <div class="card-header">
+                    <h3>Last Applied</h3>
+                </div>
+                <div class="card-body">
+                    <code id="mig-last-applied">-</code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Apps</h3>
+            </div>
+            <div class="card-body">
+                <div class="apps-list" id="mig-apps-list">
+                    <div class="empty-state">
+                        <p>No apps configured</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="conflicts-card" style="display: none;">
+            <div class="card-header">
+                <h3>⚠️ Migration Conflicts</h3>
+            </div>
+            <div class="card-body">
+                <div class="conflicts-list" id="mig-conflicts-list"></div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-diagnostics">
+        <div class="section-header">
+            <h1>Diagnostics</h1>
+            <p class="section-subtitle">Live runtime diagnostics and health monitoring</p>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Process Info</h3>
+                </div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span>PID</span>
+                        <code id="diag-pid">-</code>
+                    </div>
+                    <div class="status-row">
+                        <span>Start Time</span>
+                        <span id="diag-start-time">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Uptime</span>
+                        <span id="diag-uptime">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Database</h3>
+                </div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span>Status</span>
+                        <span class="status" id="diag-db-status">-</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Pending Migrations</span>
+                        <span id="diag-pending-mig">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Studio Configuration</h3>
+            </div>
+            <div class="card-body">
+                <div class="status-row">
+                    <span>Enabled</span>
+                    <span class="status" id="diag-studio-enabled">-</span>
+                </div>
+                <div class="status-row">
+                    <span>Base Path</span>
+                    <code id="diag-studio-path">-</code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Installed Apps</h3>
+            </div>
+            <div class="card-body">
+                <div class="apps-badges" id="diag-apps-list">
+                    <span class="empty-state">No apps</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="refresh-info">
+            <span>Auto-refresh every 5 seconds</span>
+            <button id="refresh-diagnostics" class="btn btn-sm">Refresh Now</button>
+        </div>
+    </template>
+    
+    <template id="template-api">
+        <div class="section-header">
+            <h1>API Explorer</h1>
+            <p class="section-subtitle">Browse available API endpoints</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Studio Endpoints</h3>
+            </div>
+            <div class="card-body">
+                <div class="endpoint-list">
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/handshake</code>
+                        <span class="endpoint-desc">Complete project handshake</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/context/summary</code>
+                        <span class="endpoint-desc">Lightweight context summary</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/health</code>
+                        <span class="endpoint-desc">Health check with database status</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/migrations/summary</code>
+                        <span class="endpoint-desc">Migration statistics per app</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/runtime/info</code>
+                        <span class="endpoint-desc">Runtime diagnostics</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/studio/runtime/routes</code>
+                        <span class="endpoint-desc">All registered routes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>AI Endpoints</h3>
+            </div>
+            <div class="card-body">
+                <div class="endpoint-list">
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/ai/context/full</code>
+                        <span class="endpoint-desc">Full schema context for AI</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/ai/tools</code>
+                        <span class="endpoint-desc">Available AI tools</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/ai/tools/mcp</code>
+                        <span class="endpoint-desc">MCP-formatted tools</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Documentation</h3>
+            </div>
+            <div class="card-body">
+                <div class="endpoint-list">
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/docs</code>
+                        <span class="endpoint-desc">OpenAPI (Swagger) documentation</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/redoc</code>
+                        <span class="endpoint-desc">ReDoc documentation</span>
+                    </div>
+                    <div class="endpoint-item">
+                        <span class="method-badge get">GET</span>
+                        <code>/openapi.json</code>
+                        <span class="endpoint-desc">OpenAPI schema (JSON)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <script src="/studio/assets/app.js" defer></script>
+</body>
+</html>

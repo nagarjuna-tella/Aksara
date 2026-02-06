@@ -1,0 +1,656 @@
+/**
+ * Aksara Studio - Dashboard Application
+ * 
+ * Zero-dependency, zero-build JavaScript for Aksara Studio dashboard.
+ * Uses vanilla JS with modern ES6+ features.
+ * 
+ * v0.5.3
+ */
+
+// =============================================================================
+// State
+// =============================================================================
+
+const state = {
+    handshake: null,
+    contextSummary: null,
+    runtimeInfo: null,
+    routes: [],
+    migrations: null,
+    currentSection: 'overview',
+    isConnected: false,
+    diagnosticsInterval: null,
+};
+
+// =============================================================================
+// DOM Elements
+// =============================================================================
+
+const elements = {
+    root: () => document.getElementById('root'),
+    loadingState: () => document.getElementById('loading-state'),
+    errorState: () => document.getElementById('error-state'),
+    errorMessage: () => document.getElementById('error-message'),
+    contentArea: () => document.getElementById('content-area'),
+    versionBadge: () => document.getElementById('version-badge'),
+    connectionStatus: () => document.getElementById('connection-status'),
+    themeToggle: () => document.getElementById('theme-toggle'),
+    retryButton: () => document.getElementById('retry-button'),
+};
+
+// =============================================================================
+// API Helpers
+// =============================================================================
+
+/**
+ * Make a JSON GET request to the backend.
+ * @param {string} path - API path (e.g., '/studio/handshake')
+ * @returns {Promise<any>} JSON response
+ */
+async function jsonGet(path) {
+    const response = await fetch(path, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+    });
+    
+    if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+        error.status = response.status;
+        throw error;
+    }
+    
+    return response.json();
+}
+
+// =============================================================================
+// Theme Management
+// =============================================================================
+
+function initTheme() {
+    // Check for saved preference or system preference
+    const saved = localStorage.getItem('aksara-studio-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    
+    document.documentElement.setAttribute('data-theme', theme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('aksara-studio-theme', next);
+}
+
+// =============================================================================
+// Connection Status
+// =============================================================================
+
+function updateConnectionStatus(status, text) {
+    const el = elements.connectionStatus();
+    if (!el) return;
+    
+    el.className = `connection-status ${status}`;
+    const textEl = el.querySelector('.status-text');
+    if (textEl) textEl.textContent = text;
+}
+
+// =============================================================================
+// Navigation
+// =============================================================================
+
+function initNavigation() {
+    // Handle nav item clicks
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = item.dataset.section;
+            if (section) {
+                navigateTo(section);
+            }
+        });
+    });
+    
+    // Handle browser back/forward
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash;
+        const section = hash.replace('#/', '') || 'overview';
+        if (section !== state.currentSection) {
+            navigateTo(section, false);
+        }
+    });
+}
+
+function navigateTo(section, updateHash = true) {
+    state.currentSection = section;
+    
+    // Update URL hash
+    if (updateHash) {
+        window.location.hash = `#/${section}`;
+    }
+    
+    // Update nav active state
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.section === section);
+    });
+    
+    // Render the section
+    renderSection(section);
+}
+
+// =============================================================================
+// Section Rendering
+// =============================================================================
+
+function renderSection(section) {
+    const template = document.getElementById(`template-${section}`);
+    const contentArea = elements.contentArea();
+    
+    if (!template || !contentArea) return;
+    
+    // Clone template content
+    const content = template.content.cloneNode(true);
+    
+    // Clear and append
+    contentArea.innerHTML = '';
+    contentArea.appendChild(content);
+    
+    // Section-specific rendering
+    switch (section) {
+        case 'overview':
+            renderOverview();
+            break;
+        case 'models':
+            renderModels();
+            break;
+        case 'routes':
+            renderRoutes();
+            break;
+        case 'migrations':
+            renderMigrations();
+            break;
+        case 'diagnostics':
+            renderDiagnostics();
+            break;
+        case 'api':
+            // Static content, no additional rendering needed
+            break;
+    }
+}
+
+// =============================================================================
+// Overview Section
+// =============================================================================
+
+function renderOverview() {
+    // Version info from handshake
+    if (state.handshake) {
+        const project = state.handshake.project || {};
+        
+        setText('aksara-version', project.aksara_version || '-');
+        setText('python-version', project.python_version || '-');
+        setText('environment', project.environment || '-');
+        
+        const debugBadge = document.getElementById('debug-badge');
+        if (debugBadge) {
+            if (project.debug_mode) {
+                debugBadge.textContent = 'DEBUG';
+                debugBadge.className = 'status debug';
+            } else {
+                debugBadge.textContent = 'PRODUCTION';
+                debugBadge.className = 'status ok';
+            }
+        }
+        
+        // Database status
+        const db = state.handshake.database || {};
+        const dbStatus = document.getElementById('db-status');
+        if (dbStatus) {
+            if (db.connected) {
+                dbStatus.textContent = 'Connected';
+                dbStatus.className = 'status ok';
+            } else {
+                dbStatus.textContent = 'Disconnected';
+                dbStatus.className = 'status error';
+            }
+        }
+        setText('db-pool-size', db.pool_size ?? '-');
+        setText('db-pool-available', db.pool_available ?? '-');
+    }
+    
+    // Runtime info for uptime
+    if (state.runtimeInfo) {
+        setText('uptime', formatUptime(state.runtimeInfo.uptime_seconds));
+    }
+    
+    // Context summary for stats and migrations
+    if (state.contextSummary) {
+        setText('model-count', state.contextSummary.model_count ?? '-');
+        setText('route-count', state.contextSummary.route_count ?? '-');
+        setText('viewset-count', state.contextSummary.viewset_count ?? '-');
+        setText('ai-tool-count', state.contextSummary.ai_tool_count ?? '-');
+        
+        // Migration status
+        const migStatus = state.contextSummary.migration_status || {};
+        setText('migrations-total', migStatus.total ?? '-');
+        setText('migrations-applied', migStatus.applied ?? '-');
+        
+        const pendingEl = document.getElementById('migrations-pending');
+        if (pendingEl) {
+            const pending = migStatus.pending ?? 0;
+            pendingEl.textContent = pending;
+            pendingEl.className = pending > 0 ? 'status warning' : 'status ok';
+        }
+    }
+}
+
+// =============================================================================
+// Models Section
+// =============================================================================
+
+function renderModels() {
+    const list = document.getElementById('models-list');
+    if (!list) return;
+    
+    const models = state.contextSummary?.models || [];
+    
+    if (models.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No models found</p></div>';
+        return;
+    }
+    
+    list.innerHTML = models.map(model => `
+        <div class="model-card">
+            <div class="model-header">
+                <div>
+                    <span class="model-name">${escapeHtml(model.name)}</span>
+                    <span class="model-table">${escapeHtml(model.table_name)}</span>
+                </div>
+                <div class="model-meta">
+                    <span>${model.field_count} fields</span>
+                    ${model.has_relations ? '<span class="type-badge">Relations</span>' : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Search functionality
+    const searchInput = document.getElementById('models-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.model-card').forEach(card => {
+                const name = card.querySelector('.model-name')?.textContent.toLowerCase() || '';
+                const table = card.querySelector('.model-table')?.textContent.toLowerCase() || '';
+                card.style.display = (name.includes(query) || table.includes(query)) ? '' : 'none';
+            });
+        });
+    }
+}
+
+// =============================================================================
+// Routes Section
+// =============================================================================
+
+function renderRoutes() {
+    const tbody = document.getElementById('routes-tbody');
+    if (!tbody) return;
+    
+    const routes = state.routes || [];
+    
+    if (routes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No routes found</td></tr>';
+        return;
+    }
+    
+    renderRoutesTable(routes);
+    
+    // Search functionality
+    const searchInput = document.getElementById('routes-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterRoutes);
+    }
+    
+    // Filter checkboxes
+    ['filter-studio', 'filter-admin', 'filter-ai', 'filter-api'].forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+            checkbox.addEventListener('change', filterRoutes);
+        }
+    });
+}
+
+function renderRoutesTable(routes) {
+    const tbody = document.getElementById('routes-tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = routes.map(route => {
+        const methods = (route.methods || []).map(m => 
+            `<span class="method-badge ${m.toLowerCase()}">${m}</span>`
+        ).join(' ');
+        
+        let typeBadges = '';
+        if (route.is_studio) typeBadges += '<span class="type-badge studio">Studio</span>';
+        if (route.is_admin) typeBadges += '<span class="type-badge admin">Admin</span>';
+        if (route.is_ai) typeBadges += '<span class="type-badge ai">AI</span>';
+        if (!route.is_studio && !route.is_admin && !route.is_ai) {
+            typeBadges += '<span class="type-badge api">API</span>';
+        }
+        
+        return `
+            <tr data-studio="${route.is_studio}" data-admin="${route.is_admin}" data-ai="${route.is_ai}">
+                <td>${methods}</td>
+                <td><code>${escapeHtml(route.path)}</code></td>
+                <td>${escapeHtml(route.name || '-')}</td>
+                <td>${typeBadges}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterRoutes() {
+    const searchInput = document.getElementById('routes-search');
+    const query = searchInput?.value.toLowerCase() || '';
+    
+    const showStudio = document.getElementById('filter-studio')?.checked ?? true;
+    const showAdmin = document.getElementById('filter-admin')?.checked ?? true;
+    const showAI = document.getElementById('filter-ai')?.checked ?? true;
+    const showAPI = document.getElementById('filter-api')?.checked ?? true;
+    
+    document.querySelectorAll('#routes-tbody tr').forEach(row => {
+        const path = row.querySelector('code')?.textContent.toLowerCase() || '';
+        const name = row.cells[2]?.textContent.toLowerCase() || '';
+        
+        const matchesSearch = path.includes(query) || name.includes(query);
+        
+        const isStudio = row.dataset.studio === 'true';
+        const isAdmin = row.dataset.admin === 'true';
+        const isAI = row.dataset.ai === 'true';
+        const isAPI = !isStudio && !isAdmin && !isAI;
+        
+        const matchesFilter = 
+            (isStudio && showStudio) ||
+            (isAdmin && showAdmin) ||
+            (isAI && showAI) ||
+            (isAPI && showAPI);
+        
+        row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+    });
+}
+
+// =============================================================================
+// Migrations Section
+// =============================================================================
+
+function renderMigrations() {
+    if (!state.migrations) {
+        fetchMigrations().then(() => renderMigrationsData());
+    } else {
+        renderMigrationsData();
+    }
+}
+
+async function fetchMigrations() {
+    try {
+        state.migrations = await jsonGet('/studio/migrations/summary');
+    } catch (err) {
+        console.error('Failed to fetch migrations:', err);
+    }
+}
+
+function renderMigrationsData() {
+    const mig = state.migrations;
+    if (!mig) return;
+    
+    setText('mig-total', mig.total_migrations ?? '-');
+    setText('mig-applied', mig.applied_migrations ?? '-');
+    
+    const pendingEl = document.getElementById('mig-pending');
+    if (pendingEl) {
+        const pending = mig.pending_migrations ?? 0;
+        pendingEl.textContent = pending;
+        pendingEl.className = pending > 0 ? 'status warning' : 'status ok';
+    }
+    
+    const conflictsEl = document.getElementById('mig-conflicts');
+    if (conflictsEl) {
+        const hasConflicts = mig.conflicts && mig.conflicts.length > 0;
+        conflictsEl.textContent = hasConflicts ? 'Yes' : 'None';
+        conflictsEl.className = hasConflicts ? 'status error' : 'status ok';
+    }
+    
+    setText('mig-last-applied', mig.last_applied || 'None');
+    
+    // Apps list
+    const appsList = document.getElementById('mig-apps-list');
+    if (appsList && mig.apps && mig.apps.length > 0) {
+        appsList.innerHTML = mig.apps.map(app => `
+            <div class="app-item">
+                <span class="app-name">${escapeHtml(app.app_label)}</span>
+                <div class="app-stats">
+                    <span>Applied: ${app.applied}</span>
+                    <span>Pending: ${app.pending}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Conflicts
+    const conflictsCard = document.getElementById('conflicts-card');
+    const conflictsList = document.getElementById('mig-conflicts-list');
+    if (conflictsCard && conflictsList && mig.conflicts && mig.conflicts.length > 0) {
+        conflictsCard.style.display = '';
+        conflictsList.innerHTML = mig.conflicts.map(c => `
+            <div class="conflict-item">
+                <div class="conflict-app">${escapeHtml(c.app_label)}</div>
+                <div class="conflict-heads">${escapeHtml(c.heads.join(', '))}</div>
+            </div>
+        `).join('');
+    }
+}
+
+// =============================================================================
+// Diagnostics Section
+// =============================================================================
+
+function renderDiagnostics() {
+    updateDiagnosticsData();
+    
+    // Set up auto-refresh
+    if (state.diagnosticsInterval) {
+        clearInterval(state.diagnosticsInterval);
+    }
+    state.diagnosticsInterval = setInterval(fetchAndUpdateDiagnostics, 5000);
+    
+    // Manual refresh button
+    const refreshBtn = document.getElementById('refresh-diagnostics');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', fetchAndUpdateDiagnostics);
+    }
+}
+
+async function fetchAndUpdateDiagnostics() {
+    try {
+        state.runtimeInfo = await jsonGet('/studio/runtime/info');
+        updateDiagnosticsData();
+    } catch (err) {
+        console.error('Failed to fetch diagnostics:', err);
+    }
+}
+
+function updateDiagnosticsData() {
+    const info = state.runtimeInfo;
+    if (!info) return;
+    
+    setText('diag-pid', info.pid ?? '-');
+    setText('diag-start-time', formatDateTime(info.start_time));
+    setText('diag-uptime', formatUptime(info.uptime_seconds));
+    
+    const dbStatus = document.getElementById('diag-db-status');
+    if (dbStatus) {
+        const status = info.database_status || 'disconnected';
+        dbStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        dbStatus.className = `status ${status === 'ok' ? 'ok' : status === 'degraded' ? 'warning' : 'error'}`;
+    }
+    
+    setText('diag-pending-mig', info.pending_migrations ?? '-');
+    
+    const studioEnabled = document.getElementById('diag-studio-enabled');
+    if (studioEnabled) {
+        studioEnabled.textContent = info.studio_enabled ? 'Yes' : 'No';
+        studioEnabled.className = info.studio_enabled ? 'status ok' : 'status warning';
+    }
+    
+    setText('diag-studio-path', info.studio_base_path || '/studio');
+    
+    // Installed apps
+    const appsList = document.getElementById('diag-apps-list');
+    if (appsList && info.installed_apps && info.installed_apps.length > 0) {
+        appsList.innerHTML = info.installed_apps.map(app => 
+            `<span class="app-badge">${escapeHtml(app)}</span>`
+        ).join('');
+    }
+}
+
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function formatUptime(seconds) {
+    if (!seconds && seconds !== 0) return '-';
+    
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
+}
+
+function formatDateTime(isoString) {
+    if (!isoString) return '-';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleString();
+    } catch {
+        return isoString;
+    }
+}
+
+// =============================================================================
+// Initialization
+// =============================================================================
+
+async function init() {
+    console.log('Aksara Studio initializing...');
+    
+    // Initialize theme
+    initTheme();
+    
+    // Set up event listeners
+    const themeToggle = elements.themeToggle();
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    const retryButton = elements.retryButton();
+    if (retryButton) {
+        retryButton.addEventListener('click', () => {
+            elements.errorState()?.classList.add('hidden');
+            elements.loadingState()?.classList.remove('hidden');
+            init();
+        });
+    }
+    
+    // Initialize navigation
+    initNavigation();
+    
+    try {
+        // Fetch initial data
+        updateConnectionStatus('', 'Connecting...');
+        
+        const [handshake, contextSummary, runtimeInfo, routes] = await Promise.all([
+            jsonGet('/studio/handshake'),
+            jsonGet('/studio/context/summary'),
+            jsonGet('/studio/runtime/info'),
+            jsonGet('/studio/runtime/routes'),
+        ]);
+        
+        state.handshake = handshake;
+        state.contextSummary = contextSummary;
+        state.runtimeInfo = runtimeInfo;
+        state.routes = routes;
+        state.isConnected = true;
+        
+        // Update UI
+        updateConnectionStatus('connected', 'Connected');
+        
+        // Update version badge
+        const versionBadge = elements.versionBadge();
+        if (versionBadge && handshake.project) {
+            versionBadge.textContent = `v${handshake.project.aksara_version}`;
+        }
+        
+        // Show content
+        elements.loadingState()?.classList.add('hidden');
+        elements.contentArea()?.classList.remove('hidden');
+        
+        // Navigate to initial section (from hash or default)
+        const hash = window.location.hash;
+        const section = hash.replace('#/', '') || 'overview';
+        navigateTo(section, false);
+        
+        console.log('Aksara Studio initialized successfully');
+        
+    } catch (err) {
+        console.error('Failed to initialize Aksara Studio:', err);
+        
+        state.isConnected = false;
+        updateConnectionStatus('error', 'Error');
+        
+        // Show error state
+        elements.loadingState()?.classList.add('hidden');
+        elements.contentArea()?.classList.add('hidden');
+        elements.errorState()?.classList.remove('hidden');
+        
+        const errorMessage = elements.errorMessage();
+        if (errorMessage) {
+            if (err.status === 403) {
+                errorMessage.textContent = 'Access denied. Check CORS configuration or studio_allowed_origins setting.';
+            } else if (err.status === 404) {
+                errorMessage.textContent = 'Studio endpoints not found. Make sure Studio is enabled.';
+            } else {
+                errorMessage.textContent = `Unable to connect to Aksara backend: ${err.message}`;
+            }
+        }
+    }
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    if (state.diagnosticsInterval) {
+        clearInterval(state.diagnosticsInterval);
+    }
+});
+
+// Start the app
+document.addEventListener('DOMContentLoaded', init);

@@ -89,6 +89,11 @@ class Settings:
         "http://localhost:3000",  # Local Studio dev
     ])
     
+    # v0.5.3: Studio UI settings
+    studio_ui_enabled: bool = True  # Enable embedded Studio UI
+    studio_ui_auto_open: bool = False  # Auto-open UI on server start (future)
+    studio_ui_title: str = "Aksara Studio"  # Customizable UI title
+    
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     

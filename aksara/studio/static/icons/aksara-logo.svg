@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="aksara-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <!-- Lightning bolt -->
+  <path d="M36 6L16 34h12L24 58l24-32H34L36 6z" fill="url(#aksara-gradient)"/>
+  <!-- Subtle shadow/glow -->
+  <path d="M36 6L16 34h12L24 58l24-32H34L36 6z" fill="rgba(0,0,0,0.1)" transform="translate(1.5, 1.5)"/>
+</svg>

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.2"
+CLI_VERSION = "0.5.3"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2360,10 +2360,15 @@ def studio_url(host: str, port: int, https: bool):
     click.echo()
     click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - Endpoint URLs")
     click.echo()
+    click.echo("  \033[1mStudio UI:\033[0m")
+    click.echo(f"    Dashboard:       {base_url}/studio/ui")
+    click.echo()
     click.echo("  \033[1mStudio Endpoints:\033[0m")
     click.echo(f"    Handshake:       {base_url}/studio/handshake")
     click.echo(f"    Context Summary: {base_url}/studio/context/summary")
     click.echo(f"    Health:          {base_url}/studio/health")
+    click.echo(f"    Runtime Info:    {base_url}/studio/runtime/info")
+    click.echo(f"    Routes:          {base_url}/studio/runtime/routes")
     click.echo()
     click.echo("  \033[1mAI Endpoints (full context):\033[0m")
     click.echo(f"    Full Context:    {base_url}/ai/context/full")
@@ -2371,6 +2376,79 @@ def studio_url(host: str, port: int, https: bool):
     click.echo(f"    MCP Tools:       {base_url}/ai/tools/mcp")
     click.echo()
     click.echo("  \033[90mTip: Use --https for production URLs\033[0m")
+    click.echo()
+
+
+# =============================================================================
+# v0.5.3: Studio UI Commands
+# =============================================================================
+
+@studio.command("open")
+@click.option("--host", "-h", default="127.0.0.1", help="Server host")
+@click.option("--port", "-p", default=8000, type=int, help="Server port")
+@click.option("--https/--no-https", default=False, help="Use HTTPS")
+def studio_open(host: str, port: int, https: bool):
+    """Open the Studio UI in your browser.
+    
+    Opens the embedded Studio dashboard in your default web browser.
+    Make sure your Aksara server is running first.
+    
+    Examples:
+        aksara studio open
+        aksara studio open --port 8080
+        aksara studio open --host 192.168.1.100
+    """
+    import webbrowser
+    
+    protocol = "https" if https else "http"
+    url = f"{protocol}://{host}:{port}/studio/ui"
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m")
+    click.echo()
+    click.echo(f"  Opening: {url}")
+    click.echo()
+    
+    try:
+        webbrowser.open(url)
+        click.echo("  \033[32m✓\033[0m Browser opened successfully")
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Failed to open browser: {e}")
+        click.echo(f"  \033[90mPlease open this URL manually: {url}\033[0m")
+        sys.exit(1)
+    
+    click.echo()
+
+
+@studio.command("ui-path")
+def studio_ui_path():
+    """Show the path to Studio UI static assets.
+    
+    Displays the filesystem path where Studio UI files are located.
+    Useful for debugging or customization.
+    
+    Examples:
+        aksara studio ui-path
+    """
+    from aksara.studio.fastapi import get_static_dir
+    
+    static_dir = get_static_dir()
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - Static Assets Path")
+    click.echo()
+    click.echo(f"  Path: {static_dir}")
+    click.echo()
+    
+    # Check if directory exists and list contents
+    if static_dir.exists():
+        click.echo("  \033[1mContents:\033[0m")
+        for item in sorted(static_dir.iterdir()):
+            icon = "📁" if item.is_dir() else "📄"
+            click.echo(f"    {icon} {item.name}")
+    else:
+        click.echo("  \033[31m✗\033[0m Directory does not exist!")
+    
     click.echo()
 
 
