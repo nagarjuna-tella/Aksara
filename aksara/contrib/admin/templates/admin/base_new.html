@@ -93,9 +93,38 @@
                 </div>
                 
                 <div class="admin-header-right">
-                    {% if debug %}
-                    <span class="badge badge-success">DEBUG MODE</span>
+                    {% if studio_enabled %}
+                    <a href="/ai/studio" class="btn btn-sm btn-ghost header-studio-link" title="Open AI Studio">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="m2 17 10 5 10-5"/>
+                            <path d="m2 12 10 5 10-5"/>
+                        </svg>
+                        <span class="header-link-text">Studio</span>
+                    </a>
                     {% endif %}
+                    
+                    {% if debug %}
+                    <span class="badge badge-warning">DEBUG</span>
+                    {% endif %}
+                    
+                    <!-- Theme Toggle Button -->
+                    <button type="button" class="btn btn-sm btn-ghost theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode">
+                        <svg class="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg class="theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
                     
                     {% if user %}
                     <div class="header-user">
@@ -160,20 +189,42 @@
             });
         }
         
-        // Dark mode toggle (optional - can be enabled)
+        // Dark mode toggle
         function toggleDarkMode() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            localStorage.setItem('aksara-admin-theme', newTheme);
+            updateThemeIcon(newTheme);
         }
         
-        // Restore theme preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
+        // Update theme icon visibility
+        function updateThemeIcon(theme) {
+            const lightIcon = document.querySelector('.theme-icon-light');
+            const darkIcon = document.querySelector('.theme-icon-dark');
+            if (lightIcon && darkIcon) {
+                if (theme === 'dark') {
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                } else {
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                }
+            }
         }
+        
+        // Restore theme preference on load
+        (function() {
+            const savedTheme = localStorage.getItem('aksara-admin-theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            // Icons will be updated after DOM ready
+            document.addEventListener('DOMContentLoaded', function() {
+                updateThemeIcon(theme);
+            });
+        })();
     </script>
     
     {% block extra_js %}{% endblock %}

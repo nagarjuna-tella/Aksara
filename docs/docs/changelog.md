@@ -4,6 +4,60 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.9] — 2026-02-08
+
+### Added
+- **Admin UI 2.0 - DX & UX Pass**: Major admin interface overhaul
+  - **Theme Toggle Button**: Visible dark/light mode toggle in header
+    - Uses `localStorage` for persistence (`aksara-admin-theme`)
+    - Respects `prefers-color-scheme` as default
+    - Smooth icon transition between sun/moon
+  - **Studio Link**: Header link to AI Studio when enabled
+  - **Improved Breadcrumbs**: SVG chevron separators, aria-label support
+  - **Record Count Badges**: Show count in list view headers
+  - **Sticky Form Actions**: Form save/cancel/delete actions stick to bottom
+  - **Search UX**: New search card with icon, clear button styling
+  - **Empty States**: Improved SVG icons replacing emoji
+  - **Dashboard Cards**: New `.dashboard-card` component with hover effects
+  - **Model Links**: First column in list view is now clickable link to edit
+
+- **JSON Widget Enhancements** (json_widget.js v0.5.9):
+  - Auto-format JSON on blur
+  - Auto-format on paste
+  - JSON structure info (array/object count)
+  - Improved error focus and scrolling
+
+- **Array Widget Enhancements** (array_widget.js v0.5.9):
+  - Drag-and-drop reordering
+  - Drag handle with grip icon
+  - Smooth remove animation
+  - Enter key to add new item
+  - Count badge support
+  - Warning message for max items
+
+- **Responsive Improvements**:
+  - Mobile sidebar with overlay
+  - Collapsible form actions
+  - Mobile-friendly tables
+  - Breakpoints at 1024px, 768px, 480px
+
+### Changed
+- CSS version updated to 0.5.9
+- Badge for DEBUG mode changed from `badge-success` to `badge-warning`
+- Form templates use `form-input` class instead of `form-control`
+- Index template uses SVG icons instead of emoji
+- Model list uses SVG icons in empty states and actions
+- Theme localStorage key changed to `aksara-admin-theme`
+
+### Fixed
+- Theme toggle now updates icon visibility correctly on page load
+- Array widget preserves value when clearing last item
+
+### Documentation
+- Admin UI 2.0 changes documented in changelog
+
+---
+
 ## [0.5.8] — 2026-02-07
 
 ### Added

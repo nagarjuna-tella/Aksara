@@ -143,6 +143,7 @@ async def admin_index(request: Request) -> HTMLResponse:
             "user": user,
             "debug": settings.debug,
             "site_name": "Aksara Admin",
+            "studio_enabled": getattr(settings, "enable_studio", False),
         },
     )
 
@@ -162,6 +163,8 @@ async def app_index(request: Request, app_label: str) -> HTMLResponse:
     user, redirect = require_admin_user(request)
     if redirect:
         return redirect
+    
+    settings = _get_settings()
     
     # Find all models for this app
     app_models: List[Type["Model"]] = []
@@ -183,6 +186,7 @@ async def app_index(request: Request, app_label: str) -> HTMLResponse:
             "models": app_models,
             "user": user,
             "site_name": "Aksara Admin",
+            "studio_enabled": getattr(settings, "enable_studio", False),
         },
     )
 
@@ -204,6 +208,8 @@ async def model_list(
     user, redirect = require_admin_user(request)
     if redirect:
         return redirect
+    
+    settings = _get_settings()
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     if not model_admin.has_view_permission(request):
@@ -257,6 +263,7 @@ async def model_list(
             "search_query": search_query,
             "search_fields": model_admin.search_fields,
             "site_name": "Aksara Admin",
+            "studio_enabled": getattr(settings, "enable_studio", False),
         },
     )
 
@@ -278,6 +285,8 @@ async def model_add(
     user, redirect = require_admin_user(request)
     if redirect:
         return redirect
+    
+    settings = _get_settings()
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     if not model_admin.has_add_permission(request):
@@ -328,6 +337,7 @@ async def model_add(
             "errors": errors,
             "user": user,
             "site_name": "Aksara Admin",
+            "studio_enabled": getattr(settings, "enable_studio", False),
         },
     )
 
@@ -350,6 +360,8 @@ async def model_change(
     user, redirect = require_admin_user(request)
     if redirect:
         return redirect
+    
+    settings = _get_settings()
     model, model_admin = _get_model_and_admin(app_label, model_name)
     
     # Get the object
@@ -415,6 +427,7 @@ async def model_change(
             "user": user,
             "can_delete": model_admin.has_delete_permission(request, obj),
             "site_name": "Aksara Admin",
+            "studio_enabled": getattr(settings, "enable_studio", False),
         },
     )
 
