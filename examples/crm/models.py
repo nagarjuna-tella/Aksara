@@ -86,8 +86,8 @@ class Deal(Model):
         ai_description="Deal title or description",
     )
     amount = fields.Decimal(
-        precision=12,
-        scale=2,
+        max_digits=12,
+        decimal_places=2,
         ai_description="Deal value in currency",
     )
     stage = fields.String(
@@ -99,7 +99,7 @@ class Deal(Model):
         default=10,
         ai_description="Win probability percentage (0-100)",
     )
-    close_date = fields.Date(
+    close_date = fields.DateTime(
         nullable=True,
         ai_description="Expected or actual close date",
     )

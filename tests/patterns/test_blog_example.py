@@ -99,7 +99,7 @@ class TestBlogViewSets:
         
         assert PostViewSet.model == Post
         assert PostViewSet.prefix == "/api/posts"
-        assert "Posts" in PostViewSet.tags
+        assert "Blog API" in PostViewSet.tags
     
     def test_post_viewset_actions(self):
         """PostViewSet should have custom actions."""
@@ -126,6 +126,105 @@ class TestBlogViewSets:
         assert hasattr(CommentViewSet, "reject")
 
 
+class TestBlogAuth:
+    """Test blog auth module (v0.5.8)."""
+    
+    def test_auth_module_importable(self):
+        """auth module should be importable."""
+        from blog import auth
+        assert hasattr(auth, "verify_api_key")
+        assert hasattr(auth, "require_api_key")
+    
+    def test_verify_api_key_function(self):
+        """verify_api_key should work correctly."""
+        from blog.auth import verify_api_key
+        from blog import settings
+        
+        # Should verify against configured key
+        assert verify_api_key(settings.BLOG_API_KEY) is True
+        assert verify_api_key("wrong-key") is False
+    
+    def test_require_api_key_is_async(self):
+        """require_api_key should be async."""
+        from blog.auth import require_api_key
+        import inspect
+        
+        assert inspect.iscoroutinefunction(require_api_key)
+    
+    def test_settings_has_api_key(self):
+        """settings should have BLOG_API_KEY."""
+        from blog import settings
+        
+        assert hasattr(settings, "BLOG_API_KEY")
+        assert settings.BLOG_API_KEY  # Should be non-empty
+    
+    def test_viewset_has_dependencies(self):
+        """ViewSets should have auth dependencies."""
+        from blog.views import PostViewSet, CommentViewSet
+        
+        assert hasattr(PostViewSet, "dependencies")
+        assert PostViewSet.dependencies is not None
+        assert len(PostViewSet.dependencies) > 0
+        
+        assert hasattr(CommentViewSet, "dependencies")
+        assert CommentViewSet.dependencies is not None
+
+
+class TestBlogPagination:
+    """Test blog pagination settings (v0.5.8)."""
+    
+    def test_settings_has_page_size(self):
+        """settings should have DEFAULT_PAGE_SIZE."""
+        from blog import settings
+        
+        assert hasattr(settings, "DEFAULT_PAGE_SIZE")
+        assert settings.DEFAULT_PAGE_SIZE == 10
+    
+    def test_settings_has_max_page_size(self):
+        """settings should have MAX_PAGE_SIZE."""
+        from blog import settings
+        
+        assert hasattr(settings, "MAX_PAGE_SIZE")
+        assert settings.MAX_PAGE_SIZE == 100
+    
+    def test_viewset_has_list_override(self):
+        """PostViewSet should have custom list method."""
+        from blog.views import PostViewSet
+        
+        assert hasattr(PostViewSet, "list")
+        # Check it's overridden (not just inherited)
+        import inspect
+        assert inspect.iscoroutinefunction(PostViewSet.list)
+
+
+class TestBlogAI:
+    """Test blog AI endpoint (v0.5.8)."""
+    
+    def test_ai_suggest_tags_action(self):
+        """PostViewSet should have ai_suggest_tags action."""
+        from blog.views import PostViewSet
+        
+        assert hasattr(PostViewSet, "ai_suggest_tags")
+    
+    def test_ai_suggest_tags_has_ai_attributes(self):
+        """ai_suggest_tags should have AI exposure attributes."""
+        from blog.views import PostViewSet
+        
+        method = getattr(PostViewSet, "ai_suggest_tags")
+        # Check for action metadata (stored in _aksara_action)
+        assert hasattr(method, "_aksara_action")
+        meta = method._aksara_action
+        assert meta.get("ai_exposed") is True
+    
+    def test_stopwords_defined(self):
+        """STOPWORDS should be defined for keyword extraction."""
+        from blog.views import STOPWORDS
+        
+        assert isinstance(STOPWORDS, set)
+        assert "the" in STOPWORDS
+        assert "and" in STOPWORDS
+
+
 class TestBlogFiles:
     """Test blog example file structure."""
     
@@ -143,6 +242,11 @@ class TestBlogFiles:
         """settings.py should exist."""
         settings = examples_path / "blog" / "settings.py"
         assert settings.exists(), "blog/settings.py should exist"
+    
+    def test_auth_exists(self):
+        """auth.py should exist (v0.5.8)."""
+        auth = examples_path / "blog" / "auth.py"
+        assert auth.exists(), "blog/auth.py should exist"
     
     def test_migrations_folder_exists(self):
         """migrations folder should exist."""

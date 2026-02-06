@@ -1,5 +1,8 @@
 """
-CRM Example - Settings
+CRM Example - Settings (v0.5.8)
+
+Configuration for the CRM example app.
+Includes API key auth, pagination defaults, and AI mode settings.
 """
 
 import os
@@ -12,6 +15,19 @@ DATABASE_URL = os.getenv(
 
 DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
 
+# =============================================================================
+# Auth Configuration (v0.5.8)
+# =============================================================================
+# Simple API key authentication for the CRM API.
+# In production, set CRM_API_KEY environment variable to a secure value.
+CRM_API_KEY = os.getenv("CRM_API_KEY", "dev-crm-key")
+
+# =============================================================================
+# Pagination Defaults (v0.5.8)
+# =============================================================================
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+
 configure(
     database_url=DATABASE_URL,
     debug=DEBUG,
@@ -19,9 +35,8 @@ configure(
     pool_max_size=20,
     migrations_dir="migrations",
     apps=["examples.crm"],
-    enable_admin=True,
     enable_studio=True,
-    AI_MODE_ENABLED=True,
+    ai_enabled=True,
 )
 
 from aksara import settings  # noqa: E402

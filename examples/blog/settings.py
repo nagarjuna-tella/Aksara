@@ -1,7 +1,8 @@
 """
-Blog Example - Settings
+Blog Example - Settings (v0.5.8)
 
 Configuration for the blog example app.
+Includes API key auth, pagination defaults, and AI mode settings.
 """
 
 import os
@@ -16,6 +17,19 @@ DATABASE_URL = os.getenv(
 # Debug mode
 DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
 
+# =============================================================================
+# Auth Configuration (v0.5.8)
+# =============================================================================
+# Simple API key authentication for the Blog API.
+# In production, set BLOG_API_KEY environment variable to a secure value.
+BLOG_API_KEY = os.getenv("BLOG_API_KEY", "dev-blog-key")
+
+# =============================================================================
+# Pagination Defaults (v0.5.8)
+# =============================================================================
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+
 # Configure Aksara
 configure(
     database_url=DATABASE_URL,
@@ -25,9 +39,8 @@ configure(
     migrations_dir="migrations",
     apps=["examples.blog"],
     # Enable features
-    enable_admin=True,
     enable_studio=True,
-    AI_MODE_ENABLED=True,
+    ai_enabled=True,
 )
 
 # Access settings

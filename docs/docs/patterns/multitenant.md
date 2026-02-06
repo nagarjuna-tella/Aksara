@@ -225,6 +225,7 @@ class UserViewSet(ModelViewSet):
 | GET | `/api/tenants/{id}/` | Get tenant details |
 | PUT | `/api/tenants/{id}/` | Update a tenant |
 | DELETE | `/api/tenants/{id}/` | Delete a tenant |
+| GET | `/api/tenants/{id}/ai-overview/` | AI: Model overview (v0.5.8) |
 
 ### Users (Tenant-Scoped)
 
@@ -235,6 +236,8 @@ class UserViewSet(ModelViewSet):
 | GET | `/api/users/{id}/` | Get user details |
 | PUT | `/api/users/{id}/` | Update a user |
 | DELETE | `/api/users/{id}/` | Delete a user |
+| GET | `/api/users/me/` | Get current user info |
+| GET | `/api/users/admins/` | List admin users |
 
 ### Projects (Tenant-Scoped)
 
@@ -245,6 +248,122 @@ class UserViewSet(ModelViewSet):
 | GET | `/api/projects/{id}/` | Get project details |
 | PUT | `/api/projects/{id}/` | Update a project |
 | DELETE | `/api/projects/{id}/` | Delete a project |
+
+## AI-Ready Endpoints (v0.5.8)
+
+The multitenant example includes an AI-aware endpoint for tenant model overview.
+
+### AI Tenant Model Overview
+
+```python
+@action(
+    detail=True,
+    methods=["GET"],
+    path="ai-overview",
+    name="tenant_model_overview",
+    description="Get an overview of models and record counts for a specific tenant. Respects tenant isolation.",
+    ai_exposed=True,
+)
+async def ai_overview(self, pk: str, request: Request):
+    """AI Tool: Tenant model overview."""
+    tenant = await self.model.objects.get(id=pk)
+    
+    # Count records for tenant-scoped models
+    user_count = len(await User.objects.filter(tenant_id=pk).all())
+    project_count = len(await Project.objects.filter(tenant_id=pk).all())
+    
+    # User role breakdown
+    admin_count = len(await User.objects.filter(tenant_id=pk, role="admin").all())
+    member_count = len(await User.objects.filter(tenant_id=pk, role="member").all())
+    viewer_count = len(await User.objects.filter(tenant_id=pk, role="viewer").all())
+    
+    # Project visibility breakdown
+    public_projects = len(await Project.objects.filter(tenant_id=pk, is_public=True).all())
+    
+    return {
+        "tenant_id": str(tenant.id),
+        "tenant_slug": tenant.slug,
+        "tenant_name": tenant.name,
+        "plan": tenant.plan,
+        "is_active": tenant.is_active,
+        "models": [
+            {
+                "name": "User",
+                "count": user_count,
+                "breakdown": {
+                    "admin": admin_count,
+                    "member": member_count,
+                    "viewer": viewer_count,
+                }
+            },
+            {
+                "name": "Project",
+                "count": project_count,
+                "breakdown": {
+                    "public": public_projects,
+                    "private": project_count - public_projects,
+                }
+            },
+        ],
+        "summary": {
+            "total_records": user_count + project_count,
+            "active_users": admin_count + member_count,
+        }
+    }
+```
+
+### Example Request
+
+```bash
+curl http://localhost:8000/api/tenants/abc123/ai-overview/
+```
+
+### Response
+
+```json
+{
+  "tenant_id": "abc123",
+  "tenant_slug": "acme-corp",
+  "tenant_name": "Acme Corporation",
+  "plan": "pro",
+  "is_active": true,
+  "models": [
+    {
+      "name": "User",
+      "count": 15,
+      "breakdown": {
+        "admin": 2,
+        "member": 10,
+        "viewer": 3
+      }
+    },
+    {
+      "name": "Project",
+      "count": 8,
+      "breakdown": {
+        "public": 2,
+        "private": 6
+      }
+    }
+  ],
+  "summary": {
+    "total_records": 23,
+    "active_users": 12
+  }
+}
+```
+
+### AI Tools Discovery
+
+This endpoint is discoverable at `/ai/tools` with `ai_exposed=True`:
+
+```json
+{
+  "name": "tenant_model_overview",
+  "description": "Get an overview of models and record counts for a specific tenant. Respects tenant isolation.",
+  "endpoint": "/api/tenants/{id}/ai-overview/"
+}
+```
 
 ## Example Requests
 

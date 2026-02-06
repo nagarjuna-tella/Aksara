@@ -286,11 +286,11 @@ class TestVersionConsistency:
         for part in parts:
             assert part.isdigit(), f"Non-numeric version part: {part}"
     
-    def test_init_version_is_057(self):
-        """aksara.__version__ should be 0.5.7."""
+    def test_init_version_is_058(self):
+        """aksara.__version__ should be 0.5.8."""
         import aksara
         
-        assert aksara.__version__ == "0.5.7"
+        assert aksara.__version__ == "0.5.8"
     
     def test_cli_version_matches(self):
         """CLI --version should match aksara.__version__."""

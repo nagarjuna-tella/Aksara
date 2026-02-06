@@ -1,10 +1,11 @@
 """
-Multitenant Example - Views
+Multitenant Example - Views (v0.5.8)
 
 ViewSets with tenant-scoped queries.
 Demonstrates:
 - Tenant management (not scoped)
 - User and Project views scoped to current tenant
+- AI-aware tenant overview endpoint
 """
 
 from aksara import ModelViewSet, action, Request
@@ -20,18 +21,94 @@ class TenantViewSet(ModelViewSet):
     Used for tenant management by super-admins.
     
     Endpoints:
-        GET    /api/tenants/           - List all tenants
-        POST   /api/tenants/           - Create a tenant
-        GET    /api/tenants/{id}/      - Get a tenant
-        PUT    /api/tenants/{id}/      - Update a tenant
-        DELETE /api/tenants/{id}/      - Delete a tenant
+        GET    /api/tenants/                  - List all tenants
+        POST   /api/tenants/                  - Create a tenant
+        GET    /api/tenants/{id}/             - Get a tenant
+        PUT    /api/tenants/{id}/             - Update a tenant
+        DELETE /api/tenants/{id}/             - Delete a tenant
+        GET    /api/tenants/{id}/ai-overview/ - AI: tenant model overview
     """
     
     model = Tenant
     serializer_class = TenantSerializer
     prefix = "/api/tenants"
-    tags = ["Tenants"]
+    tags = ["Multitenant API"]
     ai_exposed = True
+    
+    # =========================================================================
+    # AI-Aware Endpoint (v0.5.8)
+    # =========================================================================
+    
+    @action(
+        detail=True,
+        methods=["GET"],
+        path="ai-overview",
+        name="tenant_model_overview",
+        description="Get an overview of models and record counts for a specific tenant. Respects tenant isolation.",
+        ai_exposed=True,
+    )
+    async def ai_overview(self, pk: str, request: Request):
+        """
+        AI Tool: Tenant model overview.
+        
+        Returns a summary of all tenant-scoped models and their record counts.
+        This respects tenant isolation - only data for the specified tenant
+        is included.
+        
+        Useful for LLMs to understand the data landscape of a tenant.
+        
+        Returns:
+            tenant_id: Tenant UUID
+            tenant_slug: Tenant slug
+            tenant_name: Tenant display name
+            plan: Subscription plan
+            is_active: Whether tenant is active
+            models: List of model names and their record counts
+        """
+        tenant = await self.model.objects.get(id=pk)
+        
+        # Count records for tenant-scoped models
+        user_count = len(await User.objects.filter(tenant_id=pk).all())
+        project_count = len(await Project.objects.filter(tenant_id=pk).all())
+        
+        # Public vs private projects
+        public_projects = len(await Project.objects.filter(tenant_id=pk, is_public=True).all())
+        
+        # User role breakdown
+        admin_count = len(await User.objects.filter(tenant_id=pk, role="admin").all())
+        member_count = len(await User.objects.filter(tenant_id=pk, role="member").all())
+        viewer_count = len(await User.objects.filter(tenant_id=pk, role="viewer").all())
+        
+        return {
+            "tenant_id": str(tenant.id),
+            "tenant_slug": tenant.slug,
+            "tenant_name": tenant.name,
+            "plan": tenant.plan,
+            "is_active": tenant.is_active,
+            "models": [
+                {
+                    "name": "User",
+                    "count": user_count,
+                    "breakdown": {
+                        "admin": admin_count,
+                        "member": member_count,
+                        "viewer": viewer_count,
+                    }
+                },
+                {
+                    "name": "Project",
+                    "count": project_count,
+                    "breakdown": {
+                        "public": public_projects,
+                        "private": project_count - public_projects,
+                    }
+                },
+            ],
+            "summary": {
+                "total_records": user_count + project_count,
+                "active_users": admin_count + member_count,  # Excluding viewers
+            }
+        }
 
 
 class UserViewSet(ModelViewSet):
@@ -51,7 +128,7 @@ class UserViewSet(ModelViewSet):
     model = User
     serializer_class = UserSerializer
     prefix = "/api/users"
-    tags = ["Users"]
+    tags = ["Multitenant API"]
     ai_exposed = True
     
     async def get_queryset(self, request: Request):
@@ -89,7 +166,7 @@ class UserViewSet(ModelViewSet):
             tenant_id=tenant.id,
             role="admin"
         ).all()
-        return [UserSerializer.from_model(u) for u in users]
+        return [UserSerializer.from_model(u).model_dump() for u in users]
 
 
 class ProjectViewSet(ModelViewSet):
@@ -109,7 +186,7 @@ class ProjectViewSet(ModelViewSet):
     model = Project
     serializer_class = ProjectSerializer
     prefix = "/api/projects"
-    tags = ["Projects"]
+    tags = ["Multitenant API"]
     ai_exposed = True
     
     async def get_queryset(self, request: Request):

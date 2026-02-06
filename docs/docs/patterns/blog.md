@@ -85,6 +85,171 @@ class Comment(Model):
 | POST | `/api/comments/{id}/approve/` | Approve a comment |
 | POST | `/api/comments/{id}/reject/` | Reject a comment |
 
+## Authentication (v0.5.8)
+
+The blog example includes API key authentication for protected endpoints.
+
+### Setup
+
+```python
+# settings.py
+import os
+
+BLOG_API_KEY = os.getenv("BLOG_API_KEY", "dev-blog-key")
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+```
+
+### Auth Module
+
+```python
+# auth.py
+from fastapi import HTTPException, Header
+from . import settings
+
+def verify_api_key(api_key: str) -> bool:
+    """Verify API key against configured key."""
+    return api_key == settings.BLOG_API_KEY
+
+async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str:
+    """FastAPI dependency for API key authentication."""
+    if not verify_api_key(x_api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return x_api_key
+```
+
+### Usage
+
+```python
+from fastapi import Depends
+from .auth import require_api_key
+
+class PostViewSet(ModelViewSet):
+    dependencies = [Depends(require_api_key)]
+    # All endpoints now require X-API-Key header
+```
+
+### Example Request
+
+```bash
+curl http://localhost:8000/api/posts/ \
+  -H "X-API-Key: dev-blog-key"
+```
+
+## Pagination & Ordering (v0.5.8)
+
+List endpoints support pagination and ordering via query parameters.
+
+### Query Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `page` | 1 | Page number (1-based) |
+| `page_size` | 10 | Items per page (max 100) |
+| `order_by` | `created_at` | Field to sort by |
+| `is_published` | - | Filter by publish status |
+
+### Ordering
+
+- Ascending: `?order_by=title`
+- Descending: `?order_by=-created_at`
+
+### Example Requests
+
+```bash
+# First page, 10 posts, newest first (default)
+curl http://localhost:8000/api/posts/ \
+  -H "X-API-Key: dev-blog-key"
+
+# Second page, 20 posts per page
+curl "http://localhost:8000/api/posts/?page=2&page_size=20" \
+  -H "X-API-Key: dev-blog-key"
+
+# Sort by title ascending
+curl "http://localhost:8000/api/posts/?order_by=title" \
+  -H "X-API-Key: dev-blog-key"
+
+# Published posts only, oldest first
+curl "http://localhost:8000/api/posts/?is_published=true&order_by=created_at" \
+  -H "X-API-Key: dev-blog-key"
+```
+
+### Response Format
+
+```json
+{
+  "results": [...],
+  "page": 1,
+  "page_size": 10,
+  "total": 42
+}
+```
+
+## AI-Ready Endpoints (v0.5.8)
+
+The blog example includes an AI-aware endpoint for automatic tag suggestions.
+
+### AI Suggest Tags
+
+```python
+@action(
+    detail=True,
+    methods=["GET"],
+    path="ai-suggest-tags",
+    name="suggest_tags_for_post",
+    description="Suggest tags for a blog post based on its title and content.",
+    ai_exposed=True,
+)
+async def ai_suggest_tags(self, pk: str, request: Request):
+    """AI Tool: Suggest tags for a blog post."""
+    post = await self.model.objects.get(id=pk)
+    
+    # Extract keywords from title and content
+    text = f"{post.title} {post.content or ''}"
+    words = text.lower().split()
+    
+    # Simple keyword extraction (filter stopwords)
+    keywords = [w for w in words if len(w) > 4 and w not in STOPWORDS]
+    candidate_tags = list(set(keywords))[:10]
+    
+    return {
+        "post_id": str(post.id),
+        "post_title": post.title,
+        "existing_tags": post.tags or [],
+        "candidate_tags": candidate_tags,
+    }
+```
+
+### Example Request
+
+```bash
+curl http://localhost:8000/api/posts/1/ai-suggest-tags/ \
+  -H "X-API-Key: dev-blog-key"
+```
+
+### Response
+
+```json
+{
+  "post_id": "abc123",
+  "post_title": "Getting Started with Python",
+  "existing_tags": ["python"],
+  "candidate_tags": ["programming", "tutorial", "beginner", "started", "getting"]
+}
+```
+
+### AI Tools Discovery
+
+This endpoint is discoverable at `/ai/tools` with `ai_exposed=True`:
+
+```json
+{
+  "name": "suggest_tags_for_post",
+  "description": "Suggest tags for a blog post based on its title and content.",
+  "endpoint": "/api/posts/{id}/ai-suggest-tags/"
+}
+```
+
 ## Custom Actions
 
 ### Publish Workflow

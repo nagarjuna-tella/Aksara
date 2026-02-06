@@ -86,6 +86,193 @@ class Deal(Model):
         return float(self.value) * (self.probability / 100)
 ```
 
+## Authentication (v0.5.8)
+
+The CRM example includes API key authentication for protected endpoints.
+
+### Setup
+
+```python
+# settings.py
+import os
+
+CRM_API_KEY = os.getenv("CRM_API_KEY", "dev-crm-key")
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+```
+
+### Auth Module
+
+```python
+# auth.py
+from fastapi import HTTPException, Header
+from . import settings
+
+def verify_api_key(api_key: str) -> bool:
+    """Verify API key against configured key."""
+    return api_key == settings.CRM_API_KEY
+
+async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str:
+    """FastAPI dependency for API key authentication."""
+    if not verify_api_key(x_api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return x_api_key
+```
+
+### Usage
+
+```python
+from fastapi import Depends
+from .auth import require_api_key
+
+class CustomerViewSet(ModelViewSet):
+    dependencies = [Depends(require_api_key)]
+    # All endpoints now require X-API-Key header
+
+class DealViewSet(ModelViewSet):
+    dependencies = [Depends(require_api_key)]
+```
+
+### Example Request
+
+```bash
+curl http://localhost:8000/api/customers/ \
+  -H "X-API-Key: dev-crm-key"
+```
+
+## Pagination & Ordering (v0.5.8)
+
+List endpoints support pagination and ordering via query parameters.
+
+### Query Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `page` | 1 | Page number (1-based) |
+| `page_size` | 10 | Items per page (max 100) |
+| `order_by` | `created_at` | Field to sort by |
+| `status` | - | Filter customers by status |
+| `stage` | - | Filter deals by pipeline stage |
+
+### Ordering
+
+- Ascending: `?order_by=name`
+- Descending: `?order_by=-value` (for deals)
+- Pipeline order: `?order_by=stage` (uses STAGE_ORDER)
+
+### Example Requests
+
+```bash
+# List customers sorted by name
+curl "http://localhost:8000/api/customers/?order_by=name" \
+  -H "X-API-Key: dev-crm-key"
+
+# List deals sorted by value (highest first)
+curl "http://localhost:8000/api/deals/?order_by=-value" \
+  -H "X-API-Key: dev-crm-key"
+
+# Filter deals by stage
+curl "http://localhost:8000/api/deals/?stage=proposal" \
+  -H "X-API-Key: dev-crm-key"
+```
+
+### Response Format
+
+```json
+{
+  "results": [...],
+  "page": 1,
+  "page_size": 10,
+  "total": 25
+}
+```
+
+## AI-Ready Endpoints (v0.5.8)
+
+The CRM example includes an AI-aware endpoint for customer context summaries.
+
+### AI Customer Context
+
+```python
+@action(
+    detail=True,
+    methods=["GET"],
+    path="ai-context",
+    name="summarize_customer_context",
+    description="Get a comprehensive summary of a customer's record, deals, and pipeline health.",
+    ai_exposed=True,
+)
+async def ai_context(self, pk: str, request: Request):
+    """AI Tool: Summarize customer context."""
+    customer = await self.model.objects.get(id=pk)
+    deals = await Deal.objects.filter(customer_id=pk).all()
+    
+    total_value = sum(float(d.value) for d in deals)
+    weighted_value = sum(
+        float(d.value) * STAGE_PROBABILITIES.get(d.stage, 0) / 100
+        for d in deals
+    )
+    pipeline = {}
+    for d in deals:
+        pipeline.setdefault(d.stage, {"count": 0, "value": 0})
+        pipeline[d.stage]["count"] += 1
+        pipeline[d.stage]["value"] += float(d.value)
+    
+    return {
+        "customer_id": str(customer.id),
+        "customer_name": customer.name,
+        "customer_status": customer.status,
+        "company": customer.company,
+        "deal_summary": {
+            "total_deals": len(deals),
+            "total_value": total_value,
+            "weighted_value": weighted_value,
+            "pipeline_breakdown": pipeline,
+        },
+        "notes": customer.notes,
+    }
+```
+
+### Example Request
+
+```bash
+curl http://localhost:8000/api/customers/1/ai-context/ \
+  -H "X-API-Key: dev-crm-key"
+```
+
+### Response
+
+```json
+{
+  "customer_id": "abc123",
+  "customer_name": "Acme Corp",
+  "customer_status": "customer",
+  "company": "Acme Corporation",
+  "deal_summary": {
+    "total_deals": 3,
+    "total_value": 75000.00,
+    "weighted_value": 42500.00,
+    "pipeline_breakdown": {
+      "closed_won": {"count": 1, "value": 25000.00},
+      "proposal": {"count": 2, "value": 50000.00}
+    }
+  },
+  "notes": "Key enterprise account"
+}
+```
+
+### AI Tools Discovery
+
+This endpoint is discoverable at `/ai/tools` with `ai_exposed=True`:
+
+```json
+{
+  "name": "summarize_customer_context",
+  "description": "Get a comprehensive summary of a customer's record, deals, and pipeline health.",
+  "endpoint": "/api/customers/{id}/ai-context/"
+}
+```
+
 ## Deal Pipeline Stages
 
 | Stage | Probability | Description |

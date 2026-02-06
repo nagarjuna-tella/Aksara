@@ -141,6 +141,7 @@ class TestMultitenantViewSets:
         
         assert TenantViewSet.model == Tenant
         assert TenantViewSet.prefix == "/api/tenants"
+        assert "Multitenant API" in TenantViewSet.tags
     
     def test_user_viewset_config(self):
         """UserViewSet should have correct configuration."""
@@ -149,6 +150,7 @@ class TestMultitenantViewSets:
         
         assert UserViewSet.model == User
         assert UserViewSet.prefix == "/api/users"
+        assert "Multitenant API" in UserViewSet.tags
     
     def test_user_viewset_has_scoped_queryset(self):
         """UserViewSet should have get_queryset method."""
@@ -163,12 +165,45 @@ class TestMultitenantViewSets:
         
         assert ProjectViewSet.model == Project
         assert ProjectViewSet.prefix == "/api/projects"
+        assert "Multitenant API" in ProjectViewSet.tags
     
     def test_project_viewset_has_scoped_queryset(self):
         """ProjectViewSet should have get_queryset method."""
         from multitenant.views import ProjectViewSet
         
         assert hasattr(ProjectViewSet, "get_queryset")
+    
+    def test_user_viewset_actions(self):
+        """UserViewSet should have custom actions."""
+        from multitenant.views import UserViewSet
+        
+        assert hasattr(UserViewSet, "me")
+        assert hasattr(UserViewSet, "admins")
+
+
+class TestMultitenantAI:
+    """Test multitenant AI endpoint (v0.5.8)."""
+    
+    def test_ai_overview_action(self):
+        """TenantViewSet should have ai_overview action."""
+        from multitenant.views import TenantViewSet
+        
+        assert hasattr(TenantViewSet, "ai_overview")
+    
+    def test_ai_overview_is_async(self):
+        """ai_overview should be async."""
+        from multitenant.views import TenantViewSet
+        import inspect
+        
+        method = getattr(TenantViewSet, "ai_overview")
+        assert inspect.iscoroutinefunction(method)
+    
+    def test_tenant_viewset_ai_exposed(self):
+        """TenantViewSet should have ai_exposed=True."""
+        from multitenant.views import TenantViewSet
+        
+        assert hasattr(TenantViewSet, "ai_exposed")
+        assert TenantViewSet.ai_exposed is True
 
 
 class TestMultitenantFiles:

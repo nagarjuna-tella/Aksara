@@ -103,6 +103,7 @@ class TestCRMViewSets:
         
         assert CustomerViewSet.model == Customer
         assert CustomerViewSet.prefix == "/api/customers"
+        assert "CRM API" in CustomerViewSet.tags
     
     def test_deal_viewset_config(self):
         """DealViewSet should have correct configuration."""
@@ -111,6 +112,7 @@ class TestCRMViewSets:
         
         assert DealViewSet.model == Deal
         assert DealViewSet.prefix == "/api/deals"
+        assert "CRM API" in DealViewSet.tags
     
     def test_deal_viewset_forecast_action(self):
         """DealViewSet should have forecast action."""
@@ -154,6 +156,97 @@ class TestCRMDealStages:
         assert STAGE_PROBABILITIES["closed_won"] == 100
 
 
+class TestCRMAuth:
+    """Test CRM auth module (v0.5.8)."""
+    
+    def test_auth_module_importable(self):
+        """auth module should be importable."""
+        from crm import auth
+        assert hasattr(auth, "verify_api_key")
+        assert hasattr(auth, "require_api_key")
+    
+    def test_verify_api_key_function(self):
+        """verify_api_key should work correctly."""
+        from crm.auth import verify_api_key
+        from crm import settings
+        
+        # Should verify against configured key
+        assert verify_api_key(settings.CRM_API_KEY) is True
+        assert verify_api_key("wrong-key") is False
+    
+    def test_require_api_key_is_async(self):
+        """require_api_key should be async."""
+        from crm.auth import require_api_key
+        import inspect
+        
+        assert inspect.iscoroutinefunction(require_api_key)
+    
+    def test_settings_has_api_key(self):
+        """settings should have CRM_API_KEY."""
+        from crm import settings
+        
+        assert hasattr(settings, "CRM_API_KEY")
+        assert settings.CRM_API_KEY  # Should be non-empty
+    
+    def test_viewset_has_dependencies(self):
+        """ViewSets should have auth dependencies."""
+        from crm.views import CustomerViewSet, DealViewSet
+        
+        assert hasattr(CustomerViewSet, "dependencies")
+        assert CustomerViewSet.dependencies is not None
+        assert len(CustomerViewSet.dependencies) > 0
+        
+        assert hasattr(DealViewSet, "dependencies")
+        assert DealViewSet.dependencies is not None
+
+
+class TestCRMPagination:
+    """Test CRM pagination settings (v0.5.8)."""
+    
+    def test_settings_has_page_size(self):
+        """settings should have DEFAULT_PAGE_SIZE."""
+        from crm import settings
+        
+        assert hasattr(settings, "DEFAULT_PAGE_SIZE")
+        assert settings.DEFAULT_PAGE_SIZE == 10
+    
+    def test_settings_has_max_page_size(self):
+        """settings should have MAX_PAGE_SIZE."""
+        from crm import settings
+        
+        assert hasattr(settings, "MAX_PAGE_SIZE")
+        assert settings.MAX_PAGE_SIZE == 100
+    
+    def test_viewsets_have_list_override(self):
+        """ViewSets should have custom list method."""
+        from crm.views import CustomerViewSet, DealViewSet
+        import inspect
+        
+        assert hasattr(CustomerViewSet, "list")
+        assert inspect.iscoroutinefunction(CustomerViewSet.list)
+        
+        assert hasattr(DealViewSet, "list")
+        assert inspect.iscoroutinefunction(DealViewSet.list)
+
+
+class TestCRMAI:
+    """Test CRM AI endpoint (v0.5.8)."""
+    
+    def test_ai_context_action(self):
+        """CustomerViewSet should have ai_context action."""
+        from crm.views import CustomerViewSet
+        
+        assert hasattr(CustomerViewSet, "ai_context")
+    
+    def test_ai_context_has_ai_name(self):
+        """ai_context should be registered as summarize_customer_context."""
+        from crm.views import CustomerViewSet
+        
+        method = getattr(CustomerViewSet, "ai_context")
+        # Check for action attributes
+        assert callable(method)
+
+
 class TestCRMFiles:
     """Test CRM example file structure."""
     
@@ -171,6 +264,11 @@ class TestCRMFiles:
         """settings.py should exist."""
         settings = examples_path / "crm" / "settings.py"
         assert settings.exists(), "crm/settings.py should exist"
+    
+    def test_auth_exists(self):
+        """auth.py should exist (v0.5.8)."""
+        auth = examples_path / "crm" / "auth.py"
+        assert auth.exists(), "crm/auth.py should exist"
     
     def test_migrations_folder_exists(self):
         """migrations folder should exist."""

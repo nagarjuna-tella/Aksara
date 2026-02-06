@@ -4,6 +4,44 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.8] — 2026-02-07
+
+### Added
+- **Example Hardening & Golden Paths**: Production-adjacent patterns for examples
+- **API Key Authentication** for Blog and CRM examples:
+  - New `auth.py` modules with `require_api_key` dependency
+  - `X-API-Key` header authentication pattern
+  - Environment variable support (`BLOG_API_KEY`, `CRM_API_KEY`)
+- **Pagination & Ordering Support**:
+  - `page` and `page_size` query parameters on list endpoints
+  - `order_by` query parameter (prefix with `-` for descending)
+  - `DEFAULT_PAGE_SIZE=10`, `MAX_PAGE_SIZE=100` settings
+  - Filter parameters: `is_published` (Blog), `status`/`stage` (CRM)
+- **AI-Ready Endpoints** on all example apps:
+  - `POST /api/posts/{id}/ai-suggest-tags/` - Keyword-based tag suggestions (Blog)
+  - `GET /api/customers/{id}/ai-context/` - Customer context summary (CRM)
+  - `GET /api/tenants/{id}/ai-overview/` - Tenant model overview (Multitenant)
+  - All endpoints marked with `ai_exposed=True`, `ai_name`, `ai_description`
+  - Discoverable at `/ai/tools` for LLM integration
+- **New Test Coverage**:
+  - Auth module tests (verify_api_key, require_api_key)
+  - Pagination settings tests
+  - AI endpoint tests
+
+### Changed
+- ViewSet tags updated to "Blog API", "CRM API", "Multitenant API"
+- STAGE_ORDER and STAGE_PROBABILITIES moved to module level in CRM
+- Example ViewSets now use `dependencies` for auth
+- UserSerializer returns `.model_dump()` in CRM views
+
+### Documentation
+- New "Authentication (v0.5.8)" sections in patterns docs
+- New "Pagination & Ordering (v0.5.8)" sections with examples
+- New "AI-Ready Endpoints (v0.5.8)" sections with usage examples
+- Updated API endpoint tables with new AI endpoints
+
+---
+
 ## [0.5.7] — 2026-02-06
 
 ### Added
