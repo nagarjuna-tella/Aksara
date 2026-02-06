@@ -4,6 +4,36 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.7] — 2026-02-06
+
+### Added
+- **Patterns & Example Packs**: Real-world starter templates
+- **New Example Apps**:
+  - `examples/blog/` - Full blogging backend with Post, Comment, tags, publish action
+  - `examples/crm/` - Simple CRM with Customer, Deal, forecast endpoint
+  - `examples/multitenant/` - Multi-tenant SaaS example with tenant middleware
+- **Template Support for `aksara startproject`**:
+  - `aksara startproject myblog --template blog`
+  - `aksara startproject mycrm --template crm`
+  - `aksara startproject mysaas --template multitenant`
+- **New CLI Commands**:
+  - `aksara templates list` - List available templates
+- **New Documentation**:
+  - `docs/patterns/` - Patterns & Recipes section
+  - `patterns/blog.md` - Blog tutorial
+  - `patterns/crm.md` - CRM patterns
+  - `patterns/multitenant.md` - Multi-tenant patterns
+
+### Changed
+- Scaffold templates updated to v0.5.7
+- `startproject` now supports `--template` option
+
+### Documentation
+- New "Patterns & Recipes" section with real-world examples
+- Updated CLI help with template options
+
+---
+
 ## [0.5.6] — 2026-02-06
 
 ### Added

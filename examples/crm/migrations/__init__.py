@@ -1,0 +1,3 @@
+"""
+CRM migrations package.
+"""

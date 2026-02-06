@@ -104,6 +104,11 @@ nav:
       - Project Management: cli/manage.md
       - AI Commands: cli/ai-commands.md
       - Dev Tools: cli/dev-tools.md
+  - Patterns:
+      - patterns/index.md
+      - Blog Pattern: patterns/blog.md
+      - CRM Pattern: patterns/crm.md
+      - Multitenant Pattern: patterns/multitenant.md
   - Tutorials:
       - tutorials/index.md
       - Build a Blog: tutorials/build-a-blog.md

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.6"
+CLI_VERSION = "0.5.7"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -259,7 +259,8 @@ def cli():
 @cli.command()
 @click.argument("project_name")
 @click.option("--directory", "-d", default=".", help="Directory to create project in (default: current)")
-def startproject(project_name: str, directory: str):
+@click.option("--template", "-t", default="basic", help="Template to use: basic, blog, crm, multitenant")
+def startproject(project_name: str, directory: str, template: str):
     """
     Create a new Aksara project with scaffolded structure.
     
@@ -273,20 +274,37 @@ def startproject(project_name: str, directory: str):
     - .env (environment configuration)
     - README.md (documentation)
     
+    Templates:
+        basic       - Default minimal project (Post model)
+        blog        - Full blog with Post, Comment, moderation
+        crm         - Customer & Deal pipeline with forecasting
+        multitenant - Tenant-scoped SaaS backend
+    
     Example:
         aksara startproject blogapi
+        aksara startproject myblog --template blog
+        aksara startproject mycrm -t crm
         cd blogapi
         aksara makemigrations --app app.models
         aksara migrate
         aksara run main:app --reload
     """
-    from aksara.cli.scaffold import create_project_scaffold, write_scaffold_files
+    from aksara.cli.scaffold import write_scaffold_files
+    from aksara.cli.templates import get_template_info, copy_template_project, list_templates
     
     # Validate project name
     if not project_name.isidentifier():
         click.echo(f"❌ Invalid project name: '{project_name}'")
         click.echo("   Project name must be a valid Python identifier")
         click.echo("   (letters, numbers, underscores, cannot start with number)")
+        return
+    
+    # Validate template
+    template_info = get_template_info(template)
+    if not template_info:
+        click.echo(f"❌ Unknown template: '{template}'")
+        click.echo()
+        click.echo(list_templates())
         return
     
     base_path = Path(directory).resolve()
@@ -299,15 +317,20 @@ def startproject(project_name: str, directory: str):
     
     click.echo()
     click.echo(f"  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  \033[90mCreating new project...\033[0m")
+    if template != "basic":
+        click.echo(f"  \033[90mCreating new project from template: {template}\033[0m")
+    else:
+        click.echo("  \033[90mCreating new project...\033[0m")
     click.echo()
     
     try:
-        # Generate and write scaffold files
-        files = create_project_scaffold(project_name, base_path)
+        # Generate and write scaffold files using template
+        files = copy_template_project(template, project_name, base_path)
         write_scaffold_files(files)
         
         click.echo(f"  \033[32m✓\033[0m Created project: \033[1m{project_name}\033[0m")
+        if template != "basic":
+            click.echo(f"  \033[32m✓\033[0m Using template: \033[1m{template}\033[0m ({template_info['description']})")
         click.echo()
         click.echo("  Project structure:")
         click.echo(f"  \033[36m{project_name}/\033[0m")
@@ -346,6 +369,54 @@ def startproject(project_name: str, directory: str):
     except Exception as e:
         click.echo(f"❌ Error creating project: {e}")
         return
+
+
+# =============================================================================
+# Templates Commands (v0.5.7)
+# =============================================================================
+
+@cli.group()
+def templates():
+    """Project template management.
+    
+    Commands for listing and using project templates.
+    """
+    pass
+
+
+@templates.command("list")
+def templates_list():
+    """
+    List available project templates.
+    
+    Templates can be used with:
+        aksara startproject myproj --template <name>
+    
+    Example:
+        aksara templates list
+    """
+    from aksara.cli.templates import get_available_templates
+    
+    templates_dict = get_available_templates()
+    
+    click.echo()
+    click.echo(f"  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo("  \033[90mAvailable project templates\033[0m")
+    click.echo()
+    click.echo("  \033[90m" + "─" * 50 + "\033[0m")
+    click.echo()
+    
+    for name, info in templates_dict.items():
+        default = " \033[33m(default)\033[0m" if name == "basic" else ""
+        click.echo(f"  \033[36m{name:<12}\033[0m {info['description']}{default}")
+    
+    click.echo()
+    click.echo("  \033[90m" + "─" * 50 + "\033[0m")
+    click.echo()
+    click.echo("  \033[1mUsage:\033[0m")
+    click.echo("    aksara startproject myproj --template blog")
+    click.echo("    aksara startproject mycrm -t crm")
+    click.echo()
 
 
 @cli.command()
