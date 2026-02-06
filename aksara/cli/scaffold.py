@@ -19,17 +19,29 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application
+{project_name} - Aksara Application (v0.5.6)
 
-Run with:
+A modern async API with Admin, Studio, and AI Mode built-in.
+
+Quick Start:
     aksara makemigrations --app app.models
     aksara migrate
     aksara createsuperuser  # Optional: create admin user
-    aksara run main:app --reload
+    aksara dev main:app
+
+Endpoints:
+    Welcome:   http://localhost:8000/
+    API Docs:  http://localhost:8000/docs
+    Admin:     http://localhost:8000/admin (debug mode)
+    Studio:    http://localhost:8000/studio/ui
+    AI Tools:  http://localhost:8000/ai/tools
 """
 
 import importlib
-from aksara import Aksara
+from aksara import Aksara, __version__ as aksara_version
+from aksara.middleware.request_id import RequestIdMiddleware
+from aksara.middleware.logging import LoggingMiddleware
+from fastapi.responses import HTMLResponse
 from settings import settings, INSTALLED_APPS
 
 
@@ -39,28 +51,18 @@ def load_installed_apps():
     
     This imports each app module, which triggers:
     - Model registration (from models.py)
-    - Admin registration (from admin.py)  
-    - Any other app initialization
+    - Admin registration (from admin.py)
+    - ViewSet discovery (from views.py)
     """
     for app_path in INSTALLED_APPS:
         try:
-            # Import the app module
             importlib.import_module(app_path)
-            
-            # Try to import models submodule
-            try:
-                importlib.import_module(f"{{app_path}}.models")
-            except ImportError:
-                pass
-            
-            # Try to import admin submodule
-            try:
-                importlib.import_module(f"{{app_path}}.admin")
-            except ImportError:
-                pass
-                
+            for submodule in ["models", "admin", "views"]:
+                try:
+                    importlib.import_module(f"{{app_path}}.{{submodule}}")
+                except ImportError:
+                    pass
         except ImportError as e:
-            # Skip aksara built-in apps if not needed
             if not app_path.startswith("aksara."):
                 print(f"Warning: Could not load app '{{app_path}}': {{e}}")
 
@@ -73,19 +75,115 @@ from app.urls import register_routes
 
 
 # Create the Aksara app
+# Aksara automatically mounts:
+#   - /admin (when debug=True or enable_admin=True)
+#   - /studio/* (Studio endpoints for IDE/UI integration)
+#   - /ai/* (AI tools, context, schemas)
 app = Aksara(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
-    description="A Aksara-powered async API",
+    description="A modern Aksara-powered async API",
     version="0.1.0",
     debug=settings.debug,
-    # Admin is auto-enabled in debug mode, or set explicitly:
-    # enable_admin=True,
+    enable_admin=settings.enable_admin,
+    # Middlewares (request ID, logging)
+    middlewares=[
+        (RequestIdMiddleware, {{}}),
+        (LoggingMiddleware, {{"log_request_body": False}}),
+    ],
 )
 
 
 # Register routes from app/urls.py
 register_routes(app)
+
+
+# =============================================================================
+# Welcome Page (v0.5.6)
+# =============================================================================
+
+WELCOME_HTML = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - Aksara</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e4e4e7;
+        }}
+        .container {{
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+        }}
+        .logo {{ font-size: 3rem; margin-bottom: 1rem; }}
+        h1 {{ font-size: 2rem; margin-bottom: 0.5rem; color: #fbbf24; }}
+        .version {{ color: #9ca3af; font-size: 0.9rem; margin-bottom: 1.5rem; }}
+        .success {{ color: #4ade80; font-size: 1.1rem; margin-bottom: 2rem; }}
+        .links {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }}
+        .links a {{
+            background: rgba(255,255,255,0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            color: #e4e4e7;
+            text-decoration: none;
+            transition: background 0.2s;
+        }}
+        .links a:hover {{ background: rgba(255,255,255,0.2); }}
+        .links a span {{ color: #9ca3af; font-size: 0.85rem; }}
+        .note {{
+            color: #6b7280;
+            font-size: 0.85rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }}
+        .note code {{
+            background: rgba(255,255,255,0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <h1>{project_name}</h1>
+        <p class="version">Powered by Aksara {{aksara_version}}</p>
+        <p class="success">Your Aksara project is running 🚀</p>
+        <div class="links">
+            <a href="/admin/">Admin Panel <span>→ Manage your data</span></a>
+            <a href="/studio/ui">Studio <span>→ Interactive dashboard</span></a>
+            <a href="/api/posts/">API <span>→ /api/posts/</span></a>
+            <a href="/docs">API Docs <span>→ OpenAPI / Swagger</span></a>
+            <a href="/ai/tools">AI Tools <span>→ LLM integration</span></a>
+        </div>
+        <p class="note">
+            Edit <code>main.py</code> to customize this page.
+        </p>
+    </div>
+</body>
+</html>
+"""
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def welcome():
+    """Welcome page - shows project status and links."""
+    return WELCOME_HTML
 
 
 # Health check endpoint
@@ -97,36 +195,54 @@ async def health_check():
         return {{
             "status": "healthy",
             "database": "connected",
+            "studio": "/studio/ui",
+            "admin": "/admin",
+            "ai_tools": "/ai/tools",
         }}
     return {{"status": "unhealthy", "database": "not configured"}}
-
-
-# =============================================================================
-# Quick Start:
-#   1. Define models in app/models.py
-#   2. Run: aksara makemigrations --app app.models
-#   3. Run: aksara migrate
-#   4. Run: aksara createsuperuser (optional)
-#   5. Run: aksara run main:app --reload
-#   6. Open: http://localhost:8000/docs (API)
-#   7. Open: http://localhost:8000/admin (Admin - debug mode)
-# =============================================================================
 '''
 
 
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings
+{project_name} - Settings (v0.5.6)
 
 Aksara settings with environment variable support.
 Configure via .env file or environment variables.
 """
 
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
 from aksara.conf import Settings as AksaraSettings
+
+
+# =============================================================================
+# AKSARA Configuration
+# =============================================================================
+# Central configuration dict for Aksara features.
+# These settings control Admin, Studio, AI Mode, and more.
+
+AKSARA = {{
+    "APP_NAME": "{project_name}",
+    
+    # Admin Interface
+    "ENABLE_ADMIN": True,  # Mount /admin (requires auth contrib)
+    
+    # Studio Integration (v0.5.0+)
+    "ENABLE_STUDIO": True,  # Mount /studio/* endpoints
+    "STUDIO_UI_ENABLED": True,  # Enable /studio/ui dashboard
+    "STUDIO_ALLOWED_ORIGINS": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    
+    # AI Mode (v0.4.0+)
+    "AI_MODE_ENABLED": True,  # Enable /ai/* endpoints
+    "AI_DEBUG_ENABLED": True,  # AI debug assistant in debug mode
+}}
 
 
 # =============================================================================
@@ -136,8 +252,6 @@ from aksara.conf import Settings as AksaraSettings
 #   - models.py: Database models
 #   - views.py: ViewSets and API endpoints
 #   - admin.py: Admin interface registrations
-#
-# Format: "app_module_path" (e.g., "app", "myapp.blog", "myapp.users")
 
 INSTALLED_APPS = [
     # Aksara built-in apps
@@ -167,8 +281,18 @@ class Settings(AksaraSettings):
     Add custom settings here as needed.
     """
     
-    # Reference to installed apps (can be overridden)
+    # Reference to installed apps
     installed_apps: list = INSTALLED_APPS
+    
+    # Admin & Studio (from AKSARA dict)
+    enable_admin: bool = AKSARA.get("ENABLE_ADMIN", True)
+    enable_studio: bool = AKSARA.get("ENABLE_STUDIO", True)
+    studio_ui_enabled: bool = AKSARA.get("STUDIO_UI_ENABLED", True)
+    studio_allowed_origins: list = AKSARA.get("STUDIO_ALLOWED_ORIGINS", [])
+    
+    # AI Mode
+    ai_enabled: bool = AKSARA.get("AI_MODE_ENABLED", True)
+    ai_debug_enabled: bool = AKSARA.get("AI_DEBUG_ENABLED", True)
 
 
 # Global settings instance
@@ -211,16 +335,38 @@ def get_admin_template(project_name: str) -> str:
 {project_name} - Admin Configuration
 
 Register your models with the admin interface here.
+Admin is available at /admin when debug=True or enable_admin=True.
 """
 
-from aksara.contrib.admin import site
+from aksara.contrib.admin import site, ModelAdmin
+from .models import Post
 
-# from .models import User, Post
+
+# =============================================================================
+# Post Admin
+# =============================================================================
+
+class PostAdmin(ModelAdmin):
+    """Admin configuration for Post model."""
+    list_display = ["title", "is_published", "created_at"]
+    list_filter = ["is_published"]
+    search_fields = ["title", "content"]
 
 
 # Register models with admin
-# site.register(User)
-# site.register(Post)
+site.register(Post, PostAdmin)
+
+
+# =============================================================================
+# Add more model registrations here:
+#
+# from .models import User
+#
+# class UserAdmin(ModelAdmin):
+#     list_display = ["email", "name", "is_active"]
+#
+# site.register(User, UserAdmin)
+# =============================================================================
 '''
 
 
@@ -230,12 +376,66 @@ def get_models_template(project_name: str) -> str:
 {project_name} - Models
 
 Define your Aksara ORM models here.
+Models are auto-discovered from INSTALLED_APPS.
 """
 
 from aksara import Model, fields
 
 
-# Example model - uncomment and customize:
+# =============================================================================
+# Post Model - Example model showcasing Aksara features
+# =============================================================================
+
+class Post(Model):
+    """
+    Blog post model.
+    
+    Demonstrates different field types and AI metadata.
+    This model is registered in admin.py and exposed via API in views.py.
+    
+    AI tools can discover this model at /ai/tools.
+    """
+    
+    title = fields.String(
+        max_length=200,
+        ai_description="Post title",
+    )
+    content = fields.Text(
+        nullable=True,
+        ai_description="Post body content (Markdown supported)",
+    )
+    is_published = fields.Boolean(
+        default=False,
+        ai_description="Whether the post is publicly visible",
+    )
+    view_count = fields.Integer(
+        default=0,
+        ai_description="Number of times the post has been viewed",
+        ai_agent_writable=False,  # AI shouldn't modify view counts
+    )
+    tags = fields.JSON(
+        nullable=True,
+        ai_description="List of tags for categorization",
+    )
+    created_at = fields.DateTime(
+        auto_now_add=True,
+        ai_description="When the post was created",
+    )
+    updated_at = fields.DateTime(
+        auto_now=True,
+        ai_description="When the post was last updated",
+    )
+    
+    class Meta:
+        table_name = "posts"
+        ai_name = "Post"
+        ai_description = "Blog posts for the {project_name} application"
+        ai_agent_exposed = True
+        ai_permissions = ["read", "write"]
+
+
+# =============================================================================
+# Add more models here:
 #
 # class User(Model):
 #     email = fields.Email(unique=True)
@@ -246,14 +446,14 @@ from aksara import Model, fields
 #         table_name = "users"
 #
 #
-# class Post(Model):
-#     title = fields.String(max_length=200)
-#     content = fields.Text()
-#     author = fields.ForeignKey(User, on_delete="CASCADE")
-#     published = fields.Boolean(default=False)
+# class Comment(Model):
+#     post = fields.ForeignKey(Post, on_delete="CASCADE")
+#     author = fields.String(max_length=100)
+#     body = fields.Text()
 #
 #     class Meta:
-#         table_name = "posts"
+#         table_name = "comments"
+# =============================================================================
 '''
 
 
@@ -266,24 +466,46 @@ Define your ModelSerializer classes for validation and response shaping.
 """
 
 from aksara import ModelSerializer
+from .models import Post
 
-# from .models import User, Post
+
+# =============================================================================
+# Post Serializer
+# =============================================================================
+
+class PostSerializer(ModelSerializer):
+    """
+    Serializer for Post model.
+    
+    Handles validation and JSON conversion for the Post API.
+    """
+    
+    class Meta:
+        model = Post
+        fields = [
+            "id",
+            "title",
+            "content",
+            "is_published",
+            "view_count",
+            "tags",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "view_count", "created_at", "updated_at"]
 
 
-# Example serializers - uncomment and customize:
+# =============================================================================
+# Add more serializers here:
+#
+# from .models import User
 #
 # class UserSerializer(ModelSerializer):
 #     class Meta:
 #         model = User
 #         fields = ["id", "email", "name", "is_active", "created_at"]
 #         read_only_fields = ["id", "created_at"]
-#
-#
-# class PostSerializer(ModelSerializer):
-#     class Meta:
-#         model = Post
-#         fields = ["id", "title", "content", "author_id", "published", "created_at"]
-#         read_only_fields = ["id", "created_at"]
+# =============================================================================
 '''
 
 
@@ -293,16 +515,61 @@ def get_views_template(project_name: str) -> str:
 {project_name} - Views
 
 Define your ViewSets and custom actions here.
+ViewSets are auto-discovered and exposed as AI tools at /ai/tools.
 """
 
 from aksara import ModelViewSet, action, Request
 from aksara.permissions import IsAuthenticated, IsAdminUser
+from .models import Post
+from .serializers import PostSerializer
 
-# from .models import User, Post
-# from .serializers import UserSerializer, PostSerializer
+
+# =============================================================================
+# Post ViewSet
+# =============================================================================
+
+class PostViewSet(ModelViewSet):
+    """
+    API ViewSet for Post model.
+    
+    Auto-generates these endpoints:
+        GET    /api/posts/          - List all posts
+        POST   /api/posts/          - Create a post
+        GET    /api/posts/{{id}}/     - Get a post
+        PUT    /api/posts/{{id}}/     - Update a post
+        DELETE /api/posts/{{id}}/     - Delete a post
+        POST   /api/posts/{{id}}/publish/  - Custom action
+    
+    This ViewSet is also exposed as an AI tool at /ai/tools.
+    """
+    
+    model = Post
+    serializer_class = PostSerializer
+    prefix = "/api/posts"
+    tags = ["Posts"]
+    
+    # AI exposure (default: True for ModelViewSet)
+    ai_exposed = True
+    
+    @action(detail=True, methods=["POST"])
+    async def publish(self, pk: str, request: Request):
+        """Publish a post (custom action example)."""
+        post = await self.model.objects.get(id=pk)
+        post.is_published = True
+        await post.save()
+        return {{"status": "published", "id": str(post.id)}}
+    
+    @action(detail=True, methods=["POST"])
+    async def increment_views(self, pk: str, request: Request):
+        """Increment view count (custom action example)."""
+        post = await self.model.objects.get(id=pk)
+        post.view_count += 1
+        await post.save()
+        return {{"view_count": post.view_count}}
 
 
-# Example ViewSets - uncomment and customize:
+# =============================================================================
+# Add more ViewSets here:
 #
 # class UserViewSet(ModelViewSet):
 #     model = User
@@ -310,21 +577,7 @@ from aksara.permissions import IsAuthenticated, IsAdminUser
 #     prefix = "/api/users"
 #     tags = ["Users"]
 #     permission_classes = [IsAuthenticated]
-#
-#
-# class PostViewSet(ModelViewSet):
-#     model = Post
-#     serializer_class = PostSerializer
-#     prefix = "/api/posts"
-#     tags = ["Posts"]
-#
-#     @action(detail=True, methods=["POST"])
-#     async def publish(self, pk: str, request: Request):
-#         """Publish a post."""
-#         post = await self.model.objects.get(id=pk)
-#         post.published = True
-#         await post.save()
-#         return {{"status": "published", "id": str(post.id)}}
+# =============================================================================
 '''
 
 
@@ -337,14 +590,12 @@ Register your ViewSets here.
 """
 
 from aksara import include_viewset
-
-# from .views import UserViewSet, PostViewSet
+from .views import PostViewSet
 
 
 # URL Patterns - list your ViewSets here
 urlpatterns = [
-    # UserViewSet,
-    # PostViewSet,
+    PostViewSet,
 ]
 
 
@@ -370,7 +621,7 @@ def get_readme_template(project_name: str) -> str:
     """Generate README.md content."""
     return f'''# {project_name}
 
-A Aksara-powered async API application.
+A modern Aksara-powered async API with Admin, Studio, and AI Mode built-in.
 
 ## Quick Start
 
@@ -380,7 +631,7 @@ python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
 # 2. Install dependencies
-pip install -e .
+pip install -e ".[dev]"
 
 # 3. Configure environment (edit .env with your database URL)
 cp .env.example .env
@@ -388,7 +639,7 @@ cp .env.example .env
 # 4. Create database
 createdb {project_name}
 
-# 5. Define your models in app/models.py, then:
+# 5. Run migrations (Post model is already defined)
 aksara makemigrations --app app.models
 aksara migrate
 
@@ -401,36 +652,76 @@ aksara run main:app --reload
 
 ## URLs
 
-- **API Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc  
-- **Admin**: http://localhost:8000/admin/ (debug mode)
+| URL | Description |
+|-----|-------------|
+| http://localhost:8000/docs | API Documentation (Swagger UI) |
+| http://localhost:8000/redoc | API Documentation (ReDoc) |
+| http://localhost:8000/admin | Admin Interface (debug mode) |
+| http://localhost:8000/studio/ui | Studio Dashboard |
+| http://localhost:8000/api/posts | Posts API |
+| http://localhost:8000/ai/tools | AI Tools Discovery |
+| http://localhost:8000/health | Health Check |
+
+## What's Included
+
+This project comes pre-configured with:
+
+- **Post model** - Example model with various field types
+- **PostViewSet** - Full CRUD API for posts
+- **Admin** - Post registered in admin interface
+- **Studio** - Dashboard at /studio/ui
+- **AI Mode** - Post ViewSet exposed as AI tools
+- **Middleware** - Request ID & logging
+- **Pre-commit** - Code formatting hooks
 
 ## Project Structure
 
 ```
 {project_name}/
 ├── app/
-│   ├── models.py        # ORM models
-│   ├── views.py         # ViewSets
-│   ├── serializers.py   # Serializers
+│   ├── models.py        # Post model (and your models)
+│   ├── views.py         # PostViewSet (and your ViewSets)
+│   ├── serializers.py   # PostSerializer (and your serializers)
 │   ├── urls.py          # Route registration
-│   └── admin.py         # Admin registration
+│   └── admin.py         # Post admin (and your admin classes)
 ├── migrations/          # Database migrations
-├── settings.py          # Configuration
+├── settings.py          # Configuration (AKSARA dict)
 ├── main.py              # App entry point
-└── .env                 # Environment variables
+├── .env                 # Environment variables
+└── .pre-commit-config.yaml  # Pre-commit hooks
 ```
 
 ## CLI Commands
 
 ```bash
-aksara makemigrations --app app.models  # Generate migrations
-aksara migrate                           # Apply migrations
-aksara createsuperuser                   # Create admin user
-aksara run main:app --reload            # Run dev server
-aksara shell                             # Interactive shell
-aksara format                            # Format code (black)
-aksara lint                              # Lint code (ruff)
+# Development
+aksara run main:app --reload   # Start dev server
+aksara shell                   # Interactive Python shell
+
+# Database
+aksara makemigrations --app app.models
+aksara migrate
+aksara createsuperuser
+
+# Code Quality
+aksara format                  # Format with black
+aksara lint                    # Lint with ruff
+
+# Studio
+aksara studio open             # Open Studio UI in browser
+aksara studio ai-context       # Export AI context (JSON)
+```
+
+## Configuration
+
+Edit `settings.py` to customize:
+
+```python
+AKSARA = {{
+    "ENABLE_ADMIN": True,       # /admin
+    "ENABLE_STUDIO": True,      # /studio/*
+    "AI_MODE_ENABLED": True,    # /ai/*
+}}
 ```
 
 ## Built with ⚡ Aksara
@@ -454,10 +745,10 @@ def get_pyproject_template(project_name: str) -> str:
     return f'''[project]
 name = "{project_name}"
 version = "0.1.0"
-description = "A Aksara-powered async API application"
+description = "A modern Aksara-powered async API with Admin, Studio, and AI Mode"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara>=0.3.20",
+    "aksara>=0.5.6",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]

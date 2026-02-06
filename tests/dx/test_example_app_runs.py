@@ -101,7 +101,7 @@ class TestGeneratedAppStructure:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_models_use_aksara_imports(self):
-        """Models should import from Aksara with examples in comments."""
+        """Models should import from Aksara with working Post model."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -109,11 +109,11 @@ class TestGeneratedAppStructure:
         content = models_path.read_text()
         
         assert "from aksara import Model, fields" in content
-        # Example should be in comments
-        assert "# class" in content or "Example" in content.lower()
+        # v0.5.5: Should have working Post model
+        assert "class Post(Model):" in content
     
     def test_views_use_aksara_viewset(self):
-        """Views should import Aksara ModelViewSet with examples."""
+        """Views should import Aksara ModelViewSet with working PostViewSet."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -122,11 +122,11 @@ class TestGeneratedAppStructure:
         
         assert "from aksara import" in content
         assert "ModelViewSet" in content
-        # Example should be in comments
-        assert "# class" in content
+        # v0.5.5: Should have working PostViewSet
+        assert "class PostViewSet(ModelViewSet):" in content
     
     def test_serializers_use_aksara_serializer(self):
-        """Serializers should import Aksara ModelSerializer with examples."""
+        """Serializers should import Aksara ModelSerializer with PostSerializer."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
@@ -134,8 +134,8 @@ class TestGeneratedAppStructure:
         content = serializers_path.read_text()
         
         assert "from aksara import ModelSerializer" in content
-        # Example should be in comments
-        assert "# class" in content
+        # v0.5.5: Should have working PostSerializer
+        assert "class PostSerializer(ModelSerializer):" in content
     
     def test_main_uses_aksara_app(self):
         """Main should use Aksara app, not FastAPI."""
@@ -162,26 +162,30 @@ class TestTemplatesHaveExamples:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_models_template_has_example(self):
-        """Models template should have example showing how to define models."""
+    def test_models_template_has_working_model(self):
+        """Models template should have working Post model (v0.5.5+)."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         models_path = self.base_path / "testapp" / "app" / "models.py"
         content = models_path.read_text()
         
-        # Should show example model syntax
-        assert "class User(Model):" in content  # In docstring example
+        # Should have working Post model
+        assert "class Post(Model):" in content
         assert "fields." in content  # Shows field usage
+        # Should also have commented example for extending
+        assert "# class User(Model):" in content  # Example for additional models
     
-    def test_views_template_has_example(self):
-        """Views template should have example showing ViewSet with actions."""
+    def test_views_template_has_working_viewset(self):
+        """Views template should have working PostViewSet with actions (v0.5.5+)."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         views_path = self.base_path / "testapp" / "app" / "views.py"
         content = views_path.read_text()
         
+        # Should have working PostViewSet
+        assert "class PostViewSet(ModelViewSet):" in content
         # Should show action decorator usage
         assert "@action" in content
         assert "detail=" in content

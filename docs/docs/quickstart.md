@@ -48,7 +48,7 @@ Verify it worked:
 
 ```bash
 aksara --version
-# Output: aksara, version 0.4.11
+# Output: aksara, version 0.5.6
 ```
 
 ---
@@ -62,22 +62,34 @@ aksara startproject taskmanager
 cd taskmanager
 ```
 
-**What this does:** Creates a folder with all the files you need to start.
+**What this does:** Creates a complete project with Admin, Studio, and AI Mode pre-configured.
 
 You'll see this structure:
 
 ```
 taskmanager/
 ├── main.py           ← Starts your application
-├── settings.py       ← Configuration (database URL, etc.)
+├── settings.py       ← Configuration (AKSARA dict)
 ├── .env              ← Secret settings (not committed to git)
 ├── app/
-│   ├── models.py     ← Define your data structure
-│   ├── views.py      ← Handle API requests
-│   ├── serializers.py ← Convert data to/from JSON
-│   └── urls.py       ← Map URLs to views
+│   ├── models.py     ← Post model (working example)
+│   ├── views.py      ← PostViewSet (API ready)
+│   ├── serializers.py ← PostSerializer
+│   ├── urls.py       ← Route registration
+│   └── admin.py      ← Post admin (registered)
 └── migrations/       ← Database schema changes
 ```
+
+**What's Included Out-of-the-Box:**
+
+| Feature | Endpoint | Description |
+|---------|----------|-------------|
+| Welcome | `/` | Welcome page with quick links |
+| API Docs | `/docs` | Swagger UI for your API |
+| Admin | `/admin` | Admin interface (debug mode) |
+| Studio | `/studio/ui` | Visual dashboard |
+| AI Tools | `/ai/tools` | AI tool discovery |
+| Posts API | `/api/posts` | Working CRUD example |
 
 ---
 
@@ -249,17 +261,31 @@ aksara migrate
 ## Step 7: Start Your Server
 
 ```bash
-aksara run
+aksara dev main:app
 ```
 
 **What you'll see:**
 
 ```
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process
+  ⚡ Aksara 0.5.6 — Dev Server
+
+  Env:        dev
+  Debug:      True
+
+  App:        http://127.0.0.1:8000/
+  Admin:      http://127.0.0.1:8000/admin/
+  Studio:     http://127.0.0.1:8000/studio/ui
+  API:        http://127.0.0.1:8000/api/posts/
+  Docs:       http://127.0.0.1:8000/docs
+
+  Reload: enabled | Log: info
 ```
 
 **Your API is now running!**
+
+### Welcome Page
+
+Open **http://localhost:8000/** in your browser to see the welcome page with quick links to Admin, Studio, API, and Docs.
 
 ---
 
@@ -340,8 +366,22 @@ Congratulations! You created:
 ✅ A **REST API** with full CRUD operations  
 ✅ **Interactive documentation** at `/docs`  
 ✅ **Automatic validation** of incoming data  
+✅ **Admin interface** at `/admin`  
+✅ **Studio dashboard** at `/studio/ui`  
+✅ **AI tools** at `/ai/tools`  
 
 **In about 20 lines of code.**
+
+### Explore the Dashboards
+
+Now that your server is running, try these URLs:
+
+| URL | What You'll See |
+|-----|-----------------|
+| http://localhost:8000/docs | Swagger UI with your Task API |
+| http://localhost:8000/admin | Admin panel to manage tasks |
+| http://localhost:8000/studio/ui | Studio dashboard with schema info |
+| http://localhost:8000/ai/tools | AI tools generated from your ViewSet |
 
 ---
 

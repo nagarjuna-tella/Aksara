@@ -1,6 +1,6 @@
-# Aksara Basic Example (v0.3.1)
+# Aksara Basic Example (v0.5.5)
 
-A FastAPI application demonstrating Aksara ORM with all v0.2-v0.3.1 features.
+A FastAPI application demonstrating Aksara ORM with all v0.2-v0.5.5 features.
 
 ## Project Structure
 
@@ -63,7 +63,15 @@ uvicorn main:app --reload
 
 The API will be available at http://localhost:8000
 
-## API Endpoints
+## URLs
+
+| URL | Description |
+|-----|-------------|
+| http://localhost:8000/docs | API Documentation (Swagger UI) |
+| http://localhost:8000/admin | Admin Interface (debug mode) |
+| http://localhost:8000/studio/ui | Studio Dashboard (v0.5.0+) |
+| http://localhost:8000/ai/tools | AI Tools Discovery (v0.4.0+) |
+| http://localhost:8000/health | Health Check |
 
 ### v0.3 ViewSet-generated CRUD (Recommended!)
 

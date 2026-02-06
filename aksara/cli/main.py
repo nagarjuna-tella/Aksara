@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.4"
+CLI_VERSION = "0.5.6"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -311,32 +311,36 @@ def startproject(project_name: str, directory: str):
         click.echo()
         click.echo("  Project structure:")
         click.echo(f"  \033[36m{project_name}/\033[0m")
-        click.echo("  ├── main.py")
-        click.echo("  ├── settings.py")
+        click.echo("  ├── main.py              # App entry point")
+        click.echo("  ├── settings.py          # AKSARA configuration")
         click.echo("  ├── pyproject.toml")
         click.echo("  ├── .env")
-        click.echo("  ├── .pre-commit-config.yaml")
-        click.echo("  ├── .editorconfig")
-        click.echo("  ├── requirements.txt")
         click.echo("  ├── README.md")
         click.echo("  ├── app/")
-        click.echo("  │   ├── models.py")
-        click.echo("  │   ├── views.py")
+        click.echo("  │   ├── models.py        # Post model (ready)")
+        click.echo("  │   ├── views.py         # PostViewSet (ready)")
+        click.echo("  │   ├── serializers.py   # PostSerializer (ready)")
         click.echo("  │   ├── urls.py")
-        click.echo("  │   └── serializers.py")
+        click.echo("  │   └── admin.py         # Post admin (ready)")
         click.echo("  └── migrations/")
         click.echo()
         click.echo("  \033[90m" + "─" * 40 + "\033[0m")
         click.echo()
+        click.echo("  \033[1m✨ What's included:\033[0m")
+        click.echo("     • Post model + API + Admin (working example)")
+        click.echo("     • Admin at /admin")
+        click.echo("     • Studio at /studio/ui")
+        click.echo("     • AI tools at /ai/tools")
+        click.echo()
         click.echo("  \033[1mNext steps:\033[0m")
         click.echo()
         click.echo(f"    cd {project_name}")
-        click.echo('    pip install -e ".[dev]"       # Install with dev tools')
-        click.echo("    pre-commit install            # Enable git hooks")
-        click.echo("    # Edit .env with your database URL")
+        click.echo('    pip install -e ".[dev]"')
         click.echo("    aksara makemigrations --app app.models")
         click.echo("    aksara migrate")
         click.echo("    aksara run main:app --reload")
+        click.echo()
+        click.echo("  Then open: http://localhost:8000/docs")
         click.echo()
         
     except Exception as e:
@@ -997,8 +1001,9 @@ def info(database_url: Optional[str]):
     """
     Show Aksara environment information.
     
-    Displays version, database connection status, configured apps,
-    and pending migrations. Useful for debugging configuration issues.
+    Displays version, environment, database connection status, 
+    configured apps, features, and pending migrations.
+    Useful for debugging configuration issues.
     """
     from aksara import __version__
     from aksara.conf import settings
@@ -1006,29 +1011,50 @@ def info(database_url: Optional[str]):
     
     click.echo()
     click.echo(f"  \033[33m⚡\033[0m \033[1mAksara Info\033[0m")
-    click.echo("  " + "-" * 36)
+    click.echo("  " + "-" * 40)
     
-    # Version info
-    click.echo(f"\n  \033[1mVersion:\033[0m {__version__}")
-    click.echo(f"  \033[1mCLI Version:\033[0m {CLI_VERSION}")
+    # Framework section
+    click.echo(f"\n  \033[1mFramework\033[0m")
+    click.echo(f"    Version:      Aksara {__version__}")
+    click.echo(f"    CLI Version:  {CLI_VERSION}")
     
-    # Database URL (redacted)
+    # Environment section
+    env = "dev" if settings.debug else "prod"
+    click.echo(f"\n  \033[1mEnvironment\033[0m")
+    click.echo(f"    Env:          {env}")
+    click.echo(f"    Debug:        {settings.debug}")
+    click.echo(f"    Migrations:   {settings.migrations_dir}")
+    
+    # Database section
     db_url = database_url or settings.database_url
+    click.echo(f"\n  \033[1mDatabase\033[0m")
     if db_url:
         # Redact password from URL
         redacted = _redact_db_url(db_url)
-        click.echo(f"  \033[1mDatabase:\033[0m {redacted}")
+        # Detect backend
+        backend = "PostgreSQL" if "postgresql" in db_url.lower() else "Unknown"
+        click.echo(f"    Backend:      {backend}")
+        click.echo(f"    URL:          {redacted}")
     else:
-        click.echo(f"  \033[1mDatabase:\033[0m \033[90mNot configured\033[0m")
+        click.echo(f"    Backend:      \033[90mNot configured\033[0m")
     
-    # Settings
-    click.echo(f"  \033[1mDebug:\033[0m {settings.debug}")
-    click.echo(f"  \033[1mMigrations Dir:\033[0m {settings.migrations_dir}")
-    
-    # Apps
-    click.echo(f"\n  \033[1mConfigured Apps:\033[0m")
+    # Apps section
+    click.echo(f"\n  \033[1mInstalled Apps\033[0m")
     for app in settings.apps:
         click.echo(f"    • {app}")
+    
+    # Features section (v0.5.6)
+    admin_enabled = getattr(settings, 'enable_admin', False) or settings.debug
+    studio_enabled = getattr(settings, 'enable_studio', True)
+    ai_mode_enabled = getattr(settings, 'AI_MODE_ENABLED', True)
+    
+    click.echo(f"\n  \033[1mFeatures\033[0m")
+    admin_status = "\033[32m✓ enabled\033[0m" if admin_enabled else "\033[90m✗ disabled\033[0m"
+    studio_status = "\033[32m✓ enabled\033[0m" if studio_enabled else "\033[90m✗ disabled\033[0m"
+    ai_status = "\033[32m✓ enabled\033[0m" if ai_mode_enabled else "\033[90m✗ disabled\033[0m"
+    click.echo(f"    Admin:        {admin_status}")
+    click.echo(f"    Studio:       {studio_status}")
+    click.echo(f"    AI Mode:      {ai_status}")
     
     # Discover models
     for app in settings.apps:
@@ -1039,7 +1065,7 @@ def info(database_url: Optional[str]):
             pass
     
     all_models = ModelRegistry.all()
-    click.echo(f"\n  \033[1mRegistered Models:\033[0m {len(all_models)}")
+    click.echo(f"\n  \033[1mRegistered Models\033[0m ({len(all_models)})")
     if all_models:
         for name in sorted(all_models.keys())[:10]:
             click.echo(f"    • {name}")
@@ -1073,12 +1099,12 @@ def info(database_url: Optional[str]):
                 
                 pending = get_pending_migrations(all_migrations, applied)
                 
-                click.echo(f"\n  \033[1mMigrations:\033[0m")
-                click.echo(f"    Applied: {len(applied)}")
-                click.echo(f"    Pending: {len(pending)}")
+                click.echo(f"\n  \033[1mMigrations\033[0m")
+                click.echo(f"    Applied:      {len(applied)}")
+                click.echo(f"    Pending:      {len(pending)}")
                 
                 if pending:
-                    click.echo(f"\n  \033[1mPending Migrations:\033[0m")
+                    click.echo(f"\n  \033[1mPending Migrations\033[0m")
                     for name, _ in pending[:5]:
                         click.echo(f"    • {name}")
                     if len(pending) > 5:
@@ -1223,6 +1249,73 @@ def _check_studio_enabled() -> bool:
         return True  # Default to enabled in debug
 
 
+def _check_admin_enabled() -> bool:
+    """Check if Admin panel will be enabled."""
+    try:
+        from aksara.conf import settings
+        if getattr(settings, 'enable_admin', False):
+            return True
+        # Also enabled in debug mode by default
+        if settings.debug:
+            return True
+        return False
+    except Exception:
+        return True  # Default to enabled in debug
+
+
+def _get_debug_mode() -> bool:
+    """Get debug mode from settings."""
+    try:
+        from aksara.conf import settings
+        return settings.debug
+    except Exception:
+        return True  # Assume dev mode
+
+
+def _print_dev_banner(base_url: str, actual_reload: bool, log_level: str) -> None:
+    """
+    Print enhanced dev server banner (v0.5.6).
+    
+    Shows:
+    - Aksara version
+    - Environment and debug status
+    - All relevant URLs (App, Admin, Studio, API, Docs)
+    """
+    from aksara import __version__
+    
+    admin_enabled = _check_admin_enabled()
+    studio_enabled = _check_studio_enabled()
+    debug = _get_debug_mode()
+    env = "dev" if debug else "prod"
+    
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara {__version__} — Dev Server\033[0m")
+    click.echo()
+    click.echo(f"  \033[36mEnv:\033[0m        {env}")
+    click.echo(f"  \033[36mDebug:\033[0m      {debug}")
+    click.echo()
+    
+    # URLs section
+    click.echo(f"  \033[36mApp:\033[0m        {base_url}/")
+    
+    if admin_enabled:
+        click.echo(f"  \033[36mAdmin:\033[0m      {base_url}/admin/")
+    
+    if studio_enabled:
+        click.echo(f"  \033[36mStudio:\033[0m     {base_url}/studio/ui")
+    
+    click.echo(f"  \033[36mAPI:\033[0m        {base_url}/api/posts/")
+    click.echo(f"  \033[36mDocs:\033[0m       {base_url}/docs")
+    click.echo()
+    
+    # Status line
+    reload_status = "enabled" if actual_reload else "disabled"
+    click.echo(f"  \033[90mReload: {reload_status} | Log: {log_level}\033[0m")
+    click.echo()
+    click.echo("  \033[90m" + "─" * 45 + "\033[0m")
+    click.echo()
+
+
 @cli.command()
 @click.argument("app_path")
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
@@ -1236,8 +1329,8 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
     """
     Run Aksara in development mode with enhanced DX.
     
-    v0.5.2: Improved developer experience with richer banner, 
-    log-level control, and clean shutdown.
+    v0.5.6: Improved developer experience with richer banner showing
+    all relevant URLs, environment, and debug status.
     
     APP_PATH: Import path to the app (e.g., 'main:app' or 'myproject.main:app')
     
@@ -1262,31 +1355,9 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
     
     # Build URLs
     base_url = f"http://{host}:{port}"
-    studio_enabled = _check_studio_enabled()
     
-    # Print enhanced banner
-    click.echo()
-    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara Dev Server\033[0m ({CLI_VERSION})")
-    click.echo()
-    click.echo(f"  \033[36mApp:\033[0m      {app_path}")
-    click.echo(f"  \033[36mURL:\033[0m      {base_url}/")
-    
-    if studio_enabled:
-        click.echo(f"  \033[36mStudio:\033[0m   {base_url}/studio/handshake   \033[32m[enabled]\033[0m")
-    else:
-        click.echo(f"  \033[36mStudio:\033[0m   \033[90m[disabled]\033[0m")
-    
-    click.echo(f"  \033[36mDocs:\033[0m     {base_url}/docs")
-    click.echo()
-    
-    if actual_reload:
-        click.echo(f"  \033[90mReload: enabled | Log: {log_level}\033[0m")
-    else:
-        click.echo(f"  \033[90mReload: disabled | Log: {log_level}\033[0m")
-    
-    click.echo()
-    click.echo("  \033[90m" + "─" * 45 + "\033[0m")
-    click.echo()
+    # Print enhanced banner (v0.5.6)
+    _print_dev_banner(base_url, actual_reload, log_level)
     
     try:
         # Configure and run uvicorn

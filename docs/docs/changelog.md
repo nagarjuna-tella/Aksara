@@ -4,6 +4,80 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.6] — 2026-02-06
+
+### Added
+- **Dev Server Banner Upgrade**: Enhanced `aksara dev` output with:
+  - Aksara version display
+  - Environment (dev/prod) and debug status
+  - All relevant URLs: App, Admin, Studio, API, Docs
+  - URLs only shown when feature is enabled
+- **Welcome Page in Scaffold**: New projects include a welcome page at `/`:
+  - Shows Aksara branding and version
+  - "Your Aksara project is running 🚀" confirmation
+  - Quick links to Admin, Studio, API, Docs, AI Tools
+  - Note about how to customize
+- **`aksara info` Polish**: Enhanced environment information display:
+  - Framework section with version info
+  - Environment section (dev/prod, debug, migrations dir)
+  - Database section with backend detection and masked URL
+  - Features section showing Admin/Studio/AI Mode status
+
+### Changed
+- Dev banner now shows version from `aksara.__version__`
+- Scaffold templates updated to v0.5.6
+- `aksara info` uses cleaner, aligned formatting
+
+### Documentation
+- Updated quickstart.md with new dev banner and welcome page
+- Added v0.5.6 changelog entry
+
+---
+
+## [0.5.5] — 2026-02-06
+
+### Added
+- **Boilerplate Refresh & Starter Project**: Fresh scaffold for new projects
+- **Updated `aksara startproject`**:
+  - Creates working Post model + API + Admin out-of-the-box
+  - Pre-configured for Admin, Studio, AI Mode
+  - Includes middleware (Request ID, Logging)
+  - AKSARA configuration dict in settings.py
+- **New Scaffold Files**:
+  - `models.py` - Working Post model with AI metadata
+  - `views.py` - PostViewSet with custom actions
+  - `serializers.py` - PostSerializer ready to use
+  - `admin.py` - Post registered with ModelAdmin
+  - `urls.py` - Post routes pre-registered
+- **Updated Project Structure**:
+  ```
+  myproject/
+  ├── main.py          # Admin, Studio, AI auto-mounted
+  ├── settings.py      # AKSARA config dict
+  ├── app/
+  │   ├── models.py    # Working Post model
+  │   ├── views.py     # PostViewSet
+  │   ├── admin.py     # Post admin
+  │   └── ...
+  ```
+- **Zero-Config Experience**:
+  - `/admin` - Admin ready (debug mode)
+  - `/studio/ui` - Studio dashboard ready
+  - `/ai/tools` - Post ViewSet as AI tool
+  - `/api/posts` - CRUD API ready
+
+### Changed
+- Scaffold pyproject.toml now requires `aksara>=0.5.5`
+- README.md in scaffold now shows all available endpoints
+- Example app (examples/basic_app) updated to v0.5.5 patterns
+- Quickstart docs updated to match new scaffold
+
+### Documentation
+- Updated quickstart.md with new project structure
+- Updated example app README.md
+
+---
+
 ## [0.5.4] — 2026-02-06
 
 ### Added

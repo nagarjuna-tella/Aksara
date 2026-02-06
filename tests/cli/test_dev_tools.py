@@ -472,7 +472,8 @@ class TestStartprojectDevFiles:
             
             assert result.exit_code == 0
             assert "pip install -e" in result.output
-            assert "pre-commit install" in result.output
+            # v0.5.5: Shows what's included instead of pre-commit instructions
+            assert "What's included" in result.output
     
     def test_startproject_creates_pyproject_toml(self, tmp_path):
         """Test that startproject creates pyproject.toml."""

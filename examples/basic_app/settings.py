@@ -1,8 +1,14 @@
 """
-Application Settings (v0.2)
+Application Settings (v0.5.5)
 
 Demonstrates how to configure Aksara using the settings system.
 Settings are loaded from environment variables with sensible defaults.
+
+Available Endpoints (when running):
+    - API Docs: http://localhost:8000/docs
+    - Admin: http://localhost:8000/admin (debug mode)
+    - Studio: http://localhost:8000/studio/ui
+    - AI Tools: http://localhost:8000/ai/tools
 """
 
 import os
@@ -41,8 +47,12 @@ configure(
     pool_min_size=5,
     pool_max_size=20,
     migrations_dir="migrations",
+    # AI Mode (v0.4.0+)
     ai_enabled=True,
     mcp_enabled=False,
+    # Studio (v0.5.0+) - enabled by default
+    enable_studio=True,
+    studio_ui_enabled=True,
 )
 
 # =============================================================================
