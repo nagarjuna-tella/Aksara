@@ -4,6 +4,62 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.11] — 2026-02-10
+
+### Added
+- **AI Profiles & Provider Contracts**: Vendor-agnostic, pluggable AI configuration layer
+  - **Core AI Provider Models** (`aksara/ai/providers.py`):
+    - `AiModelProfile` - Individual model metadata (name, kind, token limits, capabilities)
+    - `AiProviderProfile` - Provider with multiple models (OpenAI, Anthropic, local, etc.)
+    - `AiProfileSet` - Collection of providers with default selection
+    - `AiProviderSecretHint` - Safe env var hints (never exposes actual secrets)
+    - `AiProviderConfigInfo` - Complete provider configuration info
+    - Type aliases: `AiModelKind` (chat, completion, embedding, etc.), `AiProviderKind`
+    
+  - **AI Provider Registry**:
+    - `AiProviderRegistry` class for runtime provider management
+    - `get_ai_provider_registry(app)` - Get or create registry from FastAPI app
+    - `build_default_ai_profile_set(settings)` - Build from settings or use examples
+    - `build_example_profile_set()` - Demo providers for testing
+    - Built-in example providers: `example_openai_like`, `example_anthropic_like`, `example_local`
+  
+  - **Studio Backend Endpoints**:
+    - `GET /studio/ai/profiles` - List all configured AI providers and models
+    - `GET /studio/ai/secrets` - List env var hints with configured status
+    - New Pydantic models in `studio/models.py` for Studio responses
+    - `build_ai_profile_set_summary()` and `build_ai_secrets_info()` utilities
+  
+  - **Studio UI Panel**:
+    - New "AI Profiles" navigation item in Studio sidebar
+    - Stats cards: Providers, Models, Configured Secrets, Default Provider
+    - Provider cards with model lists, capabilities, token limits
+    - Secrets panel showing env var configuration status
+    - Export panel for JSON configuration
+  
+  - **CLI Commands** (`aksara ai` command group):
+    - `aksara ai providers` - List providers with `--format table|json`
+    - `aksara ai models` - List models with optional `--provider` filter
+    - `aksara ai secrets` - Show secret configuration status
+
+- **Configuration Options**:
+  - `ai_profiles_enabled` / `AKSARA_AI_PROFILES_ENABLED` - Enable/disable profiles (default: True)
+  - `ai_default_provider` / `AKSARA_AI_DEFAULT_PROVIDER` - Default provider name
+  - `ai_providers` / `AKSARA_AI_PROVIDERS` - Explicit provider configurations (JSON)
+  - `ai_secret_hints` / `AKSARA_AI_SECRET_HINTS` - Custom secret hints (JSON)
+
+### Security
+- AI secrets are NEVER exposed via Studio or CLI - only env var names and configured status
+- No vendor SDK dependencies - pure metadata/configuration layer
+
+### Changed
+- CLI version bumped to 0.5.11
+- AI module exports updated with new providers module components
+
+### Documentation
+- Changelog updated with v0.5.11 AI Profiles features
+
+---
+
 ## [0.5.10] — 2026-02-09
 
 ### Added

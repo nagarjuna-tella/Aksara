@@ -29,6 +29,10 @@ v0.5.4 Additions:
 v0.5.10 Additions:
 - GET /studio/db/queries - Query inspector with stats and recent batches
 - GET /studio/db/queries/{request_id} - Detailed query batch for a request
+
+v0.5.11 Additions:
+- GET /studio/ai/profiles - AI provider profiles and model configurations
+- GET /studio/ai/secrets - AI secret hints (env var names, not values)
 """
 
 from __future__ import annotations
@@ -55,6 +59,9 @@ from aksara.studio.models import (
     # v0.5.10: Query Inspector models
     StudioQueryInspector,
     StudioQueryBatch,
+    # v0.5.11: AI Profiles models
+    StudioAiProfileSetSummary,
+    StudioAiSecretsInfo,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -71,6 +78,9 @@ from aksara.studio.utils import (
     # v0.5.10: Query Inspector utils
     build_query_inspector,
     build_query_batch_detail,
+    # v0.5.11: AI Profiles utils
+    build_ai_profile_set_summary,
+    build_ai_secrets_info,
 )
 
 # v0.5.3: Static files directory
@@ -678,6 +688,93 @@ async def studio_db_query_detail(
             detail=f"No trace found for request_id: {request_id}",
         )
     return batch
+
+
+# =============================================================================
+# v0.5.11: AI Profiles & Provider Contracts Endpoints
+# =============================================================================
+
+@router.get("/studio/ai/profiles", response_model=StudioAiProfileSetSummary)
+async def studio_ai_profiles(request: Request) -> StudioAiProfileSetSummary:
+    """
+    Get AI provider profiles and model configurations.
+    
+    v0.5.11: Vendor-agnostic AI profile discovery endpoint.
+    
+    Returns:
+        StudioAiProfileSetSummary with:
+        - enabled: Whether AI profiles are enabled
+        - providers: List of available AI providers
+        - default_provider: Name of default provider
+        - total_models: Total available models
+        - environment: Current environment (dev/stage/prod)
+    
+    Example response:
+        {
+            "enabled": true,
+            "providers": [
+                {
+                    "name": "example_openai_like",
+                    "display_name": "Example OpenAI-like Provider (Demo)",
+                    "kind": "openai",
+                    "model_count": 3,
+                    "default_model": "gpt-4o",
+                    "has_custom_base_url": false,
+                    "is_example": true,
+                    "models": [
+                        {
+                            "name": "gpt-4o",
+                            "display_name": "GPT-4 Omni",
+                            "kind": "chat",
+                            "max_input_tokens": 128000,
+                            "max_output_tokens": 4096,
+                            "supports_tools": true,
+                            "supports_streaming": true,
+                            "tags": ["fast", "multimodal"]
+                        }
+                    ]
+                }
+            ],
+            "default_provider": "example_openai_like",
+            "total_models": 6,
+            "environment": "development"
+        }
+    """
+    return build_ai_profile_set_summary(request.app)
+
+
+@router.get("/studio/ai/secrets", response_model=StudioAiSecretsInfo)
+async def studio_ai_secrets(request: Request) -> StudioAiSecretsInfo:
+    """
+    Get AI secret hints (env var names, never values).
+    
+    v0.5.11: Shows what environment variables are needed for AI providers.
+    
+    SECURITY: This endpoint NEVER returns actual secret values.
+    Only env var names and whether they are configured are exposed.
+    
+    Returns:
+        StudioAiSecretsInfo with:
+        - secrets: List of secret hints with env var names
+        - configured_count: Number of configured secrets
+        - total_count: Total secrets required
+    
+    Example response:
+        {
+            "secrets": [
+                {
+                    "provider_name": "example_openai_like",
+                    "env_var": "OPENAI_API_KEY",
+                    "required": true,
+                    "description": "OpenAI API key from platform.openai.com",
+                    "is_configured": false
+                }
+            ],
+            "configured_count": 0,
+            "total_count": 2
+        }
+    """
+    return build_ai_secrets_info()
 
 
 # =============================================================================

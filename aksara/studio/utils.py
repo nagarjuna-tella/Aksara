@@ -1255,3 +1255,138 @@ def build_query_batch_detail(request_id: str) -> Optional["StudioQueryBatch"]:
         n_plus_one_suspicions=batch.n_plus_one_suspicions,
         queries=queries,
     )
+
+
+# =============================================================================
+# v0.5.11: AI Profiles & Provider Contracts
+# =============================================================================
+
+def build_ai_profile_set_summary(app: "FastAPI") -> "StudioAiProfileSetSummary":
+    """
+    Build AI profile set summary for Studio.
+    
+    v0.5.11: Gathers all AI provider profiles and builds a summary.
+    
+    Args:
+        app: FastAPI application instance
+        
+    Returns:
+        StudioAiProfileSetSummary with provider and model info
+    """
+    from aksara.conf import settings
+    from aksara.ai.providers import (
+        get_ai_provider_registry,
+        build_default_ai_profile_set,
+    )
+    from aksara.studio.models import (
+        StudioAiProfileSetSummary,
+        StudioAiProviderSummary,
+        StudioAiModelProfileSummary,
+    )
+    
+    # Check if profiles are enabled
+    ai_profiles_enabled = getattr(settings, 'ai_profiles_enabled', True)
+    
+    if not ai_profiles_enabled:
+        return StudioAiProfileSetSummary(
+            enabled=False,
+            providers=[],
+            default_provider=None,
+            total_models=0,
+            environment=None,
+            version="disabled",
+        )
+    
+    # Try to get registry from app first
+    registry = get_ai_provider_registry(app)
+    
+    # If registry is empty, use default profile set from settings
+    if len(registry) == 0:
+        profile_set = build_default_ai_profile_set(settings)
+    else:
+        profile_set = registry.get_profile_set()
+    
+    # Build provider summaries
+    providers = []
+    for provider in profile_set.providers:
+        # Build model summaries
+        models = [
+            StudioAiModelProfileSummary(
+                name=model.name,
+                display_name=model.display_name,
+                kind=model.kind,
+                max_input_tokens=model.max_input_tokens,
+                max_output_tokens=model.max_output_tokens,
+                supports_tools=model.supports_tools,
+                supports_streaming=model.supports_streaming,
+                supports_vision=getattr(model, 'supports_vision', False),
+                tags=model.tags,
+            )
+            for model in provider.models
+        ]
+        
+        # Check if this is an example provider
+        is_example = provider.metadata.get('_example', False)
+        
+        providers.append(StudioAiProviderSummary(
+            name=provider.name,
+            display_name=provider.display_name,
+            kind=provider.kind,
+            model_count=len(provider.models),
+            default_model=provider.default_model,
+            has_custom_base_url=provider.base_url is not None,
+            is_example=is_example,
+            models=models,
+        ))
+    
+    return StudioAiProfileSetSummary(
+        enabled=True,
+        providers=providers,
+        default_provider=profile_set.default_provider,
+        total_models=profile_set.total_models(),
+        environment=profile_set.environment,
+        version=profile_set.version,
+    )
+
+
+def build_ai_secrets_info() -> "StudioAiSecretsInfo":
+    """
+    Build AI secrets info for Studio.
+    
+    v0.5.11: Lists env var names and whether they are configured.
+    NEVER includes actual secret values.
+    
+    Returns:
+        StudioAiSecretsInfo with secret hints
+    """
+    import os
+    from aksara.conf import settings
+    from aksara.ai.providers import build_secret_hints_from_settings
+    from aksara.studio.models import StudioAiSecretsInfo, StudioAiSecretHint
+    
+    # Get secret hints from settings
+    raw_hints = build_secret_hints_from_settings(settings)
+    
+    # Build Studio hints with configured status
+    secrets = []
+    configured_count = 0
+    
+    for hint in raw_hints:
+        # Check if env var is set (but don't expose the value!)
+        is_configured = os.environ.get(hint.env_var) is not None
+        if is_configured:
+            configured_count += 1
+        
+        secrets.append(StudioAiSecretHint(
+            provider_name=hint.provider_name,
+            env_var=hint.env_var,
+            required=hint.required,
+            description=hint.description,
+            is_configured=is_configured,
+        ))
+    
+    return StudioAiSecretsInfo(
+        secrets=secrets,
+        configured_count=configured_count,
+        total_count=len(secrets),
+    )

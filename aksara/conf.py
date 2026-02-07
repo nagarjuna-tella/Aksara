@@ -99,6 +99,12 @@ class Settings:
     db_trace_slow_threshold_ms: float = 100.0  # Threshold for "slow" query (ms)
     db_trace_max_queries: int = 500  # Max queries to capture per request
     
+    # v0.5.11: AI Profiles & Provider Contracts
+    ai_profiles_enabled: bool = True  # Enable AI profile discovery
+    ai_default_provider: Optional[str] = None  # Default AI provider name
+    ai_providers: Optional[List[dict]] = None  # List of AiProviderProfile dicts (no secrets)
+    ai_secret_hints: Optional[List[dict]] = None  # List of AiProviderSecretHint dicts
+    
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     
@@ -200,6 +206,14 @@ class Settings:
                 self.db_trace_max_queries = int(env_max_queries)
             except ValueError:
                 pass
+        
+        # v0.5.11: AI Profiles settings
+        if self.ai_profiles_enabled:
+            self.ai_profiles_enabled = not _get_bool_env("AKSARA_AI_PROFILES_DISABLED", False)
+        
+        env_default_provider = os.environ.get("AKSARA_AI_DEFAULT_PROVIDER")
+        if env_default_provider:
+            self.ai_default_provider = env_default_provider
     
     @property
     def DATABASE_URL(self) -> Optional[str]:
@@ -255,6 +269,16 @@ class Settings:
     def DB_TRACE_MAX_QUERIES(self) -> int:
         """Alias for db_trace_max_queries (uppercase convention)."""
         return self.db_trace_max_queries
+    
+    @property
+    def AI_PROFILES_ENABLED(self) -> bool:
+        """Alias for ai_profiles_enabled (uppercase convention)."""
+        return self.ai_profiles_enabled
+    
+    @property
+    def AI_DEFAULT_PROVIDER(self) -> Optional[str]:
+        """Alias for ai_default_provider (uppercase convention)."""
+        return self.ai_default_provider
 
 
 # Global settings instance

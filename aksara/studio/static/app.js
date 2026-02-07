@@ -4,7 +4,7 @@
  * Zero-dependency, zero-build JavaScript for Aksara Studio dashboard.
  * Uses vanilla JS with modern ES6+ features.
  * 
- * v0.5.4
+ * v0.5.11
  */
 
 // =============================================================================
@@ -27,6 +27,9 @@ const state = {
     currentSchemaTab: 'plan',
     // v0.5.10: DB Queries state
     dbQueries: null,
+    // v0.5.11: AI Profiles state
+    aiProfiles: null,
+    aiSecrets: null,
 };
 
 // =============================================================================
@@ -191,6 +194,9 @@ function renderSection(section) {
             break;
         case 'db-queries':
             renderDbQueries();
+            break;
+        case 'ai-profiles':
+            renderAiProfiles();
             break;
     }
 }
@@ -872,6 +878,176 @@ function truncateSql(sql) {
     const maxLen = 200;
     if (sql.length <= maxLen) return sql;
     return sql.substring(0, maxLen) + '...';
+}
+
+// =============================================================================
+// v0.5.11: AI Profiles Section
+// =============================================================================
+
+async function renderAiProfiles() {
+    // Set up event listeners
+    const refreshBtn = document.getElementById('refresh-ai-profiles');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => loadAiProfiles());
+    }
+    
+    const copyBtn = document.getElementById('copy-ai-profiles');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const json = document.getElementById('ai-profiles-json');
+            if (json) {
+                copyToClipboard(json.textContent);
+                showToast('Profile set JSON copied to clipboard');
+            }
+        });
+    }
+    
+    // Load both profiles and secrets
+    await Promise.all([loadAiProfiles(), loadAiSecrets()]);
+}
+
+async function loadAiProfiles() {
+    try {
+        state.aiProfiles = await jsonGet('/studio/ai/profiles');
+        renderAiProfilesData();
+    } catch (err) {
+        console.error('Failed to load AI profiles:', err);
+        showToast('Failed to load AI profiles', 'error');
+    }
+}
+
+async function loadAiSecrets() {
+    try {
+        state.aiSecrets = await jsonGet('/studio/ai/secrets');
+        renderAiSecretsData();
+    } catch (err) {
+        console.error('Failed to load AI secrets:', err);
+        showToast('Failed to load AI secrets', 'error');
+    }
+}
+
+function renderAiProfilesData() {
+    const data = state.aiProfiles;
+    if (!data) return;
+    
+    // Show/hide disabled banner
+    const disabledBanner = document.getElementById('ai-profiles-disabled-banner');
+    if (disabledBanner) {
+        disabledBanner.classList.toggle('hidden', data.enabled);
+    }
+    
+    // Update stats
+    setText('ai-provider-count', data.providers?.length ?? '-');
+    setText('ai-model-count', data.total_models ?? '-');
+    setText('ai-default-provider', data.default_provider || 'None');
+    setText('ai-environment', data.environment || '-');
+    
+    // Render providers list
+    const providersList = document.getElementById('ai-providers-list');
+    if (providersList) {
+        const providers = data.providers || [];
+        if (providers.length === 0) {
+            providersList.innerHTML = '<div class="empty-state"><p>No AI providers configured</p></div>';
+        } else {
+            providersList.innerHTML = providers.map(provider => {
+                const isDefault = provider.name === data.default_provider;
+                const models = provider.models || [];
+                
+                return `
+                <div class="provider-card ${isDefault ? 'is-default' : ''} ${provider.is_example ? 'is-example' : ''}">
+                    <div class="provider-header">
+                        <span class="provider-name">${escapeHtml(provider.display_name)}</span>
+                        <span class="provider-kind badge badge-${provider.kind}">${escapeHtml(provider.kind)}</span>
+                        ${isDefault ? '<span class="badge badge-primary">Default</span>' : ''}
+                        ${provider.is_example ? '<span class="badge badge-warning">Example</span>' : ''}
+                    </div>
+                    <div class="provider-meta">
+                        <span class="provider-id">${escapeHtml(provider.name)}</span>
+                        <span class="provider-models">${provider.model_count} models</span>
+                        ${provider.has_custom_base_url ? '<span class="badge badge-secondary">Custom URL</span>' : ''}
+                    </div>
+                    <div class="models-list">
+                        ${models.map(model => `
+                            <div class="model-item">
+                                <div class="model-header">
+                                    <span class="model-name">${escapeHtml(model.name)}</span>
+                                    <span class="model-kind badge badge-${model.kind}">${escapeHtml(model.kind)}</span>
+                                </div>
+                                <div class="model-caps">
+                                    ${model.supports_tools ? '<span class="cap cap-tools" title="Supports tool calling">🔧</span>' : ''}
+                                    ${model.supports_streaming ? '<span class="cap cap-streaming" title="Supports streaming">⚡</span>' : ''}
+                                    ${model.supports_vision ? '<span class="cap cap-vision" title="Supports vision">👁️</span>' : ''}
+                                </div>
+                                <div class="model-tokens">
+                                    ${model.max_input_tokens ? `<span class="token-limit">↓${formatTokenCount(model.max_input_tokens)}</span>` : ''}
+                                    ${model.max_output_tokens ? `<span class="token-limit">↑${formatTokenCount(model.max_output_tokens)}</span>` : ''}
+                                </div>
+                                ${model.tags?.length > 0 ? `
+                                    <div class="model-tags">
+                                        ${model.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+    }
+    
+    // Update JSON export
+    const jsonPre = document.getElementById('ai-profiles-json');
+    if (jsonPre) {
+        jsonPre.innerHTML = `<code>${escapeHtml(JSON.stringify(data, null, 2))}</code>`;
+    }
+}
+
+function renderAiSecretsData() {
+    const data = state.aiSecrets;
+    if (!data) return;
+    
+    // Update badge
+    const badge = document.getElementById('secrets-count-badge');
+    if (badge) {
+        badge.textContent = `${data.configured_count}/${data.total_count} configured`;
+        badge.className = `badge ${data.configured_count === data.total_count ? 'badge-success' : 'badge-warning'}`;
+    }
+    
+    // Render secrets list
+    const secretsList = document.getElementById('ai-secrets-list');
+    if (secretsList) {
+        const secrets = data.secrets || [];
+        if (secrets.length === 0) {
+            secretsList.innerHTML = '<div class="empty-state"><p>No secrets required</p></div>';
+        } else {
+            secretsList.innerHTML = secrets.map(secret => `
+                <div class="secret-item ${secret.is_configured ? 'configured' : 'missing'}">
+                    <div class="secret-header">
+                        <span class="secret-var">${escapeHtml(secret.env_var)}</span>
+                        <span class="secret-status ${secret.is_configured ? 'ok' : 'warning'}">
+                            ${secret.is_configured ? '✓ Configured' : '✗ Not set'}
+                        </span>
+                    </div>
+                    <div class="secret-meta">
+                        <span class="secret-provider">Provider: ${escapeHtml(secret.provider_name)}</span>
+                        ${secret.required ? '<span class="badge badge-error">Required</span>' : '<span class="badge badge-secondary">Optional</span>'}
+                    </div>
+                    ${secret.description ? `<div class="secret-desc">${escapeHtml(secret.description)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+    }
+}
+
+function formatTokenCount(count) {
+    if (count >= 1000000) {
+        return (count / 1000000).toFixed(0) + 'M';
+    }
+    if (count >= 1000) {
+        return (count / 1000).toFixed(0) + 'K';
+    }
+    return count.toString();
 }
 
 // =============================================================================

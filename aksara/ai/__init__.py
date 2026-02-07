@@ -50,6 +50,12 @@ Usage:
     
     # AI Schema Doctor (v0.4.7)
     from aksara.ai.schema_doctor import analyze_schema_health, AiSchemaHealth
+    
+    # AI Profiles & Provider Contracts (v0.5.11)
+    from aksara.ai.providers import (
+        AiProviderProfile, AiModelProfile, AiProfileSet,
+        AiProviderRegistry, get_ai_provider_registry,
+    )
 
 v0.4.0: Initial AI Mode release
 v0.4.1: AI Debug Assistant
@@ -59,6 +65,7 @@ v0.4.4: AI Patch Engine (THE SURGEON)
 v0.4.5: AI Planner (THE ARCHITECT)
 v0.4.6: AI Runtime (Mini Agent Loop)
 v0.4.7: AI Schema Doctor & Migration Guardrails
+v0.5.11: AI Profiles & Provider Contracts
 """
 
 from aksara.ai.models import AiTool, AiToolParam, ToolKind
@@ -234,6 +241,27 @@ from aksara.ai.schema_doctor import (
     analyze_schema_health,
 )
 
+# v0.5.11: AI Profiles & Provider Contracts
+from aksara.ai.providers import (
+    # Type aliases
+    AiModelKind,
+    AiProviderKind,
+    # Core models
+    AiModelProfile,
+    AiProviderProfile,
+    AiProfileSet,
+    # Secret hints
+    AiProviderSecretHint,
+    AiProviderConfigInfo,
+    # Registry
+    AiProviderRegistry,
+    # Helper functions
+    get_ai_provider_registry,
+    build_default_ai_profile_set,
+    build_secret_hints_from_settings,
+    build_example_profile_set,
+)
+
 __all__ = [
     # Models
     "AiTool",
@@ -358,4 +386,17 @@ __all__ = [
     "detect_schema_drift",
     "classify_severity",
     "analyze_schema_health",
+    # v0.5.11: AI Profiles & Provider Contracts
+    "AiModelKind",
+    "AiProviderKind",
+    "AiModelProfile",
+    "AiProviderProfile",
+    "AiProfileSet",
+    "AiProviderSecretHint",
+    "AiProviderConfigInfo",
+    "AiProviderRegistry",
+    "get_ai_provider_registry",
+    "build_default_ai_profile_set",
+    "build_secret_hints_from_settings",
+    "build_example_profile_set",
 ]

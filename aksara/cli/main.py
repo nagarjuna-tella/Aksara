@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.10"
+CLI_VERSION = "0.5.11"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2978,6 +2978,322 @@ def db_clear(force: bool):
         click.echo(f"  \033[32m✓\033[0m Cleared {count} request batches.")
         click.echo()
         
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+# =============================================================================
+# v0.5.11: AI Profiles & Provider Contracts Commands
+# =============================================================================
+
+@cli.group()
+def ai():
+    """AI profiles and provider tools.
+    
+    Commands for discovering and inspecting AI provider configurations.
+    
+    v0.5.11: AI Profiles & Provider Contracts
+    """
+    pass
+
+
+@ai.command("providers")
+@click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]), default="table", help="Output format")
+def ai_providers(output_format: str):
+    """List configured AI providers.
+    
+    Displays all AI provider profiles including:
+    - Provider name and type (kind)
+    - Number of available models
+    - Whether it's the default provider
+    
+    Note: Uses built-in example providers if none configured.
+    
+    Examples:
+        aksara ai providers
+        aksara ai providers --format json
+    """
+    import json
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Providers")
+    click.echo()
+    
+    try:
+        from aksara.conf import settings
+        from aksara.ai.providers import build_default_ai_profile_set
+        
+        # Check if profiles are enabled
+        ai_profiles_enabled = getattr(settings, 'ai_profiles_enabled', True)
+        
+        if not ai_profiles_enabled:
+            click.echo("  \033[33m⚠\033[0m AI profiles are disabled.")
+            click.echo()
+            click.echo("  To enable, set:")
+            click.echo("    - ai_profiles_enabled=True (settings)")
+            click.echo()
+            sys.exit(0)
+        
+        # Get profile set
+        profile_set = build_default_ai_profile_set(settings)
+        
+        if output_format == "json":
+            data = {
+                "providers": [
+                    {
+                        "name": p.name,
+                        "display_name": p.display_name,
+                        "kind": p.kind,
+                        "model_count": len(p.models),
+                        "default_model": p.default_model,
+                        "is_default": p.name == profile_set.default_provider,
+                        "is_example": p.metadata.get("_example", False),
+                    }
+                    for p in profile_set.providers
+                ],
+                "default_provider": profile_set.default_provider,
+                "environment": profile_set.environment,
+            }
+            click.echo(json.dumps(data, indent=2))
+        else:
+            # Table format
+            if not profile_set.providers:
+                click.echo("  No AI providers configured.")
+                click.echo()
+                return
+            
+            click.echo(f"  Found {len(profile_set.providers)} provider(s):")
+            click.echo()
+            
+            # Print header
+            click.echo(f"  {'NAME':<25} {'KIND':<12} {'MODELS':<8} {'DEFAULT':<8} {'EXAMPLE':<8}")
+            click.echo(f"  {'-'*25} {'-'*12} {'-'*8} {'-'*8} {'-'*8}")
+            
+            for provider in profile_set.providers:
+                is_default = "\033[32m✓\033[0m" if provider.name == profile_set.default_provider else ""
+                is_example = "yes" if provider.metadata.get("_example", False) else ""
+                
+                click.echo(
+                    f"  {provider.name:<25} "
+                    f"{provider.kind:<12} "
+                    f"{len(provider.models):<8} "
+                    f"{is_default:<8} "
+                    f"{is_example:<8}"
+                )
+            
+            click.echo()
+            
+            if profile_set.default_provider:
+                click.echo(f"  Default provider: \033[1m{profile_set.default_provider}\033[0m")
+            
+            # Show example warning if all are examples
+            all_examples = all(p.metadata.get("_example", False) for p in profile_set.providers)
+            if all_examples:
+                click.echo()
+                click.echo("  \033[33m⚠\033[0m All providers are built-in examples.")
+                click.echo("    Configure real providers via ai_providers setting.")
+            
+            click.echo()
+            
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@ai.command("models")
+@click.option("--provider", "-p", default=None, help="Filter by provider name")
+@click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]), default="table", help="Output format")
+def ai_models(provider: Optional[str], output_format: str):
+    """List available AI models.
+    
+    Displays all AI models from configured providers including:
+    - Model name and kind
+    - Provider it belongs to
+    - Capability flags (tools, streaming, vision)
+    - Tags
+    
+    Use --provider to filter models by a specific provider.
+    
+    Examples:
+        aksara ai models
+        aksara ai models --provider example_openai_like
+        aksara ai models --format json
+    """
+    import json
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Models")
+    click.echo()
+    
+    try:
+        from aksara.conf import settings
+        from aksara.ai.providers import build_default_ai_profile_set
+        
+        # Check if profiles are enabled
+        ai_profiles_enabled = getattr(settings, 'ai_profiles_enabled', True)
+        
+        if not ai_profiles_enabled:
+            click.echo("  \033[33m⚠\033[0m AI profiles are disabled.")
+            click.echo()
+            sys.exit(0)
+        
+        # Get profile set
+        profile_set = build_default_ai_profile_set(settings)
+        
+        # Collect models
+        models = []
+        for p in profile_set.providers:
+            if provider and p.name != provider:
+                continue
+            for m in p.models:
+                models.append({
+                    "provider": p.name,
+                    "name": m.name,
+                    "display_name": m.display_name,
+                    "kind": m.kind,
+                    "supports_tools": m.supports_tools,
+                    "supports_streaming": m.supports_streaming,
+                    "supports_vision": getattr(m, 'supports_vision', False),
+                    "max_input_tokens": m.max_input_tokens,
+                    "max_output_tokens": m.max_output_tokens,
+                    "tags": m.tags,
+                })
+        
+        if output_format == "json":
+            click.echo(json.dumps({"models": models}, indent=2))
+        else:
+            # Table format
+            if not models:
+                if provider:
+                    click.echo(f"  No models found for provider '{provider}'.")
+                else:
+                    click.echo("  No models configured.")
+                click.echo()
+                return
+            
+            click.echo(f"  Found {len(models)} model(s):")
+            click.echo()
+            
+            # Print header
+            click.echo(f"  {'NAME':<22} {'PROVIDER':<22} {'KIND':<12} {'TOOLS':<6} {'STREAM':<7} {'TAGS'}")
+            click.echo(f"  {'-'*22} {'-'*22} {'-'*12} {'-'*6} {'-'*7} {'-'*20}")
+            
+            for m in models:
+                tools = "✓" if m["supports_tools"] else ""
+                stream = "✓" if m["supports_streaming"] else ""
+                tags = ", ".join(m["tags"][:3]) if m["tags"] else ""
+                if len(m["tags"]) > 3:
+                    tags += "..."
+                
+                click.echo(
+                    f"  {m['name']:<22} "
+                    f"{m['provider']:<22} "
+                    f"{m['kind']:<12} "
+                    f"{tools:<6} "
+                    f"{stream:<7} "
+                    f"{tags}"
+                )
+            
+            click.echo()
+            
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@ai.command("secrets")
+@click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]), default="table", help="Output format")
+def ai_secrets(output_format: str):
+    """Show required AI secrets status.
+    
+    Displays environment variables needed for AI providers:
+    - Environment variable name
+    - Provider it's associated with
+    - Whether it's required
+    - Whether it's currently set (not the value!)
+    
+    Note: This command NEVER shows actual secret values.
+    
+    Examples:
+        aksara ai secrets
+        aksara ai secrets --format json
+    """
+    import json
+    import os
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Secrets")
+    click.echo()
+    
+    try:
+        from aksara.conf import settings
+        from aksara.ai.providers import build_secret_hints_from_settings
+        
+        # Get secret hints
+        hints = build_secret_hints_from_settings(settings)
+        
+        if not hints:
+            click.echo("  No secret hints configured.")
+            click.echo()
+            return
+        
+        # Check which are configured
+        secrets = []
+        configured_count = 0
+        for hint in hints:
+            is_configured = os.environ.get(hint.env_var) is not None
+            if is_configured:
+                configured_count += 1
+            
+            secrets.append({
+                "provider_name": hint.provider_name,
+                "env_var": hint.env_var,
+                "required": hint.required,
+                "description": hint.description,
+                "is_configured": is_configured,
+            })
+        
+        if output_format == "json":
+            click.echo(json.dumps({
+                "secrets": secrets,
+                "configured_count": configured_count,
+                "total_count": len(secrets),
+            }, indent=2))
+        else:
+            # Table format
+            click.echo(f"  Found {len(secrets)} secret(s) ({configured_count} configured):")
+            click.echo()
+            
+            # Print header
+            click.echo(f"  {'ENV_VAR':<30} {'PROVIDER':<25} {'REQUIRED':<9} {'STATUS'}")
+            click.echo(f"  {'-'*30} {'-'*25} {'-'*9} {'-'*12}")
+            
+            for s in secrets:
+                required = "yes" if s["required"] else "no"
+                if s["is_configured"]:
+                    status = "\033[32m✓ Set\033[0m"
+                else:
+                    status = "\033[33m✗ Not set\033[0m" if s["required"] else "\033[90m✗ Not set\033[0m"
+                
+                click.echo(
+                    f"  {s['env_var']:<30} "
+                    f"{s['provider_name']:<25} "
+                    f"{required:<9} "
+                    f"{status}"
+                )
+            
+            click.echo()
+            
+            # Summary
+            if configured_count == len(secrets):
+                click.echo("  \033[32m✓\033[0m All secrets are configured.")
+            else:
+                missing = len(secrets) - configured_count
+                click.echo(f"  \033[33m⚠\033[0m {missing} secret(s) not configured.")
+            
+            click.echo()
+            
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
         raise click.Abort()

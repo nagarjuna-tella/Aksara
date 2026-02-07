@@ -892,3 +892,177 @@ class StudioQueryInspector(BaseModel):
         default_factory=list,
         description="Slowest queries across all batches"
     )
+
+
+# =============================================================================
+# v0.5.11: AI Profiles & Provider Contracts Models
+# =============================================================================
+
+class StudioAiModelProfileSummary(BaseModel):
+    """
+    Summary view of an AI model profile for Studio UI.
+    
+    v0.5.11: Lightweight representation of AiModelProfile.
+    """
+    
+    name: str = Field(
+        ...,
+        description="Model identifier (e.g., 'gpt-4o')"
+    )
+    display_name: str = Field(
+        ...,
+        description="Human-readable model name"
+    )
+    kind: str = Field(
+        ...,
+        description="Model capability type (chat, embedding, etc.)"
+    )
+    max_input_tokens: Optional[int] = Field(
+        default=None,
+        description="Maximum input context length"
+    )
+    max_output_tokens: Optional[int] = Field(
+        default=None,
+        description="Maximum output length"
+    )
+    supports_tools: bool = Field(
+        default=False,
+        description="Whether model supports tool/function calling"
+    )
+    supports_streaming: bool = Field(
+        default=True,
+        description="Whether model supports streaming"
+    )
+    supports_vision: bool = Field(
+        default=False,
+        description="Whether model supports image inputs"
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Model tags for filtering"
+    )
+
+
+class StudioAiProviderSummary(BaseModel):
+    """
+    Summary view of an AI provider profile for Studio UI.
+    
+    v0.5.11: Lightweight representation of AiProviderProfile.
+    """
+    
+    name: str = Field(
+        ...,
+        description="Provider identifier"
+    )
+    display_name: str = Field(
+        ...,
+        description="Human-readable provider name"
+    )
+    kind: str = Field(
+        ...,
+        description="Provider type (openai, anthropic, local, etc.)"
+    )
+    model_count: int = Field(
+        ...,
+        description="Number of models available"
+    )
+    default_model: Optional[str] = Field(
+        default=None,
+        description="Default model name for this provider"
+    )
+    has_custom_base_url: bool = Field(
+        default=False,
+        description="Whether provider uses custom endpoint URL"
+    )
+    is_example: bool = Field(
+        default=False,
+        description="Whether this is a built-in example provider"
+    )
+    models: List[StudioAiModelProfileSummary] = Field(
+        default_factory=list,
+        description="Available models for this provider"
+    )
+
+
+class StudioAiProfileSetSummary(BaseModel):
+    """
+    Summary of the complete AI profile configuration.
+    
+    v0.5.11: Overview of all providers and models for Studio.
+    """
+    
+    enabled: bool = Field(
+        ...,
+        description="Whether AI profiles are enabled"
+    )
+    providers: List[StudioAiProviderSummary] = Field(
+        default_factory=list,
+        description="Available AI providers"
+    )
+    default_provider: Optional[str] = Field(
+        default=None,
+        description="Name of the default provider"
+    )
+    total_models: int = Field(
+        ...,
+        description="Total models across all providers"
+    )
+    environment: Optional[str] = Field(
+        default=None,
+        description="Environment name (dev, stage, prod)"
+    )
+    version: Optional[str] = Field(
+        default=None,
+        description="Profile configuration version"
+    )
+
+
+class StudioAiSecretHint(BaseModel):
+    """
+    Secret hint for Studio UI display.
+    
+    v0.5.11: Shows what env vars are needed, never actual values.
+    """
+    
+    provider_name: str = Field(
+        ...,
+        description="Provider this secret is for"
+    )
+    env_var: str = Field(
+        ...,
+        description="Environment variable name"
+    )
+    required: bool = Field(
+        default=True,
+        description="Whether this secret is required"
+    )
+    description: Optional[str] = Field(
+        default=None,
+        description="Human-readable description"
+    )
+    is_configured: bool = Field(
+        default=False,
+        description="Whether the env var is set (not the value!)"
+    )
+
+
+class StudioAiSecretsInfo(BaseModel):
+    """
+    Information about required AI secrets.
+    
+    v0.5.11: Lists env var names and whether they are configured.
+    NEVER includes actual secret values.
+    """
+    
+    secrets: List[StudioAiSecretHint] = Field(
+        default_factory=list,
+        description="List of secret hints"
+    )
+    configured_count: int = Field(
+        ...,
+        description="Number of secrets that are configured"
+    )
+    total_count: int = Field(
+        ...,
+        description="Total number of secrets required"
+    )
