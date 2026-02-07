@@ -1,33 +1,60 @@
-# ⚡ Aksara – Async Postgres-first Web Framework
+<p align="center">
+  <img src="https://img.icons8.com/fluency/96/lightning-bolt.png" width="64" alt="Aksara logo"/>
+</p>
 
-Aksara is a modern async web framework that combines:
+<h1 align="center">Aksara – Async Postgres-first Web Framework</h1>
 
-- 🗄️ A typed ORM for PostgreSQL
-- 🧩 A FastAPI-compatible router
-- 🕹️ A built-in Admin
-- 🧠 An AI-aware Studio & contracts layer
+<p align="center">
+  A modern async web framework that combines a typed ORM for PostgreSQL, a FastAPI-compatible router, a built-in Admin, and an AI-aware Studio & contracts layer.
+</p>
 
-Built for teams that want **fast CRUD**, **strong DX**, and **LLM-ready backends**.
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/tests-2500%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/version-0.5.16-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
+</p>
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-2500%2B%20passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.5.16-blue.svg)]()
-
----
-
-## ✨ Features at a Glance
-
-- 🚀 **Async everything** – built on async Postgres drivers (asyncpg)
-- 🗄️ **Postgres-first ORM** – models, migrations, typed fields, relations
-- 🧱 **Admin included** – browse and edit data without extra setup
-- 🧪 **Studio** – inspector for models, routes, migrations, runtime, and DB queries
-- 🧠 **AI contracts** – JSON schemas, provider profiles, and route hints for LLMs
-- 🧰 **CLI & patterns** – start projects with blog, CRM, multitenant, and AI examples
+<p align="center">
+  Built for teams that want <strong>fast CRUD</strong>, <strong>strong DX</strong>, and <strong>LLM-ready backends</strong>.
+</p>
 
 ---
 
-## ⚡ Quickstart
+## Features at a Glance
+
+<table>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/lightning-bolt.png" alt="async"/></td>
+    <td><strong>Async everything</strong> – built on async Postgres drivers (asyncpg)</td>
+  </tr>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/database.png" alt="orm"/></td>
+    <td><strong>Postgres-first ORM</strong> – models, migrations, typed fields, relations</td>
+  </tr>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/settings.png" alt="admin"/></td>
+    <td><strong>Admin included</strong> – browse and edit data without extra setup</td>
+  </tr>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/monitor.png" alt="studio"/></td>
+    <td><strong>Studio</strong> – inspector for models, routes, migrations, runtime, and DB queries</td>
+  </tr>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/artificial-intelligence.png" alt="ai"/></td>
+    <td><strong>AI contracts</strong> – JSON schemas, provider profiles, and route hints for LLMs</td>
+  </tr>
+  <tr>
+    <td><img src="https://img.icons8.com/fluency/24/console.png" alt="cli"/></td>
+    <td><strong>CLI & patterns</strong> – start projects with blog, CRM, multitenant, and AI examples</td>
+  </tr>
+</table>
+
+---
+
+## Quickstart
 
 Get a running app in 30 seconds:
 
@@ -53,17 +80,17 @@ Then visit:
 
 ---
 
-## 🧭 Your First 10 Minutes with Aksara
+## Your First 10 Minutes with Aksara
 
 New to Aksara? Start here:
 
-👉 **[Your First 10 Minutes with Aksara](docs/docs/getting-started/ten-minutes.md)**
+**[Your First 10 Minutes with Aksara](docs/docs/getting-started/ten-minutes.md)**
 
 This hands-on guide walks you from zero to a running app with a model, API, Admin, and Studio.
 
 ---
 
-## 🧱 Patterns & Examples
+## Patterns & Examples
 
 Aksara ships with real-world patterns and examples:
 
@@ -74,11 +101,11 @@ Aksara ships with real-world patterns and examples:
 | **Multitenant** | Tenant-aware SaaS apps | `aksara startproject saas --template multitenant` |
 | **AI Providers** | BYO LLM wiring examples | See `examples/ai_providers/` |
 
-📂 Browse: [`examples/`](examples/) | 📖 Docs: [Patterns](docs/docs/patterns/index.md)
+Browse: [`examples/`](examples/) | Docs: [Patterns](docs/docs/patterns/index.md)
 
 ---
 
-## 🎯 The Aksara Difference
+## The Aksara Difference
 
 ```python
 # models.py
@@ -107,7 +134,7 @@ class PostViewSet(ModelViewSet):
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Section | Description |
 |---------|-------------|
@@ -122,7 +149,7 @@ class PostViewSet(ModelViewSet):
 
 ---
 
-## 🛠️ Status & Roadmap
+## Status & Roadmap
 
 Aksara is **pre-1.0** and actively evolving. Current version: **0.5.16**.
 
@@ -140,13 +167,13 @@ See the [Roadmap](docs/docs/roadmap.md) for what's coming.
 
 ---
 
-## 📄 License
+## License
 
 [MIT License](LICENSE)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Please:
 
@@ -159,10 +186,12 @@ See the codebase for style conventions.
 
 ---
 
-## 💬 Community
+## Community
 
-- 📦 [PyPI](https://pypi.org/project/aksara/)
-- 🐙 [GitHub](https://github.com/aksara-framework/aksara)
+<p>
+  <a href="https://pypi.org/project/aksara/"><img src="https://img.shields.io/badge/PyPI-aksara-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI"></a>
+  <a href="https://github.com/aksara-framework/aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+</p>
 
 ---
 
