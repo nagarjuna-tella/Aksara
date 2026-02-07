@@ -347,11 +347,21 @@
             </div>
         </div>
         
+        <!-- v0.5.16: Search/filter toolbar -->
         <div class="card">
             <div class="card-header">
                 <h3>Apps</h3>
             </div>
             <div class="card-body">
+                <div class="mig-toolbar">
+                    <input type="text" id="mig-search" placeholder="Search apps..." class="filter-input">
+                    <select id="mig-status-filter" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="applied">✓ Fully Applied</option>
+                        <option value="pending">⏳ Has Pending</option>
+                        <option value="conflict">⚠ Has Conflicts</option>
+                    </select>
+                </div>
                 <div class="apps-list" id="mig-apps-list">
                     <div class="empty-state">
                         <p>No apps configured</p>
@@ -720,7 +730,11 @@
         <div class="card">
             <div class="card-header">
                 <h3>Recent Requests</h3>
-                <button class="btn btn-sm btn-secondary" id="refresh-db-queries">Refresh</button>
+                <div class="db-query-controls">
+                    <span class="db-last-updated" id="db-last-updated"></span>
+                    <button class="btn btn-sm" id="toggle-db-live" title="Toggle auto-refresh">▶ Live</button>
+                    <button class="btn btn-sm btn-secondary" id="refresh-db-queries">Refresh</button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="requests-list" id="recent-requests-list">
@@ -740,135 +754,152 @@
             <p class="section-subtitle">AI provider configurations and model profiles</p>
         </div>
         
-        <!-- v0.5.12: Health Status Banner -->
-        <div id="ai-health-banner" class="ai-health-banner hidden">
-            <div class="ai-health-status">
-                <span class="ai-health-badge" id="ai-health-badge">Loading...</span>
-                <span class="ai-health-summary" id="ai-health-summary"></span>
+        <!-- v0.5.16: Tab bar -->
+        <div class="ai-tab-bar">
+            <button class="ai-tab active" data-ai-tab="profiles">Profiles</button>
+            <button class="ai-tab" data-ai-tab="secrets">Secrets</button>
+            <button class="ai-tab" data-ai-tab="health">Health</button>
+            <button class="ai-tab" data-ai-tab="hints">Hints</button>
+        </div>
+        
+        <!-- ===== Profiles Tab ===== -->
+        <div class="ai-tab-pane active" id="ai-pane-profiles">
+            <div id="ai-profiles-disabled-banner" class="info-banner warning hidden">
+                <span class="info-icon">⚠️</span>
+                <p>AI profiles are disabled. Enable them by setting <code>ai_profiles_enabled=True</code> in your settings.</p>
             </div>
-            <div class="ai-health-issues" id="ai-health-issues"></div>
-        </div>
-        
-        <div id="ai-profiles-disabled-banner" class="info-banner warning hidden">
-            <span class="info-icon">⚠️</span>
-            <p>AI profiles are disabled. Enable them by setting <code>ai_profiles_enabled=True</code> in your settings.</p>
-        </div>
-        
-        <!-- Stats Cards -->
-        <div class="cards-grid">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Providers</h3>
+            
+            <!-- Stats Cards -->
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Providers</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric">
+                            <span class="metric-value" id="ai-provider-count">-</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="metric">
-                        <span class="metric-value" id="ai-provider-count">-</span>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Models</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric">
+                            <span class="metric-value" id="ai-model-count">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Default Provider</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric">
+                            <span class="metric-value" id="ai-default-provider">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Environment</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric">
+                            <span class="metric-value" id="ai-environment">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
             
+            <!-- Providers Panel -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Total Models</h3>
+                    <h3>AI Providers</h3>
+                    <button class="btn btn-sm btn-secondary" id="refresh-ai-profiles">Refresh</button>
                 </div>
                 <div class="card-body">
-                    <div class="metric">
-                        <span class="metric-value" id="ai-model-count">-</span>
+                    <div class="providers-list" id="ai-providers-list">
+                        <div class="empty-state">
+                            <p>No AI providers configured</p>
+                        </div>
                     </div>
                 </div>
             </div>
             
+            <!-- Export Panel -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Default Provider</h3>
+                    <h3>Export Profile Set</h3>
                 </div>
                 <div class="card-body">
-                    <div class="metric">
-                        <span class="metric-value" id="ai-default-provider">-</span>
+                    <p class="card-description">Export the full AI profile configuration as JSON for external tools and agents.</p>
+                    <div class="json-container">
+                        <div class="json-header">
+                            <span class="json-label">Profile Set JSON</span>
+                            <button class="btn btn-sm btn-copy" id="copy-ai-profiles" data-target="ai-profiles-json">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre id="ai-profiles-json" class="json-pre"><code>Loading...</code></pre>
                     </div>
                 </div>
             </div>
-            
+        </div>
+        
+        <!-- ===== Secrets Tab ===== -->
+        <div class="ai-tab-pane" id="ai-pane-secrets">
             <div class="card">
                 <div class="card-header">
-                    <h3>Environment</h3>
+                    <h3>Required Secrets</h3>
+                    <span class="badge" id="secrets-count-badge">-</span>
                 </div>
                 <div class="card-body">
-                    <div class="metric">
-                        <span class="metric-value" id="ai-environment">-</span>
+                    <p class="card-description">Environment variables needed for AI providers. Values are never shown, only configuration status.</p>
+                    <div class="secrets-list" id="ai-secrets-list">
+                        <div class="empty-state">
+                            <p>No secrets required</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Providers Panel -->
-        <div class="card">
-            <div class="card-header">
-                <h3>AI Providers</h3>
-                <button class="btn btn-sm btn-secondary" id="refresh-ai-profiles">Refresh</button>
-            </div>
-            <div class="card-body">
-                <div class="providers-list" id="ai-providers-list">
-                    <div class="empty-state">
-                        <p>No AI providers configured</p>
-                    </div>
+        <!-- ===== Health Tab ===== -->
+        <div class="ai-tab-pane" id="ai-pane-health">
+            <div id="ai-health-banner" class="ai-health-banner hidden">
+                <div class="ai-health-status">
+                    <span class="ai-health-badge" id="ai-health-badge">Loading...</span>
+                    <span class="ai-health-summary" id="ai-health-summary"></span>
                 </div>
+                <div class="ai-health-issues" id="ai-health-issues"></div>
             </div>
         </div>
         
-        <!-- Secrets Panel -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Required Secrets</h3>
-                <span class="badge" id="secrets-count-badge">-</span>
-            </div>
-            <div class="card-body">
-                <p class="card-description">Environment variables needed for AI providers. Values are never shown, only configuration status.</p>
-                <div class="secrets-list" id="ai-secrets-list">
-                    <div class="empty-state">
-                        <p>No secrets required</p>
+        <!-- ===== Hints Tab ===== -->
+        <div class="ai-tab-pane" id="ai-pane-hints">
+            <div class="card">
+                <div class="card-header">
+                    <h3>AI Route Hints</h3>
+                    <span class="badge" id="ai-hints-count">-</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Per-route AI metadata for LLM guidance. Click a hint to expand details.</p>
+                    <div class="ai-hints-filter-container">
+                        <input type="text" id="ai-hints-filter" placeholder="Filter by title, path, or view..." class="filter-input">
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Export Panel -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Export Profile Set</h3>
-            </div>
-            <div class="card-body">
-                <p class="card-description">Export the full AI profile configuration as JSON for external tools and agents.</p>
-                <div class="json-container">
-                    <div class="json-header">
-                        <span class="json-label">Profile Set JSON</span>
-                        <button class="btn btn-sm btn-copy" id="copy-ai-profiles" data-target="ai-profiles-json">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-                            </svg>
-                            Copy
-                        </button>
-                    </div>
-                    <pre id="ai-profiles-json" class="json-pre"><code>Loading...</code></pre>
-                </div>
-            </div>
-        </div>
-        
-        <!-- v0.5.13: AI Hints Panel -->
-        <div class="card">
-            <div class="card-header">
-                <h3>AI Route Hints</h3>
-                <span class="badge" id="ai-hints-count">-</span>
-            </div>
-            <div class="card-body">
-                <p class="card-description">Per-route AI metadata for LLM guidance. Click a hint to expand details.</p>
-                <div class="ai-hints-filter-container">
-                    <input type="text" id="ai-hints-filter" placeholder="Filter by title, path, or view..." class="filter-input">
-                </div>
-                <div class="ai-hints-list" id="ai-hints-list">
-                    <div class="empty-state">
-                        <p>No AI hints defined yet</p>
+                    <div class="ai-hints-list" id="ai-hints-list">
+                        <div class="empty-state">
+                            <p>No AI hints defined yet</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.15"
+CLI_VERSION = "0.5.16"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2488,7 +2488,11 @@ def studio_handshake(app: str, output_format: str):
 @click.option("--host", "-h", default="localhost", help="Server host")
 @click.option("--port", "-p", default=8000, type=int, help="Server port")
 @click.option("--https/--no-https", default=False, help="Use HTTPS")
-def studio_url(host: str, port: int, https: bool):
+@click.option("--section", "-s", default=None, type=click.Choice([
+    "overview", "models", "routes", "migrations",
+    "db-queries", "ai-profiles", "diagnostics",
+], case_sensitive=False), help="Open a specific Studio section")
+def studio_url(host: str, port: int, https: bool, section: str):
     """Show Studio endpoint URLs.
     
     Displays the URLs for Studio integration endpoints.
@@ -2497,15 +2501,21 @@ def studio_url(host: str, port: int, https: bool):
         aksara studio url
         aksara studio url --port 8080
         aksara studio url --https
+        aksara studio url --section migrations
     """
     protocol = "https" if https else "http"
     base_url = f"{protocol}://{host}:{port}"
+    
+    # v0.5.16: Build dashboard URL with optional section hash
+    dashboard_url = f"{base_url}/studio/ui"
+    if section:
+        dashboard_url += f"#/{section}"
     
     click.echo()
     click.echo("  \033[33m⚡\033[0m \033[1mAksara Studio\033[0m - Endpoint URLs")
     click.echo()
     click.echo("  \033[1mStudio UI:\033[0m")
-    click.echo(f"    Dashboard:       {base_url}/studio/ui")
+    click.echo(f"    Dashboard:       {dashboard_url}")
     click.echo()
     click.echo("  \033[1mStudio Endpoints:\033[0m")
     click.echo(f"    Handshake:       {base_url}/studio/handshake")

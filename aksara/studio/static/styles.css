@@ -1914,3 +1914,144 @@ code {
         break-inside: avoid;
     }
 }
+
+/* =============================================================================
+   v0.5.16: Migrations Toolbar & Badges
+   ============================================================================= */
+
+.mig-toolbar {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.mig-toolbar .filter-input {
+    flex: 1;
+}
+
+.filter-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.85rem;
+    background: var(--bg-secondary, var(--color-surface));
+    color: var(--text-primary, var(--color-text));
+    border: 1px solid var(--border-light, var(--color-border));
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.filter-select:focus {
+    border-color: var(--accent-primary, var(--color-primary));
+}
+
+.mig-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    margin-left: var(--spacing-xs);
+    vertical-align: middle;
+}
+
+.mig-badge.applied {
+    background: var(--accent-secondary, #34a853);
+    color: white;
+}
+
+.mig-badge.pending {
+    background: var(--accent-warning, #fbbc04);
+    color: var(--text-primary, #1a1a2e);
+}
+
+.mig-badge.conflict {
+    background: var(--accent-error, #ea4335);
+    color: white;
+}
+
+.app-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary, var(--color-surface));
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light, var(--color-border));
+    margin-bottom: var(--spacing-xs);
+}
+
+.app-item-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+/* =============================================================================
+   v0.5.16: AI Profile Tabs
+   ============================================================================= */
+
+.ai-tab-bar {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-xs);
+    background: var(--bg-secondary, var(--color-surface));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light, var(--color-border));
+}
+
+.ai-tab {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary, var(--color-text-secondary));
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    text-align: center;
+}
+
+.ai-tab:hover {
+    background: var(--bg-tertiary, var(--color-background));
+    color: var(--text-primary, var(--color-text));
+}
+
+.ai-tab.active {
+    background: var(--accent-primary, var(--color-primary));
+    color: white;
+}
+
+.ai-tab-pane {
+    display: none;
+}
+
+.ai-tab-pane.active {
+    display: block;
+}
+
+/* =============================================================================
+   v0.5.16: DB Query Controls
+   ============================================================================= */
+
+.db-query-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.db-last-updated {
+    font-size: 0.8rem;
+    color: var(--text-tertiary, var(--color-text-secondary));
+}
+
+.btn-live-active {
+    background: var(--accent-secondary, #34a853) !important;
+    color: white !important;
+    border-color: var(--accent-secondary, #34a853) !important;
+}

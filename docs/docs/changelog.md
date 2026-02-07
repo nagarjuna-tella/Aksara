@@ -4,6 +4,26 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.16] — 2026-02-13
+
+### Added
+- **Studio UX Pass #2**: Comprehensive dashboard polish release
+  - **Migrations Panel**: Search toolbar with text filter and status dropdown (All / Applied / Pending / Conflict); colored status badges (APPLIED green, PENDING yellow, CONFLICT red) per app
+  - **AI Profiles Tabs**: Reorganized into four tabs — Profiles, Secrets, Health, Hints — defaults to Health tab when validation errors exist
+  - **Query Inspector Auto-Refresh**: Live/Paused toggle button with 5-second polling interval; "Updated HH:MM:SS" timestamp; auto-stops when navigating away
+  - **Keyboard Shortcuts**: Keys 1–7 navigate to Overview, Models, Routes, Migrations, DB Queries, AI Profiles, Diagnostics; ignored when typing in input fields
+  - **CLI `studio url --section`**: New `--section` flag accepts section names and appends `#/section` fragment to dashboard URL
+
+### Changed
+- CLI version bumped to 0.5.16
+- Studio app.js version header updated to v0.5.16
+
+### Technical Notes
+- **No breaking changes**: All Studio API endpoints unchanged; HTML/CSS/JS only
+- **No new dependencies**: Zero-build vanilla JS maintained
+
+---
+
 ## [0.5.15] — 2026-02-13
 
 ### Added

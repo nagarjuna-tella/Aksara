@@ -12,7 +12,7 @@ Built for teams that want **fast CRUD**, **strong DX**, and **LLM-ready backends
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-2500%2B%20passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.5.15-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-0.5.16-blue.svg)]()
 
 ---
 
@@ -124,7 +124,7 @@ class PostViewSet(ModelViewSet):
 
 ## 🛠️ Status & Roadmap
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.15**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.16**.
 
 See the [Roadmap](docs/docs/roadmap.md) for what's coming.
 

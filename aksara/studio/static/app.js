@@ -4,7 +4,7 @@
  * Zero-dependency, zero-build JavaScript for Aksara Studio dashboard.
  * Uses vanilla JS with modern ES6+ features.
  * 
- * v0.5.11
+ * v0.5.16
  */
 
 // =============================================================================
@@ -27,6 +27,8 @@ const state = {
     currentSchemaTab: 'plan',
     // v0.5.10: DB Queries state
     dbQueries: null,
+    dbQueriesInterval: null,   // v0.5.16: auto-refresh timer
+    dbQueriesLive: false,      // v0.5.16: live/paused toggle
     // v0.5.11: AI Profiles state
     aiProfiles: null,
     aiSecrets: null,
@@ -137,9 +139,33 @@ function initNavigation() {
             navigateTo(section, false);
         }
     });
+    
+    // v0.5.16: Keyboard shortcuts 1-7
+    const sectionKeys = {
+        'Digit1': 'overview',
+        'Digit2': 'models',
+        'Digit3': 'routes',
+        'Digit4': 'migrations',
+        'Digit5': 'db-queries',
+        'Digit6': 'ai-profiles',
+        'Digit7': 'diagnostics',
+    };
+    document.addEventListener('keydown', (e) => {
+        // Ignore when typing in inputs / textareas / selects
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+        const section = sectionKeys[e.code];
+        if (section) {
+            e.preventDefault();
+            navigateTo(section);
+        }
+    });
 }
 
 function navigateTo(section, updateHash = true) {
+    // Stop timers for previous section
+    stopSectionTimers();
+    
     state.currentSection = section;
     
     // Update URL hash
@@ -154,6 +180,16 @@ function navigateTo(section, updateHash = true) {
     
     // Render the section
     renderSection(section);
+}
+
+// v0.5.16: Clean up timers when leaving a section
+function stopSectionTimers() {
+    // Stop DB queries auto-refresh
+    if (state.dbQueriesInterval) {
+        clearInterval(state.dbQueriesInterval);
+        state.dbQueriesInterval = null;
+    }
+    state.dbQueriesLive = false;
 }
 
 // =============================================================================
@@ -415,6 +451,12 @@ function renderMigrations() {
     } else {
         renderMigrationsData();
     }
+    
+    // v0.5.16: Wire up search / filter
+    const searchInput = document.getElementById('mig-search');
+    const statusFilter = document.getElementById('mig-status-filter');
+    if (searchInput) searchInput.addEventListener('input', () => filterMigrationApps());
+    if (statusFilter) statusFilter.addEventListener('change', () => filterMigrationApps());
 }
 
 async function fetchMigrations() {
@@ -448,18 +490,34 @@ function renderMigrationsData() {
     
     setText('mig-last-applied', mig.last_applied || 'None');
     
-    // Apps list
+    // Apps list with badges (v0.5.16)
     const appsList = document.getElementById('mig-apps-list');
     if (appsList && mig.apps && mig.apps.length > 0) {
-        appsList.innerHTML = mig.apps.map(app => `
-            <div class="app-item">
-                <span class="app-name">${escapeHtml(app.app_label)}</span>
+        appsList.innerHTML = mig.apps.map(app => {
+            let badgeClass, badgeLabel;
+            if (app.has_conflicts) {
+                badgeClass = 'mig-badge conflict';
+                badgeLabel = 'CONFLICT';
+            } else if (app.pending > 0) {
+                badgeClass = 'mig-badge pending';
+                badgeLabel = 'PENDING';
+            } else {
+                badgeClass = 'mig-badge applied';
+                badgeLabel = 'APPLIED';
+            }
+            return `
+            <div class="app-item" data-status="${app.has_conflicts ? 'conflict' : app.pending > 0 ? 'pending' : 'applied'}">
+                <div class="app-item-left">
+                    <span class="app-name">${escapeHtml(app.app_label)}</span>
+                    <span class="${badgeClass}">${badgeLabel}</span>
+                </div>
                 <div class="app-stats">
                     <span>Applied: ${app.applied}</span>
                     <span>Pending: ${app.pending}</span>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     
     // Conflicts
@@ -474,6 +532,22 @@ function renderMigrationsData() {
             </div>
         `).join('');
     }
+}
+
+// v0.5.16: Client-side filtering of migration apps
+function filterMigrationApps() {
+    const searchInput = document.getElementById('mig-search');
+    const statusFilter = document.getElementById('mig-status-filter');
+    const query = searchInput ? searchInput.value.toLowerCase() : '';
+    const status = statusFilter ? statusFilter.value : 'all';
+    
+    document.querySelectorAll('#mig-apps-list .app-item').forEach(item => {
+        const name = item.querySelector('.app-name')?.textContent?.toLowerCase() || '';
+        const itemStatus = item.dataset.status;
+        const matchesSearch = !query || name.includes(query);
+        const matchesStatus = status === 'all' || itemStatus === status;
+        item.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+    });
 }
 
 // =============================================================================
@@ -784,8 +858,33 @@ async function renderDbQueries() {
         refreshBtn.addEventListener('click', () => loadDbQueries());
     }
     
+    // v0.5.16: Live / Paused toggle
+    const liveBtn = document.getElementById('toggle-db-live');
+    if (liveBtn) {
+        liveBtn.addEventListener('click', () => toggleDbLive());
+    }
+    
     // Load data
     await loadDbQueries();
+}
+
+// v0.5.16: Toggle live auto-refresh for DB queries
+function toggleDbLive() {
+    state.dbQueriesLive = !state.dbQueriesLive;
+    const liveBtn = document.getElementById('toggle-db-live');
+    if (liveBtn) {
+        liveBtn.textContent = state.dbQueriesLive ? '⏸ Paused' : '▶ Live';
+        liveBtn.classList.toggle('btn-live-active', state.dbQueriesLive);
+    }
+    if (state.dbQueriesLive) {
+        // Start polling every 5 seconds
+        state.dbQueriesInterval = setInterval(() => loadDbQueries(), 5000);
+    } else {
+        if (state.dbQueriesInterval) {
+            clearInterval(state.dbQueriesInterval);
+            state.dbQueriesInterval = null;
+        }
+    }
 }
 
 async function loadDbQueries() {
@@ -818,6 +917,13 @@ function renderDbQueriesData() {
     const thresholdBadge = document.getElementById('slow-threshold-badge');
     if (thresholdBadge) {
         thresholdBadge.textContent = `Threshold: ${data.slow_threshold_ms}ms`;
+    }
+    
+    // v0.5.16: Last updated timestamp
+    const lastUpdated = document.getElementById('db-last-updated');
+    if (lastUpdated) {
+        const now = new Date();
+        lastUpdated.textContent = `Updated ${now.toLocaleTimeString()}`;
     }
     
     // Render slow queries
@@ -912,8 +1018,27 @@ async function renderAiProfiles() {
         hintsFilter.addEventListener('input', () => renderAiHintsData());
     }
     
+    // v0.5.16: Tab switching
+    document.querySelectorAll('.ai-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.aiTab;
+            // Toggle active tab
+            document.querySelectorAll('.ai-tab').forEach(t => t.classList.toggle('active', t === tab));
+            // Toggle visible pane
+            document.querySelectorAll('.ai-tab-pane').forEach(pane => {
+                pane.classList.toggle('active', pane.id === `ai-pane-${target}`);
+            });
+        });
+    });
+    
     // Load profiles, secrets, health, and hints
     await Promise.all([loadAiProfiles(), loadAiSecrets(), loadAiHealth(), loadAiHints()]);
+    
+    // v0.5.16: Default to Health tab if there are errors
+    if (state.aiHealth && state.aiHealth.error_count > 0) {
+        const healthTab = document.querySelector('.ai-tab[data-ai-tab="health"]');
+        if (healthTab) healthTab.click();
+    }
 }
 
 async function loadAiProfiles() {
@@ -1341,6 +1466,9 @@ async function init() {
 window.addEventListener('beforeunload', () => {
     if (state.diagnosticsInterval) {
         clearInterval(state.diagnosticsInterval);
+    }
+    if (state.dbQueriesInterval) {
+        clearInterval(state.dbQueriesInterval);
     }
 });
 
