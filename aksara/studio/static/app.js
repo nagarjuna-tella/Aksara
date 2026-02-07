@@ -20,6 +20,11 @@ const state = {
     currentSection: 'overview',
     isConnected: false,
     diagnosticsInterval: null,
+    // v0.5.17: Diagnostics 2.0 state
+    diagnosticsReport: null,
+    diagnosticsLive: true,
+    diagnosticsFilter: 'all',
+    diagnosticsSearchQuery: '',
     // v0.5.4: AI Helpers state
     aiContext: null,
     aiSchemas: null,
@@ -153,11 +158,35 @@ function initNavigation() {
     document.addEventListener('keydown', (e) => {
         // Ignore when typing in inputs / textareas / selects
         const tag = e.target.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) {
+            // v0.5.17: Escape clears and blurs search inputs
+            if (e.key === 'Escape') {
+                e.target.value = '';
+                e.target.dispatchEvent(new Event('input'));
+                e.target.blur();
+            }
+            return;
+        }
         const section = sectionKeys[e.code];
         if (section) {
             e.preventDefault();
             navigateTo(section);
+            return;
+        }
+        // v0.5.17: 'd' key navigates to diagnostics
+        if (e.key === 'd' || e.key === 'D') {
+            e.preventDefault();
+            navigateTo('diagnostics');
+            return;
+        }
+        // v0.5.17: '/' key focuses the diagnostics search input (if visible)
+        if (e.key === '/') {
+            const searchInput = document.getElementById('diag-search')
+                || document.getElementById('mig-search');
+            if (searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
         }
     });
 }
@@ -190,6 +219,11 @@ function stopSectionTimers() {
         state.dbQueriesInterval = null;
     }
     state.dbQueriesLive = false;
+    // v0.5.17: Stop diagnostics auto-refresh
+    if (state.diagnosticsInterval) {
+        clearInterval(state.diagnosticsInterval);
+        state.diagnosticsInterval = null;
+    }
 }
 
 // =============================================================================
@@ -551,66 +585,149 @@ function filterMigrationApps() {
 }
 
 // =============================================================================
-// Diagnostics Section
+// Diagnostics Section (v0.5.17: Diagnostics 2.0)
 // =============================================================================
 
 function renderDiagnostics() {
-    updateDiagnosticsData();
-    
-    // Set up auto-refresh
-    if (state.diagnosticsInterval) {
-        clearInterval(state.diagnosticsInterval);
+    fetchAndRenderDiagnostics();
+
+    // Auto-refresh every 10 seconds (Live mode)
+    state.diagnosticsLive = true;
+    if (state.diagnosticsInterval) clearInterval(state.diagnosticsInterval);
+    state.diagnosticsInterval = setInterval(() => {
+        if (state.diagnosticsLive) fetchAndRenderDiagnostics();
+    }, 10000);
+
+    // Live toggle
+    const liveBtn = document.getElementById('diag-live-btn');
+    if (liveBtn) {
+        liveBtn.classList.add('btn-live-active');
+        liveBtn.textContent = 'Live';
+        liveBtn.addEventListener('click', () => {
+            state.diagnosticsLive = !state.diagnosticsLive;
+            liveBtn.classList.toggle('btn-live-active', state.diagnosticsLive);
+            liveBtn.textContent = state.diagnosticsLive ? 'Live' : 'Paused';
+        });
     }
-    state.diagnosticsInterval = setInterval(fetchAndUpdateDiagnostics, 5000);
-    
-    // Manual refresh button
-    const refreshBtn = document.getElementById('refresh-diagnostics');
+
+    // Refresh Now
+    const refreshBtn = document.getElementById('diag-refresh-btn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', fetchAndUpdateDiagnostics);
+        refreshBtn.addEventListener('click', fetchAndRenderDiagnostics);
+    }
+
+    // Severity filter buttons
+    document.querySelectorAll('.diag-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.diag-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.diagnosticsFilter = btn.dataset.filter;
+            renderDiagnosticsIssues();
+        });
+    });
+
+    // Search input
+    const searchInput = document.getElementById('diag-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            state.diagnosticsSearchQuery = e.target.value.toLowerCase();
+            renderDiagnosticsIssues();
+        });
     }
 }
 
-async function fetchAndUpdateDiagnostics() {
+async function fetchAndRenderDiagnostics() {
     try {
-        state.runtimeInfo = await jsonGet('/studio/runtime/info');
-        updateDiagnosticsData();
+        state.diagnosticsReport = await jsonGet('/studio/diagnostics');
+        updateDiagnosticsSummary();
+        renderDiagnosticsIssues();
     } catch (err) {
         console.error('Failed to fetch diagnostics:', err);
+        const list = document.getElementById('diag-issues-list');
+        if (list) list.innerHTML = '<div class="empty-state">Failed to load diagnostics</div>';
     }
 }
 
-function updateDiagnosticsData() {
-    const info = state.runtimeInfo;
-    if (!info) return;
-    
-    setText('diag-pid', info.pid ?? '-');
-    setText('diag-start-time', formatDateTime(info.start_time));
-    setText('diag-uptime', formatUptime(info.uptime_seconds));
-    
-    const dbStatus = document.getElementById('diag-db-status');
-    if (dbStatus) {
-        const status = info.database_status || 'disconnected';
-        dbStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-        dbStatus.className = `status ${status === 'ok' ? 'ok' : status === 'degraded' ? 'warning' : 'error'}`;
+function updateDiagnosticsSummary() {
+    const r = state.diagnosticsReport;
+    if (!r) return;
+
+    const status = r.stats.errors > 0 ? 'error' : (r.stats.warnings > 0 ? 'warning' : 'ok');
+    const statusLabels = { ok: 'All Clear', warning: 'Warnings Found', error: 'Issues Detected' };
+
+    const icon = document.getElementById('diag-status-icon');
+    const label = document.getElementById('diag-status-label');
+    const banner = document.getElementById('diag-summary-banner');
+
+    if (icon) icon.className = 'diag-status-icon diag-' + status;
+    if (label) label.textContent = statusLabels[status] || status;
+    if (banner) banner.className = 'diag-summary-banner diag-banner-' + status;
+
+    setText('diag-count-errors', (r.stats.errors || 0) + ' error' + (r.stats.errors !== 1 ? 's' : ''));
+    setText('diag-count-warnings', (r.stats.warnings || 0) + ' warning' + (r.stats.warnings !== 1 ? 's' : ''));
+    setText('diag-count-info', (r.stats.info || 0) + ' info');
+
+    setText('diag-duration', r.duration_ms ? r.duration_ms.toFixed(0) + ' ms' : '-');
+
+    if (r.system) {
+        const sys = r.system;
+        setText('diag-system-info', `Aksara ${sys.aksara_version || '?'} · Python ${sys.python_version || '?'} · ${sys.os || '?'}`);
     }
-    
-    setText('diag-pending-mig', info.pending_migrations ?? '-');
-    
-    const studioEnabled = document.getElementById('diag-studio-enabled');
-    if (studioEnabled) {
-        studioEnabled.textContent = info.studio_enabled ? 'Yes' : 'No';
-        studioEnabled.className = info.studio_enabled ? 'status ok' : 'status warning';
+}
+
+function renderDiagnosticsIssues() {
+    const list = document.getElementById('diag-issues-list');
+    if (!list) return;
+
+    const r = state.diagnosticsReport;
+    if (!r || !r.issues) {
+        list.innerHTML = '<div class="empty-state">No diagnostics data</div>';
+        return;
     }
-    
-    setText('diag-studio-path', info.studio_base_path || '/studio');
-    
-    // Installed apps
-    const appsList = document.getElementById('diag-apps-list');
-    if (appsList && info.installed_apps && info.installed_apps.length > 0) {
-        appsList.innerHTML = info.installed_apps.map(app => 
-            `<span class="app-badge">${escapeHtml(app)}</span>`
-        ).join('');
+
+    let issues = r.issues;
+
+    // Filter by severity
+    if (state.diagnosticsFilter !== 'all') {
+        issues = issues.filter(i => i.severity === state.diagnosticsFilter);
     }
+
+    // Search filter
+    if (state.diagnosticsSearchQuery) {
+        const q = state.diagnosticsSearchQuery;
+        issues = issues.filter(i =>
+            (i.title && i.title.toLowerCase().includes(q)) ||
+            (i.message && i.message.toLowerCase().includes(q)) ||
+            (i.kind && i.kind.toLowerCase().includes(q)) ||
+            (i.hint && i.hint.toLowerCase().includes(q))
+        );
+    }
+
+    if (issues.length === 0) {
+        const isFiltered = state.diagnosticsFilter !== 'all' || state.diagnosticsSearchQuery;
+        list.innerHTML = isFiltered
+            ? '<div class="empty-state">No matching issues</div>'
+            : '<div class="empty-state diag-all-clear">No issues found &mdash; everything looks good!</div>';
+        return;
+    }
+
+    list.innerHTML = issues.map(issue => {
+        const sevClass = 'diag-sev-' + issue.severity;
+        const kindLabel = (issue.kind || 'general').replace(/_/g, ' ');
+        const hintHtml = issue.hint
+            ? `<div class="diag-issue-hint"><strong>Hint:</strong> ${escapeHtml(issue.hint)}</div>`
+            : '';
+        return `
+            <div class="diag-issue-card ${sevClass}">
+                <div class="diag-issue-header">
+                    <span class="diag-sev-badge ${sevClass}">${escapeHtml(issue.severity)}</span>
+                    <span class="diag-kind-badge">${escapeHtml(kindLabel)}</span>
+                    <strong class="diag-issue-title">${escapeHtml(issue.title)}</strong>
+                </div>
+                <div class="diag-issue-message">${escapeHtml(issue.message)}</div>
+                ${hintHtml}
+            </div>`;
+    }).join('');
 }
 
 // =============================================================================

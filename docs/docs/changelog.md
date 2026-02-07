@@ -4,6 +4,33 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.17] — 2026-02-14
+
+### Added
+- **Self-Diagnostics & Doctor Mode**: Complete self-diagnostics engine
+  - **Core Engine** (`aksara/diagnostics.py`): Pydantic-based `DiagnosticIssue` and `DiagnosticReport` models with 8 checker functions covering database connectivity, migrations status, AI profiles, AI provider secrets, required settings, cache availability, file-system permissions, and security
+  - **Studio Endpoint**: `GET /studio/diagnostics` returns full `DiagnosticReport` JSON
+  - **Studio Diagnostics 2.0 Panel**: Summary banner with severity counts, issue cards with kind/severity badges and fix hints, category filters (All/Errors/Warnings/Info), search input, 10-second auto-refresh with Live/Paused toggle
+  - **Keyboard Shortcuts**: `d` navigates to Diagnostics, `/` focuses search, `Esc` clears and blurs search
+  - **CLI `aksara doctor`**: New command group with four subcommands:
+    - `doctor run` — Run all checks (pretty or `--format json`; exit code 0/1)
+    - `doctor summary` — Categorized issue counts table
+    - `doctor ai` — AI-specific checks only
+    - `doctor db` — Database-specific checks only
+  - **Documentation**: Full diagnostics guide with data models, CI/CD integration, keyboard shortcuts
+
+### Changed
+- CLI version bumped to 0.5.17
+- Studio app.js version header updated to v0.5.17
+- Diagnostics panel upgraded from basic runtime info to full self-diagnostics engine
+
+### Technical Notes
+- **No breaking changes**: All existing Studio API endpoints unchanged
+- **No new dependencies**: Zero-build vanilla JS maintained
+- **~100 new tests**: Model tests, checker tests, CLI tests, endpoint tests, UI smoke tests
+
+---
+
 ## [0.5.16] — 2026-02-13
 
 ### Added

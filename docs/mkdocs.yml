@@ -83,6 +83,7 @@ nav:
       - Error Pages: debugging/error-pages.md
       - AI Debug: debugging/ai-debug.md
       - Observability: debugging/observability.md
+      - Diagnostics & Doctor: diagnostics.md
   - AI Mode:
       - ai-mode/index.md
       - Overview: ai-mode/overview.md

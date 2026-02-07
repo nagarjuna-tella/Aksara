@@ -39,6 +39,9 @@ v0.5.12 Additions:
 
 v0.5.13 Additions:
 - GET /studio/ai/hints - Per-route AI hints for LLM guidance
+
+v0.5.17 Additions:
+- GET /studio/diagnostics - Full self-diagnostics report
 """
 
 from __future__ import annotations
@@ -96,6 +99,7 @@ from aksara.studio.utils import (
     # v0.5.13: AI Hints utils
     build_ai_hints,
 )
+from aksara.diagnostics import DiagnosticReport, run_all_checks
 
 # v0.5.3: Static files directory
 STATIC_DIR = Path(__file__).parent / "static"
@@ -884,6 +888,31 @@ async def studio_ai_hints(request: Request) -> StudioAiHintSet:
         }
     """
     return build_ai_hints(request.app)
+
+
+# =============================================================================
+# v0.5.17: Diagnostics Endpoint
+# =============================================================================
+
+
+@router.get("/studio/diagnostics", response_model=DiagnosticReport)
+async def studio_diagnostics(request: Request) -> DiagnosticReport:
+    """
+    Full self-diagnostics report.
+
+    v0.5.17: Runs all diagnostic checks and returns a comprehensive report
+    covering database connectivity, migrations, AI profiles, settings,
+    security, file-system, and cache.
+
+    Returns:
+        DiagnosticReport with:
+        - issues: List of DiagnosticIssue (sorted by severity)
+        - stats: {errors, warnings, info} counts
+        - timestamp: UTC timestamp of the check
+        - duration_ms: How long the check took
+        - system: {aksara_version, python_version, os, arch}
+    """
+    return await run_all_checks()
 
 
 # =============================================================================

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.16"
+CLI_VERSION = "0.5.17"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -3735,6 +3735,203 @@ def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool,
     
     click.echo("  \033[36mDocumentation:\033[0m")
     click.echo("    https://aksara.dev/ai-mode/bring-your-own-llm/")
+    click.echo()
+
+
+# =============================================================================
+# v0.5.17: Doctor — Self-Diagnostics CLI
+# =============================================================================
+
+
+@cli.group()
+def doctor():
+    """Self-diagnostics and health checks.
+
+    Runs comprehensive checks on your Aksara project including database
+    connectivity, migrations, AI providers, settings, security, and more.
+
+    v0.5.17: Doctor Mode
+    """
+    pass
+
+
+@doctor.command("run")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def doctor_run(output_format: str):
+    """Run all diagnostic checks.
+
+    Performs a comprehensive health check of your Aksara project.
+    Exit code 0 = all clear, exit code 1 = errors found.
+
+    Examples:
+        aksara doctor run
+        aksara doctor run --format json
+    """
+    import json as json_mod
+
+    async def _run():
+        from aksara.diagnostics import run_all_checks
+        return await run_all_checks()
+
+    report = asyncio.run(_run())
+
+    if output_format == "json":
+        click.echo(report.model_dump_json(indent=2))
+    else:
+        click.echo()
+        click.echo("  \033[33m⚡\033[0m \033[1mAksara Doctor\033[0m — Self-Diagnostics")
+        click.echo()
+
+        # Summary
+        status = report.overall_status
+        status_colors = {"ok": "\033[32m", "warning": "\033[33m", "error": "\033[31m"}
+        status_labels = {"ok": "ALL CLEAR", "warning": "WARNINGS", "error": "ERRORS FOUND"}
+        c = status_colors.get(status, "\033[0m")
+        click.echo(f"  Status: {c}{status_labels.get(status, status)}\033[0m")
+        click.echo(f"  Errors: {report.stats.get('errors', 0)}  Warnings: {report.stats.get('warnings', 0)}  Info: {report.stats.get('info', 0)}")
+        click.echo(f"  Duration: {report.duration_ms:.0f} ms")
+        click.echo()
+
+        if report.system:
+            s = report.system
+            click.echo(f"  System: Aksara {s.get('aksara_version', '?')} · Python {s.get('python_version', '?')} · {s.get('os', '?')}")
+            click.echo()
+
+        # Issues
+        severity_symbols = {"error": "\033[31m✗\033[0m", "warning": "\033[33m!\033[0m", "info": "\033[36m·\033[0m"}
+        for issue in report.issues:
+            sym = severity_symbols.get(issue.severity, "·")
+            click.echo(f"  {sym} [{issue.severity.upper():7s}] {issue.title}")
+            click.echo(f"            {issue.message}")
+            if issue.hint:
+                click.echo(f"            \033[90mHint: {issue.hint}\033[0m")
+            click.echo()
+
+        if not report.issues:
+            click.echo("  \033[32mNo issues found — everything looks good!\033[0m")
+            click.echo()
+
+    sys.exit(1 if report.has_errors else 0)
+
+
+@doctor.command("summary")
+def doctor_summary():
+    """Show categorized issue counts.
+
+    Quick overview of how many issues exist per category.
+
+    Example:
+        aksara doctor summary
+    """
+
+    async def _run():
+        from aksara.diagnostics import run_all_checks
+        return await run_all_checks()
+
+    report = asyncio.run(_run())
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Doctor Summary\033[0m")
+    click.echo()
+
+    # Group by kind
+    by_kind = {}
+    for issue in report.issues:
+        kind = issue.kind
+        by_kind.setdefault(kind, {"error": 0, "warning": 0, "info": 0})
+        by_kind[kind][issue.severity] += 1
+
+    if not by_kind:
+        click.echo("  \033[32mNo issues found — everything looks good!\033[0m")
+    else:
+        click.echo(f"  {'Category':<30s} {'Errors':>7s} {'Warns':>7s} {'Info':>7s}")
+        click.echo(f"  {'─' * 30} {'─' * 7} {'─' * 7} {'─' * 7}")
+        for kind, counts in sorted(by_kind.items()):
+            label = kind.replace("_", " ").title()
+            e = counts["error"]
+            w = counts["warning"]
+            i = counts["info"]
+            ec = f"\033[31m{e}\033[0m" if e else str(e)
+            wc = f"\033[33m{w}\033[0m" if w else str(w)
+            click.echo(f"  {label:<30s} {ec:>16s} {wc:>16s} {i:>7d}")
+
+    click.echo()
+    click.echo(f"  Total: {report.stats.get('errors', 0)} errors, {report.stats.get('warnings', 0)} warnings, {report.stats.get('info', 0)} info")
+    click.echo(f"  Duration: {report.duration_ms:.0f} ms")
+    click.echo()
+
+
+@doctor.command("ai")
+def doctor_ai():
+    """Run AI-specific diagnostic checks.
+
+    Checks AI profiles, provider secrets, and configuration.
+
+    Example:
+        aksara doctor ai
+    """
+
+    async def _run():
+        from aksara.diagnostics import check_ai_profiles, check_ai_provider_secrets
+        issues = []
+        issues.extend(await check_ai_profiles())
+        issues.extend(await check_ai_provider_secrets())
+        return issues
+
+    issues = asyncio.run(_run())
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Doctor — AI Checks\033[0m")
+    click.echo()
+
+    severity_symbols = {"error": "\033[31m✗\033[0m", "warning": "\033[33m!\033[0m", "info": "\033[36m·\033[0m"}
+    for issue in issues:
+        sym = severity_symbols.get(issue.severity, "·")
+        click.echo(f"  {sym} [{issue.severity.upper():7s}] {issue.title}")
+        click.echo(f"            {issue.message}")
+        if issue.hint:
+            click.echo(f"            \033[90mHint: {issue.hint}\033[0m")
+        click.echo()
+
+    if not issues:
+        click.echo("  \033[32mNo AI issues found.\033[0m")
+    click.echo()
+
+
+@doctor.command("db")
+def doctor_db():
+    """Run database-specific diagnostic checks.
+
+    Checks database connectivity, migrations, and schema.
+
+    Example:
+        aksara doctor db
+    """
+
+    async def _run():
+        from aksara.diagnostics import check_database_connectivity, check_migrations_status
+        issues = []
+        issues.extend(await check_database_connectivity())
+        issues.extend(await check_migrations_status())
+        return issues
+
+    issues = asyncio.run(_run())
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Doctor — Database Checks\033[0m")
+    click.echo()
+
+    severity_symbols = {"error": "\033[31m✗\033[0m", "warning": "\033[33m!\033[0m", "info": "\033[36m·\033[0m"}
+    for issue in issues:
+        sym = severity_symbols.get(issue.severity, "·")
+        click.echo(f"  {sym} [{issue.severity.upper():7s}] {issue.title}")
+        click.echo(f"            {issue.message}")
+        if issue.hint:
+            click.echo(f"            \033[90mHint: {issue.hint}\033[0m")
+        click.echo()
+
+    if not issues:
+        click.echo("  \033[32mNo database issues found.\033[0m")
     click.echo()
 
 

@@ -383,77 +383,46 @@
     <template id="template-diagnostics">
         <div class="section-header">
             <h1>Diagnostics</h1>
-            <p class="section-subtitle">Live runtime diagnostics and health monitoring</p>
+            <p class="section-subtitle">Self-diagnostics engine &mdash; health checks, security, and configuration</p>
         </div>
         
-        <div class="cards-grid">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Process Info</h3>
-                </div>
-                <div class="card-body">
-                    <div class="status-row">
-                        <span>PID</span>
-                        <code id="diag-pid">-</code>
-                    </div>
-                    <div class="status-row">
-                        <span>Start Time</span>
-                        <span id="diag-start-time">-</span>
-                    </div>
-                    <div class="status-row">
-                        <span>Uptime</span>
-                        <span id="diag-uptime">-</span>
-                    </div>
-                </div>
+        <!-- Summary Banner -->
+        <div class="diag-summary-banner" id="diag-summary-banner">
+            <div class="diag-summary-status" id="diag-summary-status">
+                <span class="diag-status-icon" id="diag-status-icon">&#9679;</span>
+                <span id="diag-status-label">Checking&hellip;</span>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h3>Database</h3>
-                </div>
-                <div class="card-body">
-                    <div class="status-row">
-                        <span>Status</span>
-                        <span class="status" id="diag-db-status">-</span>
-                    </div>
-                    <div class="status-row">
-                        <span>Pending Migrations</span>
-                        <span id="diag-pending-mig">-</span>
-                    </div>
-                </div>
+            <div class="diag-summary-counts">
+                <span class="diag-count error" id="diag-count-errors">0 errors</span>
+                <span class="diag-count warning" id="diag-count-warnings">0 warnings</span>
+                <span class="diag-count info" id="diag-count-info">0 info</span>
+            </div>
+            <div class="diag-summary-meta">
+                <span id="diag-duration">-</span>
+                <span id="diag-system-info">-</span>
             </div>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h3>Studio Configuration</h3>
+        <!-- Toolbar: filters + search + auto-refresh -->
+        <div class="diag-toolbar">
+            <div class="diag-filters">
+                <button class="diag-filter-btn active" data-filter="all">All</button>
+                <button class="diag-filter-btn" data-filter="error">Errors</button>
+                <button class="diag-filter-btn" data-filter="warning">Warnings</button>
+                <button class="diag-filter-btn" data-filter="info">Info</button>
             </div>
-            <div class="card-body">
-                <div class="status-row">
-                    <span>Enabled</span>
-                    <span class="status" id="diag-studio-enabled">-</span>
-                </div>
-                <div class="status-row">
-                    <span>Base Path</span>
-                    <code id="diag-studio-path">-</code>
-                </div>
+            <div class="diag-search-wrap">
+                <input type="text" id="diag-search" class="diag-search-input" placeholder="Search issues (press / to focus)">
             </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3>Installed Apps</h3>
-            </div>
-            <div class="card-body">
-                <div class="apps-badges" id="diag-apps-list">
-                    <span class="empty-state">No apps</span>
-                </div>
+            <div class="diag-controls">
+                <button id="diag-live-btn" class="btn btn-sm">Live</button>
+                <button id="diag-refresh-btn" class="btn btn-sm">Refresh Now</button>
             </div>
         </div>
         
-        <div class="refresh-info">
-            <span>Auto-refresh every 5 seconds</span>
-            <button id="refresh-diagnostics" class="btn btn-sm">Refresh Now</button>
+        <!-- Issue Cards -->
+        <div class="diag-issues-list" id="diag-issues-list">
+            <div class="empty-state">Loading diagnostics&hellip;</div>
         </div>
     </template>
     
