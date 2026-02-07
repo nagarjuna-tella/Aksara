@@ -4,6 +4,46 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.15] — 2026-02-13
+
+### Added
+- **"Hello World for Humans" DX Pass**: Documentation and discoverability improvements
+  - **Refreshed README.md**:
+    - Product-grade hero section with tagline
+    - Features at a Glance with 6 key bullet points
+    - 30-second Quickstart snippet
+    - Patterns & Examples overview table
+    - Clear status badge and version info
+    - Streamlined Contributing and License sections
+  
+  - **"Your First 10 Minutes" Tutorial** (`docs/getting-started/ten-minutes.md`):
+    - Step-by-step guide from install to running app
+    - Prerequisites table (Python 3.11+, PostgreSQL 14+)
+    - 8 clear steps: Install → Model → Admin → ViewSet → Register → Configure → Migrate/Run → Explore
+    - What's Next section linking to patterns and examples
+    - Common Questions FAQ
+  
+  - **"Choosing a Pattern" Guide** (`docs/getting-started/patterns.md`):
+    - Quick decision table for pattern selection
+    - Detailed sections for each pattern type
+    - Comparison table with features matrix
+    - Clear recommended paths based on use case
+  
+  - **Examples README** (`examples/README.md`):
+    - Quick overview table of all examples
+    - Detailed sections for: Blog, CRM, Multitenant, AI Providers, Basic App
+    - Running instructions for each example
+    - Contributing guidelines for new examples
+
+### Changed
+- CLI version bumped to 0.5.15
+- Updated mkdocs nav with new Getting Started entries
+
+### Technical Notes
+- **No runtime changes**: This is a docs-only release with no changes to core ORM, migrations, or Studio
+
+---
+
 ## [0.5.14] — 2026-02-13
 
 ### Added

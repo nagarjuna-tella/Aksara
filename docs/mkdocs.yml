@@ -43,6 +43,8 @@ nav:
   - Getting Started:
       - getting-started/index.md
       - Installation: getting-started/installation.md
+      - Your First 10 Minutes: getting-started/ten-minutes.md
+      - Choosing a Pattern: getting-started/patterns.md
       - Project Layout: getting-started/project-layout.md
       - Settings: getting-started/settings.md
       - First App: getting-started/first-app.md
