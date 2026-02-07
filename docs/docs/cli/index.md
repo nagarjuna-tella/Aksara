@@ -111,15 +111,15 @@ Migrations for 'blog':
 
 Options:
 ```bash
-aksara makemigrations --app blog        # Specific app
+aksara makemigrations --app app.models  # Specify models module
 aksara makemigrations --name add_slug   # Custom name
-aksara makemigrations --empty           # Empty migration
-aksara makemigrations --dry-run         # Preview only
+aksara makemigrations --output dir      # Custom output directory
+aksara makemigrations --stdout          # Preview to stdout
 ```
 
 ### migrate
 
-Apply pending migrations:
+Apply pending migrations from the project `migrations/` directory:
 
 ```bash
 aksara migrate
@@ -127,16 +127,16 @@ aksara migrate
 
 Output:
 ```
-Applying blog.0001_initial... OK
-Applying blog.0002_add_post_slug... OK
+Applying 0001_auto_initial... ✓ Applied successfully
+Applying 0002_auto_add_post_slug... ✓ Applied successfully
 ```
 
 Options:
 ```bash
-aksara migrate --app blog               # Specific app
-aksara migrate blog 0001                # Migrate to specific version
+aksara migrate --dry-run                # Preview without applying
 aksara migrate --fake                   # Mark as applied without running
-aksara migrate --plan                   # Show migration plan
+aksara migrate --migrations-dir dir     # Custom migrations directory
+aksara migrate --database-url URL       # Specify database
 ```
 
 ### shell

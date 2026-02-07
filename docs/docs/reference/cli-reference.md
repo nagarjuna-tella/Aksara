@@ -91,25 +91,26 @@ aksara makemigrations --check
 
 ### migrate
 
-Apply migrations.
+Apply migrations from the project-wide `migrations/` directory.
 
 ```bash
-aksara migrate [APP] [MIGRATION] [OPTIONS]
+aksara migrate [OPTIONS]
 ```
 
 | Option | Description |
 |--------|-------------|
+| `--database-url`, `-d` | PostgreSQL connection URL |
+| `--migrations-dir`, `-m` | Migrations directory (default: `./migrations`) |
+| `--dry-run` | Preview without applying |
 | `--fake` | Mark as applied without running |
-| `--list` | Show migration status |
-| `--plan` | Show migration plan |
 
 **Example:**
 
 ```bash
 aksara migrate
-aksara migrate users
-aksara migrate users 0005
-aksara migrate --list
+aksara migrate --dry-run
+aksara migrate --fake
+aksara migrate --migrations-dir custom_migrations
 ```
 
 ### dbshell

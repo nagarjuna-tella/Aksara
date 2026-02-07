@@ -6,15 +6,33 @@ Manage database schema changes with Aksara's migration system.
 
 ## Overview
 
-Aksara uses a Python-based migration system similar to Django's, with automatic change detection and conflict resolution:
+Aksara uses a **project-wide** migration system. All migrations live in a single `migrations/` directory at your project root, regardless of how many models or modules you have.
 
 ```bash
-# Create migrations for model changes
-aksara makemigrations
+# Create migrations from your models
+aksara makemigrations --app app.models
 
-# Apply migrations to database
+# Apply migrations to the database
 aksara migrate
 ```
+
+### Project Structure
+
+```
+myproject/
+├── main.py
+├── settings.py
+├── app/
+│   ├── models.py
+│   ├── views.py
+│   └── ...
+└── migrations/           # All migrations go here
+    ├── __init__.py
+    ├── 0001_auto_initial.py
+    └── 0002_auto_add_email_verification.py
+```
+
+The migrations directory is configured via `AKSARA_MIGRATIONS_DIR` in your `.env` or `settings.py` (default: `migrations`).
 
 ---
 
@@ -22,49 +40,57 @@ aksara migrate
 
 ### makemigrations
 
-Generate migration files from model changes:
+Generate migration files from your models:
 
 ```bash
-# Generate migrations for all apps
-aksara makemigrations
+# Scan models from a module and generate a migration
+aksara makemigrations --app app.models
 
-# Generate for specific app
-aksara makemigrations myapp
+# With a custom name
+aksara makemigrations --app app.models --name add_email_verification
 
-# With custom name
-aksara makemigrations --name add_email_verification
+# Output to a custom directory
+aksara makemigrations --app app.models --output my_migrations
+
+# Preview without writing (print to stdout)
+aksara makemigrations --app app.models --stdout
+
+# Generate legacy SQL format instead of Python
+aksara makemigrations --app app.models --sql
 ```
 
-This creates a migration file like:
+This creates a migration file in your `migrations/` directory:
 
 ```
-myapp/migrations/0002_add_email_verification.py
+migrations/0001_auto_add_email_verification.py
 ```
 
 ### Migration File Structure
 
 ```python
-"""Add email verification fields."""
+"""
+Migration: add_email_verification
+Generated: 2026-02-07T10:30:00
+"""
 
 from aksara.migrations import Migration
-from aksara.migrations.operations import AddField
-from aksara import fields
+from aksara.migrations import operations as op
 
 
 class Migration(Migration):
-    """Add email_verified and verification_token to User model."""
-    
-    dependencies = [
-        ("myapp", "0001_initial"),
-    ]
-    
+    """
+    Auto-generated migration for models: User
+    """
+
+    dependencies = []
+
     operations = [
-        AddField(
+        op.AddField(
             model_name="User",
             name="email_verified",
             field=fields.Boolean(default=False),
         ),
-        AddField(
+        op.AddField(
             model_name="User",
             name="verification_token",
             field=fields.String(max_length=100, nullable=True),
@@ -84,27 +110,31 @@ Apply pending migrations:
 # Apply all pending migrations
 aksara migrate
 
-# Apply migrations for specific app
-aksara migrate myapp
+# Specify a database URL
+aksara migrate --database-url postgresql://localhost/mydb
 
-# Migrate to specific migration
-aksara migrate myapp 0001_initial
+# Preview without applying
+aksara migrate --dry-run
 
-# Roll back all migrations for an app
-aksara migrate myapp zero
+# Mark migrations as applied without running SQL
+aksara migrate --fake
+
+# Use a custom migrations directory
+aksara migrate --migrations-dir my_migrations
 ```
 
 ### Check Migration Status
 
 ```bash
-# Show migration status
-aksara showmigrations
+aksara status
 
 # Output:
-# myapp
-#  [X] 0001_initial
-#  [X] 0002_add_email_verification
-#  [ ] 0003_add_avatar  # Not applied
+# 📁 Migrations directory: migrations
+# 📊 Applied migrations: 2
+#
+#  [X] 0001_auto_initial
+#  [X] 0002_auto_add_email_verification
+#  [ ] 0003_auto_add_avatar              # Not applied
 ```
 
 ---
@@ -291,21 +321,23 @@ Execute Python code during migration:
 from aksara.migrations import Migration
 from aksara.migrations.operations import RunPython
 
-def populate_slugs(apps, schema_editor):
-    """Generate slugs for existing posts."""
-    Post = apps.get_model("myapp", "Post")
-    for post in Post.objects.filter(slug__isnull=True):
-        post.slug = slugify(post.title)
-        post.save()
 
-def reverse_slugs(apps, schema_editor):
+async def populate_slugs(db):
+    """Generate slugs for existing posts."""
+    rows = await db.fetch("SELECT id, title FROM posts WHERE slug IS NULL")
+    for row in rows:
+        slug = row["title"].lower().replace(" ", "-")
+        await db.execute("UPDATE posts SET slug = $1 WHERE id = $2", slug, row["id"])
+
+
+async def reverse_slugs(db):
     """Reverse migration: clear slugs."""
-    Post = apps.get_model("myapp", "Post")
-    Post.objects.update(slug=None)
+    await db.execute("UPDATE posts SET slug = NULL")
+
 
 class Migration(Migration):
-    dependencies = [("myapp", "0002_add_slug")]
-    
+    dependencies = ["0002_auto_add_slug"]
+
     operations = [
         RunPython(populate_slugs, reverse_slugs),
     ]
@@ -330,88 +362,53 @@ RunSQL(
 
 ### Declaring Dependencies
 
+Migrations can declare dependencies on previous migrations to ensure correct ordering:
+
 ```python
 class Migration(Migration):
     dependencies = [
-        # Same app: previous migration
-        ("myapp", "0001_initial"),
-        
-        # Other app: specific migration
-        ("users", "0003_add_profile"),
+        "0001_auto_initial",
     ]
 ```
 
-### Cross-App Dependencies
-
-When models in different apps are related:
-
-```python
-# posts/migrations/0001_initial.py
-class Migration(Migration):
-    dependencies = [
-        # Ensure users app's User model exists
-        ("users", "0001_initial"),
-    ]
-    
-    operations = [
-        CreateTable(
-            name="posts",
-            fields=[
-                # ... other fields
-                ("author_id", fields.ForeignKey("users.User")),
-            ],
-        ),
-    ]
-```
+Dependencies are referenced by migration name (the filename stem). The migration executor builds a directed acyclic graph (DAG) from these dependencies and applies them in topological order.
 
 ---
 
 ## Conflict Detection
 
-Aksara automatically detects migration conflicts when multiple developers create migrations from the same base.
+Aksara detects migration conflicts when multiple developers create migrations from the same base.
 
 ### What is a Conflict?
 
 ```
-0001_initial
+0001_auto_initial
     │
-    ├── 0002_add_email (Developer A)
+    ├── 0002_auto_add_email (Developer A)
     │
-    └── 0002_add_phone (Developer B)  ← CONFLICT
-```
-
-### Detecting Conflicts
-
-```bash
-aksara makemigrations --check
-# Error: Conflicting migrations detected
+    └── 0002_auto_add_phone (Developer B)  ← CONFLICT: two heads
 ```
 
 ### Resolving Conflicts
 
-Option 1: **Merge migrations**
+Create a merge migration:
 
 ```bash
 aksara makemigrations --merge
-# Creates: 0003_merge_add_email_add_phone.py
 ```
 
-Option 2: **Renumber manually**
-
-Rename Developer B's migration to `0003_add_phone.py` and update its dependencies.
-
-### Merge Migration Example
+This creates an empty migration that depends on both heads, linearizing the history:
 
 ```python
-# 0003_merge_add_email_add_phone.py
+# 0003_merge.py
 class Migration(Migration):
     """Merge migration to resolve conflict."""
-    
+
     dependencies = [
-        ("myapp", "0002_add_email"),
-        ("myapp", "0002_add_phone"),
+        "0002_auto_add_email",
+        "0002_auto_add_phone",
     ]
-    
+
     operations = []  # Just resolves the dependency graph
 ```
 
@@ -431,79 +428,73 @@ AddField(model_name="User", name="avatar_url", ...)
 ### Name Migrations Descriptively
 
 ```bash
-aksara makemigrations --name add_user_profile_fields
-aksara makemigrations --name rename_username_to_handle
+aksara makemigrations --app app.models --name add_user_profile_fields
+aksara makemigrations --app app.models --name rename_username_to_handle
 ```
 
 ### Test Migrations
 
 ```python
-# In tests
-async def test_migration_0002():
+async def test_migration_applies():
+    """Verify migration creates the expected schema."""
     # Apply migration
-    await migrate("myapp", "0002")
-    
-    # Verify schema
+    await migrate()
+
+    # Verify schema via model
     user = await User.objects.create(email="test@example.com")
     assert user.email_verified == False
 ```
 
 ### Don't Edit Applied Migrations
 
-Once a migration is in production:
-- ❌ Don't modify it
-- ✅ Create a new migration for changes
+Once a migration has been applied to any environment:
 
-### Use Data Migrations Carefully
+- Don't modify it
+- Create a new migration for further changes
 
-```python
-# Include reverse operations
-RunPython(forward_func, reverse_func)
-
-# Handle empty tables
-def forward(apps, schema_editor):
-    Model = apps.get_model("myapp", "Model")
-    if Model.objects.exists():
-        # Only if there's data
-        ...
-```
-
----
-
-## Squashing Migrations
-
-Combine multiple migrations into one for a cleaner history:
+### Preview Before Applying
 
 ```bash
-aksara squashmigrations myapp 0001 0010
-# Creates: 0001_squashed_0010.py
+# See what will happen without changing the database
+aksara migrate --dry-run
 ```
-
-The squashed migration:
-- Combines all operations
-- Sets `replaces = [...]` to track original migrations
-- Works seamlessly with existing databases
 
 ---
 
 ## Migration Graph
 
-Aksara maintains a directed acyclic graph (DAG) of migrations:
+Aksara maintains a directed acyclic graph (DAG) of migrations to determine execution order:
+
+```
+0001_auto_initial
+│
+└── 0002_auto_add_email
+    │
+    ├── 0003_auto_add_profile
+    │
+    └── 0004_auto_add_avatar
+        │
+        └── 0005_auto_add_bio
+```
+
+The graph ensures migrations are applied in the correct order, even when dependencies branch and merge.
+
+---
+
+## Environment Configuration
+
+Configure the migrations directory in your `.env`:
 
 ```bash
-aksara showmigrations --graph
+# Default: migrations
+AKSARA_MIGRATIONS_DIR=migrations
+```
 
-# Output:
-# myapp
-#    0001_initial
-#    │
-#    └── 0002_add_email
-#        │
-#        ├── 0003_add_profile
-#        │
-#        └── 0004_add_avatar
-#            │
-#            └── 0005_add_bio
+Or override per-command:
+
+```bash
+aksara makemigrations --app app.models --output custom_migrations
+aksara migrate --migrations-dir custom_migrations
 ```
 
 ---
@@ -513,8 +504,8 @@ aksara showmigrations --graph
 ### Migration Not Detected
 
 ```bash
-# Force detection
-aksara makemigrations --force
+# Make sure you specify the models module
+aksara makemigrations --app app.models
 
 # Check model registration
 aksara info --models
@@ -523,21 +514,18 @@ aksara info --models
 ### Migration Fails to Apply
 
 ```bash
-# Show SQL without applying
-aksara sqlmigrate myapp 0002
+# Preview the migration operations
+aksara migrate --dry-run
 
-# Apply with verbose output
-aksara migrate --verbosity=2
+# Check what's already applied
+aksara status
 ```
 
 ### Database Out of Sync
 
 ```bash
-# Fake a migration (mark as applied without running)
-aksara migrate --fake myapp 0002
-
-# Fake initial migration
-aksara migrate --fake-initial myapp
+# Mark a migration as applied without running it
+aksara migrate --fake
 ```
 
 ---
@@ -547,7 +535,7 @@ aksara migrate --fake-initial myapp
 A full migration workflow:
 
 ```python
-# 1. models.py - Add new field
+# 1. app/models.py — Add new field
 class User(Model):
     email = fields.Email(unique=True)
     name = fields.String(max_length=100)
@@ -556,22 +544,22 @@ class User(Model):
 
 ```bash
 # 2. Generate migration
-aksara makemigrations --name add_avatar_url
-# Created: myapp/migrations/0005_add_avatar_url.py
+aksara makemigrations --app app.models --name add_avatar_url
+# Created: migrations/0005_auto_add_avatar_url.py
 ```
 
 ```python
 # 3. Review generated migration
-# myapp/migrations/0005_add_avatar_url.py
+# migrations/0005_auto_add_avatar_url.py
 from aksara.migrations import Migration
-from aksara.migrations.operations import AddField
+from aksara.migrations import operations as op
 from aksara import fields
 
 class Migration(Migration):
-    dependencies = [("myapp", "0004_add_bio")]
-    
+    dependencies = ["0004_auto_add_bio"]
+
     operations = [
-        AddField(
+        op.AddField(
             model_name="User",
             name="avatar_url",
             field=fields.URL(nullable=True),
@@ -584,13 +572,13 @@ class Migration(Migration):
 aksara migrate
 
 # Output:
-# Applying myapp.0005_add_avatar_url... OK
+# Applying 0005_auto_add_avatar_url... ✓ Applied successfully
 ```
 
 ```bash
 # 5. Verify
-aksara showmigrations myapp
-# [X] 0005_add_avatar_url
+aksara status
+# [X] 0005_auto_add_avatar_url
 ```
 
 ---
@@ -599,4 +587,4 @@ aksara showmigrations myapp
 
 - [Models](models.md) — Model definition
 - [Fields](fields.md) — Field types
-- [CLI Reference](../cli/commands.md) — Migration commands
+- [CLI Reference](../cli/index.md) — All CLI commands

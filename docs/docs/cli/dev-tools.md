@@ -319,35 +319,34 @@ aksara watch \
 
 ## Database Tools
 
-### Show Migrations
+### Show Migration Status
 
 ```bash
-aksara showmigrations
+aksara status
 ```
 
 Output:
 ```
-blog
-  [X] 0001_initial
-  [X] 0002_add_post_slug
-  [ ] 0003_add_post_views
+📁 Migrations directory: migrations
+📊 Applied migrations: 2
 
-users
-  [X] 0001_initial
+  [X] 0001_auto_initial
+  [X] 0002_auto_add_post_slug
+  [ ] 0003_auto_add_post_views
 ```
 
 ---
 
-### SQL for Migration
+### Preview Migration
 
 ```bash
-aksara sqlmigrate blog 0002
+aksara migrate --dry-run
 ```
 
 Output:
-```sql
-BEGIN;
-ALTER TABLE blog_post ADD COLUMN slug VARCHAR(200) NOT NULL;
+```
+[DRY RUN] Would apply: 0003_auto_add_post_views
+    → AddField post.views Integer
 CREATE INDEX blog_post_slug ON blog_post(slug);
 COMMIT;
 ```

@@ -93,40 +93,34 @@ aksara makemigrations --check
 
 ### migrate
 
-Apply database migrations.
+Apply database migrations from the project-wide `migrations/` directory.
 
 ```bash
-aksara migrate [app] [migration] [options]
+aksara migrate [options]
 ```
-
-**Arguments:**
-- `app` — App name (optional)
-- `migration` — Target migration name/number (optional)
 
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
+| `--app`, `-a` | Models module to discover | auto |
+| `--database-url`, `-d` | PostgreSQL connection URL | `DATABASE_URL` env |
+| `--migrations-dir`, `-m` | Migrations directory | `./migrations` |
+| `--dry-run` | Preview without applying | `false` |
 | `--fake` | Mark as applied without running | `false` |
-| `--fake-initial` | Fake initial migrations if tables exist | `false` |
-| `--plan` | Show migration plan | `false` |
-| `--database` | Database alias | `default` |
 
 **Examples:**
 ```bash
 # Apply all pending migrations
 aksara migrate
 
-# Migrate specific app
-aksara migrate blog
+# Preview what would be applied
+aksara migrate --dry-run
 
-# Migrate to specific version
-aksara migrate blog 0003
+# Mark as applied without running SQL
+aksara migrate --fake
 
-# Rollback to zero
-aksara migrate blog zero
-
-# Show plan without applying
-aksara migrate --plan
+# Use a custom migrations directory
+aksara migrate --migrations-dir custom_migrations
 ```
 
 ---
