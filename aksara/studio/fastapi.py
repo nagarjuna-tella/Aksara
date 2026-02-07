@@ -25,6 +25,10 @@ v0.5.4 Additions:
 - GET /studio/ai/context - AI context export for external AI tools
 - GET /studio/ai/schemas - JSON schemas for AI operations
 - GET /studio/ai/prompts - Prompt templates for AI interactions
+
+v0.5.10 Additions:
+- GET /studio/db/queries - Query inspector with stats and recent batches
+- GET /studio/db/queries/{request_id} - Detailed query batch for a request
 """
 
 from __future__ import annotations
@@ -48,6 +52,9 @@ from aksara.studio.models import (
     StudioAiContextExport,
     StudioAiSchemas,
     StudioAiPrompts,
+    # v0.5.10: Query Inspector models
+    StudioQueryInspector,
+    StudioQueryBatch,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -61,6 +68,9 @@ from aksara.studio.utils import (
     build_ai_context_export,
     build_ai_schemas,
     build_ai_prompts,
+    # v0.5.10: Query Inspector utils
+    build_query_inspector,
+    build_query_batch_detail,
 )
 
 # v0.5.3: Static files directory
@@ -538,6 +548,136 @@ async def studio_ai_prompts(request: Request) -> StudioAiPrompts:
         }
     """
     return build_ai_prompts()
+
+
+# =============================================================================
+# v0.5.10: Query Inspector & Profiler Endpoints
+# =============================================================================
+
+@router.get("/studio/db/queries", response_model=StudioQueryInspector)
+async def studio_db_queries(
+    request: Request,
+    include_queries: bool = False,
+    limit_batches: int = 20,
+    limit_slow: int = 20,
+) -> StudioQueryInspector:
+    """
+    Query inspector endpoint for database profiling.
+    
+    v0.5.10: Returns query tracing stats, recent request batches, and slow queries.
+    
+    Args:
+        include_queries: Include full query lists in batches (default: False)
+        limit_batches: Max recent batches to return (default: 20)
+        limit_slow: Max slow queries to return (default: 20)
+        
+    Returns:
+        StudioQueryInspector with:
+        - enabled: Whether tracing is currently enabled
+        - slow_threshold_ms: Current slow query threshold
+        - stats: Aggregate statistics
+        - recent_batches: Recent request query batches
+        - top_slow_queries: Slowest queries across all batches
+    
+    Example response:
+        {
+            "enabled": true,
+            "slow_threshold_ms": 100.0,
+            "stats": {
+                "total_batches": 42,
+                "total_queries": 187,
+                "avg_queries_per_request": 4.45,
+                "total_slow_queries": 3,
+                "requests_with_slow_queries": 2,
+                "requests_with_n_plus_one": 1
+            },
+            "recent_batches": [
+                {
+                    "request_id": "abc123",
+                    "path": "/api/users",
+                    "method": "GET",
+                    "status_code": 200,
+                    "total_duration_ms": 45.2,
+                    "total_queries": 3,
+                    "slow_queries": 0,
+                    "n_plus_one_suspicions": []
+                }
+            ],
+            "top_slow_queries": [
+                {
+                    "sql": "SELECT * FROM users WHERE ...",
+                    "duration_ms": 152.3,
+                    "operation": "SELECT",
+                    "table": "users",
+                    "is_slow": true
+                }
+            ]
+        }
+    
+    Notes:
+        - Requires db_trace_enabled=True in settings
+        - Recent batches are stored in a ring buffer (last 100 requests)
+        - Use include_queries=true to get full query lists (larger response)
+    """
+    return build_query_inspector(
+        include_queries=include_queries,
+        limit_batches=limit_batches,
+        limit_slow=limit_slow,
+    )
+
+
+@router.get("/studio/db/queries/{request_id}", response_model=StudioQueryBatch)
+async def studio_db_query_detail(
+    request: Request,
+    request_id: str,
+) -> StudioQueryBatch:
+    """
+    Get detailed query batch for a specific request.
+    
+    v0.5.10: Returns full query list for a single request.
+    
+    Args:
+        request_id: The request ID to look up
+        
+    Returns:
+        StudioQueryBatch with full query list
+        
+    Raises:
+        404 if request_id not found in trace storage
+    
+    Example response:
+        {
+            "request_id": "abc123",
+            "path": "/api/users/1",
+            "method": "GET",
+            "status_code": 200,
+            "started_at": "2024-01-15T10:30:00Z",
+            "ended_at": "2024-01-15T10:30:00.045Z",
+            "total_duration_ms": 45.2,
+            "total_queries": 3,
+            "slow_queries": 0,
+            "n_plus_one_suspicions": [],
+            "queries": [
+                {
+                    "sql": "SELECT * FROM users WHERE id = $1",
+                    "params": [1],
+                    "duration_ms": 12.5,
+                    "operation": "SELECT",
+                    "table": "users",
+                    "timestamp": "2024-01-15T10:30:00.010Z",
+                    "stack_summary": "views.py:42:get_user",
+                    "is_slow": false
+                }
+            ]
+        }
+    """
+    batch = build_query_batch_detail(request_id)
+    if batch is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No trace found for request_id: {request_id}",
+        )
+    return batch
 
 
 # =============================================================================

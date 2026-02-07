@@ -59,6 +59,8 @@ class QueryLogger:
         with QueryLogger(query, params) as ql:
             result = await db.fetch(query, *params)
         # Logs: QUERY (12.3ms): SELECT ... ; params: [...]
+    
+    v0.5.10: Also records to query tracing if enabled.
     """
     
     def __init__(
@@ -67,9 +69,13 @@ class QueryLogger:
         params: Optional[tuple] = None,
         *,
         enabled: Optional[bool] = None,
+        rows_affected: Optional[int] = None,
+        tags: Optional[list] = None,
     ):
         self.query = query
         self.params = params
+        self.rows_affected = rows_affected
+        self.tags = tags or []
         self.start_time: Optional[float] = None
         self.duration_ms: Optional[float] = None
         
@@ -81,18 +87,19 @@ class QueryLogger:
             self.enabled = enabled
     
     def __enter__(self) -> "QueryLogger":
-        if self.enabled:
-            self.start_time = time.perf_counter()
+        self.start_time = time.perf_counter()
         return self
     
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        if not self.enabled:
-            return
-        
         if self.start_time is not None:
             self.duration_ms = (time.perf_counter() - self.start_time) * 1000
         
-        self._log_query(exc_val)
+        # Log to console if debug is enabled
+        if self.enabled:
+            self._log_query(exc_val)
+        
+        # v0.5.10: Record to query tracing if enabled
+        self._record_trace()
     
     def _log_query(self, error: Optional[Exception] = None) -> None:
         """Log the query with timing information."""
@@ -125,6 +132,25 @@ class QueryLogger:
             logger.error(f"QUERY FAILED {timing}{query_display}{params_display} | Error: {error}")
         else:
             logger.debug(f"QUERY {timing}{query_display}{params_display}")
+    
+    def _record_trace(self) -> None:
+        """Record query to tracing system if enabled (v0.5.10)."""
+        try:
+            from aksara.db.tracing import is_tracing_enabled, record_query
+            
+            if not is_tracing_enabled():
+                return
+            
+            record_query(
+                sql=self.query,
+                params=self.params,
+                duration_ms=self.duration_ms or 0.0,
+                rows_affected=self.rows_affected,
+                tags=self.tags,
+            )
+        except ImportError:
+            # Tracing module not available
+            pass
 
 
 @contextmanager

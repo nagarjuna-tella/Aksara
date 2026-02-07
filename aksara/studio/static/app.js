@@ -25,6 +25,8 @@ const state = {
     aiSchemas: null,
     aiPrompts: null,
     currentSchemaTab: 'plan',
+    // v0.5.10: DB Queries state
+    dbQueries: null,
 };
 
 // =============================================================================
@@ -186,6 +188,9 @@ function renderSection(section) {
             break;
         case 'ai-helpers':
             renderAiHelpers();
+            break;
+        case 'db-queries':
+            renderDbQueries();
             break;
     }
 }
@@ -756,6 +761,117 @@ function formatDateTime(isoString) {
     } catch {
         return isoString;
     }
+}
+
+// =============================================================================
+// v0.5.10: DB & Queries Section
+// =============================================================================
+
+async function renderDbQueries() {
+    // Initial render with empty state
+    const refreshBtn = document.getElementById('refresh-db-queries');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => loadDbQueries());
+    }
+    
+    // Load data
+    await loadDbQueries();
+}
+
+async function loadDbQueries() {
+    try {
+        state.dbQueries = await jsonGet('/studio/db/queries');
+        renderDbQueriesData();
+    } catch (err) {
+        console.error('Failed to load DB queries:', err);
+        showToast('Failed to load query data', 'error');
+    }
+}
+
+function renderDbQueriesData() {
+    const data = state.dbQueries;
+    if (!data) return;
+    
+    // Show/hide disabled banner
+    const disabledBanner = document.getElementById('tracing-disabled-banner');
+    if (disabledBanner) {
+        disabledBanner.classList.toggle('hidden', data.enabled);
+    }
+    
+    // Update stats
+    setText('db-total-queries', data.stats?.total_queries ?? '-');
+    setText('db-avg-queries', data.stats?.avg_queries_per_request?.toFixed(2) ?? '-');
+    setText('db-slow-queries', data.stats?.total_slow_queries ?? '0');
+    setText('db-n1-count', data.stats?.requests_with_n_plus_one ?? '0');
+    
+    // Update threshold badge
+    const thresholdBadge = document.getElementById('slow-threshold-badge');
+    if (thresholdBadge) {
+        thresholdBadge.textContent = `Threshold: ${data.slow_threshold_ms}ms`;
+    }
+    
+    // Render slow queries
+    const slowList = document.getElementById('slow-queries-list');
+    if (slowList) {
+        const slowQueries = data.top_slow_queries || [];
+        if (slowQueries.length === 0) {
+            slowList.innerHTML = '<div class="empty-state"><p>No slow queries recorded</p></div>';
+        } else {
+            slowList.innerHTML = slowQueries.slice(0, 10).map(q => `
+                <div class="query-item slow">
+                    <div class="query-header">
+                        <span class="query-operation ${q.operation.toLowerCase()}">${escapeHtml(q.operation)}</span>
+                        <span class="query-table">${escapeHtml(q.table || 'unknown')}</span>
+                        <span class="query-duration">${q.duration_ms.toFixed(2)}ms</span>
+                    </div>
+                    <pre class="query-sql">${escapeHtml(truncateSql(q.sql))}</pre>
+                    ${q.stack_summary ? `<div class="query-stack">${escapeHtml(q.stack_summary)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+    }
+    
+    // Render recent requests
+    const requestsList = document.getElementById('recent-requests-list');
+    if (requestsList) {
+        const batches = data.recent_batches || [];
+        if (batches.length === 0) {
+            requestsList.innerHTML = '<div class="empty-state"><p>No requests recorded yet</p></div>';
+        } else {
+            requestsList.innerHTML = batches.map(batch => {
+                const statusClass = batch.status_code >= 400 ? 'error' : batch.status_code >= 300 ? 'warning' : 'ok';
+                const hasWarnings = batch.slow_queries > 0 || batch.n_plus_one_suspicions?.length > 0;
+                
+                return `
+                <div class="request-item ${hasWarnings ? 'has-warnings' : ''}">
+                    <div class="request-header">
+                        <span class="request-method ${(batch.method || '').toLowerCase()}">${escapeHtml(batch.method || '-')}</span>
+                        <span class="request-path">${escapeHtml(batch.path || '/')}</span>
+                        <span class="request-status status-${statusClass}">${batch.status_code || '-'}</span>
+                    </div>
+                    <div class="request-stats">
+                        <span class="request-queries">${batch.total_queries} queries</span>
+                        <span class="request-duration">${batch.total_duration_ms.toFixed(2)}ms</span>
+                        ${batch.slow_queries > 0 ? `<span class="request-slow">⚠️ ${batch.slow_queries} slow</span>` : ''}
+                        ${batch.n_plus_one_suspicions?.length > 0 ? `<span class="request-n1">🔄 N+1</span>` : ''}
+                    </div>
+                    ${batch.n_plus_one_suspicions?.length > 0 ? `
+                        <div class="request-warnings">
+                            ${batch.n_plus_one_suspicions.map(w => `<div class="warning-item">${escapeHtml(w)}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            }).join('');
+        }
+    }
+}
+
+function truncateSql(sql) {
+    if (!sql) return '';
+    const maxLen = 200;
+    if (sql.length <= maxLen) return sql;
+    return sql.substring(0, maxLen) + '...';
 }
 
 // =============================================================================

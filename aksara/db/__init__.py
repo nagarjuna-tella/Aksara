@@ -13,6 +13,20 @@ from aksara.db.debug import (
     get_active_query_log,
     log_query,
 )
+from aksara.db.tracing import (
+    DbQueryTrace,
+    DbQueryBatch,
+    start_trace_session,
+    stop_trace_session,
+    record_query,
+    get_current_trace_session,
+    get_recent_traces,
+    get_trace_by_request_id,
+    get_trace_stats,
+    get_top_slow_queries,
+    clear_traces,
+    is_tracing_enabled,
+)
 
 
 def quote_identifier(name: str) -> str:
@@ -45,4 +59,17 @@ __all__ = [
     "log_query",
     # SQL utilities
     "quote_identifier",
+    # v0.5.10: Query tracing
+    "DbQueryTrace",
+    "DbQueryBatch",
+    "start_trace_session",
+    "stop_trace_session",
+    "record_query",
+    "get_current_trace_session",
+    "get_recent_traces",
+    "get_trace_by_request_id",
+    "get_trace_stats",
+    "get_top_slow_queries",
+    "clear_traces",
+    "is_tracing_enabled",
 ]

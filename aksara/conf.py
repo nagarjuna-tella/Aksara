@@ -94,6 +94,11 @@ class Settings:
     studio_ui_auto_open: bool = False  # Auto-open UI on server start (future)
     studio_ui_title: str = "Aksara Studio"  # Customizable UI title
     
+    # v0.5.10: DB Query Tracing (Query Inspector & ORM Profiler)
+    db_trace_enabled: bool = False  # Enable per-request query tracing
+    db_trace_slow_threshold_ms: float = 100.0  # Threshold for "slow" query (ms)
+    db_trace_max_queries: int = 500  # Max queries to capture per request
+    
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     
@@ -177,6 +182,24 @@ class Settings:
         env_origins = os.environ.get("AKSARA_STUDIO_ALLOWED_ORIGINS")
         if env_origins:
             self.studio_allowed_origins = [o.strip() for o in env_origins.split(",")]
+        
+        # v0.5.10: DB Query Tracing
+        if not self.db_trace_enabled:
+            self.db_trace_enabled = _get_bool_env("AKSARA_DB_TRACE_ENABLED", False)
+        
+        env_slow_threshold = os.environ.get("AKSARA_DB_TRACE_SLOW_THRESHOLD_MS")
+        if env_slow_threshold:
+            try:
+                self.db_trace_slow_threshold_ms = float(env_slow_threshold)
+            except ValueError:
+                pass
+        
+        env_max_queries = os.environ.get("AKSARA_DB_TRACE_MAX_QUERIES")
+        if env_max_queries:
+            try:
+                self.db_trace_max_queries = int(env_max_queries)
+            except ValueError:
+                pass
     
     @property
     def DATABASE_URL(self) -> Optional[str]:
@@ -217,6 +240,21 @@ class Settings:
     def APPS(self) -> List[str]:
         """Alias for apps (uppercase convention)."""
         return self.apps
+    
+    @property
+    def DB_TRACE_ENABLED(self) -> bool:
+        """Alias for db_trace_enabled (uppercase convention)."""
+        return self.db_trace_enabled
+    
+    @property
+    def DB_TRACE_SLOW_THRESHOLD_MS(self) -> float:
+        """Alias for db_trace_slow_threshold_ms (uppercase convention)."""
+        return self.db_trace_slow_threshold_ms
+    
+    @property
+    def DB_TRACE_MAX_QUERIES(self) -> int:
+        """Alias for db_trace_max_queries (uppercase convention)."""
+        return self.db_trace_max_queries
 
 
 # Global settings instance

@@ -4,6 +4,58 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.10] — 2026-02-09
+
+### Added
+- **Query Inspector & ORM Profiler**: Comprehensive database query tracing and visibility
+  - **Core Tracing Layer** (`aksara/db/tracing.py`):
+    - `DbQueryTrace` dataclass for individual query captures (SQL, params, timing, operation, table, call site, tags)
+    - `DbQueryBatch` dataclass for per-request query collections with aggregations
+    - Contextvar-based session management (`start_trace_session`, `stop_trace_session`, `record_query`)
+    - In-memory ring buffer storage for recent traces (configurable max size)
+    - Automatic SQL operation extraction (SELECT/INSERT/UPDATE/DELETE/etc.)
+    - Automatic table name extraction from queries
+    - SQL normalization for query grouping and N+1 detection
+    - N+1 query pattern detection heuristics (configurable threshold)
+  
+  - **Request Lifecycle Integration**:
+    - New `QueryTraceMiddleware` for automatic per-request tracing
+    - Integration with `QueryLogger` to record all queries when tracing enabled
+    - Request ID correlation via existing `request_id_var` contextvar
+    - Automatic capture of HTTP method, path, and status code
+  
+  - **Studio Backend Endpoints**:
+    - `GET /studio/db/queries` - Query inspector with stats, recent batches, slow queries
+    - `GET /studio/db/queries/{request_id}` - Detailed query batch for specific request
+    - New Pydantic models: `StudioQueryTrace`, `StudioQueryBatch`, `StudioQueryStats`, `StudioQueryInspector`
+  
+  - **Studio UI Panel**:
+    - New "DB & Queries" navigation item in Studio sidebar
+    - Stats cards: Total Queries, Avg Per Request, Slow Queries, N+1 Detected
+    - Slowest Queries panel with SQL preview and call site info
+    - Recent Requests panel with method, path, status, query count, timing
+    - Warning highlights for slow queries and N+1 patterns
+    - Disabled tracing banner with configuration instructions
+  
+  - **CLI Tools** (`aksara db` command group):
+    - `aksara db stats` - Show aggregate query statistics
+    - `aksara db profile` - Show detailed profile data (slow queries, recent batches)
+    - `aksara db clear` - Clear stored trace data
+
+- **Configuration Options**:
+  - `db_trace_enabled` / `AKSARA_DB_TRACE_ENABLED` - Enable/disable tracing (default: False)
+  - `db_trace_slow_threshold_ms` / `AKSARA_DB_TRACE_SLOW_THRESHOLD_MS` - Slow query threshold (default: 100ms)
+  - `db_trace_max_queries` / `AKSARA_DB_TRACE_MAX_QUERIES` - Max queries per request (default: 500)
+
+### Changed
+- `QueryLogger` now always captures timing (not just in debug mode) for tracing integration
+- CLI version bumped to 0.5.10
+
+### Documentation
+- Changelog updated with v0.5.10 Query Inspector features
+
+---
+
 ## [0.5.9] — 2026-02-08
 
 ### Added

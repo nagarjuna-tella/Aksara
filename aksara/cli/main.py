@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.9"
+CLI_VERSION = "0.5.10"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2727,6 +2727,260 @@ def studio_ai_context(output_format):
 def main():
     """Main entry point for CLI."""
     cli()
+
+
+# =============================================================================
+# v0.5.10: Database Profiler Commands
+# =============================================================================
+
+@cli.group()
+def db():
+    """Database tools and profiling.
+    
+    Commands for database inspection, profiling, and diagnostics.
+    
+    v0.5.10: Query Inspector & ORM Profiler
+    """
+    pass
+
+
+@db.command("stats")
+@click.option("--app", "-a", default=None, help="App path (e.g., main:app)")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def db_stats(app: Optional[str], output_format: str):
+    """Show database query statistics.
+    
+    Displays aggregate statistics from the query tracer including:
+    - Total queries and requests tracked
+    - Average queries per request
+    - Slow query counts
+    - N+1 detection stats
+    
+    Note: Requires db_trace_enabled=True in settings.
+    
+    Examples:
+        aksara db stats
+        aksara db stats --format json
+    """
+    import json
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Database Statistics")
+    click.echo()
+    
+    try:
+        from aksara.db.tracing import is_tracing_enabled, get_trace_stats
+        from aksara.conf import settings
+        
+        # Check if tracing is enabled
+        if not is_tracing_enabled():
+            click.echo("  \033[33m⚠\033[0m Query tracing is disabled.")
+            click.echo()
+            click.echo("  To enable, set one of:")
+            click.echo("    - AKSARA_DB_TRACE_ENABLED=true (environment)")
+            click.echo("    - db_trace_enabled=True (settings)")
+            click.echo()
+            sys.exit(0)
+        
+        # Get stats
+        stats = get_trace_stats()
+        
+        if output_format == "json":
+            click.echo(json.dumps(stats, indent=2))
+        else:
+            # Pretty print
+            click.echo("  \033[32m✓\033[0m Query tracing is enabled")
+            click.echo(f"  \033[1mSlow threshold:\033[0m {settings.db_trace_slow_threshold_ms}ms")
+            click.echo()
+            
+            if stats["total_batches"] == 0:
+                click.echo("  No data collected yet. Run some queries with tracing enabled.")
+                click.echo()
+            else:
+                click.echo("  \033[1mOverall Statistics:\033[0m")
+                click.echo(f"    Requests tracked:        {stats['total_batches']}")
+                click.echo(f"    Total queries:           {stats['total_queries']}")
+                click.echo(f"    Avg queries per request: {stats['avg_queries_per_request']:.2f}")
+                click.echo()
+                click.echo("  \033[1mPerformance Issues:\033[0m")
+                slow_count = stats['total_slow_queries']
+                n1_count = stats['requests_with_n_plus_one']
+                
+                if slow_count > 0:
+                    click.echo(f"    \033[33m⚠\033[0m Slow queries:        {slow_count}")
+                    click.echo(f"       Requests affected:    {stats['requests_with_slow_queries']}")
+                else:
+                    click.echo(f"    \033[32m✓\033[0m No slow queries")
+                
+                if n1_count > 0:
+                    click.echo(f"    \033[31m⚠\033[0m N+1 detected in:     {n1_count} requests")
+                else:
+                    click.echo(f"    \033[32m✓\033[0m No N+1 patterns detected")
+            
+            click.echo()
+            
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@db.command("profile")
+@click.option("--app", "-a", default=None, help="App path (e.g., main:app)")
+@click.option("--limit", "-n", default=20, help="Number of items to show")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+@click.option("--slow", is_flag=True, help="Show slowest queries")
+@click.option("--recent", is_flag=True, help="Show recent request batches")
+def db_profile(app: Optional[str], limit: int, output_format: str, slow: bool, recent: bool):
+    """Show detailed query profile data.
+    
+    Displays recent query batches and slowest queries from the tracer.
+    
+    Use --slow to see the slowest queries across all requests.
+    Use --recent to see recent request batches with query counts.
+    
+    Note: Requires db_trace_enabled=True in settings.
+    
+    Examples:
+        aksara db profile
+        aksara db profile --slow --limit 10
+        aksara db profile --recent
+        aksara db profile --format json
+    """
+    import json
+    
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Database Profile")
+    click.echo()
+    
+    # Default to showing both if neither specified
+    if not slow and not recent:
+        slow = True
+        recent = True
+    
+    try:
+        from aksara.db.tracing import (
+            is_tracing_enabled,
+            get_recent_traces,
+            get_top_slow_queries,
+        )
+        from aksara.conf import settings
+        
+        # Check if tracing is enabled
+        if not is_tracing_enabled():
+            click.echo("  \033[33m⚠\033[0m Query tracing is disabled.")
+            click.echo()
+            click.echo("  To enable, set one of:")
+            click.echo("    - AKSARA_DB_TRACE_ENABLED=true (environment)")
+            click.echo("    - db_trace_enabled=True (settings)")
+            click.echo()
+            sys.exit(0)
+        
+        if output_format == "json":
+            output = {}
+            if slow:
+                slow_queries = get_top_slow_queries(limit)
+                output["slow_queries"] = [q.to_dict() for q in slow_queries]
+            if recent:
+                batches = get_recent_traces(limit)
+                output["recent_batches"] = [b.to_dict() for b in batches]
+            click.echo(json.dumps(output, indent=2, default=str))
+        else:
+            # Pretty print
+            if slow:
+                click.echo("  \033[1mSlowest Queries:\033[0m")
+                click.echo(f"  (Threshold: {settings.db_trace_slow_threshold_ms}ms)")
+                click.echo()
+                
+                slow_queries = get_top_slow_queries(limit)
+                if not slow_queries:
+                    click.echo("    No slow queries recorded.")
+                else:
+                    for i, q in enumerate(slow_queries, 1):
+                        sql_preview = q.sql.replace('\n', ' ')[:60]
+                        if len(q.sql) > 60:
+                            sql_preview += "..."
+                        
+                        click.echo(f"  {i:3}. \033[33m{q.duration_ms:8.2f}ms\033[0m  {q.operation:8} {q.table or 'unknown':15}")
+                        click.echo(f"       {sql_preview}")
+                        if q.stack_summary:
+                            click.echo(f"       \033[90m{q.stack_summary}\033[0m")
+                        click.echo()
+                
+                if recent:
+                    click.echo("  " + "─" * 60)
+                    click.echo()
+            
+            if recent:
+                click.echo("  \033[1mRecent Requests:\033[0m")
+                click.echo()
+                
+                batches = get_recent_traces(limit)
+                if not batches:
+                    click.echo("    No requests recorded.")
+                else:
+                    for b in batches:
+                        method_color = "\033[32m" if b.method == "GET" else "\033[33m"
+                        status_color = "\033[32m" if (b.status_code or 0) < 400 else "\033[31m"
+                        
+                        warnings = []
+                        if b.slow_queries > 0:
+                            warnings.append(f"\033[33m{b.slow_queries} slow\033[0m")
+                        if b.n_plus_one_suspicions:
+                            warnings.append(f"\033[31mN+1\033[0m")
+                        warning_str = f" [{', '.join(warnings)}]" if warnings else ""
+                        
+                        click.echo(f"    {method_color}{b.method or '-':6}\033[0m {b.path or '/':30} {status_color}{b.status_code or '-':3}\033[0m  {b.total_queries:3} queries  {b.total_duration_ms:8.2f}ms{warning_str}")
+                        
+                        # Show N+1 warnings
+                        for warning in b.n_plus_one_suspicions:
+                            click.echo(f"           \033[31m⚠ {warning}\033[0m")
+                
+                click.echo()
+            
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@db.command("clear")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def db_clear(force: bool):
+    """Clear stored query trace data.
+    
+    Removes all collected query traces from the in-memory ring buffer.
+    
+    Examples:
+        aksara db clear
+        aksara db clear --force
+    """
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Clear Query Traces")
+    click.echo()
+    
+    try:
+        from aksara.db.tracing import clear_traces, get_trace_stats
+        
+        stats = get_trace_stats()
+        count = stats.get("total_batches", 0)
+        
+        if count == 0:
+            click.echo("  No traces to clear.")
+            click.echo()
+            return
+        
+        if not force:
+            click.echo(f"  This will clear {count} request batches from memory.")
+            if not click.confirm("  Continue?"):
+                click.echo("  Aborted.")
+                return
+        
+        clear_traces()
+        click.echo(f"  \033[32m✓\033[0m Cleared {count} request batches.")
+        click.echo()
+        
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
 
 
 if __name__ == "__main__":

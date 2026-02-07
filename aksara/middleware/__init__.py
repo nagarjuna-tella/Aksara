@@ -47,6 +47,7 @@ from .context import request_id_var, tenant_id_var, user_id_var
 from .request_id import RequestIDMiddleware
 from .tenant import TenantMiddleware
 from .logging import LoggingMiddleware
+from .tracing import QueryTraceMiddleware
 
 __all__ = [
     # Context variables
@@ -57,4 +58,5 @@ __all__ = [
     "RequestIDMiddleware",
     "TenantMiddleware",
     "LoggingMiddleware",
+    "QueryTraceMiddleware",  # v0.5.10
 ]

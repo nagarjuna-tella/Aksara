@@ -720,3 +720,175 @@ class StudioAiPrompts(BaseModel):
         default="1.0",
         description="Prompt template version"
     )
+
+
+# =============================================================================
+# v0.5.10: Query Inspector & Profiler Models
+# =============================================================================
+
+class StudioQueryTrace(BaseModel):
+    """
+    Single database query execution trace.
+    
+    v0.5.10: Captures SQL, timing, and call site info.
+    """
+    
+    sql: str = Field(
+        ...,
+        description="The SQL query that was executed"
+    )
+    params: Optional[Any] = Field(
+        default=None,
+        description="Query parameters (if any)"
+    )
+    duration_ms: float = Field(
+        ...,
+        description="Query execution time in milliseconds"
+    )
+    rows_affected: Optional[int] = Field(
+        default=None,
+        description="Number of rows affected/returned"
+    )
+    operation: str = Field(
+        ...,
+        description="Query type: SELECT, INSERT, UPDATE, DELETE, OTHER"
+    )
+    table: Optional[str] = Field(
+        default=None,
+        description="Primary table being queried"
+    )
+    timestamp: datetime = Field(
+        ...,
+        description="When the query was executed"
+    )
+    stack_summary: Optional[str] = Field(
+        default=None,
+        description="Short call site info (file:line:function)"
+    )
+    request_id: Optional[str] = Field(
+        default=None,
+        description="Associated request ID"
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Additional categorization tags"
+    )
+    is_slow: bool = Field(
+        ...,
+        description="Whether this query exceeded the slow threshold"
+    )
+
+
+class StudioQueryBatch(BaseModel):
+    """
+    Collection of queries from a single request.
+    
+    v0.5.10: Groups queries by request with aggregations.
+    """
+    
+    request_id: Optional[str] = Field(
+        default=None,
+        description="Request correlation ID"
+    )
+    path: Optional[str] = Field(
+        default=None,
+        description="HTTP request path"
+    )
+    method: Optional[str] = Field(
+        default=None,
+        description="HTTP method"
+    )
+    status_code: Optional[int] = Field(
+        default=None,
+        description="HTTP response status code"
+    )
+    started_at: datetime = Field(
+        ...,
+        description="When the request started"
+    )
+    ended_at: Optional[datetime] = Field(
+        default=None,
+        description="When the request completed"
+    )
+    total_duration_ms: float = Field(
+        ...,
+        description="Total time spent in database queries"
+    )
+    total_queries: int = Field(
+        ...,
+        description="Total number of queries executed"
+    )
+    slow_queries: int = Field(
+        ...,
+        description="Number of queries exceeding slow threshold"
+    )
+    n_plus_one_suspicions: List[str] = Field(
+        default_factory=list,
+        description="Warnings about potential N+1 query patterns"
+    )
+    queries: List[StudioQueryTrace] = Field(
+        default_factory=list,
+        description="Individual query traces"
+    )
+
+
+class StudioQueryStats(BaseModel):
+    """
+    Aggregate query statistics.
+    
+    v0.5.10: Overview of query performance across requests.
+    """
+    
+    total_batches: int = Field(
+        ...,
+        description="Number of request batches stored"
+    )
+    total_queries: int = Field(
+        ...,
+        description="Total queries across all batches"
+    )
+    avg_queries_per_request: float = Field(
+        ...,
+        description="Average queries per request"
+    )
+    total_slow_queries: int = Field(
+        ...,
+        description="Total slow queries across all batches"
+    )
+    requests_with_slow_queries: int = Field(
+        ...,
+        description="Number of requests with at least one slow query"
+    )
+    requests_with_n_plus_one: int = Field(
+        ...,
+        description="Number of requests with potential N+1 patterns"
+    )
+
+
+class StudioQueryInspector(BaseModel):
+    """
+    Combined response for query inspector endpoint.
+    
+    v0.5.10: Includes stats, recent batches, and slow queries.
+    """
+    
+    enabled: bool = Field(
+        ...,
+        description="Whether query tracing is enabled"
+    )
+    slow_threshold_ms: float = Field(
+        ...,
+        description="Current slow query threshold in milliseconds"
+    )
+    stats: StudioQueryStats = Field(
+        ...,
+        description="Aggregate statistics"
+    )
+    recent_batches: List[StudioQueryBatch] = Field(
+        default_factory=list,
+        description="Recent request query batches (summary only)"
+    )
+    top_slow_queries: List[StudioQueryTrace] = Field(
+        default_factory=list,
+        description="Slowest queries across all batches"
+    )

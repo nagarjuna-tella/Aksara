@@ -1088,3 +1088,170 @@ Provide a clear, structured explanation:""",
         prompts=prompts,
         version="1.0",
     )
+
+
+# =============================================================================
+# v0.5.10: Query Inspector & Profiler
+# =============================================================================
+
+def build_query_inspector(
+    include_queries: bool = False,
+    limit_batches: int = 20,
+    limit_slow: int = 20,
+) -> "StudioQueryInspector":
+    """
+    Build query inspector response.
+    
+    v0.5.10: Returns query tracing stats, recent batches, and slow queries.
+    
+    Args:
+        include_queries: Whether to include full query lists in batches
+        limit_batches: Max number of recent batches to return
+        limit_slow: Max number of slow queries to return
+        
+    Returns:
+        StudioQueryInspector with stats and data
+    """
+    from aksara.conf import settings
+    from aksara.db.tracing import (
+        is_tracing_enabled,
+        get_trace_stats,
+        get_recent_traces,
+        get_top_slow_queries,
+    )
+    from aksara.studio.models import (
+        StudioQueryInspector,
+        StudioQueryStats,
+        StudioQueryBatch,
+        StudioQueryTrace,
+    )
+    
+    enabled = is_tracing_enabled()
+    slow_threshold = getattr(settings, 'db_trace_slow_threshold_ms', 100.0)
+    
+    # Get stats
+    raw_stats = get_trace_stats()
+    stats = StudioQueryStats(
+        total_batches=raw_stats.get("total_batches", 0),
+        total_queries=raw_stats.get("total_queries", 0),
+        avg_queries_per_request=raw_stats.get("avg_queries_per_request", 0.0),
+        total_slow_queries=raw_stats.get("total_slow_queries", 0),
+        requests_with_slow_queries=raw_stats.get("requests_with_slow_queries", 0),
+        requests_with_n_plus_one=raw_stats.get("requests_with_n_plus_one", 0),
+    )
+    
+    # Get recent batches
+    raw_batches = get_recent_traces(limit_batches)
+    recent_batches = []
+    for batch in raw_batches:
+        batch_dict = batch.to_summary_dict() if not include_queries else batch.to_dict()
+        
+        # Convert queries if included
+        queries = []
+        if include_queries and hasattr(batch, 'queries'):
+            for q in batch.queries:
+                queries.append(StudioQueryTrace(
+                    sql=q.sql,
+                    params=q.params,
+                    duration_ms=q.duration_ms,
+                    rows_affected=q.rows_affected,
+                    operation=q.operation,
+                    table=q.table,
+                    timestamp=q.timestamp,
+                    stack_summary=q.stack_summary,
+                    request_id=q.request_id,
+                    tags=q.tags,
+                    is_slow=q.is_slow,
+                ))
+        
+        recent_batches.append(StudioQueryBatch(
+            request_id=batch.request_id,
+            path=batch.path,
+            method=batch.method,
+            status_code=batch.status_code,
+            started_at=batch.started_at,
+            ended_at=batch.ended_at,
+            total_duration_ms=batch.total_duration_ms,
+            total_queries=batch.total_queries,
+            slow_queries=batch.slow_queries,
+            n_plus_one_suspicions=batch.n_plus_one_suspicions,
+            queries=queries,
+        ))
+    
+    # Get top slow queries
+    raw_slow = get_top_slow_queries(limit_slow)
+    top_slow_queries = [
+        StudioQueryTrace(
+            sql=q.sql,
+            params=q.params,
+            duration_ms=q.duration_ms,
+            rows_affected=q.rows_affected,
+            operation=q.operation,
+            table=q.table,
+            timestamp=q.timestamp,
+            stack_summary=q.stack_summary,
+            request_id=q.request_id,
+            tags=q.tags,
+            is_slow=q.is_slow,
+        )
+        for q in raw_slow
+    ]
+    
+    return StudioQueryInspector(
+        enabled=enabled,
+        slow_threshold_ms=slow_threshold,
+        stats=stats,
+        recent_batches=recent_batches,
+        top_slow_queries=top_slow_queries,
+    )
+
+
+def build_query_batch_detail(request_id: str) -> Optional["StudioQueryBatch"]:
+    """
+    Build detailed query batch response for a specific request.
+    
+    v0.5.10: Returns full query list for a single request.
+    
+    Args:
+        request_id: The request ID to look up
+        
+    Returns:
+        StudioQueryBatch with full query list, or None if not found
+    """
+    from aksara.db.tracing import get_trace_by_request_id
+    from aksara.studio.models import StudioQueryBatch, StudioQueryTrace
+    
+    batch = get_trace_by_request_id(request_id)
+    if batch is None:
+        return None
+    
+    queries = [
+        StudioQueryTrace(
+            sql=q.sql,
+            params=q.params,
+            duration_ms=q.duration_ms,
+            rows_affected=q.rows_affected,
+            operation=q.operation,
+            table=q.table,
+            timestamp=q.timestamp,
+            stack_summary=q.stack_summary,
+            request_id=q.request_id,
+            tags=q.tags,
+            is_slow=q.is_slow,
+        )
+        for q in batch.queries
+    ]
+    
+    return StudioQueryBatch(
+        request_id=batch.request_id,
+        path=batch.path,
+        method=batch.method,
+        status_code=batch.status_code,
+        started_at=batch.started_at,
+        ended_at=batch.ended_at,
+        total_duration_ms=batch.total_duration_ms,
+        total_queries=batch.total_queries,
+        slow_queries=batch.slow_queries,
+        n_plus_one_suspicions=batch.n_plus_one_suspicions,
+        queries=queries,
+    )
