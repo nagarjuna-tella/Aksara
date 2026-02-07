@@ -717,6 +717,7 @@ function renderDiagnosticsIssues() {
         const hintHtml = issue.hint
             ? `<div class="diag-issue-hint"><strong>Hint:</strong> ${escapeHtml(issue.hint)}</div>`
             : '';
+        const actionsHtml = renderDiagnosticActions(issue.actions || []);
         return `
             <div class="diag-issue-card ${sevClass}">
                 <div class="diag-issue-header">
@@ -726,8 +727,84 @@ function renderDiagnosticsIssues() {
                 </div>
                 <div class="diag-issue-message">${escapeHtml(issue.message)}</div>
                 ${hintHtml}
+                ${actionsHtml}
             </div>`;
     }).join('');
+
+    // Bind copy-to-clipboard buttons for action examples
+    list.querySelectorAll('.diag-action-copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const text = btn.getAttribute('data-copy');
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const orig = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => { btn.textContent = orig; }, 1200);
+                });
+            }
+        });
+    });
+
+    // Bind expand/collapse toggles for action sections
+    list.querySelectorAll('.diag-actions-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const section = toggle.closest('.diag-actions-section');
+            if (section) section.classList.toggle('diag-actions-expanded');
+        });
+    });
+}
+
+/**
+ * v0.5.18: Render autoremediation action cards for a diagnostic issue.
+ */
+function renderDiagnosticActions(actions) {
+    if (!actions || actions.length === 0) return '';
+
+    const kindIcons = {
+        set_env: '\u2699\uFE0F',
+        run_command: '\u25B6\uFE0F',
+        open_doc: '\uD83D\uDCD6',
+        edit_file: '\uD83D\uDCDD',
+        add_setting: '\u2699\uFE0F',
+    };
+
+    const kindLabels = {
+        set_env: 'Set Environment Variable',
+        run_command: 'Run Command',
+        open_doc: 'Open Documentation',
+        edit_file: 'Edit File',
+        add_setting: 'Add Setting',
+    };
+
+    const actionCards = actions.map(a => {
+        const icon = kindIcons[a.kind] || '\u2139\uFE0F';
+        const kindLabel = kindLabels[a.kind] || a.kind;
+        const exampleHtml = a.example
+            ? `<div class="diag-action-example">
+                 <code>${escapeHtml(a.example)}</code>
+                 <button class="diag-action-copy-btn" data-copy="${escapeHtml(a.example)}" title="Copy to clipboard">Copy</button>
+               </div>`
+            : '';
+        const descHtml = a.description
+            ? `<div class="diag-action-desc">${escapeHtml(a.description)}</div>`
+            : '';
+        return `
+            <div class="diag-action-card diag-action-kind-${a.kind}">
+                <div class="diag-action-header">
+                    <span class="diag-action-icon">${icon}</span>
+                    <span class="diag-action-kind-label">${escapeHtml(kindLabel)}</span>
+                </div>
+                <div class="diag-action-title">${escapeHtml(a.title)}</div>
+                ${descHtml}
+                ${exampleHtml}
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="diag-actions-section">
+            <button class="diag-actions-toggle">\uD83D\uDD27 Fix This Issue (${actions.length} action${actions.length !== 1 ? 's' : ''})</button>
+            <div class="diag-actions-list">${actionCards}</div>
+        </div>`;
 }
 
 // =============================================================================

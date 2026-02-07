@@ -4,6 +4,32 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.18] — 2026-02-15
+
+### Added
+- **Autoremediation Hints**: Every diagnostic issue now includes structured fix actions
+  - **`DiagnosticAction` model**: Machine-readable fix instructions with `kind` (set_env, run_command, open_doc, edit_file, add_setting), `target`, `title`, `example`, and `description` fields
+  - **`build_action()` helper**: Convenience function for creating `DiagnosticAction` instances
+  - **`actions` field on `DiagnosticIssue`**: List of autoremediation actions attached to every issue
+  - All 8 diagnostic checkers enhanced with contextual fix actions
+  - **Studio UI "Fix This Issue"**: Expandable action cards per issue with kind icons, titles, example snippets, and copy-to-clipboard buttons
+  - **CLI `aksara doctor fix-plan`**: New subcommand with `--format text|json`, `--only-errors`, `--only-with-actions` flags
+  - **CLI `aksara doctor run`**: Now shows actions with kind labels and examples in pretty output
+  - **Documentation**: Autoremediation guide with action model reference, CLI usage, and CI/CD integration
+  - **~60 new tests**: Action model tests, checker action attachment tests, endpoint tests, CLI fix-plan tests
+
+### Changed
+- CLI version bumped to 0.5.18
+- Diagnostics engine docstring updated for v0.5.18
+- `__all__` exports updated with `DiagnosticAction`, `DiagnosticActionKind`, `build_action`
+
+### Technical Notes
+- **No breaking changes**: `actions` field defaults to empty list; existing code unaffected
+- **Zero new dependencies**: Vanilla JS maintained, Pydantic auto-serializes new field
+- **Backward compatible API**: `GET /studio/diagnostics` response gains `actions` array per issue
+
+---
+
 ## [0.5.17] — 2026-02-14
 
 ### Added

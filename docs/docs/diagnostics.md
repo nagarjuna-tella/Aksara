@@ -2,6 +2,8 @@
 
 **v0.5.17** — Aksara includes a built-in self-diagnostics engine that checks your project's health across database, migrations, AI providers, settings, security, file-system, and cache.
 
+**v0.5.18** — Every diagnostic issue now includes structured **autoremediation actions** — machine-readable fix instructions that the Studio UI, CLI, and future agents can surface. See [Autoremediation Hints](debugging/autoremediation.md) for the full guide.
+
 ## Quick Start
 
 ### CLI
@@ -21,6 +23,11 @@ aksara doctor ai
 
 # Database-specific checks
 aksara doctor db
+
+# v0.5.18: Generate a fix-plan with structured actions
+aksara doctor fix-plan
+aksara doctor fix-plan --format json
+aksara doctor fix-plan --only-errors --only-with-actions
 ```
 
 ### Studio Dashboard
@@ -46,6 +53,9 @@ for issue in report.issues:
     print(f"[{issue.severity}] {issue.title}: {issue.message}")
     if issue.hint:
         print(f"  Hint: {issue.hint}")
+    # v0.5.18: Autoremediation actions
+    for action in issue.actions:
+        print(f"  → [{action.kind}] {action.title}")
 ```
 
 ## What Gets Checked

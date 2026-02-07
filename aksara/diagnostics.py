@@ -4,11 +4,15 @@ Aksara Self-Diagnostics Engine
 v0.5.17: Comprehensive health checks for database, migrations, AI providers,
 environment, settings, security, cache, and file-system.
 
+v0.5.18: Autoremediation hints — every issue includes structured fix actions.
+
 Usage:
     from aksara.diagnostics import run_all_checks
     report = await run_all_checks()
     for issue in report.issues:
         print(f"[{issue.severity}] {issue.title}: {issue.message}")
+        for action in issue.actions:
+            print(f"  -> [{action.kind}] {action.title}")
 """
 
 from __future__ import annotations
@@ -48,6 +52,45 @@ DiagnosticKind = Literal[
     "general",
 ]
 
+# v0.5.18: Autoremediation action types
+DiagnosticActionKind = Literal[
+    "set_env",
+    "edit_file",
+    "run_command",
+    "open_doc",
+    "add_setting",
+]
+
+
+class DiagnosticAction(BaseModel):
+    """A machine-usable fix action for a diagnostic issue.
+
+    v0.5.18: Autoremediation hints that the UI, CLI, and future agents can use.
+    """
+
+    kind: DiagnosticActionKind = Field(..., description="Action type")
+    target: str = Field(..., description="Env var name, filename, doc URL, setting key, or command")
+    title: str = Field(..., description="Human-friendly title")
+    example: Optional[str] = Field(default=None, description="Full example snippet")
+    description: Optional[str] = Field(default=None, description="Optional extra detail")
+
+
+def build_action(
+    kind: DiagnosticActionKind,
+    target: str,
+    title: str,
+    example: Optional[str] = None,
+    description: Optional[str] = None,
+) -> DiagnosticAction:
+    """Convenience builder for DiagnosticAction."""
+    return DiagnosticAction(
+        kind=kind,
+        target=target,
+        title=title,
+        example=example,
+        description=description,
+    )
+
 
 class DiagnosticIssue(BaseModel):
     """A single diagnostic finding."""
@@ -58,6 +101,9 @@ class DiagnosticIssue(BaseModel):
     message: str = Field(..., description="Detailed explanation")
     hint: Optional[str] = Field(default=None, description="Suggested fix")
     meta: Optional[Dict[str, Any]] = Field(default=None, description="Extra metadata")
+    actions: List[DiagnosticAction] = Field(
+        default_factory=list, description="Autoremediation fix actions (v0.5.18)"
+    )
 
 
 class DiagnosticReport(BaseModel):
@@ -111,6 +157,19 @@ async def check_database_connectivity() -> List[DiagnosticIssue]:
                 title="No database URL configured",
                 message="DATABASE_URL or database_url setting is not set.",
                 hint="Set DATABASE_URL environment variable or configure database_url in Settings.",
+                actions=[
+                    build_action(
+                        kind="set_env",
+                        target="DATABASE_URL",
+                        title="Set DATABASE_URL",
+                        example='export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"',
+                    ),
+                    build_action(
+                        kind="open_doc",
+                        target="https://aksara.dev/docs/config/database",
+                        title="Open database configuration docs",
+                    ),
+                ],
             ))
             return issues
 
@@ -128,6 +187,19 @@ async def check_database_connectivity() -> List[DiagnosticIssue]:
                 message=f"Could not connect to database: {e}",
                 hint="Check that your database is running and the connection URL is correct.",
                 meta={"error_type": type(e).__name__},
+                actions=[
+                    build_action(
+                        kind="run_command",
+                        target="pg_isready",
+                        title="Check if PostgreSQL is running",
+                        example="pg_isready -h localhost -p 5432",
+                    ),
+                    build_action(
+                        kind="open_doc",
+                        target="https://aksara.dev/docs/config/database",
+                        title="Open database configuration docs",
+                    ),
+                ],
             ))
     except ImportError:
         issues.append(DiagnosticIssue(
@@ -136,6 +208,14 @@ async def check_database_connectivity() -> List[DiagnosticIssue]:
             title="asyncpg not installed",
             message="The asyncpg driver is required for PostgreSQL connections.",
             hint="Install asyncpg: pip install asyncpg",
+            actions=[
+                build_action(
+                    kind="run_command",
+                    target="pip install asyncpg",
+                    title="Install asyncpg driver",
+                    example="pip install asyncpg",
+                ),
+            ],
         ))
     except Exception as e:
         issues.append(DiagnosticIssue(
@@ -161,6 +241,14 @@ async def check_migrations_status() -> List[DiagnosticIssue]:
                 title="No migrations directory",
                 message=f"Migrations directory '{migrations_dir}' does not exist.",
                 hint="Run 'aksara makemigrations' to create initial migrations.",
+                actions=[
+                    build_action(
+                        kind="run_command",
+                        target="aksara makemigrations",
+                        title="Create initial migrations",
+                        example="aksara makemigrations",
+                    ),
+                ],
             ))
             return issues
 
@@ -175,6 +263,14 @@ async def check_migrations_status() -> List[DiagnosticIssue]:
                 title="No migrations found",
                 message="No migration files exist yet.",
                 hint="Run 'aksara makemigrations' to generate migrations.",
+                actions=[
+                    build_action(
+                        kind="run_command",
+                        target="aksara makemigrations",
+                        title="Generate migrations",
+                        example="aksara makemigrations",
+                    ),
+                ],
             ))
             return issues
 
@@ -206,6 +302,14 @@ async def check_migrations_status() -> List[DiagnosticIssue]:
                         message=f"{len(pending)} of {total} migrations have not been applied.",
                         hint="Run 'aksara migrate' to apply pending migrations.",
                         meta={"pending": pending[:10], "total": total, "pending_count": len(pending)},
+                        actions=[
+                            build_action(
+                                kind="run_command",
+                                target="aksara migrate",
+                                title="Run database migrations",
+                                example="aksara migrate",
+                            ),
+                        ],
                     ))
             except ImportError:
                 pass
@@ -254,6 +358,14 @@ async def check_ai_profiles() -> List[DiagnosticIssue]:
                 title="AI profiles disabled",
                 message="AI profiles are disabled in settings.",
                 hint="Set ai_profiles_enabled=True to enable AI profile features.",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="ai_profiles_enabled",
+                        title="Enable AI profiles",
+                        example="configure(ai_profiles_enabled=True)",
+                    ),
+                ],
             ))
             return issues
 
@@ -302,6 +414,14 @@ async def check_ai_provider_secrets() -> List[DiagnosticIssue]:
                     message=f"Required environment variable '{hint.env_var}' for provider '{hint.provider_name}' is not set.",
                     hint=f"Set the {hint.env_var} environment variable.",
                     meta={"provider": hint.provider_name, "env_var": hint.env_var},
+                    actions=[
+                        build_action(
+                            kind="set_env",
+                            target=hint.env_var,
+                            title=f"Set {hint.env_var}",
+                            example=f'export {hint.env_var}="your-secret-here"',
+                        ),
+                    ],
                 ))
     except ImportError:
         pass
@@ -324,6 +444,14 @@ async def check_required_settings() -> List[DiagnosticIssue]:
                 title="No database URL",
                 message="DATABASE_URL is not configured. Aksara requires a PostgreSQL database.",
                 hint="Set DATABASE_URL=postgresql://user:pass@localhost/dbname",
+                actions=[
+                    build_action(
+                        kind="set_env",
+                        target="DATABASE_URL",
+                        title="Set DATABASE_URL",
+                        example='export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"',
+                    ),
+                ],
             ))
 
         # Pool size sanity
@@ -334,6 +462,14 @@ async def check_required_settings() -> List[DiagnosticIssue]:
                 title="Invalid pool size",
                 message=f"Pool max ({settings.pool_max_size}) is less than min ({settings.pool_min_size}).",
                 hint="Set pool_max_size >= pool_min_size.",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="pool_max_size",
+                        title="Fix pool size configuration",
+                        example="configure(pool_min_size=2, pool_max_size=10)",
+                    ),
+                ],
             ))
 
         if settings.pool_max_size > 100:
@@ -343,6 +479,14 @@ async def check_required_settings() -> List[DiagnosticIssue]:
                 title="Very large connection pool",
                 message=f"pool_max_size is {settings.pool_max_size}. This may exhaust database connections.",
                 hint="Consider using pool_max_size <= 50 for most workloads.",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="pool_max_size",
+                        title="Reduce pool_max_size",
+                        example="configure(pool_max_size=20)",
+                    ),
+                ],
             ))
 
         # Slow query threshold
@@ -353,6 +497,14 @@ async def check_required_settings() -> List[DiagnosticIssue]:
                 title="Invalid slow query threshold",
                 message=f"db_trace_slow_threshold_ms is {settings.db_trace_slow_threshold_ms}. Must be positive.",
                 hint="Set db_trace_slow_threshold_ms to a positive number (e.g. 100).",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="db_trace_slow_threshold_ms",
+                        title="Set slow query threshold",
+                        example="configure(db_trace_slow_threshold_ms=100)",
+                    ),
+                ],
             ))
 
     except Exception as e:
@@ -379,6 +531,14 @@ async def check_cache_available() -> List[DiagnosticIssue]:
                 title="No cache configured",
                 message="No AKSARA_CACHE_URL or CACHE_URL environment variable is set.",
                 hint="If your app uses caching, set AKSARA_CACHE_URL.",
+                actions=[
+                    build_action(
+                        kind="set_env",
+                        target="AKSARA_CACHE_URL",
+                        title="Set cache URL",
+                        example='export AKSARA_CACHE_URL="redis://localhost:6379/0"',
+                    ),
+                ],
             ))
     except Exception:
         pass
@@ -402,6 +562,14 @@ async def check_file_system_permissions() -> List[DiagnosticIssue]:
                 message=f"Cannot write to temp directory: {e}",
                 hint="Check file-system permissions on the temp directory.",
                 meta={"path": str(test_path)},
+                actions=[
+                    build_action(
+                        kind="run_command",
+                        target=f"chmod 755 {tempfile.gettempdir()}",
+                        title="Fix temp directory permissions",
+                        example=f"chmod 755 {tempfile.gettempdir()}",
+                    ),
+                ],
             ))
 
         # Try the migrations directory
@@ -420,6 +588,14 @@ async def check_file_system_permissions() -> List[DiagnosticIssue]:
                     message=f"Cannot write to migrations directory '{mig_dir}': {e}",
                     hint="Check file-system permissions for the migrations directory.",
                     meta={"path": str(mig_dir)},
+                    actions=[
+                        build_action(
+                            kind="run_command",
+                            target=f"chmod 755 {mig_dir}",
+                            title="Fix migrations directory permissions",
+                            example=f"chmod 755 {mig_dir}",
+                        ),
+                    ],
                 ))
     except Exception:
         pass
@@ -440,6 +616,14 @@ async def check_security() -> List[DiagnosticIssue]:
                 title="Debug mode is enabled",
                 message="Running with debug=True. Do NOT use this in production.",
                 hint="Set AKSARA_DEBUG=false or debug=False for production.",
+                actions=[
+                    build_action(
+                        kind="set_env",
+                        target="AKSARA_DEBUG",
+                        title="Disable debug mode",
+                        example='export AKSARA_DEBUG="false"',
+                    ),
+                ],
             ))
 
         # Studio exposed in production
@@ -450,6 +634,14 @@ async def check_security() -> List[DiagnosticIssue]:
                 title="Studio exposed in production",
                 message="Studio is accessible in production mode. This may leak internal info.",
                 hint="Set studio_expose_in_production=False unless intentionally exposing Studio.",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="studio_expose_in_production",
+                        title="Disable Studio in production",
+                        example="configure(studio_expose_in_production=False)",
+                    ),
+                ],
             ))
 
         # Allowed origins too open
@@ -461,6 +653,14 @@ async def check_security() -> List[DiagnosticIssue]:
                 title="Studio allows all origins",
                 message="studio_allowed_origins contains '*', allowing any domain.",
                 hint="Restrict studio_allowed_origins to trusted origins.",
+                actions=[
+                    build_action(
+                        kind="add_setting",
+                        target="studio_allowed_origins",
+                        title="Restrict allowed origins",
+                        example='configure(studio_allowed_origins=["http://localhost:3000"])',
+                    ),
+                ],
             ))
 
         # SECRET_KEY not set (future-proofing)
@@ -472,6 +672,14 @@ async def check_security() -> List[DiagnosticIssue]:
                 title="No SECRET_KEY set",
                 message="No AKSARA_SECRET_KEY or SECRET_KEY environment variable found.",
                 hint="Set a SECRET_KEY for session signing and CSRF protection.",
+                actions=[
+                    build_action(
+                        kind="set_env",
+                        target="SECRET_KEY",
+                        title="Set a SECRET_KEY",
+                        example='export SECRET_KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(64))")"',
+                    ),
+                ],
             ))
 
     except Exception as e:
@@ -540,8 +748,11 @@ async def run_all_checks() -> DiagnosticReport:
 __all__ = [
     "DiagnosticSeverity",
     "DiagnosticKind",
+    "DiagnosticActionKind",
+    "DiagnosticAction",
     "DiagnosticIssue",
     "DiagnosticReport",
+    "build_action",
     "check_database_connectivity",
     "check_migrations_status",
     "check_ai_profiles",

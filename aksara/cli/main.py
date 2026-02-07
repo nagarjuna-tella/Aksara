@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.17"
+CLI_VERSION = "0.5.18"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -3805,6 +3805,12 @@ def doctor_run(output_format: str):
             click.echo(f"            {issue.message}")
             if issue.hint:
                 click.echo(f"            \033[90mHint: {issue.hint}\033[0m")
+            if issue.actions:
+                for action in issue.actions:
+                    kind_sym = {"set_env": "ENV", "run_command": "CMD", "open_doc": "DOC", "edit_file": "FILE", "add_setting": "CFG"}.get(action.kind, action.kind.upper())
+                    click.echo(f"            \033[36m→ [{kind_sym}]\033[0m {action.title}")
+                    if action.example:
+                        click.echo(f"              \033[90m$ {action.example}\033[0m")
             click.echo()
 
         if not report.issues:
@@ -3933,6 +3939,93 @@ def doctor_db():
     if not issues:
         click.echo("  \033[32mNo database issues found.\033[0m")
     click.echo()
+
+
+@doctor.command("fix-plan")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+@click.option("--only-errors", is_flag=True, default=False, help="Only show error-severity issues")
+@click.option("--only-with-actions", is_flag=True, default=False, help="Only show issues that have fix actions")
+def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bool):
+    """Generate a remediation fix-plan from diagnostics.
+
+    Shows every issue with its machine-readable fix actions. Useful for
+    scripting, automation, and AI agents.
+
+    v0.5.18: Autoremediation Hints
+
+    Examples:
+        aksara doctor fix-plan
+        aksara doctor fix-plan --format json
+        aksara doctor fix-plan --only-errors
+        aksara doctor fix-plan --only-with-actions
+    """
+    import json as json_mod
+
+    async def _run():
+        from aksara.diagnostics import run_all_checks
+        return await run_all_checks()
+
+    report = asyncio.run(_run())
+
+    # Filter issues
+    issues = list(report.issues)
+    if only_errors:
+        issues = [i for i in issues if i.severity == "error"]
+    if only_with_actions:
+        issues = [i for i in issues if i.actions]
+
+    if output_format == "json":
+        data = {
+            "issues": [i.model_dump() for i in issues],
+            "stats": report.stats,
+            "duration_ms": report.duration_ms,
+            "system": report.system,
+        }
+        click.echo(json_mod.dumps(data, indent=2, default=str))
+    else:
+        click.echo()
+        click.echo("  \033[33m⚡\033[0m \033[1mAksara Doctor — Fix Plan\033[0m")
+        click.echo()
+
+        if not issues:
+            filters = []
+            if only_errors:
+                filters.append("--only-errors")
+            if only_with_actions:
+                filters.append("--only-with-actions")
+            filter_note = f" (filters: {', '.join(filters)})" if filters else ""
+            click.echo(f"  \033[32mNo issues to fix{filter_note}.\033[0m")
+            click.echo()
+            sys.exit(0)
+
+        kind_sym = {
+            "set_env": "ENV", "run_command": "CMD", "open_doc": "DOC",
+            "edit_file": "FILE", "add_setting": "CFG",
+        }
+        severity_symbols = {"error": "\033[31m✗\033[0m", "warning": "\033[33m!\033[0m", "info": "\033[36m·\033[0m"}
+
+        for idx, issue in enumerate(issues, 1):
+            sym = severity_symbols.get(issue.severity, "·")
+            click.echo(f"  {sym} {idx}. [{issue.severity.upper()}] {issue.title}")
+            click.echo(f"     {issue.message}")
+            if issue.hint:
+                click.echo(f"     \033[90mHint: {issue.hint}\033[0m")
+            if issue.actions:
+                click.echo(f"     \033[1mActions:\033[0m")
+                for action in issue.actions:
+                    ks = kind_sym.get(action.kind, action.kind.upper())
+                    click.echo(f"       \033[36m→ [{ks}]\033[0m {action.title}")
+                    if action.example:
+                        click.echo(f"         \033[90m$ {action.example}\033[0m")
+            else:
+                click.echo(f"     \033[90m(no fix actions available)\033[0m")
+            click.echo()
+
+        total_actions = sum(len(i.actions) for i in issues)
+        click.echo(f"  {len(issues)} issue(s), {total_actions} fix action(s)")
+        click.echo()
+
+    sys.exit(1 if any(i.severity == "error" for i in issues) else 0)
 
 
 if __name__ == "__main__":

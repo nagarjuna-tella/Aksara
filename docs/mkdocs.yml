@@ -84,6 +84,7 @@ nav:
       - AI Debug: debugging/ai-debug.md
       - Observability: debugging/observability.md
       - Diagnostics & Doctor: diagnostics.md
+      - Autoremediation: debugging/autoremediation.md
   - AI Mode:
       - ai-mode/index.md
       - Overview: ai-mode/overview.md
