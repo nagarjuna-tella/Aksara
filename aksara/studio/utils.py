@@ -47,6 +47,11 @@ from aksara.studio.models import (
     StudioAiSchemas,
     StudioAiPromptTemplate,
     StudioAiPrompts,
+    # v0.5.19: Agent Mode models
+    AgentContextSection,
+    StudioAgentContext,
+    StudioAgentPromptRequest,
+    StudioAgentPromptResponse,
 )
 
 if TYPE_CHECKING:
@@ -1575,4 +1580,301 @@ def build_ai_hints(app: "FastAPI") -> "StudioAiHintSet":
         low_risk_count=hint_set.low_risk_count,
         medium_risk_count=hint_set.medium_risk_count,
         high_risk_count=hint_set.high_risk_count,
+    )
+
+
+# =============================================================================
+# v0.5.19: Agent Mode — Context Builder
+# =============================================================================
+
+
+def _section_size_kb(data: Any) -> float:
+    """Compute approximate size of a data payload in KB."""
+    try:
+        return len(json.dumps(data, default=str)) / 1024.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _make_section(key: str, title: str, description: str, data: Any) -> AgentContextSection:
+    """Create an AgentContextSection with auto-computed size."""
+    return AgentContextSection(
+        key=key,
+        title=title,
+        description=description,
+        data=data,
+        size_kb=round(_section_size_kb(data), 2),
+    )
+
+
+async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
+    """
+    Gather all available project context for an LLM agent.
+
+    v0.5.19: Collects 9 sections:
+    - project_info: app name, version, environment, debug flag
+    - models: registered model names, fields, relations
+    - routes: all API endpoints with methods
+    - migrations: migration status per app
+    - diagnostics: latest self-diagnostics report
+    - ai_profiles: configured AI providers and models
+    - ai_hints: per-route AI hints and risk levels
+    - db_queries: recent query inspector stats
+    - schema_checksum: current schema fingerprint
+
+    Returns:
+        StudioAgentContext with all sections populated.
+    """
+    from aksara.conf import settings
+    from aksara.registry import ModelRegistry
+    import aksara
+    aksara_ver = aksara.__version__
+
+    sections: List[AgentContextSection] = []
+
+    # 1. project_info
+    project_data = {
+        "app_title": getattr(settings, "app_title", None) or "Aksara App",
+        "app_version": getattr(settings, "app_version", None) or "0.0.0",
+        "debug": getattr(settings, "debug", False),
+        "environment": _get_environment(),
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "aksara_version": aksara_ver,
+    }
+    sections.append(_make_section(
+        "project_info",
+        "Project Info",
+        "Application name, version, environment, and runtime details",
+        project_data,
+    ))
+
+    # 2. models
+    try:
+        all_models = ModelRegistry.all()
+        models_data = []
+        for name, model_cls in all_models.items():
+            fields_info = []
+            for fname, fobj in getattr(model_cls, '_fields', {}).items():
+                fields_info.append({
+                    "name": fname,
+                    "type": getattr(fobj, 'field_type', type(fobj).__name__),
+                })
+            models_data.append({
+                "name": name,
+                "table_name": getattr(model_cls, '_table_name', name.lower()),
+                "field_count": len(fields_info),
+                "fields": fields_info,
+                "has_relations": any(
+                    getattr(f, 'is_relation', False) for f in getattr(model_cls, '_fields', {}).values()
+                ),
+            })
+    except Exception:
+        models_data = []
+    sections.append(_make_section(
+        "models",
+        "Models",
+        "Registered database models with fields and relations",
+        models_data,
+    ))
+
+    # 3. routes
+    try:
+        routes_list = build_routes_info(app)
+        routes_data = [r.model_dump() for r in routes_list]
+    except Exception:
+        routes_data = []
+    sections.append(_make_section(
+        "routes",
+        "Routes",
+        "All registered API endpoints with methods and labels",
+        routes_data,
+    ))
+
+    # 4. migrations
+    try:
+        mig_summary = await build_migration_summary(app)
+        migrations_data = mig_summary.model_dump()
+    except Exception:
+        migrations_data = {}
+    sections.append(_make_section(
+        "migrations",
+        "Migrations",
+        "Database migration status per application",
+        migrations_data,
+    ))
+
+    # 5. diagnostics
+    try:
+        from aksara.diagnostics import run_all_checks
+        diag_report = await run_all_checks()
+        diagnostics_data = diag_report.model_dump(mode="json")
+    except Exception:
+        diagnostics_data = {}
+    sections.append(_make_section(
+        "diagnostics",
+        "Diagnostics",
+        "Latest self-diagnostics report with issues and stats",
+        diagnostics_data,
+    ))
+
+    # 6. ai_profiles
+    try:
+        profiles = build_ai_profile_set_summary(app)
+        ai_profiles_data = profiles.model_dump()
+    except Exception:
+        ai_profiles_data = {}
+    sections.append(_make_section(
+        "ai_profiles",
+        "AI Profiles",
+        "Configured AI providers, models, and readiness status",
+        ai_profiles_data,
+    ))
+
+    # 7. ai_hints
+    try:
+        hints = build_ai_hints(app)
+        ai_hints_data = hints.model_dump()
+    except Exception:
+        ai_hints_data = {}
+    sections.append(_make_section(
+        "ai_hints",
+        "AI Hints",
+        "Per-route AI hints with risk levels and example prompts",
+        ai_hints_data,
+    ))
+
+    # 8. db_queries
+    try:
+        inspector = build_query_inspector(include_queries=False)
+        db_queries_data = inspector.model_dump()
+    except Exception:
+        db_queries_data = {}
+    sections.append(_make_section(
+        "db_queries",
+        "DB Queries",
+        "Recent database query stats and slow-query detection",
+        db_queries_data,
+    ))
+
+    # 9. schema_checksum
+    try:
+        model_classes = list(ModelRegistry.all().values())
+        checksum = compute_schema_checksum(model_classes)
+    except Exception:
+        checksum = "unknown"
+    sections.append(_make_section(
+        "schema_checksum",
+        "Schema Checksum",
+        "SHA-256 fingerprint of the current model schema",
+        {"checksum": checksum},
+    ))
+
+    total_size = round(sum(s.size_kb for s in sections), 2)
+
+    return StudioAgentContext(
+        generated_at=datetime.now(timezone.utc),
+        total_sections=len(sections),
+        total_size_kb=total_size,
+        sections=sections,
+    )
+
+
+# =============================================================================
+# v0.5.19: Agent Mode — Prompt Generator
+# =============================================================================
+
+
+def build_agent_prompt(
+    request: StudioAgentPromptRequest,
+    context: StudioAgentContext,
+) -> StudioAgentPromptResponse:
+    """
+    Generate a system prompt for an LLM agent based on selected context.
+
+    v0.5.19: Filters sections by request.selected_sections (empty = all),
+    builds a structured system prompt with the goal and section data,
+    recommends temperature and model, and estimates token count.
+
+    Args:
+        request: The prompt generation request with goal and section selection.
+        context: The full agent context to draw from.
+
+    Returns:
+        StudioAgentPromptResponse with assembled prompt and recommendations.
+    """
+    # Filter sections
+    if request.selected_sections:
+        selected = [
+            s for s in context.sections
+            if s.key in request.selected_sections
+        ]
+    else:
+        selected = list(context.sections)
+
+    # Build system prompt
+    parts: List[str] = []
+
+    if request.custom_system_prompt:
+        parts.append(request.custom_system_prompt)
+        parts.append("")
+
+    parts.append("You are an expert assistant for an Aksara web application.")
+    parts.append(f"Goal: {request.goal}")
+    parts.append("")
+
+    for section in selected:
+        parts.append(f"## {section.title}")
+        parts.append(f"{section.description}")
+        parts.append("")
+        try:
+            data_str = json.dumps(section.data, indent=2, default=str)
+        except (TypeError, ValueError):
+            data_str = str(section.data)
+        parts.append(f"```json\n{data_str}\n```")
+        parts.append("")
+
+    system_prompt = "\n".join(parts)
+
+    # Determine temperature
+    has_high_risk = False
+    for section in selected:
+        if section.key == "ai_hints":
+            high_count = 0
+            if isinstance(section.data, dict):
+                high_count = section.data.get("high_risk_count", 0)
+            if high_count > 0:
+                has_high_risk = True
+                break
+        if section.key == "diagnostics":
+            if isinstance(section.data, dict):
+                stats = section.data.get("stats", {})
+                if stats.get("errors", 0) > 0:
+                    has_high_risk = True
+                    break
+
+    temperature = 0.3 if has_high_risk else 0.5
+
+    # Pick recommended model from AI profiles
+    recommended_model = "gpt-4o"
+    for section in selected:
+        if section.key == "ai_profiles" and isinstance(section.data, dict):
+            providers = section.data.get("providers", [])
+            for provider in providers:
+                if isinstance(provider, dict) and provider.get("client_ready"):
+                    models = provider.get("models", [])
+                    if models:
+                        first_model = models[0]
+                        if isinstance(first_model, dict):
+                            recommended_model = first_model.get("name", recommended_model)
+                        break
+            break
+
+    # Token estimate (rough word count)
+    tokens_estimate = len(system_prompt.split())
+
+    return StudioAgentPromptResponse(
+        system_prompt=system_prompt,
+        recommended_temperature=temperature,
+        recommended_model=recommended_model,
+        tokens_estimate=tokens_estimate,
     )

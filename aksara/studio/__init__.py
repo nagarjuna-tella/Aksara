@@ -52,6 +52,11 @@ from aksara.studio.models import (
     StudioAiSchemas,
     StudioAiPromptTemplate,
     StudioAiPrompts,
+    # v0.5.19: Agent Mode models
+    AgentContextSection,
+    StudioAgentContext,
+    StudioAgentPromptRequest,
+    StudioAgentPromptResponse,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -67,6 +72,9 @@ from aksara.studio.utils import (
     build_ai_context_export,
     build_ai_schemas,
     build_ai_prompts,
+    # v0.5.19: Agent Mode utils
+    build_agent_context,
+    build_agent_prompt,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -96,6 +104,11 @@ __all__ = [
     "StudioAiSchemas",
     "StudioAiPromptTemplate",
     "StudioAiPrompts",
+    # v0.5.19: Agent Mode models
+    "AgentContextSection",
+    "StudioAgentContext",
+    "StudioAgentPromptRequest",
+    "StudioAgentPromptResponse",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -107,6 +120,8 @@ __all__ = [
     "build_ai_context_export",  # v0.5.4
     "build_ai_schemas",  # v0.5.4
     "build_ai_prompts",  # v0.5.4
+    "build_agent_context",  # v0.5.19
+    "build_agent_prompt",  # v0.5.19
     # Router
     "studio_router",
 ]

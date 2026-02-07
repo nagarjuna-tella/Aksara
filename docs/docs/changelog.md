@@ -4,6 +4,34 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.19] — 2026-02-16
+
+### Added
+- **Agent Mode**: Build LLM-ready system prompts from project context
+  - **`AgentContextSection` model**: Section container with title, key, data payload, and auto-computed `size_kb`
+  - **`StudioAgentContext` model**: Aggregated context with 9 sections, timestamp, and total size
+  - **`StudioAgentPromptRequest` / `StudioAgentPromptResponse` models**: Goal-driven prompt generation with model/temperature recommendations
+  - **`build_agent_context()`**: Async builder gathering project_info, models, routes, migrations, diagnostics, ai_profiles, ai_hints, db_queries, schema_checksum
+  - **`build_agent_prompt()`**: Section-filtered system prompt assembly with token estimation
+  - **`GET /studio/agent/context`**: Full agent context endpoint
+  - **`POST /studio/agent/prompt`**: Prompt generation endpoint
+  - **CLI `aksara agent context`**: Context inspection with `--sections`, `--output`, `--summary`, `--size` flags
+  - **CLI `aksara agent prompt`**: Prompt generation with `--goal`, `--sections`, `--custom-system-prompt`, `--format` flags
+  - **Studio UI Agent panel**: Section checkboxes, goal textarea, Prompt/Context JSON tabs, keyboard shortcuts (8, ⌘G/Ctrl+G), localStorage persistence
+  - **~89 new tests**: Context builder, prompt generator, CLI commands, UI integration tests
+  - **Documentation**: Agent Mode guide under AI Mode
+
+### Changed
+- CLI version bumped to 0.5.19
+- Studio `__init__.py` exports updated with Agent Mode models and utils
+
+### Technical Notes
+- **No breaking changes**: All new endpoints and models; existing API unchanged
+- **Zero new dependencies**: Vanilla JS maintained throughout
+- **Smart recommendations**: Temperature lowers for high-risk hints or diagnostic errors; model picked from ready AI profiles
+
+---
+
 ## [0.5.18] — 2026-02-15
 
 ### Added

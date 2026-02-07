@@ -41,6 +41,8 @@ const state = {
     aiHealth: null,
     // v0.5.13: AI Hints state
     aiHints: null,
+    // v0.5.19: Agent Mode state
+    agent: { context: null, selectedSections: [], lastPromptResponse: null },
 };
 
 // =============================================================================
@@ -154,6 +156,7 @@ function initNavigation() {
         'Digit5': 'db-queries',
         'Digit6': 'ai-profiles',
         'Digit7': 'diagnostics',
+        'Digit8': 'agent',
     };
     document.addEventListener('keydown', (e) => {
         // Ignore when typing in inputs / textareas / selects
@@ -187,6 +190,12 @@ function initNavigation() {
                 e.preventDefault();
                 searchInput.focus();
             }
+        }
+        // v0.5.19: Cmd/Ctrl+G triggers agent prompt generation
+        if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
+            e.preventDefault();
+            const btn = document.getElementById('agent-generate-btn');
+            if (btn) btn.click();
         }
     });
 }
@@ -271,6 +280,9 @@ function renderSection(section) {
             break;
         case 'ai-profiles':
             renderAiProfiles();
+            break;
+        case 'agent':
+            renderAgentPanel();
             break;
     }
 }
@@ -1565,6 +1577,174 @@ function formatTokenCount(count) {
         return (count / 1000).toFixed(0) + 'K';
     }
     return count.toString();
+}
+
+// =============================================================================
+// v0.5.19: Agent Mode
+// =============================================================================
+
+async function loadAgentContext() {
+    try {
+        const ctx = await jsonGet('/studio/agent/context');
+        state.agent.context = ctx;
+        // Restore selected sections from localStorage or default to all
+        const saved = localStorage.getItem('aksara_agent_sections');
+        if (saved) {
+            try {
+                state.agent.selectedSections = JSON.parse(saved);
+            } catch (_) {
+                state.agent.selectedSections = ctx.sections.map(s => s.key);
+            }
+        } else {
+            state.agent.selectedSections = ctx.sections.map(s => s.key);
+        }
+        return ctx;
+    } catch (err) {
+        console.error('Failed to load agent context:', err);
+        return null;
+    }
+}
+
+function renderAgentPanel() {
+    loadAgentContext().then(ctx => {
+        if (!ctx) return;
+        renderAgentSections(ctx);
+        renderAgentContextJson(ctx);
+        initAgentEvents(ctx);
+    });
+}
+
+function renderAgentSections(ctx) {
+    const list = document.getElementById('agent-section-list');
+    if (!list) return;
+
+    list.innerHTML = ctx.sections.map(s => {
+        const checked = state.agent.selectedSections.includes(s.key) ? 'checked' : '';
+        return `<label class="agent-section-item">
+            <input type="checkbox" value="${escapeHtml(s.key)}" ${checked} class="agent-section-cb">
+            <span class="agent-section-title">${escapeHtml(s.title)}</span>
+            <span class="agent-section-size">${s.size_kb.toFixed(1)} KB</span>
+        </label>`;
+    }).join('');
+
+    // Update toggle-all button state
+    updateAgentToggleAll();
+}
+
+function updateAgentToggleAll() {
+    const btn = document.getElementById('agent-toggle-all');
+    if (!btn || !state.agent.context) return;
+    const allSelected = state.agent.selectedSections.length === state.agent.context.sections.length;
+    btn.textContent = allSelected ? 'Deselect All' : 'Select All';
+}
+
+function renderAgentContextJson(ctx) {
+    const el = document.getElementById('agent-json-output');
+    if (el) {
+        const filtered = {
+            ...ctx,
+            sections: ctx.sections.filter(s => state.agent.selectedSections.includes(s.key)),
+        };
+        el.textContent = JSON.stringify(filtered, null, 2);
+    }
+}
+
+function initAgentEvents(ctx) {
+    // Section checkbox changes
+    const list = document.getElementById('agent-section-list');
+    if (list) {
+        list.addEventListener('change', (e) => {
+            if (e.target.classList.contains('agent-section-cb')) {
+                const key = e.target.value;
+                if (e.target.checked) {
+                    if (!state.agent.selectedSections.includes(key)) {
+                        state.agent.selectedSections.push(key);
+                    }
+                } else {
+                    state.agent.selectedSections = state.agent.selectedSections.filter(k => k !== key);
+                }
+                localStorage.setItem('aksara_agent_sections', JSON.stringify(state.agent.selectedSections));
+                updateAgentToggleAll();
+                renderAgentContextJson(ctx);
+            }
+        });
+    }
+
+    // Toggle all
+    const toggleBtn = document.getElementById('agent-toggle-all');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const allSelected = state.agent.selectedSections.length === ctx.sections.length;
+            state.agent.selectedSections = allSelected ? [] : ctx.sections.map(s => s.key);
+            localStorage.setItem('aksara_agent_sections', JSON.stringify(state.agent.selectedSections));
+            renderAgentSections(ctx);
+            renderAgentContextJson(ctx);
+        });
+    }
+
+    // Generate button
+    const genBtn = document.getElementById('agent-generate-btn');
+    if (genBtn) {
+        genBtn.addEventListener('click', () => generateAgentPrompt());
+    }
+
+    // Tab switching
+    document.querySelectorAll('.agent-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.agent-tab-pane').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const pane = document.getElementById(`agent-pane-${tab.dataset.agentTab}`);
+            if (pane) pane.classList.add('active');
+        });
+    });
+}
+
+async function generateAgentPrompt() {
+    const goalEl = document.getElementById('agent-goal');
+    const outputEl = document.getElementById('agent-prompt-output');
+    const metaEl = document.getElementById('agent-prompt-meta');
+    if (!goalEl || !outputEl) return;
+
+    const goal = goalEl.value.trim();
+    if (!goal) {
+        outputEl.textContent = 'Please enter a goal first.';
+        return;
+    }
+
+    outputEl.textContent = 'Generating prompt...';
+    if (metaEl) metaEl.textContent = '';
+
+    try {
+        const body = {
+            goal: goal,
+            selected_sections: state.agent.selectedSections,
+        };
+        const resp = await jsonPost('/studio/agent/prompt', body);
+        state.agent.lastPromptResponse = resp;
+        outputEl.textContent = resp.system_prompt;
+        if (metaEl) {
+            metaEl.innerHTML = `<span>Model: <strong>${escapeHtml(resp.recommended_model)}</strong></span>`
+                + `<span>Temp: <strong>${resp.recommended_temperature}</strong></span>`
+                + `<span>~${resp.tokens_estimate} tokens</span>`;
+        }
+    } catch (err) {
+        outputEl.textContent = `Error: ${err.message}`;
+    }
+}
+
+async function jsonPost(url, body) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+        const err = new Error(`HTTP ${resp.status}`);
+        err.status = resp.status;
+        throw err;
+    }
+    return resp.json();
 }
 
 // =============================================================================

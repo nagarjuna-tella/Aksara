@@ -90,6 +90,13 @@
                     </svg>
                     <span>AI Profiles</span>
                 </a>
+                <a href="#/agent" class="nav-item" data-section="agent">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7l-3 4-3-4c-2-1.5-4-4-4-7a7 7 0 017-7z"></path>
+                        <circle cx="12" cy="9" r="2.5"></circle>
+                    </svg>
+                    <span>Agent</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -873,6 +880,63 @@
                 </div>
             </div>
         </div>
+    </template>
+
+    <!-- v0.5.19: Agent Mode -->
+    <template id="template-agent">
+        <section class="section-container" id="section-agent">
+            <div class="section-header">
+                <div>
+                    <h2>Agent Mode</h2>
+                    <p class="section-subtitle">Build LLM-ready system prompts from project context</p>
+                </div>
+            </div>
+
+            <div class="agent-layout">
+                <!-- Left: Section Checkboxes -->
+                <div class="card agent-sections-card">
+                    <div class="card-header">
+                        <h3>Context Sections</h3>
+                        <button class="btn btn-sm" id="agent-toggle-all">Select All</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="agent-section-list" id="agent-section-list">
+                            <p class="text-muted">Loading context...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Goal + Output -->
+                <div class="agent-right">
+                    <div class="card agent-goal-card">
+                        <div class="card-header"><h3>Goal</h3></div>
+                        <div class="card-body">
+                            <textarea id="agent-goal" class="agent-goal-input" rows="3" placeholder="Describe what the agent should accomplish..."></textarea>
+                            <button class="btn btn-primary" id="agent-generate-btn">Generate Prompt</button>
+                        </div>
+                    </div>
+
+                    <div class="card agent-output-card">
+                        <div class="card-header">
+                            <h3>Output</h3>
+                            <div class="agent-tabs">
+                                <button class="agent-tab active" data-agent-tab="prompt">Prompt</button>
+                                <button class="agent-tab" data-agent-tab="context">Context JSON</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="agent-tab-pane active" id="agent-pane-prompt">
+                                <pre class="agent-prompt-output" id="agent-prompt-output">Press "Generate Prompt" to get started.</pre>
+                                <div class="agent-prompt-meta" id="agent-prompt-meta"></div>
+                            </div>
+                            <div class="agent-tab-pane" id="agent-pane-context">
+                                <pre class="agent-json-output" id="agent-json-output">{}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </template>
     
     <script src="/studio/assets/app.js" defer></script>

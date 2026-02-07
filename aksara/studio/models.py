@@ -1262,3 +1262,95 @@ class StudioAiHintSet(BaseModel):
         default=0,
         description="High risk routes"
     )
+
+
+# =============================================================================
+# v0.5.19: Agent Mode Models
+# =============================================================================
+
+
+class AgentContextSection(BaseModel):
+    """
+    One section of gathered context for an LLM agent.
+
+    v0.5.19: Each section represents a logical group of project data
+    (e.g. models, routes, migrations) that can be selectively included
+    in an agent prompt.
+    """
+
+    title: str = Field(description="Human-readable section title")
+    description: str = Field(description="What this section contains")
+    key: str = Field(description="Machine-readable section key")
+    data: Any = Field(description="Section payload (models, routes, etc.)")
+    size_kb: float = Field(
+        default=0.0,
+        description="Approximate size of this section in KB",
+    )
+
+
+class StudioAgentContext(BaseModel):
+    """
+    Full agent context gathered from all available sources.
+
+    v0.5.19: Aggregates project_info, models, routes, migrations,
+    diagnostics, ai_profiles, ai_hints, db_queries, and schema_checksum
+    into a single response for LLM consumption.
+    """
+
+    generated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="UTC timestamp when context was generated",
+    )
+    total_sections: int = Field(default=0, description="Number of sections")
+    total_size_kb: float = Field(
+        default=0.0,
+        description="Total approximate size across all sections in KB",
+    )
+    sections: List[AgentContextSection] = Field(
+        default_factory=list,
+        description="All gathered context sections",
+    )
+
+
+class StudioAgentPromptRequest(BaseModel):
+    """
+    Request body for generating an agent system prompt.
+
+    v0.5.19: The caller specifies which context sections to include,
+    an optional goal, and an optional custom system prompt prefix.
+    """
+
+    selected_sections: List[str] = Field(
+        default_factory=list,
+        description="Section keys to include (empty = all)",
+    )
+    custom_system_prompt: Optional[str] = Field(
+        default=None,
+        description="Optional custom prefix for the system prompt",
+    )
+    goal: str = Field(
+        description="What the agent should accomplish",
+    )
+
+
+class StudioAgentPromptResponse(BaseModel):
+    """
+    Generated system prompt and LLM recommendations.
+
+    v0.5.19: Contains the assembled system prompt, recommended model
+    parameters, and a rough token estimate.
+    """
+
+    system_prompt: str = Field(description="The assembled system prompt")
+    recommended_temperature: float = Field(
+        default=0.5,
+        description="Suggested temperature (lower for high-risk tasks)",
+    )
+    recommended_model: str = Field(
+        default="gpt-4o",
+        description="Suggested model identifier",
+    )
+    tokens_estimate: int = Field(
+        default=0,
+        description="Rough word-count-based token estimate",
+    )

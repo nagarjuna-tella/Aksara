@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.18"
+CLI_VERSION = "0.5.19"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4026,6 +4026,163 @@ def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bo
         click.echo()
 
     sys.exit(1 if any(i.severity == "error" for i in issues) else 0)
+
+
+# =============================================================================
+# v0.5.19: Agent Mode CLI
+# =============================================================================
+
+
+@cli.group()
+def agent():
+    """Agent context and prompt generation.
+
+    Gather project context and build LLM-ready system prompts for
+    AI agents working with your Aksara application.
+
+    v0.5.19: Agent Mode
+    """
+    pass
+
+
+@agent.command("context")
+@click.option("--sections", "-s", default="", help="Comma-separated section keys to include (empty = all)")
+@click.option("--output", "-o", type=click.Choice(["json", "pretty"]), default="pretty", help="Output format")
+@click.option("--summary", is_flag=True, default=False, help="Show only section titles and sizes")
+@click.option("--size", is_flag=True, default=False, help="Show total size in KB")
+def agent_context(sections: str, output: str, summary: bool, size: bool):
+    """Gather project context for an LLM agent.
+
+    Collects project info, models, routes, migrations, diagnostics,
+    AI profiles, AI hints, DB queries, and schema checksum.
+    """
+    import asyncio
+    import json as json_mod
+    from unittest.mock import MagicMock
+
+    app = MagicMock()
+    app_module = getattr(_get_settings(), "app_module", None)
+    if app_module:
+        try:
+            from aksara.apps import Aksara
+            real_app = Aksara.instance
+            if real_app:
+                app = real_app
+        except Exception:
+            pass
+
+    try:
+        ctx = asyncio.run(_run_agent_context(app))
+    except Exception as e:
+        click.echo(f"  \033[31m✗ Error gathering context: {e}\033[0m")
+        sys.exit(1)
+
+    # Filter sections if requested
+    if sections:
+        keys = [k.strip() for k in sections.split(",") if k.strip()]
+        ctx_sections = [s for s in ctx.sections if s.key in keys]
+    else:
+        ctx_sections = ctx.sections
+
+    if size:
+        total = sum(s.size_kb for s in ctx_sections)
+        click.echo(f"  Total size: {total:.2f} KB ({len(ctx_sections)} section(s))")
+        return
+
+    if summary:
+        click.echo(f"  Agent Context — {len(ctx_sections)} section(s)")
+        click.echo()
+        for s in ctx_sections:
+            click.echo(f"  • {s.title} ({s.key}) — {s.size_kb:.2f} KB")
+        click.echo()
+        total = sum(s.size_kb for s in ctx_sections)
+        click.echo(f"  Total: {total:.2f} KB")
+        return
+
+    if output == "json":
+        data = ctx.model_dump(mode="json")
+        if sections:
+            keys = [k.strip() for k in sections.split(",") if k.strip()]
+            data["sections"] = [s for s in data["sections"] if s["key"] in keys]
+            data["total_sections"] = len(data["sections"])
+        click.echo(json_mod.dumps(data, indent=2, default=str))
+    else:
+        click.echo(f"  Agent Context — {len(ctx_sections)} section(s)")
+        click.echo()
+        for s in ctx_sections:
+            click.echo(f"  \033[1m{s.title}\033[0m ({s.key}) — {s.size_kb:.2f} KB")
+            click.echo(f"  {s.description}")
+            click.echo()
+
+
+@agent.command("prompt")
+@click.option("--goal", "-g", required=True, help="What the agent should accomplish")
+@click.option("--sections", "-s", default="", help="Comma-separated section keys (empty = all)")
+@click.option("--custom-system-prompt", "-c", default=None, help="Custom prefix for the system prompt")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def agent_prompt(goal: str, sections: str, custom_system_prompt: str | None, output_format: str):
+    """Generate an LLM system prompt from project context.
+
+    Requires --goal to specify the agent's task.
+    """
+    import asyncio
+    import json as json_mod
+    from unittest.mock import MagicMock
+
+    from aksara.studio.models import StudioAgentPromptRequest
+    from aksara.studio.utils import build_agent_prompt as _build_prompt
+
+    app = MagicMock()
+    app_module = getattr(_get_settings(), "app_module", None)
+    if app_module:
+        try:
+            from aksara.apps import Aksara
+            real_app = Aksara.instance
+            if real_app:
+                app = real_app
+        except Exception:
+            pass
+
+    try:
+        ctx = asyncio.run(_run_agent_context(app))
+    except Exception as e:
+        click.echo(f"  \033[31m✗ Error gathering context: {e}\033[0m")
+        sys.exit(1)
+
+    selected = [k.strip() for k in sections.split(",") if k.strip()] if sections else []
+
+    req = StudioAgentPromptRequest(
+        selected_sections=selected,
+        custom_system_prompt=custom_system_prompt,
+        goal=goal,
+    )
+
+    result = _build_prompt(req, ctx)
+
+    if output_format == "json":
+        click.echo(json_mod.dumps(result.model_dump(), indent=2, default=str))
+    else:
+        click.echo(result.system_prompt)
+        click.echo()
+        click.echo(f"  \033[90mModel: {result.recommended_model}  |  "
+                    f"Temp: {result.recommended_temperature}  |  "
+                    f"~{result.tokens_estimate} tokens\033[0m")
+
+
+async def _run_agent_context(app):
+    """Run build_agent_context in async context."""
+    from aksara.studio.utils import build_agent_context
+    return await build_agent_context(app)
+
+
+def _get_settings():
+    """Get Aksara settings with fallback."""
+    try:
+        from aksara.conf import settings
+        return settings
+    except Exception:
+        from unittest.mock import MagicMock
+        return MagicMock()
 
 
 if __name__ == "__main__":

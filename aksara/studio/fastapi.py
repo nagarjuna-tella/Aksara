@@ -42,6 +42,10 @@ v0.5.13 Additions:
 
 v0.5.17 Additions:
 - GET /studio/diagnostics - Full self-diagnostics report
+
+v0.5.19 Additions:
+- GET /studio/agent/context - Agent context gathering
+- POST /studio/agent/prompt - Agent prompt generation
 """
 
 from __future__ import annotations
@@ -75,6 +79,10 @@ from aksara.studio.models import (
     StudioAiProfileHealth,
     # v0.5.13: AI Hints models
     StudioAiHintSet,
+    # v0.5.19: Agent Mode models
+    StudioAgentContext,
+    StudioAgentPromptRequest,
+    StudioAgentPromptResponse,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -98,6 +106,9 @@ from aksara.studio.utils import (
     build_ai_profile_health,
     # v0.5.13: AI Hints utils
     build_ai_hints,
+    # v0.5.19: Agent Mode utils
+    build_agent_context,
+    build_agent_prompt,
 )
 from aksara.diagnostics import DiagnosticReport, run_all_checks
 
@@ -913,6 +924,49 @@ async def studio_diagnostics(request: Request) -> DiagnosticReport:
         - system: {aksara_version, python_version, os, arch}
     """
     return await run_all_checks()
+
+
+# =============================================================================
+# v0.5.19: Agent Mode Endpoints
+# =============================================================================
+
+
+@router.get("/studio/agent/context", response_model=StudioAgentContext)
+async def studio_agent_context(request: Request) -> StudioAgentContext:
+    """
+    Gather full project context for an LLM agent.
+
+    v0.5.19: Collects 9 sections (project_info, models, routes,
+    migrations, diagnostics, ai_profiles, ai_hints, db_queries,
+    schema_checksum) into a single response suitable for agent
+    consumption.
+
+    Returns:
+        StudioAgentContext with all available sections.
+    """
+    return await build_agent_context(request.app)
+
+
+@router.post("/studio/agent/prompt", response_model=StudioAgentPromptResponse)
+async def studio_agent_prompt(
+    request: Request,
+    body: StudioAgentPromptRequest,
+) -> StudioAgentPromptResponse:
+    """
+    Generate a system prompt for an LLM agent.
+
+    v0.5.19: Accepts a goal, optional section filter, and optional
+    custom system prompt prefix.  Returns the assembled system prompt,
+    recommended temperature/model, and a rough token estimate.
+
+    Args:
+        body: StudioAgentPromptRequest with goal and section selection.
+
+    Returns:
+        StudioAgentPromptResponse with prompt and recommendations.
+    """
+    context = await build_agent_context(request.app)
+    return build_agent_prompt(body, context)
 
 
 # =============================================================================

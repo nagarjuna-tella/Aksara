@@ -2365,3 +2365,140 @@ code {
 .diag-action-copy-btn:hover {
     opacity: 0.85;
 }
+
+/* =============================================================================
+   v0.5.19: Agent Mode
+   ============================================================================= */
+
+.agent-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.2rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .agent-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.agent-section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.agent-section-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    transition: background 0.15s;
+}
+
+.agent-section-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.agent-section-title {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.agent-section-size {
+    color: var(--text-secondary, #888);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.agent-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.agent-goal-input {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.agent-goal-input:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -1px;
+}
+
+.agent-goal-card .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.agent-tabs {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.agent-tab {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--text-secondary, #888);
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.agent-tab.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.agent-tab-pane {
+    display: none;
+}
+
+.agent-tab-pane.active {
+    display: block;
+}
+
+.agent-prompt-output,
+.agent-json-output {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 480px;
+    overflow-y: auto;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.agent-prompt-meta {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #888);
+}
