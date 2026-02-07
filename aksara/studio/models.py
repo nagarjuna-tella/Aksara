@@ -1066,3 +1066,85 @@ class StudioAiSecretsInfo(BaseModel):
         ...,
         description="Total number of secrets required"
     )
+
+
+# =============================================================================
+# v0.5.12: AI Profile Health Models
+# =============================================================================
+
+class StudioAiProfileIssue(BaseModel):
+    """
+    A single validation issue in AI profile configuration.
+    
+    v0.5.12: Used by /studio/ai/health endpoint.
+    """
+    
+    id: str = Field(
+        ...,
+        description="Stable identifier for this issue"
+    )
+    kind: str = Field(
+        ...,
+        description="Classification of the issue type"
+    )
+    severity: str = Field(
+        ...,
+        description="How critical this issue is (info/warning/error)"
+    )
+    message: str = Field(
+        ...,
+        description="Human-readable description of the issue"
+    )
+    provider_name: Optional[str] = Field(
+        default=None,
+        description="Provider involved (if applicable)"
+    )
+    model_name: Optional[str] = Field(
+        default=None,
+        description="Model involved (if applicable)"
+    )
+    field: Optional[str] = Field(
+        default=None,
+        description="Specific field with issue"
+    )
+
+
+class StudioAiProfileHealth(BaseModel):
+    """
+    Health status of AI profile configuration.
+    
+    v0.5.12: Result of /studio/ai/health endpoint.
+    """
+    
+    is_valid: bool = Field(
+        ...,
+        description="True if no errors were found"
+    )
+    error_count: int = Field(
+        default=0,
+        description="Number of error-level issues"
+    )
+    warning_count: int = Field(
+        default=0,
+        description="Number of warning-level issues"
+    )
+    info_count: int = Field(
+        default=0,
+        description="Number of info-level issues"
+    )
+    issues: List[StudioAiProfileIssue] = Field(
+        default_factory=list,
+        description="List of all discovered issues"
+    )
+    provider_count: int = Field(
+        default=0,
+        description="Number of configured providers"
+    )
+    model_count: int = Field(
+        default=0,
+        description="Total number of models"
+    )
+    default_provider: Optional[str] = Field(
+        default=None,
+        description="Name of the default provider"
+    )

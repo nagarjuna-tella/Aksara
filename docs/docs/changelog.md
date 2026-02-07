@@ -4,6 +4,55 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.12] — 2026-02-11
+
+### Added
+- **AI Profiles Validation & Linting**: Hardened AI contracts with validation, linting, and health reporting
+  - **Core Validation API** (`aksara/ai/providers.py`):
+    - `AiProfileIssueSeverity` type literal (info, warning, error)
+    - `AiProfileIssueKind` type literal (8 issue kinds)
+    - `AiProfileIssue` model for individual validation issues
+    - `AiProfileHealth` model for validation results
+    - `validate_profile_set(profile_set)` - Validate any profile set
+    - `validate_default_profile_set()` - Validate current app configuration
+    - `classify_issue_severity(kind)` - Get severity for issue kind
+  
+  - **Detected Issues**:
+    - `empty_profile_set` - No providers configured
+    - `duplicate_provider_name` - Provider names must be unique
+    - `duplicate_model_name` - Model names must be unique per provider
+    - `unknown_provider_kind` - Provider kind not in valid set
+    - `unknown_model_kind` - Model kind not in valid set
+    - `missing_default_provider` - Default provider not set or invalid reference
+    - `invalid_model_reference` - Default model doesn't exist in provider
+    - `missing_required_field` - Required field not provided
+  
+  - **CLI Validation** (`aksara ai validate`):
+    - `--format text|json` - Output format (default: text)
+    - Exit code 0 on valid, 1 on errors
+    - Color-coded severity badges in text output
+    - Full health JSON export for CI/CD integration
+  
+  - **Studio Health Endpoint**:
+    - `GET /studio/ai/health` - Returns `StudioAiProfileHealth`
+    - `StudioAiProfileIssue` and `StudioAiProfileHealth` models
+    - `build_ai_profile_health(app)` utility function
+  
+  - **Studio UI Health Badge**:
+    - Health banner in AI Profiles panel
+    - Green OK badge or red ERROR badge with counts
+    - Issues list with severity indicators
+    - Auto-loads on panel render
+
+### Changed
+- CLI version bumped to 0.5.12
+- AI module exports updated with validation components
+
+### Documentation
+- Changelog updated with v0.5.12 AI Profiles Validation features
+
+---
+
 ## [0.5.11] — 2026-02-10
 
 ### Added

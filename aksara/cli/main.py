@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.11"
+CLI_VERSION = "0.5.12"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -3294,6 +3294,125 @@ def ai_secrets(output_format: str):
             
             click.echo()
             
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@ai.command("validate")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_validate(output_format: str):
+    """Validate AI profile configuration.
+    
+    v0.5.12: Runs validation checks on the AI profile configuration.
+    
+    Checks include:
+    - Provider names are unique
+    - Model names are unique within providers
+    - Provider and model kinds are valid
+    - Default provider exists and has models
+    - Profile set is non-empty
+    
+    Exit codes:
+    - 0: Configuration is valid (no errors)
+    - 1: Configuration has errors
+    
+    Examples:
+        aksara ai validate
+        aksara ai validate --format json
+    """
+    import json
+    
+    try:
+        from aksara.conf import settings
+        from aksara.ai.providers import build_default_ai_profile_set, validate_profile_set
+        
+        # Get environment info
+        environment = "development" if getattr(settings, "debug", False) else "production"
+        
+        click.echo()
+        click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Profiles Validation (env: {environment})")
+        click.echo()
+        
+        # Check if profiles are enabled
+        ai_profiles_enabled = getattr(settings, 'ai_profiles_enabled', True)
+        
+        if not ai_profiles_enabled:
+            health_data = {
+                "is_valid": True,
+                "error_count": 0,
+                "warning_count": 0,
+                "info_count": 1,
+                "issues": [{
+                    "id": "ai_profiles_disabled",
+                    "kind": "info",
+                    "severity": "info",
+                    "message": "AI profiles are disabled",
+                    "field": "ai_profiles_enabled",
+                }],
+            }
+            
+            if output_format == "json":
+                click.echo(json.dumps(health_data, indent=2))
+            else:
+                click.echo("  Status: \033[32mOK\033[0m (AI profiles disabled)")
+                click.echo()
+                click.echo("  - [INFO] AI profiles are disabled.")
+                click.echo()
+            sys.exit(0)
+        
+        # Build and validate profile set
+        profile_set = build_default_ai_profile_set(settings)
+        health = validate_profile_set(profile_set)
+        
+        if output_format == "json":
+            click.echo(json.dumps(health.model_dump(), indent=2))
+        else:
+            # Text format
+            if health.is_valid:
+                if health.warning_count > 0:
+                    click.echo(f"  Status: \033[32mOK\033[0m ({health.warning_count} warning(s))")
+                else:
+                    click.echo("  Status: \033[32mOK\033[0m")
+            else:
+                parts = []
+                if health.error_count > 0:
+                    parts.append(f"{health.error_count} error(s)")
+                if health.warning_count > 0:
+                    parts.append(f"{health.warning_count} warning(s)")
+                click.echo(f"  Status: \033[31mERROR\033[0m ({', '.join(parts)})")
+            
+            click.echo()
+            
+            # Show issues
+            if health.issues:
+                for issue in health.issues:
+                    if issue.severity == "error":
+                        severity_badge = "\033[31m[ERROR]\033[0m"
+                    elif issue.severity == "warning":
+                        severity_badge = "\033[33m[WARNING]\033[0m"
+                    else:
+                        severity_badge = "\033[90m[INFO]\033[0m"
+                    
+                    click.echo(f"  - {severity_badge} {issue.kind}: {issue.message}")
+                
+                click.echo()
+            else:
+                click.echo("  No issues found.")
+                click.echo()
+            
+            # Show summary
+            provider_count = len(profile_set.providers)
+            model_count = profile_set.total_models()
+            click.echo(f"  Providers: {provider_count}")
+            click.echo(f"  Models: {model_count}")
+            if profile_set.default_provider:
+                click.echo(f"  Default: {profile_set.default_provider}")
+            click.echo()
+        
+        # Exit code based on validity
+        sys.exit(0 if health.is_valid else 1)
+        
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
         raise click.Abort()

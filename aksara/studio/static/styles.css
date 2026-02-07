@@ -1623,6 +1623,117 @@ code {
 }
 
 /* =============================================================================
+   v0.5.12: AI Profile Health Styles
+   ============================================================================= */
+
+.ai-health-banner {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-light);
+}
+
+.ai-health-banner.health-ok {
+    border-left: 3px solid var(--accent-secondary);
+}
+
+.ai-health-banner.health-warning {
+    border-left: 3px solid var(--accent-warning);
+}
+
+.ai-health-banner.health-error {
+    border-left: 3px solid var(--accent-error);
+}
+
+.ai-health-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-health-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ai-health-badge.health-ok {
+    background: var(--accent-secondary);
+    color: white;
+}
+
+.ai-health-badge.health-warning {
+    background: var(--accent-warning);
+    color: var(--text-primary);
+}
+
+.ai-health-badge.health-error {
+    background: var(--accent-error);
+    color: white;
+}
+
+.ai-health-summary {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.ai-health-issues {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+}
+
+.ai-health-issue {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.ai-health-issue-severity {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    flex-shrink: 0;
+}
+
+.ai-health-issue-severity.error {
+    background: var(--accent-error);
+    color: white;
+}
+
+.ai-health-issue-severity.warning {
+    background: var(--accent-warning);
+    color: var(--text-primary);
+}
+
+.ai-health-issue-severity.info {
+    background: var(--text-tertiary);
+    color: white;
+}
+
+.ai-health-issue-message {
+    color: var(--text-secondary);
+}
+
+.ai-health-error-text {
+    color: var(--accent-error);
+    font-size: 0.85rem;
+}
+
+/* =============================================================================
    Print Styles
    ============================================================================= */
 

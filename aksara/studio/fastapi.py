@@ -33,6 +33,9 @@ v0.5.10 Additions:
 v0.5.11 Additions:
 - GET /studio/ai/profiles - AI provider profiles and model configurations
 - GET /studio/ai/secrets - AI secret hints (env var names, not values)
+
+v0.5.12 Additions:
+- GET /studio/ai/health - AI profile validation and health status
 """
 
 from __future__ import annotations
@@ -62,6 +65,8 @@ from aksara.studio.models import (
     # v0.5.11: AI Profiles models
     StudioAiProfileSetSummary,
     StudioAiSecretsInfo,
+    # v0.5.12: AI Profile Health models
+    StudioAiProfileHealth,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -81,6 +86,8 @@ from aksara.studio.utils import (
     # v0.5.11: AI Profiles utils
     build_ai_profile_set_summary,
     build_ai_secrets_info,
+    # v0.5.12: AI Profile Health utils
+    build_ai_profile_health,
 )
 
 # v0.5.3: Static files directory
@@ -775,6 +782,51 @@ async def studio_ai_secrets(request: Request) -> StudioAiSecretsInfo:
         }
     """
     return build_ai_secrets_info()
+
+
+@router.get("/studio/ai/health", response_model=StudioAiProfileHealth)
+async def studio_ai_health(request: Request) -> StudioAiProfileHealth:
+    """
+    Get AI profile configuration health status.
+    
+    v0.5.12: Validates AI profile configuration and returns any issues found.
+    
+    This endpoint runs validation checks on the current AI profile 
+    configuration, detecting:
+    - Duplicate provider or model names
+    - Invalid provider or model kinds
+    - Missing or invalid default provider/model references
+    - Empty profile sets
+    
+    Returns:
+        StudioAiProfileHealth with:
+        - is_valid: True if no errors found
+        - error_count, warning_count, info_count: Issue counts by severity
+        - issues: List of validation issues
+        - provider_count, model_count: Configuration summary
+        - default_provider: Current default provider name
+    
+    Example response:
+        {
+            "is_valid": true,
+            "error_count": 0,
+            "warning_count": 1,
+            "info_count": 0,
+            "issues": [
+                {
+                    "id": "missing_default_provider:none",
+                    "kind": "missing_default_provider",
+                    "severity": "warning",
+                    "message": "No default provider is set",
+                    "field": "default_provider"
+                }
+            ],
+            "provider_count": 3,
+            "model_count": 6,
+            "default_provider": null
+        }
+    """
+    return build_ai_profile_health(request.app)
 
 
 # =============================================================================

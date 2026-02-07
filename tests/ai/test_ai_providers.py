@@ -531,3 +531,256 @@ class TestBuildExampleProfileSet:
         assert openai_provider is not None
         assert openai_provider.kind == "openai"
         assert len(openai_provider.models) > 0
+
+
+# =============================================================================
+# v0.5.12: Validation Tests
+# =============================================================================
+
+from aksara.ai.providers import (
+    AiProfileIssueSeverity,
+    AiProfileIssueKind,
+    AiProfileIssue,
+    AiProfileHealth,
+    validate_profile_set,
+    validate_default_profile_set,
+    classify_issue_severity,
+)
+
+
+class TestAiProfileIssue:
+    """Tests for AiProfileIssue model."""
+    
+    def test_create_issue(self):
+        """Test creating a validation issue."""
+        issue = AiProfileIssue(
+            id="duplicate_provider_name:openai",
+            kind="duplicate_provider_name",
+            severity="error",
+            message="Provider name 'openai' is defined multiple times",
+            provider_name="openai",
+        )
+        assert issue.id == "duplicate_provider_name:openai"
+        assert issue.kind == "duplicate_provider_name"
+        assert issue.severity == "error"
+        assert issue.provider_name == "openai"
+    
+    def test_issue_optional_fields(self):
+        """Test issue with optional fields."""
+        issue = AiProfileIssue(
+            id="test",
+            kind="empty_profile_set",
+            severity="warning",
+            message="Test issue",
+        )
+        assert issue.provider_name is None
+        assert issue.model_name is None
+        assert issue.field is None
+
+
+class TestAiProfileHealth:
+    """Tests for AiProfileHealth model."""
+    
+    def test_create_valid_health(self):
+        """Test creating health result with no issues."""
+        health = AiProfileHealth(
+            is_valid=True,
+            error_count=0,
+            warning_count=0,
+            info_count=0,
+            issues=[],
+        )
+        assert health.is_valid is True
+        assert health.error_count == 0
+    
+    def test_create_health_with_issues(self):
+        """Test creating health result with issues."""
+        issue = AiProfileIssue(
+            id="test_issue",
+            kind="duplicate_provider_name",
+            severity="error",
+            message="Test error",
+        )
+        health = AiProfileHealth(
+            is_valid=False,
+            error_count=1,
+            warning_count=0,
+            info_count=0,
+            issues=[issue],
+        )
+        assert health.is_valid is False
+        assert health.error_count == 1
+        assert len(health.issues) == 1
+
+
+class TestClassifyIssueSeverity:
+    """Tests for classify_issue_severity function."""
+    
+    def test_duplicate_provider_is_error(self):
+        """Test that duplicate provider names are errors."""
+        severity = classify_issue_severity("duplicate_provider_name")
+        assert severity == "error"
+    
+    def test_duplicate_model_is_error(self):
+        """Test that duplicate model names are errors."""
+        severity = classify_issue_severity("duplicate_model_name")
+        assert severity == "error"
+    
+    def test_unknown_kinds_are_errors(self):
+        """Test that unknown provider/model kinds are errors."""
+        assert classify_issue_severity("unknown_provider_kind") == "error"
+        assert classify_issue_severity("unknown_model_kind") == "error"
+    
+    def test_empty_profile_set_severity(self):
+        """Test empty profile set severity."""
+        # When configured, it's an error
+        severity = classify_issue_severity("empty_profile_set", is_configured=True)
+        assert severity == "error"
+        
+        # When not configured, it's a warning
+        severity = classify_issue_severity("empty_profile_set", is_configured=False)
+        assert severity == "warning"
+
+
+class TestValidateProfileSet:
+    """Tests for validate_profile_set function."""
+    
+    def test_valid_profile_set(self):
+        """Test that a valid profile set passes validation."""
+        profile_set = build_example_profile_set()
+        health = validate_profile_set(profile_set)
+        
+        assert health.is_valid is True
+        assert health.error_count == 0
+    
+    def test_empty_profile_set(self):
+        """Test that empty profile set is flagged."""
+        profile_set = AiProfileSet(providers=[])
+        health = validate_profile_set(profile_set)
+        
+        # Empty is an error
+        assert health.is_valid is False
+        assert any(i.kind == "empty_profile_set" for i in health.issues)
+    
+    def test_duplicate_provider_names(self):
+        """Test detection of duplicate provider names."""
+        provider1 = AiProviderProfile(
+            name="same_name",
+            display_name="Provider 1",
+            kind="openai",
+        )
+        provider2 = AiProviderProfile(
+            name="same_name",  # duplicate!
+            display_name="Provider 2",
+            kind="anthropic",
+        )
+        profile_set = AiProfileSet(providers=[provider1, provider2])
+        
+        health = validate_profile_set(profile_set)
+        
+        assert health.is_valid is False
+        assert any(i.kind == "duplicate_provider_name" for i in health.issues)
+    
+    def test_duplicate_model_names_within_provider(self):
+        """Test detection of duplicate model names within a provider."""
+        model1 = AiModelProfile(
+            name="same_model",
+            display_name="Model 1",
+            model_id="model-1",
+        )
+        model2 = AiModelProfile(
+            name="same_model",  # duplicate!
+            display_name="Model 2",
+            model_id="model-2",
+        )
+        provider = AiProviderProfile(
+            name="test_provider",
+            display_name="Test Provider",
+            kind="openai",
+            models=[model1, model2],
+        )
+        profile_set = AiProfileSet(providers=[provider])
+        
+        health = validate_profile_set(profile_set)
+        
+        assert health.is_valid is False
+        assert any(i.kind == "duplicate_model_name" for i in health.issues)
+    
+    def test_invalid_default_provider(self):
+        """Test detection of invalid default provider reference."""
+        provider = AiProviderProfile(
+            name="real_provider",
+            display_name="Real Provider",
+            kind="openai",
+            models=[
+                AiModelProfile(name="model1", display_name="Model 1", model_id="m1"),
+            ],
+        )
+        profile_set = AiProfileSet(
+            providers=[provider],
+            default_provider="nonexistent_provider",  # invalid reference
+        )
+        
+        health = validate_profile_set(profile_set)
+        
+        assert health.is_valid is False
+        assert any(i.kind == "missing_default_provider" for i in health.issues)
+    
+    def test_invalid_default_model_reference(self):
+        """Test detection of invalid default model reference in provider."""
+        provider = AiProviderProfile(
+            name="test_provider",
+            display_name="Test Provider",
+            kind="openai",
+            models=[
+                AiModelProfile(name="model1", display_name="Model 1", model_id="m1"),
+            ],
+            default_model="nonexistent_model",  # invalid reference
+        )
+        profile_set = AiProfileSet(providers=[provider])
+        
+        health = validate_profile_set(profile_set)
+        
+        assert health.is_valid is False
+        assert any(i.kind == "invalid_model_reference" for i in health.issues)
+    
+    def test_warning_for_no_default_provider(self):
+        """Test that missing default provider is a warning."""
+        provider = AiProviderProfile(
+            name="test_provider",
+            display_name="Test Provider",
+            kind="openai",
+            models=[
+                AiModelProfile(name="model1", display_name="Model 1", model_id="m1"),
+            ],
+        )
+        profile_set = AiProfileSet(
+            providers=[provider],
+            default_provider=None,  # no default set
+        )
+        
+        health = validate_profile_set(profile_set)
+        
+        # Should be valid (warning doesn't make it invalid)
+        assert health.is_valid is True
+        assert health.warning_count > 0
+        assert any(i.kind == "missing_default_provider" and i.severity == "warning" for i in health.issues)
+
+
+class TestValidateDefaultProfileSet:
+    """Tests for validate_default_profile_set function."""
+    
+    def test_default_profiles_are_valid(self):
+        """Test that default profiles validate successfully."""
+        from unittest.mock import MagicMock, patch
+        
+        mock_settings = MagicMock()
+        mock_settings.ai_profiles_enabled = True
+        mock_settings.ai_providers = None
+        mock_settings.ai_default_provider = None
+        mock_settings.debug = True
+        
+        with patch("aksara.conf.settings", mock_settings):
+            health = validate_default_profile_set()
+        
+        assert health.is_valid is True

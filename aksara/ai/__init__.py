@@ -242,6 +242,7 @@ from aksara.ai.schema_doctor import (
 )
 
 # v0.5.11: AI Profiles & Provider Contracts
+# v0.5.12: Added validation models and functions
 from aksara.ai.providers import (
     # Type aliases
     AiModelKind,
@@ -253,6 +254,11 @@ from aksara.ai.providers import (
     # Secret hints
     AiProviderSecretHint,
     AiProviderConfigInfo,
+    # v0.5.12: Validation models
+    AiProfileIssueSeverity,
+    AiProfileIssueKind,
+    AiProfileIssue,
+    AiProfileHealth,
     # Registry
     AiProviderRegistry,
     # Helper functions
@@ -260,6 +266,10 @@ from aksara.ai.providers import (
     build_default_ai_profile_set,
     build_secret_hints_from_settings,
     build_example_profile_set,
+    # v0.5.12: Validation functions
+    classify_issue_severity,
+    validate_profile_set,
+    validate_default_profile_set,
 )
 
 __all__ = [
@@ -387,6 +397,7 @@ __all__ = [
     "classify_severity",
     "analyze_schema_health",
     # v0.5.11: AI Profiles & Provider Contracts
+    # v0.5.12: Added validation
     "AiModelKind",
     "AiProviderKind",
     "AiModelProfile",
@@ -394,9 +405,16 @@ __all__ = [
     "AiProfileSet",
     "AiProviderSecretHint",
     "AiProviderConfigInfo",
+    "AiProfileIssueSeverity",
+    "AiProfileIssueKind",
+    "AiProfileIssue",
+    "AiProfileHealth",
     "AiProviderRegistry",
     "get_ai_provider_registry",
     "build_default_ai_profile_set",
     "build_secret_hints_from_settings",
     "build_example_profile_set",
+    "classify_issue_severity",
+    "validate_profile_set",
+    "validate_default_profile_set",
 ]

@@ -733,10 +733,20 @@
     </template>
     
     <!-- v0.5.11: AI Profiles Template -->
+    <!-- v0.5.12: Added health badge and issues list -->
     <template id="template-ai-profiles">
         <div class="section-header">
             <h1>AI Profiles</h1>
             <p class="section-subtitle">AI provider configurations and model profiles</p>
+        </div>
+        
+        <!-- v0.5.12: Health Status Banner -->
+        <div id="ai-health-banner" class="ai-health-banner hidden">
+            <div class="ai-health-status">
+                <span class="ai-health-badge" id="ai-health-badge">Loading...</span>
+                <span class="ai-health-summary" id="ai-health-summary"></span>
+            </div>
+            <div class="ai-health-issues" id="ai-health-issues"></div>
         </div>
         
         <div id="ai-profiles-disabled-banner" class="info-banner warning hidden">

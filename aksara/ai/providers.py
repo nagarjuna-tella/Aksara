@@ -388,6 +388,346 @@ class AiProviderConfigInfo(BaseModel):
 
 
 # =============================================================================
+# v0.5.12: Validation & Linting Models
+# =============================================================================
+
+AiProfileIssueSeverity = Literal["info", "warning", "error"]
+"""Severity level for profile validation issues."""
+
+AiProfileIssueKind = Literal[
+    "duplicate_provider_name",
+    "duplicate_model_name",
+    "missing_default_provider",
+    "missing_default_model",
+    "unknown_provider_kind",
+    "unknown_model_kind",
+    "invalid_model_reference",
+    "empty_profile_set",
+    "empty_provider_models",
+]
+"""Classification of validation issue types."""
+
+# Valid kinds for validation
+_VALID_MODEL_KINDS = {"chat", "completion", "embedding", "tool-calling", "rerank", "vision", "audio", "code"}
+_VALID_PROVIDER_KINDS = {"openai", "azure_openai", "anthropic", "google", "cohere", "local", "other"}
+
+
+class AiProfileIssue(BaseModel):
+    """
+    A single validation issue found in an AI profile configuration.
+    
+    v0.5.12: Used by validate_profile_set() to report problems.
+    
+    Attributes:
+        id: Stable identifier (e.g., "duplicate_provider_name:openai")
+        kind: Classification of the issue type
+        severity: How critical this issue is
+        message: Human-readable description
+        provider_name: Provider involved (if applicable)
+        model_name: Model involved (if applicable)
+        field: Specific field with issue (e.g., "default_provider")
+    """
+    
+    model_config = {"extra": "forbid"}
+    
+    id: str = Field(
+        ...,
+        description="Stable identifier for this issue",
+    )
+    kind: AiProfileIssueKind = Field(
+        ...,
+        description="Classification of the issue type",
+    )
+    severity: AiProfileIssueSeverity = Field(
+        ...,
+        description="How critical this issue is",
+    )
+    message: str = Field(
+        ...,
+        description="Human-readable description of the issue",
+    )
+    provider_name: Optional[str] = Field(
+        default=None,
+        description="Provider involved (if applicable)",
+    )
+    model_name: Optional[str] = Field(
+        default=None,
+        description="Model involved (if applicable)",
+    )
+    field: Optional[str] = Field(
+        default=None,
+        description="Specific field with issue",
+    )
+
+
+class AiProfileHealth(BaseModel):
+    """
+    Health status of an AI profile configuration.
+    
+    v0.5.12: Result of validate_profile_set().
+    
+    Attributes:
+        is_valid: True if no errors were found
+        error_count: Number of error-level issues
+        warning_count: Number of warning-level issues
+        info_count: Number of info-level issues
+        issues: List of all discovered issues
+    """
+    
+    model_config = {"extra": "forbid"}
+    
+    is_valid: bool = Field(
+        ...,
+        description="True if no errors were found",
+    )
+    error_count: int = Field(
+        default=0,
+        description="Number of error-level issues",
+    )
+    warning_count: int = Field(
+        default=0,
+        description="Number of warning-level issues",
+    )
+    info_count: int = Field(
+        default=0,
+        description="Number of info-level issues",
+    )
+    issues: List[AiProfileIssue] = Field(
+        default_factory=list,
+        description="List of all discovered issues",
+    )
+
+
+# =============================================================================
+# v0.5.12: Validation Functions
+# =============================================================================
+
+def classify_issue_severity(
+    kind: AiProfileIssueKind, 
+    *, 
+    is_configured: bool = True
+) -> AiProfileIssueSeverity:
+    """
+    Determine severity for an issue kind.
+    
+    v0.5.12: Centralizes severity logic for validation.
+    
+    Args:
+        kind: The type of issue
+        is_configured: Whether user has explicit config (vs defaults)
+        
+    Returns:
+        Appropriate severity level
+    """
+    # Hard errors - always error level
+    hard_errors = {
+        "duplicate_provider_name",
+        "duplicate_model_name",
+        "unknown_provider_kind",
+        "unknown_model_kind",
+        "invalid_model_reference",
+    }
+    
+    if kind in hard_errors:
+        return "error"
+    
+    # Soft issues - depends on configuration state
+    if kind == "empty_profile_set":
+        return "error" if is_configured else "warning"
+    
+    if kind == "empty_provider_models":
+        return "warning"
+    
+    if kind in ("missing_default_provider", "missing_default_model"):
+        # If user explicitly configured something wrong, it's an error
+        # If just using defaults, it's a warning
+        return "warning"
+    
+    return "warning"
+
+
+def validate_profile_set(profile_set: AiProfileSet) -> AiProfileHealth:
+    """
+    Validate an AiProfileSet for configuration issues.
+    
+    v0.5.12: Main validation entry point.
+    
+    Checks:
+    - Profile set is non-empty
+    - Provider names are unique
+    - Provider kinds are valid
+    - Model names within each provider are unique
+    - Model kinds are valid
+    - Default provider exists and has models
+    - Default model exists within default provider
+    
+    Args:
+        profile_set: The profile set to validate
+        
+    Returns:
+        AiProfileHealth with validation results
+    """
+    issues: List[AiProfileIssue] = []
+    
+    # Track provider names for duplicate detection
+    seen_provider_names: Dict[str, int] = {}
+    
+    # Check 1: Empty profile set
+    if not profile_set.providers:
+        issues.append(AiProfileIssue(
+            id="empty_profile_set",
+            kind="empty_profile_set",
+            severity=classify_issue_severity("empty_profile_set"),
+            message="Profile set has no providers configured",
+            field="providers",
+        ))
+    
+    # Iterate through providers
+    for provider in profile_set.providers:
+        # Check 2: Duplicate provider names
+        if provider.name in seen_provider_names:
+            issues.append(AiProfileIssue(
+                id=f"duplicate_provider_name:{provider.name}",
+                kind="duplicate_provider_name",
+                severity=classify_issue_severity("duplicate_provider_name"),
+                message=f"Provider name '{provider.name}' is defined multiple times",
+                provider_name=provider.name,
+                field="name",
+            ))
+        seen_provider_names[provider.name] = seen_provider_names.get(provider.name, 0) + 1
+        
+        # Check 3: Unknown provider kind
+        if provider.kind not in _VALID_PROVIDER_KINDS:
+            issues.append(AiProfileIssue(
+                id=f"unknown_provider_kind:{provider.name}:{provider.kind}",
+                kind="unknown_provider_kind",
+                severity=classify_issue_severity("unknown_provider_kind"),
+                message=f"Provider '{provider.name}' has unknown kind '{provider.kind}'",
+                provider_name=provider.name,
+                field="kind",
+            ))
+        
+        # Check 4: Empty models list (warning)
+        if not provider.models:
+            issues.append(AiProfileIssue(
+                id=f"empty_provider_models:{provider.name}",
+                kind="empty_provider_models",
+                severity=classify_issue_severity("empty_provider_models"),
+                message=f"Provider '{provider.name}' has no models defined",
+                provider_name=provider.name,
+                field="models",
+            ))
+        
+        # Track model names for duplicate detection within provider
+        seen_model_names: Dict[str, int] = {}
+        
+        for model in provider.models:
+            # Check 5: Duplicate model names within provider
+            if model.name in seen_model_names:
+                issues.append(AiProfileIssue(
+                    id=f"duplicate_model_name:{provider.name}:{model.name}",
+                    kind="duplicate_model_name",
+                    severity=classify_issue_severity("duplicate_model_name"),
+                    message=f"Model name '{model.name}' is defined multiple times in provider '{provider.name}'",
+                    provider_name=provider.name,
+                    model_name=model.name,
+                    field="name",
+                ))
+            seen_model_names[model.name] = seen_model_names.get(model.name, 0) + 1
+            
+            # Check 6: Unknown model kind
+            if model.kind not in _VALID_MODEL_KINDS:
+                issues.append(AiProfileIssue(
+                    id=f"unknown_model_kind:{provider.name}:{model.name}:{model.kind}",
+                    kind="unknown_model_kind",
+                    severity=classify_issue_severity("unknown_model_kind"),
+                    message=f"Model '{model.name}' in provider '{provider.name}' has unknown kind '{model.kind}'",
+                    provider_name=provider.name,
+                    model_name=model.name,
+                    field="kind",
+                ))
+        
+        # Check 7: Provider's default_model doesn't exist
+        if provider.default_model:
+            model_names = {m.name for m in provider.models}
+            if provider.default_model not in model_names:
+                issues.append(AiProfileIssue(
+                    id=f"invalid_model_reference:{provider.name}:{provider.default_model}",
+                    kind="invalid_model_reference",
+                    severity=classify_issue_severity("invalid_model_reference"),
+                    message=f"Provider '{provider.name}' references non-existent default model '{provider.default_model}'",
+                    provider_name=provider.name,
+                    model_name=provider.default_model,
+                    field="default_model",
+                ))
+    
+    # Check 8: Default provider validation
+    if profile_set.default_provider:
+        provider_names = {p.name for p in profile_set.providers}
+        if profile_set.default_provider not in provider_names:
+            issues.append(AiProfileIssue(
+                id=f"missing_default_provider:{profile_set.default_provider}",
+                kind="missing_default_provider",
+                severity="error",  # Explicit reference to non-existent provider is an error
+                message=f"Default provider '{profile_set.default_provider}' does not exist",
+                provider_name=profile_set.default_provider,
+                field="default_provider",
+            ))
+        else:
+            # Check if default provider has models
+            default_provider = profile_set.get_provider(profile_set.default_provider)
+            if default_provider and not default_provider.models:
+                issues.append(AiProfileIssue(
+                    id=f"missing_default_model:{profile_set.default_provider}",
+                    kind="missing_default_model",
+                    severity="error",
+                    message=f"Default provider '{profile_set.default_provider}' has no models",
+                    provider_name=profile_set.default_provider,
+                    field="default_model",
+                ))
+    elif profile_set.providers:
+        # No default provider set - soft warning
+        issues.append(AiProfileIssue(
+            id="missing_default_provider:none",
+            kind="missing_default_provider",
+            severity="warning",
+            message="No default provider is set",
+            field="default_provider",
+        ))
+    
+    # Count issues by severity
+    error_count = sum(1 for i in issues if i.severity == "error")
+    warning_count = sum(1 for i in issues if i.severity == "warning")
+    info_count = sum(1 for i in issues if i.severity == "info")
+    
+    return AiProfileHealth(
+        is_valid=error_count == 0,
+        error_count=error_count,
+        warning_count=warning_count,
+        info_count=info_count,
+        issues=issues,
+    )
+
+
+def validate_default_profile_set() -> AiProfileHealth:
+    """
+    Validate the default AI profile set from settings.
+    
+    v0.5.12: Convenience wrapper for validate_profile_set().
+    
+    Builds the default profile set using build_default_ai_profile_set()
+    and validates it.
+    
+    Returns:
+        AiProfileHealth with validation results
+    """
+    from aksara.conf import settings
+    
+    profile_set = build_default_ai_profile_set(settings)
+    return validate_profile_set(profile_set)
+
+
+# =============================================================================
 # Built-in Example Profiles
 # =============================================================================
 
@@ -881,6 +1221,11 @@ __all__ = [
     # Secret hints
     "AiProviderSecretHint",
     "AiProviderConfigInfo",
+    # v0.5.12: Validation models
+    "AiProfileIssueSeverity",
+    "AiProfileIssueKind",
+    "AiProfileIssue",
+    "AiProfileHealth",
     # Registry
     "AiProviderRegistry",
     # Helper functions
@@ -888,4 +1233,8 @@ __all__ = [
     "build_default_ai_profile_set",
     "build_secret_hints_from_settings",
     "build_example_profile_set",
+    # v0.5.12: Validation functions
+    "classify_issue_severity",
+    "validate_profile_set",
+    "validate_default_profile_set",
 ]

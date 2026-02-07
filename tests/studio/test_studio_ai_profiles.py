@@ -273,3 +273,122 @@ class TestBuildAiSecretsInfo:
             # Check the Pydantic model doesn't have a value field
             assert not hasattr(secret, 'value')
             assert not hasattr(secret, 'api_key')
+
+
+# =============================================================================
+# v0.5.12: /studio/ai/health Tests
+# =============================================================================
+
+class TestStudioAiHealthEndpoint:
+    """Tests for GET /studio/ai/health endpoint."""
+    
+    def test_health_endpoint_returns_200(self, test_client):
+        """Test that health endpoint returns 200."""
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            response = test_client.get("/studio/ai/health")
+        
+        assert response.status_code == 200
+    
+    def test_health_response_structure(self, test_client):
+        """Test that health response has correct structure."""
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            response = test_client.get("/studio/ai/health")
+        
+        data = response.json()
+        
+        assert "is_valid" in data
+        assert "error_count" in data
+        assert "warning_count" in data
+        assert "info_count" in data
+        assert "issues" in data
+    
+    def test_health_returns_valid_for_default_profiles(self, test_client):
+        """Test that health returns valid for default profiles."""
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            response = test_client.get("/studio/ai/health")
+        
+        data = response.json()
+        
+        # Default profiles should be valid
+        assert data["is_valid"] is True
+        assert data["error_count"] == 0
+    
+    def test_health_issue_structure(self, test_client):
+        """Test that health issues have correct structure when present."""
+        from aksara.studio.models import StudioAiProfileHealth, StudioAiProfileIssue
+        
+        mock_settings = create_mock_settings()
+        
+        # Create a mock health result that will be returned by build_ai_profile_health
+        health_with_issues = StudioAiProfileHealth(
+            is_valid=True,
+            error_count=0,
+            warning_count=1,
+            info_count=0,
+            issues=[
+                StudioAiProfileIssue(
+                    id="test_warning",
+                    kind="missing_default_provider",
+                    severity="warning",
+                    message="No default provider is set",
+                )
+            ],
+            provider_count=1,
+            model_count=1,
+            default_provider=None,
+        )
+        
+        with patch("aksara.conf.settings", mock_settings):
+            # Patch build_ai_profile_health where it's imported in fastapi module
+            with patch("aksara.studio.fastapi.build_ai_profile_health", return_value=health_with_issues):
+                response = test_client.get("/studio/ai/health")
+        
+        data = response.json()
+        
+        assert data["warning_count"] == 1
+        assert len(data["issues"]) == 1
+        
+        issue = data["issues"][0]
+        assert "id" in issue
+        assert "kind" in issue
+        assert "severity" in issue
+        assert "message" in issue
+
+
+class TestBuildAiProfileHealth:
+    """Unit tests for build_ai_profile_health utility."""
+    
+    def test_returns_health_result(self):
+        """Test that utility returns health result."""
+        from aksara.studio.utils import build_ai_profile_health
+        
+        mock_settings = create_mock_settings()
+        mock_app = MagicMock()
+        mock_app.ai_provider_registry = None
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = build_ai_profile_health(mock_app)
+        
+        assert hasattr(result, 'is_valid')
+        assert hasattr(result, 'error_count')
+        assert hasattr(result, 'issues')
+    
+    def test_default_profile_set_is_valid(self):
+        """Test that default profile set passes validation."""
+        from aksara.studio.utils import build_ai_profile_health
+        
+        mock_settings = create_mock_settings()
+        mock_app = MagicMock()
+        mock_app.ai_provider_registry = None
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = build_ai_profile_health(mock_app)
+        
+        assert result.is_valid is True
+        assert result.error_count == 0

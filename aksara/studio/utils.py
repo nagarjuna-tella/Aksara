@@ -1390,3 +1390,78 @@ def build_ai_secrets_info() -> "StudioAiSecretsInfo":
         configured_count=configured_count,
         total_count=len(secrets),
     )
+
+
+def build_ai_profile_health(app: "FastAPI") -> "StudioAiProfileHealth":
+    """
+    Build AI profile health status for Studio.
+    
+    v0.5.12: Validates AI profile configuration and returns health status.
+    
+    Args:
+        app: FastAPI application instance
+        
+    Returns:
+        StudioAiProfileHealth with validation results
+    """
+    from aksara.conf import settings
+    from aksara.ai.providers import (
+        build_default_ai_profile_set,
+        validate_profile_set,
+    )
+    from aksara.studio.models import (
+        StudioAiProfileHealth,
+        StudioAiProfileIssue,
+    )
+    
+    # Check if profiles are enabled
+    ai_profiles_enabled = getattr(settings, 'ai_profiles_enabled', True)
+    
+    if not ai_profiles_enabled:
+        return StudioAiProfileHealth(
+            is_valid=True,
+            error_count=0,
+            warning_count=0,
+            info_count=1,
+            issues=[
+                StudioAiProfileIssue(
+                    id="ai_profiles_disabled",
+                    kind="info",
+                    severity="info",
+                    message="AI profiles are disabled",
+                    field="ai_profiles_enabled",
+                )
+            ],
+            provider_count=0,
+            model_count=0,
+            default_provider=None,
+        )
+    
+    # Build and validate profile set
+    profile_set = build_default_ai_profile_set(settings)
+    health = validate_profile_set(profile_set)
+    
+    # Convert issues to Studio format
+    studio_issues = [
+        StudioAiProfileIssue(
+            id=issue.id,
+            kind=issue.kind,
+            severity=issue.severity,
+            message=issue.message,
+            provider_name=issue.provider_name,
+            model_name=issue.model_name,
+            field=issue.field,
+        )
+        for issue in health.issues
+    ]
+    
+    return StudioAiProfileHealth(
+        is_valid=health.is_valid,
+        error_count=health.error_count,
+        warning_count=health.warning_count,
+        info_count=health.info_count,
+        issues=studio_issues,
+        provider_count=len(profile_set.providers),
+        model_count=profile_set.total_models(),
+        default_provider=profile_set.default_provider,
+    )

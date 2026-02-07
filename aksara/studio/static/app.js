@@ -30,6 +30,8 @@ const state = {
     // v0.5.11: AI Profiles state
     aiProfiles: null,
     aiSecrets: null,
+    // v0.5.12: AI Profile Health state
+    aiHealth: null,
 };
 
 // =============================================================================
@@ -903,7 +905,7 @@ async function renderAiProfiles() {
     }
     
     // Load both profiles and secrets
-    await Promise.all([loadAiProfiles(), loadAiSecrets()]);
+    await Promise.all([loadAiProfiles(), loadAiSecrets(), loadAiHealth()]);
 }
 
 async function loadAiProfiles() {
@@ -923,6 +925,81 @@ async function loadAiSecrets() {
     } catch (err) {
         console.error('Failed to load AI secrets:', err);
         showToast('Failed to load AI secrets', 'error');
+    }
+}
+
+// v0.5.12: Load AI profile health
+async function loadAiHealth() {
+    try {
+        state.aiHealth = await jsonGet('/studio/ai/health');
+        renderAiHealthData();
+    } catch (err) {
+        console.error('Failed to load AI health:', err);
+        // Show error in health banner
+        const banner = document.getElementById('ai-health-banner');
+        if (banner) {
+            banner.classList.remove('hidden');
+            banner.innerHTML = '<div class="ai-health-error-text">Could not load AI profile health</div>';
+        }
+    }
+}
+
+// v0.5.12: Render AI profile health data
+function renderAiHealthData() {
+    const health = state.aiHealth;
+    if (!health) return;
+    
+    const banner = document.getElementById('ai-health-banner');
+    const badge = document.getElementById('ai-health-badge');
+    const summary = document.getElementById('ai-health-summary');
+    const issuesList = document.getElementById('ai-health-issues');
+    
+    if (!banner || !badge || !summary || !issuesList) return;
+    
+    // Show banner
+    banner.classList.remove('hidden');
+    
+    // Determine health status class
+    let statusClass = 'health-ok';
+    let badgeText = 'OK';
+    
+    if (health.error_count > 0) {
+        statusClass = 'health-error';
+        badgeText = 'ERRORS';
+    } else if (health.warning_count > 0) {
+        statusClass = 'health-warning';
+        badgeText = 'WARNINGS';
+    }
+    
+    // Update banner class
+    banner.className = `ai-health-banner ${statusClass}`;
+    
+    // Update badge
+    badge.className = `ai-health-badge ${statusClass}`;
+    badge.textContent = badgeText;
+    
+    // Update summary
+    const parts = [];
+    if (health.error_count > 0) parts.push(`${health.error_count} error(s)`);
+    if (health.warning_count > 0) parts.push(`${health.warning_count} warning(s)`);
+    if (health.info_count > 0) parts.push(`${health.info_count} info`);
+    
+    if (parts.length > 0) {
+        summary.textContent = parts.join(', ');
+    } else {
+        summary.textContent = 'Configuration is valid';
+    }
+    
+    // Render issues
+    if (health.issues && health.issues.length > 0) {
+        issuesList.innerHTML = health.issues.map(issue => `
+            <div class="ai-health-issue">
+                <span class="ai-health-issue-severity ${issue.severity}">${escapeHtml(issue.severity.toUpperCase())}</span>
+                <span class="ai-health-issue-message">${escapeHtml(issue.message)}</span>
+            </div>
+        `).join('');
+    } else {
+        issuesList.innerHTML = '';
     }
 }
 

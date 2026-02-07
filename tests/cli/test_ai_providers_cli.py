@@ -277,3 +277,147 @@ class TestAiCommandGroup:
         assert "providers" in output_lower
         assert "models" in output_lower
         assert "secrets" in output_lower
+
+
+# =============================================================================
+# v0.5.12: aksara ai validate Tests
+# =============================================================================
+
+class TestAiValidateCommand:
+    """Tests for `aksara ai validate` command."""
+    
+    def test_validate_command_exists(self, runner):
+        """Test that validate command exists."""
+        from aksara.cli.main import cli
+        
+        result = runner.invoke(cli, ["ai", "validate", "--help"])
+        assert result.exit_code == 0
+        assert "validate" in result.output.lower() or "profiles" in result.output.lower()
+    
+    def test_validate_text_format(self, runner):
+        """Test validate command with text format."""
+        from aksara.cli.main import cli
+        
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = runner.invoke(cli, ["ai", "validate", "--format", "text"])
+        
+        # Should exit successfully with valid default profiles
+        assert result.exit_code == 0
+        assert "ok" in result.output.lower() or "valid" in result.output.lower() or "health" in result.output.lower()
+    
+    def test_validate_json_format(self, runner):
+        """Test validate command with JSON format."""
+        from aksara.cli.main import cli
+        
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = runner.invoke(cli, ["ai", "validate", "--format", "json"])
+        
+        assert result.exit_code == 0
+        
+        # Find JSON in output
+        output = result.output.strip()
+        json_start = output.find('{')
+        if json_start >= 0:
+            json_str = output[json_start:]
+            data = json.loads(json_str)
+            assert "is_valid" in data
+            assert "issues" in data
+            assert "error_count" in data
+    
+    def test_validate_default_is_text(self, runner):
+        """Test that default format is text."""
+        from aksara.cli.main import cli
+        
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = runner.invoke(cli, ["ai", "validate"])
+        
+        assert result.exit_code == 0
+        # Should be text format, not JSON
+        assert not result.output.strip().startswith('{')
+    
+    def test_validate_exit_code_zero_when_valid(self, runner):
+        """Test that exit code is 0 when profiles are valid."""
+        from aksara.cli.main import cli
+        
+        mock_settings = create_mock_settings()
+        
+        with patch("aksara.conf.settings", mock_settings):
+            result = runner.invoke(cli, ["ai", "validate"])
+        
+        assert result.exit_code == 0
+    
+    def test_validate_exit_code_one_on_errors(self, runner):
+        """Test that exit code is 1 when there are errors."""
+        from aksara.cli.main import cli
+        from aksara.ai.providers import AiProfileHealth, AiProfileIssue
+        
+        mock_settings = create_mock_settings()
+        
+        # Create a health result with errors
+        bad_health = AiProfileHealth(
+            is_valid=False,
+            error_count=1,
+            warning_count=0,
+            info_count=0,
+            issues=[
+                AiProfileIssue(
+                    id="test_error",
+                    kind="duplicate_provider_name",
+                    severity="error",
+                    message="Test error",
+                )
+            ],
+        )
+        
+        with patch("aksara.conf.settings", mock_settings):
+            # Patch validate_profile_set where it's imported in main.py
+            with patch("aksara.ai.providers.validate_profile_set", return_value=bad_health):
+                result = runner.invoke(cli, ["ai", "validate"])
+        
+        assert result.exit_code == 1
+    
+    def test_validate_shows_issues(self, runner):
+        """Test that issues are displayed in output."""
+        from aksara.cli.main import cli
+        from aksara.ai.providers import AiProfileHealth, AiProfileIssue
+        
+        mock_settings = create_mock_settings()
+        
+        health_with_warning = AiProfileHealth(
+            is_valid=True,
+            error_count=0,
+            warning_count=1,
+            info_count=0,
+            issues=[
+                AiProfileIssue(
+                    id="test_warning",
+                    kind="missing_default_provider",
+                    severity="warning",
+                    message="No default provider is set",
+                )
+            ],
+        )
+        
+        with patch("aksara.conf.settings", mock_settings):
+            with patch("aksara.ai.providers.validate_profile_set", return_value=health_with_warning):
+                result = runner.invoke(cli, ["ai", "validate"])
+        
+        assert result.exit_code == 0
+        # Should show warning in output
+        output_lower = result.output.lower()
+        assert "warning" in output_lower or "no default" in output_lower
+    
+    def test_validate_listed_in_ai_help(self, runner):
+        """Test that validate is listed in `aksara ai --help`."""
+        from aksara.cli.main import cli
+        
+        result = runner.invoke(cli, ["ai", "--help"])
+        
+        assert result.exit_code == 0
+        assert "validate" in result.output.lower()
