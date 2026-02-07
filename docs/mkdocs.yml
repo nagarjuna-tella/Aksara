@@ -82,17 +82,19 @@ nav:
       - AI Debug: debugging/ai-debug.md
       - Observability: debugging/observability.md
   - AI Mode:
-      - ai/index.md
-      - Overview: ai/overview.md
-      - Tools: ai/tools.md
-      - Context Engine: ai/context-engine.md
-      - Query Engine: ai/query-engine.md
-      - CodeGen: ai/codegen.md
-      - Patch Engine: ai/patch-engine.md
-      - Planner: ai/planner.md
-      - Agent Runtime: ai/agent-runtime.md
-      - Schema Doctor: ai/schema-doctor.md
-      - Best Practices: ai/best-practices.md
+      - ai-mode/index.md
+      - Overview: ai-mode/overview.md
+      - Tools: ai-mode/tools.md
+      - Context Engine: ai-mode/context-engine.md
+      - Query Engine: ai-mode/query-engine.md
+      - CodeGen: ai-mode/codegen.md
+      - Patch Engine: ai-mode/patch-engine.md
+      - Planner: ai-mode/planner.md
+      - Agent Runtime: ai-mode/agent-runtime.md
+      - Schema Doctor: ai-mode/schema-doctor.md
+      - Providers: ai-mode/providers.md
+      - Route Hints: ai-mode/hints.md
+      - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md
       - Studio API: studio/api.md

@@ -1465,3 +1465,59 @@ def build_ai_profile_health(app: "FastAPI") -> "StudioAiProfileHealth":
         model_count=profile_set.total_models(),
         default_provider=profile_set.default_provider,
     )
+
+
+# =============================================================================
+# v0.5.13: AI Hints
+# =============================================================================
+
+def build_ai_hints(app: "FastAPI") -> "StudioAiHintSet":
+    """
+    Build AI hints information for Studio.
+    
+    v0.5.13: Extracts route-level AI hints from the application.
+    
+    Args:
+        app: FastAPI application instance
+        
+    Returns:
+        StudioAiHintSet with all discovered hints
+    """
+    from aksara.ai.hints import build_ai_hint_set
+    from aksara.studio.models import (
+        StudioAiHintSet,
+        StudioAiRouteHint,
+    )
+    
+    hint_set = build_ai_hint_set(app)
+    
+    # Convert to Studio format
+    studio_hints = [
+        StudioAiRouteHint(
+            view_name=h.view_name,
+            route_name=h.route_name,
+            path=h.path,
+            methods=h.methods,
+            title=h.title,
+            description=h.description,
+            usage_kind=h.usage_kind,
+            risk_level=h.risk_level,
+            example_prompt=h.example_prompt,
+            example_input=h.example_input,
+            example_output=h.example_output,
+            recommended_model=h.recommended_model,
+            recommended_provider=h.recommended_provider,
+        )
+        for h in hint_set.routes
+    ]
+    
+    return StudioAiHintSet(
+        routes=studio_hints,
+        total_count=hint_set.total_count,
+        read_only_count=hint_set.read_only_count,
+        write_count=hint_set.write_count,
+        admin_count=hint_set.admin_count,
+        low_risk_count=hint_set.low_risk_count,
+        medium_risk_count=hint_set.medium_risk_count,
+        high_risk_count=hint_set.high_risk_count,
+    )

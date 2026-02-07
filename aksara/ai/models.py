@@ -144,3 +144,110 @@ class AiTool(BaseModel):
             }
         }
     }
+
+
+# =============================================================================
+# v0.5.13: Per-View AI Hints (Route-Level AI Metadata)
+# =============================================================================
+
+AiRiskLevel = Literal["low", "medium", "high"]
+"""Risk level classification for AI operations."""
+
+AiUsageKind = Literal["read_only", "write", "admin"]
+"""Usage kind classification for AI operations.
+
+- read_only: Only reads data, no side effects
+- write: Modifies data
+- admin: Sensitive/administrative operations
+"""
+
+
+class AiRouteHint(BaseModel):
+    """
+    Per-route/view AI hint metadata.
+    
+    Provides structured information about what a route does, how it should
+    be used by LLMs, and how risky it is. This is metadata-only and 
+    LLM-agnostic - no provider coupling.
+    
+    Attributes:
+        app_label: Application label for namespacing
+        view_name: ViewSet/View class name (e.g., "PostViewSet")
+        route_name: Route identifier (e.g., "post-list", "post-publish")
+        path: Full URL path (e.g., "/api/posts/{id}/publish/")
+        methods: HTTP methods (e.g., ["GET"], ["POST"])
+        title: Short label for the route (e.g., "Publish blog post")
+        description: 1-3 sentence AI-facing description
+        usage_kind: Read-only, write, or admin classification
+        risk_level: Low, medium, or high risk level
+        example_prompt: Example user prompt that would trigger this route
+        example_input: Example request body/parameters
+        example_output: Example response body
+        recommended_model: Optional recommended model name
+        recommended_provider: Optional recommended provider name
+    """
+    
+    # Identity
+    app_label: str = Field("", description="Application label")
+    view_name: str = Field(..., description="ViewSet/View class name")
+    route_name: str = Field(..., description="Route identifier")
+    path: str = Field(..., description="Full URL path")
+    methods: List[str] = Field(default_factory=list, description="HTTP methods")
+    
+    # Semantics
+    title: str = Field(..., description="Short label for the route")
+    description: str = Field("", description="AI-facing description")
+    usage_kind: AiUsageKind = Field("read_only", description="Usage classification")
+    risk_level: AiRiskLevel = Field("low", description="Risk level")
+    
+    # Examples (for LLMs)
+    example_prompt: Optional[str] = Field(None, description="Example user prompt")
+    example_input: Optional[Dict[str, Any]] = Field(None, description="Example request")
+    example_output: Optional[Dict[str, Any]] = Field(None, description="Example response")
+    
+    # Optional recommendations
+    recommended_model: Optional[str] = Field(None, description="Recommended AI model")
+    recommended_provider: Optional[str] = Field(None, description="Recommended AI provider")
+    
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "app_label": "blog",
+                "view_name": "PostViewSet",
+                "route_name": "post-publish",
+                "path": "/api/posts/{id}/publish/",
+                "methods": ["POST"],
+                "title": "Publish a blog post",
+                "description": "Marks the given post as published. Call once user confirms publishing.",
+                "usage_kind": "write",
+                "risk_level": "medium",
+                "example_prompt": "User says: 'Publish my draft about async APIs'",
+                "example_input": {"id": 42},
+                "example_output": {"id": 42, "is_published": True},
+            }
+        }
+    }
+
+
+class AiHintSet(BaseModel):
+    """
+    Collection of AI route hints.
+    
+    Groups all hints discovered from the application for easy export/display.
+    """
+    
+    routes: List[AiRouteHint] = Field(default_factory=list, description="Route hints")
+    total_count: int = Field(default=0, description="Total hint count")
+    
+    # Stats
+    read_only_count: int = Field(default=0, description="Read-only routes")
+    write_count: int = Field(default=0, description="Write routes")
+    admin_count: int = Field(default=0, description="Admin routes")
+    low_risk_count: int = Field(default=0, description="Low risk routes")
+    medium_risk_count: int = Field(default=0, description="Medium risk routes")
+    high_risk_count: int = Field(default=0, description="High risk routes")
+    
+    model_config = {
+        "extra": "forbid",
+    }

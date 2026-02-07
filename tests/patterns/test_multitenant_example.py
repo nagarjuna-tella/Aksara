@@ -70,12 +70,13 @@ class TestMultitenantModels:
         assert hasattr(Tenant, "Meta")
         assert Tenant.Meta.table_name == "tenants"
         
-        # Check required fields
-        assert hasattr(Tenant, "name")
-        assert hasattr(Tenant, "slug")
-        assert hasattr(Tenant, "domain")
-        assert hasattr(Tenant, "plan")
-        assert hasattr(Tenant, "is_active")
+        # Check required fields in _fields (dict)
+        field_names = list(Tenant._fields.keys())
+        assert "name" in field_names
+        assert "slug" in field_names
+        assert "domain" in field_names
+        assert "plan" in field_names
+        assert "is_active" in field_names
     
     def test_user_model_fields(self):
         """User model should have correct fields."""
@@ -84,11 +85,12 @@ class TestMultitenantModels:
         assert hasattr(User, "Meta")
         assert User.Meta.table_name == "tenant_users"
         
-        # Check required fields
-        assert hasattr(User, "tenant")  # FK to Tenant
-        assert hasattr(User, "email")
-        assert hasattr(User, "name")
-        assert hasattr(User, "role")
+        # Check required fields in _fields (dict)
+        field_names = list(User._fields.keys())
+        assert "tenant" in field_names  # FK to Tenant
+        assert "email" in field_names
+        assert "name" in field_names
+        assert "role" in field_names
     
     def test_project_model_fields(self):
         """Project model should have correct fields."""
@@ -97,11 +99,12 @@ class TestMultitenantModels:
         assert hasattr(Project, "Meta")
         assert Project.Meta.table_name == "projects"
         
-        # Check required fields
-        assert hasattr(Project, "tenant")  # FK to Tenant
-        assert hasattr(Project, "name")
-        assert hasattr(Project, "description")
-        assert hasattr(Project, "is_public")
+        # Check required fields in _fields (dict)
+        field_names = list(Project._fields.keys())
+        assert "tenant" in field_names  # FK to Tenant
+        assert "name" in field_names
+        assert "description" in field_names
+        assert "is_public" in field_names
 
 
 class TestMultitenantMiddleware:

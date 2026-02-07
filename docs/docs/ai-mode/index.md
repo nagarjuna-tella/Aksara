@@ -18,6 +18,8 @@ Aksara's AI Mode provides developer tools that understand your codebase:
 | [Planner](planner.md) | Multi-step task planning |
 | [Agent Runtime](agent-runtime.md) | Execute AI agents |
 | [Schema Doctor](schema-doctor.md) | Schema analysis and fixes |
+| [Providers](providers.md) | Vendor-agnostic AI profiles |
+| [Route Hints](hints.md) | Per-view AI metadata *(v0.5.13)* |
 
 ---
 

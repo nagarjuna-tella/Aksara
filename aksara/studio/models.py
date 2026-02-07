@@ -1148,3 +1148,113 @@ class StudioAiProfileHealth(BaseModel):
         default=None,
         description="Name of the default provider"
     )
+
+
+# =============================================================================
+# v0.5.13: AI Route Hints Models
+# =============================================================================
+
+class StudioAiRouteHint(BaseModel):
+    """
+    AI hint for a specific route.
+    
+    v0.5.13: Route-level AI metadata for LLM guidance.
+    """
+    
+    view_name: str = Field(
+        ...,
+        description="ViewSet/View class name"
+    )
+    route_name: str = Field(
+        ...,
+        description="Route identifier"
+    )
+    path: str = Field(
+        ...,
+        description="Full URL path"
+    )
+    methods: List[str] = Field(
+        default_factory=list,
+        description="HTTP methods"
+    )
+    title: str = Field(
+        ...,
+        description="Short label"
+    )
+    description: str = Field(
+        default="",
+        description="AI-facing description"
+    )
+    usage_kind: str = Field(
+        default="read_only",
+        description="read_only, write, or admin"
+    )
+    risk_level: str = Field(
+        default="low",
+        description="low, medium, or high"
+    )
+    example_prompt: Optional[str] = Field(
+        default=None,
+        description="Example user prompt"
+    )
+    example_input: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Example request body"
+    )
+    example_output: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Example response body"
+    )
+    recommended_model: Optional[str] = Field(
+        default=None,
+        description="Recommended AI model"
+    )
+    recommended_provider: Optional[str] = Field(
+        default=None,
+        description="Recommended AI provider"
+    )
+
+
+class StudioAiHintSet(BaseModel):
+    """
+    Collection of AI route hints.
+    
+    v0.5.13: Result of /studio/ai/hints endpoint.
+    """
+    
+    routes: List[StudioAiRouteHint] = Field(
+        default_factory=list,
+        description="All discovered route hints"
+    )
+    total_count: int = Field(
+        default=0,
+        description="Total number of hints"
+    )
+    
+    # Usage stats
+    read_only_count: int = Field(
+        default=0,
+        description="Read-only routes"
+    )
+    write_count: int = Field(
+        default=0,
+        description="Write routes"
+    )
+    admin_count: int = Field(
+        default=0,
+        description="Admin routes"
+    )
+    
+    # Risk stats
+    low_risk_count: int = Field(
+        default=0,
+        description="Low risk routes"
+    )
+    medium_risk_count: int = Field(
+        default=0,
+        description="Medium risk routes"
+    )
+    high_risk_count: int = Field(
+        default=0,
+        description="High risk routes"
+    )

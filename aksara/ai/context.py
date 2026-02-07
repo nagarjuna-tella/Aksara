@@ -372,6 +372,33 @@ class AiFullContext(BaseModel):
     ai_tools: List[AiToolSummary] = Field(default_factory=list, description="Available AI tools")
     ai_tool_count: int = Field(default=0, description="Total AI tool count")
     ai_schemas: List[AiSchemaInfo] = Field(default_factory=list, description="AI-related schemas")
+    
+    # v0.5.13: Per-View AI Hints
+    ai_hints: List["AiRouteHintInfo"] = Field(default_factory=list, description="Route-level AI hints")
+    ai_hint_count: int = Field(default=0, description="Total AI hint count")
+
+
+# v0.5.13: AI Hint Info for Context (simplified version of AiRouteHint)
+class AiRouteHintInfo(BaseModel):
+    """AI hint information for context export."""
+    
+    view_name: str = Field(..., description="ViewSet/View class name")
+    route_name: str = Field(..., description="Route identifier")
+    path: str = Field(..., description="Full URL path")
+    methods: List[str] = Field(default_factory=list, description="HTTP methods")
+    title: str = Field(..., description="Short label")
+    description: str = Field(default="", description="AI-facing description")
+    usage_kind: str = Field(default="read_only", description="read_only, write, admin")
+    risk_level: str = Field(default="low", description="low, medium, high")
+    example_prompt: Optional[str] = Field(None, description="Example user prompt")
+    has_example_input: bool = Field(default=False, description="Whether example input exists")
+    has_example_output: bool = Field(default=False, description="Whether example output exists")
+    recommended_model: Optional[str] = Field(None, description="Recommended AI model")
+    recommended_provider: Optional[str] = Field(None, description="Recommended AI provider")
+
+
+# Update AiFullContext to use forward reference
+AiFullContext.model_rebuild()
 
 
 # =============================================================================
@@ -755,6 +782,46 @@ def _extract_ai_schemas_info() -> List[AiSchemaInfo]:
     return schemas
 
 
+def _extract_ai_hints_info(app: "FastAPI") -> List["AiRouteHintInfo"]:
+    """
+    Extract AI hints from the application.
+    
+    v0.5.13: Looks for routes/viewsets decorated with @ai_route_hint
+    and converts them to AiRouteHintInfo for context export.
+    """
+    hints_info: List[AiRouteHintInfo] = []
+    
+    try:
+        from aksara.ai.hints import extract_hints_from_app
+        
+        hints = extract_hints_from_app(app)
+        
+        for hint in hints:
+            hints_info.append(AiRouteHintInfo(
+                view_name=hint.view_name,
+                route_name=hint.route_name,
+                path=hint.path,
+                methods=hint.methods,
+                title=hint.title,
+                description=hint.description,
+                usage_kind=hint.usage_kind,
+                risk_level=hint.risk_level,
+                example_prompt=hint.example_prompt,
+                has_example_input=hint.example_input is not None,
+                has_example_output=hint.example_output is not None,
+                recommended_model=hint.recommended_model,
+                recommended_provider=hint.recommended_provider,
+            ))
+    except ImportError:
+        pass
+    except Exception as e:
+        # Log but don't fail context building
+        import logging
+        logging.getLogger("aksara.ai.context").warning(f"Error extracting AI hints: {e}")
+    
+    return hints_info
+
+
 def _compute_checksum(data: Dict[str, Any]) -> str:
     """Compute deterministic checksum for context data."""
     # Remove volatile fields
@@ -842,6 +909,10 @@ async def build_full_ai_context(
     # Extract AI schemas
     ai_schemas = _extract_ai_schemas_info()
     
+    # v0.5.13: Extract AI hints
+    ai_hints: List[AiRouteHintInfo] = []
+    ai_hints = _extract_ai_hints_info(app)
+    
     # Build context without checksum first
     context_data = {
         "framework": "aksara",
@@ -865,6 +936,8 @@ async def build_full_ai_context(
         "ai_tools": [t.model_dump() for t in ai_tools],
         "ai_tool_count": len(ai_tools),
         "ai_schemas": [s.model_dump() for s in ai_schemas],
+        "ai_hints": [h.model_dump() for h in ai_hints],
+        "ai_hint_count": len(ai_hints),
     }
     
     # Compute checksum
@@ -892,6 +965,8 @@ async def build_full_ai_context(
         ai_tools=ai_tools,
         ai_tool_count=len(ai_tools),
         ai_schemas=ai_schemas,
+        ai_hints=ai_hints,
+        ai_hint_count=len(ai_hints),
     )
 
 
@@ -944,6 +1019,8 @@ __all__ = [
     # AI Tools & Schemas
     "AiToolSummary",
     "AiSchemaInfo",
+    # v0.5.13: AI Hints
+    "AiRouteHintInfo",
     # Full context
     "AiFullContext",
     # Builder functions

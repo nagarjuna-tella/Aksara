@@ -36,6 +36,9 @@ v0.5.11 Additions:
 
 v0.5.12 Additions:
 - GET /studio/ai/health - AI profile validation and health status
+
+v0.5.13 Additions:
+- GET /studio/ai/hints - Per-route AI hints for LLM guidance
 """
 
 from __future__ import annotations
@@ -67,6 +70,8 @@ from aksara.studio.models import (
     StudioAiSecretsInfo,
     # v0.5.12: AI Profile Health models
     StudioAiProfileHealth,
+    # v0.5.13: AI Hints models
+    StudioAiHintSet,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -88,6 +93,8 @@ from aksara.studio.utils import (
     build_ai_secrets_info,
     # v0.5.12: AI Profile Health utils
     build_ai_profile_health,
+    # v0.5.13: AI Hints utils
+    build_ai_hints,
 )
 
 # v0.5.3: Static files directory
@@ -827,6 +834,56 @@ async def studio_ai_health(request: Request) -> StudioAiProfileHealth:
         }
     """
     return build_ai_profile_health(request.app)
+
+
+@router.get("/studio/ai/hints", response_model=StudioAiHintSet)
+async def studio_ai_hints(request: Request) -> StudioAiHintSet:
+    """
+    Get per-route AI hints for LLM guidance.
+    
+    v0.5.13: Returns route-level AI hints declared via @ai_route_hint decorator.
+    
+    These hints help LLMs understand:
+    - What each route does (title, description)
+    - How risky/sensitive it is (risk_level)
+    - Whether it reads or writes data (usage_kind)
+    - Example prompts and inputs/outputs for guidance
+    - Recommended AI model/provider for the operation
+    
+    Returns:
+        StudioAiHintSet with:
+        - routes: List of route hints with metadata
+        - total_count: Total number of hinted routes
+        - Usage stats: read_only_count, write_count, admin_count
+        - Risk stats: low_risk_count, medium_risk_count, high_risk_count
+    
+    Example response:
+        {
+            "routes": [
+                {
+                    "view_name": "PostViewSet",
+                    "route_name": "post-publish",
+                    "path": "/api/posts/{id}/publish/",
+                    "methods": ["POST"],
+                    "title": "Publish a blog post",
+                    "description": "Marks the given post as published.",
+                    "usage_kind": "write",
+                    "risk_level": "medium",
+                    "example_prompt": "User says: 'Publish my draft about async APIs'",
+                    "example_input": {"id": 42},
+                    "example_output": {"id": 42, "is_published": true}
+                }
+            ],
+            "total_count": 1,
+            "read_only_count": 0,
+            "write_count": 1,
+            "admin_count": 0,
+            "low_risk_count": 0,
+            "medium_risk_count": 1,
+            "high_risk_count": 0
+        }
+    """
+    return build_ai_hints(request.app)
 
 
 # =============================================================================

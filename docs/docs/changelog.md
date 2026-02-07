@@ -4,6 +4,71 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.13] — 2026-02-12
+
+### Added
+- **Per-View AI Hints (Route-Level AI Metadata)**: Rich metadata for LLM guidance
+  - **Core Hint Models** (`aksara/ai/models.py`):
+    - `AiRiskLevel` type literal (low, medium, high)
+    - `AiUsageKind` type literal (read_only, write, admin)
+    - `AiRouteHint` model for per-route AI metadata
+    - `AiHintSet` model with computed risk breakdown
+  
+  - **Developer API** (`aksara/ai/hints.py`):
+    - `@ai_route_hint(title, description, ...)` decorator for viewset actions
+    - `set_view_default_hint(cls, ...)` for class-level defaults
+    - `get_ai_route_hint(func)` to retrieve hint from decorated function
+    - `extract_hints_from_viewset(cls)` to extract hints from a viewset
+    - `extract_hints_from_app(module)` to extract hints from entire app
+    - `build_ai_hint_set(settings)` to build complete hint set
+  
+  - **Hint Metadata Fields**:
+    - `title` - Human-readable action title
+    - `description` - Detailed description
+    - `view_name` / `route_name` - View and action identifiers
+    - `path` / `http_method` - Route path and HTTP method
+    - `usage_kind` - read_only, write, or admin
+    - `risk_level` - low, medium, or high
+    - `example_prompt` - Sample natural language prompt
+    - `example_input` / `example_output` - Sample request/response
+    - `recommended_model` / `recommended_provider` - Suggestions for LLM
+  
+  - **Context Integration**:
+    - `AiRouteHintInfo` model for lightweight context export
+    - `AiFullContext.ai_hints` - List of all route hints
+    - `AiFullContext.ai_hint_count` - Total hint count
+  
+  - **CLI Command** (`aksara ai hints`):
+    - `--view` / `-v` - Filter by view/viewset name
+    - `--route` / `-r` - Filter by action/route name
+    - `--risk` - Filter by risk level (low/medium/high)
+    - `--format text|json` - Output format
+    - Color-coded risk badges in text output
+    - Risk breakdown summary (high/medium/low counts)
+  
+  - **Studio Backend**:
+    - `GET /studio/ai/hints` - Returns `StudioAiHintSet`
+    - `StudioAiRouteHint` and `StudioAiHintSet` models
+    - `build_ai_hints(app)` utility function
+  
+  - **Studio UI**:
+    - New "AI Route Hints" panel in AI Profiles section
+    - Searchable/filterable hint list
+    - Expandable hint cards with full details
+    - Risk level badges (color-coded)
+    - Usage kind badges
+
+### Changed
+- CLI version bumped to 0.5.13
+- AI module exports updated with hints components
+- Studio UI enhanced with hints panel
+
+### Documentation
+- New `docs/ai-mode/hints.md` - Complete AI hints documentation
+- Changelog updated with v0.5.13 features
+
+---
+
 ## [0.5.12] — 2026-02-11
 
 ### Added

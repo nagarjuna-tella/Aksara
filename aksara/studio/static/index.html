@@ -854,6 +854,25 @@
                 </div>
             </div>
         </div>
+        
+        <!-- v0.5.13: AI Hints Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3>AI Route Hints</h3>
+                <span class="badge" id="ai-hints-count">-</span>
+            </div>
+            <div class="card-body">
+                <p class="card-description">Per-route AI metadata for LLM guidance. Click a hint to expand details.</p>
+                <div class="ai-hints-filter-container">
+                    <input type="text" id="ai-hints-filter" placeholder="Filter by title, path, or view..." class="filter-input">
+                </div>
+                <div class="ai-hints-list" id="ai-hints-list">
+                    <div class="empty-state">
+                        <p>No AI hints defined yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </template>
     
     <script src="/studio/assets/app.js" defer></script>

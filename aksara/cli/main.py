@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.12"
+CLI_VERSION = "0.5.13"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1698,6 +1698,8 @@ def ai():
     - Context gathering for LLM agents
     - Schema health and drift detection
     - Plan preview and application
+    - AI provider and model configuration (v0.5.11)
+    - Per-view AI route hints (v0.5.13)
     
     These commands are LLM-provider-agnostic. They do NOT call any
     AI models directly; they provide structured data that external
@@ -2987,16 +2989,6 @@ def db_clear(force: bool):
 # v0.5.11: AI Profiles & Provider Contracts Commands
 # =============================================================================
 
-@cli.group()
-def ai():
-    """AI profiles and provider tools.
-    
-    Commands for discovering and inspecting AI provider configurations.
-    
-    v0.5.11: AI Profiles & Provider Contracts
-    """
-    pass
-
 
 @ai.command("providers")
 @click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]), default="table", help="Output format")
@@ -3412,6 +3404,137 @@ def ai_validate(output_format: str):
         
         # Exit code based on validity
         sys.exit(0 if health.is_valid else 1)
+        
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
+        raise click.Abort()
+
+
+@ai.command("hints")
+@click.option("--view", "-v", "view_name", default=None, help="Filter by view/viewset name")
+@click.option("--route", "-r", "route_name", default=None, help="Filter by route/action name")
+@click.option("--risk", type=click.Choice(["low", "medium", "high"]), default=None, help="Filter by risk level")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_hints(view_name: Optional[str], route_name: Optional[str], risk: Optional[str], output_format: str):
+    """List AI route hints defined in the application.
+    
+    v0.5.13: Shows per-view/per-route AI metadata for LLM guidance.
+    
+    AI hints provide structured information about what each route does,
+    how risky it is, and how to use it effectively with LLMs.
+    
+    Examples:
+        aksara ai hints
+        aksara ai hints --view UserViewSet
+        aksara ai hints --route create
+        aksara ai hints --risk high
+        aksara ai hints --format json
+    """
+    import json
+    
+    try:
+        from aksara.conf import settings
+        from aksara.ai.hints import build_ai_hint_set
+        
+        environment = "development" if getattr(settings, "debug", False) else "production"
+        
+        click.echo()
+        click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Route Hints (env: {environment})")
+        click.echo()
+        
+        # Discover and build hints
+        app_module = getattr(settings, 'app_module', None)
+        if app_module:
+            discover_models(app_module)
+        
+        hint_set = build_ai_hint_set(settings)
+        
+        # Filter hints
+        filtered_hints = hint_set.routes
+        
+        if view_name:
+            filtered_hints = [h for h in filtered_hints if view_name.lower() in (h.view_name or "").lower()]
+        
+        if route_name:
+            filtered_hints = [h for h in filtered_hints if route_name.lower() in (h.route_name or "").lower()]
+        
+        if risk:
+            filtered_hints = [h for h in filtered_hints if h.risk_level == risk]
+        
+        # Sort by risk level (high -> medium -> low), then by view/route name
+        risk_order = {"high": 0, "medium": 1, "low": 2}
+        filtered_hints = sorted(filtered_hints, key=lambda h: (
+            risk_order.get(h.risk_level, 3),
+            h.view_name or "",
+            h.route_name or ""
+        ))
+        
+        if output_format == "json":
+            output_data = {
+                "total_count": hint_set.total_count,
+                "filtered_count": len(filtered_hints),
+                "hints_by_risk": {
+                    "high": hint_set.high_risk_count,
+                    "medium": hint_set.medium_risk_count,
+                    "low": hint_set.low_risk_count,
+                },
+                "hints": [h.model_dump() for h in filtered_hints],
+            }
+            click.echo(json.dumps(output_data, indent=2, default=str))
+        else:
+            # Text format
+            total = hint_set.total_count
+            shown = len(filtered_hints)
+            
+            # Show stats
+            high_count = hint_set.high_risk_count
+            medium_count = hint_set.medium_risk_count
+            low_count = hint_set.low_risk_count
+            
+            click.echo(f"  Total: {total} hints")
+            click.echo(f"  Risk breakdown: \033[31m{high_count} high\033[0m | \033[33m{medium_count} medium\033[0m | \033[32m{low_count} low\033[0m")
+            
+            if view_name or route_name or risk:
+                click.echo(f"  Showing: {shown} (filtered)")
+            click.echo()
+            
+            if not filtered_hints:
+                click.echo("  No hints found matching the filter.")
+                click.echo()
+            else:
+                for hint in filtered_hints:
+                    # Risk badge colors
+                    if hint.risk_level == "high":
+                        risk_badge = "\033[31m[HIGH]\033[0m"
+                    elif hint.risk_level == "medium":
+                        risk_badge = "\033[33m[MEDIUM]\033[0m"
+                    else:
+                        risk_badge = "\033[32m[LOW]\033[0m"
+                    
+                    # Usage badge
+                    if hint.usage_kind == "admin":
+                        usage_badge = "\033[35madmin\033[0m"
+                    elif hint.usage_kind == "write":
+                        usage_badge = "\033[33mwrite\033[0m"
+                    else:
+                        usage_badge = "\033[36mread\033[0m"
+                    
+                    # Title and location
+                    title = hint.title or f"{hint.view_name}.{hint.route_name}"
+                    path = hint.path or "N/A"
+                    
+                    click.echo(f"  {risk_badge} {title}")
+                    click.echo(f"      Path: \033[90m{path}\033[0m")
+                    click.echo(f"      View: \033[90m{hint.view_name}.{hint.route_name}\033[0m | Usage: {usage_badge}")
+                    
+                    if hint.description:
+                        desc = hint.description[:80] + "..." if len(hint.description) > 80 else hint.description
+                        click.echo(f"      Desc: \033[90m{desc}\033[0m")
+                    
+                    if hint.example_prompt:
+                        click.echo(f"      Example: \033[90m\"{hint.example_prompt}\"\033[0m")
+                    
+                    click.echo()
         
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)

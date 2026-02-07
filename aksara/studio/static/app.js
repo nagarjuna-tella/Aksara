@@ -32,6 +32,8 @@ const state = {
     aiSecrets: null,
     // v0.5.12: AI Profile Health state
     aiHealth: null,
+    // v0.5.13: AI Hints state
+    aiHints: null,
 };
 
 // =============================================================================
@@ -904,8 +906,14 @@ async function renderAiProfiles() {
         });
     }
     
-    // Load both profiles and secrets
-    await Promise.all([loadAiProfiles(), loadAiSecrets(), loadAiHealth()]);
+    // v0.5.13: Set up hints filter
+    const hintsFilter = document.getElementById('ai-hints-filter');
+    if (hintsFilter) {
+        hintsFilter.addEventListener('input', () => renderAiHintsData());
+    }
+    
+    // Load profiles, secrets, health, and hints
+    await Promise.all([loadAiProfiles(), loadAiSecrets(), loadAiHealth(), loadAiHints()]);
 }
 
 async function loadAiProfiles() {
@@ -1001,6 +1009,119 @@ function renderAiHealthData() {
     } else {
         issuesList.innerHTML = '';
     }
+}
+
+// v0.5.13: Load AI hints
+async function loadAiHints() {
+    try {
+        state.aiHints = await jsonGet('/studio/ai/hints');
+        renderAiHintsData();
+    } catch (err) {
+        console.error('Failed to load AI hints:', err);
+        // Don't show error toast - hints are optional
+    }
+}
+
+// v0.5.13: Render AI hints data
+function renderAiHintsData() {
+    const hints = state.aiHints;
+    if (!hints) return;
+    
+    const hintsList = document.getElementById('ai-hints-list');
+    const hintsCount = document.getElementById('ai-hints-count');
+    const filterInput = document.getElementById('ai-hints-filter');
+    
+    if (!hintsList) return;
+    
+    // Update count badge
+    if (hintsCount) {
+        hintsCount.textContent = hints.total_count;
+    }
+    
+    // Get filter value
+    const filterValue = filterInput ? filterInput.value.toLowerCase() : '';
+    
+    // Filter hints
+    let routes = hints.routes || [];
+    if (filterValue) {
+        routes = routes.filter(hint => 
+            hint.title.toLowerCase().includes(filterValue) ||
+            hint.path.toLowerCase().includes(filterValue) ||
+            hint.view_name.toLowerCase().includes(filterValue) ||
+            hint.route_name.toLowerCase().includes(filterValue)
+        );
+    }
+    
+    if (routes.length === 0) {
+        hintsList.innerHTML = '<div class="empty-state"><p>No AI hints defined yet</p></div>';
+        return;
+    }
+    
+    hintsList.innerHTML = routes.map(hint => {
+        const riskClass = `risk-${hint.risk_level}`;
+        const usageLabel = hint.usage_kind.replace('_', ' ');
+        const methodsStr = hint.methods.join(', ');
+        
+        const hasExample = hint.example_prompt || hint.example_input || hint.example_output;
+        
+        return `
+            <div class="ai-hint-item" data-expanded="false">
+                <div class="ai-hint-header" onclick="toggleHintExpanded(this)">
+                    <div class="ai-hint-title-row">
+                        <span class="ai-hint-title">${escapeHtml(hint.title)}</span>
+                        <span class="ai-hint-risk-badge ${riskClass}">${hint.risk_level}</span>
+                        <span class="ai-hint-usage-badge">${usageLabel}</span>
+                    </div>
+                    <div class="ai-hint-meta">
+                        <span class="ai-hint-methods">${methodsStr}</span>
+                        <span class="ai-hint-path">${escapeHtml(hint.path)}</span>
+                    </div>
+                </div>
+                <div class="ai-hint-details hidden">
+                    <div class="ai-hint-description">${escapeHtml(hint.description || 'No description')}</div>
+                    <div class="ai-hint-view">${escapeHtml(hint.view_name)} → ${escapeHtml(hint.route_name)}</div>
+                    ${hasExample ? `
+                        <div class="ai-hint-examples">
+                            ${hint.example_prompt ? `
+                                <div class="ai-hint-example">
+                                    <strong>Example Prompt:</strong>
+                                    <span>${escapeHtml(hint.example_prompt)}</span>
+                                </div>
+                            ` : ''}
+                            ${hint.example_input ? `
+                                <div class="ai-hint-example">
+                                    <strong>Example Input:</strong>
+                                    <pre class="ai-hint-json">${JSON.stringify(hint.example_input, null, 2)}</pre>
+                                </div>
+                            ` : ''}
+                            ${hint.example_output ? `
+                                <div class="ai-hint-example">
+                                    <strong>Example Output:</strong>
+                                    <pre class="ai-hint-json">${JSON.stringify(hint.example_output, null, 2)}</pre>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                    ${hint.recommended_model || hint.recommended_provider ? `
+                        <div class="ai-hint-recommendations">
+                            ${hint.recommended_model ? `<span>Model: ${escapeHtml(hint.recommended_model)}</span>` : ''}
+                            ${hint.recommended_provider ? `<span>Provider: ${escapeHtml(hint.recommended_provider)}</span>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// v0.5.13: Toggle hint expanded state
+function toggleHintExpanded(header) {
+    const item = header.parentElement;
+    const details = item.querySelector('.ai-hint-details');
+    const isExpanded = item.getAttribute('data-expanded') === 'true';
+    
+    item.setAttribute('data-expanded', !isExpanded);
+    details.classList.toggle('hidden', isExpanded);
 }
 
 function renderAiProfilesData() {

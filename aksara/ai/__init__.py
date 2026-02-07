@@ -16,6 +16,9 @@ This module provides:
 - AI Planner for multi-step execution plans (v0.4.5)
 - AI Runtime (Mini Agent Loop) for external AI coordination (v0.4.6)
 - AI Schema Doctor for schema health & drift detection (v0.4.7)
+- AI Profiles & Provider Contracts (v0.5.11)
+- AI Profiles Validation & Linting (v0.5.12)
+- Per-View AI Hints (v0.5.13)
 
 Usage:
     from aksara.ai import AiTool, AiToolRegistry, get_ai_tools_for_request
@@ -56,6 +59,17 @@ Usage:
         AiProviderProfile, AiModelProfile, AiProfileSet,
         AiProviderRegistry, get_ai_provider_registry,
     )
+    
+    # Per-View AI Hints (v0.5.13)
+    from aksara.ai import ai_route_hint, AiRouteHint, AiHintSet
+    
+    @ai_route_hint(
+        title="Publish blog post",
+        description="Marks a post as published.",
+        usage_kind="write",
+        risk_level="medium",
+    )
+    async def publish(request, id: int): ...
 
 v0.4.0: Initial AI Mode release
 v0.4.1: AI Debug Assistant
@@ -66,6 +80,8 @@ v0.4.5: AI Planner (THE ARCHITECT)
 v0.4.6: AI Runtime (Mini Agent Loop)
 v0.4.7: AI Schema Doctor & Migration Guardrails
 v0.5.11: AI Profiles & Provider Contracts
+v0.5.12: AI Profiles Validation & Linting
+v0.5.13: Per-View AI Hints (Route-Level AI Metadata)
 """
 
 from aksara.ai.models import AiTool, AiToolParam, ToolKind
@@ -160,6 +176,8 @@ from aksara.ai.context import (
     # AI Tools & Schemas
     AiToolSummary,
     AiSchemaInfo,
+    # v0.5.13: AI Hints info
+    AiRouteHintInfo,
     # Full context
     AiFullContext,
     # Builder functions
@@ -272,6 +290,25 @@ from aksara.ai.providers import (
     validate_default_profile_set,
 )
 
+# v0.5.13: Per-View AI Hints (Route-Level AI Metadata)
+from aksara.ai.models import (
+    AiRiskLevel,
+    AiUsageKind,
+    AiRouteHint,
+    AiHintSet,
+)
+from aksara.ai.hints import (
+    ai_route_hint,
+    set_view_default_hint,
+    get_hint_from_callable,
+    get_default_hint_from_class,
+    extract_hints_from_app,
+    build_ai_hint_set,
+    build_ai_hint_set_sync,
+    HINT_ATTR,
+    DEFAULT_HINT_ATTR,
+)
+
 __all__ = [
     # Models
     "AiTool",
@@ -345,6 +382,7 @@ __all__ = [
     "AiMiddlewareInfo",
     "AiToolSummary",
     "AiSchemaInfo",
+    "AiRouteHintInfo",
     "AiFullContext",
     "build_full_ai_context",
     "build_full_ai_context_sync",
@@ -417,4 +455,18 @@ __all__ = [
     "classify_issue_severity",
     "validate_profile_set",
     "validate_default_profile_set",
+    # v0.5.13: Per-View AI Hints
+    "AiRiskLevel",
+    "AiUsageKind",
+    "AiRouteHint",
+    "AiHintSet",
+    "ai_route_hint",
+    "set_view_default_hint",
+    "get_hint_from_callable",
+    "get_default_hint_from_class",
+    "extract_hints_from_app",
+    "build_ai_hint_set",
+    "build_ai_hint_set_sync",
+    "HINT_ATTR",
+    "DEFAULT_HINT_ATTR",
 ]

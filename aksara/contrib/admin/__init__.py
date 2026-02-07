@@ -32,8 +32,12 @@ from aksara.contrib.admin.mount import include_admin
 # Global admin site instance
 site = AdminSite()
 
+# Backwards compatibility alias
+admin_site = site
+
 __all__ = [
     "site",
+    "admin_site",  # Alias for backwards compatibility
     "AdminSite",
     "ModelAdmin",
     "admin_router",

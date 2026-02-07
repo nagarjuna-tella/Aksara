@@ -4,7 +4,7 @@
 
 **Aksara** (meaning "letter/script" in Sanskrit — the building blocks of written language) is a batteries-included, async-native web framework for Python. Built on FastAPI and PostgreSQL, it gives you everything you need to build production APIs in minutes, not days.
 
-[![Tests](https://img.shields.io/badge/tests-2000%2B%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-2493%2B%20passing-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 

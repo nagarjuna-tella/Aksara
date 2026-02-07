@@ -254,25 +254,25 @@ class TestScaffoldVersionUpdates:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_main_py_says_v056(self):
-        """main.py should reference v0.5.6."""
+        """main.py should reference current version."""
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert 'v0.5.6' in content
+        assert 'v0.5.13' in content
     
     def test_settings_py_says_v056(self):
-        """settings.py should reference v0.5.6."""
+        """settings.py should reference current version."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        assert 'v0.5.6' in content
+        assert 'v0.5.13' in content
     
     def test_pyproject_requires_056(self):
-        """pyproject.toml should require aksara>=0.5.6."""
+        """pyproject.toml should require aksara>=0.5.13."""
         pyproject_path = self.project_path / "pyproject.toml"
         content = pyproject_path.read_text()
         
-        assert 'aksara>=0.5.6' in content
+        assert 'aksara>=0.5.13' in content
     
     def test_main_py_uses_aksara_dev(self):
         """main.py docstring should mention aksara dev command."""
