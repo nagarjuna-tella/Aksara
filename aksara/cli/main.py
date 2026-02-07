@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.13"
+CLI_VERSION = "0.5.14"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -3539,6 +3539,193 @@ def ai_hints(view_name: Optional[str], route_name: Optional[str], risk: Optional
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}", err=True)
         raise click.Abort()
+
+
+@ai.command("examples")
+@click.option("--provider", "-p", type=click.Choice(["openai", "azure", "anthropic"]), default=None, help="Show example for specific provider")
+@click.option("--output-dir", "-o", default=None, help="Directory to copy example files to")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing files")
+@click.option("--list", "-l", "list_only", is_flag=True, help="List available example files")
+def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool, list_only: bool):
+    """Show real-world AI provider wiring examples.
+    
+    v0.5.14: Demonstrates how to wire Aksara's AI contracts to popular
+    LLM providers (OpenAI, Azure OpenAI, Anthropic) without adding
+    hard dependencies to your project.
+    
+    Examples:
+        aksara ai examples                    # Show overview
+        aksara ai examples --provider openai  # Show OpenAI example
+        aksara ai examples --list             # List available example files
+        aksara ai examples -o ./ai_adapters   # Copy examples to folder
+    
+    The examples package includes:
+        - settings.py     Environment-based provider configuration
+        - adapters.py     Protocol-based LLM client adapters
+        - prompting.py    Prompt building from AiRouteHint
+        - views.py        End-to-end view examples
+        - main.py         App wiring example
+    """
+    import os
+    import shutil
+    from pathlib import Path
+    
+    # Find the examples package
+    try:
+        import examples.ai_providers as ai_examples_pkg
+        examples_path = Path(ai_examples_pkg.__file__).parent
+    except ImportError:
+        examples_path = None
+    
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Provider Wiring Examples (v0.5.14)")
+    click.echo()
+    
+    # Define example files
+    example_files = [
+        ("settings.py", "Environment-based provider configuration"),
+        ("adapters.py", "Protocol-based LLM client adapters with soft SDK imports"),
+        ("prompting.py", "Prompt building utilities from AiRouteHint"),
+        ("views.py", "End-to-end example views with @ai_route_hint"),
+        ("main.py", "Complete app wiring example"),
+        ("__init__.py", "Package exports"),
+    ]
+    
+    if list_only:
+        click.echo("  Available example files:")
+        click.echo()
+        for filename, desc in example_files:
+            click.echo(f"    \033[36m{filename:15}\033[0m - {desc}")
+        click.echo()
+        
+        if examples_path and examples_path.exists():
+            click.echo(f"  Source: {examples_path}")
+        else:
+            click.echo("  \033[33mNote:\033[0m Examples package not found in current environment.")
+            click.echo("        View examples at: https://github.com/aksara-framework/aksara/tree/main/examples/ai_providers")
+        click.echo()
+        return
+    
+    if output_dir:
+        # Copy examples to output directory
+        output_path = Path(output_dir).resolve()
+        
+        if not examples_path or not examples_path.exists():
+            click.echo(f"  \033[31m✗\033[0m Examples package not found. Cannot copy files.")
+            click.echo("    Install from source or download from GitHub.")
+            raise click.Abort()
+        
+        click.echo(f"  Copying examples to: {output_path}")
+        click.echo()
+        
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        copied = 0
+        for filename, desc in example_files:
+            src = examples_path / filename
+            dst = output_path / filename
+            
+            if src.exists():
+                if dst.exists() and not force:
+                    click.echo(f"    \033[33m⚠\033[0m {filename} - already exists (use --force to overwrite)")
+                else:
+                    shutil.copy2(src, dst)
+                    click.echo(f"    \033[32m✓\033[0m {filename}")
+                    copied += 1
+            else:
+                click.echo(f"    \033[90m-\033[0m {filename} - not found in source")
+        
+        click.echo()
+        click.echo(f"  Copied {copied} files.")
+        click.echo()
+        click.echo("  Next steps:")
+        click.echo(f"    1. cd {output_dir}")
+        click.echo("    2. Set environment variables (OPENAI_API_KEY, etc.)")
+        click.echo("    3. pip install openai  (or anthropic)")
+        click.echo("    4. Import adapters into your views")
+        click.echo()
+        return
+    
+    # Show overview
+    click.echo("  The examples/ai_providers package demonstrates how to wire")
+    click.echo("  Aksara's AI contracts to real LLM providers without adding")
+    click.echo("  hard dependencies to your project.")
+    click.echo()
+    click.echo("  \033[1mKey Pattern:\033[0m Protocol-based adapters with soft SDK imports")
+    click.echo()
+    
+    # Show provider-specific info if requested
+    if provider:
+        click.echo(f"  \033[1mProvider: {provider.upper()}\033[0m")
+        click.echo()
+        
+        if provider == "openai":
+            click.echo("  \033[36mEnvironment Variables:\033[0m")
+            click.echo("    OPENAI_API_KEY=sk-...")
+            click.echo("    OPENAI_DEFAULT_MODEL=gpt-4o-mini  (optional)")
+            click.echo("    OPENAI_ORG_ID=org-...            (optional)")
+            click.echo()
+            click.echo("  \033[36mInstall SDK:\033[0m")
+            click.echo("    pip install openai")
+            click.echo()
+            click.echo("  \033[36mUsage:\033[0m")
+            click.echo('    from your_adapters import get_llm_client')
+            click.echo('    client = get_llm_client("openai", api_key=os.environ["OPENAI_API_KEY"])')
+            click.echo('    response = await client.complete("Hello!", model=profile)')
+            
+        elif provider == "azure":
+            click.echo("  \033[36mEnvironment Variables:\033[0m")
+            click.echo("    AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/")
+            click.echo("    AZURE_OPENAI_API_KEY=...")
+            click.echo("    AZURE_OPENAI_DEPLOYMENT=your-deployment-name")
+            click.echo("    AZURE_OPENAI_API_VERSION=2024-02-01  (optional)")
+            click.echo()
+            click.echo("  \033[36mInstall SDK:\033[0m")
+            click.echo("    pip install openai")
+            click.echo()
+            click.echo("  \033[36mUsage:\033[0m")
+            click.echo('    from your_adapters import get_llm_client')
+            click.echo('    client = get_llm_client("azure",')
+            click.echo('        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],')
+            click.echo('        api_key=os.environ["AZURE_OPENAI_API_KEY"],')
+            click.echo('        deployment=os.environ["AZURE_OPENAI_DEPLOYMENT"])')
+            click.echo('    response = await client.complete("Hello!", model=profile)')
+            
+        elif provider == "anthropic":
+            click.echo("  \033[36mEnvironment Variables:\033[0m")
+            click.echo("    ANTHROPIC_API_KEY=sk-ant-...")
+            click.echo("    ANTHROPIC_DEFAULT_MODEL=claude-3-sonnet-20240229  (optional)")
+            click.echo()
+            click.echo("  \033[36mInstall SDK:\033[0m")
+            click.echo("    pip install anthropic")
+            click.echo()
+            click.echo("  \033[36mUsage:\033[0m")
+            click.echo('    from your_adapters import get_llm_client')
+            click.echo('    client = get_llm_client("anthropic", api_key=os.environ["ANTHROPIC_API_KEY"])')
+            click.echo('    response = await client.complete("Hello!", model=profile)')
+        
+        click.echo()
+    else:
+        click.echo("  \033[36mSupported Providers:\033[0m")
+        click.echo("    - openai     OpenAI (GPT-4, GPT-3.5, etc.)")
+        click.echo("    - azure      Azure OpenAI Service")
+        click.echo("    - anthropic  Anthropic Claude")
+        click.echo()
+        click.echo("  \033[36mCommands:\033[0m")
+        click.echo("    aksara ai examples --list             List example files")
+        click.echo("    aksara ai examples --provider openai  Show OpenAI setup")
+        click.echo("    aksara ai examples -o ./adapters      Copy to project")
+        click.echo()
+    
+    click.echo("  \033[36mExample Files:\033[0m")
+    for filename, desc in example_files[:3]:  # Show first 3
+        click.echo(f"    {filename:15} - {desc}")
+    click.echo("    ... use --list to see all")
+    click.echo()
+    
+    click.echo("  \033[36mDocumentation:\033[0m")
+    click.echo("    https://aksara.dev/ai-mode/bring-your-own-llm/")
+    click.echo()
 
 
 if __name__ == "__main__":

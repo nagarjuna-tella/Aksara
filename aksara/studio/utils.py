@@ -1261,6 +1261,57 @@ def build_query_batch_detail(request_id: str) -> Optional["StudioQueryBatch"]:
 # v0.5.11: AI Profiles & Provider Contracts
 # =============================================================================
 
+def _check_provider_ready(kind: str, settings) -> bool:
+    """
+    Check if a provider is ready (SDK installed + credentials configured).
+    
+    v0.5.14: Used by Studio to show "Client Ready?" status.
+    
+    Args:
+        kind: Provider kind (openai, anthropic, etc.)
+        settings: Application settings
+        
+    Returns:
+        True if both SDK and credentials are available
+    """
+    import os
+    
+    # Check SDK availability
+    sdk_available = False
+    if kind in ("openai", "azure"):
+        try:
+            import openai  # noqa: F401
+            sdk_available = True
+        except ImportError:
+            sdk_available = False
+    elif kind == "anthropic":
+        try:
+            import anthropic  # noqa: F401
+            sdk_available = True
+        except ImportError:
+            sdk_available = False
+    else:
+        # Unknown provider kind - assume ready if configured
+        sdk_available = True
+    
+    if not sdk_available:
+        return False
+    
+    # Check credentials
+    if kind == "openai":
+        return bool(os.environ.get("OPENAI_API_KEY"))
+    elif kind == "azure":
+        return all([
+            os.environ.get("AZURE_OPENAI_ENDPOINT"),
+            os.environ.get("AZURE_OPENAI_API_KEY"),
+        ])
+    elif kind == "anthropic":
+        return bool(os.environ.get("ANTHROPIC_API_KEY"))
+    
+    # Unknown kind - assume ready
+    return True
+
+
 def build_ai_profile_set_summary(app: "FastAPI") -> "StudioAiProfileSetSummary":
     """
     Build AI profile set summary for Studio.
@@ -1328,6 +1379,9 @@ def build_ai_profile_set_summary(app: "FastAPI") -> "StudioAiProfileSetSummary":
         # Check if this is an example provider
         is_example = provider.metadata.get('_example', False)
         
+        # v0.5.14: Check if provider is ready (SDK + credentials)
+        client_ready = _check_provider_ready(provider.kind, settings)
+        
         providers.append(StudioAiProviderSummary(
             name=provider.name,
             display_name=provider.display_name,
@@ -1336,6 +1390,7 @@ def build_ai_profile_set_summary(app: "FastAPI") -> "StudioAiProfileSetSummary":
             default_model=provider.default_model,
             has_custom_base_url=provider.base_url is not None,
             is_example=is_example,
+            client_ready=client_ready,
             models=models,
         ))
     

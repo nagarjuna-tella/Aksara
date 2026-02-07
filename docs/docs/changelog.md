@@ -4,6 +4,85 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.14] — 2026-02-13
+
+### Added
+- **Real-World AI Provider Wiring Examples**: Show developers how to wire Aksara's AI contracts to actual providers
+  - **Protocol-Based Adapters** (`examples/ai_providers/adapters.py`):
+    - `LlmClient` Protocol with `complete()` and `chat()` methods
+    - `BaseLlmClient` abstract base class
+    - `OpenAIClient` adapter for OpenAI API
+    - `AzureOpenAIClient` adapter for Azure OpenAI Service
+    - `AnthropicClient` adapter for Anthropic Claude
+    - Soft SDK imports with clear error messages when SDK missing
+    - `get_llm_client(provider, ...)` factory function
+    - `get_llm_client_from_settings(settings)` helper
+    - `check_sdk_availability()` utility
+  
+  - **Environment-Based Configuration** (`examples/ai_providers/settings.py`):
+    - `Settings` class extending `AksaraSettings`
+    - `AI_DEFAULT_PROVIDER` setting
+    - `OPENAI_API_KEY`, `OPENAI_DEFAULT_MODEL`, `OPENAI_ORG_ID`
+    - `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`
+    - `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_MODEL`
+    - `is_provider_configured(provider)` validation method
+    - `get_configured_providers()` helper
+    - `validate_ai_config()` health check
+  
+  - **Prompt Building Utilities** (`examples/ai_providers/prompting.py`):
+    - `build_prompt_for_route(hint, user_input)` - Build prompts from AI hints
+    - `build_chat_messages_for_route(hint, user_input)` - Build chat messages
+    - `format_structured_output_prompt(...)` - Request JSON responses
+    - `parse_json_response(response)` - Parse JSON from LLM output
+    - `extract_tags_from_response(response)` - Parse tag lists
+    - Template helpers for common tasks
+  
+  - **Example Views** (`examples/ai_providers/views.py`):
+    - `DemoPostViewSet` with AI-powered actions
+    - `ai_suggest_tags` - Tag suggestion using AI hints
+    - `ai_generate_summary` - Content summarization
+    - `ai_analyze` - Content analysis with structured output
+    - `get_ai_client_status()` utility for health checks
+  
+  - **Example App** (`examples/ai_providers/main.py`):
+    - Complete FastAPI app with AI wiring
+    - Lifespan manager for startup validation
+    - `/ai/status` endpoint for provider readiness
+    - `/ai/providers` endpoint listing configured providers
+    - `/ai/test` endpoint for connection testing
+  
+  - **CLI Command** (`aksara ai examples`):
+    - `aksara ai examples` - Show overview
+    - `--provider openai|azure|anthropic` - Provider-specific setup info
+    - `--list` / `-l` - List available example files
+    - `--output-dir` / `-o` - Copy examples to project directory
+    - `--force` / `-f` - Overwrite existing files
+  
+  - **Studio Enhancement**:
+    - `client_ready` field on `StudioAiProviderSummary`
+    - `_check_provider_ready(kind, settings)` utility
+    - Providers panel now shows "Client Ready?" status
+  
+  - **Documentation** (`docs/ai-mode/bring-your-own-llm.md`):
+    - Complete guide for wiring providers
+    - Quick start guide
+    - Adapter pattern explanation
+    - Provider-specific setup instructions
+    - Security best practices
+    - Troubleshooting guide
+
+### Changed
+- CLI version bumped to 0.5.14
+- `StudioAiProviderSummary` model now includes `client_ready` field
+- `build_ai_profile_set_summary()` populates provider readiness
+
+### Technical Notes
+- **No hard SDK dependencies**: Provider SDKs (openai, anthropic) remain optional
+- **Environment-first configuration**: All credentials from environment variables
+- **Protocol-based design**: Easy to add new providers by implementing `LlmClient`
+
+---
+
 ## [0.5.13] — 2026-02-12
 
 ### Added

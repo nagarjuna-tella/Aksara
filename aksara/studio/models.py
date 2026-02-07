@@ -978,6 +978,10 @@ class StudioAiProviderSummary(BaseModel):
         default=False,
         description="Whether this is a built-in example provider"
     )
+    client_ready: bool = Field(
+        default=False,
+        description="v0.5.14: Whether SDK is installed and credentials configured"
+    )
     models: List[StudioAiModelProfileSummary] = Field(
         default_factory=list,
         description="Available models for this provider"
