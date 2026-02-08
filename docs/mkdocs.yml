@@ -89,6 +89,10 @@ nav:
       - inspectors/index.md
       - Query Inspector: inspectors/query.md
       - Model Inspector: inspectors/models.md
+  - Search:
+      - search/index.md
+      - Semantic Engine: search/semantic.md
+      - Studio Spotlight: search/studio.md
   - AI Mode:
       - ai-mode/index.md
       - Overview: ai-mode/overview.md

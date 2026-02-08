@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.21"
+CLI_VERSION = "0.5.22"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4461,6 +4461,121 @@ def inspect_queries(limit: int, as_json: bool):
     if stats.total_queries == 0:
         click.echo("  No query data. Enable tracing: AKSARA_DB_TRACE_ENABLED=true")
         click.echo()
+
+
+# =============================================================================
+# v0.5.22: Search Commands
+# =============================================================================
+
+
+@cli.group()
+def search():
+    """Semantic search across your project.
+
+    Search models, routes, settings, playbooks, migrations, and queries.
+    Supports keyword, semantic (TF-IDF), and hybrid search modes.
+
+    v0.5.22: Semantic Search & AI Index
+    """
+    pass
+
+
+@search.command("query")
+@click.argument("query_text")
+@click.option("--kind", "-k", default=None, help="Filter by kind (model, route, setting, playbook, migration, query)")
+@click.option("--top", "-n", default=10, type=int, help="Max results (default 10)")
+@click.option("--semantic", "-s", is_flag=True, help="Use semantic search mode (TF-IDF)")
+@click.option("--json-output", "--json", "json_out", is_flag=True, help="Output as JSON (pipe to agent mode)")
+@click.option("--min-score", default=0.0, type=float, help="Minimum score threshold (0.0-1.0)")
+def search_query(query_text: str, kind: str, top: int, semantic: bool, json_out: bool, min_score: float):
+    """Search across project models, routes, settings, and more.
+
+    Examples:
+
+      aksara search query "User model"
+
+      aksara search query "auth" --kind route --semantic
+
+      aksara search query "database" --json | aksara agent
+    """
+    import json as json_mod
+
+    from aksara.search.engine import SearchIndex
+    from aksara.search.indexers import build_full_index
+
+    mode = "semantic" if semantic else "hybrid"
+    kind_filter = kind if kind else None
+
+    index = build_full_index()
+    results = index.search(
+        query_text,
+        top_k=top,
+        kind=kind_filter,
+        min_score=min_score,
+        mode=mode,
+    )
+
+    if json_out:
+        output = {
+            "query": query_text,
+            "mode": mode,
+            "total_results": len(results),
+            "results": [r.to_dict() for r in results],
+        }
+        click.echo(json_mod.dumps(output, indent=2, default=str))
+        return
+
+    if not results:
+        click.echo(f"  No results for: {query_text}")
+        click.echo()
+        return
+
+    click.echo(f"\n  Search: \"{query_text}\" ({mode} mode)")
+    click.echo(f"  Found {len(results)} results\n")
+
+    for i, r in enumerate(results, 1):
+        score_pct = f"{r.score * 100:.0f}%"
+        click.echo(f"  {i}. [{r.document.kind.upper():10s}] {r.document.title}")
+        click.echo(f"     Score: {score_pct}  |  {r.match_type}  |  {r.document.source}")
+        if r.document.summary:
+            click.echo(f"     {r.document.summary[:100]}")
+        if r.highlights:
+            for hl in r.highlights[:2]:
+                click.echo(f"     > {hl[:100]}")
+        click.echo()
+
+
+@search.command("index")
+@click.option("--json-output", "--json", "json_out", is_flag=True, help="Output as JSON")
+def search_index(json_out: bool):
+    """Show search index statistics.
+
+    Displays document counts by kind, vocabulary size, and
+    available categories.
+    """
+    import json as json_mod
+
+    from aksara.search.indexers import build_full_index
+
+    index = build_full_index()
+    stats = index.stats()
+
+    if json_out:
+        click.echo(json_mod.dumps(stats, indent=2, default=str))
+        return
+
+    click.echo(f"\n  Search Index Statistics")
+    click.echo(f"  {'=' * 40}")
+    click.echo(f"  Total Documents: {stats['total_documents']}")
+    click.echo(f"  Vocabulary Size: {stats['vocabulary_size']}")
+    click.echo()
+
+    by_kind = stats.get("by_kind", {})
+    if by_kind:
+        click.echo(f"  Documents by Kind:")
+        for kind_name, count in sorted(by_kind.items()):
+            click.echo(f"    {kind_name:15s}  {count}")
+    click.echo()
 
 
 if __name__ == "__main__":

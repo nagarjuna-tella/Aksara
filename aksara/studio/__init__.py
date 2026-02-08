@@ -67,6 +67,11 @@ from aksara.studio.models import (
     StudioQueryPlanResult,
     StudioModelInspectorSummary,
     StudioModelInspectorAll,
+    # v0.5.22: Semantic Search models
+    StudioSearchRequest,
+    StudioSearchResultItem,
+    StudioSearchResultSet,
+    StudioSearchIndexInfo,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -91,6 +96,9 @@ from aksara.studio.utils import (
     build_query_plan,
     build_model_inspector,
     build_all_models_inspector,
+    # v0.5.22: Semantic Search utils
+    build_search_index_info,
+    build_search_results,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -135,6 +143,11 @@ __all__ = [
     "StudioQueryPlanResult",
     "StudioModelInspectorSummary",
     "StudioModelInspectorAll",
+    # v0.5.22: Semantic Search
+    "StudioSearchRequest",
+    "StudioSearchResultItem",
+    "StudioSearchResultSet",
+    "StudioSearchIndexInfo",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -152,6 +165,8 @@ __all__ = [
     "build_query_plan",  # v0.5.21
     "build_model_inspector",  # v0.5.21
     "build_all_models_inspector",  # v0.5.21
+    "build_search_index_info",  # v0.5.22
+    "build_search_results",  # v0.5.22
     # Router
     "studio_router",
 ]

@@ -1006,6 +1006,42 @@
         </div>
     </template>
     
+    <!-- v0.5.22: Spotlight Search Overlay -->
+    <div id="spotlight-overlay" class="spotlight-overlay" style="display:none;">
+        <div class="spotlight-backdrop" id="spotlight-backdrop"></div>
+        <div class="spotlight-container">
+            <div class="spotlight-header">
+                <svg class="spotlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="spotlight-input" class="spotlight-input" placeholder="Search models, routes, settings, playbooks..." autocomplete="off" spellcheck="false">
+                <kbd class="spotlight-kbd">ESC</kbd>
+            </div>
+            <div class="spotlight-filters" id="spotlight-filters">
+                <button class="spotlight-filter active" data-kind="all">All</button>
+                <button class="spotlight-filter" data-kind="model">Models</button>
+                <button class="spotlight-filter" data-kind="route">Routes</button>
+                <button class="spotlight-filter" data-kind="setting">Settings</button>
+                <button class="spotlight-filter" data-kind="playbook">Playbooks</button>
+                <button class="spotlight-filter" data-kind="migration">Migrations</button>
+                <button class="spotlight-filter" data-kind="query">Queries</button>
+            </div>
+            <div class="spotlight-results" id="spotlight-results">
+                <div class="spotlight-empty">Type to search across your project</div>
+            </div>
+            <div class="spotlight-preview" id="spotlight-preview" style="display:none;">
+                <div class="spotlight-preview-header" id="spotlight-preview-header"></div>
+                <pre class="spotlight-preview-body" id="spotlight-preview-body"></pre>
+            </div>
+            <div class="spotlight-footer">
+                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+                <span><kbd>Enter</kbd> Open</span>
+                <span><kbd>Tab</kbd> Preview</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+    
     <script src="/studio/assets/app.js" defer></script>
-</body>
-</html>
+</body></html>

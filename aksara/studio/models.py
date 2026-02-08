@@ -1549,3 +1549,55 @@ class StudioModelInspectorAll(BaseModel):
     total_count: int = Field(default=0)
     total_fields: int = Field(default=0)
     total_relationships: int = Field(default=0)
+
+
+# =============================================================================
+# v0.5.22: Semantic Search & AI Index
+# =============================================================================
+
+
+class StudioSearchRequest(BaseModel):
+    """Request body for search query endpoint."""
+
+    query: str = Field(description="Search query string")
+    top_k: int = Field(default=10, ge=1, le=100, description="Max results")
+    kind: Optional[str] = Field(default=None, description="Filter by document kind")
+    kinds: Optional[List[str]] = Field(default=None, description="Filter by multiple kinds")
+    tags: Optional[List[str]] = Field(default=None, description="Filter by tags")
+    min_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Minimum score threshold")
+    mode: str = Field(default="hybrid", description="Search mode: keyword, semantic, hybrid")
+
+
+class StudioSearchResultItem(BaseModel):
+    """A single search result item for Studio API."""
+
+    id: str = Field(description="Document ID")
+    kind: str = Field(description="Document kind")
+    title: str = Field(description="Document title")
+    summary: str = Field(description="Short summary")
+    score: float = Field(description="Relevance score 0-1")
+    highlights: List[str] = Field(default_factory=list, description="Matched snippets")
+    match_type: str = Field(default="keyword", description="Match method")
+    source: str = Field(default="", description="Source identifier")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Extra metadata")
+    tags: List[str] = Field(default_factory=list)
+
+
+class StudioSearchResultSet(BaseModel):
+    """Response for search query endpoint."""
+
+    query: str = Field(description="Original query")
+    total_results: int = Field(default=0, description="Number of results returned")
+    results: List[StudioSearchResultItem] = Field(default_factory=list)
+    mode: str = Field(default="hybrid", description="Search mode used")
+    index_size: int = Field(default=0, description="Total documents in index")
+
+
+class StudioSearchIndexInfo(BaseModel):
+    """Response for search index info endpoint."""
+
+    total_documents: int = Field(default=0)
+    by_kind: Dict[str, int] = Field(default_factory=dict)
+    vocabulary_size: int = Field(default=0)
+    kinds_available: List[str] = Field(default_factory=list)
+    embedding_provider: str = Field(default="local_tfidf")

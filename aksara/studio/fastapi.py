@@ -100,6 +100,10 @@ from aksara.studio.models import (
     StudioQueryPlanResult,
     StudioModelInspectorSummary,
     StudioModelInspectorAll,
+    # v0.5.22: Semantic Search models
+    StudioSearchRequest,
+    StudioSearchResultSet,
+    StudioSearchIndexInfo,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -132,6 +136,9 @@ from aksara.studio.utils import (
     build_query_plan,
     build_model_inspector,
     build_all_models_inspector,
+    # v0.5.22: Semantic Search utils
+    build_search_index_info,
+    build_search_results,
 )
 from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
@@ -1138,6 +1145,59 @@ async def studio_model_inspect(
             detail=f"Model not found: {model_name}",
         )
     return result
+
+
+# =============================================================================
+# v0.5.22: Semantic Search & AI Index Endpoints
+# =============================================================================
+
+
+@router.get("/studio/search/index", response_model=StudioSearchIndexInfo)
+async def studio_search_index(request: Request) -> StudioSearchIndexInfo:
+    """
+    Get search index info and statistics.
+
+    v0.5.22: Returns document counts, available kinds, vocabulary size.
+    """
+    return build_search_index_info(request.app)
+
+
+@router.post("/studio/search/query", response_model=StudioSearchResultSet)
+async def studio_search_query(
+    request: Request,
+    body: StudioSearchRequest,
+) -> StudioSearchResultSet:
+    """
+    Run a search query against the project index.
+
+    v0.5.22: Supports keyword, semantic, and hybrid search modes.
+    """
+    return build_search_results(
+        query=body.query,
+        app=request.app,
+        top_k=body.top_k,
+        kind=body.kind,
+        kinds=body.kinds,
+        tags=body.tags,
+        min_score=body.min_score,
+        mode=body.mode,
+    )
+
+
+@router.post("/studio/search/rebuild")
+async def studio_search_rebuild(request: Request) -> Dict[str, Any]:
+    """
+    Force rebuild the search index.
+
+    v0.5.22: Clears cache and rebuilds from scratch.
+    """
+    from aksara.studio.utils import _get_search_index
+    index = _get_search_index(request.app, force_rebuild=True)
+    return {
+        "status": "rebuilt",
+        "total_documents": index.size,
+        "by_kind": index.count_by_kind(),
+    }
 
 
 # =============================================================================

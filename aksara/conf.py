@@ -105,6 +105,13 @@ class Settings:
     ai_providers: Optional[List[dict]] = None  # List of AiProviderProfile dicts (no secrets)
     ai_secret_hints: Optional[List[dict]] = None  # List of AiProviderSecretHint dicts
     
+    # v0.5.22: Semantic Search & AI Index
+    semantic_search_enabled: bool = True  # Enable semantic search
+    embedding_provider: str = "local"  # Embedding backend (local, openai, azure, anthropic)
+    embedding_model: str = "local_tfidf"  # Model/strategy name
+    embedding_dimensions: int = 512  # Max embedding dimensions
+    search_index_backend: str = "memory"  # Index storage (memory only for now)
+    
     # v0.3.6: Multi-app support
     apps: List[str] = field(default_factory=lambda: ["app"])
     

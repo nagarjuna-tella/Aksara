@@ -434,6 +434,71 @@ _BUILTIN_PLAYBOOKS: List[AgentPlaybook] = [
         tags=["refactor", "model", "serializer", "rename", "extract"],
         notes="Generate migrations after all model changes are applied.",
     ),
+
+    # -------------------------------------------------------------------------
+    # 8. Identify Root Cause from Search
+    # -------------------------------------------------------------------------
+    AgentPlaybook(
+        key="identify_root_cause_from_search",
+        label="Root Cause from Search",
+        kind="debug_queries",
+        description=(
+            "Use semantic search to cross-reference models, routes, settings, "
+            "and queries to identify the root cause of a bug or issue."
+        ),
+        category="diagnostics",
+        default_goal_template=(
+            "Search for the root cause of: {issue_description}. "
+            "Cross-reference related models, routes, and settings."
+        ),
+        risk_level="low",
+        usage_kind="read_only",
+        default_sections=["semantic_index", "models", "routes", "diagnostics"],
+        steps=[
+            AgentPlaybookStep(
+                id="search_codebase",
+                title="Search the codebase",
+                description=(
+                    "Use semantic search to find all models, routes, settings, "
+                    "and queries related to the reported issue."
+                ),
+                recommended_sections=["semantic_index"],
+                estimated_impact="diagnostic",
+            ),
+            AgentPlaybookStep(
+                id="cross_reference",
+                title="Cross-reference results",
+                description=(
+                    "Correlate search results across different kinds "
+                    "(models, routes, queries) to narrow down the cause."
+                ),
+                recommended_sections=["models", "routes", "db_queries"],
+                estimated_impact="analysis",
+            ),
+            AgentPlaybookStep(
+                id="check_settings",
+                title="Check related settings",
+                description=(
+                    "Verify that related configuration settings are correct "
+                    "and environment variables are properly set."
+                ),
+                recommended_sections=["semantic_index", "diagnostics"],
+                estimated_impact="diagnostic",
+            ),
+            AgentPlaybookStep(
+                id="propose_fix",
+                title="Propose a fix",
+                description=(
+                    "Based on the cross-referenced evidence, propose a targeted "
+                    "fix with the least possible side effects."
+                ),
+                recommended_sections=["models", "routes"],
+                estimated_impact="recommended action",
+            ),
+        ],
+        tags=["search", "debug", "root-cause", "cross-reference", "semantic"],
+        notes="Uses the v0.5.22 semantic search index for cross-referencing.",
+    ),
 ]
 
 

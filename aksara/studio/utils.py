@@ -1819,6 +1819,20 @@ async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
         schema_analysis_data,
     ))
 
+    # 12. semantic_index (v0.5.22)
+    try:
+        from aksara.search.indexers import build_full_index
+        search_index = build_full_index(app)
+        semantic_index_data = search_index.stats()
+    except Exception:
+        semantic_index_data = {}
+    sections.append(_make_section(
+        "semantic_index",
+        "Semantic Index",
+        "Cross-referenced search index: models, routes, settings, playbooks, migrations, queries",
+        semantic_index_data,
+    ))
+
     total_size = round(sum(s.size_kb for s in sections), 2)
 
     return StudioAgentContext(
@@ -2154,4 +2168,91 @@ def _convert_inspector_to_studio(result) -> "StudioModelInspectorSummary":
         ai_agent_exposed=result.ai_agent_exposed,
         create_table_sql=result.create_table_sql,
         comments=result.comments,
+    )
+
+
+# =============================================================================
+# v0.5.22: Semantic Search & AI Index
+# =============================================================================
+
+# Module-level search index singleton (lazy-built)
+_search_index_cache: Optional[Any] = None
+
+
+def _get_search_index(app: Optional[Any] = None, *, force_rebuild: bool = False) -> Any:
+    """Get or build the search index singleton."""
+    global _search_index_cache
+    from aksara.search.indexers import build_full_index
+
+    if _search_index_cache is None or force_rebuild:
+        _search_index_cache = build_full_index(app)
+    return _search_index_cache
+
+
+def build_search_index_info(app: Optional[Any] = None) -> "StudioSearchIndexInfo":
+    """
+    Build search index info for the Studio API.
+
+    v0.5.22: Returns index stats (document counts, kinds, vocabulary size).
+    """
+    from aksara.studio.models import StudioSearchIndexInfo
+
+    index = _get_search_index(app)
+    stats = index.stats()
+
+    return StudioSearchIndexInfo(
+        total_documents=stats["total_documents"],
+        by_kind=stats["by_kind"],
+        vocabulary_size=stats["vocabulary_size"],
+        kinds_available=index.kinds(),
+        embedding_provider="local_tfidf",
+    )
+
+
+def build_search_results(
+    query: str,
+    app: Optional[Any] = None,
+    *,
+    top_k: int = 10,
+    kind: Optional[str] = None,
+    kinds: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
+    min_score: float = 0.0,
+    mode: str = "hybrid",
+) -> "StudioSearchResultSet":
+    """
+    Run a search query and return Studio-formatted results.
+
+    v0.5.22: Builds the index if needed, runs search, wraps in Pydantic models.
+    """
+    from aksara.studio.models import StudioSearchResultItem, StudioSearchResultSet
+
+    index = _get_search_index(app)
+    results = index.search(
+        query, top_k=top_k, kind=kind, kinds=kinds,
+        tags=tags, min_score=min_score, mode=mode,
+    )
+
+    items = [
+        StudioSearchResultItem(
+            id=r.document.id,
+            kind=r.document.kind,
+            title=r.document.title,
+            summary=r.document.summary,
+            score=round(r.score, 4),
+            highlights=r.highlights,
+            match_type=r.match_type,
+            source=r.document.source,
+            metadata=r.document.metadata,
+            tags=r.document.tags,
+        )
+        for r in results
+    ]
+
+    return StudioSearchResultSet(
+        query=query,
+        total_results=len(items),
+        results=items,
+        mode=mode,
+        index_size=index.size,
     )

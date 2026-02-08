@@ -4,6 +4,45 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.22] — 2026-02-19
+
+### Added
+- **Semantic Search & AI Index**: Cross-referenced code intelligence with unified search
+  - **`SearchDocument` model**: Structured document with kind, title, summary, content, metadata, tags
+  - **`SearchResult` model**: Ranked result with score, highlights, and match type
+  - **`SearchIndex`**: In-memory TF-IDF search index with keyword, semantic, and hybrid modes
+  - **`LocalTfIdfEmbedder`**: Built-in bag-of-words embedding provider (no external dependencies)
+  - **`BaseEmbeddingProvider` protocol**: Extensible interface for pluggable embedding backends
+  - **Index builders**: Auto-index models, routes, migrations, queries, settings, playbooks
+  - **`build_full_index()`**: Build complete search index from all project artifacts
+
+- **Studio Spotlight**: ⌘K / Ctrl+K command palette for instant project search
+  - Fuzzy + semantic search across all indexed artifacts
+  - Category filter buttons (All, Models, Routes, Settings, Playbooks, Migrations, Queries)
+  - Keyboard navigation (↑↓ navigate, Enter open, Tab preview, Esc close)
+  - Preview pane with document details and metadata
+  - Real-time debounced search
+
+- **Search Studio API**:
+  - **`GET /studio/search/index`**: Index statistics and document counts
+  - **`POST /studio/search/query`**: Full search with filters and scoring
+  - **`StudioSearchRequest`, `StudioSearchResultSet`, `StudioSearchIndexInfo` models**
+
+- **CLI `aksara search` command group**:
+  - **`aksara search query`**: Search with `--kind`, `--semantic`, `--json`, `--min-score`
+  - **`aksara search index`**: Show index statistics
+  - JSON output for piping to agent mode
+
+- **Agent Mode integration**:
+  - **12th context section `semantic_index`**: Search index stats in agent context
+  - **8th playbook `identify_root_cause_from_search`**: Cross-reference search for root cause analysis
+
+- **Settings**: `semantic_search_enabled`, `embedding_provider`, `embedding_model`, `embedding_dimensions`, `search_index_backend`
+
+- **`aksara/search/` package**: New module for semantic search engine, embeddings, and indexers
+
+---
+
 ## [0.5.21] — 2026-02-18
 
 ### Added

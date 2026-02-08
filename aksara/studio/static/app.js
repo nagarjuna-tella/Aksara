@@ -50,6 +50,16 @@ const state = {
     // v0.5.21: Model Inspector state
     modelInspector: null,
     modelInspectorSelected: null,
+    // v0.5.22: Spotlight Search state
+    spotlight: {
+        visible: false,
+        query: '',
+        results: [],
+        selectedIndex: 0,
+        kindFilter: 'all',
+        debounceTimer: null,
+        indexInfo: null,
+    },
 };
 
 // =============================================================================
@@ -167,6 +177,12 @@ function initNavigation() {
         'Digit9': 'model-inspector',
     };
     document.addEventListener('keydown', (e) => {
+        // v0.5.22: Cmd/Ctrl+K opens Spotlight Search (always, even in inputs)
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            toggleSpotlight();
+            return;
+        }
         // Ignore when typing in inputs / textareas / selects
         const tag = e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) {
@@ -2169,6 +2185,233 @@ async function init() {
             }
         }
     }
+}
+
+// =============================================================================
+// v0.5.22: Spotlight Search
+// =============================================================================
+
+function toggleSpotlight() {
+    if (state.spotlight.visible) {
+        closeSpotlight();
+    } else {
+        openSpotlight();
+    }
+}
+
+function openSpotlight() {
+    state.spotlight.visible = true;
+    state.spotlight.query = '';
+    state.spotlight.results = [];
+    state.spotlight.selectedIndex = 0;
+
+    const overlay = document.getElementById('spotlight-overlay');
+    const input = document.getElementById('spotlight-input');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+    }
+
+    // Set up event listeners
+    const backdrop = document.getElementById('spotlight-backdrop');
+    if (backdrop) backdrop.onclick = closeSpotlight;
+
+    if (input) {
+        input.oninput = (e) => {
+            state.spotlight.query = e.target.value;
+            clearTimeout(state.spotlight.debounceTimer);
+            state.spotlight.debounceTimer = setTimeout(() => spotlightSearch(), 200);
+        };
+        input.onkeydown = handleSpotlightKeydown;
+    }
+
+    // Set up filter buttons
+    document.querySelectorAll('.spotlight-filter').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.spotlight-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.spotlight.kindFilter = btn.dataset.kind;
+            spotlightSearch();
+        };
+    });
+
+    renderSpotlightResults();
+}
+
+function closeSpotlight() {
+    state.spotlight.visible = false;
+    const overlay = document.getElementById('spotlight-overlay');
+    if (overlay) overlay.style.display = 'none';
+    const preview = document.getElementById('spotlight-preview');
+    if (preview) preview.style.display = 'none';
+}
+
+function handleSpotlightKeydown(e) {
+    const results = state.spotlight.results;
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSpotlight();
+        return;
+    }
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        state.spotlight.selectedIndex = Math.min(state.spotlight.selectedIndex + 1, results.length - 1);
+        renderSpotlightResults();
+        return;
+    }
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        state.spotlight.selectedIndex = Math.max(state.spotlight.selectedIndex - 1, 0);
+        renderSpotlightResults();
+        return;
+    }
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const selected = results[state.spotlight.selectedIndex];
+        if (selected) {
+            spotlightNavigate(selected);
+        }
+        return;
+    }
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const selected = results[state.spotlight.selectedIndex];
+        if (selected) {
+            spotlightShowPreview(selected);
+        }
+        return;
+    }
+}
+
+async function spotlightSearch() {
+    const query = state.spotlight.query.trim();
+    if (!query) {
+        state.spotlight.results = [];
+        state.spotlight.selectedIndex = 0;
+        renderSpotlightResults();
+        return;
+    }
+
+    try {
+        const body = {
+            query: query,
+            top_k: 20,
+            mode: 'hybrid',
+        };
+        if (state.spotlight.kindFilter !== 'all') {
+            body.kind = state.spotlight.kindFilter;
+        }
+
+        const resp = await fetch('/studio/search/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            state.spotlight.results = data.results || [];
+            state.spotlight.selectedIndex = 0;
+        } else {
+            state.spotlight.results = [];
+        }
+    } catch (err) {
+        state.spotlight.results = [];
+    }
+
+    renderSpotlightResults();
+}
+
+function renderSpotlightResults() {
+    const container = document.getElementById('spotlight-results');
+    if (!container) return;
+
+    const results = state.spotlight.results;
+
+    if (!state.spotlight.query.trim()) {
+        container.innerHTML = '<div class="spotlight-empty">Type to search across your project</div>';
+        return;
+    }
+
+    if (results.length === 0) {
+        container.innerHTML = '<div class="spotlight-empty">No results found</div>';
+        return;
+    }
+
+    container.innerHTML = results.map((r, i) => `
+        <div class="spotlight-result-item ${i === state.spotlight.selectedIndex ? 'selected' : ''}"
+             data-index="${i}">
+            <span class="spotlight-result-kind" data-kind="${r.kind}">${r.kind}</span>
+            <div class="spotlight-result-info">
+                <div class="spotlight-result-title">${escapeHtml(r.title)}</div>
+                <div class="spotlight-result-summary">${escapeHtml(r.summary)}</div>
+            </div>
+            <span class="spotlight-result-score">${(r.score * 100).toFixed(0)}%</span>
+        </div>
+    `).join('');
+
+    // Click handlers
+    container.querySelectorAll('.spotlight-result-item').forEach(item => {
+        item.onclick = () => {
+            const idx = parseInt(item.dataset.index);
+            state.spotlight.selectedIndex = idx;
+            spotlightNavigate(results[idx]);
+        };
+        item.onmouseenter = () => {
+            state.spotlight.selectedIndex = parseInt(item.dataset.index);
+            renderSpotlightResults();
+        };
+    });
+}
+
+function spotlightNavigate(result) {
+    closeSpotlight();
+    // Navigate to the appropriate section based on result kind
+    const kindToSection = {
+        model: 'model-inspector',
+        route: 'routes',
+        migration: 'migrations',
+        query: 'db-queries',
+        setting: 'overview',
+        playbook: 'agent',
+    };
+    const section = kindToSection[result.kind] || 'overview';
+    navigateTo(section);
+}
+
+function spotlightShowPreview(result) {
+    const preview = document.getElementById('spotlight-preview');
+    const header = document.getElementById('spotlight-preview-header');
+    const body = document.getElementById('spotlight-preview-body');
+    if (!preview || !header || !body) return;
+
+    header.textContent = `${result.kind.toUpperCase()}: ${result.title}`;
+
+    const parts = [result.summary];
+    if (result.highlights && result.highlights.length > 0) {
+        parts.push('');
+        parts.push('Matches:');
+        result.highlights.forEach(h => parts.push(`  ${h}`));
+    }
+    if (result.metadata) {
+        parts.push('');
+        parts.push('Metadata:');
+        Object.entries(result.metadata).forEach(([k, v]) => {
+            const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            if (val.length < 80) parts.push(`  ${k}: ${val}`);
+        });
+    }
+
+    body.textContent = parts.join('\n');
+    preview.style.display = 'block';
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // Clean up on page unload
