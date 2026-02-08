@@ -1417,8 +1417,16 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
     except ImportError:
         click.echo("❌ uvicorn not installed in the current Python environment\n", err=True)
         click.echo(f"   Python: {sys.executable}", err=True)
-        click.echo(f"   Try: python -m pip install uvicorn", err=True)
-        click.echo(f"   Or:  python -m aksara dev", err=True)
+        
+        # Check if we're in a venv
+        in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+        if in_venv:
+            click.echo(f"   Virtual environment detected, but 'aksara' command may be from global install", err=True)
+            click.echo(f"   Try: python -m aksara dev  (uses venv's Python)", err=True)
+            click.echo(f"   Or:  pip install -e . && hash -r  (reinstall aksara in venv)", err=True)
+        else:
+            click.echo(f"   Try: python -m pip install uvicorn", err=True)
+            click.echo(f"   Or:  python -m aksara dev", err=True)
         sys.exit(1)
     
     # Ensure current directory is in Python path for module imports
