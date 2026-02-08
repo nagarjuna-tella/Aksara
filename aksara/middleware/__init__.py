@@ -44,7 +44,7 @@ Context Variables:
 from __future__ import annotations
 
 from .context import request_id_var, tenant_id_var, user_id_var
-from .request_id import RequestIDMiddleware
+from .request_id import RequestIDMiddleware, RequestIdMiddleware
 from .tenant import TenantMiddleware
 from .logging import LoggingMiddleware
 from .tracing import QueryTraceMiddleware
@@ -56,6 +56,7 @@ __all__ = [
     "user_id_var",
     # Middleware classes
     "RequestIDMiddleware",
+    "RequestIdMiddleware",  # Backwards compat alias (v0.5.24+)
     "TenantMiddleware",
     "LoggingMiddleware",
     "QueryTraceMiddleware",  # v0.5.10

@@ -94,4 +94,8 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
-__all__ = ["RequestIDMiddleware"]
+# Backwards compatibility alias (v0.5.24+)
+# Old scaffold templates used RequestIdMiddleware (lowercase "Id")
+RequestIdMiddleware = RequestIDMiddleware
+
+__all__ = ["RequestIDMiddleware", "RequestIdMiddleware"]
