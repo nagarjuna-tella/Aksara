@@ -19,7 +19,7 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application (v0.5.13)
+{project_name} - Aksara Application (v0.5.24)
 
 A modern async API with Admin, Studio, and AI Mode built-in.
 
@@ -38,6 +38,7 @@ Endpoints:
 """
 
 import importlib
+from pathlib import Path
 from aksara import Aksara, __version__ as aksara_version
 from aksara.middleware.request_id import RequestIdMiddleware
 from aksara.middleware.logging import LoggingMiddleware
@@ -99,16 +100,45 @@ register_routes(app)
 
 
 # =============================================================================
-# Welcome Page (v0.5.13)
+# Welcome Page (loaded from static/welcome.html)
 # =============================================================================
 
-WELCOME_HTML = f"""
-<!DOCTYPE html>
+_WELCOME_HTML_PATH = Path(__file__).parent / "static" / "welcome.html"
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def welcome():
+    """Welcome page — serves static/welcome.html."""
+    if _WELCOME_HTML_PATH.exists():
+        return _WELCOME_HTML_PATH.read_text()
+    return HTMLResponse(f"<h1>{project_name} is running on Aksara {{aksara_version}}</h1>")
+
+
+# Health check endpoint
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Health check endpoint."""
+    if app.db:
+        await app.db.fetchval("SELECT 1")
+        return {{
+            "status": "healthy",
+            "database": "connected",
+            "studio": "/studio/ui",
+            "admin": "/admin",
+            "ai_tools": "/ai/tools",
+        }}
+    return {{"status": "unhealthy", "database": "not configured"}}
+'''
+
+
+def get_welcome_html_template(project_name: str) -> str:
+    """Generate static/welcome.html content."""
+    return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{project_name} - Aksara</title>
+    <title>{project_name} — Aksara</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
@@ -160,53 +190,30 @@ WELCOME_HTML = f"""
 </head>
 <body>
     <div class="container">
-        <div class="logo">⚡</div>
+        <div class="logo">&#9889;</div>
         <h1>{project_name}</h1>
-        <p class="version">Powered by Aksara {{aksara_version}}</p>
-        <p class="success">Your Aksara project is running 🚀</p>
+        <p class="version">Powered by Aksara</p>
+        <p class="success">Your project is running</p>
         <div class="links">
-            <a href="/admin/">Admin Panel <span>→ Manage your data</span></a>
-            <a href="/studio/ui">Studio <span>→ Interactive dashboard</span></a>
-            <a href="/api/posts/">API <span>→ /api/posts/</span></a>
-            <a href="/docs">API Docs <span>→ OpenAPI / Swagger</span></a>
-            <a href="/ai/tools">AI Tools <span>→ LLM integration</span></a>
+            <a href="/admin/">Admin Panel <span>&rarr; Manage your data</span></a>
+            <a href="/studio/ui">Studio <span>&rarr; Interactive dashboard</span></a>
+            <a href="/api/posts/">API <span>&rarr; /api/posts/</span></a>
+            <a href="/docs">API Docs <span>&rarr; OpenAPI / Swagger</span></a>
+            <a href="/ai/tools">AI Tools <span>&rarr; LLM integration</span></a>
         </div>
         <p class="note">
-            Edit <code>main.py</code> to customize this page.
+            Edit <code>static/welcome.html</code> to customize this page.
         </p>
     </div>
 </body>
 </html>
-"""
-
-
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def welcome():
-    """Welcome page - shows project status and links."""
-    return WELCOME_HTML
-
-
-# Health check endpoint
-@app.get("/health", tags=["System"])
-async def health_check():
-    """Health check endpoint."""
-    if app.db:
-        await app.db.fetchval("SELECT 1")
-        return {{
-            "status": "healthy",
-            "database": "connected",
-            "studio": "/studio/ui",
-            "admin": "/admin",
-            "ai_tools": "/ai/tools",
-        }}
-    return {{"status": "unhealthy", "database": "not configured"}}
 '''
 
 
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings (v0.5.13)
+{project_name} - Settings (v0.5.24)
 
 Aksara settings with environment variable support.
 Configure via .env file or environment variables.
@@ -748,7 +755,7 @@ version = "0.1.0"
 description = "A modern Aksara-powered async API with Admin, Studio, and AI Mode"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara>=0.5.13",
+    "aksara>=0.5.24",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]
@@ -938,6 +945,7 @@ def create_project_scaffold(project_name: str, base_path: Path) -> Dict[str, str
         project_path / ".gitignore": get_gitignore_template(),
         project_path / ".pre-commit-config.yaml": get_precommit_config_template(),
         project_path / ".editorconfig": get_editorconfig_template(),
+        project_path / "static" / "welcome.html": get_welcome_html_template(project_name),
     }
     
     return files

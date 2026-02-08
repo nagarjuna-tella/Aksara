@@ -87,7 +87,7 @@ def build_model_documents() -> List[SearchDocument]:
                 fields_info.append(f"{fname}: {ftype}")
                 field_names.append(fname)
 
-            table_name = getattr(model_cls, "_table_name", name.lower())
+            table_name = getattr(model_cls, "__tablename__", None) or getattr(model_cls, "_table_name", name.lower())
             ai_desc = getattr(model_cls, "_ai_description", "")
 
             relations: List[str] = []

@@ -712,7 +712,7 @@ def model_to_create_table(model_class) -> str:
     )
     
     # Get table name (try both attributes)
-    table_name = getattr(model_class, '_table_name', None) or getattr(model_class, '__tablename__', None)
+    table_name = getattr(model_class, '__tablename__', None) or getattr(model_class, '_table_name', None)
     if not table_name:
         # Generate from class name
         name = model_class.__name__.lower()

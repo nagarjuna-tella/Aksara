@@ -834,18 +834,18 @@ def migrate(
                     migration_name = f"model_{model_name.lower()}"
                     
                     if migration_name in applied:
-                        click.echo(f"\n→ Table '{model._table_name}' already migrated")
+                        click.echo(f"\n→ Table '{model.__tablename__}' already migrated")
                         continue
                     
                     if dry_run:
-                        click.echo(f"\n[DRY RUN] Would create table '{model._table_name}':")
+                        click.echo(f"\n[DRY RUN] Would create table '{model.__tablename__}':")
                         click.echo(sql)
                     else:
-                        click.echo(f"\n→ Creating table '{model._table_name}'...")
+                        click.echo(f"\n→ Creating table '{model.__tablename__}'...")
                         try:
                             await db.execute(sql)
                             await record_migration(db, migration_name, compute_checksum(sql))
-                            click.echo(f"  ✓ Table '{model._table_name}' created/verified")
+                            click.echo(f"  ✓ Table '{model.__tablename__}' created/verified")
                         except Exception as e:
                             click.echo(f"  ✗ Error: {e}")
             
@@ -1224,7 +1224,7 @@ def models(app: Optional[str], ai: bool):
     
     for name, model in all_models.items():
         click.echo(f"📦 {name}")
-        click.echo(f"   Table: {model._table_name}")
+        click.echo(f"   Table: {model.__tablename__}")
         
         if ai:
             # Show AI metadata

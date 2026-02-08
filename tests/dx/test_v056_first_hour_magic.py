@@ -114,80 +114,64 @@ class TestScaffoldWelcomePage:
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        # Should have the welcome route
-        assert '@app.get("/", response_class=HTMLResponse' in content
+        # Should have the welcome route serving static HTML
+        assert '@app.get("/"' in content
         assert 'async def welcome(' in content
+        assert 'HTMLResponse' in content
     
-    def test_main_py_has_welcome_html(self):
-        """main.py should have WELCOME_HTML constant."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+    def test_welcome_html_in_static_dir(self):
+        """Welcome HTML should live in static/welcome.html, not inline in main.py."""
+        html_path = self.project_path / "static" / "welcome.html"
+        assert html_path.exists(), "static/welcome.html should exist"
         
-        assert 'WELCOME_HTML' in content
+        main_path = self.project_path / "main.py"
+        main_content = main_path.read_text()
+        # main.py should NOT contain the full HTML blob
+        assert '<!DOCTYPE html>' not in main_content
+        # main.py should reference the static file
+        assert 'welcome.html' in main_content
     
     def test_welcome_html_has_project_name(self):
-        """Welcome HTML should include project name."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should include project name."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert self.project_name in content
     
-    def test_welcome_html_has_aksara_version(self):
-        """Welcome HTML should include Aksara version reference."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
-        
-        assert 'aksara_version' in content
-    
     def test_welcome_html_has_admin_link(self):
-        """Welcome HTML should have link to admin."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should have link to admin."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert '/admin/' in content
     
     def test_welcome_html_has_studio_link(self):
-        """Welcome HTML should have link to studio."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should have link to studio."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert '/studio/ui' in content
     
     def test_welcome_html_has_api_link(self):
-        """Welcome HTML should have link to API."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should have link to API."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert '/api/posts/' in content
     
     def test_welcome_html_has_docs_link(self):
-        """Welcome HTML should have link to docs."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should have link to docs."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert '/docs' in content
     
     def test_welcome_html_has_ai_tools_link(self):
-        """Welcome HTML should have link to AI tools."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
+        """static/welcome.html should have link to AI tools."""
+        html_path = self.project_path / "static" / "welcome.html"
+        content = html_path.read_text()
         
         assert '/ai/tools' in content
-    
-    def test_welcome_html_has_customize_note(self):
-        """Welcome HTML should mention how to customize."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
-        
-        assert 'main.py' in content
-        assert 'customize' in content.lower() or 'edit' in content.lower()
-    
-    def test_main_py_imports_htmlresponse(self):
-        """main.py should import HTMLResponse."""
-        main_path = self.project_path / "main.py"
-        content = main_path.read_text()
-        
-        assert 'from fastapi.responses import HTMLResponse' in content
 
 
 class TestAksaraInfoPolish:
@@ -253,26 +237,26 @@ class TestScaffoldVersionUpdates:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_main_py_says_v056(self):
+    def test_main_py_says_current_version(self):
         """main.py should reference current version."""
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert 'v0.5.13' in content
+        assert 'v0.5.24' in content
     
-    def test_settings_py_says_v056(self):
+    def test_settings_py_says_current_version(self):
         """settings.py should reference current version."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        assert 'v0.5.13' in content
+        assert 'v0.5.24' in content
     
-    def test_pyproject_requires_056(self):
-        """pyproject.toml should require aksara>=0.5.13."""
+    def test_pyproject_requires_current_version(self):
+        """pyproject.toml should require aksara>=0.5.24."""
         pyproject_path = self.project_path / "pyproject.toml"
         content = pyproject_path.read_text()
         
-        assert 'aksara>=0.5.13' in content
+        assert 'aksara>=0.5.24' in content
     
     def test_main_py_uses_aksara_dev(self):
         """main.py docstring should mention aksara dev command."""
