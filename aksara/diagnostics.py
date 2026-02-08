@@ -143,6 +143,52 @@ class DiagnosticReport(BaseModel):
 # =============================================================================
 
 
+# ---------------------------------------------------------------------------
+# Lazy Import Helpers
+# ---------------------------------------------------------------------------
+# Checker functions defer imports of aksara.conf.settings and
+# aksara.ai.providers to avoid circular import chains at module-load time.
+#
+# For tests, patch these helpers on ``aksara.diagnostics``:
+#   @patch("aksara.diagnostics._get_settings")
+#   @patch("aksara.diagnostics._get_ai_profile_validators")
+#   @patch("aksara.diagnostics._get_ai_secret_hints")
+# ---------------------------------------------------------------------------
+
+
+def _get_settings():
+    """Lazy import: aksara.conf.settings.
+
+    Deferred because aksara.conf may trigger model registration,
+    which in turn may reference diagnostics — creating a circular chain.
+    """
+    from aksara.conf import settings
+    return settings
+
+
+def _get_ai_profile_validators():
+    """Lazy import: AI profile validation functions.
+
+    Returns (build_default_ai_profile_set, validate_profile_set).
+    Deferred because aksara.ai.providers is heavy and only needed
+    when AI features are enabled.
+    """
+    from aksara.ai.providers import (
+        build_default_ai_profile_set,
+        validate_profile_set,
+    )
+    return build_default_ai_profile_set, validate_profile_set
+
+
+def _get_ai_secret_hints():
+    """Lazy import: aksara.ai.providers.build_secret_hints_from_settings.
+
+    Deferred for the same reason as _get_ai_profile_validators.
+    """
+    from aksara.ai.providers import build_secret_hints_from_settings
+    return build_secret_hints_from_settings
+
+
 async def check_database_connectivity() -> List[DiagnosticIssue]:
     """Try an actual DB connection and report issues."""
     issues: List[DiagnosticIssue] = []

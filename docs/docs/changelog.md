@@ -4,6 +4,35 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.24] — 2026-02-20
+
+### Changed
+- **AI Circular Import Cleanup**: Introduced explicit `_get_*` lazy-import helpers in
+  `aksara.ai.workflows` (`_get_run_all_checks`, `_get_search_index_and_builder`,
+  `_get_playbook`) — same runtime behaviour, stable patch targets for tests
+- **Search Indexer Import Hygiene**: Six `_get_*` helpers in `aksara.search.indexers`
+  (`_get_model_registry`, `_get_routes_builder`, `_get_migration_graph`,
+  `_get_query_stats`, `_get_settings`, `_get_builtin_playbooks`)
+- **Diagnostics Import Helpers**: Three `_get_*` helpers in `aksara.diagnostics`
+  (`_get_settings`, `_get_ai_profile_validators`, `_get_ai_secret_hints`)
+- All test patch targets updated to use the new helpers
+
+### Fixed
+- **CLI Exit Codes**: `aksara migrate` and `aksara status` now exit with code 1
+  (not 0) when `DATABASE_URL` is missing — includes actionable hints
+- **CLI Error Handling**: `aksara doctor run`, `aksara agent workflow`,
+  `aksara search query`, and `aksara search index` no longer show raw stack
+  traces — wrapped in try/except with user-friendly messages and `sys.exit(1)`
+- **Studio Error Feedback**: `fetchMigrations`, `loadAgentContext`,
+  `loadAgentPlaybooks`, and `spotlightSearch` now show `showToast()` errors
+  instead of silently failing
+
+### Docs
+- Roadmap updated to reflect v0.5.24 as current stable
+- Changelog entry added
+
+---
+
 ## [0.5.23] — 2026-02-20
 
 ### Added

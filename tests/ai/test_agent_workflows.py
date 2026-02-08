@@ -106,7 +106,7 @@ class TestBuildDiagnosticSteps:
             assert step.order >= 5
 
     def test_fallback_on_error(self):
-        with patch("aksara.diagnostics.run_all_checks", side_effect=Exception("fail")):
+        with patch("aksara.ai.workflows._get_run_all_checks", side_effect=Exception("fail")):
             steps = _build_diagnostic_steps("test goal")
             assert len(steps) == 1
             assert "diagnostic" in steps[0].kind
@@ -123,8 +123,9 @@ class TestBuildSearchSteps:
     def test_returns_empty_on_no_results(self):
         mock_index = MagicMock()
         mock_index.search.return_value = []
+        mock_builder = MagicMock(return_value=mock_index)
 
-        with patch("aksara.search.indexers.build_full_index", return_value=mock_index):
+        with patch("aksara.ai.workflows._get_search_index_and_builder", return_value=(MagicMock, mock_builder)):
             steps = _build_search_steps("test goal")
             assert len(steps) == 1
             assert "No search results" in steps[0].description
@@ -147,8 +148,9 @@ class TestBuildSearchSteps:
 
         mock_index = MagicMock()
         mock_index.search.return_value = [mock_result]
+        mock_builder = MagicMock(return_value=mock_index)
 
-        with patch("aksara.search.indexers.build_full_index", return_value=mock_index):
+        with patch("aksara.ai.workflows._get_search_index_and_builder", return_value=(MagicMock, mock_builder)):
             steps = _build_search_steps("find user model")
             assert len(steps) == 1
             assert steps[0].kind == "search"
@@ -158,14 +160,15 @@ class TestBuildSearchSteps:
     def test_uses_custom_search_query(self):
         mock_index = MagicMock()
         mock_index.search.return_value = []
+        mock_builder = MagicMock(return_value=mock_index)
 
-        with patch("aksara.search.indexers.build_full_index", return_value=mock_index):
+        with patch("aksara.ai.workflows._get_search_index_and_builder", return_value=(MagicMock, mock_builder)):
             steps = _build_search_steps("default", search_query="custom query")
             assert len(steps) == 1
             assert steps[0].references["query"] == "custom query"
 
     def test_fallback_on_error(self):
-        with patch("aksara.search.indexers.build_full_index", side_effect=Exception("fail")):
+        with patch("aksara.ai.workflows._get_search_index_and_builder", side_effect=Exception("fail")):
             steps = _build_search_steps("test goal")
             assert len(steps) == 1
             assert steps[0].kind == "search"
@@ -188,8 +191,9 @@ class TestBuildSearchSteps:
 
         mock_index = MagicMock()
         mock_index.search.return_value = [mock_result]
+        mock_builder = MagicMock(return_value=mock_index)
 
-        with patch("aksara.search.indexers.build_full_index", return_value=mock_index):
+        with patch("aksara.ai.workflows._get_search_index_and_builder", return_value=(MagicMock, mock_builder)):
             steps = _build_search_steps("fix Post")
             assert any("aksara inspect models --model Post" in cmd for cmd in steps[0].commands)
 
@@ -249,7 +253,7 @@ class TestBuildPlaybookSteps:
             MagicMock(id="s2", key="generate_migration", title="Generate migration",
                       description="Run migration gen."),
         ]
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             steps = _build_playbook_steps("add_field_to_model", "add email field")
             assert len(steps) == 2
             for step in steps:
@@ -263,7 +267,7 @@ class TestBuildPlaybookSteps:
             MagicMock(id="s1", key="inspect_model", title="Inspect",
                       description="Inspect model."),
         ]
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             steps = _build_playbook_steps("add_field_to_model", "goal", start_order=200)
             assert steps[0].order == 200
 
@@ -349,6 +353,7 @@ class TestBuildAgentWorkflow:
         mock_pb = MagicMock()
         mock_pb.key = "add_field_to_model"
         mock_pb.label = "Add Field to Model"
+        mock_pb.kind = "add_field"
         mock_pb.risk_level = "medium"
         mock_pb.steps = [
             MagicMock(id="s1", key="define_field", title="Define the field",
@@ -356,7 +361,7 @@ class TestBuildAgentWorkflow:
             MagicMock(id="s2", key="generate_migration", title="Generate migration",
                       description="Run migration gen."),
         ]
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             wf = build_agent_workflow(
                 "add email to user model",
                 playbook="add_field_to_model",
@@ -382,9 +387,10 @@ class TestBuildAgentWorkflow:
         mock_pb = MagicMock()
         mock_pb.key = "add_field_to_model"
         mock_pb.label = "Add Field to Model"
+        mock_pb.kind = "add_field"
         mock_pb.risk_level = "medium"
         mock_pb.steps = []
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             wf = build_agent_workflow(
                 "add field",
                 playbook="add_field_to_model",
@@ -442,12 +448,13 @@ class TestSummarizeAgentWorkflow:
         mock_pb = MagicMock()
         mock_pb.key = "add_field_to_model"
         mock_pb.label = "Add Field to Model"
+        mock_pb.kind = "add_field"
         mock_pb.risk_level = "medium"
         mock_pb.steps = [
             MagicMock(id="s1", key="define_field", title="Define",
                       description="Define."),
         ]
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             wf = build_agent_workflow(
                 "add field",
                 playbook="add_field_to_model",

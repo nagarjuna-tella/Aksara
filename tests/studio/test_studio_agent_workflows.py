@@ -60,6 +60,7 @@ class TestPostAgentWorkflow:
         mock_pb = MagicMock()
         mock_pb.key = "add_field_to_model"
         mock_pb.label = "Add Field to Model"
+        mock_pb.kind = "add_field"
         mock_pb.risk_level = "medium"
         mock_pb.steps = [
             MagicMock(id="s1", key="define_field", title="Define the field",
@@ -73,7 +74,7 @@ class TestPostAgentWorkflow:
             include_diagnostics=False,
             include_search=False,
         )
-        with patch("aksara.ai.playbooks.get_playbook_by_key", return_value=mock_pb):
+        with patch("aksara.ai.workflows._get_playbook", return_value=mock_pb):
             wf = build_agent_workflow(
                 goal=body.goal,
                 playbook=body.playbook,

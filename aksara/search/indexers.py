@@ -16,6 +16,55 @@ if TYPE_CHECKING:
 
 
 # =============================================================================
+# Lazy Import Helpers
+# =============================================================================
+# These helpers centralise deferred imports to avoid circular chains at
+# module-load time and to give tests a single, stable patch target:
+#   aksara.search.indexers._get_<name>
+#
+# Why lazy?  indexers.py is imported by aksara.studio.utils, which is also
+# imported by several of the modules below (ModelRegistry, MigrationGraph,
+# etc.).  Eager top-level imports would trigger a circular import error.
+# =============================================================================
+
+
+def _get_model_registry():
+    """Lazy import: aksara.registry.ModelRegistry."""
+    from aksara.registry import ModelRegistry
+    return ModelRegistry
+
+
+def _get_routes_builder():
+    """Lazy import: aksara.studio.utils.build_routes_info."""
+    from aksara.studio.utils import build_routes_info
+    return build_routes_info
+
+
+def _get_migration_graph():
+    """Lazy import: aksara.migrations.graph.MigrationGraph."""
+    from aksara.migrations.graph import MigrationGraph
+    return MigrationGraph
+
+
+def _get_query_stats():
+    """Lazy import: aksara.inspectors.queries.get_query_stats."""
+    from aksara.inspectors.queries import get_query_stats
+    return get_query_stats
+
+
+def _get_settings():
+    """Lazy import: aksara.conf.settings."""
+    from aksara.conf import settings
+    return settings
+
+
+def _get_builtin_playbooks():
+    """Lazy import: aksara.ai.playbooks.get_builtin_playbooks."""
+    from aksara.ai.playbooks import get_builtin_playbooks
+    return get_builtin_playbooks
+
+
+# =============================================================================
 # Model Indexer
 # =============================================================================
 
@@ -28,7 +77,7 @@ def build_model_documents() -> List[SearchDocument]:
     """
     docs: List[SearchDocument] = []
     try:
-        from aksara.registry import ModelRegistry
+        ModelRegistry = _get_model_registry()
 
         for name, model_cls in ModelRegistry.all().items():
             fields_info: List[str] = []
@@ -97,7 +146,7 @@ def build_route_documents(app: Optional[Any] = None) -> List[SearchDocument]:
         return docs
 
     try:
-        from aksara.studio.utils import build_routes_info
+        build_routes_info = _get_routes_builder()
 
         routes = build_routes_info(app)
         for route_info in routes:
@@ -145,7 +194,7 @@ def build_migration_documents() -> List[SearchDocument]:
     """
     docs: List[SearchDocument] = []
     try:
-        from aksara.migrations.graph import MigrationGraph
+        MigrationGraph = _get_migration_graph()
 
         graph = MigrationGraph()
         graph.discover()
@@ -187,7 +236,7 @@ def build_query_documents() -> List[SearchDocument]:
     """
     docs: List[SearchDocument] = []
     try:
-        from aksara.inspectors.queries import get_query_stats
+        get_query_stats = _get_query_stats()
 
         stats = get_query_stats(limit_slow=20)
         if hasattr(stats, "slow_queries"):
@@ -223,7 +272,7 @@ def build_settings_documents() -> List[SearchDocument]:
     """
     docs: List[SearchDocument] = []
     try:
-        from aksara.conf import settings
+        settings = _get_settings()
         from dataclasses import fields as dc_fields
 
         for f in dc_fields(settings):
@@ -260,7 +309,7 @@ def build_playbook_documents() -> List[SearchDocument]:
     """
     docs: List[SearchDocument] = []
     try:
-        from aksara.ai.playbooks import get_builtin_playbooks
+        get_builtin_playbooks = _get_builtin_playbooks()
 
         pset = get_builtin_playbooks()
         for pb in pset.playbooks:

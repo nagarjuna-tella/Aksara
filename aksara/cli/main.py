@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.23"
+CLI_VERSION = "0.5.24"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -703,9 +703,9 @@ def migrate(
     # Get database URL from args or settings
     db_url = database_url or settings.database_url
     if not db_url:
-        click.echo("\n❌ No database URL provided!")
-        click.echo("   Set DATABASE_URL or use --database-url")
-        return
+        click.echo("\n❌ No database URL provided!", err=True)
+        click.echo("   Set DATABASE_URL or use --database-url", err=True)
+        sys.exit(1)
     
     # Get migrations directory
     mig_dir = Path(migrations_dir) if migrations_dir else Path(settings.migrations_dir)
@@ -877,8 +877,9 @@ def status(database_url: Optional[str]):
     # Get database URL
     db_url = database_url or settings.database_url
     if not db_url:
-        click.echo("\n❌ No database URL provided!")
-        return
+        click.echo("\n❌ No database URL provided!", err=True)
+        click.echo("   Try: set DATABASE_URL or use --database-url", err=True)
+        sys.exit(1)
     
     # Get migrations directory
     mig_dir = Path(settings.migrations_dir)
@@ -3773,7 +3774,12 @@ def doctor_run(output_format: str):
         from aksara.diagnostics import run_all_checks
         return await run_all_checks()
 
-    report = asyncio.run(_run())
+    try:
+        report = asyncio.run(_run())
+    except Exception as e:
+        click.echo(f"❌ Diagnostics failed: {e}", err=True)
+        click.echo("   Try: check your DATABASE_URL or run aksara doctor db", err=True)
+        sys.exit(1)
 
     if output_format == "json":
         click.echo(report.model_dump_json(indent=2))
@@ -4329,15 +4335,20 @@ def agent_workflow(
     )
     from aksara.studio.models import AgentWorkflowResponse
 
-    workflow = build_agent_workflow(
-        goal=goal,
-        playbook=playbook,
-        include_diagnostics=not no_diagnostics,
-        include_search=not no_search,
-        search_query=search_query,
-        search_limit=limit_search,
-        diagnostics_limit=limit_diagnostics,
-    )
+    try:
+        workflow = build_agent_workflow(
+            goal=goal,
+            playbook=playbook,
+            include_diagnostics=not no_diagnostics,
+            include_search=not no_search,
+            search_query=search_query,
+            search_limit=limit_search,
+            diagnostics_limit=limit_diagnostics,
+        )
+    except Exception as e:
+        click.echo(f"❌ Failed to build workflow: {e}", err=True)
+        click.echo("   Try: aksara doctor run", err=True)
+        sys.exit(1)
 
     if output_format == "json":
         response = AgentWorkflowResponse(
@@ -4593,14 +4604,19 @@ def search_query(query_text: str, kind: str, top: int, semantic: bool, json_out:
     mode = "semantic" if semantic else "hybrid"
     kind_filter = kind if kind else None
 
-    index = build_full_index()
-    results = index.search(
-        query_text,
-        top_k=top,
-        kind=kind_filter,
-        min_score=min_score,
-        mode=mode,
-    )
+    try:
+        index = build_full_index()
+        results = index.search(
+            query_text,
+            top_k=top,
+            kind=kind_filter,
+            min_score=min_score,
+            mode=mode,
+        )
+    except Exception as e:
+        click.echo(f"❌ Search failed: {e}", err=True)
+        click.echo("   Try: aksara search index --json", err=True)
+        sys.exit(1)
 
     if json_out:
         output = {
@@ -4644,8 +4660,12 @@ def search_index(json_out: bool):
 
     from aksara.search.indexers import build_full_index
 
-    index = build_full_index()
-    stats = index.stats()
+    try:
+        index = build_full_index()
+        stats = index.stats()
+    except Exception as e:
+        click.echo(f"❌ Failed to build search index: {e}", err=True)
+        sys.exit(1)
 
     if json_out:
         click.echo(json_mod.dumps(stats, indent=2, default=str))

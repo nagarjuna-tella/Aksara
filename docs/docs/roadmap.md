@@ -1,6 +1,6 @@
 # Aksara Roadmap
 
-> **Updated Feb 7, 2026**
+> **Updated Feb 20, 2026**
 
 Aksara is now an AI-first application framework with a fully integrated
 developer studio, automatic diagnostics, code-generation agents, and
@@ -11,20 +11,24 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 
 ## Current Stable Version
 
-### v0.5.20 — Agent Playbooks (Feb 2026)
+### v0.5.24 — Stability & Refactor Pass (Feb 2026)
 
-Includes:
+Includes everything from v0.5.0–v0.5.23 plus:
 
-- Studio 2.0
-- Diagnostics 2.0
-- Query Inspector
-- Agent Mode
-- Playbook Engine
-- Provider Integration Toolkit
-- AI Profiles / Hints
+- Studio 2.0 with Spotlight search (⌘K)
+- Diagnostics 2.0 with autoremediation
+- Query Inspector 2.0
+- Agent Mode with agentic workflows
+- Playbook Engine (8 built-in playbooks)
+- Semantic Search (TF-IDF + pluggable embeddings)
+- Provider Integration Toolkit (OpenAI, Anthropic, Azure, Ollama)
+- AI Profiles / Hints / Schema Doctor
 - Studio Keyboard Shortcuts
 - Full FastAPI/ORM integration
-- 2900+ test suite
+- Lazy-import helper pattern for testability
+- CLI error handling hardened (exit codes, hints)
+- Studio error feedback (toast notifications)
+- 3250+ test suite
 
 ---
 

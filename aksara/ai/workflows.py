@@ -56,6 +56,57 @@ def _effort_from_kind(kind: str) -> str:
 
 
 # =============================================================================
+# Lazy Import Helpers
+# =============================================================================
+# These helpers centralise deferred imports that would otherwise cause circular
+# import chains at module-load time.  Using explicit helpers (rather than bare
+# ``from … import …`` inside function bodies) gives tests a single, stable
+# patch target:  ``aksara.ai.workflows._get_<name>``.
+#
+# Pattern:
+#   def _get_foo():
+#       from some.module import foo
+#       return foo
+#
+# Test patch:
+#   @patch("aksara.ai.workflows._get_foo", return_value=mock_foo)
+# =============================================================================
+
+
+def _get_run_all_checks():
+    """Lazy import: aksara.diagnostics.run_all_checks.
+
+    Deferred because diagnostics may pull in asyncpg/settings,
+    and importing eagerly would create a circular chain via
+    aksara.conf → models → diagnostics.
+    """
+    from aksara.diagnostics import run_all_checks
+    return run_all_checks
+
+
+def _get_search_index_and_builder():
+    """Lazy import: aksara.search.engine.SearchIndex + indexers.build_full_index.
+
+    Deferred because the search subsystem imports aksara.studio.utils
+    for route info, which in turn imports this very module for workflow
+    re-exports — creating a potential circular chain.
+    """
+    from aksara.search.engine import SearchIndex
+    from aksara.search.indexers import build_full_index
+    return SearchIndex, build_full_index
+
+
+def _get_playbook(key: str):
+    """Lazy import: aksara.ai.playbooks.get_playbook_by_key.
+
+    Deferred to avoid a playbooks ↔ workflows cross-import cycle.
+    Tests should patch ``aksara.ai.workflows._get_playbook``.
+    """
+    from aksara.ai.playbooks import get_playbook_by_key
+    return get_playbook_by_key(key)
+
+
+# =============================================================================
 # Diagnostic Steps Builder
 # =============================================================================
 
@@ -72,7 +123,7 @@ def _build_diagnostic_steps(
     steps: List[AgentWorkflowStep] = []
     try:
         import asyncio
-        from aksara.diagnostics import run_all_checks
+        run_all_checks = _get_run_all_checks()
 
         try:
             loop = asyncio.get_running_loop()
@@ -193,8 +244,7 @@ def _build_search_steps(
     query = search_query or goal
 
     try:
-        from aksara.search.engine import SearchIndex
-        from aksara.search.indexers import build_full_index
+        _SearchIndex, build_full_index = _get_search_index_and_builder()
 
         index = build_full_index()
         results = index.search(query, top_k=limit, mode="hybrid")
@@ -349,9 +399,7 @@ def _build_playbook_steps(
     """Convert playbook steps into workflow steps."""
     steps: List[AgentWorkflowStep] = []
     try:
-        from aksara.ai.playbooks import get_playbook_by_key
-
-        pb = get_playbook_by_key(playbook_key)
+        pb = _get_playbook(playbook_key)
         if pb is None:
             return steps
 
@@ -466,9 +514,7 @@ def build_agent_workflow(
     playbook_kind: Optional[str] = None
     if playbook:
         try:
-            from aksara.ai.playbooks import get_playbook_by_key
-
-            pb = get_playbook_by_key(playbook)
+            pb = _get_playbook(playbook)
             if pb:
                 playbook_kind = pb.kind
                 metadata["playbook_key"] = playbook

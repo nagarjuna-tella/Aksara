@@ -30,8 +30,9 @@ class TestBuildModelDocuments:
     """Tests for build_model_documents."""
 
     def test_returns_list(self):
-        with patch("aksara.registry.ModelRegistry") as mock_reg:
-            mock_reg.all.return_value = {}
+        mock_reg = MagicMock()
+        mock_reg.all.return_value = {}
+        with patch("aksara.search.indexers._get_model_registry", return_value=mock_reg):
             docs = build_model_documents()
             assert isinstance(docs, list)
 
@@ -45,8 +46,9 @@ class TestBuildModelDocuments:
         mock_model._table_name = "users"
         mock_model._ai_description = "User accounts"
 
-        with patch("aksara.registry.ModelRegistry") as mock_reg:
-            mock_reg.all.return_value = {"User": mock_model}
+        mock_reg = MagicMock()
+        mock_reg.all.return_value = {"User": mock_model}
+        with patch("aksara.search.indexers._get_model_registry", return_value=mock_reg):
             docs = build_model_documents()
             assert len(docs) == 1
             assert docs[0].kind == "model"
@@ -55,7 +57,7 @@ class TestBuildModelDocuments:
             assert docs[0].metadata["table_name"] == "users"
 
     def test_handles_registry_error(self):
-        with patch.dict("sys.modules", {"aksara.registry": None}):
+        with patch("aksara.search.indexers._get_model_registry", side_effect=ImportError("no registry")):
             # Should return empty list on import error
             docs = build_model_documents()
             assert docs == []
@@ -75,8 +77,9 @@ class TestBuildModelDocuments:
         mock_model._table_name = "users"
         mock_model._ai_description = ""
 
-        with patch("aksara.registry.ModelRegistry") as mock_reg:
-            mock_reg.all.return_value = {"User": mock_model}
+        mock_reg = MagicMock()
+        mock_reg.all.return_value = {"User": mock_model}
+        with patch("aksara.search.indexers._get_model_registry", return_value=mock_reg):
             docs = build_model_documents()
             assert docs[0].metadata["relation_count"] == 1
 
@@ -90,8 +93,9 @@ class TestBuildModelDocuments:
         mock_model._table_name = "users"
         mock_model._ai_description = ""
 
-        with patch("aksara.registry.ModelRegistry") as mock_reg:
-            mock_reg.all.return_value = {"User": mock_model}
+        mock_reg = MagicMock()
+        mock_reg.all.return_value = {"User": mock_model}
+        with patch("aksara.search.indexers._get_model_registry", return_value=mock_reg):
             docs = build_model_documents()
             assert "model" in docs[0].tags
             assert "users" in docs[0].tags
@@ -102,8 +106,9 @@ class TestBuildModelDocuments:
         mock_model._table_name = "users"
         mock_model._ai_description = ""
 
-        with patch("aksara.registry.ModelRegistry") as mock_reg:
-            mock_reg.all.return_value = {"User": mock_model}
+        mock_reg = MagicMock()
+        mock_reg.all.return_value = {"User": mock_model}
+        with patch("aksara.search.indexers._get_model_registry", return_value=mock_reg):
             docs = build_model_documents()
             assert docs[0].source == "model:User"
 
@@ -129,7 +134,7 @@ class TestBuildRouteDocuments:
             "tags": ["users"],
         }
 
-        with patch("aksara.studio.utils.build_routes_info", return_value=[mock_route]):
+        with patch("aksara.search.indexers._get_routes_builder", return_value=MagicMock(return_value=[mock_route])):
             docs = build_route_documents(MagicMock())
             assert len(docs) == 1
             assert docs[0].kind == "route"
@@ -143,12 +148,12 @@ class TestBuildRouteDocuments:
             "tags": [],
         }
 
-        with patch("aksara.studio.utils.build_routes_info", return_value=[route_dict]):
+        with patch("aksara.search.indexers._get_routes_builder", return_value=MagicMock(return_value=[route_dict])):
             docs = build_route_documents(MagicMock())
             assert len(docs) == 1
 
     def test_handles_error(self):
-        with patch("aksara.studio.utils.build_routes_info", side_effect=Exception("fail")):
+        with patch("aksara.search.indexers._get_routes_builder", side_effect=Exception("fail")):
             docs = build_route_documents(MagicMock())
             assert docs == []
 

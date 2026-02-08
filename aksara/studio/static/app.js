@@ -548,6 +548,7 @@ async function fetchMigrations() {
         state.migrations = await jsonGet('/studio/migrations/summary');
     } catch (err) {
         console.error('Failed to fetch migrations:', err);
+        showToast('Failed to load migrations. Check server logs.', 'error');
     }
 }
 
@@ -1763,6 +1764,7 @@ async function loadAgentContext() {
         return ctx;
     } catch (err) {
         console.error('Failed to load agent context:', err);
+        showToast('Failed to load agent context. Try: aksara agent context', 'error');
         return null;
     }
 }
@@ -1935,6 +1937,7 @@ async function loadAgentPlaybooks() {
         return data;
     } catch (err) {
         console.error('Failed to load agent playbooks:', err);
+        showToast('Failed to load playbooks. Try: aksara agent playbooks', 'error');
         return null;
     }
 }
@@ -2474,6 +2477,8 @@ async function spotlightSearch() {
             state.spotlight.results = [];
         }
     } catch (err) {
+        console.error('Spotlight search failed:', err);
+        showToast('Search failed.', 'error');
         state.spotlight.results = [];
     }
 
