@@ -261,6 +261,12 @@ aksara migrate
 ## Step 7: Start Your Server
 
 ```bash
+aksara dev
+```
+
+Or specify a custom app path:
+
+```bash
 aksara dev main:app
 ```
 

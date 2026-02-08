@@ -27,7 +27,7 @@ Quick Start:
     aksara makemigrations --app app.models
     aksara migrate
     aksara createsuperuser  # Optional: create admin user
-    aksara dev main:app
+    aksara dev              # Uses main:app by default
 
 Endpoints:
     Welcome:   http://localhost:8000/

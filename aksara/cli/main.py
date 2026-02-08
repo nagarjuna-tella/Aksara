@@ -1389,7 +1389,7 @@ def _print_dev_banner(base_url: str, actual_reload: bool, log_level: str) -> Non
 
 
 @cli.command()
-@click.argument("app_path")
+@click.argument("app_path", default="main:app")
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
 @click.option("--reload", "-r", is_flag=True, default=True, help="Enable auto-reload (default: True)")
@@ -1404,9 +1404,10 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
     v0.5.6: Improved developer experience with richer banner showing
     all relevant URLs, environment, and debug status.
     
-    APP_PATH: Import path to the app (e.g., 'main:app' or 'myproject.main:app')
+    APP_PATH: Import path to the app (default: 'main:app')
     
     Examples:
+        aksara dev                  # Uses main:app by default
         aksara dev main:app
         aksara dev myproject.main:app --log-level debug
         aksara dev main:app --no-reload --port 3000
