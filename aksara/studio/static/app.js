@@ -46,6 +46,8 @@ const state = {
         context: null, selectedSections: [], lastPromptResponse: null,
         // v0.5.20: Playbooks state
         playbooks: null, selectedPlaybook: null, playbookFilter: 'all', playbookSearch: '',
+        // v0.5.23: Workflows state
+        lastWorkflowResponse: null,
     },
     // v0.5.21: Model Inspector state
     modelInspector: null,
@@ -1772,6 +1774,7 @@ function renderAgentPanel() {
         renderAgentSections(ctx);
         renderAgentContextJson(ctx);
         initAgentEvents(ctx);
+        initWorkflowEvents();
     });
 }
 
@@ -2082,6 +2085,158 @@ function initPlaybookSearch() {
         state.agent.playbookSearch = input.value;
         renderAgentPlaybooks();
     });
+}
+
+
+// =============================================================================
+// v0.5.23: Agentic Workflows — Plans, Not Pushes
+// =============================================================================
+
+
+function initWorkflowEvents() {
+    const wfBtn = document.getElementById('agent-workflow-btn');
+    if (wfBtn) {
+        if (wfBtn._wfBound) return;
+        wfBtn._wfBound = true;
+        wfBtn.addEventListener('click', () => generateAgentWorkflow());
+    }
+
+    // Restore last goal from localStorage
+    const savedGoal = localStorage.getItem('aksara_agent_goal');
+    if (savedGoal) {
+        const goalEl = document.getElementById('agent-goal');
+        if (goalEl && !goalEl.value) goalEl.value = savedGoal;
+    }
+
+    // Save goal on change
+    const goalEl = document.getElementById('agent-goal');
+    if (goalEl && !goalEl._goalSaveBound) {
+        goalEl._goalSaveBound = true;
+        goalEl.addEventListener('input', () => {
+            localStorage.setItem('aksara_agent_goal', goalEl.value);
+        });
+    }
+}
+
+async function generateAgentWorkflow() {
+    const goalEl = document.getElementById('agent-goal');
+    const outputEl = document.getElementById('agent-workflow-output');
+    if (!goalEl || !outputEl) return;
+
+    const goal = goalEl.value.trim();
+    if (!goal) {
+        outputEl.innerHTML = '<p class="text-muted">Please enter a goal first.</p>';
+        return;
+    }
+
+    outputEl.innerHTML = '<p class="text-muted">Generating workflow...</p>';
+
+    // Switch to Workflow tab
+    document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.agent-tab-pane').forEach(p => p.classList.remove('active'));
+    const wfTab = document.querySelector('[data-agent-tab="workflow"]');
+    if (wfTab) wfTab.classList.add('active');
+    const wfPane = document.getElementById('agent-pane-workflow');
+    if (wfPane) wfPane.classList.add('active');
+
+    const diagCb = document.getElementById('agent-wf-diagnostics');
+    const searchCb = document.getElementById('agent-wf-search');
+    const searchQueryEl = document.getElementById('agent-wf-search-query');
+
+    const body = {
+        goal: goal,
+        playbook: state.agent.selectedPlaybook ? state.agent.selectedPlaybook.key : null,
+        include_diagnostics: diagCb ? diagCb.checked : true,
+        include_search: searchCb ? searchCb.checked : true,
+        search_query: searchQueryEl && searchQueryEl.value.trim() ? searchQueryEl.value.trim() : null,
+        limit_search_results: 10,
+        limit_diagnostics: 10,
+    };
+
+    try {
+        const resp = await jsonPost('/studio/agent/workflow', body);
+        renderAgentWorkflow(resp);
+    } catch (err) {
+        outputEl.innerHTML = `<p style="color: var(--red);">Error: ${escapeHtml(err.message)}</p>`;
+    }
+}
+
+function renderAgentWorkflow(response) {
+    const outputEl = document.getElementById('agent-workflow-output');
+    if (!outputEl) return;
+
+    const wf = response.workflow;
+    const steps = wf.steps || [];
+
+    let html = '';
+
+    // Summary header
+    html += '<div class="wf-summary">';
+    html += `<div class="wf-goal">🎯 ${escapeHtml(wf.goal)}</div>`;
+    if (wf.playbook) {
+        html += `<div class="wf-meta">📋 Playbook: ${escapeHtml(wf.playbook)}</div>`;
+    }
+    html += `<div class="wf-meta">📊 ${steps.length} steps · Source: ${escapeHtml(wf.source)}</div>`;
+    if (response.summary) {
+        html += `<div class="wf-meta-summary">${escapeHtml(response.summary)}</div>`;
+    }
+    html += '</div>';
+
+    // Stats chips
+    const stats = response.stats || {};
+    if (stats.by_kind) {
+        html += '<div class="wf-stats">';
+        for (const [kind, count] of Object.entries(stats.by_kind)) {
+            html += `<span class="wf-chip wf-chip-kind" data-kind="${escapeHtml(kind)}">${escapeHtml(kind)}: ${count}</span>`;
+        }
+        if (stats.has_high_risk) {
+            html += '<span class="wf-chip wf-chip-risk">⚠ high-risk steps</span>';
+        }
+        html += '</div>';
+    }
+
+    // Steps timeline
+    html += '<div class="wf-timeline">';
+    for (const step of steps) {
+        const riskClass = step.risk === 'high' ? 'wf-risk-high' : step.risk === 'medium' ? 'wf-risk-medium' : 'wf-risk-low';
+        html += `<div class="wf-step ${riskClass}">`;
+        html += `<div class="wf-step-header">`;
+        html += `<span class="wf-step-order">${step.order}</span>`;
+        html += `<span class="wf-step-kind">${escapeHtml(step.kind)}</span>`;
+        html += `<span class="wf-step-title">${escapeHtml(step.title)}</span>`;
+        if (step.risk) {
+            html += `<span class="wf-step-badge wf-badge-${step.risk}">${step.risk}</span>`;
+        }
+        if (step.estimated_effort) {
+            html += `<span class="wf-step-badge wf-badge-effort">${step.estimated_effort}</span>`;
+        }
+        html += '</div>';
+
+        if (step.description) {
+            html += `<div class="wf-step-desc">${escapeHtml(step.description)}</div>`;
+        }
+
+        if (step.commands && step.commands.length) {
+            html += '<div class="wf-step-commands">';
+            for (const cmd of step.commands) {
+                html += `<div class="wf-cmd"><code>$ ${escapeHtml(cmd)}</code><button class="wf-copy-btn" onclick="navigator.clipboard.writeText('${escapeHtml(cmd).replace(/'/g, "\\'")}')">📋</button></div>`;
+            }
+            html += '</div>';
+        }
+
+        if (step.notes && step.notes.length) {
+            html += '<div class="wf-step-notes">';
+            for (const note of step.notes) {
+                html += `<div class="wf-note">• ${escapeHtml(note)}</div>`;
+            }
+            html += '</div>';
+        }
+
+        html += '</div>';
+    }
+    html += '</div>';
+
+    outputEl.innerHTML = html;
 }
 
 async function jsonPost(url, body) {

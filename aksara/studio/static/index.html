@@ -942,7 +942,15 @@
                         <div class="card-header"><h3>Goal</h3></div>
                         <div class="card-body">
                             <textarea id="agent-goal" class="agent-goal-input" rows="3" placeholder="Describe what the agent should accomplish..."></textarea>
-                            <button class="btn btn-primary" id="agent-generate-btn">Generate Prompt</button>
+                            <div class="agent-goal-actions">
+                                <button class="btn btn-primary" id="agent-generate-btn">Generate Prompt</button>
+                                <button class="btn btn-secondary" id="agent-workflow-btn">Generate Workflow</button>
+                            </div>
+                            <div class="agent-workflow-options" id="agent-workflow-options">
+                                <label><input type="checkbox" id="agent-wf-diagnostics" checked /> Use diagnostics</label>
+                                <label><input type="checkbox" id="agent-wf-search" checked /> Use semantic search</label>
+                                <input type="text" id="agent-wf-search-query" class="agent-wf-search-input" placeholder="Search query override (optional)" />
+                            </div>
                         </div>
                     </div>
 
@@ -952,6 +960,7 @@
                             <div class="agent-tabs">
                                 <button class="agent-tab active" data-agent-tab="prompt">Prompt</button>
                                 <button class="agent-tab" data-agent-tab="context">Context JSON</button>
+                                <button class="agent-tab" data-agent-tab="workflow">Workflow</button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -961,6 +970,11 @@
                             </div>
                             <div class="agent-tab-pane" id="agent-pane-context">
                                 <pre class="agent-json-output" id="agent-json-output">{}</pre>
+                            </div>
+                            <div class="agent-tab-pane" id="agent-pane-workflow">
+                                <div class="agent-workflow-output" id="agent-workflow-output">
+                                    <p class="text-muted">Press "Generate Workflow" to create a step-by-step plan.</p>
+                                </div>
                             </div>
                         </div>
                     </div>

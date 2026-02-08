@@ -4,6 +4,37 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.23] — 2026-02-20
+
+### Added
+- **Agentic Workflows v1 — Plans, Not Pushes**: Structured execution plans from free-text goals
+  - **`AgentWorkflow` model**: Ordered list of steps with goal, playbook, source, and metadata
+  - **`AgentWorkflowStep` model**: Actionable step with kind, risk, effort, commands, and notes
+  - **`AgentWorkflowRequest` / `AgentWorkflowResponse` models**: API request/response types
+  - **10 step kinds**: `inspect`, `search`, `edit_file`, `run_migration`, `run_query`, `run_test`, `environment`, `config`, `diagnostics`, `doc_reading`
+
+- **Workflow Builder** (`aksara.ai.workflows`):
+  - **`build_agent_workflow()`**: Combine diagnostics, inspectors, search, and playbooks into one plan
+  - **`summarize_agent_workflow()`**: Natural-language summary of a workflow
+  - **`workflow_stats()`**: Step counts by kind, risk, and effort
+  - Five sub-builders: diagnostic steps, search steps, inspector steps, playbook steps, test step
+  - Deterministic ordering: diagnostics (1–49), inspectors (50–99), search (100–199), playbooks (200–299), test (300)
+
+- **Studio Workflow UI**:
+  - **Generate Workflow** button in Agent panel alongside existing Generate Prompt
+  - **Workflow tab** with step timeline, risk/effort badges, copy-able commands, and summary stats
+  - Diagnostics/search toggle checkboxes and search query override input
+
+- **Studio API Endpoints**:
+  - **`POST /studio/agent/workflow`**: Generate a workflow from a goal
+  - **`GET /studio/agent/workflow/sample`**: Sample workflow for demonstration
+
+- **CLI `aksara agent workflow` command**:
+  - `--playbook`, `--no-diagnostics`, `--no-search`, `--search-query`, `--limit-search`, `--limit-diagnostics`
+  - `--format text|json` output modes
+
+---
+
 ## [0.5.22] — 2026-02-19
 
 ### Added

@@ -107,6 +107,7 @@ nav:
       - Providers: ai-mode/providers.md
       - Route Hints: ai-mode/hints.md
       - Agent Mode: ai-mode/agent.md
+      - Agent Workflows: ai-mode/workflows.md
       - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md

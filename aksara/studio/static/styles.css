@@ -2997,3 +2997,227 @@ code {
     border-radius: 3px;
     margin-right: 2px;
 }
+
+/* =============================================================================
+   v0.5.23: Agentic Workflows — Plans, Not Pushes
+   ============================================================================= */
+
+.agent-goal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.agent-workflow-options {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.agent-workflow-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.agent-wf-search-input {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #1a202c);
+    flex: 1;
+    min-width: 180px;
+}
+
+.wf-summary {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-secondary, #f7fafc);
+    border-radius: 6px;
+    border-left: 3px solid var(--blue, #3b82f6);
+}
+
+.wf-goal {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wf-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted, #718096);
+}
+
+.wf-meta-summary {
+    font-size: 0.8rem;
+    margin-top: 6px;
+    color: var(--text-secondary, #4a5568);
+    font-style: italic;
+}
+
+.wf-stats {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.wf-chip {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-secondary, #f7fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.wf-chip-risk {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.wf-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wf-step {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    background: var(--bg-primary, #fff);
+    border-left: 3px solid var(--text-muted, #718096);
+}
+
+.wf-step.wf-risk-high {
+    border-left-color: var(--red, #ef4444);
+}
+
+.wf-step.wf-risk-medium {
+    border-left-color: var(--yellow, #f59e0b);
+}
+
+.wf-step.wf-risk-low {
+    border-left-color: var(--green, #22c55e);
+}
+
+.wf-step-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wf-step-order {
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--blue, #3b82f6);
+    color: #fff;
+}
+
+.wf-step-kind {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--bg-secondary, #f7fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    color: var(--text-secondary, #4a5568);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.wf-step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.wf-step-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+
+.wf-badge-high {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.wf-badge-medium {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.wf-badge-low {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.wf-badge-effort {
+    background: var(--bg-secondary, #f7fafc);
+    color: var(--text-muted, #718096);
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.wf-step-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #4a5568);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.wf-step-commands {
+    margin-top: 8px;
+}
+
+.wf-cmd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.wf-cmd code {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    background: var(--bg-secondary, #f7fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.wf-copy-btn {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: none;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.wf-copy-btn:hover {
+    opacity: 1;
+}
+
+.wf-step-notes {
+    margin-top: 6px;
+}
+
+.wf-note {
+    font-size: 0.75rem;
+    color: var(--text-muted, #718096);
+    line-height: 1.5;
+}

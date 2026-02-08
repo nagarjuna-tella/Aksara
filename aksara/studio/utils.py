@@ -2256,3 +2256,15 @@ def build_search_results(
         mode=mode,
         index_size=index.size,
     )
+
+
+# =============================================================================
+# v0.5.23: Agentic Workflows — Plans, Not Pushes
+# =============================================================================
+
+# Re-export builder functions so aksara.studio imports work.
+from aksara.ai.workflows import (  # noqa: E402, F401
+    build_agent_workflow,
+    summarize_agent_workflow,
+    workflow_stats,
+)

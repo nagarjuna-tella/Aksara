@@ -72,6 +72,11 @@ from aksara.studio.models import (
     StudioSearchResultItem,
     StudioSearchResultSet,
     StudioSearchIndexInfo,
+    # v0.5.23: Agentic Workflows models
+    AgentWorkflowStep,
+    AgentWorkflow,
+    AgentWorkflowRequest,
+    AgentWorkflowResponse,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -99,6 +104,10 @@ from aksara.studio.utils import (
     # v0.5.22: Semantic Search utils
     build_search_index_info,
     build_search_results,
+    # v0.5.23: Agentic Workflows utils
+    build_agent_workflow,
+    summarize_agent_workflow,
+    workflow_stats,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -148,6 +157,11 @@ __all__ = [
     "StudioSearchResultItem",
     "StudioSearchResultSet",
     "StudioSearchIndexInfo",
+    # v0.5.23: Agentic Workflows
+    "AgentWorkflowStep",
+    "AgentWorkflow",
+    "AgentWorkflowRequest",
+    "AgentWorkflowResponse",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -167,6 +181,9 @@ __all__ = [
     "build_all_models_inspector",  # v0.5.21
     "build_search_index_info",  # v0.5.22
     "build_search_results",  # v0.5.22
+    "build_agent_workflow",  # v0.5.23
+    "summarize_agent_workflow",  # v0.5.23
+    "workflow_stats",  # v0.5.23
     # Router
     "studio_router",
 ]

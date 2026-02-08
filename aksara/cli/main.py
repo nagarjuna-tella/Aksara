@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.22"
+CLI_VERSION = "0.5.23"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4285,6 +4285,93 @@ def _get_settings():
     except Exception:
         from unittest.mock import MagicMock
         return MagicMock()
+
+
+# =============================================================================
+# v0.5.23: Agent Workflow Command
+# =============================================================================
+
+
+@agent.command("workflow")
+@click.argument("goal")
+@click.option("--playbook", "-p", default=None, help="Playbook key to guide the workflow")
+@click.option("--no-diagnostics", is_flag=True, default=False, help="Skip diagnostics")
+@click.option("--no-search", is_flag=True, default=False, help="Skip semantic search")
+@click.option("--search-query", default=None, help="Custom search query (defaults to goal)")
+@click.option("--limit-search", default=10, type=int, help="Max search results")
+@click.option("--limit-diagnostics", default=10, type=int, help="Max diagnostic issues")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def agent_workflow(
+    goal: str,
+    playbook: str | None,
+    no_diagnostics: bool,
+    no_search: bool,
+    search_query: str | None,
+    limit_search: int,
+    limit_diagnostics: int,
+    output_format: str,
+):
+    """Generate a structured workflow plan for a goal.
+
+    GOAL is the task you want to accomplish (e.g. "Fix slow queries on /api/posts/").
+
+    The workflow combines diagnostics, inspectors, semantic search, and playbooks
+    into an ordered list of actionable steps.  Nothing is auto-applied — all
+    commands are for display and human review.
+
+    v0.5.23: Agentic Workflows — Plans, Not Pushes
+    """
+    import json as json_mod
+    from aksara.ai.workflows import (
+        build_agent_workflow,
+        summarize_agent_workflow,
+        workflow_stats,
+    )
+    from aksara.studio.models import AgentWorkflowResponse
+
+    workflow = build_agent_workflow(
+        goal=goal,
+        playbook=playbook,
+        include_diagnostics=not no_diagnostics,
+        include_search=not no_search,
+        search_query=search_query,
+        search_limit=limit_search,
+        diagnostics_limit=limit_diagnostics,
+    )
+
+    if output_format == "json":
+        response = AgentWorkflowResponse(
+            workflow=workflow,
+            summary=summarize_agent_workflow(workflow),
+            stats=workflow_stats(workflow),
+        )
+        click.echo(json_mod.dumps(response.model_dump(), indent=2, default=str))
+        return
+
+    # Text format — rich outline
+    click.echo()
+    click.echo(f"  🎯 Goal: {goal}")
+    if workflow.playbook:
+        click.echo(f"  📋 Playbook: {workflow.playbook}")
+    click.echo(f"  📊 Source: {workflow.source} | Steps: {len(workflow.steps)}")
+    click.echo()
+
+    for step in workflow.steps:
+        risk_str = step.risk or "—"
+        click.echo(
+            f"  {step.order}. [{step.kind}, {risk_str} risk] {step.title}"
+        )
+        if step.description:
+            click.echo(f"     {step.description[:120]}")
+        for cmd in step.commands:
+            click.echo(f"     \033[36m$ {cmd}\033[0m")
+        for note in step.notes:
+            click.echo(f"     \033[90m• {note}\033[0m")
+        click.echo()
+
+    summary = summarize_agent_workflow(workflow)
+    click.echo(f"  \033[90m{summary}\033[0m")
+    click.echo()
 
 
 # =============================================================================

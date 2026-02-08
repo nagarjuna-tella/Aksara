@@ -1601,3 +1601,109 @@ class StudioSearchIndexInfo(BaseModel):
     vocabulary_size: int = Field(default=0)
     kinds_available: List[str] = Field(default_factory=list)
     embedding_provider: str = Field(default="local_tfidf")
+
+
+# =============================================================================
+# v0.5.23: Agentic Workflows — Plans, Not Pushes
+# =============================================================================
+
+
+AgentWorkflowStepKind = Literal[
+    "inspect",
+    "search",
+    "edit_file",
+    "run_migration",
+    "run_query",
+    "run_test",
+    "environment",
+    "config",
+    "diagnostics",
+    "doc_reading",
+]
+
+
+class AgentWorkflowStep(BaseModel):
+    """A single step in an agent workflow.
+
+    v0.5.23: Structured task for humans or external agents.
+    Commands and notes are display-only — nothing is auto-executed.
+    """
+
+    id: str = Field(description="Unique step identifier")
+    kind: AgentWorkflowStepKind = Field(description="Step category")
+    title: str = Field(description="Short human-readable title")
+    description: str = Field(default="", description="Detailed explanation")
+    references: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="References to models, routes, diagnostics, etc.",
+    )
+    estimated_effort: Literal["low", "medium", "high"] = Field(
+        default="low", description="Estimated effort"
+    )
+    risk: Optional[str] = Field(
+        default=None, description="Risk level (low/medium/high)"
+    )
+    commands: List[str] = Field(
+        default_factory=list,
+        description="Shell/CLI commands for display only",
+    )
+    notes: List[str] = Field(
+        default_factory=list, description="Extra hints and gotchas"
+    )
+    order: int = Field(default=0, description="Sort order in the workflow")
+
+
+class AgentWorkflow(BaseModel):
+    """A complete agent workflow — structured plan of tasks.
+
+    v0.5.23: Read-only workflow; no auto-mutation of user code.
+    """
+
+    id: str = Field(description="Workflow identifier")
+    goal: str = Field(description="User's stated goal")
+    playbook: Optional[str] = Field(
+        default=None, description="Playbook key, if derived from one"
+    )
+    source: Literal["doctor", "search", "manual", "mixed"] = Field(
+        default="mixed", description="How the workflow was generated"
+    )
+    steps: List[AgentWorkflowStep] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Diagnostic IDs, search queries, etc.",
+    )
+
+
+class AgentWorkflowRequest(BaseModel):
+    """Request body for generating an agent workflow."""
+
+    goal: str = Field(description="What the user wants to accomplish")
+    playbook: Optional[str] = Field(
+        default=None, description="Optional playbook key"
+    )
+    include_diagnostics: bool = Field(
+        default=True, description="Include diagnostics in workflow"
+    )
+    include_search: bool = Field(
+        default=True, description="Include semantic search results"
+    )
+    search_query: Optional[str] = Field(
+        default=None, description="Custom search query (defaults to goal)"
+    )
+    limit_search_results: int = Field(
+        default=10, ge=1, le=50, description="Max search results"
+    )
+    limit_diagnostics: int = Field(
+        default=10, ge=1, le=50, description="Max diagnostic issues"
+    )
+
+
+class AgentWorkflowResponse(BaseModel):
+    """Response from workflow generation."""
+
+    workflow: AgentWorkflow
+    summary: str = Field(default="", description="1-3 sentence summary")
+    stats: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Step counts by kind, risk, effort",
+    )

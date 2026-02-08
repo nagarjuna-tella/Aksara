@@ -104,6 +104,10 @@ from aksara.studio.models import (
     StudioSearchRequest,
     StudioSearchResultSet,
     StudioSearchIndexInfo,
+    # v0.5.23: Agentic Workflows models
+    AgentWorkflowRequest,
+    AgentWorkflowResponse,
+    AgentWorkflow,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -139,6 +143,10 @@ from aksara.studio.utils import (
     # v0.5.22: Semantic Search utils
     build_search_index_info,
     build_search_results,
+    # v0.5.23: Agentic Workflows utils
+    build_agent_workflow,
+    summarize_agent_workflow,
+    workflow_stats,
 )
 from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
@@ -1198,6 +1206,55 @@ async def studio_search_rebuild(request: Request) -> Dict[str, Any]:
         "total_documents": index.size,
         "by_kind": index.count_by_kind(),
     }
+
+
+# =============================================================================
+# v0.5.23: Agentic Workflows — Plans, Not Pushes
+# =============================================================================
+
+
+@router.post("/studio/agent/workflow", response_model=AgentWorkflowResponse)
+async def studio_agent_workflow(
+    request: Request,
+    body: AgentWorkflowRequest,
+) -> AgentWorkflowResponse:
+    """
+    Generate a structured agent workflow.
+
+    v0.5.23: Combines diagnostics, search, inspectors, and playbooks
+    into an ordered sequence of actionable steps.
+    """
+    workflow = build_agent_workflow(
+        goal=body.goal,
+        playbook=body.playbook,
+        include_diagnostics=body.include_diagnostics,
+        include_search=body.include_search,
+        search_query=body.search_query,
+        search_limit=body.limit_search_results,
+        diagnostics_limit=body.limit_diagnostics,
+    )
+    return AgentWorkflowResponse(
+        workflow=workflow,
+        summary=summarize_agent_workflow(workflow),
+        stats=workflow_stats(workflow),
+    )
+
+
+@router.get("/studio/agent/workflow/sample", response_model=AgentWorkflow)
+async def studio_agent_workflow_sample(
+    request: Request,
+) -> AgentWorkflow:
+    """
+    Return a sample workflow for demo and testing.
+
+    v0.5.23: Uses a canned goal to showcase the workflow structure.
+    """
+    return build_agent_workflow(
+        goal="Fix slow queries on /api/posts/",
+        include_diagnostics=False,
+        include_search=True,
+        search_limit=5,
+    )
 
 
 # =============================================================================
