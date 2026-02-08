@@ -143,7 +143,7 @@ class TestScaffoldTemplates:
         assert "# testproject" in content
         assert "aksara makemigrations" in content
         assert "aksara migrate" in content
-        assert "aksara run main:app" in content
+        assert "aksara dev" in content
     
     def test_requirements_template(self):
         """Requirements should include uvicorn."""

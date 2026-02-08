@@ -318,7 +318,7 @@ class TestProjectDocumentation:
         
         assert "Quick Start" in content
         assert "pip install" in content
-        assert "aksara run main:app" in content
+        assert "aksara dev" in content
     
     def test_readme_has_api_docs_reference(self):
         """README should reference API documentation."""

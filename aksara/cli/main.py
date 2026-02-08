@@ -1415,8 +1415,11 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
     try:
         import uvicorn
     except ImportError:
-        click.echo("❌ uvicorn not installed. Run: pip install uvicorn")
-        return
+        click.echo("❌ uvicorn not installed in the current Python environment\n", err=True)
+        click.echo(f"   Python: {sys.executable}", err=True)
+        click.echo(f"   Try: python -m pip install uvicorn", err=True)
+        click.echo(f"   Or:  python -m aksara dev", err=True)
+        sys.exit(1)
     
     # Ensure current directory is in Python path for module imports
     cwd = str(Path.cwd())

@@ -654,8 +654,10 @@ aksara migrate
 aksara createsuperuser
 
 # 7. Start the server
-aksara run main:app --reload
+aksara dev
 ```
+
+> **Tip:** If you get "uvicorn not installed" errors, run `python -m aksara dev` instead of `aksara dev` to ensure you're using your virtual environment's Python.
 
 ## URLs
 
@@ -702,7 +704,7 @@ This project comes pre-configured with:
 
 ```bash
 # Development
-aksara run main:app --reload   # Start dev server
+aksara dev                     # Start dev server (uses main:app by default)
 aksara shell                   # Interactive Python shell
 
 # Database
