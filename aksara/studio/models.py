@@ -1441,3 +1441,111 @@ class StudioAgentPlaybookPromptRequest(BaseModel):
         default=None,
         description="Optional custom prefix for the system prompt",
     )
+
+
+# =============================================================================
+# v0.5.21: Query & Model Inspector Models
+# =============================================================================
+
+
+class StudioQueryPlanRequest(BaseModel):
+    """Request body for EXPLAIN plan generation via Studio API."""
+
+    sql: str = Field(description="The SQL query to explain")
+    analyze: bool = Field(
+        default=False,
+        description="Run EXPLAIN ANALYZE (actually executes the query)",
+    )
+
+
+class StudioQueryPlanResult(BaseModel):
+    """EXPLAIN plan result for Studio API."""
+
+    sql: str = Field(description="Original SQL query")
+    plan: List[str] = Field(
+        default_factory=list,
+        description="Lines of the EXPLAIN output",
+    )
+    estimated_cost: Optional[float] = Field(
+        default=None,
+        description="Total estimated cost from the planner",
+    )
+    plan_type: str = Field(
+        default="EXPLAIN",
+        description="Type: EXPLAIN or EXPLAIN ANALYZE",
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Warnings or notes about the plan",
+    )
+
+
+class StudioModelInspectorField(BaseModel):
+    """Per-field metadata from model inspection."""
+
+    name: str = Field(description="Field name")
+    column_name: str = Field(description="Database column name")
+    field_type: str = Field(description="Aksara field class name")
+    python_type: str = Field(default="Any", description="Python type")
+    nullable: bool = Field(default=False)
+    primary_key: bool = Field(default=False)
+    unique: bool = Field(default=False)
+    has_default: bool = Field(default=False)
+    default_repr: Optional[str] = Field(default=None)
+    max_length: Optional[int] = Field(default=None)
+    choices: Optional[List[str]] = Field(default=None)
+    is_relation: bool = Field(default=False)
+    ai_description: str = Field(default="")
+    ai_sensitive: bool = Field(default=False)
+    auto_generated: str = Field(default="")
+
+
+class StudioModelInspectorRelationship(BaseModel):
+    """Relationship metadata from model inspection."""
+
+    field_name: str = Field(description="Field name")
+    kind: str = Field(description="fk, m2m, o2o")
+    target_model: str = Field(description="Target model name")
+    target_table: str = Field(default="")
+    on_delete: str = Field(default="CASCADE")
+    through_table: Optional[str] = Field(default=None)
+    related_name: Optional[str] = Field(default=None)
+    nullable: bool = Field(default=False)
+
+
+class StudioModelInspectorConstraint(BaseModel):
+    """Constraint / index info from model inspection."""
+
+    kind: str = Field(description="primary_key, unique, index, check")
+    columns: List[str] = Field(default_factory=list)
+    name: Optional[str] = Field(default=None)
+    description: str = Field(default="")
+
+
+class StudioModelInspectorSummary(BaseModel):
+    """Full model inspection result for Studio API."""
+
+    name: str = Field(description="Model class name")
+    table_name: str = Field(description="Database table name")
+    app_label: Optional[str] = Field(default=None)
+    num_fields: int = Field(default=0)
+    num_relationships: int = Field(default=0)
+    has_timestamps: bool = Field(default=False)
+    pk_field: Optional[str] = Field(default=None)
+    pk_type: str = Field(default="IntegerField")
+    fields: List[StudioModelInspectorField] = Field(default_factory=list)
+    relationships: List[StudioModelInspectorRelationship] = Field(default_factory=list)
+    constraints: List[StudioModelInspectorConstraint] = Field(default_factory=list)
+    ai_description: str = Field(default="")
+    ai_agent_exposed: bool = Field(default=True)
+    create_table_sql: str = Field(default="")
+    comments: List[str] = Field(default_factory=list)
+
+
+class StudioModelInspectorAll(BaseModel):
+    """All inspected models response."""
+
+    models: List[StudioModelInspectorSummary] = Field(default_factory=list)
+    total_count: int = Field(default=0)
+    total_fields: int = Field(default=0)
+    total_relationships: int = Field(default=0)

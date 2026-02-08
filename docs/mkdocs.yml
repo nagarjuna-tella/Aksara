@@ -85,6 +85,10 @@ nav:
       - Observability: debugging/observability.md
       - Diagnostics & Doctor: diagnostics.md
       - Autoremediation: debugging/autoremediation.md
+  - Inspectors:
+      - inspectors/index.md
+      - Query Inspector: inspectors/query.md
+      - Model Inspector: inspectors/models.md
   - AI Mode:
       - ai-mode/index.md
       - Overview: ai-mode/overview.md

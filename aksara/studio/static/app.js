@@ -47,6 +47,9 @@ const state = {
         // v0.5.20: Playbooks state
         playbooks: null, selectedPlaybook: null, playbookFilter: 'all', playbookSearch: '',
     },
+    // v0.5.21: Model Inspector state
+    modelInspector: null,
+    modelInspectorSelected: null,
 };
 
 // =============================================================================
@@ -161,6 +164,7 @@ function initNavigation() {
         'Digit6': 'ai-profiles',
         'Digit7': 'diagnostics',
         'Digit8': 'agent',
+        'Digit9': 'model-inspector',
     };
     document.addEventListener('keydown', (e) => {
         // Ignore when typing in inputs / textareas / selects
@@ -296,6 +300,9 @@ function renderSection(section) {
             break;
         case 'agent':
             renderAgentPanel();
+            break;
+        case 'model-inspector':
+            renderModelInspector();
             break;
     }
 }
@@ -1153,14 +1160,16 @@ function renderDbQueriesData() {
             slowList.innerHTML = '<div class="empty-state"><p>No slow queries recorded</p></div>';
         } else {
             slowList.innerHTML = slowQueries.slice(0, 10).map(q => `
-                <div class="query-item slow">
+                <div class="query-item slow query-slow-highlight">
                     <div class="query-header">
                         <span class="query-operation ${q.operation.toLowerCase()}">${escapeHtml(q.operation)}</span>
                         <span class="query-table">${escapeHtml(q.table || 'unknown')}</span>
                         <span class="query-duration">${q.duration_ms.toFixed(2)}ms</span>
+                        <span class="badge badge-slow-query">🔥 Slow Query</span>
                     </div>
                     <pre class="query-sql">${escapeHtml(truncateSql(q.sql))}</pre>
                     ${q.stack_summary ? `<div class="query-stack">${escapeHtml(q.stack_summary)}</div>` : ''}
+                    <button class="btn btn-sm btn-explain-plan" onclick="explainQueryPlan('${escapeHtml(q.sql.replace(/'/g, "\\'"))}')">Explain Plan</button>
                 </div>
             `).join('');
         }
@@ -1208,6 +1217,128 @@ function truncateSql(sql) {
     if (sql.length <= maxLen) return sql;
     return sql.substring(0, maxLen) + '...';
 }
+
+
+// =============================================================================
+// v0.5.21: Model Inspector Section
+// =============================================================================
+
+async function renderModelInspector() {
+    const refreshBtn = document.getElementById('refresh-model-inspector');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => loadModelInspector());
+    }
+    await loadModelInspector();
+}
+
+async function loadModelInspector() {
+    try {
+        state.modelInspector = await jsonGet('/studio/models/inspect/all');
+        renderModelInspectorData();
+    } catch (err) {
+        console.error('Failed to load model inspector:', err);
+        showToast('Failed to load model inspector data', 'error');
+    }
+}
+
+function renderModelInspectorData() {
+    const data = state.modelInspector;
+    if (!data) return;
+
+    // Update summary stats
+    setText('mi-total-models', data.total_count ?? 0);
+    setText('mi-total-fields', data.total_fields ?? 0);
+    setText('mi-total-rels', data.total_relationships ?? 0);
+
+    // Render model list
+    const listEl = document.getElementById('model-inspector-list');
+    if (!listEl) return;
+
+    const models = data.models || [];
+    if (models.length === 0) {
+        listEl.innerHTML = '<div class="empty-state"><p>No models registered</p></div>';
+        return;
+    }
+
+    listEl.innerHTML = models.map(m => {
+        const commentHtml = (m.comments || []).map(c => `<span class="mi-comment">${escapeHtml(c)}</span>`).join(' ');
+        const fieldRows = (m.fields || []).map(f => {
+            const badges = [];
+            if (f.primary_key) badges.push('<span class="badge badge-pk">PK</span>');
+            if (f.unique) badges.push('<span class="badge badge-unique">UQ</span>');
+            if (f.nullable) badges.push('<span class="badge badge-null">NULL</span>');
+            if (f.ai_sensitive) badges.push('<span class="badge badge-sensitive">⚠️</span>');
+            return `<tr>
+                <td><code>${escapeHtml(f.name)}</code></td>
+                <td>${escapeHtml(f.field_type)}</td>
+                <td>${escapeHtml(f.python_type)}</td>
+                <td>${badges.join(' ')}</td>
+                <td>${escapeHtml(f.default_repr || '-')}</td>
+            </tr>`;
+        }).join('');
+
+        const relRows = (m.relationships || []).map(r => {
+            return `<tr>
+                <td><code>${escapeHtml(r.field_name)}</code></td>
+                <td><span class="badge">${escapeHtml(r.kind.toUpperCase())}</span></td>
+                <td>${escapeHtml(r.target_model)}</td>
+                <td>${escapeHtml(r.on_delete)}</td>
+            </tr>`;
+        }).join('');
+
+        return `
+        <div class="card mi-model-card" data-model="${escapeHtml(m.name)}">
+            <div class="card-header">
+                <h3>${escapeHtml(m.name)} <small class="mi-table-name">${escapeHtml(m.table_name)}</small></h3>
+                <span class="badge">${m.num_fields} fields</span>
+            </div>
+            <div class="card-body">
+                ${commentHtml ? `<div class="mi-comments">${commentHtml}</div>` : ''}
+                <table class="mi-field-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Python</th><th>Flags</th><th>Default</th></tr></thead>
+                    <tbody>${fieldRows}</tbody>
+                </table>
+                ${relRows ? `
+                    <h4 class="mi-sub-heading">Relationships</h4>
+                    <table class="mi-rel-table">
+                        <thead><tr><th>Field</th><th>Kind</th><th>Target</th><th>On Delete</th></tr></thead>
+                        <tbody>${relRows}</tbody>
+                    </table>
+                ` : ''}
+                ${m.create_table_sql ? `
+                    <details class="mi-sql-details">
+                        <summary>CREATE TABLE SQL</summary>
+                        <pre class="mi-sql">${escapeHtml(m.create_table_sql)}</pre>
+                    </details>
+                ` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// v0.5.21: Explain Plan button handler
+async function explainQueryPlan(sql) {
+    try {
+        const result = await jsonPost('/studio/db/plan', { sql: sql, analyze: false });
+        const planText = (result.plan || []).join('\\n');
+        const costInfo = result.estimated_cost != null ? `Estimated cost: ${result.estimated_cost}` : '';
+        const warningText = (result.warnings || []).join('\\n');
+        alert(`EXPLAIN Plan\\n${'='.repeat(40)}\\n${planText}\\n${costInfo}\\n${warningText}`);
+    } catch (err) {
+        alert('Failed to get query plan: ' + err.message);
+    }
+}
+
+async function jsonPost(url, body) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+}
+
 
 // =============================================================================
 // v0.5.11: AI Profiles Section

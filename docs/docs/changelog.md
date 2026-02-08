@@ -4,6 +4,53 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.21] — 2026-02-18
+
+### Added
+- **Query Inspector 2.0**: Deep SQL plan analysis and aggregate statistics
+  - **`QueryPlanRequest` / `QueryPlanResult` models**: EXPLAIN plan request/response with estimated cost and warnings
+  - **`QueryStats` model**: Aggregate statistics with totals, averages, slow threshold, top slow queries, N+1 count, by-operation breakdown
+  - **`explain_query()`**: Run EXPLAIN on SQL with real DB or synthetic fallback
+  - **`get_query_stats()`**: Compute aggregate stats from trace storage
+  - **`POST /studio/db/plan`**: EXPLAIN plan endpoint
+  - **Studio UI slow query highlight**: Red border, 🔥 badge, "Explain Plan" button on slow queries
+  - **Agent context `query_stats` section**: Section 10 of 11 with aggregate query stats
+
+- **Model Inspector 1.0**: Deep model introspection for schema analysis
+  - **`ModelInspectorField` model**: Per-field metadata (type, nullable, unique, default, max_length, choices, AI flags)
+  - **`ModelInspectorRelationship` model**: FK/M2M relationship metadata with target model, on_delete, through table
+  - **`ModelInspectorConstraint` model**: Inferred constraints (primary_key, unique, index)
+  - **`ModelInspectorSummary` model**: Full inspection with fields, relationships, constraints, CREATE TABLE SQL, auto-comments
+  - **`inspect_model()` / `inspect_all_models()`**: Deep model introspection functions
+  - **`GET /studio/models/inspect/{model_name}`**: Single model inspection endpoint (404 if not found)
+  - **`GET /studio/models/inspect/all`**: All models inspection with aggregate counts
+  - **Studio UI Inspector tab**: Nav link, summary cards, model cards with field/relationship tables, keyboard shortcut (9)
+  - **Agent context `schema_analysis` section**: Section 11 of 11 with deep schema analysis
+
+- **`aksara/inspectors/` package**: New module for inspection utilities
+  - `aksara/inspectors/models.py` — Model inspector models and functions
+  - `aksara/inspectors/queries.py` — Query inspector models and functions
+
+- **CLI `aksara inspect` commands**:
+  - `aksara inspect models` — List all models with metadata, `--model`, `--fields`, `--relationships`, `--json` flags
+  - `aksara inspect queries` — Query stats and slow queries, `--limit`, `--json` flags
+
+- **~100+ new tests**: Model inspector, query inspector, Studio endpoint, CLI command tests
+
+- **Documentation**: Inspectors section with Query Inspector and Model Inspector guides
+
+### Changed
+- Agent context now gathers 11 sections (was 9) — added `query_stats` and `schema_analysis`
+- CLI version bumped to 0.5.21
+- Studio `__init__.py` exports updated with inspector models and utils
+
+### Technical Notes
+- **No breaking changes**: All new endpoints, models, and CLI commands; existing API unchanged
+- **Zero new dependencies**: Synthetic plan fallback eliminates need for live DB in tests
+- **Vanilla JS maintained**: Inspector tab uses zero external dependencies
+
+---
+
 ## [0.5.20] — 2026-02-17
 
 ### Added

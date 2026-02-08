@@ -50,6 +50,11 @@ v0.5.19 Additions:
 v0.5.20 Additions:
 - GET /studio/agent/playbooks - List available agent playbooks
 - POST /studio/agent/playbooks/prompt - Playbook-driven prompt generation
+
+v0.5.21 Additions:
+- POST /studio/db/plan - EXPLAIN query plan
+- GET /studio/models/inspect/{model_name} - Inspect a single model
+- GET /studio/models/inspect/all - Inspect all registered models
 """
 
 from __future__ import annotations
@@ -90,6 +95,11 @@ from aksara.studio.models import (
     # v0.5.20: Agent Playbooks models
     AgentPlaybookSet,
     StudioAgentPlaybookPromptRequest,
+    # v0.5.21: Query & Model Inspector models
+    StudioQueryPlanRequest,
+    StudioQueryPlanResult,
+    StudioModelInspectorSummary,
+    StudioModelInspectorAll,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -118,6 +128,10 @@ from aksara.studio.utils import (
     build_agent_prompt,
     # v0.5.20: Agent Playbooks utils
     build_agent_prompt_from_playbook,
+    # v0.5.21: Query & Model Inspector utils
+    build_query_plan,
+    build_model_inspector,
+    build_all_models_inspector,
 )
 from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
@@ -1048,6 +1062,82 @@ async def studio_agent_playbook_prompt(
         custom_system_prompt=body.custom_system_prompt,
         context=context,
     )
+
+
+# =============================================================================
+# v0.5.21: Query & Model Inspector Endpoints
+# =============================================================================
+
+
+@router.post("/studio/db/plan", response_model=StudioQueryPlanResult)
+async def studio_db_plan(
+    request: Request,
+    body: StudioQueryPlanRequest,
+) -> StudioQueryPlanResult:
+    """
+    Generate an EXPLAIN plan for a SQL query.
+
+    v0.5.21: Returns the query plan with estimated cost and warnings.
+    Uses a synthetic plan when no live database connection is available.
+
+    Args:
+        body: StudioQueryPlanRequest with sql and optional analyze flag.
+
+    Returns:
+        StudioQueryPlanResult with plan lines and estimated cost.
+    """
+    return build_query_plan(body.sql, analyze=body.analyze)
+
+
+@router.get(
+    "/studio/models/inspect/all",
+    response_model=StudioModelInspectorAll,
+)
+async def studio_models_inspect_all(
+    request: Request,
+) -> StudioModelInspectorAll:
+    """
+    Inspect all registered models.
+
+    v0.5.21: Returns a list of inspection summaries for every registered
+    model, plus aggregate counts.
+
+    Returns:
+        StudioModelInspectorAll with all model inspections.
+    """
+    return build_all_models_inspector()
+
+
+@router.get(
+    "/studio/models/inspect/{model_name}",
+    response_model=StudioModelInspectorSummary,
+)
+async def studio_model_inspect(
+    request: Request,
+    model_name: str,
+) -> StudioModelInspectorSummary:
+    """
+    Inspect a single model by name.
+
+    v0.5.21: Returns fields, relationships, constraints, SQL, and
+    auto-generated comments for the specified model.
+
+    Args:
+        model_name: Model class name (e.g. "User", "Post").
+
+    Returns:
+        StudioModelInspectorSummary with full inspection data.
+
+    Raises:
+        HTTPException 404 if the model is not found in the registry.
+    """
+    result = build_model_inspector(model_name)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Model not found: {model_name}",
+        )
+    return result
 
 
 # =============================================================================

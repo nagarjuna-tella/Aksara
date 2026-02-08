@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.20"
+CLI_VERSION = "0.5.21"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4285,6 +4285,182 @@ def _get_settings():
     except Exception:
         from unittest.mock import MagicMock
         return MagicMock()
+
+
+# =============================================================================
+# v0.5.21: Inspect Commands
+# =============================================================================
+
+
+@cli.group()
+def inspect():
+    """Model and query inspection tools.
+
+    Deep introspection for schema analysis, query profiling, and
+    diagnostics.  Pipe JSON output to agent mode for AI analysis.
+
+    v0.5.21: Query & Model Inspector
+    """
+    pass
+
+
+@inspect.command("models")
+@click.option("--model", "-m", default=None, help="Inspect a single model by name")
+@click.option("--fields", is_flag=True, help="Show field details")
+@click.option("--relationships", is_flag=True, help="Show relationship details")
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+def inspect_models(model: Optional[str], fields: bool, relationships: bool, as_json: bool):
+    """Inspect registered models.
+
+    Shows model metadata including fields, relationships, constraints,
+    timestamps, primary keys, and auto-generated comments.
+
+    Examples:
+        aksara inspect models
+        aksara inspect models --model User
+        aksara inspect models --fields --relationships
+        aksara inspect models --json
+        aksara inspect models --json | aksara agent prompt -g "Review schema"
+    """
+    import json as json_mod
+    from aksara.inspectors.models import inspect_model as _inspect, inspect_all_models
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m — Model Inspector")
+    click.echo()
+
+    if model:
+        # Single model inspection
+        from aksara.registry import ModelRegistry
+        try:
+            model_cls = ModelRegistry.get(model)
+        except KeyError:
+            click.echo(f"  \033[31m✗\033[0m Model not found: {model}")
+            click.echo()
+            available = sorted(ModelRegistry.all().keys())
+            if available:
+                click.echo(f"  Available models: {', '.join(available)}")
+            sys.exit(1)
+
+        result = _inspect(model_cls)
+        results = [result]
+    else:
+        results = inspect_all_models()
+
+    if not results:
+        click.echo("  No models registered.")
+        click.echo()
+        return
+
+    if as_json:
+        data = [r.model_dump(mode="json") for r in results]
+        if model:
+            click.echo(json_mod.dumps(data[0], indent=2, default=str))
+        else:
+            click.echo(json_mod.dumps(data, indent=2, default=str))
+        return
+
+    for r in results:
+        click.echo(f"  \033[1m{r.name}\033[0m  ({r.table_name})")
+        if r.app_label:
+            click.echo(f"  App: {r.app_label}")
+        click.echo(f"  Fields: {r.num_fields}  |  Relations: {r.num_relationships}  |  "
+                    f"Timestamps: {'✓' if r.has_timestamps else '✗'}  |  "
+                    f"PK: {r.pk_field or 'none'} ({r.pk_type})")
+
+        if r.comments:
+            for c in r.comments:
+                click.echo(f"  {c}")
+
+        if fields or model:
+            click.echo()
+            click.echo(f"  \033[1mFields:\033[0m")
+            for f in r.fields:
+                flags = []
+                if f.primary_key:
+                    flags.append("PK")
+                if f.unique:
+                    flags.append("UQ")
+                if f.nullable:
+                    flags.append("NULL")
+                if f.ai_sensitive:
+                    flags.append("⚠️SENSITIVE")
+                flag_str = f" [{', '.join(flags)}]" if flags else ""
+                default_str = f" = {f.default_repr}" if f.has_default else ""
+                click.echo(f"    {f.name}: {f.field_type} ({f.python_type}){flag_str}{default_str}")
+
+        if relationships or model:
+            if r.relationships:
+                click.echo()
+                click.echo(f"  \033[1mRelationships:\033[0m")
+                for rel in r.relationships:
+                    extra = ""
+                    if rel.through_table:
+                        extra = f" via {rel.through_table}"
+                    click.echo(f"    {rel.field_name} → {rel.target_model} ({rel.kind.upper()}, {rel.on_delete}){extra}")
+
+        click.echo()
+
+    click.echo(f"  Total: {len(results)} model(s)")
+    click.echo()
+
+
+@inspect.command("queries")
+@click.option("--limit", "-n", default=10, help="Number of slow queries to show")
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+def inspect_queries(limit: int, as_json: bool):
+    """Inspect query statistics and slow queries.
+
+    Shows aggregate query stats, slow queries, and N+1 detections
+    from the trace storage.
+
+    Examples:
+        aksara inspect queries
+        aksara inspect queries --limit 5
+        aksara inspect queries --json
+        aksara inspect queries --json | aksara agent prompt -g "Optimize queries"
+    """
+    import json as json_mod
+    from aksara.inspectors.queries import get_query_stats
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m — Query Inspector")
+    click.echo()
+
+    stats = get_query_stats(limit_slow=limit)
+
+    if as_json:
+        click.echo(json_mod.dumps(stats.model_dump(mode="json"), indent=2, default=str))
+        return
+
+    click.echo(f"  \033[1mAggregate Statistics:\033[0m")
+    click.echo(f"    Total queries:      {stats.total_queries}")
+    click.echo(f"    Total batches:      {stats.total_batches}")
+    click.echo(f"    Slow queries:       {stats.total_slow_queries}")
+    click.echo(f"    Avg duration:       {stats.avg_duration_ms:.2f}ms")
+    click.echo(f"    Max duration:       {stats.max_duration_ms:.2f}ms")
+    click.echo(f"    Slow threshold:     {stats.slow_threshold_ms}ms")
+    click.echo(f"    N+1 suspicions:     {stats.n_plus_one_count}")
+    click.echo()
+
+    if stats.by_operation:
+        click.echo(f"  \033[1mBy Operation:\033[0m")
+        for op, count in sorted(stats.by_operation.items()):
+            click.echo(f"    {op}: {count}")
+        click.echo()
+
+    if stats.top_slow:
+        click.echo(f"  \033[1mTop Slow Queries:\033[0m")
+        for i, sq in enumerate(stats.top_slow, 1):
+            sql_preview = sq["sql"][:80] + "..." if len(sq["sql"]) > 80 else sq["sql"]
+            click.echo(f"    {i}. [{sq['duration_ms']:.2f}ms] {sq.get('operation', '?')} on "
+                        f"{sq.get('table', 'unknown')}")
+            click.echo(f"       {sql_preview}")
+        click.echo()
+
+    if stats.total_queries == 0:
+        click.echo("  No query data. Enable tracing: AKSARA_DB_TRACE_ENABLED=true")
+        click.echo()
 
 
 if __name__ == "__main__":

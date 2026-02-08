@@ -1625,6 +1625,10 @@ async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
     - db_queries: recent query inspector stats
     - schema_checksum: current schema fingerprint
 
+    v0.5.21: Adds 2 more sections (11 total):
+    - query_stats: aggregate slow/avg/top-slow query statistics
+    - schema_analysis: deep model inspection with comments
+
     Returns:
         StudioAgentContext with all sections populated.
     """
@@ -1770,6 +1774,49 @@ async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
         "Schema Checksum",
         "SHA-256 fingerprint of the current model schema",
         {"checksum": checksum},
+    ))
+
+    # 10. query_stats (v0.5.21)
+    try:
+        from aksara.inspectors.queries import get_query_stats as _get_qstats
+        qstats = _get_qstats(limit_slow=5)
+        query_stats_data = qstats.model_dump()
+    except Exception:
+        query_stats_data = {}
+    sections.append(_make_section(
+        "query_stats",
+        "Query Stats",
+        "Aggregate query statistics: slow count, avg duration, top slow queries",
+        query_stats_data,
+    ))
+
+    # 11. schema_analysis (v0.5.21)
+    try:
+        from aksara.inspectors.models import inspect_all_models as _inspect_all
+        all_inspections = _inspect_all()
+        schema_analysis_data = {
+            "total_models": len(all_inspections),
+            "total_fields": sum(m.num_fields for m in all_inspections),
+            "total_relationships": sum(m.num_relationships for m in all_inspections),
+            "models": [
+                {
+                    "name": m.name,
+                    "table": m.table_name,
+                    "fields": m.num_fields,
+                    "relationships": m.num_relationships,
+                    "has_timestamps": m.has_timestamps,
+                    "comments": m.comments,
+                }
+                for m in all_inspections
+            ],
+        }
+    except Exception:
+        schema_analysis_data = {}
+    sections.append(_make_section(
+        "schema_analysis",
+        "Schema Analysis",
+        "Deep model inspection: fields, relationships, constraints, and auto-comments",
+        schema_analysis_data,
     ))
 
     total_size = round(sum(s.size_kb for s in sections), 2)
@@ -1965,3 +2012,146 @@ def build_agent_prompt_from_playbook(
         custom_system_prompt=combined_prefix,
     )
     return build_agent_prompt(request, context)
+
+
+# =============================================================================
+# v0.5.21: Query & Model Inspector Builders
+# =============================================================================
+
+
+def build_query_plan(sql: str, analyze: bool = False) -> "StudioQueryPlanResult":
+    """
+    Build a Studio query plan response.
+
+    v0.5.21: Delegates to aksara.inspectors.queries.explain_query.
+    """
+    from aksara.inspectors.queries import explain_query
+    from aksara.studio.models import StudioQueryPlanResult
+
+    result = explain_query(sql=sql, analyze=analyze)
+    return StudioQueryPlanResult(
+        sql=result.sql,
+        plan=result.plan,
+        estimated_cost=result.estimated_cost,
+        plan_type=result.plan_type,
+        warnings=result.warnings,
+    )
+
+
+def build_model_inspector(model_name: str) -> Optional["StudioModelInspectorSummary"]:
+    """
+    Inspect a single model by name and return a Studio response.
+
+    v0.5.21: Wraps aksara.inspectors.models.inspect_model.
+
+    Returns None if the model is not found in the registry.
+    """
+    from aksara.registry import ModelRegistry
+    from aksara.inspectors.models import inspect_model
+    from aksara.studio.models import (
+        StudioModelInspectorSummary,
+        StudioModelInspectorField,
+        StudioModelInspectorRelationship,
+        StudioModelInspectorConstraint,
+    )
+
+    try:
+        model_cls = ModelRegistry.get(model_name)
+    except KeyError:
+        return None
+
+    result = inspect_model(model_cls)
+    return _convert_inspector_to_studio(result)
+
+
+def build_all_models_inspector() -> "StudioModelInspectorAll":
+    """
+    Inspect all registered models and return a Studio response.
+
+    v0.5.21: Wraps aksara.inspectors.models.inspect_all_models.
+    """
+    from aksara.inspectors.models import inspect_all_models
+    from aksara.studio.models import StudioModelInspectorAll
+
+    results = inspect_all_models()
+    studio_models = [_convert_inspector_to_studio(r) for r in results]
+
+    return StudioModelInspectorAll(
+        models=studio_models,
+        total_count=len(studio_models),
+        total_fields=sum(m.num_fields for m in studio_models),
+        total_relationships=sum(m.num_relationships for m in studio_models),
+    )
+
+
+def _convert_inspector_to_studio(result) -> "StudioModelInspectorSummary":
+    """Convert an inspectors.ModelInspectorSummary to Studio Pydantic model."""
+    from aksara.studio.models import (
+        StudioModelInspectorSummary,
+        StudioModelInspectorField,
+        StudioModelInspectorRelationship,
+        StudioModelInspectorConstraint,
+    )
+
+    fields = [
+        StudioModelInspectorField(
+            name=f.name,
+            column_name=f.column_name,
+            field_type=f.field_type,
+            python_type=f.python_type,
+            nullable=f.nullable,
+            primary_key=f.primary_key,
+            unique=f.unique,
+            has_default=f.has_default,
+            default_repr=f.default_repr,
+            max_length=f.max_length,
+            choices=f.choices,
+            is_relation=f.is_relation,
+            ai_description=f.ai_description,
+            ai_sensitive=f.ai_sensitive,
+            auto_generated=f.auto_generated,
+        )
+        for f in result.fields
+    ]
+
+    relationships = [
+        StudioModelInspectorRelationship(
+            field_name=r.field_name,
+            kind=r.kind,
+            target_model=r.target_model,
+            target_table=r.target_table,
+            on_delete=r.on_delete,
+            through_table=r.through_table,
+            related_name=r.related_name,
+            nullable=r.nullable,
+        )
+        for r in result.relationships
+    ]
+
+    constraints = [
+        StudioModelInspectorConstraint(
+            kind=c.kind,
+            columns=c.columns,
+            name=c.name,
+            description=c.description,
+        )
+        for c in result.constraints
+    ]
+
+    return StudioModelInspectorSummary(
+        name=result.name,
+        table_name=result.table_name,
+        app_label=result.app_label,
+        num_fields=result.num_fields,
+        num_relationships=result.num_relationships,
+        has_timestamps=result.has_timestamps,
+        pk_field=result.pk_field,
+        pk_type=result.pk_type,
+        fields=fields,
+        relationships=relationships,
+        constraints=constraints,
+        ai_description=result.ai_description,
+        ai_agent_exposed=result.ai_agent_exposed,
+        create_table_sql=result.create_table_sql,
+        comments=result.comments,
+    )

@@ -62,6 +62,11 @@ from aksara.studio.models import (
     AgentPlaybook,
     AgentPlaybookSet,
     StudioAgentPlaybookPromptRequest,
+    # v0.5.21: Query & Model Inspector models
+    StudioQueryPlanRequest,
+    StudioQueryPlanResult,
+    StudioModelInspectorSummary,
+    StudioModelInspectorAll,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -82,6 +87,10 @@ from aksara.studio.utils import (
     build_agent_prompt,
     # v0.5.20: Agent Playbooks utils
     build_agent_prompt_from_playbook,
+    # v0.5.21: Query & Model Inspector utils
+    build_query_plan,
+    build_model_inspector,
+    build_all_models_inspector,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -121,6 +130,11 @@ __all__ = [
     "AgentPlaybook",
     "AgentPlaybookSet",
     "StudioAgentPlaybookPromptRequest",
+    # v0.5.21: Query & Model Inspector
+    "StudioQueryPlanRequest",
+    "StudioQueryPlanResult",
+    "StudioModelInspectorSummary",
+    "StudioModelInspectorAll",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -135,6 +149,9 @@ __all__ = [
     "build_agent_context",  # v0.5.19
     "build_agent_prompt",  # v0.5.19
     "build_agent_prompt_from_playbook",  # v0.5.20
+    "build_query_plan",  # v0.5.21
+    "build_model_inspector",  # v0.5.21
+    "build_all_models_inspector",  # v0.5.21
     # Router
     "studio_router",
 ]

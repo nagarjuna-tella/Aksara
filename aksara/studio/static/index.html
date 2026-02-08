@@ -97,6 +97,12 @@
                     </svg>
                     <span>Agent</span>
                 </a>
+                <a href="#/model-inspector" class="nav-item" data-section="model-inspector">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"></path>
+                    </svg>
+                    <span>Inspector</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -961,6 +967,43 @@
                 </div>
             </div>
         </section>
+    </template>
+    
+    <!-- v0.5.21: Model Inspector Template -->
+    <template id="template-model-inspector">
+        <div class="section-header">
+            <h1>Model Inspector</h1>
+            <p class="section-subtitle">Deep schema introspection: fields, relationships, constraints, and auto-comments</p>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header"><h3>Models</h3></div>
+                <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-models">-</span></div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Total Fields</h3></div>
+                <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-fields">-</span></div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Relationships</h3></div>
+                <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-rels">-</span></div></div>
+            </div>
+        </div>
+        
+        <!-- Model List -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Registered Models</h3>
+                <button class="btn btn-sm btn-secondary" id="refresh-model-inspector">Refresh</button>
+            </div>
+            <div class="card-body">
+                <div id="model-inspector-list">
+                    <div class="empty-state"><p>Loading models...</p></div>
+                </div>
+            </div>
+        </div>
     </template>
     
     <script src="/studio/assets/app.js" defer></script>

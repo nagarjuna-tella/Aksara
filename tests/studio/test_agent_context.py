@@ -123,15 +123,15 @@ class TestBuildAgentContext:
             ctx = await build_agent_context(mock_app)
 
             assert isinstance(ctx, StudioAgentContext)
-            assert ctx.total_sections == 9
-            assert len(ctx.sections) == 9
+            assert ctx.total_sections == 11
+            assert len(ctx.sections) == 11
 
     @pytest.mark.asyncio
     async def test_section_keys_are_correct(self, mock_app):
         expected_keys = {
             "project_info", "models", "routes", "migrations",
             "diagnostics", "ai_profiles", "ai_hints", "db_queries",
-            "schema_checksum",
+            "schema_checksum", "query_stats", "schema_analysis",
         }
         with patch("aksara.registry.ModelRegistry") as mock_reg, \
              patch("aksara.studio.utils.build_routes_info", return_value=[]), \
