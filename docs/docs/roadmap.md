@@ -1,223 +1,179 @@
-# Roadmap
+# Aksara Roadmap
 
-Future plans for Aksara development.
+> **Updated Feb 7, 2026**
 
----
-
-## Current Version
-
-**v0.4.11** — Stable release with AI Mode, full ORM, API framework, Admin UI/UX Overhaul, and comprehensive tooling.
-
----
-
-## Upcoming Releases
-
-### v0.5.0 — Performance & Scale
-
-**Planned: Q2 2025**
-
-Focus on performance optimization and enterprise-scale features.
-
-#### Planned Features
-
-- [ ] **Query Optimization**
-  - Automatic query plan analysis
-  - Index recommendation engine
-  - Query result caching improvements
-
-- [ ] **Connection Pooling**
-  - PgBouncer integration
-  - Connection health monitoring
-  - Automatic failover
-
-- [ ] **Horizontal Scaling**
-  - Read replica support
-  - Database sharding helpers
-  - Distributed caching with Redis Cluster
-
-- [ ] **Background Tasks**
-  - Built-in task queue
-  - Scheduled tasks (cron-like)
-  - Task monitoring dashboard
+Aksara is now an AI-first application framework with a fully integrated
+developer studio, automatic diagnostics, code-generation agents, and
+intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
+2026 development cadence.
 
 ---
 
-### v0.6.0 — Enterprise Features
+## Current Stable Version
 
-**Planned: Q3 2025**
+### v0.5.20 — Agent Playbooks (Feb 2026)
 
-Enterprise-ready features for large organizations.
+Includes:
 
-#### Planned Features
-
-- [ ] **Advanced Multi-Tenancy**
-  - Schema-per-tenant isolation
-  - Tenant-aware migrations
-  - Cross-tenant queries (admin)
-
-- [ ] **Audit Logging**
-  - Automatic change tracking
-  - Compliance reporting
-  - Data retention policies
-
-- [ ] **Advanced Permissions**
-  - Row-level security
-  - Dynamic permissions
-  - Permission inheritance
-
-- [ ] **SSO Integration**
-  - SAML 2.0 support
-  - OAuth 2.0 / OIDC
-  - LDAP/Active Directory
+- Studio 2.0
+- Diagnostics 2.0
+- Query Inspector
+- Agent Mode
+- Playbook Engine
+- Provider Integration Toolkit
+- AI Profiles / Hints
+- Studio Keyboard Shortcuts
+- Full FastAPI/ORM integration
+- 2900+ test suite
 
 ---
 
-### v0.7.0 — AI Mode 2.0
+## v0.6.0 — Production Mode
 
-**Planned: Q4 2025**
+**Target: Feb–Mar 2026**
 
-Next generation AI-powered development.
+Focus: Make Aksara production-ready for real applications and enterprise loads.
 
-#### Planned Features
+### Production Infrastructure
 
-- [ ] **AI Code Review**
-  - Automatic PR reviews
-  - Security vulnerability detection
-  - Performance suggestions
+- PgBouncer-ready connection pooling
+- Query caching layer
+- Read replica routing
+- Async migrations
+- Database failover support
+- Zero-downtime reload signals
+- Schema drift detection
 
-- [ ] **AI Testing**
-  - Automatic test generation
-  - Test coverage analysis
-  - Regression detection
+### Studio Production Tools
 
-- [ ] **AI Documentation**
-  - Auto-generate API docs
-  - Code comment generation
-  - README generation
-
-- [ ] **Custom AI Agents**
-  - User-defined agent workflows
-  - Domain-specific training
-  - Agent marketplace
+- Slow Query Heatmaps
+- Replica Lag Monitor
+- Connection Pool Dashboard
+- Index Recommendation Engine
+- “Production Mode” UI (read-only safety)
 
 ---
 
-### v1.0.0 — Stable Release
+## v0.7.0 — AI Mode 3.0
 
-**Planned: Q1 2026**
+**Target: Apr–May 2026**
 
-Production-ready stable release.
+Next-gen agent capabilities.
 
-#### Goals
+### Agentic Development
 
-- [ ] API stability guarantee
-- [ ] Long-term support (LTS)
-- [ ] Comprehensive documentation
-- [ ] Migration guides from Django/FastAPI
-- [ ] Enterprise support tier
+- Auto PR Reviews
+- Agent Test Writer
+- Regression Analyzer
+- “Fix with AI” buttons throughout Studio
+- Model/Viewset/Serializer refactor assistant
+
+### Multi-Agent Runtime
+
+- Parallel agents
+- Shared session memory
+- Provider orchestration (OpenAI+Azure+Anthropic switching)
+
+### AI Documentation Engine
+
+- API doc generation
+- README/Module doc generation
+- Example snippet generation
 
 ---
 
-## Feature Requests
+## v0.8.0 — Enterprise Data & Permissions
 
-### Under Consideration
+**Target: Jun–Jul 2026**
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| GraphQL support | Evaluating | Medium |
-| gRPC support | Evaluating | Medium |
-| WebSocket improvements | Planned | High |
-| File uploads | Planned | High |
-| Email sending | Planned | Medium |
-| PDF generation | Evaluating | Low |
+### Multi-Tenancy 2.0
 
-### Community Requests
+- Schema-per-tenant
+- Tenant-aware migrations
+- Cross-tenant admin queries
+- Tenant-level DB Inspector
 
-Vote on features and submit requests:
+### Advanced Permissioning
 
-- [GitHub Discussions](https://github.com/aksara/aksara/discussions)
-- [Feature Requests](https://github.com/aksara/aksara/issues?q=label%3Aenhancement)
+- Row-level access policies (RLS)
+- Field-level rules
+- Policy sandboxing & simulation
+- Condition-based dynamic rules
+
+### Audit & Compliance
+
+- Full audit event system
+- Compliance export pipeline
+- Studio Audit Explorer
+
+---
+
+## v0.9.0 — Plugins & Ecosystem
+
+**Target: Aug–Sep 2026**
+
+### Plugin Architecture
+
+- `aksara add plugin-name`
+- Aksara Registry
+- Official Plugins
+  - Email
+  - Uploads
+  - WebSockets
+  - SSE
+  - PDF exporter
+
+### Developer Experience
+
+- VS Code Extension
+- Aksara Playground (browser dev environment)
+- Dev Server Inspector
+- Latency profiling
+
+---
+
+## v1.0.0 — General Availability (GA)
+
+**Target: Oct–Dec 2026**
+
+### Release Goals
+
+- API Stability Guarantee
+- 18-Month LTS Window
+- Migration Guide (Django/FastAPI → Aksara)
+- Complete Documentation Rewrite
+- Performance Benchmarks (vs Django/FastAPI/Node)
+- Enterprise Support Tier
+
+---
+
+## Feature Requests — Updated Priorities
+
+### High Priority
+
+- WebSockets
+- File Uploads
+- Email
+- Background Task Runner
+
+### Medium
+
+- GraphQL
+- gRPC
+- Server-Sent Events
+
+### Low
+
+- PDF Toolkit
+- UI Components Pack
 
 ---
 
 ## Long-Term Vision
 
-### Goals
+Aksara is aiming to become:
 
-1. **Developer Experience**
-   - Fastest time from idea to production
-   - AI-assisted development at every step
-   - Zero-configuration defaults that scale
-
-2. **Performance**
-   - Competitive with bare FastAPI
-   - Automatic optimization
-   - Built-in profiling
-
-3. **Ecosystem**
-   - Plugin marketplace
-   - Community templates
-   - Integration library
-
-### Non-Goals
-
-- Replacing general-purpose frameworks
-- Supporting legacy Python versions
-- Synchronous-first design
-
----
-
-## Contributing
-
-### How to Contribute
-
-1. **Code contributions**
-   - Fix bugs
-   - Implement features
-   - Improve documentation
-
-2. **Testing**
-   - Report bugs
-   - Test pre-releases
-   - Write tests
-
-3. **Documentation**
-   - Fix typos
-   - Add examples
-   - Translate docs
-
-4. **Community**
-   - Answer questions
-   - Write tutorials
-   - Share projects
-
-### Contribution Guide
-
-See [CONTRIBUTING.md](https://github.com/aksara/aksara/blob/main/CONTRIBUTING.md)
-
----
-
-## Version Support
-
-| Version | Status | Support Until |
-|---------|--------|---------------|
-| 0.4.x | Current | Active |
-| 0.3.x | Maintenance | 2025-06 |
-| 0.2.x | End of Life | — |
-| 0.1.x | End of Life | — |
-
----
-
-## Stay Updated
-
-- [GitHub Releases](https://github.com/aksara/aksara/releases)
-- [Changelog](changelog.md)
-- [Blog](https://aksara.dev/blog)
-- [Twitter](https://twitter.com/aksaraframework)
-
----
-
-## Related
-
-- [Changelog](changelog.md)
-- [Getting Started](getting-started/index.md)
+- The fastest framework to go from idea → production
+- The first AI-native dev framework
+- A complete batteries-included enterprise platform
+- An ecosystem & marketplace for plugins & agent workflows
