@@ -40,7 +40,7 @@ Endpoints:
 import importlib
 from pathlib import Path
 from aksara import Aksara, __version__ as aksara_version
-from aksara.middleware.request_id import RequestIdMiddleware
+from aksara.middleware.request_id import RequestIDMiddleware
 from aksara.middleware.logging import LoggingMiddleware
 from fastapi.responses import HTMLResponse
 from settings import settings, INSTALLED_APPS
@@ -89,7 +89,7 @@ app = Aksara(
     enable_admin=settings.enable_admin,
     # Middlewares (request ID, logging)
     middlewares=[
-        (RequestIdMiddleware, {{}}),
+        (RequestIDMiddleware, {{}}),
         (LoggingMiddleware, {{"log_request_body": False}}),
     ],
 )

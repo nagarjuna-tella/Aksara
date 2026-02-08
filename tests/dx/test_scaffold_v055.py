@@ -203,7 +203,7 @@ class TestScaffoldV055Structure:
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert "from aksara.middleware.request_id import RequestIdMiddleware" in content
+        assert "from aksara.middleware.request_id import RequestIDMiddleware" in content
         assert "from aksara.middleware.logging import LoggingMiddleware" in content
     
     def test_main_configures_middleware(self):
@@ -212,7 +212,7 @@ class TestScaffoldV055Structure:
         content = main_path.read_text()
         
         assert "middlewares=[" in content
-        assert "(RequestIdMiddleware, {})" in content
+        assert "(RequestIDMiddleware, {})" in content
         assert "(LoggingMiddleware," in content
     
     def test_main_enables_admin(self):
