@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -1353,4 +1353,91 @@ class StudioAgentPromptResponse(BaseModel):
     tokens_estimate: int = Field(
         default=0,
         description="Rough word-count-based token estimate",
+    )
+
+
+# =============================================================================
+# v0.5.20: Agent Playbooks Models
+# =============================================================================
+
+# Reuse Literal types compatible with aksara.ai.models
+AgentPlaybookKind = Literal[
+    "add_field", "add_endpoint", "fix_migrations",
+    "add_validation", "refactor_viewset", "debug_queries",
+    "harden_permissions",
+]
+
+
+class AgentPlaybookStep(BaseModel):
+    """One step within an Agent Playbook."""
+
+    id: str = Field(description="Step identifier")
+    title: str = Field(description="Human-readable step title")
+    description: str = Field(description="What this step does")
+    recommended_sections: List[str] = Field(
+        default_factory=list,
+        description="Context section keys relevant to this step",
+    )
+    estimated_impact: Optional[str] = Field(
+        default=None,
+        description="Short impact note (e.g. 'schema change', 'low risk')",
+    )
+
+
+class AgentPlaybook(BaseModel):
+    """A reusable Agent Playbook recipe for LLM-assisted tasks."""
+
+    key: str = Field(description="Unique slug identifier")
+    label: str = Field(description="Human-readable name")
+    kind: AgentPlaybookKind = Field(description="Playbook kind")
+    description: str = Field(description="What this playbook does")
+    category: str = Field(description="Category: schema, api, migrations, diagnostics")
+    default_goal_template: str = Field(
+        description="Goal template with {placeholders}",
+    )
+    risk_level: str = Field(
+        default="low",
+        description="Risk level: low, medium, high",
+    )
+    usage_kind: str = Field(
+        default="read_only",
+        description="Usage kind: read_only, write, admin",
+    )
+    default_sections: List[str] = Field(
+        default_factory=list,
+        description="Context sections selected by default",
+    )
+    steps: List[AgentPlaybookStep] = Field(
+        default_factory=list,
+        description="Ordered list of playbook steps",
+    )
+    tags: List[str] = Field(default_factory=list, description="Search tags")
+    notes: Optional[str] = Field(default=None, description="Additional notes")
+
+
+class AgentPlaybookSet(BaseModel):
+    """Collection of playbooks with aggregate counts."""
+
+    playbooks: List[AgentPlaybook] = Field(default_factory=list)
+    total_count: int = Field(default=0)
+    by_category: Dict[str, int] = Field(default_factory=dict)
+    by_risk_level: Dict[str, int] = Field(default_factory=dict)
+    by_usage_kind: Dict[str, int] = Field(default_factory=dict)
+
+
+class StudioAgentPlaybookPromptRequest(BaseModel):
+    """Request body for playbook-driven prompt generation."""
+
+    playbook_key: str = Field(description="Key of the playbook to use")
+    user_goal: Optional[str] = Field(
+        default=None,
+        description="Optional goal override (else uses playbook default)",
+    )
+    selected_sections: Optional[List[str]] = Field(
+        default=None,
+        description="Section keys override (else uses playbook defaults)",
+    )
+    custom_system_prompt: Optional[str] = Field(
+        default=None,
+        description="Optional custom prefix for the system prompt",
     )

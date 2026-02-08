@@ -12,7 +12,7 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/tests-2500%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.19-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.5.20-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -56,7 +56,7 @@
   </tr>
   <tr>
     <td>🧠</td>
-    <td><strong>Agent mode</strong> – gather project context and build LLM-ready system prompts via Studio UI, CLI (<code>aksara agent</code>), or Python API</td>
+    <td><strong>Agent mode</strong> – gather project context and build LLM-ready system prompts via Studio UI, CLI (<code>aksara agent</code>), or Python API; <strong>Playbooks</strong> (v0.5.20) – 7 built-in recipes for common tasks (add field, fix migrations, harden permissions, etc.)</td>
   </tr>
 </table>
 
@@ -159,7 +159,7 @@ class PostViewSet(ModelViewSet):
 
 ## Status & Roadmap
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.19**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.20**.
 
 See the [Roadmap](docs/docs/roadmap.md) for what's coming.
 

@@ -2372,7 +2372,7 @@ code {
 
 .agent-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 320px 1fr;
     gap: 1.2rem;
     align-items: start;
 }
@@ -2381,6 +2381,12 @@ code {
     .agent-layout {
         grid-template-columns: 1fr;
     }
+}
+
+.agent-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
 }
 
 .agent-section-list {
@@ -2501,4 +2507,134 @@ code {
     margin-top: 0.5rem;
     font-size: 0.78rem;
     color: var(--text-secondary, #888);
+}
+
+/* =============================================================================
+   v0.5.20: Agent Playbooks
+   ============================================================================= */
+
+.agent-playbook-search {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+}
+
+.agent-playbook-search:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -1px;
+}
+
+.agent-playbook-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.65rem;
+}
+
+.agent-filter-pill {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--text-secondary, #888);
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.agent-filter-pill:hover {
+    background: var(--bg-tertiary);
+}
+
+.agent-filter-pill.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.agent-playbook-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.agent-playbook-card {
+    padding: 0.55rem 0.65rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    transition: all 0.15s;
+}
+
+.agent-playbook-card:hover {
+    border-color: var(--accent-color);
+    background: var(--bg-tertiary);
+}
+
+.agent-playbook-card--selected {
+    border-color: var(--accent-color);
+    background: var(--bg-tertiary);
+    box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.agent-playbook-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.agent-playbook-card-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary, #888);
+    margin: 0 0 0.3rem 0;
+    line-height: 1.35;
+}
+
+.agent-playbook-card-meta {
+    display: flex;
+    gap: 0.7rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary, #888);
+}
+
+.agent-playbook-badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.agent-playbook-badge--low {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.agent-playbook-badge--medium {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.agent-playbook-badge--high {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.agent-playbook-count {
+    font-size: 0.78rem;
+    color: var(--text-secondary, #888);
+    font-weight: 500;
 }

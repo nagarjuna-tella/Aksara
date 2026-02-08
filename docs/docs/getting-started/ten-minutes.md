@@ -181,7 +181,7 @@ aksara dev
 You should see:
 
 ```
-⚡ Aksara v0.5.19
+⚡ Aksara v0.5.20
 
   Running development server...
   

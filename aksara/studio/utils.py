@@ -52,6 +52,9 @@ from aksara.studio.models import (
     StudioAgentContext,
     StudioAgentPromptRequest,
     StudioAgentPromptResponse,
+    # v0.5.20: Agent Playbooks models
+    AgentPlaybook,
+    StudioAgentPlaybookPromptRequest,
 )
 
 if TYPE_CHECKING:
@@ -1878,3 +1881,87 @@ def build_agent_prompt(
         recommended_model=recommended_model,
         tokens_estimate=tokens_estimate,
     )
+
+
+# =============================================================================
+# v0.5.20: Agent Playbooks — Prompt from Playbook
+# =============================================================================
+
+
+def build_agent_prompt_from_playbook(
+    playbook: AgentPlaybook,
+    user_goal: Optional[str],
+    selected_sections: Optional[List[str]],
+    custom_system_prompt: Optional[str],
+    context: StudioAgentContext,
+) -> StudioAgentPromptResponse:
+    """
+    Generate a system prompt driven by a playbook recipe.
+
+    v0.5.20: Builds a playbook-aware prompt header and delegates to
+    the standard build_agent_prompt() pipeline.
+
+    Steps:
+    1. Use playbook.default_sections if selected_sections is not provided.
+    2. Use playbook.default_goal_template if user_goal is empty.
+    3. Build a structured playbook header with label, kind, risk,
+       usage, and step listing.
+    4. Combine custom_system_prompt (if any) + playbook header
+       into a single prefix.
+    5. Delegate to build_agent_prompt() for final assembly.
+
+    Args:
+        playbook: The AgentPlaybook to use.
+        user_goal: Optional user-provided goal (overrides template).
+        selected_sections: Optional section keys (overrides defaults).
+        custom_system_prompt: Optional extra prefix.
+        context: The full agent context.
+
+    Returns:
+        StudioAgentPromptResponse with prompt and recommendations.
+    """
+    # Resolve goal — use default template if no user goal
+    goal = user_goal.strip() if user_goal and user_goal.strip() else playbook.default_goal_template
+
+    # Resolve sections — use playbook defaults if not overridden
+    sections = selected_sections if selected_sections is not None else list(playbook.default_sections)
+
+    # Build playbook header
+    header_parts: List[str] = []
+    header_parts.append(f"# Playbook: {playbook.label}")
+    header_parts.append(f"Kind: {playbook.kind}")
+    header_parts.append(f"Risk: {playbook.risk_level}  |  Usage: {playbook.usage_kind}")
+    header_parts.append(f"Category: {playbook.category}")
+    header_parts.append("")
+    header_parts.append(f"{playbook.description}")
+    header_parts.append("")
+
+    if playbook.steps:
+        header_parts.append("## Steps")
+        for i, step in enumerate(playbook.steps, 1):
+            header_parts.append(f"{i}. **{step.title}** — {step.description}")
+            if step.estimated_impact:
+                header_parts.append(f"   Impact: {step.estimated_impact}")
+        header_parts.append("")
+
+    if playbook.notes:
+        header_parts.append(f"Note: {playbook.notes}")
+        header_parts.append("")
+
+    playbook_header = "\n".join(header_parts)
+
+    # Combine custom + playbook header
+    prefix_parts: List[str] = []
+    if custom_system_prompt and custom_system_prompt.strip():
+        prefix_parts.append(custom_system_prompt.strip())
+        prefix_parts.append("")
+    prefix_parts.append(playbook_header)
+    combined_prefix = "\n".join(prefix_parts)
+
+    # Delegate to standard prompt builder
+    request = StudioAgentPromptRequest(
+        goal=goal,
+        selected_sections=sections,
+        custom_system_prompt=combined_prefix,
+    )
+    return build_agent_prompt(request, context)

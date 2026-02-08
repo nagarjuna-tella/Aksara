@@ -57,6 +57,11 @@ from aksara.studio.models import (
     StudioAgentContext,
     StudioAgentPromptRequest,
     StudioAgentPromptResponse,
+    # v0.5.20: Agent Playbooks models
+    AgentPlaybookStep,
+    AgentPlaybook,
+    AgentPlaybookSet,
+    StudioAgentPlaybookPromptRequest,
 )
 from aksara.studio.utils import (
     build_studio_handshake,
@@ -75,6 +80,8 @@ from aksara.studio.utils import (
     # v0.5.19: Agent Mode utils
     build_agent_context,
     build_agent_prompt,
+    # v0.5.20: Agent Playbooks utils
+    build_agent_prompt_from_playbook,
 )
 from aksara.studio.fastapi import router as studio_router
 
@@ -109,6 +116,11 @@ __all__ = [
     "StudioAgentContext",
     "StudioAgentPromptRequest",
     "StudioAgentPromptResponse",
+    # v0.5.20: Agent Playbooks models
+    "AgentPlaybookStep",
+    "AgentPlaybook",
+    "AgentPlaybookSet",
+    "StudioAgentPlaybookPromptRequest",
     # Utils
     "build_studio_handshake",
     "build_context_summary",
@@ -122,6 +134,7 @@ __all__ = [
     "build_ai_prompts",  # v0.5.4
     "build_agent_context",  # v0.5.19
     "build_agent_prompt",  # v0.5.19
+    "build_agent_prompt_from_playbook",  # v0.5.20
     # Router
     "studio_router",
 ]

@@ -1,11 +1,17 @@
 # Agent Mode
 
 > *v0.5.19 — Build LLM-ready system prompts from project context.*
+> *v0.5.20 — Agent Playbooks: reusable recipes for common tasks.*
 
 Agent Mode gathers structured context from your entire Aksara project and
 assembles it into a system prompt that any LLM can consume. It covers
 models, routes, migrations, diagnostics, AI profiles, AI hints, DB
 queries, and schema checksums — all in one shot.
+
+**Playbooks** (v0.5.20) are opinionated, step-by-step recipes that
+pre-configure the goal, context sections, and prompt structure for common
+development tasks like adding a field, fixing migrations, or hardening
+permissions.
 
 ---
 
@@ -111,3 +117,99 @@ other Studio endpoints.
   - The `diagnostics` section has `errors > 0`
 - **Model** defaults to `gpt-4o`. If an AI profile with `client_ready: true`
   is configured, the first ready model is recommended instead.
+
+---
+
+## Playbooks (v0.5.20)
+
+Playbooks are pre-built recipes for common LLM-assisted tasks. Each
+playbook defines a kind, category, risk level, default goal template,
+recommended context sections, and ordered steps.
+
+### Built-in Playbooks
+
+| Key | Label | Category | Risk | Usage |
+|-----|-------|----------|------|-------|
+| `add_field_to_model` | Add Field to Model | schema | medium | write |
+| `add_api_action_to_viewset` | Add API Action | api | medium | write |
+| `fix_migration_conflicts` | Fix Migration Conflicts | migrations | high | admin |
+| `add_validation_rule` | Add Validation Rule | schema | low | write |
+| `harden_endpoint_permissions` | Harden Permissions | api | medium | admin |
+| `debug_slow_queries` | Debug Slow Queries | diagnostics | low | read_only |
+| `refactor_model_and_serializer` | Refactor Model & Serializer | schema | medium | write |
+
+### Studio UI
+
+Press **Shift+P** to jump to the playbook search. Click a playbook card
+to auto-prefill the goal template and select recommended sections, then
+click **Generate Prompt**. Use the category filter pills or search to
+narrow the list.
+
+### CLI
+
+```bash
+# List all playbooks
+aksara agent playbooks
+
+# Filter by category
+aksara agent playbooks --category schema
+
+# Run a playbook
+aksara agent playbook-run add_field_to_model \
+  --goal "Add an email field to the User model"
+
+# Run with JSON output
+aksara agent playbook-run debug_slow_queries -f json
+```
+
+### Python API
+
+```python
+from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
+from aksara.studio.utils import build_agent_prompt_from_playbook
+
+# List all playbooks
+playbook_set = get_builtin_playbooks()
+print(playbook_set.total_count)  # 7
+
+# Filter by category
+schema_playbooks = get_builtin_playbooks(category="schema")
+
+# Get a specific playbook and generate a prompt
+playbook = get_playbook_by_key("add_field_to_model")
+context = await build_agent_context(app)
+response = build_agent_prompt_from_playbook(
+    playbook=playbook,
+    user_goal="Add a verified_at timestamp to User",
+    selected_sections=None,  # use playbook defaults
+    custom_system_prompt=None,
+    context=context,
+)
+print(response.system_prompt)
+```
+
+### Playbooks Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/studio/agent/playbooks` | List playbooks (supports `?category=`, `?risk_level=`, `?usage_kind=` filters) |
+| `POST` | `/studio/agent/playbooks/prompt` | Generate playbook-driven prompt |
+
+### CLI Commands
+
+#### `aksara agent playbooks`
+
+| Flag | Description |
+|------|-------------|
+| `--format`, `-f` | `pretty` (default) or `json` |
+| `--category`, `-c` | Filter by category |
+| `--risk`, `-r` | Filter by risk level |
+| `--usage`, `-u` | Filter by usage kind |
+
+#### `aksara agent playbook-run <KEY>`
+
+| Flag | Description |
+|------|-------------|
+| `--goal`, `-g` | Override the playbook's default goal template |
+| `--sections`, `-s` | Comma-separated section keys (default: playbook defaults) |
+| `--format`, `-f` | `text` (default) or `json` |

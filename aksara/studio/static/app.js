@@ -42,7 +42,11 @@ const state = {
     // v0.5.13: AI Hints state
     aiHints: null,
     // v0.5.19: Agent Mode state
-    agent: { context: null, selectedSections: [], lastPromptResponse: null },
+    agent: {
+        context: null, selectedSections: [], lastPromptResponse: null,
+        // v0.5.20: Playbooks state
+        playbooks: null, selectedPlaybook: null, playbookFilter: 'all', playbookSearch: '',
+    },
 };
 
 // =============================================================================
@@ -196,6 +200,15 @@ function initNavigation() {
             e.preventDefault();
             const btn = document.getElementById('agent-generate-btn');
             if (btn) btn.click();
+        }
+        // v0.5.20: Shift+P focuses playbook search
+        if (e.shiftKey && e.key === 'P') {
+            e.preventDefault();
+            navigateTo('agent');
+            setTimeout(() => {
+                const searchInput = document.getElementById('agent-playbook-search');
+                if (searchInput) searchInput.focus();
+            }, 100);
         }
     });
 }
@@ -1606,6 +1619,7 @@ async function loadAgentContext() {
 }
 
 function renderAgentPanel() {
+    loadAgentPlaybooks();
     loadAgentContext().then(ctx => {
         if (!ctx) return;
         renderAgentSections(ctx);
@@ -1707,8 +1721,34 @@ async function generateAgentPrompt() {
     if (!goalEl || !outputEl) return;
 
     const goal = goalEl.value.trim();
+
+    // v0.5.20: If a playbook is selected, use playbook prompt endpoint
+    if (state.agent.selectedPlaybook) {
+        outputEl.textContent = 'Generating playbook prompt...';
+        if (metaEl) metaEl.textContent = '';
+        try {
+            const body = {
+                playbook_key: state.agent.selectedPlaybook.key,
+                user_goal: goal || null,
+                selected_sections: state.agent.selectedSections.length ? state.agent.selectedSections : null,
+            };
+            const resp = await jsonPost('/studio/agent/playbooks/prompt', body);
+            state.agent.lastPromptResponse = resp;
+            outputEl.textContent = resp.system_prompt;
+            if (metaEl) {
+                metaEl.innerHTML = `<span>Playbook: <strong>${escapeHtml(state.agent.selectedPlaybook.label)}</strong></span>`
+                    + `<span>Model: <strong>${escapeHtml(resp.recommended_model)}</strong></span>`
+                    + `<span>Temp: <strong>${resp.recommended_temperature}</strong></span>`
+                    + `<span>~${resp.tokens_estimate} tokens</span>`;
+            }
+        } catch (err) {
+            outputEl.textContent = `Error: ${err.message}`;
+        }
+        return;
+    }
+
     if (!goal) {
-        outputEl.textContent = 'Please enter a goal first.';
+        outputEl.textContent = 'Please enter a goal or select a playbook first.';
         return;
     }
 
@@ -1731,6 +1771,170 @@ async function generateAgentPrompt() {
     } catch (err) {
         outputEl.textContent = `Error: ${err.message}`;
     }
+}
+
+// =============================================================================
+// v0.5.20: Agent Playbooks UI
+// =============================================================================
+
+async function loadAgentPlaybooks() {
+    try {
+        const data = await jsonGet('/studio/agent/playbooks');
+        state.agent.playbooks = data;
+        renderAgentPlaybooks();
+        return data;
+    } catch (err) {
+        console.error('Failed to load agent playbooks:', err);
+        return null;
+    }
+}
+
+function renderAgentPlaybooks() {
+    const list = document.getElementById('agent-playbook-list');
+    const countEl = document.getElementById('agent-playbook-count');
+    if (!list || !state.agent.playbooks) return;
+
+    const playbooks = filterPlaybooks();
+    if (countEl) countEl.textContent = `${playbooks.length}`;
+
+    if (playbooks.length === 0) {
+        list.innerHTML = '<p class="text-muted">No matching playbooks.</p>';
+        return;
+    }
+
+    list.innerHTML = playbooks.map(pb => {
+        const selected = state.agent.selectedPlaybook && state.agent.selectedPlaybook.key === pb.key;
+        const cls = selected ? 'agent-playbook-card agent-playbook-card--selected' : 'agent-playbook-card';
+        const riskCls = `agent-playbook-badge agent-playbook-badge--${pb.risk_level}`;
+        return `<div class="${cls}" data-playbook-key="${escapeHtml(pb.key)}">
+            <div class="agent-playbook-card-header">
+                <strong>${escapeHtml(pb.label)}</strong>
+                <span class="${riskCls}">${escapeHtml(pb.risk_level)}</span>
+            </div>
+            <p class="agent-playbook-card-desc">${escapeHtml(pb.description)}</p>
+            <div class="agent-playbook-card-meta">
+                <span>${escapeHtml(pb.category)}</span>
+                <span>${pb.steps.length} steps</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Bind click events
+    list.querySelectorAll('.agent-playbook-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const key = card.dataset.playbookKey;
+            selectPlaybook(key);
+        });
+    });
+
+    // Bind filter pills
+    initPlaybookFilters();
+
+    // Bind search
+    initPlaybookSearch();
+}
+
+function filterPlaybooks() {
+    if (!state.agent.playbooks) return [];
+    let pbs = state.agent.playbooks.playbooks;
+    // Category filter
+    if (state.agent.playbookFilter && state.agent.playbookFilter !== 'all') {
+        pbs = pbs.filter(p => p.category === state.agent.playbookFilter);
+    }
+    // Search
+    if (state.agent.playbookSearch) {
+        const q = state.agent.playbookSearch.toLowerCase();
+        pbs = pbs.filter(p =>
+            p.label.toLowerCase().includes(q) ||
+            p.description.toLowerCase().includes(q) ||
+            (p.tags || []).some(t => t.toLowerCase().includes(q))
+        );
+    }
+    return pbs;
+}
+
+function selectPlaybook(key) {
+    if (!state.agent.playbooks) return;
+    const pb = state.agent.playbooks.playbooks.find(p => p.key === key);
+    if (!pb) return;
+
+    // Toggle: click same playbook deselects
+    if (state.agent.selectedPlaybook && state.agent.selectedPlaybook.key === key) {
+        state.agent.selectedPlaybook = null;
+        renderAgentPlaybooks();
+        return;
+    }
+
+    state.agent.selectedPlaybook = pb;
+
+    // Auto-prefill goal with default template
+    const goalEl = document.getElementById('agent-goal');
+    if (goalEl && (!goalEl.value.trim())) {
+        goalEl.value = pb.default_goal_template;
+    }
+
+    // Auto-select recommended sections
+    if (pb.default_sections && pb.default_sections.length && state.agent.context) {
+        state.agent.selectedSections = [...pb.default_sections];
+        localStorage.setItem('aksara_agent_sections', JSON.stringify(state.agent.selectedSections));
+        renderAgentSections(state.agent.context);
+        renderAgentContextJson(state.agent.context);
+    }
+
+    // Render playbook steps in output area
+    renderPlaybookSteps(pb);
+
+    // Re-render to show selection highlight
+    renderAgentPlaybooks();
+}
+
+function renderPlaybookSteps(pb) {
+    const outputEl = document.getElementById('agent-prompt-output');
+    if (!outputEl) return;
+    const lines = [];
+    lines.push(`Playbook: ${pb.label}`);
+    lines.push(`Kind: ${pb.kind}  |  Risk: ${pb.risk_level}  |  Usage: ${pb.usage_kind}`);
+    lines.push('');
+    lines.push('Steps:');
+    pb.steps.forEach((step, i) => {
+        lines.push(`  ${i + 1}. ${step.title}`);
+        lines.push(`     ${step.description}`);
+        if (step.estimated_impact) lines.push(`     Impact: ${step.estimated_impact}`);
+    });
+    if (pb.notes) {
+        lines.push('');
+        lines.push(`Note: ${pb.notes}`);
+    }
+    lines.push('');
+    lines.push('Press "Generate Prompt" to build the full system prompt.');
+    outputEl.textContent = lines.join('\n');
+}
+
+function initPlaybookFilters() {
+    const container = document.getElementById('agent-playbook-filters');
+    if (!container) return;
+    container.querySelectorAll('.agent-filter-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.filter === state.agent.playbookFilter);
+        // Remove old listeners by cloning
+        const newPill = pill.cloneNode(true);
+        pill.parentNode.replaceChild(newPill, pill);
+        newPill.addEventListener('click', () => {
+            state.agent.playbookFilter = newPill.dataset.filter;
+            renderAgentPlaybooks();
+        });
+    });
+}
+
+function initPlaybookSearch() {
+    const input = document.getElementById('agent-playbook-search');
+    if (!input) return;
+    // Avoid duplicating listeners
+    if (input._playbookSearchBound) return;
+    input._playbookSearchBound = true;
+    input.addEventListener('input', () => {
+        state.agent.playbookSearch = input.value;
+        renderAgentPlaybooks();
+    });
 }
 
 async function jsonPost(url, body) {

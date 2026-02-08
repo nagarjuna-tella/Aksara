@@ -4,6 +4,36 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.20] — 2026-02-17
+
+### Added
+- **Agent Playbooks**: Opinionated, reusable recipes for common LLM-assisted development tasks
+  - **7 Built-in Playbooks**: `add_field_to_model`, `add_api_action_to_viewset`, `fix_migration_conflicts`, `add_validation_rule`, `harden_endpoint_permissions`, `debug_slow_queries`, `refactor_model_and_serializer`
+  - **`AgentPlaybook` / `AgentPlaybookStep` models**: Playbook recipe with kind, category, risk level, usage kind, steps, tags, default goal template
+  - **`AgentPlaybookSet` model**: Collection with aggregate counts by category/risk/usage
+  - **`StudioAgentPlaybookPromptRequest` model**: Playbook-driven prompt request
+  - **`aksara/ai/playbooks.py` registry**: `get_builtin_playbooks()` with category/risk/usage filters, `get_playbook_by_key()`, `build_playbook_set()`
+  - **`build_agent_prompt_from_playbook()`**: Playbook-aware prompt builder with step listing, risk/usage header, and default goal/section fallback
+  - **`GET /studio/agent/playbooks`**: List playbooks with optional category/risk_level/usage_kind filters
+  - **`POST /studio/agent/playbooks/prompt`**: Playbook-driven prompt generation with 404 for unknown keys
+  - **CLI `aksara agent playbooks`**: List playbooks with `--format`, `--category`, `--risk`, `--usage` flags
+  - **CLI `aksara agent playbook-run <key>`**: Run a playbook with `--goal`, `--sections`, `--format` flags
+  - **Studio UI Playbooks sidebar**: Search box, category filter pills, playbook cards with risk badges, click-to-select with auto-prefill of goal and sections, step preview, Shift+P keyboard shortcut
+  - **~72 new tests**: Registry/model tests, prompt builder tests, endpoint tests, CLI tests, UI structure tests
+  - **Documentation**: Playbooks section in Agent Mode guide
+
+### Changed
+- CLI version bumped to 0.5.20
+- Studio `__init__.py` exports updated with Playbook models and utils
+- Agent panel grid width increased from 300px to 320px for playbook sidebar
+
+### Technical Notes
+- **No breaking changes**: All new endpoints and models; existing API unchanged
+- **Zero new dependencies**: Vanilla JS maintained throughout
+- **Playbook registry is in-memory**: No database tables; all 7 playbooks are hardcoded for deterministic behavior
+
+---
+
 ## [0.5.19] — 2026-02-16
 
 ### Added

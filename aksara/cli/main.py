@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.19"
+CLI_VERSION = "0.5.20"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4173,6 +4173,108 @@ async def _run_agent_context(app):
     """Run build_agent_context in async context."""
     from aksara.studio.utils import build_agent_context
     return await build_agent_context(app)
+
+
+# =============================================================================
+# v0.5.20: Agent Playbooks CLI
+# =============================================================================
+
+
+@agent.command("playbooks")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+@click.option("--category", "-c", default=None, help="Filter by category (schema, api, migrations, diagnostics)")
+@click.option("--risk", "-r", default=None, help="Filter by risk level (low, medium, high)")
+@click.option("--usage", "-u", default=None, help="Filter by usage kind (read_only, write, admin)")
+def agent_playbooks(output_format: str, category: str | None, risk: str | None, usage: str | None):
+    """List available agent playbooks.
+
+    Shows built-in playbook recipes for common LLM-assisted tasks.
+    Use --category, --risk, or --usage to filter.
+    """
+    import json as json_mod
+    from aksara.ai.playbooks import get_builtin_playbooks
+
+    result = get_builtin_playbooks(category=category, risk_level=risk, usage_kind=usage)
+
+    if output_format == "json":
+        click.echo(json_mod.dumps(result.model_dump(mode="json"), indent=2, default=str))
+    else:
+        click.echo(f"  Agent Playbooks — {result.total_count} playbook(s)")
+        click.echo()
+        for pb in result.playbooks:
+            risk_color = {"low": "32", "medium": "33", "high": "31"}.get(pb.risk_level, "0")
+            click.echo(f"  \033[1m{pb.label}\033[0m  [{pb.key}]")
+            click.echo(f"  {pb.description}")
+            click.echo(f"  Category: {pb.category}  |  "
+                        f"Risk: \033[{risk_color}m{pb.risk_level}\033[0m  |  "
+                        f"Usage: {pb.usage_kind}  |  "
+                        f"Steps: {len(pb.steps)}")
+            click.echo()
+
+        if result.by_category:
+            cats = ", ".join(f"{k}: {v}" for k, v in sorted(result.by_category.items()))
+            click.echo(f"  Categories: {cats}")
+
+
+@agent.command("playbook-run")
+@click.argument("key")
+@click.option("--goal", "-g", default=None, help="Override the playbook's default goal template")
+@click.option("--sections", "-s", default="", help="Comma-separated section keys (empty = playbook defaults)")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def agent_playbook_run(key: str, goal: str | None, sections: str, output_format: str):
+    """Run a playbook to generate an LLM system prompt.
+
+    KEY is the playbook key (e.g. add_field_to_model).
+    Use `aksara agent playbooks` to list available keys.
+    """
+    import asyncio
+    import json as json_mod
+    from unittest.mock import MagicMock
+    from aksara.ai.playbooks import get_playbook_by_key
+    from aksara.studio.utils import build_agent_prompt_from_playbook
+
+    playbook = get_playbook_by_key(key)
+    if playbook is None:
+        click.echo(f"  \033[31m✗ Playbook not found: {key}\033[0m")
+        click.echo("  Run `aksara agent playbooks` to see available playbooks.")
+        sys.exit(1)
+
+    app = MagicMock()
+    app_module = getattr(_get_settings(), "app_module", None)
+    if app_module:
+        try:
+            from aksara.apps import Aksara
+            real_app = Aksara.instance
+            if real_app:
+                app = real_app
+        except Exception:
+            pass
+
+    try:
+        ctx = asyncio.run(_run_agent_context(app))
+    except Exception as e:
+        click.echo(f"  \033[31m✗ Error gathering context: {e}\033[0m")
+        sys.exit(1)
+
+    selected = [k.strip() for k in sections.split(",") if k.strip()] if sections else None
+
+    result = build_agent_prompt_from_playbook(
+        playbook=playbook,
+        user_goal=goal,
+        selected_sections=selected,
+        custom_system_prompt=None,
+        context=ctx,
+    )
+
+    if output_format == "json":
+        click.echo(json_mod.dumps(result.model_dump(), indent=2, default=str))
+    else:
+        click.echo(result.system_prompt)
+        click.echo()
+        click.echo(f"  \033[90mPlaybook: {playbook.label}  |  "
+                    f"Model: {result.recommended_model}  |  "
+                    f"Temp: {result.recommended_temperature}  |  "
+                    f"~{result.tokens_estimate} tokens\033[0m")
 
 
 def _get_settings():

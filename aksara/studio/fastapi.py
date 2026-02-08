@@ -46,15 +46,19 @@ v0.5.17 Additions:
 v0.5.19 Additions:
 - GET /studio/agent/context - Agent context gathering
 - POST /studio/agent/prompt - Agent prompt generation
+
+v0.5.20 Additions:
+- GET /studio/agent/playbooks - List available agent playbooks
+- POST /studio/agent/playbooks/prompt - Playbook-driven prompt generation
 """
 
 from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
 from aksara.studio.models import (
@@ -83,6 +87,9 @@ from aksara.studio.models import (
     StudioAgentContext,
     StudioAgentPromptRequest,
     StudioAgentPromptResponse,
+    # v0.5.20: Agent Playbooks models
+    AgentPlaybookSet,
+    StudioAgentPlaybookPromptRequest,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -109,7 +116,10 @@ from aksara.studio.utils import (
     # v0.5.19: Agent Mode utils
     build_agent_context,
     build_agent_prompt,
+    # v0.5.20: Agent Playbooks utils
+    build_agent_prompt_from_playbook,
 )
+from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
 
 # v0.5.3: Static files directory
@@ -967,6 +977,77 @@ async def studio_agent_prompt(
     """
     context = await build_agent_context(request.app)
     return build_agent_prompt(body, context)
+
+
+# =============================================================================
+# v0.5.20: Agent Playbooks Endpoints
+# =============================================================================
+
+
+@router.get("/studio/agent/playbooks", response_model=AgentPlaybookSet)
+async def studio_agent_playbooks(
+    request: Request,
+    category: Optional[str] = Query(None, description="Filter by category"),
+    risk_level: Optional[str] = Query(None, description="Filter by risk level"),
+    usage_kind: Optional[str] = Query(None, description="Filter by usage kind"),
+) -> AgentPlaybookSet:
+    """
+    List available agent playbooks.
+
+    v0.5.20: Returns built-in playbooks with optional filtering by
+    category, risk_level, and/or usage_kind.  Includes aggregate counts
+    by_category, by_risk_level, and by_usage_kind.
+
+    Query Parameters:
+        category: Filter by category (e.g. "schema", "api", "migrations").
+        risk_level: Filter by risk level ("low", "medium", "high").
+        usage_kind: Filter by usage kind ("read_only", "write", "admin").
+
+    Returns:
+        AgentPlaybookSet with matching playbooks.
+    """
+    return get_builtin_playbooks(
+        category=category,
+        risk_level=risk_level,
+        usage_kind=usage_kind,
+    )
+
+
+@router.post("/studio/agent/playbooks/prompt", response_model=StudioAgentPromptResponse)
+async def studio_agent_playbook_prompt(
+    request: Request,
+    body: StudioAgentPlaybookPromptRequest,
+) -> StudioAgentPromptResponse:
+    """
+    Generate a system prompt using a playbook recipe.
+
+    v0.5.20: Looks up the playbook by key, gathers project context,
+    and builds a playbook-aware prompt with step listing.
+
+    Args:
+        body: StudioAgentPlaybookPromptRequest with playbook_key and
+              optional goal/sections overrides.
+
+    Returns:
+        StudioAgentPromptResponse with assembled prompt.
+
+    Raises:
+        HTTPException 404 if playbook_key not found.
+    """
+    playbook = get_playbook_by_key(body.playbook_key)
+    if playbook is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Playbook not found: {body.playbook_key}",
+        )
+    context = await build_agent_context(request.app)
+    return build_agent_prompt_from_playbook(
+        playbook=playbook,
+        user_goal=body.user_goal,
+        selected_sections=body.selected_sections,
+        custom_system_prompt=body.custom_system_prompt,
+        context=context,
+    )
 
 
 # =============================================================================

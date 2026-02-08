@@ -893,15 +893,39 @@
             </div>
 
             <div class="agent-layout">
-                <!-- Left: Section Checkboxes -->
-                <div class="card agent-sections-card">
-                    <div class="card-header">
-                        <h3>Context Sections</h3>
-                        <button class="btn btn-sm" id="agent-toggle-all">Select All</button>
+                <!-- Left column: Playbooks + Sections -->
+                <div class="agent-left">
+                    <!-- v0.5.20: Playbooks sidebar -->
+                    <div class="card agent-playbooks-card">
+                        <div class="card-header">
+                            <h3>Playbooks</h3>
+                            <span class="agent-playbook-count" id="agent-playbook-count"></span>
+                        </div>
+                        <div class="card-body">
+                            <input type="text" class="agent-playbook-search" id="agent-playbook-search" placeholder="Search playbooks..." />
+                            <div class="agent-playbook-filters" id="agent-playbook-filters">
+                                <button class="agent-filter-pill active" data-filter="all">All</button>
+                                <button class="agent-filter-pill" data-filter="schema">Schema</button>
+                                <button class="agent-filter-pill" data-filter="api">API</button>
+                                <button class="agent-filter-pill" data-filter="migrations">Migrations</button>
+                                <button class="agent-filter-pill" data-filter="diagnostics">Diagnostics</button>
+                            </div>
+                            <div class="agent-playbook-list" id="agent-playbook-list">
+                                <p class="text-muted">Loading playbooks...</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="agent-section-list" id="agent-section-list">
-                            <p class="text-muted">Loading context...</p>
+
+                    <!-- Context Sections -->
+                    <div class="card agent-sections-card">
+                        <div class="card-header">
+                            <h3>Context Sections</h3>
+                            <button class="btn btn-sm" id="agent-toggle-all">Select All</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="agent-section-list" id="agent-section-list">
+                                <p class="text-muted">Loading context...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
