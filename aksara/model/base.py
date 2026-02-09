@@ -357,9 +357,12 @@ class ModelMeta(type):
             ai_meta.ai_name = name
         namespace['_ai_meta'] = ai_meta
         
-        # Infer table name
+        # Infer table name (check Meta.table_name first, then auto-generate)
         if not is_base and '__tablename__' not in namespace:
-            namespace['__tablename__'] = pluralize(to_snake_case(name))
+            if meta_class and hasattr(meta_class, 'table_name'):
+                namespace['__tablename__'] = meta_class.table_name
+            else:
+                namespace['__tablename__'] = pluralize(to_snake_case(name))
         
         # Create the class
         cls = super().__new__(mcs, name, bases, namespace)

@@ -1251,6 +1251,63 @@ def models(app: Optional[str], ai: bool):
         click.echo()
 
 
+# =============================================================================
+# Static File Collection
+# =============================================================================
+
+def _ensure_static_files() -> None:
+    """
+    Ensure static files exist before starting the server.
+    
+    If the project has a main.py (Aksara project) but is missing
+    static/welcome.html, auto-generate it. This handles:
+    - Projects scaffolded before v0.5.24 (inline HTML in main.py)
+    - Projects where static/ was accidentally deleted
+    """
+    cwd = Path.cwd()
+    main_py = cwd / "main.py"
+    static_dir = cwd / "static"
+    welcome_html = static_dir / "welcome.html"
+    
+    # Only act if this looks like an Aksara project (has main.py)
+    if not main_py.exists():
+        return
+    
+    if welcome_html.exists():
+        return
+    
+    # Derive project name from directory name
+    project_name = cwd.name
+    
+    try:
+        from aksara.cli.scaffold import get_welcome_html_template
+        static_dir.mkdir(parents=True, exist_ok=True)
+        welcome_html.write_text(get_welcome_html_template(project_name))
+        click.echo(f"  \033[32m✓\033[0m Created static/welcome.html")
+    except Exception as e:
+        click.echo(f"  \033[33m⚠\033[0m Could not create static/welcome.html: {e}", err=True)
+
+
+@cli.command()
+def collectstatic():
+    """
+    Collect and generate static files for the Aksara project.
+    
+    Creates missing static files (e.g., welcome.html) in the static/ directory.
+    This runs automatically before `aksara dev` and `aksara run`, but can also
+    be invoked manually.
+    
+    Example:
+        aksara collectstatic
+    """
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — Collect Static Files")
+    click.echo()
+    _ensure_static_files()
+    click.echo("  \033[32m✓\033[0m Done.")
+    click.echo()
+
+
 @cli.command()
 @click.argument("app_path")
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
@@ -1272,6 +1329,9 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     except ImportError:
         click.echo("❌ uvicorn not installed. Run: pip install uvicorn")
         return
+    
+    # Auto-collect static files
+    _ensure_static_files()
     
     # Ensure current directory is in Python path for module imports
     cwd = str(Path.cwd())
@@ -1428,6 +1488,9 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
             click.echo(f"   Try: python -m pip install uvicorn", err=True)
             click.echo(f"   Or:  python -m aksara dev", err=True)
         sys.exit(1)
+    
+    # Auto-collect static files
+    _ensure_static_files()
     
     # Ensure current directory is in Python path for module imports
     cwd = str(Path.cwd())

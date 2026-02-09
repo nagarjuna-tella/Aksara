@@ -90,7 +90,7 @@ app = Aksara(
     # Middlewares (request ID, logging)
     middlewares=[
         (RequestIDMiddleware, {{}}),
-        (LoggingMiddleware, {{"log_request_body": False}}),
+        (LoggingMiddleware, {{}}),
     ],
 )
 
@@ -551,9 +551,14 @@ class PostViewSet(ModelViewSet):
     """
     
     model = Post
-    serializer_class = PostSerializer
     prefix = "/api/posts"
     tags = ["Posts"]
+    
+    # Serializer for all CRUD actions
+    list_serializer_class = PostSerializer
+    retrieve_serializer_class = PostSerializer
+    create_serializer_class = PostSerializer
+    update_serializer_class = PostSerializer
     
     # AI exposure (default: True for ModelViewSet)
     ai_exposed = True
@@ -580,7 +585,10 @@ class PostViewSet(ModelViewSet):
 #
 # class UserViewSet(ModelViewSet):
 #     model = User
-#     serializer_class = UserSerializer
+#     list_serializer_class = UserSerializer
+#     retrieve_serializer_class = UserSerializer
+#     create_serializer_class = UserSerializer
+#     update_serializer_class = UserSerializer
 #     prefix = "/api/users"
 #     tags = ["Users"]
 #     permission_classes = [IsAuthenticated]

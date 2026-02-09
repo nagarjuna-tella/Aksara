@@ -285,3 +285,112 @@ class TestDevBannerHelperFunctions:
         # Should not raise and return a boolean
         result = _check_studio_enabled()
         assert isinstance(result, bool)
+
+
+class TestCollectStatic:
+    """Test auto-collection of static files (v0.5.24)."""
+    
+    def setup_method(self):
+        """Create a temporary directory for each test."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.base_path = Path(self.temp_dir)
+        self.project_name = "testapp"
+        
+        # Create scaffold
+        files = create_project_scaffold(self.project_name, self.base_path)
+        write_scaffold_files(files)
+        self.project_path = self.base_path / self.project_name
+    
+    def teardown_method(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_ensure_static_files_creates_welcome_html(self):
+        """_ensure_static_files should create static/welcome.html if missing."""
+        from aksara.cli.main import _ensure_static_files
+        
+        # Delete the welcome.html that scaffold created
+        welcome = self.project_path / "static" / "welcome.html"
+        welcome.unlink()
+        assert not welcome.exists()
+        
+        # Run with cwd set to project path
+        with patch('aksara.cli.main.Path') as mock_path_cls:
+            mock_path_cls.cwd.return_value = self.project_path
+            # But we need the real Path for everything else
+            mock_path_cls.side_effect = Path
+            
+        # Use a simpler approach: just change cwd
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.project_path)
+            _ensure_static_files()
+            assert welcome.exists(), "static/welcome.html should be auto-created"
+            content = welcome.read_text()
+            assert "testapp" in content
+        finally:
+            os.chdir(old_cwd)
+    
+    def test_ensure_static_files_no_overwrite(self):
+        """_ensure_static_files should NOT overwrite existing welcome.html."""
+        from aksara.cli.main import _ensure_static_files
+        
+        welcome = self.project_path / "static" / "welcome.html"
+        # Write custom content
+        welcome.write_text("<h1>Custom page</h1>")
+        
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.project_path)
+            _ensure_static_files()
+            # Should still be our custom content
+            assert welcome.read_text() == "<h1>Custom page</h1>"
+        finally:
+            os.chdir(old_cwd)
+    
+    def test_ensure_static_files_skips_non_aksara_dir(self):
+        """_ensure_static_files should do nothing if no main.py exists."""
+        from aksara.cli.main import _ensure_static_files
+        
+        # Use a directory with no main.py
+        empty_dir = self.base_path / "empty"
+        empty_dir.mkdir()
+        
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(empty_dir)
+            _ensure_static_files()
+            # Should not create anything
+            assert not (empty_dir / "static" / "welcome.html").exists()
+        finally:
+            os.chdir(old_cwd)
+    
+    def test_collectstatic_command_exists(self):
+        """aksara collectstatic command should be registered."""
+        from aksara.cli.main import cli
+        runner = CliRunner()
+        result = runner.invoke(cli, ["collectstatic", "--help"])
+        assert result.exit_code == 0
+        assert "Collect" in result.output or "static" in result.output
+    
+    def test_collectstatic_regenerates_missing_file(self):
+        """aksara collectstatic should regenerate missing welcome.html."""
+        from aksara.cli.main import cli
+        runner = CliRunner()
+        
+        # Delete welcome.html
+        welcome = self.project_path / "static" / "welcome.html"
+        welcome.unlink()
+        
+        import os
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.project_path)
+            result = runner.invoke(cli, ["collectstatic"])
+            assert result.exit_code == 0
+            assert welcome.exists()
+        finally:
+            os.chdir(old_cwd)
