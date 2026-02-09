@@ -1023,6 +1023,110 @@ a:hover {
     gap: var(--space-md);
 }
 
+/* Data Table - Admin List View */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table thead {
+    background: var(--bg-base);
+}
+
+.data-table th {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: var(--space-md) var(--space-lg);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+
+.data-table tbody tr {
+    transition: var(--transition);
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Make first column (primary link) stand out */
+.data-table td:first-child {
+    font-weight: 500;
+}
+
+/* Actions column alignment */
+.data-table .actions-column {
+    text-align: right;
+    width: 100px;
+}
+
+.data-table .actions-cell {
+    text-align: right;
+}
+
+/* Value Badges for Booleans */
+.value-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.value-badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.value-badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.value-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* UUID/ID styling */
+.value-code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    background: var(--bg-base);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* Null/empty value */
+.value-null {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
 /* =========================================================================
    Tables
    ========================================================================= */
@@ -1535,13 +1639,18 @@ a:hover {
     }
     
     /* Mobile table adjustments */
-    .data-table {
-        font-size: 0.8125rem;
-    }
-    
     .data-table th,
     .data-table td {
-        padding: var(--space-sm);
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    .data-table th {
+        font-size: 0.6875rem;
+    }
+    
+    .data-table .actions-column,
+    .data-table .actions-cell {
+        width: auto;
     }
     
     .action-buttons {
