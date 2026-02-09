@@ -284,6 +284,11 @@ a:hover {
     font-size: 0.75rem;
 }
 
+/* Dark mode avatar adjustment */
+[data-theme="dark"] .header-user-avatar {
+    background: rgba(79, 70, 229, 0.2);
+}
+
 /* Theme Toggle Button */
 .theme-toggle {
     position: relative;

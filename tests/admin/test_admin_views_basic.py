@@ -349,3 +349,130 @@ class TestModelAdminConfiguration:
         assert admin.get_field_type("bool_field") == "checkbox"
         assert admin.get_field_type("text_field") == "textarea"
         assert admin.get_field_type("unknown") == "text"
+
+
+class TestAdmin20Features:
+    """Tests for Admin 2.0 specific features."""
+    
+    def setup_method(self):
+        """Clear registries before each test."""
+        ModelRegistry.clear()
+        from aksara.contrib.admin import site
+        site.clear()
+    
+    def test_admin_index_has_theme_toggle(self):
+        """Test that admin index includes the theme toggle button."""
+        from aksara.contrib.admin import site
+        
+        class TestModel(Model):
+            name = fields.String()
+            
+            class Meta:
+                app_label = "test"
+        
+        site.register(TestModel)
+        
+        app = Aksara(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        app.add_middleware(create_staff_middleware())
+        
+        client = TestClient(app)
+        response = client.get("/admin/")
+        
+        assert response.status_code == 200
+        # Check for theme toggle button
+        assert "theme-toggle" in response.text
+        assert "toggleDarkMode" in response.text
+    
+    def test_admin_index_has_sidebar_nav(self):
+        """Test that admin index has sidebar navigation with models."""
+        from aksara.contrib.admin import site
+        
+        class Product(Model):
+            name = fields.String()
+            
+            class Meta:
+                app_label = "shop"
+        
+        site.register(Product)
+        
+        app = Aksara(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        app.add_middleware(create_staff_middleware())
+        
+        client = TestClient(app)
+        response = client.get("/admin/")
+        
+        assert response.status_code == 200
+        assert "admin-sidebar" in response.text
+        assert "sidebar-menu" in response.text
+    
+    def test_model_list_has_search_card_when_searchable(self):
+        """Test that model list includes search card when search_fields is set."""
+        from aksara.contrib.admin import site, ModelAdmin
+        
+        class Article(Model):
+            title = fields.String()
+            body = fields.Text()
+            
+            class Meta:
+                app_label = "content"
+        
+        class ArticleAdmin(ModelAdmin):
+            list_display = ["title"]
+            search_fields = ["title", "body"]
+        
+        site.register(Article, ArticleAdmin)
+        
+        app = Aksara(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        app.add_middleware(create_staff_middleware())
+        
+        with patch.object(ArticleAdmin, 'get_queryset', new_callable=AsyncMock) as mock_qs:
+            mock_queryset = MagicMock()
+            mock_queryset.all = AsyncMock(return_value=[])
+            mock_qs.return_value = mock_queryset
+            
+            client = TestClient(app)
+            response = client.get("/admin/content/article/")
+            
+            assert response.status_code == 200
+            assert "search-card" in response.text
+            assert "Search Article" in response.text
+    
+    def test_model_form_has_breadcrumbs(self):
+        """Test that model add form has proper breadcrumbs."""
+        from aksara.contrib.admin import site
+        
+        class Note(Model):
+            content = fields.Text()
+            
+            class Meta:
+                app_label = "notes"
+        
+        site.register(Note)
+        
+        app = Aksara(
+            database_url=None,
+            debug=True,
+            auto_discover_views=False,
+        )
+        app.add_middleware(create_staff_middleware())
+        
+        client = TestClient(app)
+        response = client.get("/admin/notes/note/add/")
+        
+        assert response.status_code == 200
+        assert "admin-breadcrumb" in response.text
+        assert "Home" in response.text
+        assert "notes" in response.text
+        assert "Note" in response.text

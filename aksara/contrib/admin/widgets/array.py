@@ -120,13 +120,20 @@ class ArrayAdminWidget(Widget):
             )
             
             rows_html.append(f'''
-        <div class="array-item" data-index="{i}">
+        <div class="array-item" data-index="{i}" draggable="true">
+            <span class="array-drag-handle" title="Drag to reorder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                    <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                </svg>
+            </span>
             <input
                 type="{self.item_type}"
                 name="{name}_item"
                 value="{item_value}"
                 class="form-input array-input"
                 data-array-item="true"
+                placeholder="Enter value..."
             />
             <button
                 type="button"

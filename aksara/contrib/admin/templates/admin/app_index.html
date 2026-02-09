@@ -3,31 +3,41 @@
 {% block title %}{{ app_label }} - {{ site_name }}{% endblock %}
 
 {% block breadcrumb %}
-<nav class="breadcrumb">
-    <a href="{{ request.url_for('admin:index') }}">Home</a>
-    <span class="breadcrumb-separator">›</span>
-    <span>{{ app_label }}</span>
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ request.url_for('admin:index') }}" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+        </svg>
+    </span>
+    <span class="breadcrumb-current">{{ app_label }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>{{ app_label }}</h1>
+    <div class="page-header-content">
+        <h1>{{ app_label }}</h1>
+        <span class="badge badge-secondary">{{ models|length }} model{% if models|length != 1 %}s{% endif %}</span>
+    </div>
 </div>
 
 <div class="card">
-    <div class="card-body">
-        <ul class="model-list">
-            {% for model in models %}
-            <li class="model-item">
-                <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}" class="model-link">
-                    <span class="model-icon">📄</span>
-                    <span class="model-name">{{ model.__name__ }}</span>
-                    <span class="model-arrow">→</span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul class="model-list">
+        {% for model in models %}
+        <li class="model-item">
+            <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model.__name__|lower) }}" class="model-link">
+                <svg class="model-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                </svg>
+                <span class="model-name">{{ model.__name__ }}</span>
+                <svg class="model-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6"/>
+                </svg>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
 </div>
 {% endblock %}
