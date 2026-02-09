@@ -6,7 +6,6 @@ Defines routes for the admin interface.
 
 import os
 from fastapi import APIRouter
-from starlette.staticfiles import StaticFiles
 
 from aksara.contrib.admin.views import (
     admin_index,
@@ -22,16 +21,8 @@ from aksara.contrib.admin.views import (
 # Create the admin router
 router = APIRouter(tags=["Admin"])
 
-# Mount static files for admin
-admin_dir = os.path.dirname(__file__)
-static_dir = os.path.join(admin_dir, "static")
-
-if os.path.exists(static_dir):
-    router.mount(
-        "/static/admin",
-        StaticFiles(directory=static_dir),
-        name="admin_static"
-    )
+# Note: Admin static files are mounted at the app level in include_admin()
+# so templates can reference /static/admin/... regardless of admin prefix.
 
 # Auth routes (must be before the catch-all routes)
 router.add_api_route(

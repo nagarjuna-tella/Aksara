@@ -62,9 +62,24 @@ def include_admin(app: "FastAPI", prefix: str = "/admin") -> None:
         # Or with custom prefix
         include_admin(app, prefix="/dashboard")
     """
+    import os
+    from starlette.staticfiles import StaticFiles
     from aksara.contrib.admin.urls import router as admin_router
     
     # Add session middleware for admin authentication
     app.add_middleware(AdminSessionMiddleware)
+    
+    # Mount admin static files at app level so templates can reference
+    # /static/admin/css/admin.css regardless of admin prefix.
+    # Directory layout: admin/static/admin/{css,js}/... 
+    # We mount the inner static/admin/ dir at /static/admin/
+    admin_dir = os.path.dirname(os.path.abspath(__file__))
+    static_admin_dir = os.path.join(admin_dir, "static", "admin")
+    if os.path.exists(static_admin_dir):
+        app.mount(
+            "/static/admin",
+            StaticFiles(directory=static_admin_dir),
+            name="admin_static",
+        )
     
     app.include_router(admin_router, prefix=prefix)

@@ -286,6 +286,43 @@ class TestScaffoldAPICompatibility:
         assert hasattr(site, "register")
         assert callable(site.register)
 
+    def test_admin_static_files_exist(self):
+        """Admin CSS and JS files should exist in the package."""
+        import os
+        admin_dir = os.path.dirname(os.path.abspath(
+            __import__("aksara.contrib.admin", fromlist=["__init__"]).__file__
+        ))
+        static_dir = os.path.join(admin_dir, "static")
+        assert os.path.exists(static_dir), "admin/static/ directory missing"
+        assert os.path.exists(os.path.join(static_dir, "admin", "css", "admin.css")), \
+            "admin/static/admin/css/admin.css missing"
+
+    def test_admin_templates_use_consistent_static_paths(self):
+        """All admin templates should reference /static/admin/ (not /admin/static/)."""
+        import os
+        import glob
+        admin_dir = os.path.dirname(os.path.abspath(
+            __import__("aksara.contrib.admin", fromlist=["__init__"]).__file__
+        ))
+        templates_dir = os.path.join(admin_dir, "templates")
+        
+        for html_file in glob.glob(os.path.join(templates_dir, "**", "*.html"), recursive=True):
+            content = open(html_file).read()
+            basename = os.path.basename(html_file)
+            # All static refs should use /static/admin/ not /admin/static/admin/
+            assert "/admin/static/" not in content, (
+                f"{basename} uses '/admin/static/' — should use '/static/admin/' "
+                f"since static files are mounted at app level"
+            )
+
+    def test_include_admin_mounts_static_on_app(self):
+        """include_admin should mount static files at /static/admin on the app."""
+        import inspect
+        from aksara.contrib.admin.mount import include_admin
+        source = inspect.getsource(include_admin)
+        assert "/static/admin" in source
+        assert "app.mount" in source
+
     # =========================================================================
     # Settings/Conf
     # =========================================================================
