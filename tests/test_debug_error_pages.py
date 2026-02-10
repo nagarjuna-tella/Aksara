@@ -219,8 +219,8 @@ class TestRenderDebugPage:
         body = response.body.decode("utf-8")
         
         # Dark theme colors
-        assert "#0d1117" in body  # bg-primary
-        assert "#c9d1d9" in body  # text-primary
+        assert "#09090B" in body  # bg-primary
+        assert "#FAFAFA" in body  # text-primary
     
     def test_render_debug_page_contains_tabs(self):
         """Test that debug page has navigation tabs."""
@@ -344,7 +344,7 @@ class TestRenderMinimalErrorPage:
         response = render_minimal_error_page(500, "Error")
         body = response.body.decode("utf-8")
         
-        assert "#0d1117" in body  # Dark background
+        assert "#09090B" in body  # Dark background
 
 
 class TestRenderJsonError:
@@ -725,7 +725,7 @@ class TestDebugExceptionHandlersIntegration:
         assert "text/html" in response.headers["content-type"]
         assert "ValueError" in response.text
         assert "Test error" in response.text
-        assert "#0d1117" in response.text  # Dark theme
+        assert "#09090B" in response.text  # Dark theme
     
     def test_debug_mode_http_exception(self, debug_app):
         """Test that debug mode handles HTTPException."""
