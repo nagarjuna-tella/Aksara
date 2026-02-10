@@ -48,7 +48,7 @@ from aksara._version import __version__
 
 
 # Aksara SVG logo (blue lightning bolt with gradient)
-AKSARA_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234DA8FF'/%3E%3Cstop offset='100%25' style='stop-color:%231E90FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='55,5 25,45 45,45 20,95 75,40 50,40 70,5' fill='url(%23g)'/%3E%3C/svg%3E'''
+AKSARA_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366F1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/%3E%3C/svg%3E'''
 
 
 class Aksara(FastAPI):
@@ -308,120 +308,202 @@ class Aksara(FastAPI):
         async def welcome_page():
             html_content = f"""
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     <link rel="icon" href="{AKSARA_LOGO_SVG}">
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+
+        :root {{
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --background: #FAFAFA;
+            --foreground: #09090B;
+            --card: #FFFFFF;
+            --muted: #F4F4F5;
+            --muted-foreground: #71717A;
+            --border: #E4E4E7;
+            --ring: #6366F1;
+            --radius: 0.5rem;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }}
+
+        [data-theme="dark"] {{
+            --background: #09090B;
+            --foreground: #FAFAFA;
+            --card: #18181B;
+            --muted: #27272A;
+            --muted-foreground: #A1A1AA;
+            --border: #27272A;
+            --primary: #818CF8;
+            --primary-hover: #6366F1;
+        }}
+
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: var(--font-sans);
+            background: var(--background);
+            color: var(--foreground);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #fff;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }}
+
         .container {{
             text-align: center;
             padding: 2rem;
+            max-width: 480px;
+            width: 100%;
         }}
-        .logo {{
-            width: 120px;
-            height: 120px;
+
+        .logo-wrap {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 1rem;
+            background: var(--muted);
             margin-bottom: 1.5rem;
-            filter: drop-shadow(0 0 30px rgba(77, 168, 255, 0.5));
-            animation: pulse 2s ease-in-out infinite;
         }}
-        @keyframes pulse {{
-            0%, 100% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.05); }}
+        .logo-wrap svg {{
+            width: 36px;
+            height: 36px;
+            color: var(--primary);
         }}
+
         h1 {{
-            font-size: 3rem;
+            font-size: 1.875rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, #4DA8FF, #1E90FF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.25rem;
+            color: var(--foreground);
         }}
         .tagline {{
-            font-size: 1.2rem;
-            color: #888;
-            margin-bottom: 2rem;
+            font-size: 0.9375rem;
+            color: var(--muted-foreground);
+            margin-bottom: 0.25rem;
         }}
         .version {{
-            font-size: 0.9rem;
-            color: #666;
+            font-size: 0.8125rem;
+            color: var(--muted-foreground);
             margin-bottom: 2rem;
         }}
+
         .links {{
             display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
         }}
         .link {{
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            background: var(--card);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.15s ease;
         }}
-        .link-primary {{
-            background: linear-gradient(90deg, #4DA8FF, #1E90FF);
-            color: #fff;
+        .link:hover {{
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
         }}
-        .link-primary:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(77, 168, 255, 0.3);
+        .link svg {{
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+            flex-shrink: 0;
         }}
-        .link-secondary {{
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .link span {{
+            color: var(--muted-foreground);
+            font-size: 0.8125rem;
+            font-weight: 400;
+            margin-left: auto;
         }}
-        .link-secondary:hover {{
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }}
+
         .footer {{
-            margin-top: 3rem;
-            font-size: 0.85rem;
-            color: #555;
+            font-size: 0.8125rem;
+            color: var(--muted-foreground);
         }}
         .footer a {{
-            color: #4DA8FF;
+            color: var(--primary);
             text-decoration: none;
+            font-weight: 500;
         }}
+        .footer a:hover {{ text-decoration: underline; }}
+
+        .theme-toggle {{
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--card);
+            color: var(--muted-foreground);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }}
+        .theme-toggle:hover {{
+            background: var(--muted);
+            color: var(--foreground);
+        }}
+        .theme-toggle svg {{ width: 16px; height: 16px; }}
+        [data-theme="dark"] .icon-sun {{ display: none; }}
+        [data-theme="light"] .icon-moon {{ display: none; }}
     </style>
+    <script>
+        (function() {{
+            var t = localStorage.getItem('aksara-theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }}
+        }})();
+    </script>
 </head>
 <body>
+    <button class="theme-toggle" onclick="var d=document.documentElement,n=d.getAttribute('data-theme')==='dark'?'light':'dark';d.setAttribute('data-theme',n);localStorage.setItem('aksara-theme',n)">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
     <div class="container">
-        <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="bolt-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#4DA8FF"/>
-                    <stop offset="100%" style="stop-color:#1E90FF"/>
-                </linearGradient>
-            </defs>
-            <polygon points="55,5 25,45 45,45 20,95 75,40 50,40 70,5" fill="url(#bolt-gradient)"/>
-        </svg>
+        <div class="logo-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+        </div>
         <h1>{title}</h1>
-        <p class="tagline">⚡ Async Postgres ORM for FastAPI</p>
+        <p class="tagline">Async Postgres ORM for FastAPI</p>
         <p class="version">v{version}</p>
         <div class="links">
-            <a href="/docs" class="link link-primary">📚 API Documentation</a>
-            <a href="/redoc" class="link link-secondary">📖 ReDoc</a>
+            <a href="/docs" class="link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                API Documentation <span>/docs</span>
+            </a>
+            <a href="/redoc" class="link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                ReDoc <span>/redoc</span>
+            </a>
         </div>
         <p class="footer">
             Powered by <a href="https://github.com/nagarjuna-tella/aksara" target="_blank">Aksara</a>

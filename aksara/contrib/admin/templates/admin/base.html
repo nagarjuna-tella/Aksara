@@ -614,14 +614,8 @@
 <body>
     <header class="admin-header">
         <div class="admin-title">
-            <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="bolt-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#4DA8FF"/>
-                        <stop offset="100%" style="stop-color:#1E90FF"/>
-                    </linearGradient>
-                </defs>
-                <polygon points="55,5 25,45 45,45 20,95 75,40 50,40 70,5" fill="url(#bolt-gradient)"/>
+            <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
             <a href="{{ request.url_for('admin:index') }}">{{ site_name }}</a>
             {% if debug %}<span class="debug-badge">DEBUG</span>{% endif %}

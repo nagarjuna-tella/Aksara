@@ -134,72 +134,173 @@ async def health_check():
 def get_welcome_html_template(project_name: str) -> str:
     """Generate static/welcome.html content."""
     return f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name} — Aksara</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+
+        :root {{
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --background: #FAFAFA;
+            --foreground: #09090B;
+            --card: #FFFFFF;
+            --muted: #F4F4F5;
+            --muted-foreground: #71717A;
+            --border: #E4E4E7;
+            --radius: 0.5rem;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }}
+
+        [data-theme="dark"] {{
+            --background: #09090B;
+            --foreground: #FAFAFA;
+            --card: #18181B;
+            --muted: #27272A;
+            --muted-foreground: #A1A1AA;
+            --border: #27272A;
+            --primary: #818CF8;
+            --primary-hover: #6366F1;
+        }}
+
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: var(--font-sans);
+            background: var(--background);
+            color: var(--foreground);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #e4e4e7;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }}
+
         .container {{
             text-align: center;
             padding: 2rem;
-            max-width: 600px;
+            max-width: 480px;
+            width: 100%;
         }}
-        .logo {{ font-size: 3rem; margin-bottom: 1rem; }}
-        h1 {{ font-size: 2rem; margin-bottom: 0.5rem; color: #fbbf24; }}
-        .version {{ color: #9ca3af; font-size: 0.9rem; margin-bottom: 1.5rem; }}
-        .success {{ color: #4ade80; font-size: 1.1rem; margin-bottom: 2rem; }}
+
+        .logo-wrap {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 1rem;
+            background: var(--muted);
+            margin-bottom: 1.5rem;
+        }}
+        .logo-wrap svg {{
+            width: 36px;
+            height: 36px;
+            color: var(--primary);
+        }}
+
+        h1 {{
+            font-size: 1.875rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.25rem;
+            color: var(--foreground);
+        }}
+        .version {{ color: var(--muted-foreground); font-size: 0.875rem; margin-bottom: 0.25rem; }}
+        .success {{ color: #10B981; font-size: 0.9375rem; margin-bottom: 2rem; font-weight: 500; }}
+
         .links {{
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.5rem;
             margin-bottom: 2rem;
         }}
         .links a {{
-            background: rgba(255,255,255,0.1);
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            color: #e4e4e7;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--card);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            color: var(--foreground);
             text-decoration: none;
-            transition: background 0.2s;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
         }}
-        .links a:hover {{ background: rgba(255,255,255,0.2); }}
-        .links a span {{ color: #9ca3af; font-size: 0.85rem; }}
+        .links a:hover {{ border-color: var(--primary); box-shadow: var(--shadow-md); }}
+        .links a span {{ color: var(--muted-foreground); font-size: 0.8125rem; font-weight: 400; margin-left: auto; }}
+
         .note {{
-            color: #6b7280;
-            font-size: 0.85rem;
+            color: var(--muted-foreground);
+            font-size: 0.8125rem;
             padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid var(--border);
         }}
         .note code {{
-            background: rgba(255,255,255,0.1);
-            padding: 0.1rem 0.3rem;
-            border-radius: 3px;
+            background: var(--muted);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.8125rem;
         }}
+
+        .theme-toggle {{
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--card);
+            color: var(--muted-foreground);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }}
+        .theme-toggle:hover {{ background: var(--muted); color: var(--foreground); }}
+        .theme-toggle svg {{ width: 16px; height: 16px; }}
+        [data-theme="dark"] .icon-sun {{ display: none; }}
+        [data-theme="light"] .icon-moon {{ display: none; }}
     </style>
+    <script>
+        (function() {{
+            var t = localStorage.getItem('aksara-theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }}
+        }})();
+    </script>
 </head>
 <body>
+    <button class="theme-toggle" onclick="var d=document.documentElement,n=d.getAttribute('data-theme')==='dark'?'light':'dark';d.setAttribute('data-theme',n);localStorage.setItem('aksara-theme',n)">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
     <div class="container">
-        <div class="logo">&#9889;</div>
+        <div class="logo-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+        </div>
         <h1>{project_name}</h1>
         <p class="version">Powered by Aksara</p>
         <p class="success">Your project is running</p>
         <div class="links">
-            <a href="/admin/">Admin Panel <span>&rarr; Manage your data</span></a>
-            <a href="/studio/ui">Studio <span>&rarr; Interactive dashboard</span></a>
-            <a href="/api/posts/">API <span>&rarr; /api/posts/</span></a>
-            <a href="/docs">API Docs <span>&rarr; OpenAPI / Swagger</span></a>
-            <a href="/ai/tools">AI Tools <span>&rarr; LLM integration</span></a>
+            <a href="/admin/">Admin Panel <span>/admin/</span></a>
+            <a href="/studio/ui">Studio <span>/studio/ui</span></a>
+            <a href="/api/posts/">API <span>/api/posts/</span></a>
+            <a href="/docs">API Docs <span>/docs</span></a>
+            <a href="/ai/tools">AI Tools <span>/ai/tools</span></a>
         </div>
         <p class="note">
             Edit <code>static/welcome.html</code> to customize this page.
