@@ -314,7 +314,7 @@
     <script>
         // Theme toggle
         (function() {
-            const savedTheme = localStorage.getItem('admin-theme');
+            const savedTheme = localStorage.getItem('aksara-admin-theme');
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -418,7 +418,7 @@
             const current = html.getAttribute('data-theme') || 'light';
             const next = current === 'light' ? 'dark' : 'light';
             html.setAttribute('data-theme', next);
-            localStorage.setItem('admin-theme', next);
+            localStorage.setItem('aksara-admin-theme', next);
         }
     </script>
 </body>

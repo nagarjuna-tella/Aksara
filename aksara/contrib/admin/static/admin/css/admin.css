@@ -88,6 +88,10 @@
     /* Transitions */
     --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Derived */
+    --ring-alpha: rgba(99, 102, 241, 0.2);
+    --sidebar-width: 256px;
 }
 
 /* Dark Mode */
@@ -124,6 +128,10 @@
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    
+    --ring-alpha: rgba(99, 102, 241, 0.3);
+    
+    color-scheme: dark;
 }
 
 /* =========================================================================
@@ -587,6 +595,10 @@ a:hover {
     box-shadow: var(--shadow-sm);
 }
 
+.card + .card {
+    margin-top: var(--space-lg);
+}
+
 .card-header {
     margin-bottom: var(--space-md);
     padding-bottom: var(--space-md);
@@ -712,6 +724,106 @@ a:hover {
     opacity: 1;
     transform: translateX(0);
     color: var(--primary);
+}
+
+/* =========================================================================
+   Badges
+   ========================================================================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.badge-secondary {
+    background: var(--muted);
+    color: var(--text-secondary);
+}
+
+.badge-warning {
+    background: var(--warning-light);
+    color: #D97706;
+}
+
+[data-theme="dark"] .badge-warning {
+    color: #FBBF24;
+}
+
+.badge-success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+/* =========================================================================
+   Empty States
+   ========================================================================= */
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-2xl) var(--space-lg);
+    color: var(--text-secondary);
+}
+
+.empty-state-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--space-md);
+    color: var(--text-tertiary);
+}
+
+.empty-state-icon svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+    font-size: 0.875rem;
+}
+
+/* =========================================================================
+   Code Block
+   ========================================================================= */
+
+.code-block {
+    text-align: left;
+    margin-top: var(--space-md);
+    display: inline-block;
+}
+
+.code-block pre {
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    overflow-x: auto;
+}
+
+.code-block code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    background: none;
+    padding: 0;
 }
 
 /* Page Subtitle */
@@ -875,6 +987,11 @@ a:hover {
     font-family: var(--font-sans);
     line-height: 1;
     transition: all var(--transition);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-tertiary);
 }
 
 .form-input:focus,
