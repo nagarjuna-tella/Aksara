@@ -1159,6 +1159,10 @@ code {
     line-height: 1.5;
 }
 
+.info-banner.warning p {
+    color: #1c1917;
+}
+
 [data-theme="light"] {
     --color-info-bg: rgba(59, 130, 246, 0.08);
     --color-info-border: rgba(59, 130, 246, 0.2);
