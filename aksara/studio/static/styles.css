@@ -1417,12 +1417,15 @@ code {
 /* Warning banner for disabled tracing */
 .info-banner.warning {
     background: var(--accent-warning);
-    color: var(--text-inverse);
+    color: #1c1917;
 }
 
 .info-banner.warning code {
-    background: rgba(0, 0, 0, 0.2);
-    color: inherit;
+    background: rgba(0, 0, 0, 0.15);
+    color: #1c1917;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
 }
 
 /* Query item styles */
@@ -2227,9 +2230,14 @@ code {
 }
 
 .btn-live-active {
-    background: var(--accent-secondary, #34a853) !important;
+    background: var(--accent-secondary) !important;
     color: white !important;
-    border-color: var(--accent-secondary, #34a853) !important;
+    border-color: var(--accent-secondary) !important;
+}
+
+.btn-live {
+    color: var(--accent-secondary);
+    border-color: var(--border-color);
 }
 
 /* =============================================================================
