@@ -2224,7 +2224,7 @@ async function generateAgentWorkflow() {
         const resp = await jsonPost('/studio/agent/workflow', body);
         renderAgentWorkflow(resp);
     } catch (err) {
-        outputEl.innerHTML = `<p style="color: var(--red);">Error: ${escapeHtml(err.message)}</p>`;
+        outputEl.innerHTML = `<p style="color: var(--accent-error);">Error: ${escapeHtml(err.message)}</p>`;
     }
 }
 
