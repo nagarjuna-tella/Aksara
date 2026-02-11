@@ -681,11 +681,12 @@ class TestStudioAiHubUI:
         content = index_path.read_text()
         assert 'id="template-ai-hub"' in content
 
-    def test_index_html_has_four_tabs(self):
+    def test_index_html_has_five_tabs(self):
         index_path = Path(__file__).parent.parent / "aksara" / "studio" / "static" / "index.html"
         content = index_path.read_text()
         assert 'data-tab="providers"' in content
-        assert 'data-tab="tools"' in content
+        assert 'data-tab="helpers"' in content
+        assert 'data-tab="profiles"' in content
         assert 'data-tab="context"' in content
         assert 'data-tab="agent"' in content
 

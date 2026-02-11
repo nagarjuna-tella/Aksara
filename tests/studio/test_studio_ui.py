@@ -437,7 +437,6 @@ class TestStudioUIContent:
             'template-routes',
             'template-migrations',
             'template-diagnostics',
-            'template-api',
         ]
         
         for template_id in templates:
@@ -448,7 +447,7 @@ class TestStudioUIContent:
         index_path = STATIC_DIR / "index.html"
         html = index_path.read_text()
         
-        nav_sections = ['overview', 'models', 'routes', 'migrations', 'diagnostics', 'api']
+        nav_sections = ['overview', 'models', 'routes', 'migrations', 'diagnostics', 'db-queries', 'ai-hub']
         
         for section in nav_sections:
             assert f'data-section="{section}"' in html, f"Missing nav item: {section}"

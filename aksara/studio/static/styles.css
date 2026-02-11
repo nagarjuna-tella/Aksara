@@ -224,6 +224,21 @@ code {
     overflow-y: auto;
 }
 
+/* v0.5.25: Nav group labels */
+.nav-group-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+}
+
+.nav-group-label:first-child {
+    margin-top: 0;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
@@ -3321,6 +3336,40 @@ code {
    v0.5.25: AI Hub Styles
    ============================================================================= */
 
+/* v0.5.25: Section sub-tabs (Models, Routes & API) */
+.section-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    margin-bottom: 1.5rem;
+}
+
+.section-tab {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    background: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted, #718096);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.section-tab:hover {
+    color: var(--text-primary, #1a202c);
+}
+
+.section-tab.active {
+    color: var(--accent, #6366f1);
+    border-bottom-color: var(--accent, #6366f1);
+}
+
+.section-tab-panel {
+    /* panels toggled via JS display:none/block */
+}
+
+/* ---- AI Hub ---- */
 .ai-hub-tabs {
     display: flex;
     gap: 0;

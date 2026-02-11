@@ -178,11 +178,9 @@ function initNavigation() {
         'Digit2': 'models',
         'Digit3': 'routes',
         'Digit4': 'migrations',
-        'Digit5': 'db-queries',
-        'Digit6': 'ai-profiles',
-        'Digit7': 'diagnostics',
-        'Digit8': 'agent',
-        'Digit9': 'model-inspector',
+        'Digit5': 'diagnostics',
+        'Digit6': 'db-queries',
+        'Digit7': 'ai-hub',
     };
     document.addEventListener('keydown', (e) => {
         // v0.5.22: Cmd/Ctrl+K opens Spotlight Search (always, even in inputs)
@@ -229,14 +227,14 @@ function initNavigation() {
             const btn = document.getElementById('agent-generate-btn');
             if (btn) btn.click();
         }
-        // v0.5.20: Shift+P focuses playbook search
+        // v0.5.20: Shift+P focuses playbook search in AI Hub Agent tab
         if (e.shiftKey && e.key === 'P') {
             e.preventDefault();
             navigateTo('agent');
             setTimeout(() => {
                 const searchInput = document.getElementById('agent-playbook-search');
                 if (searchInput) searchInput.focus();
-            }, 100);
+            }, 200);
         }
         // v0.5.25: 'A' opens AI Hub
         if (e.key === 'a' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
@@ -257,6 +255,27 @@ function navigateTo(section, updateHash = true) {
     // Stop timers for previous section
     stopSectionTimers();
     
+    // v0.5.25: Redirect consolidated sections to their new homes
+    const redirects = {
+        'api': 'routes',
+        'model-inspector': 'models',
+        'ai-helpers': 'ai-hub',
+        'ai-profiles': 'ai-hub',
+        'agent': 'ai-hub',
+    };
+    const activateTab = {
+        'api': { attr: 'data-routes-tab', value: 'api-ref' },
+        'model-inspector': { attr: 'data-models-tab', value: 'inspector' },
+        'ai-helpers': { tab: 'helpers' },
+        'ai-profiles': { tab: 'profiles' },
+        'agent': { tab: 'agent' },
+    };
+    const tabInfo = activateTab[section];
+    const redirected = redirects[section];
+    if (redirected) {
+        section = redirected;
+    }
+
     state.currentSection = section;
     
     // Update URL hash
@@ -271,6 +290,21 @@ function navigateTo(section, updateHash = true) {
     
     // Render the section
     renderSection(section);
+
+    // v0.5.25: Activate the right tab after rendering for redirected sections
+    if (tabInfo) {
+        setTimeout(() => {
+            if (tabInfo.tab) {
+                // AI Hub tab
+                const tabBtn = document.querySelector(`.ai-hub-tab[data-tab="${tabInfo.tab}"]`);
+                if (tabBtn) tabBtn.click();
+            } else if (tabInfo.attr) {
+                // Section sub-tab (models/routes)
+                const tabBtn = document.querySelector(`.section-tab[${tabInfo.attr}="${tabInfo.value}"]`);
+                if (tabBtn) tabBtn.click();
+            }
+        }, 50);
+    }
 }
 
 // v0.5.16: Clean up timers when leaving a section
@@ -312,9 +346,11 @@ function renderSection(section) {
             break;
         case 'models':
             renderModels();
+            initSectionTabs('models');
             break;
         case 'routes':
             renderRoutes();
+            initSectionTabs('routes');
             break;
         case 'migrations':
             renderMigrations();
@@ -322,28 +358,35 @@ function renderSection(section) {
         case 'diagnostics':
             renderDiagnostics();
             break;
-        case 'api':
-            // Static content, no additional rendering needed
-            break;
-        case 'ai-helpers':
-            renderAiHelpers();
-            break;
         case 'db-queries':
             renderDbQueries();
-            break;
-        case 'ai-profiles':
-            renderAiProfiles();
-            break;
-        case 'agent':
-            renderAgentPanel();
-            break;
-        case 'model-inspector':
-            renderModelInspector();
             break;
         case 'ai-hub':
             renderAiHub();
             break;
     }
+}
+
+// v0.5.25: Generic section tab switching for merged sections (Models, Routes)
+function initSectionTabs(sectionName) {
+    const tabAttr = `data-${sectionName}-tab`;
+    const panelAttr = `data-${sectionName}-panel`;
+    document.querySelectorAll(`.section-tab[${tabAttr}]`).forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabKey = btn.getAttribute(tabAttr);
+            // Toggle active tab button
+            document.querySelectorAll(`.section-tab[${tabAttr}]`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Toggle panels
+            document.querySelectorAll(`.section-tab-panel[${panelAttr}]`).forEach(p => {
+                p.style.display = p.getAttribute(panelAttr) === tabKey ? '' : 'none';
+            });
+            // Lazy-load inspector data on first click
+            if (sectionName === 'models' && tabKey === 'inspector' && !state.modelInspector) {
+                renderModelInspector();
+            }
+        });
+    });
 }
 
 // =============================================================================
@@ -2601,6 +2644,9 @@ function escapeHtml(str) {
 // =============================================================================
 
 async function renderAiHub() {
+    // Track which tabs have been loaded
+    const loadedTabs = { providers: true };
+
     // Wire tab switching
     document.querySelectorAll('.ai-hub-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -2609,6 +2655,27 @@ async function renderAiHub() {
             const target = tab.dataset.tab;
             document.querySelectorAll('.ai-hub-panel').forEach(p => {
                 p.style.display = p.dataset.tabPanel === target ? '' : 'none';
+            });
+            // v0.5.25: Lazy-load consolidated sections on first visit
+            if (!loadedTabs[target]) {
+                loadedTabs[target] = true;
+                if (target === 'helpers') renderAiHelpers();
+                if (target === 'profiles') renderAiProfiles();
+                if (target === 'agent') renderAgentPanel();
+                if (target === 'context') loadAiHubContext();
+            }
+        });
+    });
+
+    // Wire AI Profiles sub-tabs (inside the profiles panel)
+    document.querySelectorAll('.ai-tab[data-ai-tab]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const parent = tab.closest('.ai-hub-panel') || document;
+            parent.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const target = tab.dataset.aiTab;
+            parent.querySelectorAll('.ai-tab-pane').forEach(p => {
+                p.classList.toggle('active', p.id === `ai-pane-${target}`);
             });
         });
     });

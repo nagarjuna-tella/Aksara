@@ -16,16 +16,19 @@ class TestAgentHtml:
 
     def test_agent_nav_item_exists(self):
         html = (STATIC_DIR / "index.html").read_text()
-        assert 'data-section="agent"' in html
+        # v0.5.25: Agent is consolidated into AI Hub
+        assert 'data-section="ai-hub"' in html
         assert "Agent" in html
 
     def test_agent_template_exists(self):
         html = (STATIC_DIR / "index.html").read_text()
-        assert 'id="template-agent"' in html
+        # v0.5.25: Agent content is inside the AI Hub template
+        assert 'id="template-ai-hub"' in html
 
     def test_agent_section_container(self):
         html = (STATIC_DIR / "index.html").read_text()
-        assert 'id="section-agent"' in html
+        # v0.5.25: Agent panel is inside AI Hub
+        assert 'id="ai-hub-agent-panel"' in html
 
     def test_agent_goal_textarea(self):
         html = (STATIC_DIR / "index.html").read_text()
@@ -77,9 +80,9 @@ class TestAgentJs:
         js = (STATIC_DIR / "app.js").read_text()
         assert "function generateAgentPrompt" in js
 
-    def test_keyboard_shortcut_digit8(self):
+    def test_keyboard_shortcut_digit7(self):
         js = (STATIC_DIR / "app.js").read_text()
-        assert "'Digit8': 'agent'" in js
+        assert "'Digit7': 'ai-hub'" in js
 
     def test_keyboard_shortcut_ctrl_g(self):
         js = (STATIC_DIR / "app.js").read_text()
@@ -87,7 +90,8 @@ class TestAgentJs:
 
     def test_section_switch_agent(self):
         js = (STATIC_DIR / "app.js").read_text()
-        assert "case 'agent':" in js
+        # v0.5.25: Agent is now loaded via AI Hub tab
+        assert "case 'ai-hub':" in js
         assert "renderAgentPanel()" in js
 
     def test_local_storage_persistence(self):

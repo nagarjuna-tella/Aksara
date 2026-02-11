@@ -22,6 +22,7 @@
             </div>
             
             <nav class="sidebar-nav">
+                <div class="nav-group-label">App</div>
                 <a href="#/overview" class="nav-item active" data-section="overview">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
@@ -37,7 +38,7 @@
                         <path d="M2 17l10 5 10-5"></path>
                         <path d="M2 12l10 5 10-5"></path>
                     </svg>
-                    <span>Models & Schema</span>
+                    <span>Models</span>
                 </a>
                 <a href="#/routes" class="nav-item" data-section="routes">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -46,8 +47,10 @@
                         <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
                         <path d="M12 22.08V12"></path>
                     </svg>
-                    <span>Routes Explorer</span>
+                    <span>Routes & API</span>
                 </a>
+
+                <div class="nav-group-label">Ops</div>
                 <a href="#/migrations" class="nav-item" data-section="migrations">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path>
@@ -68,49 +71,14 @@
                     </svg>
                     <span>DB & Queries</span>
                 </a>
-                <a href="#/api" class="nav-item" data-section="api">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path>
-                    </svg>
-                    <span>API Explorer</span>
-                </a>
-                <a href="#/ai-helpers" class="nav-item" data-section="ai-helpers">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-                        <path d="M19 12a7 7 0 11-14 0 7 7 0 0114 0z" stroke-dasharray="2 2"></path>
-                    </svg>
-                    <span>AI Helpers</span>
-                </a>
-                <a href="#/ai-profiles" class="nav-item" data-section="ai-profiles">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a4 4 0 00-4 4v2a4 4 0 008 0V6a4 4 0 00-4-4z"></path>
-                        <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"></path>
-                        <circle cx="19" cy="5" r="2"></circle>
-                        <path d="M19 7v4"></path>
-                    </svg>
-                    <span>AI Profiles</span>
-                </a>
-                <a href="#/agent" class="nav-item" data-section="agent">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7l-3 4-3-4c-2-1.5-4-4-4-7a7 7 0 017-7z"></path>
-                        <circle cx="12" cy="9" r="2.5"></circle>
-                    </svg>
-                    <span>Agent</span>
-                </a>
+
+                <div class="nav-group-label">AI</div>
                 <a href="#/ai-hub" class="nav-item" data-section="ai-hub">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
                     </svg>
                     <span>AI Hub</span>
-                </a>
-                <a href="#/model-inspector" class="nav-item" data-section="model-inspector">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"></path>
-                    </svg>
-                    <span>Inspector</span>
                 </a>
             </nav>
             
@@ -273,58 +241,143 @@
     
     <template id="template-models">
         <div class="section-header">
-            <h1>Models & Schema</h1>
-            <p class="section-subtitle">Database models and their relationships</p>
+            <h1>Models</h1>
+            <p class="section-subtitle">Database models, schemas, and deep introspection</p>
         </div>
         
-        <div class="toolbar">
-            <input type="search" id="models-search" class="search-input" placeholder="Search models...">
+        <div class="section-tabs">
+            <button class="section-tab active" data-models-tab="schema">Schema</button>
+            <button class="section-tab" data-models-tab="inspector">Inspector</button>
         </div>
-        
-        <div class="models-list" id="models-list">
-            <div class="empty-state">
-                <p>No models found</p>
+
+        <!-- Schema Tab -->
+        <div class="section-tab-panel" data-models-panel="schema">
+            <div class="toolbar">
+                <input type="search" id="models-search" class="search-input" placeholder="Search models...">
+            </div>
+            
+            <div class="models-list" id="models-list">
+                <div class="empty-state">
+                    <p>No models found</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspector Tab -->
+        <div class="section-tab-panel" data-models-panel="inspector" style="display:none;">
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header"><h3>Models</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-models">-</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Total Fields</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-fields">-</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Relationships</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="mi-total-rels">-</span></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Registered Models</h3>
+                    <button class="btn btn-sm btn-secondary" id="refresh-model-inspector">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="model-inspector-list">
+                        <div class="empty-state"><p>Loading models...</p></div>
+                    </div>
+                </div>
             </div>
         </div>
     </template>
     
     <template id="template-routes">
         <div class="section-header">
-            <h1>Routes Explorer</h1>
-            <p class="section-subtitle">All registered API endpoints</p>
+            <h1>Routes & API</h1>
+            <p class="section-subtitle">All registered endpoints and API reference</p>
         </div>
         
-        <div class="toolbar">
-            <input type="search" id="routes-search" class="search-input" placeholder="Search routes...">
-            <div class="filter-group">
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-studio" checked> Studio
-                </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-admin" checked> Admin
-                </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-ai" checked> AI
-                </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-api" checked> API
-                </label>
+        <div class="section-tabs">
+            <button class="section-tab active" data-routes-tab="explorer">Routes</button>
+            <button class="section-tab" data-routes-tab="api-ref">API Reference</button>
+        </div>
+
+        <!-- Routes Explorer Tab -->
+        <div class="section-tab-panel" data-routes-panel="explorer">
+            <div class="toolbar">
+                <input type="search" id="routes-search" class="search-input" placeholder="Search routes...">
+                <div class="filter-group">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="filter-studio" checked> Studio
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="filter-admin" checked> Admin
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="filter-ai" checked> AI
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="filter-api" checked> API
+                    </label>
+                </div>
+            </div>
+            
+            <div class="routes-table-wrapper">
+                <table class="routes-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Path</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routes-tbody">
+                    </tbody>
+                </table>
             </div>
         </div>
-        
-        <div class="routes-table-wrapper">
-            <table class="routes-table">
-                <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Path</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                    </tr>
-                </thead>
-                <tbody id="routes-tbody">
-                </tbody>
-            </table>
+
+        <!-- API Reference Tab -->
+        <div class="section-tab-panel" data-routes-panel="api-ref" style="display:none;">
+            <div class="card">
+                <div class="card-header"><h3>Studio Endpoints</h3></div>
+                <div class="card-body">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/handshake</code> <span class="endpoint-desc">Complete project handshake</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/context/summary</code> <span class="endpoint-desc">Lightweight context summary</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/health</code> <span class="endpoint-desc">Health check with database status</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/migrations/summary</code> <span class="endpoint-desc">Migration statistics per app</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/runtime/info</code> <span class="endpoint-desc">Runtime diagnostics</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/runtime/routes</code> <span class="endpoint-desc">All registered routes</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/ai/context</code> <span class="endpoint-desc">AI context export</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/ai/schemas</code> <span class="endpoint-desc">AI operation schemas</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/studio/ai/prompts</code> <span class="endpoint-desc">Prompt templates</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>AI Endpoints</h3></div>
+                <div class="card-body">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/ai/context/full</code> <span class="endpoint-desc">Full schema context for AI</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/ai/tools</code> <span class="endpoint-desc">Available AI tools</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/ai/tools/mcp</code> <span class="endpoint-desc">MCP-formatted tools</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Documentation</h3></div>
+                <div class="card-body">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/docs</code> <span class="endpoint-desc">OpenAPI (Swagger) documentation</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/redoc</code> <span class="endpoint-desc">ReDoc documentation</span></div>
+                        <div class="endpoint-item"><span class="method-badge get">GET</span> <code>/openapi.json</code> <span class="endpoint-desc">OpenAPI schema (JSON)</span></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </template>
     
@@ -1033,14 +1086,15 @@
     <template id="template-ai-hub">
         <div class="section-header">
             <h2>AI Hub</h2>
-            <p class="section-subtitle">Unified AI provider management, tools, and agent</p>
+            <p class="section-subtitle">Unified AI provider management, helpers, profiles, and agent</p>
         </div>
         
         <!-- Tab navigation -->
         <div class="ai-hub-tabs">
             <button class="ai-hub-tab active" data-tab="providers">Providers</button>
-            <button class="ai-hub-tab" data-tab="tools">Tools</button>
-            <button class="ai-hub-tab" data-tab="context">Context Viewer</button>
+            <button class="ai-hub-tab" data-tab="helpers">Helpers</button>
+            <button class="ai-hub-tab" data-tab="profiles">Profiles</button>
+            <button class="ai-hub-tab" data-tab="context">Context</button>
             <button class="ai-hub-tab" data-tab="agent">Agent</button>
         </div>
         
@@ -1096,56 +1150,121 @@
             </div>
         </div>
         
-        <!-- Tools Tab -->
-        <div class="ai-hub-panel" id="ai-hub-tools" data-tab-panel="tools" style="display:none;">
+        <!-- Helpers Tab (consolidated from AI Helpers) -->
+        <div class="ai-hub-panel" id="ai-hub-helpers" data-tab-panel="helpers" style="display:none;">
+            <div class="info-banner">
+                <span class="info-icon">ℹ️</span>
+                <p>Export context and schemas for external AI tools like ChatGPT, Claude, or Copilot.</p>
+            </div>
             <div class="card">
-                <div class="card-header"><h3>Available AI Tools</h3></div>
+                <div class="card-header">
+                    <h3>AI Context Export</h3>
+                    <button class="btn btn-sm btn-secondary" id="refresh-ai-context">Refresh</button>
+                </div>
                 <div class="card-body">
-                    <div class="tool-grid">
-                        <a href="#/ai-helpers" class="tool-card">
-                            <div class="tool-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-                                </svg>
-                            </div>
-                            <h4>AI Helpers</h4>
-                            <p>Context export, schemas, prompt templates</p>
-                        </a>
-                        <a href="#/ai-profiles" class="tool-card">
-                            <div class="tool-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                    <path d="M12 2a4 4 0 00-4 4v2a4 4 0 008 0V6a4 4 0 00-4-4z"></path>
-                                    <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"></path>
-                                </svg>
-                            </div>
-                            <h4>AI Profiles</h4>
-                            <p>Provider profiles, model configs, secrets</p>
-                        </a>
-                        <a href="#/agent" class="tool-card">
-                            <div class="tool-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                    <path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7l-3 4-3-4c-2-1.5-4-4-4-7a7 7 0 017-7z"></path>
-                                    <circle cx="12" cy="9" r="2.5"></circle>
-                                </svg>
-                            </div>
-                            <h4>Agent Mode</h4>
-                            <p>Context gathering, playbooks, workflows</p>
-                        </a>
-                        <a href="#/model-inspector" class="tool-card">
-                            <div class="tool-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                    <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"></path>
-                                </svg>
-                            </div>
-                            <h4>Model Inspector</h4>
-                            <p>Fields, relationships, constraints, SQL</p>
-                        </a>
+                    <p class="card-description">JSON bundle of your project's models, routes, and tools.</p>
+                    <div class="json-container">
+                        <div class="json-header">
+                            <span class="json-label">Context JSON</span>
+                            <button class="btn btn-sm btn-copy" id="copy-ai-context" data-target="ai-context-json">Copy</button>
+                        </div>
+                        <pre id="ai-context-json" class="json-pre"><code>Loading...</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>AI Operation Schemas</h3>
+                    <button class="btn btn-sm btn-secondary" id="refresh-ai-schemas">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div class="schema-tabs">
+                        <button class="schema-tab active" data-schema="plan">Plan</button>
+                        <button class="schema-tab" data-schema="patch">Patch</button>
+                        <button class="schema-tab" data-schema="query">Query</button>
+                        <button class="schema-tab" data-schema="codegen">Codegen</button>
+                    </div>
+                    <div class="json-container">
+                        <div class="json-header">
+                            <span class="json-label" id="schema-label">Plan Schema</span>
+                            <button class="btn btn-sm btn-copy" id="copy-ai-schema">Copy</button>
+                        </div>
+                        <pre id="ai-schema-json" class="json-pre"><code>Loading...</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Prompt Templates</h3>
+                    <button class="btn btn-sm btn-secondary" id="refresh-ai-prompts">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="prompt-templates-list" class="prompt-templates-list">
+                        <div class="prompt-loading">Loading prompts...</div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Profiles Tab (consolidated from AI Profiles) -->
+        <div class="ai-hub-panel" id="ai-hub-profiles" data-tab-panel="profiles" style="display:none;">
+            <div class="ai-tab-bar">
+                <button class="ai-tab active" data-ai-tab="profiles">Profiles</button>
+                <button class="ai-tab" data-ai-tab="secrets">Secrets</button>
+                <button class="ai-tab" data-ai-tab="health">Health</button>
+                <button class="ai-tab" data-ai-tab="hints">Hints</button>
+            </div>
+            <div class="ai-tab-pane active" id="ai-pane-profiles">
+                <div id="ai-profiles-disabled-banner" class="info-banner warning hidden">
+                    <span class="info-icon">⚠️</span>
+                    <p>AI profiles are disabled. Enable them by setting <code>ai_profiles_enabled=True</code>.</p>
+                </div>
+                <div class="cards-grid">
+                    <div class="card"><div class="card-header"><h3>Providers</h3></div><div class="card-body"><div class="metric"><span class="metric-value" id="ai-provider-count">-</span></div></div></div>
+                    <div class="card"><div class="card-header"><h3>Total Models</h3></div><div class="card-body"><div class="metric"><span class="metric-value" id="ai-model-count">-</span></div></div></div>
+                    <div class="card"><div class="card-header"><h3>Default Provider</h3></div><div class="card-body"><div class="metric"><span class="metric-value" id="ai-default-provider">-</span></div></div></div>
+                    <div class="card"><div class="card-header"><h3>Environment</h3></div><div class="card-body"><div class="metric"><span class="metric-value" id="ai-environment">-</span></div></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>AI Providers</h3><button class="btn btn-sm btn-secondary" id="refresh-ai-profiles">Refresh</button></div>
+                    <div class="card-body"><div class="providers-list" id="ai-providers-list"><div class="empty-state"><p>No AI providers configured</p></div></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Export Profile Set</h3></div>
+                    <div class="card-body">
+                        <div class="json-container">
+                            <div class="json-header"><span class="json-label">Profile Set JSON</span><button class="btn btn-sm btn-copy" id="copy-ai-profiles" data-target="ai-profiles-json">Copy</button></div>
+                            <pre id="ai-profiles-json" class="json-pre"><code>Loading...</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ai-tab-pane" id="ai-pane-secrets">
+                <div class="card">
+                    <div class="card-header"><h3>Required Secrets</h3><span class="badge" id="secrets-count-badge">-</span></div>
+                    <div class="card-body">
+                        <p class="card-description">Environment variables needed for AI providers.</p>
+                        <div class="secrets-list" id="ai-secrets-list"><div class="empty-state"><p>No secrets required</p></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="ai-tab-pane" id="ai-pane-health">
+                <div id="ai-health-banner" class="ai-health-banner hidden">
+                    <div class="ai-health-status"><span class="ai-health-badge" id="ai-health-badge">Loading...</span><span class="ai-health-summary" id="ai-health-summary"></span></div>
+                    <div class="ai-health-issues" id="ai-health-issues"></div>
+                </div>
+            </div>
+            <div class="ai-tab-pane" id="ai-pane-hints">
+                <div class="card">
+                    <div class="card-header"><h3>AI Route Hints</h3><span class="badge" id="ai-hints-count">-</span></div>
+                    <div class="card-body">
+                        <div class="ai-hints-filter-container"><input type="text" id="ai-hints-filter" placeholder="Filter by title, path, or view..." class="filter-input"></div>
+                        <div class="ai-hints-list" id="ai-hints-list"><div class="empty-state"><p>No AI hints defined yet</p></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Context Viewer Tab -->
         <div class="ai-hub-panel" id="ai-hub-context" data-tab-panel="context" style="display:none;">
             <div class="card">
@@ -1161,8 +1280,9 @@
             </div>
         </div>
         
-        <!-- Agent Tab -->
-        <div class="ai-hub-panel" id="ai-hub-agent" data-tab-panel="agent" style="display:none;">
+        <!-- Agent Tab (consolidated from Agent Mode + AI Hub Agent) -->
+        <div class="ai-hub-panel" id="ai-hub-agent-panel" data-tab-panel="agent" style="display:none;">
+            <!-- Inline Agent -->
             <div class="card">
                 <div class="card-header">
                     <h3>AI Agent</h3>
@@ -1184,10 +1304,73 @@
                         </label>
                     </div>
                     <div id="ai-hub-agent-output" class="ai-hub-output" style="margin-top:1rem; display:none;">
-                        <div class="ai-hub-output-header">
-                            <span id="ai-hub-agent-meta"></span>
-                        </div>
+                        <div class="ai-hub-output-header"><span id="ai-hub-agent-meta"></span></div>
                         <pre id="ai-hub-agent-result" class="ai-hub-output-body"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Builder (from Agent Mode) -->
+            <div class="agent-layout" style="margin-top:1rem;">
+                <div class="agent-left">
+                    <div class="card agent-playbooks-card">
+                        <div class="card-header"><h3>Playbooks</h3><span class="agent-playbook-count" id="agent-playbook-count"></span></div>
+                        <div class="card-body">
+                            <input type="text" class="agent-playbook-search" id="agent-playbook-search" placeholder="Search playbooks..." />
+                            <div class="agent-playbook-filters" id="agent-playbook-filters">
+                                <button class="agent-filter-pill active" data-filter="all">All</button>
+                                <button class="agent-filter-pill" data-filter="schema">Schema</button>
+                                <button class="agent-filter-pill" data-filter="api">API</button>
+                                <button class="agent-filter-pill" data-filter="migrations">Migrations</button>
+                                <button class="agent-filter-pill" data-filter="diagnostics">Diagnostics</button>
+                            </div>
+                            <div class="agent-playbook-list" id="agent-playbook-list"><p class="text-muted">Loading playbooks...</p></div>
+                        </div>
+                    </div>
+                    <div class="card agent-sections-card">
+                        <div class="card-header"><h3>Context Sections</h3><button class="btn btn-sm" id="agent-toggle-all">Select All</button></div>
+                        <div class="card-body"><div class="agent-section-list" id="agent-section-list"><p class="text-muted">Loading context...</p></div></div>
+                    </div>
+                </div>
+                <div class="agent-right">
+                    <div class="card agent-goal-card">
+                        <div class="card-header"><h3>Prompt Builder</h3></div>
+                        <div class="card-body">
+                            <textarea id="agent-goal" class="agent-goal-input" rows="3" placeholder="Describe what the agent should accomplish..."></textarea>
+                            <div class="agent-goal-actions">
+                                <button class="btn btn-primary" id="agent-generate-btn">Generate Prompt</button>
+                                <button class="btn btn-secondary" id="agent-workflow-btn">Generate Workflow</button>
+                            </div>
+                            <div class="agent-workflow-options" id="agent-workflow-options">
+                                <label><input type="checkbox" id="agent-wf-diagnostics" checked /> Use diagnostics</label>
+                                <label><input type="checkbox" id="agent-wf-search" checked /> Use semantic search</label>
+                                <input type="text" id="agent-wf-search-query" class="agent-wf-search-input" placeholder="Search query override (optional)" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card agent-output-card">
+                        <div class="card-header">
+                            <h3>Output</h3>
+                            <div class="agent-tabs">
+                                <button class="agent-tab active" data-agent-tab="prompt">Prompt</button>
+                                <button class="agent-tab" data-agent-tab="context">Context JSON</button>
+                                <button class="agent-tab" data-agent-tab="workflow">Workflow</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="agent-tab-pane active" id="agent-pane-prompt">
+                                <pre class="agent-prompt-output" id="agent-prompt-output">Press "Generate Prompt" to get started.</pre>
+                                <div class="agent-prompt-meta" id="agent-prompt-meta"></div>
+                            </div>
+                            <div class="agent-tab-pane" id="agent-pane-context">
+                                <pre class="agent-json-output" id="agent-json-output">{}</pre>
+                            </div>
+                            <div class="agent-tab-pane" id="agent-pane-workflow">
+                                <div class="agent-workflow-output" id="agent-workflow-output">
+                                    <p class="text-muted">Press "Generate Workflow" to create a step-by-step plan.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
