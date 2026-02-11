@@ -2268,3 +2268,231 @@ from aksara.ai.workflows import (  # noqa: E402, F401
     summarize_agent_workflow,
     workflow_stats,
 )
+
+
+# =============================================================================
+# v0.5.25: AI Hub & Unified Provider System
+# =============================================================================
+
+
+def build_ai_hub_providers() -> "StudioAiProvidersSummary":
+    """
+    Build AI hub providers summary.
+
+    v0.5.25: Detects all providers via env, pings them, returns status.
+    """
+    from aksara.studio.models import StudioAiProvidersSummary, StudioAiProviderStatus
+    from aksara.ai.providers_unified import detect_all_providers, get_active_provider
+
+    active = get_active_provider()
+    detected = detect_all_providers()
+
+    statuses: list = []
+    for prov in detected:
+        reachable = False
+        error_msg = None
+
+        if prov.is_configured():
+            try:
+                ping_result = prov.ping()
+                reachable = ping_result.get("ok", False) if isinstance(ping_result, dict) else bool(ping_result)
+                if not reachable:
+                    error_msg = ping_result.get("message") if isinstance(ping_result, dict) else None
+            except Exception as exc:
+                error_msg = str(exc)
+
+        safe = prov.to_safe_dict()
+        statuses.append(StudioAiProviderStatus(
+            provider=prov.provider,
+            configured=prov.is_configured(),
+            reachable=reachable,
+            model=safe.get("model", ""),
+            base_url=safe.get("base_url", ""),
+            error=error_msg,
+        ))
+
+    configured_count = sum(1 for s in statuses if s.configured)
+
+    return StudioAiProvidersSummary(
+        active_provider=active.provider if active else None,
+        active_model=active.model if active else "",
+        providers=statuses,
+        configured_count=configured_count,
+        total_count=len(statuses),
+    )
+
+
+def build_ai_hub_provider_save(
+    provider: str,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    model: Optional[str] = None,
+    extra: Optional[Dict] = None,
+    save_to: str = "env",
+) -> "StudioAiProviderSaveResponse":
+    """
+    Save a provider config to .env or provider.json.
+
+    v0.5.25: Writes config to disk.
+    """
+    from aksara.studio.models import StudioAiProviderSaveResponse
+    from aksara.ai.providers_unified import UnifiedAiProvider
+
+    try:
+        prov = UnifiedAiProvider(
+            provider=provider,
+            base_url=base_url or "",
+            api_key=api_key or "",
+            model=model or "",
+            extra=extra or {},
+        )
+
+        if save_to == "json":
+            path = prov.save_to_json()
+        else:
+            path = prov.save_to_env_file()
+
+        return StudioAiProviderSaveResponse(
+            saved=True,
+            provider=provider,
+            file_path=str(path),
+            message=f"Provider '{provider}' saved to {path}",
+        )
+    except Exception as exc:
+        return StudioAiProviderSaveResponse(
+            saved=False,
+            provider=provider,
+            message=f"Failed to save: {exc}",
+        )
+
+
+def build_ai_hub_provider_ping(
+    provider_key: Optional[str] = None,
+) -> "StudioAiProviderPingResponse":
+    """
+    Ping a specific provider or the active one.
+
+    v0.5.25: Tests connectivity and returns latency.
+    """
+    import time
+    from aksara.studio.models import StudioAiProviderPingResponse
+    from aksara.ai.providers_unified import get_active_provider, UnifiedAiProvider
+
+    if provider_key:
+        prov = UnifiedAiProvider.from_env()
+        if prov.provider != provider_key:
+            # Try to detect from env for the specific provider
+            from aksara.ai.providers_unified import detect_all_providers
+            found = [p for p in detect_all_providers() if p.provider == provider_key]
+            prov = found[0] if found else None
+    else:
+        prov = get_active_provider()
+
+    if prov is None:
+        return StudioAiProviderPingResponse(
+            provider=provider_key or "unknown",
+            reachable=False,
+            error="No provider configured",
+        )
+
+    start = time.monotonic()
+    try:
+        ping_result = prov.ping()
+        reachable = ping_result.get("ok", False) if isinstance(ping_result, dict) else bool(ping_result)
+        latency = (time.monotonic() - start) * 1000
+        ping_msg = ping_result.get("message") if isinstance(ping_result, dict) else None
+        return StudioAiProviderPingResponse(
+            provider=prov.provider,
+            reachable=reachable,
+            latency_ms=round(latency, 2),
+            model=prov.model,
+            error=None if reachable else (ping_msg or "Ping returned False"),
+        )
+    except Exception as exc:
+        latency = (time.monotonic() - start) * 1000
+        return StudioAiProviderPingResponse(
+            provider=prov.provider,
+            reachable=False,
+            latency_ms=round(latency, 2),
+            model=prov.model,
+            error=str(exc),
+        )
+
+
+def build_ai_hub_agent_run(
+    prompt: str,
+    app: Optional[Any] = None,
+    *,
+    provider_key: Optional[str] = None,
+    model_override: Optional[str] = None,
+    include_context: bool = True,
+    context_sections: Optional[List[str]] = None,
+    temperature: float = 0.3,
+    max_tokens: int = 2048,
+) -> "StudioAiAgentRunResponse":
+    """
+    Run the AI agent with a user prompt.
+
+    v0.5.25: Uses the unified provider to generate a response.
+    """
+    from aksara.studio.models import StudioAiAgentRunResponse
+    from aksara.ai.providers_unified import get_active_provider, UnifiedAiProvider
+
+    # Resolve provider
+    prov: Optional[UnifiedAiProvider] = None
+    if provider_key:
+        from aksara.ai.providers_unified import detect_all_providers
+        found = [p for p in detect_all_providers() if p.provider == provider_key]
+        prov = found[0] if found else None
+    else:
+        prov = get_active_provider()
+
+    if prov is None or not prov.is_configured():
+        return StudioAiAgentRunResponse(
+            provider=provider_key or "none",
+            model=model_override or "",
+            error="No AI provider configured. Set environment variables or use the save endpoint.",
+        )
+
+    # Override model if requested
+    if model_override:
+        prov = UnifiedAiProvider(
+            provider=prov.provider,
+            base_url=prov.base_url,
+            api_key=prov.api_key,
+            model=model_override,
+            extra=prov.extra,
+        )
+
+    # Build system prompt with context if requested
+    system_parts: list = []
+    if include_context:
+        system_parts.append(
+            "You are an AI assistant for an Aksara web application. "
+            "Answer questions about the project, suggest improvements, "
+            "and help with code generation."
+        )
+
+    full_prompt = prompt
+    if system_parts:
+        full_prompt = "\n".join(system_parts) + "\n\nUser: " + prompt
+
+    try:
+        client = prov.get_llm_client()
+        output = client.generate(
+            full_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return StudioAiAgentRunResponse(
+            provider=prov.provider,
+            model=prov.model,
+            output=output,
+            tokens_estimated=len(output.split()) * 2,  # rough estimate
+        )
+    except Exception as exc:
+        return StudioAiAgentRunResponse(
+            provider=prov.provider,
+            model=prov.model,
+            error=str(exc),
+        )

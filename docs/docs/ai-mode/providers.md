@@ -313,3 +313,37 @@ This enables a clean separation:
 4. **Document token limits** for proper request sizing
 5. **Set `supports_tools: true`** only for models that actually support it
 6. **Use `environment`** to distinguish dev/staging/prod profiles
+
+
+---
+
+## Unified AI Provider System (v0.5.25)
+
+!!! info "v0.5.25 Feature"
+    The Unified Provider System was added in Aksara v0.5.25.
+
+Starting in v0.5.25, Aksara provides a **UnifiedAiProvider** class that replaces ad-hoc
+environment variable handling with a single configuration object. See [AI Hub](hub.md)
+for the full documentation.
+
+### Quick Example
+
+```python
+from aksara.ai.providers_unified import UnifiedAiProvider, get_active_provider
+
+# Auto-detect from environment
+provider = get_active_provider()
+if provider and provider.is_configured():
+    client = provider.get_llm_client()
+    response = client.generate("Hello!")
+```
+
+### Supported Providers
+
+| Provider | Env Var | Zero-Dependency |
+|----------|---------|-----------------|
+| OpenAI | `OPENAI_API_KEY` | Yes (urllib) |
+| Anthropic | `ANTHROPIC_API_KEY` | Yes (urllib) |
+| Azure OpenAI | `AZURE_OPENAI_API_KEY` | Yes (urllib) |
+| Ollama | `OLLAMA_HOST` | Yes (urllib) |
+| Custom HTTP | `AKSARA_CUSTOM_LLM_URL` | Yes (urllib) |

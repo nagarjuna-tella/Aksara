@@ -221,6 +221,16 @@ class Settings:
         env_default_provider = os.environ.get("AKSARA_AI_DEFAULT_PROVIDER")
         if env_default_provider:
             self.ai_default_provider = env_default_provider
+
+        # v0.5.25: Populate ai_default_provider from unified provider if not set
+        if not self.ai_default_provider:
+            try:
+                from aksara.ai.providers_unified import get_active_provider
+                active = get_active_provider()
+                if active and active.is_configured():
+                    self.ai_default_provider = active.provider
+            except Exception:
+                pass  # Unified provider module may not be available
     
     @property
     def DATABASE_URL(self) -> Optional[str]:

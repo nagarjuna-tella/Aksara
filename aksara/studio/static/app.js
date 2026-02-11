@@ -62,6 +62,12 @@ const state = {
         debounceTimer: null,
         indexInfo: null,
     },
+    // v0.5.25: AI Hub state
+    aiHub: {
+        providers: null,
+        agentOutput: null,
+        contextData: null,
+    },
 };
 
 // =============================================================================
@@ -232,6 +238,18 @@ function initNavigation() {
                 if (searchInput) searchInput.focus();
             }, 100);
         }
+        // v0.5.25: 'A' opens AI Hub
+        if (e.key === 'a' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            navigateTo('ai-hub');
+            return;
+        }
+        // v0.5.25: Cmd/Ctrl+Enter runs AI Hub agent prompt
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const btn = document.getElementById('ai-hub-agent-run');
+            if (btn) btn.click();
+        }
     });
 }
 
@@ -321,6 +339,9 @@ function renderSection(section) {
             break;
         case 'model-inspector':
             renderModelInspector();
+            break;
+        case 'ai-hub':
+            renderAiHub();
             break;
     }
 }
@@ -2573,6 +2594,234 @@ function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+
+// =============================================================================
+// v0.5.25: AI Hub Section
+// =============================================================================
+
+async function renderAiHub() {
+    // Wire tab switching
+    document.querySelectorAll('.ai-hub-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ai-hub-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const target = tab.dataset.tab;
+            document.querySelectorAll('.ai-hub-panel').forEach(p => {
+                p.style.display = p.dataset.tabPanel === target ? '' : 'none';
+            });
+        });
+    });
+
+    // Load providers
+    await loadAiHubProviders();
+
+    // Wire buttons
+    const refreshBtn = document.getElementById('ai-hub-refresh-providers');
+    if (refreshBtn) refreshBtn.addEventListener('click', loadAiHubProviders);
+
+    const detectBtn = document.getElementById('ai-hub-detect-providers');
+    if (detectBtn) detectBtn.addEventListener('click', loadAiHubProviders);
+
+    const saveBtn = document.getElementById('ai-hub-cfg-save');
+    if (saveBtn) saveBtn.addEventListener('click', aiHubSaveProvider);
+
+    const pingBtn = document.getElementById('ai-hub-cfg-ping');
+    if (pingBtn) pingBtn.addEventListener('click', aiHubPingProvider);
+
+    const runBtn = document.getElementById('ai-hub-agent-run');
+    if (runBtn) runBtn.addEventListener('click', aiHubRunAgent);
+
+    const refreshCtxBtn = document.getElementById('ai-hub-refresh-context');
+    if (refreshCtxBtn) refreshCtxBtn.addEventListener('click', loadAiHubContext);
+
+    // Cmd+Enter in agent textarea
+    const textarea = document.getElementById('ai-hub-agent-prompt');
+    if (textarea) {
+        textarea.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                aiHubRunAgent();
+            }
+        });
+    }
+}
+
+async function loadAiHubProviders() {
+    const container = document.getElementById('ai-hub-provider-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+
+    try {
+        const data = await jsonGet('/studio/ai/hub/providers');
+        state.aiHub.providers = data;
+
+        if (!data.providers || data.providers.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>No AI providers detected.</p>
+                    <p class="text-muted">Set environment variables (e.g., OPENAI_API_KEY) or use Quick Configure below.</p>
+                </div>`;
+            return;
+        }
+
+        const activeKey = data.active_provider;
+        container.innerHTML = data.providers.map(p => {
+            const isActive = p.provider === activeKey;
+            const statusClass = p.reachable ? 'status-ok' : (p.configured ? 'status-warn' : 'status-off');
+            const statusIcon = p.reachable ? '✓' : (p.configured ? '⚠' : '○');
+            const statusText = p.reachable ? 'Reachable' : (p.configured ? 'Configured' : 'Not configured');
+            return `
+                <div class="provider-card ${isActive ? 'provider-active' : ''}">
+                    <div class="provider-header">
+                        <span class="provider-name">${escapeHtml(p.provider)}${isActive ? ' <span class="badge badge-primary">active</span>' : ''}</span>
+                        <span class="provider-status ${statusClass}">${statusIcon} ${statusText}</span>
+                    </div>
+                    <div class="provider-details">
+                        ${p.model ? `<span class="detail-item">Model: <code>${escapeHtml(p.model)}</code></span>` : ''}
+                        ${p.base_url ? `<span class="detail-item">URL: <code>${escapeHtml(p.base_url)}</code></span>` : ''}
+                        ${p.error ? `<span class="detail-item text-danger">Error: ${escapeHtml(p.error)}</span>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Populate agent provider selector
+        const agentSelect = document.getElementById('ai-hub-agent-provider');
+        if (agentSelect) {
+            agentSelect.innerHTML = '<option value="">Active Provider</option>' +
+                data.providers.filter(p => p.configured).map(p =>
+                    `<option value="${p.provider}">${p.provider}${p.provider === activeKey ? ' (active)' : ''}</option>`
+                ).join('');
+        }
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state"><p class="text-danger">Error: ${escapeHtml(err.message)}</p></div>`;
+    }
+}
+
+async function aiHubSaveProvider() {
+    const resultEl = document.getElementById('ai-hub-cfg-result');
+    const provider = document.getElementById('ai-hub-cfg-provider')?.value;
+    const apiKey = document.getElementById('ai-hub-cfg-apikey')?.value;
+    const model = document.getElementById('ai-hub-cfg-model')?.value;
+    const baseUrl = document.getElementById('ai-hub-cfg-baseurl')?.value;
+
+    if (!provider) return;
+
+    try {
+        const resp = await jsonPost('/studio/ai/hub/providers/save', {
+            provider, api_key: apiKey || null, model: model || null,
+            base_url: baseUrl || null, save_to: 'env',
+        });
+        if (resultEl) {
+            resultEl.innerHTML = resp.saved
+                ? `<span class="text-success">✓ ${escapeHtml(resp.message)}</span>`
+                : `<span class="text-danger">✗ ${escapeHtml(resp.message)}</span>`;
+        }
+        if (resp.saved) await loadAiHubProviders();
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
+async function aiHubPingProvider() {
+    const resultEl = document.getElementById('ai-hub-cfg-result');
+    const provider = document.getElementById('ai-hub-cfg-provider')?.value;
+
+    try {
+        const resp = await jsonPost('/studio/ai/hub/providers/ping', { provider: provider || null });
+        if (resultEl) {
+            resultEl.innerHTML = resp.reachable
+                ? `<span class="text-success">✓ ${resp.provider} reachable (${resp.latency_ms}ms)</span>`
+                : `<span class="text-danger">✗ ${resp.provider}: ${escapeHtml(resp.error || 'Unreachable')}</span>`;
+        }
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
+async function loadAiHubContext() {
+    const container = document.getElementById('ai-hub-context-tree');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state"><p>Loading context...</p></div>';
+
+    try {
+        const data = await jsonGet('/studio/agent/context');
+        state.aiHub.contextData = data;
+
+        const sections = Object.keys(data).filter(k => data[k] != null);
+        if (sections.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>No context available.</p></div>';
+            return;
+        }
+
+        container.innerHTML = sections.map(key => {
+            const val = data[key];
+            const size = JSON.stringify(val).length;
+            const sizeLabel = size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`;
+            const preview = typeof val === 'object' ? `${Object.keys(val).length} keys` : String(val).substring(0, 80);
+            return `
+                <div class="context-section">
+                    <div class="context-section-header">
+                        <span class="context-key">${escapeHtml(key)}</span>
+                        <span class="badge badge-secondary">${sizeLabel}</span>
+                    </div>
+                    <div class="context-preview text-muted">${escapeHtml(preview)}</div>
+                </div>`;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state"><p class="text-danger">Error: ${escapeHtml(err.message)}</p></div>`;
+    }
+}
+
+async function aiHubRunAgent() {
+    const promptEl = document.getElementById('ai-hub-agent-prompt');
+    const outputContainer = document.getElementById('ai-hub-agent-output');
+    const resultEl = document.getElementById('ai-hub-agent-result');
+    const metaEl = document.getElementById('ai-hub-agent-meta');
+    const runBtn = document.getElementById('ai-hub-agent-run');
+    const providerSelect = document.getElementById('ai-hub-agent-provider');
+    const includeCtx = document.getElementById('ai-hub-agent-include-ctx');
+
+    const prompt = promptEl?.value?.trim();
+    if (!prompt) return;
+
+    if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Running...'; }
+    if (outputContainer) outputContainer.style.display = '';
+    if (resultEl) resultEl.textContent = 'Generating...';
+
+    try {
+        const resp = await jsonPost('/studio/ai/hub/agent/run', {
+            prompt,
+            provider: providerSelect?.value || null,
+            include_context: includeCtx?.checked ?? true,
+        });
+
+        state.aiHub.agentOutput = resp;
+
+        if (resp.error) {
+            if (resultEl) resultEl.textContent = `Error: ${resp.error}`;
+            if (metaEl) metaEl.textContent = `${resp.provider} / ${resp.model}`;
+        } else {
+            if (resultEl) resultEl.textContent = resp.output;
+            if (metaEl) metaEl.textContent = `${resp.provider} / ${resp.model} · ~${resp.tokens_estimated || '?'} tokens`;
+        }
+    } catch (err) {
+        if (resultEl) resultEl.textContent = `Error: ${err.message}`;
+    } finally {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run'; }
+    }
+}
+
+async function jsonPost(url, data) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+    return resp.json();
+}
+
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {

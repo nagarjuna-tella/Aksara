@@ -55,6 +55,12 @@ v0.5.21 Additions:
 - POST /studio/db/plan - EXPLAIN query plan
 - GET /studio/models/inspect/{model_name} - Inspect a single model
 - GET /studio/models/inspect/all - Inspect all registered models
+
+v0.5.25 Additions:
+- GET /studio/ai/hub/providers - Unified provider status & detection
+- POST /studio/ai/hub/providers/save - Save provider configuration
+- POST /studio/ai/hub/providers/ping - Test provider connectivity
+- POST /studio/ai/hub/agent/run - Run AI agent with prompt
 """
 
 from __future__ import annotations
@@ -108,6 +114,14 @@ from aksara.studio.models import (
     AgentWorkflowRequest,
     AgentWorkflowResponse,
     AgentWorkflow,
+    # v0.5.25: AI Hub models
+    StudioAiProvidersSummary,
+    StudioAiProviderSaveRequest,
+    StudioAiProviderSaveResponse,
+    StudioAiProviderPingRequest,
+    StudioAiProviderPingResponse,
+    StudioAiAgentRunRequest,
+    StudioAiAgentRunResponse,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -147,6 +161,11 @@ from aksara.studio.utils import (
     build_agent_workflow,
     summarize_agent_workflow,
     workflow_stats,
+    # v0.5.25: AI Hub utils
+    build_ai_hub_providers,
+    build_ai_hub_provider_save,
+    build_ai_hub_provider_ping,
+    build_ai_hub_agent_run,
 )
 from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
@@ -1254,6 +1273,99 @@ async def studio_agent_workflow_sample(
         include_diagnostics=False,
         include_search=True,
         search_limit=5,
+    )
+
+
+# =============================================================================
+# v0.5.25: AI Hub & Unified Provider System Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai/hub/providers", response_model=StudioAiProvidersSummary)
+async def studio_ai_hub_providers(request: Request) -> StudioAiProvidersSummary:
+    """
+    Get unified AI provider status and detection results.
+
+    v0.5.25: Detects all configured providers from environment variables,
+    pings each to check connectivity, and returns the active provider.
+
+    Returns:
+        StudioAiProvidersSummary with provider statuses and active provider.
+    """
+    return build_ai_hub_providers()
+
+
+@router.post("/studio/ai/hub/providers/save", response_model=StudioAiProviderSaveResponse)
+async def studio_ai_hub_providers_save(
+    request: Request,
+    body: StudioAiProviderSaveRequest,
+) -> StudioAiProviderSaveResponse:
+    """
+    Save AI provider configuration to .env or provider.json.
+
+    v0.5.25: Writes provider config to the project root.
+
+    Args:
+        body: Provider config with save_to target.
+
+    Returns:
+        StudioAiProviderSaveResponse with save status.
+    """
+    return build_ai_hub_provider_save(
+        provider=body.provider,
+        api_key=body.api_key,
+        base_url=body.base_url,
+        model=body.model,
+        extra=body.extra,
+        save_to=body.save_to,
+    )
+
+
+@router.post("/studio/ai/hub/providers/ping", response_model=StudioAiProviderPingResponse)
+async def studio_ai_hub_providers_ping(
+    request: Request,
+    body: StudioAiProviderPingRequest,
+) -> StudioAiProviderPingResponse:
+    """
+    Test connectivity to an AI provider.
+
+    v0.5.25: Pings the specified provider (or active) and returns latency.
+
+    Args:
+        body: Optional provider key to ping.
+
+    Returns:
+        StudioAiProviderPingResponse with reachability and latency.
+    """
+    return build_ai_hub_provider_ping(provider_key=body.provider)
+
+
+@router.post("/studio/ai/hub/agent/run", response_model=StudioAiAgentRunResponse)
+async def studio_ai_hub_agent_run(
+    request: Request,
+    body: StudioAiAgentRunRequest,
+) -> StudioAiAgentRunResponse:
+    """
+    Run the AI agent with a prompt.
+
+    v0.5.25: Uses the unified provider to generate a response.
+    Optionally includes project context in the system prompt.
+
+    Args:
+        body: Prompt, provider/model overrides, context settings.
+
+    Returns:
+        StudioAiAgentRunResponse with generated output or error.
+    """
+    return build_ai_hub_agent_run(
+        prompt=body.prompt,
+        app=request.app,
+        provider_key=body.provider,
+        model_override=body.model,
+        include_context=body.include_context,
+        context_sections=body.context_sections,
+        temperature=body.temperature,
+        max_tokens=body.max_tokens,
     )
 
 

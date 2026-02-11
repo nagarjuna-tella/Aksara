@@ -1707,3 +1707,87 @@ class AgentWorkflowResponse(BaseModel):
         default_factory=dict,
         description="Step counts by kind, risk, effort",
     )
+
+
+# =============================================================================
+# v0.5.25: AI Hub & Unified Provider System
+# =============================================================================
+
+
+class StudioAiProviderStatus(BaseModel):
+    """Status summary for a single AI provider."""
+
+    provider: str = Field(description="Provider key (openai, azure, anthropic, ollama, custom)")
+    configured: bool = Field(default=False, description="Whether env vars are set")
+    reachable: bool = Field(default=False, description="Whether ping succeeded")
+    model: str = Field(default="", description="Currently configured model")
+    base_url: str = Field(default="", description="Base URL (redacted if needed)")
+    error: Optional[str] = Field(default=None, description="Error message if unreachable")
+
+
+class StudioAiProvidersSummary(BaseModel):
+    """Response for GET /studio/ai/hub/providers."""
+
+    active_provider: Optional[str] = Field(default=None, description="Currently active provider key")
+    active_model: str = Field(default="", description="Active model name")
+    providers: List[StudioAiProviderStatus] = Field(default_factory=list, description="All detected providers")
+    configured_count: int = Field(default=0, description="Number of configured providers")
+    total_count: int = Field(default=0, description="Total providers checked")
+
+
+class StudioAiProviderSaveRequest(BaseModel):
+    """Request body for POST /studio/ai/hub/providers/save."""
+
+    provider: str = Field(description="Provider key")
+    api_key: Optional[str] = Field(default=None, description="API key (if applicable)")
+    base_url: Optional[str] = Field(default=None, description="Base URL override")
+    model: Optional[str] = Field(default=None, description="Model name")
+    extra: Dict[str, Any] = Field(default_factory=dict, description="Extra config (deployment, api_version, etc.)")
+    save_to: str = Field(default="env", description="Where to save: 'env' (.env) or 'json' (provider.json)")
+
+
+class StudioAiProviderSaveResponse(BaseModel):
+    """Response for POST /studio/ai/hub/providers/save."""
+
+    saved: bool = Field(default=False, description="Whether save succeeded")
+    provider: str = Field(description="Provider key saved")
+    file_path: str = Field(default="", description="Path of the file written")
+    message: str = Field(default="", description="Human-readable status message")
+
+
+class StudioAiProviderPingRequest(BaseModel):
+    """Request body for POST /studio/ai/hub/providers/ping."""
+
+    provider: Optional[str] = Field(default=None, description="Provider key to ping (None = active)")
+
+
+class StudioAiProviderPingResponse(BaseModel):
+    """Response for POST /studio/ai/hub/providers/ping."""
+
+    provider: str = Field(description="Provider that was pinged")
+    reachable: bool = Field(default=False)
+    latency_ms: Optional[float] = Field(default=None, description="Ping latency in milliseconds")
+    model: str = Field(default="", description="Model used for ping")
+    error: Optional[str] = Field(default=None, description="Error if unreachable")
+
+
+class StudioAiAgentRunRequest(BaseModel):
+    """Request body for POST /studio/ai/hub/agent/run."""
+
+    prompt: str = Field(description="User prompt text")
+    provider: Optional[str] = Field(default=None, description="Provider override (None = active)")
+    model: Optional[str] = Field(default=None, description="Model override")
+    include_context: bool = Field(default=True, description="Include project context in system prompt")
+    context_sections: Optional[List[str]] = Field(default=None, description="Sections to include")
+    temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Sampling temperature")
+    max_tokens: int = Field(default=2048, ge=1, le=32000, description="Max tokens in response")
+
+
+class StudioAiAgentRunResponse(BaseModel):
+    """Response for POST /studio/ai/hub/agent/run."""
+
+    provider: str = Field(description="Provider used")
+    model: str = Field(description="Model used")
+    output: str = Field(default="", description="Generated text output")
+    tokens_estimated: Optional[int] = Field(default=None, description="Rough token count")
+    error: Optional[str] = Field(default=None, description="Error if generation failed")

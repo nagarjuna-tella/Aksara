@@ -82,6 +82,13 @@ v0.4.7: AI Schema Doctor & Migration Guardrails
 v0.5.11: AI Profiles & Provider Contracts
 v0.5.12: AI Profiles Validation & Linting
 v0.5.13: Per-View AI Hints (Route-Level AI Metadata)
+v0.5.25: Unified AI Provider System & LLM Client Adapters
+
+    # Unified AI Provider (v0.5.25)
+    from aksara.ai.providers_unified import (
+        UnifiedAiProvider, detect_all_providers, get_active_provider,
+    )
+    from aksara.ai.llm_clients import BaseLlmClient, get_client_for_provider
 """
 
 from aksara.ai.models import AiTool, AiToolParam, ToolKind

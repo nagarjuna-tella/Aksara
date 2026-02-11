@@ -4,6 +4,42 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.25] — 2026-02-21
+
+### Added
+- **Unified AI Provider System**: New `UnifiedAiProvider` class in `aksara.ai.providers_unified`
+  — single configuration object for all AI features with `from_env()`, `from_dict()`,
+  `from_json_file()`, `is_configured()`, `ping()`, `get_llm_client()`, `to_safe_dict()`,
+  `save_to_env_file()`, `save_to_json()` methods
+- **LLM Client Adapters**: 5 zero-dependency adapters (all use urllib, no SDK required):
+  OpenAI, Azure OpenAI, Anthropic, Ollama, Custom HTTP — in `aksara.ai.llm_clients/`
+- **AI Hub Studio Section**: New sidebar tab with 4 sub-tabs (Providers, Tools,
+  Context Viewer, Agent) — keyboard shortcut `A`, agent prompt with `Cmd+Enter`
+- **Studio API Endpoints**: 4 new endpoints under `/studio/ai/hub/`:
+  `GET providers`, `POST providers/save`, `POST providers/ping`, `POST agent/run`
+- **CLI `ai-provider` Commands**: `list`, `detect`, `ping`, `configure` subcommands
+  for managing AI providers from the command line
+- **Provider Auto-Detection**: Scans environment variables with priority order:
+  OpenAI → Anthropic → Azure → Ollama → Custom
+
+### Changed
+- `aksara.conf` now auto-populates `ai_default_provider` from unified provider when not set
+- `aksara.ai.__init__` exports new unified provider and LLM client types
+
+### Docs
+- New: `docs/ai-mode/hub.md` — AI Hub documentation
+- New: `docs/ai-mode/custom-http.md` — Custom HTTP provider guide
+- New: `docs/ai-mode/ollama.md` — Ollama local LLM guide
+- Updated: `docs/ai-mode/providers.md` — unified provider section added
+- Updated: `docs/changelog.md` — this entry
+
+### Tests
+- 90+ new tests in `tests/test_v025_ai_hub.py` covering: provider system,
+  adapters (mocked HTTP), Studio models, build utilities, CLI commands,
+  Studio UI templates, integration & non-regression
+
+---
+
 ## [0.5.24] — 2026-02-20
 
 ### Changed

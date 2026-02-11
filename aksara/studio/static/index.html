@@ -99,6 +99,13 @@
                     </svg>
                     <span>Agent</span>
                 </a>
+                <a href="#/ai-hub" class="nav-item" data-section="ai-hub">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                    </svg>
+                    <span>AI Hub</span>
+                </a>
                 <a href="#/model-inspector" class="nav-item" data-section="model-inspector">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"></path>
@@ -1017,6 +1024,171 @@
             <div class="card-body">
                 <div id="model-inspector-list">
                     <div class="empty-state"><p>Loading models...</p></div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- v0.5.25: AI Hub Template -->
+    <template id="template-ai-hub">
+        <div class="section-header">
+            <h2>AI Hub</h2>
+            <p class="section-subtitle">Unified AI provider management, tools, and agent</p>
+        </div>
+        
+        <!-- Tab navigation -->
+        <div class="ai-hub-tabs">
+            <button class="ai-hub-tab active" data-tab="providers">Providers</button>
+            <button class="ai-hub-tab" data-tab="tools">Tools</button>
+            <button class="ai-hub-tab" data-tab="context">Context Viewer</button>
+            <button class="ai-hub-tab" data-tab="agent">Agent</button>
+        </div>
+        
+        <!-- Providers Tab -->
+        <div class="ai-hub-panel" id="ai-hub-providers" data-tab-panel="providers">
+            <div class="card">
+                <div class="card-header">
+                    <h3>AI Providers</h3>
+                    <div class="card-actions">
+                        <button class="btn btn-sm btn-secondary" id="ai-hub-refresh-providers">Refresh</button>
+                        <button class="btn btn-sm btn-primary" id="ai-hub-detect-providers">Detect</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="ai-hub-provider-list">
+                        <div class="empty-state"><p>Loading providers...</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-header"><h3>Quick Configure</h3></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="ai-hub-cfg-provider">Provider</label>
+                            <select id="ai-hub-cfg-provider" class="form-select">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="azure">Azure OpenAI</option>
+                                <option value="ollama">Ollama</option>
+                                <option value="custom">Custom HTTP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-hub-cfg-apikey">API Key</label>
+                            <input type="password" id="ai-hub-cfg-apikey" class="form-input" placeholder="sk-...">
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-hub-cfg-model">Model</label>
+                            <input type="text" id="ai-hub-cfg-model" class="form-input" placeholder="gpt-4o">
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-hub-cfg-baseurl">Base URL (optional)</label>
+                            <input type="text" id="ai-hub-cfg-baseurl" class="form-input" placeholder="https://api.openai.com/v1">
+                        </div>
+                    </div>
+                    <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-primary" id="ai-hub-cfg-save">Save to .env</button>
+                        <button class="btn btn-sm btn-secondary" id="ai-hub-cfg-ping">Test Connection</button>
+                    </div>
+                    <div id="ai-hub-cfg-result" style="margin-top:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tools Tab -->
+        <div class="ai-hub-panel" id="ai-hub-tools" data-tab-panel="tools" style="display:none;">
+            <div class="card">
+                <div class="card-header"><h3>Available AI Tools</h3></div>
+                <div class="card-body">
+                    <div class="tool-grid">
+                        <a href="#/ai-helpers" class="tool-card">
+                            <div class="tool-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                                </svg>
+                            </div>
+                            <h4>AI Helpers</h4>
+                            <p>Context export, schemas, prompt templates</p>
+                        </a>
+                        <a href="#/ai-profiles" class="tool-card">
+                            <div class="tool-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <path d="M12 2a4 4 0 00-4 4v2a4 4 0 008 0V6a4 4 0 00-4-4z"></path>
+                                    <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"></path>
+                                </svg>
+                            </div>
+                            <h4>AI Profiles</h4>
+                            <p>Provider profiles, model configs, secrets</p>
+                        </a>
+                        <a href="#/agent" class="tool-card">
+                            <div class="tool-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7l-3 4-3-4c-2-1.5-4-4-4-7a7 7 0 017-7z"></path>
+                                    <circle cx="12" cy="9" r="2.5"></circle>
+                                </svg>
+                            </div>
+                            <h4>Agent Mode</h4>
+                            <p>Context gathering, playbooks, workflows</p>
+                        </a>
+                        <a href="#/model-inspector" class="tool-card">
+                            <div class="tool-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"></path>
+                                </svg>
+                            </div>
+                            <h4>Model Inspector</h4>
+                            <p>Fields, relationships, constraints, SQL</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Context Viewer Tab -->
+        <div class="ai-hub-panel" id="ai-hub-context" data-tab-panel="context" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Context Viewer</h3>
+                    <button class="btn btn-sm btn-secondary" id="ai-hub-refresh-context">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="ai-hub-context-tree">
+                        <div class="empty-state"><p>Loading context...</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Agent Tab -->
+        <div class="ai-hub-panel" id="ai-hub-agent" data-tab-panel="agent" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>AI Agent</h3>
+                    <div class="card-actions">
+                        <select id="ai-hub-agent-provider" class="form-select form-select-sm">
+                            <option value="">Active Provider</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="ai-hub-agent-prompt">Prompt</label>
+                        <textarea id="ai-hub-agent-prompt" class="form-textarea" rows="4" placeholder="Ask anything about your project... (Cmd+Enter to run)"></textarea>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.5rem;">
+                        <button class="btn btn-primary" id="ai-hub-agent-run">Run</button>
+                        <label class="form-checkbox-inline">
+                            <input type="checkbox" id="ai-hub-agent-include-ctx" checked> Include context
+                        </label>
+                    </div>
+                    <div id="ai-hub-agent-output" class="ai-hub-output" style="margin-top:1rem; display:none;">
+                        <div class="ai-hub-output-header">
+                            <span id="ai-hub-agent-meta"></span>
+                        </div>
+                        <pre id="ai-hub-agent-result" class="ai-hub-output-body"></pre>
+                    </div>
                 </div>
             </div>
         </div>

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.24"
+CLI_VERSION = "0.5.25"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -4757,6 +4757,227 @@ def search_index(json_out: bool):
         click.echo(f"  Documents by Kind:")
         for kind_name, count in sorted(by_kind.items()):
             click.echo(f"    {kind_name:15s}  {count}")
+    click.echo()
+
+
+# =============================================================================
+# v0.5.25: AI Provider CLI Commands
+# =============================================================================
+
+
+@cli.group("ai-provider")
+def ai_provider_group():
+    """Unified AI provider management.
+
+    Detect, configure, test, and list AI provider configurations
+    using the unified provider system.
+
+    Examples:
+        aksara ai-provider list
+        aksara ai-provider detect
+        aksara ai-provider ping
+        aksara ai-provider configure openai --api-key sk-...
+    """
+    pass
+
+
+@ai_provider_group.command("list")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_provider_list(output_format: str):
+    """List all detected AI providers and their status.
+
+    Scans environment variables for configured providers and shows
+    which ones are available.
+
+    Examples:
+        aksara ai-provider list
+        aksara ai-provider list --format json
+    """
+    import json as json_mod
+    from aksara.ai.providers_unified import detect_all_providers, get_active_provider
+
+    providers = detect_all_providers()
+    active = get_active_provider()
+    active_key = active.provider if active else None
+
+    if output_format == "json":
+        data = {
+            "active_provider": active_key,
+            "providers": [p.to_safe_dict() for p in providers],
+        }
+        click.echo(json_mod.dumps(data, indent=2))
+        return
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - AI Providers")
+    click.echo()
+
+    if not providers:
+        click.echo("  No providers detected.")
+        click.echo("  Set environment variables like OPENAI_API_KEY to configure.")
+        click.echo()
+        return
+
+    for p in providers:
+        is_active = p.provider == active_key
+        configured = p.is_configured()
+        marker = "\033[32m●\033[0m" if configured else "\033[90m○\033[0m"
+        active_tag = " \033[36m[active]\033[0m" if is_active else ""
+        click.echo(f"  {marker} \033[1m{p.provider:12s}\033[0m{active_tag}")
+        if p.model:
+            click.echo(f"      Model:    {p.model}")
+        if p.base_url:
+            click.echo(f"      Base URL: {p.base_url}")
+        key_status = "***" + p.api_key[-4:] if p.api_key and len(p.api_key) > 4 else ("(set)" if p.api_key else "(not set)")
+        click.echo(f"      API Key:  {key_status}")
+        click.echo()
+
+
+@ai_provider_group.command("detect")
+def ai_provider_detect():
+    """Auto-detect providers from environment variables.
+
+    Scans all known env var patterns and reports what's found.
+
+    Examples:
+        aksara ai-provider detect
+    """
+    from aksara.ai.providers_unified import detect_all_providers
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Provider Detection")
+    click.echo()
+
+    providers = detect_all_providers()
+    configured = [p for p in providers if p.is_configured()]
+
+    if not configured:
+        click.echo("  No providers detected from environment.")
+        click.echo()
+        click.echo("  Supported environment variables:")
+        click.echo("    OPENAI_API_KEY         → OpenAI")
+        click.echo("    ANTHROPIC_API_KEY      → Anthropic")
+        click.echo("    AZURE_OPENAI_API_KEY   → Azure OpenAI")
+        click.echo("    OLLAMA_HOST            → Ollama (or localhost:11434)")
+        click.echo("    AKSARA_CUSTOM_LLM_URL  → Custom HTTP endpoint")
+    else:
+        click.echo(f"  Found {len(configured)} provider(s):")
+        click.echo()
+        for p in configured:
+            click.echo(f"    \033[32m✓\033[0m {p.provider:12s}  model={p.model or '(default)'}")
+    click.echo()
+
+
+@ai_provider_group.command("ping")
+@click.option("--provider", "-p", default=None, help="Provider to ping (default: active)")
+def ai_provider_ping(provider: Optional[str]):
+    """Test connectivity to an AI provider.
+
+    Sends a ping request to verify the provider is reachable
+    and the API key is valid.
+
+    Examples:
+        aksara ai-provider ping
+        aksara ai-provider ping --provider openai
+    """
+    import time
+    from aksara.ai.providers_unified import get_active_provider, detect_all_providers
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Provider Ping")
+    click.echo()
+
+    prov = None
+    if provider:
+        found = [p for p in detect_all_providers() if p.provider == provider]
+        prov = found[0] if found else None
+        if not prov:
+            click.echo(f"  \033[31m✗\033[0m Provider '{provider}' not found or not configured.")
+            click.echo()
+            return
+    else:
+        prov = get_active_provider()
+        if not prov:
+            click.echo("  \033[31m✗\033[0m No active provider configured.")
+            click.echo()
+            return
+
+    click.echo(f"  Pinging \033[1m{prov.provider}\033[0m...")
+    start = time.monotonic()
+    try:
+        ping_result = prov.ping()
+        ok = ping_result.get("ok", False) if isinstance(ping_result, dict) else bool(ping_result)
+        latency = (time.monotonic() - start) * 1000
+        if ok:
+            click.echo(f"  \033[32m✓\033[0m Reachable ({latency:.0f}ms)")
+        else:
+            msg = ping_result.get("message", "") if isinstance(ping_result, dict) else ""
+            click.echo(f"  \033[31m✗\033[0m Not reachable ({latency:.0f}ms){': ' + msg if msg else ''}")
+    except Exception as e:
+        latency = (time.monotonic() - start) * 1000
+        click.echo(f"  \033[31m✗\033[0m Error ({latency:.0f}ms): {e}")
+    click.echo()
+
+
+@ai_provider_group.command("configure")
+@click.argument("provider_name", type=click.Choice(["openai", "azure", "anthropic", "ollama", "custom"]))
+@click.option("--api-key", default=None, help="API key")
+@click.option("--model", default=None, help="Model name")
+@click.option("--base-url", default=None, help="Base URL override")
+@click.option("--save-to", type=click.Choice(["env", "json"]), default="env", help="Where to save")
+def ai_provider_configure(provider_name: str, api_key: Optional[str], model: Optional[str],
+                           base_url: Optional[str], save_to: str):
+    """Configure and save an AI provider.
+
+    Prompts for missing values and writes config to .env or provider.json.
+
+    Examples:
+        aksara ai-provider configure openai --api-key sk-... --model gpt-4o
+        aksara ai-provider configure ollama --model llama3
+        aksara ai-provider configure anthropic --save-to json
+    """
+    from aksara.ai.providers_unified import UnifiedAiProvider
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Configure Provider")
+    click.echo()
+
+    # Interactive prompts for missing values
+    if not api_key and provider_name not in ("ollama",):
+        api_key = click.prompt(f"  API Key for {provider_name}", hide_input=True, default="", show_default=False)
+
+    if not model:
+        defaults = {
+            "openai": "gpt-4o",
+            "anthropic": "claude-sonnet-4-20250514",
+            "azure": "gpt-4o",
+            "ollama": "llama3",
+            "custom": "",
+        }
+        model = click.prompt(f"  Model name", default=defaults.get(provider_name, ""))
+
+    try:
+        prov = UnifiedAiProvider(
+            provider=provider_name,
+            base_url=base_url or "",
+            api_key=api_key or "",
+            model=model or "",
+        )
+
+        if save_to == "json":
+            path = prov.save_to_json()
+        else:
+            path = prov.save_to_env_file()
+
+        click.echo(f"  \033[32m✓\033[0m Saved to {path}")
+        click.echo()
+        click.echo(f"  Provider: {provider_name}")
+        click.echo(f"  Model:    {model}")
+        if base_url:
+            click.echo(f"  Base URL: {base_url}")
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m Error: {e}")
     click.echo()
 
 
