@@ -1114,7 +1114,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card" style="margin-top:1rem;">
+            <div class="card">
                 <div class="card-header"><h3>Quick Configure</h3></div>
                 <div class="card-body">
                     <div class="form-grid">
@@ -1141,11 +1141,11 @@
                             <input type="text" id="ai-hub-cfg-baseurl" class="form-input" placeholder="https://api.openai.com/v1">
                         </div>
                     </div>
-                    <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+                    <div class="form-actions">
                         <button class="btn btn-sm btn-primary" id="ai-hub-cfg-save">Save to .env</button>
                         <button class="btn btn-sm btn-secondary" id="ai-hub-cfg-ping">Test Connection</button>
                     </div>
-                    <div id="ai-hub-cfg-result" style="margin-top:0.5rem;"></div>
+                    <div id="ai-hub-cfg-result" class="cfg-result"></div>
                 </div>
             </div>
         </div>
@@ -1303,7 +1303,7 @@
                             <input type="checkbox" id="ai-hub-agent-include-ctx" checked> Include context
                         </label>
                     </div>
-                    <div id="ai-hub-agent-output" class="ai-hub-output" style="margin-top:1rem; display:none;">
+                    <div id="ai-hub-agent-output" class="ai-hub-output agent-output" style="display:none;">
                         <div class="ai-hub-output-header"><span id="ai-hub-agent-meta"></span></div>
                         <pre id="ai-hub-agent-result" class="ai-hub-output-body"></pre>
                     </div>
@@ -1311,7 +1311,7 @@
             </div>
 
             <!-- Prompt Builder (from Agent Mode) -->
-            <div class="agent-layout" style="margin-top:1rem;">
+            <div class="agent-layout">
                 <div class="agent-left">
                     <div class="card agent-playbooks-card">
                         <div class="card-header"><h3>Playbooks</h3><span class="agent-playbook-count" id="agent-playbook-count"></span></div>
