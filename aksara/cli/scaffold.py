@@ -1233,7 +1233,6 @@ def create_app_scaffold(app_name: str, base_path: Path) -> Dict[Path, str]:
         app_path / "__init__.py": get_app_init_template_for_startapp(app_name),
         app_path / "models.py": get_app_models_template(app_name),
         app_path / "views.py": get_app_views_template(app_name),
-        app_path / "api.py": get_app_api_template(app_name),
         app_path / "serializers.py": get_app_serializers_template(app_name),
     }
     
