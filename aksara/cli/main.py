@@ -68,8 +68,8 @@ MIGRATION_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS aksara_migrations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    checksum VARCHAR(64) NOT NULL,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    checksum VARCHAR(64),
+    applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -558,8 +558,11 @@ def makemigrations(
     for model_name in models:
         click.echo(f"  • {model_name}")
     
+    # Get migrations directory
+    migrations_dir = Path(output) if output else Path(settings.migrations_dir)
+    
     if sql:
-        # Legacy SQL mode
+        # Legacy SQL mode — no autodetection, always dumps all models
         sql_statements = []
         for model_name, model in models.items():
             sql_stmt = model.get_create_table_sql()
@@ -575,8 +578,6 @@ def makemigrations(
             click.echo(full_sql)
             return
         
-        # Write to migrations directory
-        migrations_dir = Path(output) if output else Path(settings.migrations_dir)
         migrations_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate migration filename
@@ -597,47 +598,71 @@ def makemigrations(
         click.echo(f"  Checksum: {compute_checksum(full_sql)}")
     
     else:
-        # Python migration mode (v0.3.3 default)
-        operations_code = models_to_migration_code(models)
+        # Python migration mode with AUTODETECTION (v0.5.26)
+        from aksara.migrations.autodetector import detect_changes, operations_to_code
         
-        if stdout:
-            click.echo("\n" + "=" * 40)
-            click.echo("Generated Python Migration:")
-            click.echo("=" * 40 + "\n")
-            
-            timestamp = datetime.now().isoformat()
-            click.echo(f'''"""
-Migration: {name}
-Generated: {timestamp}
-"""
-
-from aksara.migrations import Migration
-from aksara.migrations import operations as op
-
-
-class Migration(Migration):
-    """
-    Auto-generated migration for models: {', '.join(models.keys())}
-    """
-    
-    dependencies = []
-    
-    operations = [
-{operations_code},
-    ]
-''')
+        # Discover existing migrations
+        existing_migrations = discover_migrations(migrations_dir) if migrations_dir.exists() else []
+        
+        click.echo(f"\nExisting migrations: {len(existing_migrations)}")
+        
+        # Run autodetector: compare existing migrations vs current models
+        diff, operations = detect_changes(existing_migrations, models)
+        
+        if not diff.has_changes:
+            click.echo("\n✓ No changes detected.")
+            click.echo("  Your models match the current migration state.")
             return
         
-        # Write to migrations directory
-        migrations_dir = Path(output) if output else Path(settings.migrations_dir)
-        migrations_dir.mkdir(parents=True, exist_ok=True)
+        # Report what was detected
+        click.echo("\nDetected changes:")
+        if diff.new_tables:
+            for t in diff.new_tables:
+                click.echo(f"  + New table: {t}")
+        if diff.added_fields:
+            for t, fields in diff.added_fields.items():
+                for f in fields:
+                    click.echo(f"  + Add field: {t}.{f}")
+        if diff.removed_fields:
+            for t, fields in diff.removed_fields.items():
+                for f in fields:
+                    click.echo(f"  - Remove field: {t}.{f}")
+        if diff.removed_tables:
+            for t in diff.removed_tables:
+                click.echo(f"  - Drop table: {t}")
+        if diff.altered_fields:
+            for t, fields in diff.altered_fields.items():
+                for f in fields:
+                    click.echo(f"  ~ Alter field: {t}.{f}")
         
-        # Generate migration filename
-        filename = generate_migration_filename(name)
-        migration_file = migrations_dir / filename
+        # Generate operations code
+        operations_code = operations_to_code(operations)
+        
+        # Determine dependencies — depend on the last migration if any exist
+        deps_code = "[]"
+        if existing_migrations:
+            last_name = existing_migrations[-1][0]
+            last_path = existing_migrations[-1][1]
+            # Extract app label
+            from aksara.migrations.executor import extract_app_label_from_name
+            app_label = extract_app_label_from_name(last_name, last_path)
+            deps_code = f'[("{app_label}", "{last_name}")]'
+        
+        # Build the operation description
+        desc_parts = []
+        if diff.new_tables:
+            desc_parts.append(f"Create: {', '.join(diff.new_tables)}")
+        if diff.added_fields:
+            for t, fields in diff.added_fields.items():
+                desc_parts.append(f"Add to {t}: {', '.join(fields)}")
+        if diff.removed_fields:
+            for t, fields in diff.removed_fields.items():
+                desc_parts.append(f"Remove from {t}: {', '.join(fields)}")
+        if diff.removed_tables:
+            desc_parts.append(f"Drop: {', '.join(diff.removed_tables)}")
+        description = "; ".join(desc_parts) if desc_parts else name
         
         timestamp = datetime.now().isoformat()
-        description = f"Auto-generated migration for models: {', '.join(models.keys())}"
         
         content = f'''"""
 Migration: {name}
@@ -653,18 +678,31 @@ class Migration(Migration):
     {description}
     """
     
-    dependencies = []
+    dependencies = {deps_code}
     
     operations = [
 {operations_code},
     ]
 '''
         
+        if stdout:
+            click.echo("\n" + "=" * 40)
+            click.echo("Generated Python Migration:")
+            click.echo("=" * 40 + "\n")
+            click.echo(content)
+            return
+        
+        # Write to migrations directory
+        migrations_dir.mkdir(parents=True, exist_ok=True)
+        
+        filename = generate_migration_filename(name)
+        migration_file = migrations_dir / filename
+        
         with open(migration_file, "w") as f:
             f.write(content)
         
         click.echo(f"\n✓ Python Migration created: {migration_file}")
-        click.echo(f"  Operations: {len(models)} CreateTable(s)")
+        click.echo(f"  Operations: {len(operations)}")
         click.echo("\n  To apply: aksara migrate")
 
 

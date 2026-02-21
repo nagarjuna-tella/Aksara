@@ -450,10 +450,12 @@ class EnumField(FieldOp):
         self,
         allowed_values: Optional[list] = None,
         *,
+        enum_name: Optional[str] = None,
         nullable: bool = False,
         default: Optional[str] = None,
     ):
         self.allowed_values = allowed_values or []
+        self.enum_name = enum_name
         self.nullable = nullable
         self.default = default
     
@@ -501,10 +503,11 @@ class OneToOneField(FieldOp):
         
         return " ".join(parts)
     
-    def get_constraint_sql(self, column_name: str) -> str:
+    def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
+        prefix = f"{table_name}_" if table_name else ""
         return (
-            f"CONSTRAINT fk_{column_name} "
+            f"CONSTRAINT fk_{prefix}{column_name} "
             f"FOREIGN KEY ({column_name}) "
             f'REFERENCES "{self.to_table}"({self.to_column}) '
             f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
@@ -597,10 +600,11 @@ class ForeignKeyField(FieldOp):
         # Note: The REFERENCES clause is added separately as a constraint
         return " ".join(parts)
     
-    def get_constraint_sql(self, column_name: str) -> str:
+    def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
+        prefix = f"{table_name}_" if table_name else ""
         return (
-            f"CONSTRAINT fk_{column_name} "
+            f"CONSTRAINT fk_{prefix}{column_name} "
             f"FOREIGN KEY ({column_name}) "
             f'REFERENCES "{self.to_table}"({self.to_column}) '
             f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
@@ -754,7 +758,7 @@ class CreateTable(Operation):
             
             # Handle ForeignKey and OneToOne constraints
             if isinstance(field, (ForeignKeyField, OneToOneField)):
-                constraints.append(field.get_constraint_sql(col_name))
+                constraints.append(field.get_constraint_sql(col_name, self.name))
         
         # Build CREATE TABLE SQL
         all_parts = columns + constraints
@@ -960,7 +964,7 @@ class AddField(Operation):
         
         # Handle ForeignKey/OneToOne constraints as a separate statement
         if isinstance(self.field, (ForeignKeyField, OneToOneField)):
-            constraint_sql = self.field.get_constraint_sql(self.name)
+            constraint_sql = self.field.get_constraint_sql(self.name, self.table)
             constraint_stmt = f'ALTER TABLE "{self.table}" ADD {constraint_sql}'
             await connection.execute(constraint_stmt)
     
@@ -1040,12 +1044,16 @@ class AlterFieldType(Operation):
         """Alter the column type."""
         # Extract the SQL type, stripping constraint keywords like NOT NULL, UNIQUE, DEFAULT etc.
         full_sql = self.new_field.to_sql()
-        # Remove constraint suffixes to get just the type
+        # Find the earliest constraint keyword and truncate there
         type_sql = full_sql
-        for keyword in ('NOT NULL', 'UNIQUE', 'DEFAULT ', 'PRIMARY KEY', 'REFERENCES '):
+        constraint_keywords = ('NOT NULL', 'UNIQUE', 'DEFAULT ', 'PRIMARY KEY', 'REFERENCES ')
+        min_idx = len(type_sql)
+        for keyword in constraint_keywords:
             idx = type_sql.upper().find(keyword)
-            if idx > 0:
-                type_sql = type_sql[:idx].strip()
+            if idx > 0 and idx < min_idx:
+                min_idx = idx
+        if min_idx < len(type_sql):
+            type_sql = type_sql[:min_idx].strip()
         
         using_clause = f" USING {self.using}" if self.using else ""
         sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" TYPE {type_sql}{using_clause}'
@@ -1240,13 +1248,17 @@ class AddIndex(Operation):
         """Create the index."""
         sql = self.index.to_sql()
         
-        # Add CONCURRENTLY if requested (note: can't be used in transaction)
+        # PostgreSQL syntax: CREATE INDEX [CONCURRENTLY] [IF NOT EXISTS] ...
+        # Both must be inserted right after "INDEX " in the correct order.
+        # We build the insert fragment and do a single replacement.
+        insert_parts = []
         if self.concurrently:
-            sql = sql.replace("INDEX ", "INDEX CONCURRENTLY ", 1)
-        
-        # Add IF NOT EXISTS
+            insert_parts.append("CONCURRENTLY")
         if self.if_not_exists:
-            sql = sql.replace("INDEX ", "INDEX IF NOT EXISTS ", 1)
+            insert_parts.append("IF NOT EXISTS")
+        if insert_parts:
+            insert_str = " ".join(insert_parts) + " "
+            sql = sql.replace("INDEX ", f"INDEX {insert_str}", 1)
         
         if hasattr(connection, 'execute'):
             try:
@@ -1453,11 +1465,10 @@ class RunSQL(Operation):
         if self.dangerous:
             allow_dangerous = os.environ.get("AKSARA_ALLOW_DANGEROUS_MIGRATIONS", "").lower()
             if allow_dangerous not in ("1", "true", "yes"):
-                logger.warning(
-                    f"⚠️  DANGEROUS MIGRATION BLOCKED: {self.sql[:100]}..."
-                    f"\nSet AKSARA_ALLOW_DANGEROUS_MIGRATIONS=1 to allow."
+                raise RuntimeError(
+                    f"DANGEROUS MIGRATION BLOCKED: {self.sql[:100]}... "
+                    f"Set AKSARA_ALLOW_DANGEROUS_MIGRATIONS=1 to allow."
                 )
-                return
             else:
                 logger.warning(f"⚠️  Executing dangerous migration: {self.sql[:100]}...")
         

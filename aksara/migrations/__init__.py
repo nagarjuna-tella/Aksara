@@ -39,6 +39,12 @@ from aksara.migrations.graph import (
     find_conflicts,
     format_conflict_message,
 )
+from aksara.migrations.autodetector import (
+    detect_changes,
+    build_state_from_migrations,
+    build_state_from_models,
+    diff_states,
+)
 
 __all__ = [
     "Migration",
@@ -56,4 +62,9 @@ __all__ = [
     "MigrationNode",
     "find_conflicts",
     "format_conflict_message",
+    # v0.5.26: Autodetector
+    "detect_changes",
+    "build_state_from_migrations",
+    "build_state_from_models",
+    "diff_states",
 ]

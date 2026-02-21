@@ -787,8 +787,6 @@ def model_to_create_table(model_class) -> str:
             parts = []
             if field.nullable:
                 parts.append("nullable=True")
-            if field.unique:
-                parts.append("unique=True")
             opts = ", ".join(parts)
             field_code = f"op.TextField({opts})" if opts else "op.TextField()"
         
@@ -827,8 +825,6 @@ def model_to_create_table(model_class) -> str:
             parts = []
             if field.nullable:
                 parts.append("nullable=True")
-            if field.unique:
-                parts.append("unique=True")
             opts = ", ".join(parts)
             field_code = f"op.DateField({opts})" if opts else "op.DateField()"
         
@@ -860,6 +856,12 @@ def model_to_create_table(model_class) -> str:
         
         elif isinstance(field, Enum):
             parts = []
+            enum_name = field.enum_class.__name__ if field.enum_class else 'Unknown'
+            # Get allowed values from the enum class
+            try:
+                allowed_values = [e.value for e in field.enum_class]
+            except Exception:
+                allowed_values = []
             if field.nullable:
                 parts.append("nullable=True")
             if field.default is not None:
@@ -868,7 +870,11 @@ def model_to_create_table(model_class) -> str:
                 else:
                     parts.append(f"default={field.default!r}")
             opts = ", ".join(parts)
-            field_code = f"op.EnumField('{field.enum_class.__name__}', {opts})" if opts else f"op.EnumField('{field.enum_class.__name__}')"
+            av_repr = repr(allowed_values)
+            if opts:
+                field_code = f"op.EnumField({av_repr}, enum_name='{enum_name}', {opts})"
+            else:
+                field_code = f"op.EnumField({av_repr}, enum_name='{enum_name}')"
         
         elif isinstance(field, Array):
             # Map item_type to SQL type for the migration
