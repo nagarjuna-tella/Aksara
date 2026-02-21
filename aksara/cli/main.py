@@ -430,6 +430,7 @@ def startapp(app_name: str, directory: str):
     
     Creates an app structure with:
     - models.py (Aksara ORM models)
+    - admin.py (Admin model registration)
     - views.py (ModelViewSet classes)
     - serializers.py (ModelSerializer classes)
     
@@ -474,6 +475,7 @@ def startapp(app_name: str, directory: str):
         click.echo("  App structure:")
         click.echo(f"  \033[36m{app_name}/\033[0m")
         click.echo("  ├── __init__.py")
+        click.echo("  ├── admin.py")
         click.echo("  ├── models.py")
         click.echo("  ├── views.py")
         click.echo("  └── serializers.py")

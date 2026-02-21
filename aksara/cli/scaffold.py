@@ -1205,6 +1205,35 @@ from aksara import ModelViewSet, action, Request
 '''
 
 
+def get_app_admin_template(app_name: str) -> str:
+    """Generate admin.py content for a new app."""
+    capitalized = app_name.capitalize()
+    return f'''"""
+{capitalized} - Admin Configuration
+
+Register your models with the admin interface here.
+Admin is available at /admin when debug=True or enable_admin=True.
+"""
+
+from aksara.contrib.admin import site, ModelAdmin
+
+# Import your models
+# from .models import MyModel
+
+
+# =============================================================================
+# Example admin registration:
+#
+# class MyModelAdmin(ModelAdmin):
+#     list_display = ["name", "created_at"]
+#     list_filter = ["is_active"]
+#     search_fields = ["name"]
+#
+# site.register(MyModel, MyModelAdmin)
+# =============================================================================
+'''
+
+
 def get_app_init_template_for_startapp(app_name: str) -> str:
     """Generate __init__.py content for a new app."""
     return f'''"""
@@ -1234,6 +1263,7 @@ def create_app_scaffold(app_name: str, base_path: Path) -> Dict[Path, str]:
         app_path / "models.py": get_app_models_template(app_name),
         app_path / "views.py": get_app_views_template(app_name),
         app_path / "serializers.py": get_app_serializers_template(app_name),
+        app_path / "admin.py": get_app_admin_template(app_name),
     }
     
     return files
