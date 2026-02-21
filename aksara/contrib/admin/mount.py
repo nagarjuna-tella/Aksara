@@ -82,4 +82,4 @@ def include_admin(app: "FastAPI", prefix: str = "/admin") -> None:
             name="admin_static",
         )
     
-    app.include_router(admin_router, prefix=prefix)
+    app.include_router(admin_router, prefix=prefix, include_in_schema=False)

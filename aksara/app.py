@@ -660,13 +660,13 @@ class Aksara(FastAPI):
         # Initialize the registry
         self.ai_registry = AiToolRegistry()
         
-        # Include AI endpoints
-        self.include_router(ai_router)
+        # Include AI endpoints (hidden from public OpenAPI docs)
+        self.include_router(ai_router, include_in_schema=False)
         
         # v0.5.0: Include Studio endpoints
         if self._should_enable_studio():
             from aksara.studio.fastapi import router as studio_router
-            self.include_router(studio_router)
+            self.include_router(studio_router, include_in_schema=False)
     
     def _should_enable_studio(self) -> bool:
         """
