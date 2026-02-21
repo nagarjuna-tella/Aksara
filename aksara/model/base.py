@@ -29,7 +29,7 @@ def to_snake_case(name: str) -> str:
 
 def pluralize(name: str) -> str:
     """Simple pluralization for table names."""
-    if name.endswith('y'):
+    if name.endswith('y') and len(name) > 1 and name[-2] not in 'aeiou':
         return name[:-1] + 'ies'
     if name.endswith(('s', 'x', 'z', 'ch', 'sh')):
         return name + 'es'
@@ -754,8 +754,8 @@ class Model(metaclass=ModelMeta):
             # Skip auto-generated fields without values
             if field_name == 'id' and self._data.get('id') is None:
                 continue
-            # Skip auto_now_add fields (created_at) - SQL DEFAULT handles them
-            if isinstance(field, DateTime) and field.auto_now_add:
+            # Skip auto_now_add fields unless the user explicitly set a value
+            if isinstance(field, DateTime) and field.auto_now_add and self._data.get(field_name) is None:
                 continue
             
             value = self._data.get(field_name)
@@ -766,7 +766,7 @@ class Model(metaclass=ModelMeta):
                 else:
                     col_name = field_name
                 
-                fields_to_insert.append(col_name)
+                fields_to_insert.append(quote_identifier(col_name))
                 values.append(field.to_db(value))
                 placeholders.append(f"${len(values)}")
         
@@ -811,7 +811,7 @@ class Model(metaclass=ModelMeta):
             else:
                 col_name = field_name
             
-            set_clauses.append(f"{col_name} = ${len(values)}")
+            set_clauses.append(f"{quote_identifier(col_name)} = ${len(values)}")
         
         # Add the id for the WHERE clause
         values.append(self._data['id'])
@@ -821,7 +821,7 @@ class Model(metaclass=ModelMeta):
         query = f"""
             UPDATE {table}
             SET {set_sql}
-            WHERE id = ${len(values)}
+            WHERE "id" = ${len(values)}
             RETURNING *
         """
         

@@ -708,7 +708,8 @@ def model_to_create_table(model_class) -> str:
     """
     from aksara.fields import (
         String, Integer, Boolean, DateTime, UUID, JSON,
-        ForeignKey,
+        ForeignKey, OneToOne,
+        Text, Email, URL, Decimal, Enum, Float, Date, Array,
     )
     
     # Get table name (try both attributes)
@@ -716,7 +717,7 @@ def model_to_create_table(model_class) -> str:
     if not table_name:
         # Generate from class name
         name = model_class.__name__.lower()
-        if name.endswith('y'):
+        if name.endswith('y') and len(name) > 1 and name[-2] not in 'aeiou':
             table_name = name[:-1] + 'ies'
         elif name.endswith(('s', 'x', 'z', 'ch', 'sh')):
             table_name = name + 'es'
@@ -726,6 +727,7 @@ def model_to_create_table(model_class) -> str:
     
     for field_name, field in model_class._fields.items():
         # Map Aksara fields to migration FieldOps
+        # Note: OneToOne must be checked before ForeignKey (it inherits from FK)
         if isinstance(field, UUID):
             if field.primary_key:
                 field_code = "op.UUIDField(primary_key=True)"
@@ -738,6 +740,39 @@ def model_to_create_table(model_class) -> str:
                 opts = ", ".join(parts)
                 field_code = f"op.UUIDField({opts})" if opts else "op.UUIDField()"
         
+        elif isinstance(field, OneToOne):
+            # Must check before ForeignKey since OneToOne inherits from it
+            try:
+                target_model = field.to_model
+                target_table = getattr(target_model, '__tablename__', None) or getattr(target_model, '_table_name', 'unknown')
+            except Exception:
+                target_table = "unknown"
+            
+            parts = [f"'{target_table}'"]
+            parts.append(f"on_delete='{field.on_delete}'")
+            if field.nullable:
+                parts.append("nullable=True")
+            
+            field_name = field.db_column_name
+            field_code = f"op.OneToOneField({', '.join(parts)})"
+        
+        elif isinstance(field, Email):
+            parts = [f"{field.max_length}"]
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            field_code = f"op.EmailField({', '.join(parts)})"
+        
+        elif isinstance(field, URL):
+            parts = []
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            opts = ", ".join(parts)
+            field_code = f"op.URLField({opts})" if opts else "op.URLField()"
+        
         elif isinstance(field, String):
             parts = [f"{field.max_length}"]
             if field.nullable:
@@ -747,6 +782,15 @@ def model_to_create_table(model_class) -> str:
             if field.default is not None and not callable(field.default):
                 parts.append(f"default={field.default!r}")
             field_code = f"op.StringField({', '.join(parts)})"
+        
+        elif isinstance(field, Text):
+            parts = []
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            opts = ", ".join(parts)
+            field_code = f"op.TextField({opts})" if opts else "op.TextField()"
         
         elif isinstance(field, Integer):
             parts = []
@@ -779,6 +823,15 @@ def model_to_create_table(model_class) -> str:
             opts = ", ".join(parts)
             field_code = f"op.DateTimeField({opts})" if opts else "op.DateTimeField()"
         
+        elif isinstance(field, Date):
+            parts = []
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            opts = ", ".join(parts)
+            field_code = f"op.DateField({opts})" if opts else "op.DateField()"
+        
         elif isinstance(field, JSON):
             parts = []
             if field.nullable:
@@ -787,6 +840,43 @@ def model_to_create_table(model_class) -> str:
                 parts.append(f"default={field.default!r}")
             opts = ", ".join(parts)
             field_code = f"op.JSONField({opts})" if opts else "op.JSONField()"
+        
+        elif isinstance(field, Decimal):
+            parts = [f"{field.max_digits}", f"{field.decimal_places}"]
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            field_code = f"op.DecimalField({', '.join(parts)})"
+        
+        elif isinstance(field, Float):
+            parts = []
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.default is not None and not callable(field.default):
+                parts.append(f"default={field.default!r}")
+            opts = ", ".join(parts)
+            field_code = f"op.FloatField({opts})" if opts else "op.FloatField()"
+        
+        elif isinstance(field, Enum):
+            parts = []
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.default is not None:
+                if isinstance(field.default, field.enum_class):
+                    parts.append(f"default='{field.default.value}'")
+                else:
+                    parts.append(f"default={field.default!r}")
+            opts = ", ".join(parts)
+            field_code = f"op.EnumField('{field.enum_class.__name__}', {opts})" if opts else f"op.EnumField('{field.enum_class.__name__}')"
+        
+        elif isinstance(field, Array):
+            # Map item_type to SQL type for the migration
+            type_name = field.item_type.__name__ if hasattr(field.item_type, '__name__') else 'str'
+            parts = [f"item_type='{type_name}'"]
+            if field.nullable:
+                parts.append("nullable=True")
+            field_code = f"op.TextField({', '.join(parts)})"  # Fallback: array stored as text
         
         elif isinstance(field, ForeignKey):
             # Get target table name (try __tablename__ first, then _table_name)
@@ -805,18 +895,8 @@ def model_to_create_table(model_class) -> str:
             field_name = field.db_column_name
             field_code = f"op.ForeignKeyField({', '.join(parts)})"
         
-        elif hasattr(field, '__class__') and 'Float' in field.__class__.__name__:
-            parts = []
-            if field.nullable:
-                parts.append("nullable=True")
-            if field.default is not None and not callable(field.default):
-                parts.append(f"default={field.default!r}")
-            opts = ", ".join(parts)
-            field_code = f"op.FloatField({opts})" if opts else "op.FloatField()"
-        
         else:
             # Fallback for unknown field types
-            sql_type = field.sql_type if hasattr(field, 'sql_type') else 'VARCHAR(255)'
             parts = []
             if hasattr(field, 'nullable') and field.nullable:
                 parts.append("nullable=True")

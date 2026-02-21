@@ -752,8 +752,8 @@ class CreateTable(Operation):
         for col_name, field in self.fields:
             columns.append(f'"{col_name}" {field.to_sql()}')
             
-            # Handle ForeignKey constraints
-            if isinstance(field, ForeignKeyField):
+            # Handle ForeignKey and OneToOne constraints
+            if isinstance(field, (ForeignKeyField, OneToOneField)):
                 constraints.append(field.get_constraint_sql(col_name))
         
         # Build CREATE TABLE SQL
@@ -953,15 +953,16 @@ class AddField(Operation):
         """Add the column to the table."""
         sql = f'ALTER TABLE "{self.table}" ADD COLUMN "{self.name}" {self.field.to_sql()}'
         
-        # Handle ForeignKey constraints
-        if isinstance(self.field, ForeignKeyField):
-            constraint_sql = self.field.get_constraint_sql(self.name)
-            sql += f';\nALTER TABLE "{self.table}" ADD {constraint_sql}'
-        
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
         else:
             raise TypeError(f"Unsupported connection type: {type(connection)}")
+        
+        # Handle ForeignKey/OneToOne constraints as a separate statement
+        if isinstance(self.field, (ForeignKeyField, OneToOneField)):
+            constraint_sql = self.field.get_constraint_sql(self.name)
+            constraint_stmt = f'ALTER TABLE "{self.table}" ADD {constraint_sql}'
+            await connection.execute(constraint_stmt)
     
     def reverse(self) -> "RemoveField":
         """Return a RemoveField operation to reverse this."""
@@ -1037,8 +1038,14 @@ class AlterFieldType(Operation):
     
     async def apply(self, connection) -> None:
         """Alter the column type."""
-        # Extract just the type from the field definition
-        type_sql = self.new_field.to_sql().split()[0]  # First word is the type
+        # Extract the SQL type, stripping constraint keywords like NOT NULL, UNIQUE, DEFAULT etc.
+        full_sql = self.new_field.to_sql()
+        # Remove constraint suffixes to get just the type
+        type_sql = full_sql
+        for keyword in ('NOT NULL', 'UNIQUE', 'DEFAULT ', 'PRIMARY KEY', 'REFERENCES '):
+            idx = type_sql.upper().find(keyword)
+            if idx > 0:
+                type_sql = type_sql[:idx].strip()
         
         using_clause = f" USING {self.using}" if self.using else ""
         sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" TYPE {type_sql}{using_clause}'
@@ -1235,7 +1242,7 @@ class AddIndex(Operation):
         
         # Add CONCURRENTLY if requested (note: can't be used in transaction)
         if self.concurrently:
-            sql = sql.replace("CREATE ", "CREATE CONCURRENTLY ", 1)
+            sql = sql.replace("INDEX ", "INDEX CONCURRENTLY ", 1)
         
         # Add IF NOT EXISTS
         if self.if_not_exists:
@@ -1447,9 +1454,10 @@ class RunSQL(Operation):
             allow_dangerous = os.environ.get("AKSARA_ALLOW_DANGEROUS_MIGRATIONS", "").lower()
             if allow_dangerous not in ("1", "true", "yes"):
                 logger.warning(
-                    f"⚠️  DANGEROUS MIGRATION DETECTED: {self.sql[:100]}..."
+                    f"⚠️  DANGEROUS MIGRATION BLOCKED: {self.sql[:100]}..."
                     f"\nSet AKSARA_ALLOW_DANGEROUS_MIGRATIONS=1 to allow."
                 )
+                return
             else:
                 logger.warning(f"⚠️  Executing dangerous migration: {self.sql[:100]}...")
         

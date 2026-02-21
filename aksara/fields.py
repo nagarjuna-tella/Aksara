@@ -15,7 +15,7 @@ import json
 import re
 import uuid as uuid_lib
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal as PyDecimal, InvalidOperation
 from enum import Enum as PyEnum
 from typing import Any, Optional, Type, Union, Callable, TYPE_CHECKING, List
@@ -76,6 +76,19 @@ URL_REGEX = re.compile(
 )
 
 
+def _singularize(table_name: str) -> str:
+    """Convert a plural table name to singular form."""
+    if table_name.endswith('ies') and len(table_name) > 3 and table_name[-4] not in 'aeiou':
+        return table_name[:-3] + 'y'
+    if table_name.endswith('ses') or table_name.endswith('xes') or table_name.endswith('zes'):
+        return table_name[:-2]
+    if table_name.endswith('ches') or table_name.endswith('shes'):
+        return table_name[:-2]
+    if table_name.endswith('s') and not table_name.endswith('ss'):
+        return table_name[:-1]
+    return table_name
+
+
 class Field(ABC):
     """
     Base class for all field types.
@@ -85,6 +98,7 @@ class Field(ABC):
         - default: Default value for the field
         - unique: Whether the field should have a UNIQUE constraint
         - primary_key: Whether this field is the primary key
+        - db_index: Whether to create a database index on this field
         
     AI metadata arguments (v0.2):
         - ai_description: Human-readable description for AI agents
@@ -102,6 +116,7 @@ class Field(ABC):
         default: Any = None,
         unique: bool = False,
         primary_key: bool = False,
+        db_index: bool = False,
         # AI metadata
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
@@ -111,6 +126,7 @@ class Field(ABC):
         self.default = default
         self.unique = unique
         self.primary_key = primary_key
+        self.db_index = db_index
         
         # AI metadata
         self.ai_description = ai_description
@@ -213,6 +229,7 @@ class String(Field):
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
+        db_index: Whether to create a database index
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
@@ -225,6 +242,7 @@ class String(Field):
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
@@ -238,6 +256,7 @@ class String(Field):
             ai_agent_writable=ai_agent_writable,
         )
         self.max_length = max_length
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -262,6 +281,7 @@ class Integer(Field):
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
+        db_index: Whether to create a database index
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
@@ -273,6 +293,7 @@ class Integer(Field):
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
@@ -285,6 +306,7 @@ class Integer(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -308,6 +330,8 @@ class Boolean(Field):
     Args:
         nullable: Whether the field can be NULL
         default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
@@ -318,6 +342,8 @@ class Boolean(Field):
         *,
         nullable: bool = False,
         default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
@@ -325,10 +351,12 @@ class Boolean(Field):
         super().__init__(
             nullable=nullable,
             default=default,
+            unique=unique,
             ai_description=ai_description,
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -353,6 +381,9 @@ class DateTime(Field):
         auto_now: Automatically set to current time on every save
         auto_now_add: Automatically set to current time on creation
         nullable: Whether the field can be NULL
+        default: Default value (datetime or callable)
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
@@ -364,18 +395,24 @@ class DateTime(Field):
         auto_now: bool = False,
         auto_now_add: bool = False,
         nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
     ):
         super().__init__(
             nullable=nullable,
+            default=default,
+            unique=unique,
             ai_description=ai_description,
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
         self.auto_now = auto_now
         self.auto_now_add = auto_now_add
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -388,8 +425,13 @@ class DateTime(Field):
         if not self.nullable:
             parts.append("NOT NULL")
         
+        if self.unique:
+            parts.append("UNIQUE")
+        
         if self.auto_now_add:
             parts.append("DEFAULT CURRENT_TIMESTAMP")
+        elif self.default is not None and not callable(self.default):
+            parts.append(f"DEFAULT {self._format_default()}")
         
         return " ".join(parts)
     
@@ -398,6 +440,8 @@ class DateTime(Field):
             return None
         if isinstance(value, datetime):
             return value
+        if isinstance(value, str):
+            return datetime.fromisoformat(value)
         return value
     
     def to_db(self, value: Any) -> Optional[datetime]:
@@ -452,8 +496,11 @@ class UUID(Field):
         if self.primary_key:
             parts.append("PRIMARY KEY")
             parts.append("DEFAULT gen_random_uuid()")
-        elif not self.nullable:
-            parts.append("NOT NULL")
+        else:
+            if not self.nullable:
+                parts.append("NOT NULL")
+            if self.unique:
+                parts.append("UNIQUE")
         
         return " ".join(parts)
     
@@ -677,11 +724,15 @@ class Text(Field):
     Text field mapping to TEXT (unlimited length string).
     
     Use this for long-form text content instead of String when you don't
-    need a maximum length constraint.
+    need a maximum length constraint. If max_length is provided, validation
+    will enforce it but the database column remains TEXT.
     
     Args:
+        max_length: Optional max length for validation (DB stays TEXT)
         nullable: Whether the field can be NULL
         default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
         ai_description: Description for AI agents
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
@@ -689,9 +740,12 @@ class Text(Field):
     
     def __init__(
         self,
+        max_length: Optional[int] = None,
         *,
         nullable: bool = False,
         default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
@@ -699,10 +753,13 @@ class Text(Field):
         super().__init__(
             nullable=nullable,
             default=default,
+            unique=unique,
             ai_description=ai_description,
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.max_length = max_length
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -716,7 +773,12 @@ class Text(Field):
     def to_db(self, value: Any) -> Optional[str]:
         if value is None:
             return None
-        return str(value)
+        s = str(value)
+        if self.max_length is not None and len(s) > self.max_length:
+            raise ValueError(
+                f"Text value exceeds maximum length of {self.max_length}"
+            )
+        return s
 
 
 class Email(Field):
@@ -936,9 +998,18 @@ class Decimal(Field):
         except InvalidOperation:
             raise ValueError(f"Invalid decimal value: {value}")
         
+        # Reject NaN and Infinity
+        if dec.is_nan() or dec.is_infinite():
+            raise ValueError(f"Invalid decimal value: {value}")
+        
         # Check precision
         sign, digits, exponent = dec.as_tuple()
-        integer_digits = len(digits) + min(exponent, 0)
+        # For values like 100000 (1E+5): digits=(1,), exponent=5 → 6 integer digits
+        # For values like 12.34: digits=(1,2,3,4), exponent=-2 → 2 integer digits
+        if exponent >= 0:
+            integer_digits = len(digits) + exponent
+        else:
+            integer_digits = max(len(digits) + exponent, 0)
         
         if integer_digits > (self.max_digits - self.decimal_places):
             raise ValueError(
@@ -1007,6 +1078,8 @@ class Enum(Field):
         *,
         nullable: bool = False,
         default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
         ai_description: Optional[str] = None,
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
@@ -1014,11 +1087,13 @@ class Enum(Field):
         super().__init__(
             nullable=nullable,
             default=default,
+            unique=unique,
             ai_description=ai_description,
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
         self.enum_class = enum_class
+        self.db_index = db_index
     
     @property
     def sql_type(self) -> str:
@@ -1120,6 +1195,136 @@ EmailField = Email
 URLField = URL
 DecimalField = Decimal
 EnumField = Enum
+
+
+class Float(Field):
+    """
+    Float field mapping to DOUBLE PRECISION.
+    
+    Use this for floating-point numeric values. For exact precision
+    (e.g., monetary values), use Decimal instead.
+    
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+    
+    Usage:
+        class Measurement(Model):
+            temperature = fields.Float()
+            latitude = fields.Float(nullable=True)
+    """
+    
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+    
+    @property
+    def sql_type(self) -> str:
+        return "DOUBLE PRECISION"
+    
+    def to_python(self, value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        return float(value)
+    
+    def to_db(self, value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        return float(value)
+
+
+class Date(Field):
+    """
+    Date field mapping to DATE (date without time).
+    
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+    
+    Usage:
+        from datetime import date
+        
+        class Event(Model):
+            event_date = fields.Date()
+            deadline = fields.Date(nullable=True)
+    """
+    
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+    
+    @property
+    def sql_type(self) -> str:
+        return "DATE"
+    
+    def to_python(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, date) and not isinstance(value, datetime):
+            return value
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, str):
+            # Handle ISO format date strings
+            if 'T' in value:
+                return datetime.fromisoformat(value).date()
+            return date.fromisoformat(value)
+        return value
+    
+    def to_db(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        return value
+
+
+FloatField = Float
+DateField = Date
 
 
 class ForeignKey(Field):
@@ -1225,6 +1430,11 @@ class ForeignKey(Field):
         # Get the primary key field of the referenced model
         try:
             target_model = self.to_model
+            # Find the field with primary_key=True
+            for f in target_model._fields.values():
+                if f.primary_key:
+                    return f.sql_type
+            # Fallback: try "id" field
             pk_field = target_model._fields.get("id")
             if pk_field:
                 return pk_field.sql_type
@@ -1253,7 +1463,7 @@ class ForeignKey(Field):
             if isinstance(self._to, str):
                 # Convert model name to table name (simple pluralization)
                 name = self._to.lower()
-                if name.endswith('y'):
+                if name.endswith('y') and len(name) > 1 and name[-2] not in 'aeiou':
                     target_table = name[:-1] + 'ies'
                 elif name.endswith(('s', 'x', 'z', 'ch', 'sh')):
                     target_table = name + 'es'
@@ -1352,6 +1562,7 @@ class OneToOne(ForeignKey):
     ):
         super().__init__(
             to,
+            related_name=related_name,
             column_name=column_name,
             on_delete=on_delete,
             nullable=nullable,
@@ -1359,7 +1570,6 @@ class OneToOne(ForeignKey):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
-        self.related_name = related_name
         # Mark as unique (one-to-one)
         self.unique = True
     
@@ -1480,9 +1690,7 @@ class ManyToMany(Field):
         if self._source_model:
             # Use singular form: users -> user_id
             table_name = self._source_model.__tablename__
-            singular = table_name.rstrip('s')
-            if table_name.endswith('ies'):
-                singular = table_name[:-3] + 'y'
+            singular = _singularize(table_name)
             return f"{singular}_id"
         return "source_id"
     
@@ -1491,9 +1699,7 @@ class ManyToMany(Field):
         """Get the target column name in join table."""
         try:
             target_table = self.to_model.__tablename__
-            singular = target_table.rstrip('s')
-            if target_table.endswith('ies'):
-                singular = target_table[:-3] + 'y'
+            singular = _singularize(target_table)
             return f"{singular}_id"
         except Exception:
             return "target_id"
@@ -1521,7 +1727,7 @@ class ManyToMany(Field):
             # Fallback for unresolved models
             if isinstance(self._to, str):
                 name = self._to.lower()
-                if name.endswith('y'):
+                if name.endswith('y') and len(name) > 1 and name[-2] not in 'aeiou':
                     target_table = name[:-1] + 'ies'
                 elif name.endswith(('s', 'x', 'z', 'ch', 'sh')):
                     target_table = name + 'es'
