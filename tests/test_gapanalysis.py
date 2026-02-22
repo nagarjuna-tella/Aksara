@@ -1415,19 +1415,19 @@ class TestGapsCliFixPlan:
 
 
 class TestVersionBump:
-    """Verify the version was correctly bumped to v0.5.26."""
+    """Verify the version was correctly bumped to v0.5.27."""
 
     def test_library_version(self):
         from aksara._version import __version__
 
-        assert __version__ == "0.5.26"
+        assert __version__ == "0.5.27"
 
     def test_aksara_package_version(self):
         import aksara
 
-        assert aksara.__version__ == "0.5.26"
+        assert aksara.__version__ == "0.5.27"
 
     def test_cli_version(self):
         from aksara.cli.main import CLI_VERSION
 
-        assert CLI_VERSION == "0.5.26"
+        assert CLI_VERSION == "0.5.27"

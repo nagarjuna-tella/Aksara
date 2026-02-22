@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.26"
+CLI_VERSION = "0.5.27"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1356,7 +1356,7 @@ def collectstatic():
 @click.option("--workers", "-w", default=1, type=int, help="Number of workers")
 def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     """
-    Run a Aksara application with uvicorn.
+    Run an Aksara application with uvicorn.
     
     APP_PATH: Import path to the app (e.g., 'main:app' or 'myproject.main:app')
     
@@ -2513,8 +2513,6 @@ def studio():
     """Studio IDE integration commands.
     
     Commands for testing and managing Aksara Studio integration.
-    
-    v0.5.0: Studio Core & Handshake
     """
     pass
 
@@ -4634,13 +4632,21 @@ def inspect_queries(limit: int, as_json: bool):
         aksara inspect queries --json | aksara agent prompt -g "Optimize queries"
     """
     import json as json_mod
-    from aksara.inspectors.queries import get_query_stats
 
     click.echo()
     click.echo("  \033[33m⚡\033[0m \033[1mAksara\033[0m — Query Inspector")
     click.echo()
 
-    stats = get_query_stats(limit_slow=limit)
+    try:
+        from aksara.inspectors.queries import get_query_stats
+        stats = get_query_stats(limit_slow=limit)
+    except Exception as exc:
+        click.echo(f"  \033[31m✗\033[0m Failed to load query data: {exc}", err=True)
+        click.echo()
+        click.echo("  Pro tip: Ensure DATABASE_URL is set and db tracing is enabled.")
+        click.echo("           Run `aksara doctor db` for a detailed check.")
+        click.echo()
+        sys.exit(1)
 
     if as_json:
         click.echo(json_mod.dumps(stats.model_dump(mode="json"), indent=2, default=str))

@@ -71,6 +71,13 @@
                     </svg>
                     <span>DB & Queries</span>
                 </a>
+                <a href="#/gaps" class="nav-item" data-section="gaps">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                        <path d="M12 8v4M12 16h.01"></path>
+                    </svg>
+                    <span>Gap Analysis</span>
+                </a>
 
                 <div class="nav-group-label">AI</div>
                 <a href="#/ai-hub" class="nav-item" data-section="ai-hub">
@@ -498,6 +505,48 @@
         <!-- Issue Cards -->
         <div class="diag-issues-list" id="diag-issues-list">
             <div class="empty-state">Loading diagnostics&hellip;</div>
+        </div>
+    </template>
+    
+    <!-- v0.5.27: Gap Analysis Panel -->
+    <template id="template-gaps">
+        <div class="section-header">
+            <h1>Gap Analysis</h1>
+            <p class="section-subtitle">Static pre-flight scan &mdash; missing packages, config holes, structural issues</p>
+        </div>
+        
+        <div class="diag-summary-banner" id="gaps-summary-banner">
+            <div class="diag-summary-status" id="gaps-summary-status">
+                <span class="diag-status-icon" id="gaps-status-icon">&#9679;</span>
+                <span id="gaps-status-label">Scanning&hellip;</span>
+            </div>
+            <div class="diag-summary-counts">
+                <span class="diag-count error" id="gaps-count-critical">0 critical</span>
+                <span class="diag-count error" id="gaps-count-errors">0 errors</span>
+                <span class="diag-count warning" id="gaps-count-warnings">0 warnings</span>
+                <span class="diag-count info" id="gaps-count-info">0 info</span>
+            </div>
+            <div class="diag-summary-meta">
+                <span id="gaps-duration">-</span>
+                <span id="gaps-categories">-</span>
+            </div>
+        </div>
+        
+        <div class="diag-toolbar">
+            <div class="diag-filters">
+                <button class="gaps-filter-btn active" data-filter="all">All</button>
+                <button class="gaps-filter-btn" data-filter="critical">Critical</button>
+                <button class="gaps-filter-btn" data-filter="error">Errors</button>
+                <button class="gaps-filter-btn" data-filter="warning">Warnings</button>
+                <button class="gaps-filter-btn" data-filter="info">Info</button>
+            </div>
+            <div class="diag-controls">
+                <button id="gaps-refresh-btn" class="btn btn-sm">Re-scan</button>
+            </div>
+        </div>
+        
+        <div class="diag-issues-list" id="gaps-issues-list">
+            <div class="empty-state">Loading gap analysis&hellip;</div>
         </div>
     </template>
     

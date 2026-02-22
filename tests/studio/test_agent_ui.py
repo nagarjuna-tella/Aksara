@@ -80,9 +80,9 @@ class TestAgentJs:
         js = (STATIC_DIR / "app.js").read_text()
         assert "function generateAgentPrompt" in js
 
-    def test_keyboard_shortcut_digit7(self):
+    def test_keyboard_shortcut_digit8(self):
         js = (STATIC_DIR / "app.js").read_text()
-        assert "'Digit7': 'ai-hub'" in js
+        assert "'Digit8': 'ai-hub'" in js
 
     def test_keyboard_shortcut_ctrl_g(self):
         js = (STATIC_DIR / "app.js").read_text()

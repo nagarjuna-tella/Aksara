@@ -113,6 +113,26 @@ async function jsonGet(path) {
     return response.json();
 }
 
+/**
+ * Make a JSON POST request to the backend.
+ * @param {string} url - API path (e.g., '/studio/db/plan')
+ * @param {any} body - JSON-serialisable payload
+ * @returns {Promise<any>} JSON response
+ */
+async function jsonPost(url, body) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+        const err = new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        err.status = resp.status;
+        throw err;
+    }
+    return resp.json();
+}
+
 // =============================================================================
 // Theme Management
 // =============================================================================
@@ -179,8 +199,9 @@ function initNavigation() {
         'Digit3': 'routes',
         'Digit4': 'migrations',
         'Digit5': 'diagnostics',
-        'Digit6': 'db-queries',
-        'Digit7': 'ai-hub',
+        'Digit6': 'gaps',
+        'Digit7': 'db-queries',
+        'Digit8': 'ai-hub',
     };
     document.addEventListener('keydown', (e) => {
         // v0.5.22: Cmd/Ctrl+K opens Spotlight Search (always, even in inputs)
@@ -210,6 +231,12 @@ function initNavigation() {
         if (e.key === 'd' || e.key === 'D') {
             e.preventDefault();
             navigateTo('diagnostics');
+            return;
+        }
+        // v0.5.27: 'g' key navigates to gap analysis
+        if (e.key === 'g' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            navigateTo('gaps');
             return;
         }
         // v0.5.17: '/' key focuses the diagnostics search input (if visible)
@@ -357,6 +384,9 @@ function renderSection(section) {
             break;
         case 'diagnostics':
             renderDiagnostics();
+            break;
+        case 'gaps':
+            renderGaps();
             break;
         case 'db-queries':
             renderDbQueries();
@@ -1157,6 +1187,105 @@ function formatDateTime(isoString) {
 }
 
 // =============================================================================
+// v0.5.27: Gap Analysis Panel
+// =============================================================================
+
+async function renderGaps() {
+    const listEl = document.getElementById('gaps-issues-list');
+    const refreshBtn = document.getElementById('gaps-refresh-btn');
+    if (refreshBtn) refreshBtn.addEventListener('click', () => loadGapAnalysis());
+
+    // Wire filter buttons
+    document.querySelectorAll('.gaps-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.gaps-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.dataset.filter;
+            document.querySelectorAll('.diag-issue-card[data-severity]').forEach(card => {
+                card.style.display = (filter === 'all' || card.dataset.severity === filter) ? '' : 'none';
+            });
+        });
+    });
+
+    await loadGapAnalysis();
+}
+
+async function loadGapAnalysis() {
+    const listEl = document.getElementById('gaps-issues-list');
+    if (listEl) listEl.innerHTML = '<div class="empty-state">Scanning\u2026</div>';
+
+    try {
+        const report = await jsonGet('/studio/gaps');
+
+        // Update summary banner
+        const stats = report.stats || {};
+        const statusIcon = document.getElementById('gaps-status-icon');
+        const statusLabel = document.getElementById('gaps-status-label');
+
+        const total = stats.total || 0;
+        const hasCritical = (stats.critical || 0) > 0;
+        const hasError = (stats.error || 0) > 0;
+
+        if (statusIcon && statusLabel) {
+            if (hasCritical) {
+                statusIcon.style.color = 'var(--color-error)';
+                statusLabel.textContent = 'Critical issues found';
+            } else if (hasError) {
+                statusIcon.style.color = 'var(--color-error)';
+                statusLabel.textContent = 'Errors found';
+            } else if (total > 0) {
+                statusIcon.style.color = 'var(--color-warning)';
+                statusLabel.textContent = 'Warnings present';
+            } else {
+                statusIcon.style.color = 'var(--color-success)';
+                statusLabel.textContent = 'All clear';
+            }
+        }
+
+        setText('gaps-count-critical', `${stats.critical || 0} critical`);
+        setText('gaps-count-errors', `${stats.error || 0} errors`);
+        setText('gaps-count-warnings', `${stats.warning || 0} warnings`);
+        setText('gaps-count-info', `${stats.info || 0} info`);
+        setText('gaps-duration', report.duration_ms != null ? `${report.duration_ms.toFixed(0)} ms` : '-');
+        setText('gaps-categories', (report.categories_checked || []).join(', '));
+
+        if (!listEl) return;
+
+        const issues = report.issues || [];
+        if (issues.length === 0) {
+            listEl.innerHTML = '<div class="empty-state">\u2705 No gaps found \u2014 your project looks good!</div>';
+            return;
+        }
+
+        listEl.innerHTML = issues.map(issue => {
+            const severityClass = issue.severity === 'critical' ? 'error' : issue.severity;
+            const icon = issue.severity === 'critical' || issue.severity === 'error' ? '\u2717' :
+                         issue.severity === 'warning' ? '!' : '\u00b7';
+            const fixHtml = (issue.fix_commands || []).map(cmd =>
+                `<div class="diag-action"><span class="action-label">\u2192 ${escapeHtml(cmd.description)}</span><code>${escapeHtml(cmd.command)}</code></div>`
+            ).join('');
+            return `<div class="diag-issue-card ${severityClass}" data-severity="${issue.severity}">
+                <div class="diag-issue-header">
+                    <span class="diag-severity-badge ${severityClass}">${icon} ${issue.severity.toUpperCase()}</span>
+                    <span class="diag-issue-title">${escapeHtml(issue.title)}</span>
+                    <span class="diag-issue-category">${escapeHtml(issue.category)}</span>
+                </div>
+                <div class="diag-issue-body">
+                    <p>${escapeHtml(issue.message)}</p>
+                    ${issue.hint ? `<p class="diag-hint">Hint: ${escapeHtml(issue.hint)}</p>` : ''}
+                    ${fixHtml}
+                </div>
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error('Gap analysis load failed:', err);
+        if (listEl) listEl.innerHTML = `<div class="empty-state error">Failed to load gap analysis: ${escapeHtml(err.message)}</div>`;
+        showToast('Failed to load gap analysis', 'error');
+    }
+}
+
+// =============================================================================
 // v0.5.10: DB & Queries Section
 // =============================================================================
 
@@ -1406,20 +1535,11 @@ async function explainQueryPlan(sql) {
         const planText = (result.plan || []).join('\\n');
         const costInfo = result.estimated_cost != null ? `Estimated cost: ${result.estimated_cost}` : '';
         const warningText = (result.warnings || []).join('\\n');
-        alert(`EXPLAIN Plan\\n${'='.repeat(40)}\\n${planText}\\n${costInfo}\\n${warningText}`);
+        showToast(`EXPLAIN Plan retrieved — ${planText.split('\\n').length} line(s)`);
+        console.log('EXPLAIN Plan:', planText, costInfo, warningText);
     } catch (err) {
-        alert('Failed to get query plan: ' + err.message);
+        showToast('Failed to get query plan: ' + err.message, 'error');
     }
-}
-
-async function jsonPost(url, body) {
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return resp.json();
 }
 
 
@@ -2306,20 +2426,6 @@ function renderAgentWorkflow(response) {
     outputEl.innerHTML = html;
 }
 
-async function jsonPost(url, body) {
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    if (!resp.ok) {
-        const err = new Error(`HTTP ${resp.status}`);
-        err.status = resp.status;
-        throw err;
-    }
-    return resp.json();
-}
-
 // =============================================================================
 // Initialization
 // =============================================================================
@@ -2877,16 +2983,6 @@ async function aiHubRunAgent() {
     } finally {
         if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run'; }
     }
-}
-
-async function jsonPost(url, data) {
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-    if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
-    return resp.json();
 }
 
 

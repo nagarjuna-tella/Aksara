@@ -1172,7 +1172,12 @@ async def run_gap_analysis_for_category(
         return []
     try:
         return await checker()
-    except Exception:
+    except Exception as exc:
+        import logging
+
+        logging.getLogger("aksara.gapanalysis").warning(
+            "Checker %r raised %s: %s", category, type(exc).__name__, exc,
+        )
         return []
 
 

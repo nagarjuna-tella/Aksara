@@ -4,6 +4,34 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.27] — 2026-02-21
+
+### Fixed
+- **CLI grammar**: "Run a Aksara" → "Run an Aksara" in `run` command help
+- **CLI error handling**: `aksara inspect queries` now catches errors and shows
+  a user-friendly message instead of a stack trace
+- **Gap Analysis logging**: `run_gap_analysis_for_category` now logs warnings
+  instead of silently swallowing exceptions
+- **Studio `jsonPost` consolidation**: Removed 3 duplicate `jsonPost` definitions
+  (copy-paste bug) and consolidated into one canonical definition near `jsonGet`
+- **Studio UX**: Replaced `alert()` with `showToast()` in query plan explainer
+  for consistent notification style
+- **Stale version tag**: Removed obsolete `v0.5.0: Studio Core & Handshake`
+  from CLI `studio` group docstring
+
+### Added
+- **Gap Analysis Studio panel**: Navigation item, template, `renderGaps()` and
+  `loadGapAnalysis()` functions with severity filter buttons (All / Critical /
+  Errors / Warnings / Info) and Re-scan action
+- **Keyboard shortcuts**: `6` = Gap Analysis, `7` = DB Queries, `8` = AI Hub;
+  `g` key navigates to Gap Analysis panel
+
+### Changed
+- Keyboard shortcut mapping reorganised to accommodate the new Gaps panel
+- Docs and help text aligned with current behaviour
+
+---
+
 ## [0.5.25] — 2026-02-21
 
 ### Added

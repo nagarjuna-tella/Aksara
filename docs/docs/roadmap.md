@@ -11,6 +11,23 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 
 ## Current Stable Version
 
+### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
+
+- **Studio Gap Analysis panel** — nav item, template, `renderGaps()` /
+  `loadGapAnalysis()` with severity filter buttons and Re-scan action
+- Consolidated 3 duplicate `jsonPost` definitions in Studio app.js
+- Replaced `alert()` with `showToast()` for consistent Studio UX
+- `aksara inspect queries` now handles missing `DATABASE_URL` gracefully
+- `run_gap_analysis_for_category` logs warnings instead of silent swallow
+- CLI help text fixes (grammar, stale version tags removed)
+- Keyboard shortcuts reorganised: `6`=Gaps, `7`=DB Queries, `8`=AI Hub, `g`=Gaps
+- Docs and help text aligned with current behaviour
+- Full suite at **3551+ passed**
+
+---
+
+## Recent Releases
+
 ### v0.5.26 — Gap Analysis Engine (Feb 2026)
 
 - **Gap Analysis Engine** (`aksara/gapanalysis.py`) — static pre-flight scanner
@@ -23,10 +40,6 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 - `build_fix_plan()` — severity-ordered actionable fix list with per-issue
   shell commands and required env vars
 - 112 new tests; full suite at **3409 passed**
-
----
-
-## Recent Releases
 
 ### v0.5.25 — AI Hub & Unified Provider System (Feb 2026)
 
