@@ -103,6 +103,11 @@
                     <span class="status-dot"></span>
                     <span class="status-text">Connecting...</span>
                 </div>
+                <!-- v0.5.28: AI Hub Status Indicator -->
+                <div class="ai-status-indicator" id="ai-status-indicator" title="AI Hub Status" style="display:none;">
+                    <span class="ai-status-dot" id="ai-status-dot"></span>
+                    <span class="ai-status-label" id="ai-status-label">AI</span>
+                </div>
             </div>
         </aside>
         
@@ -1131,24 +1136,72 @@
         </div>
     </template>
     
-    <!-- v0.5.25: AI Hub Template -->
+    <!-- v0.5.25 / v0.5.28: AI Hub Template -->
     <template id="template-ai-hub">
         <div class="section-header">
             <h2>AI Hub</h2>
             <p class="section-subtitle">Unified AI provider management, helpers, profiles, and agent</p>
         </div>
         
-        <!-- Tab navigation -->
+        <!-- Tab navigation (v0.5.28: added hub-overview, hub-models, routing, onboarding) -->
         <div class="ai-hub-tabs">
-            <button class="ai-hub-tab active" data-tab="providers">Providers</button>
+            <button class="ai-hub-tab active" data-tab="hub-overview">Overview</button>
+            <button class="ai-hub-tab" data-tab="providers">Providers</button>
+            <button class="ai-hub-tab" data-tab="hub-models">Models</button>
+            <button class="ai-hub-tab" data-tab="routing">Routing</button>
+            <button class="ai-hub-tab" data-tab="onboarding">Onboarding</button>
             <button class="ai-hub-tab" data-tab="helpers">Helpers</button>
             <button class="ai-hub-tab" data-tab="profiles">Profiles</button>
             <button class="ai-hub-tab" data-tab="context">Context</button>
             <button class="ai-hub-tab" data-tab="agent">Agent</button>
         </div>
+
+        <!-- v0.5.28: Hub Overview Tab -->
+        <div class="ai-hub-panel" id="ai-hub-overview" data-tab-panel="hub-overview">
+            <div id="ai-hub-overview-warnings" class="ai-hub-warnings"></div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header"><h3>Status</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="ai-hub-overall-status">-</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Active Provider</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="ai-hub-active-provider">-</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Configured</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="ai-hub-configured-count">-</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Onboarding</h3></div>
+                    <div class="card-body"><div class="metric"><span class="metric-value" id="ai-hub-onboarding-status">-</span></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Default Models</h3>
+                </div>
+                <div class="card-body">
+                    <div class="defaults-grid" id="ai-hub-defaults-summary">
+                        <div class="empty-state"><p>Loading defaults...</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Provider Summary</h3>
+                    <button class="btn btn-sm btn-secondary" id="ai-hub-overview-refresh">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="ai-hub-overview-providers">
+                        <div class="empty-state"><p>Loading providers...</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        <!-- Providers Tab -->
-        <div class="ai-hub-panel" id="ai-hub-providers" data-tab-panel="providers">
+        <!-- Providers Tab (v0.5.28: enhanced with provider cards + test) -->
+        <div class="ai-hub-panel" id="ai-hub-providers" data-tab-panel="providers" style="display:none;">
             <div class="card">
                 <div class="card-header">
                     <h3>AI Providers</h3>
@@ -1158,13 +1211,14 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="ai-hub-provider-list">
+                    <div id="ai-hub-provider-list" class="provider-cards-grid">
                         <div class="empty-state"><p>Loading providers...</p></div>
                     </div>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header"><h3>Quick Configure</h3></div>
+            <!-- Provider Configure Slide Panel -->
+            <div class="card" id="ai-hub-provider-config-panel">
+                <div class="card-header"><h3>Configure Provider</h3></div>
                 <div class="card-body">
                     <div class="form-grid">
                         <div class="form-group">
@@ -1195,6 +1249,183 @@
                         <button class="btn btn-sm btn-secondary" id="ai-hub-cfg-ping">Test Connection</button>
                     </div>
                     <div id="ai-hub-cfg-result" class="cfg-result"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- v0.5.28: Models Tab -->
+        <div class="ai-hub-panel" id="ai-hub-models-panel" data-tab-panel="hub-models" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Default Models</h3>
+                    <button class="btn btn-sm btn-secondary" id="ai-hub-models-refresh">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div class="defaults-edit-grid" id="ai-hub-defaults-edit">
+                        <div class="form-group">
+                            <label for="ai-hub-default-chat">Chat Model</label>
+                            <input type="text" id="ai-hub-default-chat" class="form-input" placeholder="gpt-4o">
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-hub-default-code">Code Model</label>
+                            <input type="text" id="ai-hub-default-code" class="form-input" placeholder="gpt-4o">
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-hub-default-embeddings">Embeddings Model</label>
+                            <input type="text" id="ai-hub-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-sm btn-primary" id="ai-hub-defaults-save">Save Defaults</button>
+                    </div>
+                    <div id="ai-hub-defaults-result" class="cfg-result"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Available Models</h3></div>
+                <div class="card-body">
+                    <table class="data-table" id="ai-hub-models-table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Provider</th>
+                                <th>Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-hub-models-tbody">
+                            <tr><td colspan="3" class="text-muted">Loading models...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- v0.5.28: Routing/Usage Tab -->
+        <div class="ai-hub-panel" id="ai-hub-routing-panel" data-tab-panel="routing" style="display:none;">
+            <div class="info-banner">
+                <span class="info-icon">🔀</span>
+                <p>Shows which AI provider and model each Aksara feature uses.</p>
+            </div>
+            <div id="ai-hub-routing-warnings" class="ai-hub-warnings"></div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Feature Routing Table</h3>
+                    <button class="btn btn-sm btn-secondary" id="ai-hub-routing-refresh">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <table class="data-table" id="ai-hub-routing-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Provider</th>
+                                <th>Model</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-hub-routing-tbody">
+                            <tr><td colspan="4" class="text-muted">Loading routing...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- v0.5.28: Onboarding Tab -->
+        <div class="ai-hub-panel" id="ai-hub-onboarding-panel" data-tab-panel="onboarding" style="display:none;">
+            <div class="card">
+                <div class="card-header"><h3>AI Hub Setup Wizard</h3></div>
+                <div class="card-body">
+                    <div class="onboarding-steps" id="ai-hub-onboarding-steps">
+                        <div class="onboarding-step" data-step="1">
+                            <div class="onboarding-step-header">
+                                <span class="onboarding-step-number">1</span>
+                                <span class="onboarding-step-title">Select Providers</span>
+                                <span class="onboarding-step-status" id="onboarding-step-1-status">○</span>
+                            </div>
+                            <div class="onboarding-step-body">
+                                <p>Choose which AI providers you want to configure.</p>
+                                <div class="onboarding-provider-select" id="onboarding-provider-select">
+                                    <label class="form-checkbox-inline"><input type="checkbox" value="openai"> OpenAI</label>
+                                    <label class="form-checkbox-inline"><input type="checkbox" value="anthropic"> Anthropic</label>
+                                    <label class="form-checkbox-inline"><input type="checkbox" value="azure"> Azure OpenAI</label>
+                                    <label class="form-checkbox-inline"><input type="checkbox" value="ollama"> Ollama</label>
+                                    <label class="form-checkbox-inline"><input type="checkbox" value="custom"> Custom HTTP</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="onboarding-step" data-step="2">
+                            <div class="onboarding-step-header">
+                                <span class="onboarding-step-number">2</span>
+                                <span class="onboarding-step-title">Enter API Keys</span>
+                                <span class="onboarding-step-status" id="onboarding-step-2-status">○</span>
+                            </div>
+                            <div class="onboarding-step-body">
+                                <p>Provide API keys for your selected providers.</p>
+                                <div id="onboarding-keys-form" class="form-grid"></div>
+                                <div class="form-actions">
+                                    <button class="btn btn-sm btn-primary" id="onboarding-save-keys">Save Keys</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="onboarding-step" data-step="3">
+                            <div class="onboarding-step-header">
+                                <span class="onboarding-step-number">3</span>
+                                <span class="onboarding-step-title">Test Connections</span>
+                                <span class="onboarding-step-status" id="onboarding-step-3-status">○</span>
+                            </div>
+                            <div class="onboarding-step-body">
+                                <p>Verify that each provider is reachable.</p>
+                                <div id="onboarding-test-results" class="onboarding-test-results"></div>
+                                <div class="form-actions">
+                                    <button class="btn btn-sm btn-primary" id="onboarding-test-all">Test All</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="onboarding-step" data-step="4">
+                            <div class="onboarding-step-header">
+                                <span class="onboarding-step-number">4</span>
+                                <span class="onboarding-step-title">Choose Defaults</span>
+                                <span class="onboarding-step-status" id="onboarding-step-4-status">○</span>
+                            </div>
+                            <div class="onboarding-step-body">
+                                <p>Select default models for chat, code, and embeddings.</p>
+                                <div class="form-grid" id="onboarding-defaults-form">
+                                    <div class="form-group">
+                                        <label for="onboarding-default-chat">Chat Model</label>
+                                        <input type="text" id="onboarding-default-chat" class="form-input" placeholder="gpt-4o">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="onboarding-default-code">Code Model</label>
+                                        <input type="text" id="onboarding-default-code" class="form-input" placeholder="gpt-4o">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="onboarding-default-embeddings">Embeddings Model</label>
+                                        <input type="text" id="onboarding-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button class="btn btn-sm btn-primary" id="onboarding-save-defaults">Save Defaults</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="onboarding-step" data-step="5">
+                            <div class="onboarding-step-header">
+                                <span class="onboarding-step-number">5</span>
+                                <span class="onboarding-step-title">Sample Query</span>
+                                <span class="onboarding-step-status" id="onboarding-step-5-status">○</span>
+                            </div>
+                            <div class="onboarding-step-body">
+                                <p>Run a quick test prompt to confirm everything works.</p>
+                                <div class="form-group">
+                                    <textarea id="onboarding-sample-prompt" class="form-textarea" rows="2" placeholder="Hello, can you describe this Aksara project?"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button class="btn btn-sm btn-primary" id="onboarding-run-sample">Run Sample</button>
+                                </div>
+                                <div id="onboarding-sample-result" class="cfg-result"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

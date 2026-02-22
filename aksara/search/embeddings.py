@@ -191,7 +191,7 @@ def get_embedding_provider(
     Get an embedding provider instance.
 
     Args:
-        provider: Provider name. Defaults to "local" (built-in TF-IDF).
+        provider: Provider name. Defaults to AI Hub config, then "local" (built-in TF-IDF).
         **kwargs: Extra arguments passed to the provider constructor.
 
     Returns:
@@ -200,6 +200,19 @@ def get_embedding_provider(
     Raises:
         ValueError: If the provider name is not registered.
     """
+    # v0.5.28: Try AI Hub defaults when no explicit provider given
+    if provider is None:
+        try:
+            from aksara.ai.hub_settings import load_aihub_settings
+            hub = load_aihub_settings()
+            if hub.defaults and hub.defaults.embeddings_provider and hub.defaults.embeddings_model:
+                # Only use hub default if the provider is registered
+                hub_prov = hub.defaults.embeddings_provider
+                if hub_prov in _PROVIDERS:
+                    provider = hub_prov
+                    kwargs.setdefault("model", hub.defaults.embeddings_model)
+        except Exception:
+            pass
     name = provider or "local"
     cls = _PROVIDERS.get(name)
     if cls is None:

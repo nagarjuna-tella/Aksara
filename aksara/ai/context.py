@@ -376,6 +376,9 @@ class AiFullContext(BaseModel):
     # v0.5.13: Per-View AI Hints
     ai_hints: List["AiRouteHintInfo"] = Field(default_factory=list, description="Route-level AI hints")
     ai_hint_count: int = Field(default=0, description="Total AI hint count")
+    
+    # v0.5.28: AI Hub Summary
+    ai_hub_summary: Optional[Dict[str, Any]] = Field(default=None, description="AI Hub provider/model summary")
 
 
 # v0.5.13: AI Hint Info for Context (simplified version of AiRouteHint)
@@ -822,6 +825,33 @@ def _extract_ai_hints_info(app: "FastAPI") -> List["AiRouteHintInfo"]:
     return hints_info
 
 
+def _extract_ai_hub_summary() -> Optional[Dict[str, Any]]:
+    """
+    v0.5.28: Extract AI Hub configuration summary for context.
+
+    Returns a safe dict with provider status and default model assignments,
+    or None if the hub settings module is not available.
+    """
+    try:
+        from aksara.ai.hub_settings import load_aihub_settings
+        hub = load_aihub_settings()
+        providers = []
+        for p in hub.providers:
+            providers.append({
+                "kind": p.kind,
+                "configured": p.is_configured,
+                "modes": p.get_supported_modes(),
+            })
+        return {
+            "active_provider": hub.active_provider,
+            "configured_count": sum(1 for p in hub.providers if p.is_configured),
+            "providers": providers,
+            "defaults": hub.defaults.model_dump() if hub.defaults else {},
+        }
+    except Exception:
+        return None
+
+
 def _compute_checksum(data: Dict[str, Any]) -> str:
     """Compute deterministic checksum for context data."""
     # Remove volatile fields
@@ -913,6 +943,9 @@ async def build_full_ai_context(
     ai_hints: List[AiRouteHintInfo] = []
     ai_hints = _extract_ai_hints_info(app)
     
+    # v0.5.28: Extract AI Hub summary
+    ai_hub_summary = _extract_ai_hub_summary()
+    
     # Build context without checksum first
     context_data = {
         "framework": "aksara",
@@ -938,6 +971,7 @@ async def build_full_ai_context(
         "ai_schemas": [s.model_dump() for s in ai_schemas],
         "ai_hints": [h.model_dump() for h in ai_hints],
         "ai_hint_count": len(ai_hints),
+        "ai_hub_summary": ai_hub_summary,
     }
     
     # Compute checksum
@@ -967,6 +1001,7 @@ async def build_full_ai_context(
         ai_schemas=ai_schemas,
         ai_hints=ai_hints,
         ai_hint_count=len(ai_hints),
+        ai_hub_summary=ai_hub_summary,
     )
 
 

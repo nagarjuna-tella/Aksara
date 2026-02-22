@@ -1441,6 +1441,111 @@ async def studio_gaps_run(
 
 
 # =============================================================================
+# v0.5.28: AI Hub 2.0 Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai-hub/status")
+async def studio_aihub_status(request: Request):
+    """
+    Overall AI Hub status — readiness, onboarding progress, warnings.
+
+    v0.5.28: Central status endpoint for the AI Hub 2.0 panel.
+    """
+    from aksara.studio.utils import build_aihub_status
+    return build_aihub_status()
+
+
+@router.get("/studio/ai-hub/providers")
+async def studio_aihub_providers(request: Request):
+    """
+    List all detected providers with configuration and reachability status.
+
+    v0.5.28: Full provider inventory for the AI Hub panel.
+    """
+    from aksara.studio.utils import build_aihub_providers
+    return build_aihub_providers()
+
+
+@router.get("/studio/ai-hub/models")
+async def studio_aihub_models(request: Request):
+    """
+    Default model assignments and available models per provider.
+
+    v0.5.28: Model listing for the AI Hub Models tab.
+    """
+    from aksara.studio.utils import build_aihub_models
+    return build_aihub_models()
+
+
+@router.post("/studio/ai-hub/configure")
+async def studio_aihub_configure(request: Request):
+    """
+    Configure a provider (non-secret fields like base_url, model, enabled).
+
+    v0.5.28: Accepts provider kind + config fields.
+    """
+    from aksara.studio.utils import build_aihub_configure
+
+    body = await request.json()
+    return build_aihub_configure(
+        provider=body.get("provider", ""),
+        base_url=body.get("base_url"),
+        model=body.get("model"),
+        enabled=body.get("enabled", True),
+    )
+
+
+@router.post("/studio/ai-hub/configure/secret")
+async def studio_aihub_configure_secret(request: Request):
+    """
+    Handle API key configuration securely (no logging).
+
+    v0.5.28: Saves API key to .env without exposing it in logs.
+    """
+    from aksara.studio.utils import build_aihub_configure_secret
+
+    body = await request.json()
+    return build_aihub_configure_secret(
+        provider=body.get("provider", ""),
+        api_key=body.get("api_key", ""),
+    )
+
+
+@router.post("/studio/ai-hub/defaults")
+async def studio_aihub_defaults(request: Request):
+    """
+    Update default model assignments (chat, code, embeddings).
+
+    v0.5.28: Set which model/provider to use for each AI mode.
+    """
+    from aksara.studio.utils import build_aihub_defaults
+
+    body = await request.json()
+    return build_aihub_defaults(
+        chat_model=body.get("chat_model"),
+        chat_provider=body.get("chat_provider"),
+        code_model=body.get("code_model"),
+        code_provider=body.get("code_provider"),
+        embeddings_model=body.get("embeddings_model"),
+        embeddings_provider=body.get("embeddings_provider"),
+    )
+
+
+@router.post("/studio/ai-hub/test")
+async def studio_aihub_test(request: Request):
+    """
+    Test a single provider's connectivity (ping).
+
+    v0.5.28: Returns reachability, latency, and supported modes.
+    """
+    from aksara.studio.utils import build_aihub_test
+
+    body = await request.json()
+    return build_aihub_test(provider=body.get("provider", ""))
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 

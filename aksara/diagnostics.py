@@ -476,6 +476,49 @@ async def check_ai_provider_secrets() -> List[DiagnosticIssue]:
     return issues
 
 
+async def check_ai_hub_config() -> List[DiagnosticIssue]:
+    """v0.5.28: Validate AI Hub configuration and resolved defaults."""
+    issues: List[DiagnosticIssue] = []
+    try:
+        from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+
+        hub = load_aihub_settings()
+        configured = [p for p in hub.providers if p.is_configured]
+
+        if not configured:
+            issues.append(DiagnosticIssue(
+                kind="ai_hub_no_provider",
+                severity="info",
+                title="No AI providers configured in AI Hub",
+                message="No AI providers have API keys or base URLs configured. AI features will be unavailable.",
+                hint="Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or configure providers via Studio AI Hub.",
+            ))
+        else:
+            # Check if defaults are resolved
+            defaults = resolve_defaults(hub)
+            if not defaults.chat_model:
+                issues.append(DiagnosticIssue(
+                    kind="ai_hub_defaults_missing",
+                    severity="warning",
+                    title="AI Hub: No default chat model",
+                    message="AI Hub has configured providers but no default chat model is set.",
+                    hint="Set defaults via aksara ai-hub defaults or Studio AI Hub → Models tab.",
+                ))
+            if not defaults.embeddings_model:
+                issues.append(DiagnosticIssue(
+                    kind="ai_hub_defaults_missing",
+                    severity="info",
+                    title="AI Hub: No default embeddings model",
+                    message="No default embeddings model configured. Semantic search will use local TF-IDF.",
+                    hint="Set embeddings_model via aksara ai-hub defaults or Studio AI Hub → Models tab.",
+                ))
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    return issues
+
+
 async def check_required_settings() -> List[DiagnosticIssue]:
     """Check canonical Aksara settings for common misconfigurations."""
     issues: List[DiagnosticIssue] = []
@@ -764,6 +807,7 @@ async def run_all_checks() -> DiagnosticReport:
         check_migrations_status,
         check_ai_profiles,
         check_ai_provider_secrets,
+        check_ai_hub_config,
         check_required_settings,
         check_cache_available,
         check_file_system_permissions,
@@ -803,6 +847,7 @@ __all__ = [
     "check_migrations_status",
     "check_ai_profiles",
     "check_ai_provider_secrets",
+    "check_ai_hub_config",
     "check_required_settings",
     "check_cache_available",
     "check_file_system_permissions",

@@ -1,6 +1,6 @@
 # Aksara Roadmap
 
-> **Updated Feb 21, 2026**
+> **Updated Feb 22, 2026**
 
 Aksara is now an AI-first application framework with a fully integrated
 developer studio, automatic diagnostics, code-generation agents, and
@@ -11,20 +11,39 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 
 ## Current Stable Version
 
-### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
+### v0.5.28 — AI Hub 2.0 (Feb 2026)
 
-- **Studio Gap Analysis panel** — nav item, template, `renderGaps()` /
-  `loadGapAnalysis()` with severity filter buttons and Re-scan action
-- Consolidated 3 duplicate `jsonPost` definitions in Studio app.js
-- Replaced `alert()` with `showToast()` for consistent Studio UX
-- `aksara inspect queries` now handles missing `DATABASE_URL` gracefully
-- `run_gap_analysis_for_category` logs warnings instead of silent swallow
-- CLI help text fixes (grammar, stale version tags removed)
-- Keyboard shortcuts reorganised: `6`=Gaps, `7`=DB Queries, `8`=AI Hub, `g`=Gaps
-- Docs and help text aligned with current behaviour
-- Full suite at **3551+ passed**
+- **AI Hub 2.0** — unified configuration layer for all AI providers:
+  `AiHubSettings`, `ProviderConfig`, `AiDefaultModels` in `aksara/ai/hub_settings.py`
+- **7 REST endpoints** under `/studio/ai-hub/` for provider management
+- **Studio UI** — 4 new tabs (Overview, Models, Routing, Onboarding), global
+  sidebar indicator, Alt+A shortcut, onboarding wizard
+- **AI Hub CLI** — `aksara ai-hub` group with `status`, `providers`, `models`,
+  `defaults`, `configure`, `doctor` subcommands
+- **Gap Analysis** — new `ai_hub` category (9 categories total), 6 gap codes
+  with fix-plan commands
+- **Wiring** — AI context includes hub summary, agent workflows inject hub
+  defaults, search embeddings consult hub, diagnostics check hub config
+- **Deprecation** — old `ai_profiles_enabled`, `ai_providers`, `ai_secret_hints`
+  settings marked deprecated (removed in v0.6)
 
 ---
+
+## Recent Releases
+
+### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
+
+- Studio Gap Analysis panel, severity filter buttons, Re-scan action
+- Studio UX consolidation, CLI help fixes, keyboard shortcut reorg
+- Full suite at **3551+ passed**
+
+## Recent Releases
+
+### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
+
+- Studio Gap Analysis panel, severity filter buttons, Re-scan action
+- Studio UX consolidation, CLI help fixes, keyboard shortcut reorg
+- Full suite at **3551+ passed**
 
 ## Recent Releases
 

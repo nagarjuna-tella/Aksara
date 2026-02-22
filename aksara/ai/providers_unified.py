@@ -168,6 +168,19 @@ class UnifiedAiProvider(BaseModel):
         )
 
     @classmethod
+    def from_provider_config(
+        cls,
+        config: Any,
+    ) -> "UnifiedAiProvider":
+        """
+        Build from a ``ProviderConfig`` (aksara.ai.hub_settings).
+
+        This bridges the new AI Hub settings layer into the existing
+        UnifiedAiProvider / LLM-client adapter stack.
+        """
+        return config.to_unified_provider()
+
+    @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "UnifiedAiProvider":
         """Build from a dictionary (e.g. loaded from provider.json)."""
         return cls(**data)
@@ -272,6 +285,31 @@ class UnifiedAiProvider(BaseModel):
             key = d["api_key"]
             d["api_key"] = f"{key[:4]}...{key[-4:]}" if len(key) > 8 else "****"
         return d
+
+    def is_reachable(self) -> bool:
+        """
+        Quick connectivity check (returns bool, swallows errors).
+        """
+        try:
+            return self.ping().get("ok", False)
+        except Exception:
+            return False
+
+    def get_supported_modes(self) -> List[str]:
+        """
+        Return list of supported modes: chat, code, embeddings.
+        """
+        from aksara.ai.hub_settings import _PROVIDER_DEFAULT_MODELS
+
+        modes: List[str] = []
+        defaults = _PROVIDER_DEFAULT_MODELS.get(self.provider, {})
+        if defaults.get("chat"):
+            modes.append("chat")
+        if defaults.get("code"):
+            modes.append("code")
+        if defaults.get("embeddings"):
+            modes.append("embeddings")
+        return modes
 
     def save_to_env_file(self, path: Optional[str] = None) -> str:
         """
@@ -401,6 +439,34 @@ def detect_all_providers() -> List["UnifiedAiProvider"]:
     return results
 
 
+def provider_status_summary() -> Dict[str, Any]:
+    """
+    Return a JSON-friendly summary of all detected providers.
+
+    Includes configuration status, supported modes, and the active provider.
+    """
+    providers = detect_all_providers()
+    active = get_active_provider()
+
+    items: List[Dict[str, Any]] = []
+    for p in providers:
+        items.append({
+            "provider": p.provider,
+            "configured": p.is_configured(),
+            "model": p.model or "",
+            "base_url": p.base_url or "",
+            "modes": p.get_supported_modes(),
+        })
+
+    return {
+        "total": len(items),
+        "configured": sum(1 for i in items if i["configured"]),
+        "active_provider": active.provider if active else None,
+        "active_model": active.model if active else None,
+        "providers": items,
+    }
+
+
 def get_active_provider() -> UnifiedAiProvider:
     """
     Get the currently active unified provider.
@@ -424,4 +490,5 @@ __all__ = [
     "UnifiedAiProvider",
     "detect_all_providers",
     "get_active_provider",
+    "provider_status_summary",
 ]

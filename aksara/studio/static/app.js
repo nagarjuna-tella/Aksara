@@ -67,6 +67,11 @@ const state = {
         providers: null,
         agentOutput: null,
         contextData: null,
+        // v0.5.28: AI Hub 2.0 state
+        status: null,
+        models: null,
+        routing: null,
+        onboardingState: { selectedProviders: [] },
     },
 };
 
@@ -265,6 +270,12 @@ function initNavigation() {
         }
         // v0.5.25: 'A' opens AI Hub
         if (e.key === 'a' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            navigateTo('ai-hub');
+            return;
+        }
+        // v0.5.28: Alt/Option+A opens AI Hub (works from anywhere)
+        if (e.altKey && (e.key === 'a' || e.key === 'A') && !e.metaKey && !e.ctrlKey) {
             e.preventDefault();
             navigateTo('ai-hub');
             return;
@@ -2474,6 +2485,9 @@ async function init() {
         // Update UI
         updateConnectionStatus('connected', 'Connected');
         
+        // v0.5.28: Load AI Hub status indicator
+        loadAiStatusIndicator();
+        
         // Update version badge
         const versionBadge = elements.versionBadge();
         if (versionBadge && handshake.project) {
@@ -2750,8 +2764,8 @@ function escapeHtml(str) {
 // =============================================================================
 
 async function renderAiHub() {
-    // Track which tabs have been loaded
-    const loadedTabs = { providers: true };
+    // Track which tabs have been loaded (v0.5.28: hub-overview is default)
+    const loadedTabs = { 'hub-overview': true };
 
     // Wire tab switching
     document.querySelectorAll('.ai-hub-tab').forEach(tab => {
@@ -2762,13 +2776,18 @@ async function renderAiHub() {
             document.querySelectorAll('.ai-hub-panel').forEach(p => {
                 p.style.display = p.dataset.tabPanel === target ? '' : 'none';
             });
-            // v0.5.25: Lazy-load consolidated sections on first visit
+            // Lazy-load consolidated sections on first visit
             if (!loadedTabs[target]) {
                 loadedTabs[target] = true;
+                if (target === 'providers') loadAiHubProviders();
                 if (target === 'helpers') renderAiHelpers();
                 if (target === 'profiles') renderAiProfiles();
                 if (target === 'agent') renderAgentPanel();
                 if (target === 'context') loadAiHubContext();
+                // v0.5.28: New tabs
+                if (target === 'hub-models') loadAiHubModels();
+                if (target === 'routing') loadAiHubRouting();
+                if (target === 'onboarding') loadAiHubOnboarding();
             }
         });
     });
@@ -2786,10 +2805,10 @@ async function renderAiHub() {
         });
     });
 
-    // Load providers
-    await loadAiHubProviders();
+    // v0.5.28: Load Hub Overview (default tab)
+    await loadAiHubOverview();
 
-    // Wire buttons
+    // Wire buttons (providers tab - loaded lazily)
     const refreshBtn = document.getElementById('ai-hub-refresh-providers');
     if (refreshBtn) refreshBtn.addEventListener('click', loadAiHubProviders);
 
@@ -2808,6 +2827,34 @@ async function renderAiHub() {
     const refreshCtxBtn = document.getElementById('ai-hub-refresh-context');
     if (refreshCtxBtn) refreshCtxBtn.addEventListener('click', loadAiHubContext);
 
+    // v0.5.28: Wire overview refresh
+    const overviewRefresh = document.getElementById('ai-hub-overview-refresh');
+    if (overviewRefresh) overviewRefresh.addEventListener('click', loadAiHubOverview);
+
+    // v0.5.28: Wire models tab buttons
+    const modelsRefresh = document.getElementById('ai-hub-models-refresh');
+    if (modelsRefresh) modelsRefresh.addEventListener('click', loadAiHubModels);
+
+    const defaultsSave = document.getElementById('ai-hub-defaults-save');
+    if (defaultsSave) defaultsSave.addEventListener('click', aiHubSaveDefaults);
+
+    // v0.5.28: Wire routing tab refresh
+    const routingRefresh = document.getElementById('ai-hub-routing-refresh');
+    if (routingRefresh) routingRefresh.addEventListener('click', loadAiHubRouting);
+
+    // v0.5.28: Wire onboarding buttons
+    const testAllBtn = document.getElementById('onboarding-test-all');
+    if (testAllBtn) testAllBtn.addEventListener('click', onboardingTestAll);
+
+    const saveKeysBtn = document.getElementById('onboarding-save-keys');
+    if (saveKeysBtn) saveKeysBtn.addEventListener('click', onboardingSaveKeys);
+
+    const saveDefaultsBtn = document.getElementById('onboarding-save-defaults');
+    if (saveDefaultsBtn) saveDefaultsBtn.addEventListener('click', onboardingSaveDefaults);
+
+    const runSampleBtn = document.getElementById('onboarding-run-sample');
+    if (runSampleBtn) runSampleBtn.addEventListener('click', onboardingRunSample);
+
     // Cmd+Enter in agent textarea
     const textarea = document.getElementById('ai-hub-agent-prompt');
     if (textarea) {
@@ -2820,40 +2867,356 @@ async function renderAiHub() {
     }
 }
 
+// v0.5.28: Global AI status indicator (sidebar)
+async function loadAiStatusIndicator() {
+    const indicator = document.getElementById('ai-status-indicator');
+    const dot = document.getElementById('ai-status-dot');
+    const label = document.getElementById('ai-status-label');
+    if (!indicator) return;
+
+    try {
+        const data = await jsonGet('/studio/ai-hub/status');
+        indicator.style.display = '';
+        const overall = data.overall || 'disabled';
+        dot.className = 'ai-status-dot ai-status-' + overall;
+        if (overall === 'ready') {
+            label.textContent = 'AI Ready';
+            indicator.title = 'AI Hub: All providers configured';
+        } else if (overall === 'partial') {
+            label.textContent = 'AI Partial';
+            indicator.title = 'AI Hub: Some providers configured';
+        } else {
+            label.textContent = 'AI Off';
+            indicator.title = 'AI Hub: No providers configured';
+        }
+    } catch {
+        // Silently hide if endpoint not available
+        indicator.style.display = 'none';
+    }
+}
+
+// v0.5.28: Hub Overview tab
+async function loadAiHubOverview() {
+    const statusEl = document.getElementById('ai-hub-overall-status');
+    const activeEl = document.getElementById('ai-hub-active-provider');
+    const countEl = document.getElementById('ai-hub-configured-count');
+    const onboardEl = document.getElementById('ai-hub-onboarding-status');
+    const warningsEl = document.getElementById('ai-hub-overview-warnings');
+    const defaultsEl = document.getElementById('ai-hub-defaults-summary');
+    const providersEl = document.getElementById('ai-hub-overview-providers');
+
+    try {
+        const data = await jsonGet('/studio/ai-hub/status');
+        state.aiHub.status = data;
+
+        if (statusEl) {
+            const cls = data.overall === 'ready' ? 'text-success' : (data.overall === 'partial' ? 'text-warning' : 'text-danger');
+            statusEl.innerHTML = `<span class="${cls}">${data.overall || 'unknown'}</span>`;
+        }
+        if (activeEl) activeEl.textContent = data.active_provider || 'none';
+        if (countEl) countEl.textContent = String(data.configured_count || 0);
+        if (onboardEl) {
+            const ob = data.onboarding;
+            if (ob && ob.completed) {
+                onboardEl.innerHTML = '<span class="text-success">✓ Complete</span>';
+            } else {
+                const done = ob ? [ob.has_provider, ob.has_key, ob.has_test, ob.has_defaults, ob.has_sample].filter(Boolean).length : 0;
+                onboardEl.innerHTML = `<span class="text-warning">${done}/5 steps</span>`;
+            }
+        }
+        // Warnings
+        if (warningsEl) {
+            const warnings = data.warnings || [];
+            warningsEl.innerHTML = warnings.map(w =>
+                `<div class="info-banner warning"><span class="info-icon">⚠️</span><p>${escapeHtml(w)}</p></div>`
+            ).join('');
+        }
+        // Defaults summary
+        if (defaultsEl) {
+            const d = data.defaults || {};
+            defaultsEl.innerHTML = `
+                <div class="defaults-row"><span class="defaults-label">Chat:</span><span class="defaults-value">${escapeHtml(d.chat_model || 'not set')} <span class="text-muted">(${escapeHtml(d.chat_provider || '-')})</span></span></div>
+                <div class="defaults-row"><span class="defaults-label">Code:</span><span class="defaults-value">${escapeHtml(d.code_model || 'not set')} <span class="text-muted">(${escapeHtml(d.code_provider || '-')})</span></span></div>
+                <div class="defaults-row"><span class="defaults-label">Embeddings:</span><span class="defaults-value">${escapeHtml(d.embeddings_model || 'not set')} <span class="text-muted">(${escapeHtml(d.embeddings_provider || '-')})</span></span></div>`;
+        }
+        // Providers summary cards
+        if (providersEl) {
+            const provData = await jsonGet('/studio/ai-hub/providers');
+            if (!provData.providers || provData.providers.length === 0) {
+                providersEl.innerHTML = '<div class="empty-state"><p>No providers configured.</p></div>';
+            } else {
+                providersEl.innerHTML = provData.providers.map(p => {
+                    const icon = p.configured ? (p.reachable ? '✓' : '⚠') : '○';
+                    const cls = p.configured ? (p.reachable ? 'status-ok' : 'status-warn') : 'status-off';
+                    return `<div class="provider-summary-row">
+                        <span class="provider-status ${cls}">${icon}</span>
+                        <span class="provider-name">${escapeHtml(p.kind)}</span>
+                        ${p.error ? `<span class="text-danger text-sm">${escapeHtml(p.error)}</span>` : ''}
+                    </div>`;
+                }).join('');
+            }
+        }
+        // Also update the global indicator
+        loadAiStatusIndicator();
+    } catch (err) {
+        if (statusEl) statusEl.innerHTML = `<span class="text-danger">Error</span>`;
+    }
+}
+
+// v0.5.28: Models tab
+async function loadAiHubModels() {
+    const tbody = document.getElementById('ai-hub-models-tbody');
+    const chatInput = document.getElementById('ai-hub-default-chat');
+    const codeInput = document.getElementById('ai-hub-default-code');
+    const embeddingsInput = document.getElementById('ai-hub-default-embeddings');
+
+    try {
+        const data = await jsonGet('/studio/ai-hub/models');
+        state.aiHub.models = data;
+
+        // Fill defaults fields
+        if (data.defaults) {
+            if (chatInput) chatInput.value = data.defaults.chat_model || '';
+            if (codeInput) codeInput.value = data.defaults.code_model || '';
+            if (embeddingsInput) embeddingsInput.value = data.defaults.embeddings_model || '';
+        }
+
+        // Fill models table
+        if (tbody) {
+            if (!data.models || data.models.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No models available</td></tr>';
+            } else {
+                tbody.innerHTML = data.models.map(m =>
+                    `<tr><td><code>${escapeHtml(m.model_id)}</code></td><td>${escapeHtml(m.provider)}</td><td>${escapeHtml(m.mode)}</td></tr>`
+                ).join('');
+            }
+        }
+    } catch (err) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="3" class="text-danger">Error: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+async function aiHubSaveDefaults() {
+    const resultEl = document.getElementById('ai-hub-defaults-result');
+    const chatModel = document.getElementById('ai-hub-default-chat')?.value;
+    const codeModel = document.getElementById('ai-hub-default-code')?.value;
+    const embeddingsModel = document.getElementById('ai-hub-default-embeddings')?.value;
+
+    try {
+        const resp = await jsonPost('/studio/ai-hub/defaults', {
+            chat_model: chatModel || null,
+            code_model: codeModel || null,
+            embeddings_model: embeddingsModel || null,
+        });
+        if (resultEl) {
+            resultEl.innerHTML = resp.ok
+                ? `<span class="text-success">✓ ${escapeHtml(resp.message || 'Defaults saved')}</span>`
+                : `<span class="text-danger">✗ ${escapeHtml(resp.message || 'Failed')}</span>`;
+        }
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
+// v0.5.28: Routing tab
+async function loadAiHubRouting() {
+    const tbody = document.getElementById('ai-hub-routing-tbody');
+    const warningsEl = document.getElementById('ai-hub-routing-warnings');
+
+    try {
+        const data = await jsonGet('/studio/ai-hub/status');
+        state.aiHub.routing = data;
+
+        // Build routes from status data to simulate routing
+        let routeData;
+        try {
+            routeData = await jsonGet('/studio/ai-hub/providers');
+        } catch { routeData = { providers: [] }; }
+
+        const features = ['agents', 'playbooks', 'search', 'diagnostics'];
+        const activeProvider = data.active_provider || 'none';
+        const defaults = data.defaults || {};
+
+        if (tbody) {
+            tbody.innerHTML = features.map(feature => {
+                const model = feature === 'search' ? (defaults.embeddings_model || '-') : (defaults.chat_model || '-');
+                const provider = activeProvider;
+                const status = data.overall === 'ready' ? '✓ Active' : (data.overall === 'partial' ? '⚠ Partial' : '○ Inactive');
+                const statusCls = data.overall === 'ready' ? 'text-success' : (data.overall === 'partial' ? 'text-warning' : 'text-muted');
+                return `<tr>
+                    <td><strong>${escapeHtml(feature)}</strong></td>
+                    <td>${escapeHtml(provider)}</td>
+                    <td><code>${escapeHtml(model)}</code></td>
+                    <td><span class="${statusCls}">${status}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Warnings
+        if (warningsEl) {
+            const warnings = data.warnings || [];
+            warningsEl.innerHTML = warnings.map(w =>
+                `<div class="info-banner warning"><span class="info-icon">⚠️</span><p>${escapeHtml(w)}</p></div>`
+            ).join('');
+        }
+    } catch (err) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Error: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+// v0.5.28: Onboarding tab
+async function loadAiHubOnboarding() {
+    try {
+        const data = await jsonGet('/studio/ai-hub/status');
+        const ob = data.onboarding || {};
+        const steps = [
+            { id: 1, done: ob.has_provider },
+            { id: 2, done: ob.has_key },
+            { id: 3, done: ob.has_test },
+            { id: 4, done: ob.has_defaults },
+            { id: 5, done: ob.has_sample },
+        ];
+        steps.forEach(s => {
+            const el = document.getElementById(`onboarding-step-${s.id}-status`);
+            if (el) {
+                el.textContent = s.done ? '✓' : '○';
+                el.className = 'onboarding-step-status ' + (s.done ? 'text-success' : 'text-muted');
+            }
+        });
+    } catch {
+        // ignore
+    }
+}
+
+async function onboardingTestAll() {
+    const container = document.getElementById('onboarding-test-results');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted">Testing providers...</p>';
+
+    try {
+        const provData = await jsonGet('/studio/ai-hub/providers');
+        const providers = (provData.providers || []).filter(p => p.configured);
+        if (providers.length === 0) {
+            container.innerHTML = '<p class="text-muted">No configured providers to test.</p>';
+            return;
+        }
+        const results = [];
+        for (const p of providers) {
+            try {
+                const resp = await jsonPost('/studio/ai-hub/test', { provider: p.kind });
+                results.push(resp);
+            } catch (err) {
+                results.push({ provider: p.kind, reachable: false, error: err.message });
+            }
+        }
+        container.innerHTML = results.map(r => {
+            const icon = r.reachable ? '✓' : '✗';
+            const cls = r.reachable ? 'text-success' : 'text-danger';
+            const latency = r.latency_ms ? ` (${r.latency_ms}ms)` : '';
+            return `<div class="onboarding-test-row"><span class="${cls}">${icon} ${escapeHtml(r.provider)}${latency}</span>${r.error ? ` <span class="text-danger">${escapeHtml(r.error)}</span>` : ''}</div>`;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = `<p class="text-danger">Error: ${escapeHtml(err.message)}</p>`;
+    }
+}
+
+async function onboardingSaveKeys() {
+    const form = document.getElementById('onboarding-keys-form');
+    if (!form) return;
+    const inputs = form.querySelectorAll('input[data-provider]');
+    for (const input of inputs) {
+        const provider = input.dataset.provider;
+        const apiKey = input.value?.trim();
+        if (apiKey) {
+            try {
+                await jsonPost('/studio/ai-hub/configure/secret', { provider, api_key: apiKey });
+            } catch { /* ignore individual errors */ }
+        }
+    }
+    // Refresh onboarding status
+    loadAiHubOnboarding();
+}
+
+async function onboardingSaveDefaults() {
+    const chatModel = document.getElementById('onboarding-default-chat')?.value;
+    const codeModel = document.getElementById('onboarding-default-code')?.value;
+    const embeddingsModel = document.getElementById('onboarding-default-embeddings')?.value;
+
+    try {
+        await jsonPost('/studio/ai-hub/defaults', {
+            chat_model: chatModel || null,
+            code_model: codeModel || null,
+            embeddings_model: embeddingsModel || null,
+        });
+        loadAiHubOnboarding();
+    } catch { /* ignore */ }
+}
+
+async function onboardingRunSample() {
+    const resultEl = document.getElementById('onboarding-sample-result');
+    const prompt = document.getElementById('onboarding-sample-prompt')?.value?.trim();
+    if (!prompt) return;
+    if (resultEl) resultEl.innerHTML = '<span class="text-muted">Running...</span>';
+
+    try {
+        const resp = await jsonPost('/studio/ai/hub/agent/run', {
+            prompt, include_context: true,
+        });
+        if (resultEl) {
+            if (resp.error) {
+                resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(resp.error)}</span>`;
+            } else {
+                resultEl.innerHTML = `<span class="text-success">✓ Response received (${resp.provider}/${resp.model})</span><pre class="ai-hub-output-body">${escapeHtml(resp.output?.substring(0, 500) || '')}</pre>`;
+            }
+        }
+        loadAiHubOnboarding();
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
 async function loadAiHubProviders() {
     const container = document.getElementById('ai-hub-provider-list');
     if (!container) return;
     container.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
 
     try {
-        const data = await jsonGet('/studio/ai/hub/providers');
+        const data = await jsonGet('/studio/ai-hub/providers');
         state.aiHub.providers = data;
 
         if (!data.providers || data.providers.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <p>No AI providers detected.</p>
-                    <p class="text-muted">Set environment variables (e.g., OPENAI_API_KEY) or use Quick Configure below.</p>
+                    <p class="text-muted">Set environment variables (e.g., OPENAI_API_KEY) or use Configure below.</p>
                 </div>`;
             return;
         }
 
         const activeKey = data.active_provider;
+        const providerIcons = { openai: '🤖', anthropic: '🧠', azure: '☁️', ollama: '🦙', custom: '🔌' };
         container.innerHTML = data.providers.map(p => {
-            const isActive = p.provider === activeKey;
+            const isActive = p.kind === activeKey;
             const statusClass = p.reachable ? 'status-ok' : (p.configured ? 'status-warn' : 'status-off');
             const statusIcon = p.reachable ? '✓' : (p.configured ? '⚠' : '○');
             const statusText = p.reachable ? 'Reachable' : (p.configured ? 'Configured' : 'Not configured');
+            const icon = providerIcons[p.kind] || '🔌';
+            const modesStr = (p.modes || []).join(', ') || '-';
             return `
                 <div class="provider-card ${isActive ? 'provider-active' : ''}">
                     <div class="provider-header">
-                        <span class="provider-name">${escapeHtml(p.provider)}${isActive ? ' <span class="badge badge-primary">active</span>' : ''}</span>
+                        <span class="provider-name"><span class="provider-icon">${icon}</span> ${escapeHtml(p.kind)}${isActive ? ' <span class="badge badge-primary">active</span>' : ''}</span>
                         <span class="provider-status ${statusClass}">${statusIcon} ${statusText}</span>
                     </div>
                     <div class="provider-details">
                         ${p.model ? `<span class="detail-item">Model: <code>${escapeHtml(p.model)}</code></span>` : ''}
                         ${p.base_url ? `<span class="detail-item">URL: <code>${escapeHtml(p.base_url)}</code></span>` : ''}
+                        <span class="detail-item">Modes: ${escapeHtml(modesStr)}</span>
                         ${p.error ? `<span class="detail-item text-danger">Error: ${escapeHtml(p.error)}</span>` : ''}
+                    </div>
+                    <div class="provider-card-actions">
+                        <button class="btn btn-xs btn-secondary" onclick="aiHubTestProvider('${escapeHtml(p.kind)}')">Test</button>
+                        <button class="btn btn-xs btn-secondary" onclick="aiHubSelectProvider('${escapeHtml(p.kind)}')">Configure</button>
                     </div>
                 </div>`;
         }).join('');
@@ -2863,12 +3226,33 @@ async function loadAiHubProviders() {
         if (agentSelect) {
             agentSelect.innerHTML = '<option value="">Active Provider</option>' +
                 data.providers.filter(p => p.configured).map(p =>
-                    `<option value="${p.provider}">${p.provider}${p.provider === activeKey ? ' (active)' : ''}</option>`
+                    `<option value="${p.kind}">${p.kind}${p.kind === activeKey ? ' (active)' : ''}</option>`
                 ).join('');
         }
     } catch (err) {
         container.innerHTML = `<div class="empty-state"><p class="text-danger">Error: ${escapeHtml(err.message)}</p></div>`;
     }
+}
+
+// v0.5.28: Test a specific provider from the provider card
+async function aiHubTestProvider(providerKind) {
+    try {
+        const resp = await jsonPost('/studio/ai-hub/test', { provider: providerKind });
+        const msg = resp.reachable
+            ? `✓ ${providerKind} reachable (${resp.latency_ms || 0}ms)`
+            : `✗ ${providerKind}: ${resp.error || 'Unreachable'}`;
+        alert(msg);
+    } catch (err) {
+        alert(`Error testing ${providerKind}: ${err.message}`);
+    }
+}
+
+// v0.5.28: Select a provider in the configure form
+function aiHubSelectProvider(providerKind) {
+    const select = document.getElementById('ai-hub-cfg-provider');
+    if (select) select.value = providerKind;
+    const panel = document.getElementById('ai-hub-provider-config-panel');
+    if (panel) panel.scrollIntoView({ behavior: 'smooth' });
 }
 
 async function aiHubSaveProvider() {

@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.27"
+CLI_VERSION = "0.5.28"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -3997,10 +3997,11 @@ def doctor_ai():
     """
 
     async def _run():
-        from aksara.diagnostics import check_ai_profiles, check_ai_provider_secrets
+        from aksara.diagnostics import check_ai_profiles, check_ai_provider_secrets, check_ai_hub_config
         issues = []
         issues.extend(await check_ai_profiles())
         issues.extend(await check_ai_provider_secrets())
+        issues.extend(await check_ai_hub_config())
         return issues
 
     issues = asyncio.run(_run())
@@ -5025,6 +5026,453 @@ def ai_provider_configure(provider_name: str, api_key: Optional[str], model: Opt
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}")
     click.echo()
+
+
+# =============================================================================
+# v0.5.28: AI Hub CLI Commands
+# =============================================================================
+
+
+@cli.group("ai-hub")
+def ai_hub_group():
+    """Unified AI Hub management.
+
+    Central CLI for AI provider configuration, model defaults,
+    and health checks — powered by the AI Hub 2.0 engine.
+
+    Examples:
+        aksara ai-hub status
+        aksara ai-hub providers
+        aksara ai-hub models
+        aksara ai-hub defaults --chat-model gpt-4o
+        aksara ai-hub configure openai --api-key sk-...
+        aksara ai-hub doctor
+
+    v0.5.28: AI Hub 2.0
+    """
+    pass
+
+
+@ai_hub_group.command("status")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_hub_status(output_format: str):
+    """Show overall AI Hub status.
+
+    Displays the active provider, configured provider count,
+    default model assignments, and readiness state.
+
+    Examples:
+        aksara ai-hub status
+        aksara ai-hub status --format json
+    """
+    import json as json_mod
+    from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+
+    hub = load_aihub_settings()
+    defaults = resolve_defaults(hub)
+    configured = hub.configured_providers()
+
+    if output_format == "json":
+        status = hub.to_safe_dict()
+        click.echo(json_mod.dumps(status, indent=2, default=str))
+        return
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — AI Hub Status  (v{CLI_VERSION})")
+    click.echo()
+
+    # Readiness
+    if configured:
+        click.echo(f"  Status:          \033[32m● Ready\033[0m")
+    else:
+        click.echo(f"  Status:          \033[90m○ No providers configured\033[0m")
+
+    click.echo(f"  Active Provider: {hub.active_provider or '(none)'}")
+    click.echo(f"  Configured:      {len(configured)} provider(s)")
+    click.echo()
+
+    # Defaults
+    click.echo("  \033[1mDefault Models\033[0m")
+    click.echo("  " + "─" * 40)
+    click.echo(f"  Chat:       {defaults.chat_model or '(not set)'}")
+    click.echo(f"  Code:       {defaults.code_model or '(not set)'}")
+    click.echo(f"  Embeddings: {defaults.embeddings_model or '(not set)'}")
+    click.echo()
+
+    # Provider list
+    if configured:
+        click.echo("  \033[1mConfigured Providers\033[0m")
+        click.echo("  " + "─" * 40)
+        for p in configured:
+            marker = "\033[36m[active]\033[0m " if p.kind == hub.active_provider else ""
+            modes = ", ".join(p.get_supported_modes()) if hasattr(p, "get_supported_modes") else ""
+            click.echo(f"  \033[32m●\033[0m {p.kind:12s} {marker}{modes}")
+        click.echo()
+
+
+@ai_hub_group.command("providers")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_hub_providers(output_format: str):
+    """List all AI Hub providers and their configuration.
+
+    Shows each provider kind, whether it's configured, enabled,
+    and its supported modes (chat, code, embeddings).
+
+    Examples:
+        aksara ai-hub providers
+        aksara ai-hub providers --format json
+    """
+    import json as json_mod
+    from aksara.ai.hub_settings import load_aihub_settings
+
+    hub = load_aihub_settings()
+
+    if output_format == "json":
+        data = [p.to_safe_dict() for p in hub.providers]
+        click.echo(json_mod.dumps(data, indent=2, default=str))
+        return
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — AI Hub Providers")
+    click.echo()
+
+    if not hub.providers:
+        click.echo("  No providers registered.")
+        click.echo("  Configure via: aksara ai-hub configure <provider> --api-key <key>")
+        click.echo()
+        return
+
+    for p in hub.providers:
+        configured = p.is_configured
+        enabled = p.enabled
+        marker = "\033[32m●\033[0m" if configured else "\033[90m○\033[0m"
+        state = ""
+        if not enabled:
+            state = " \033[90m(disabled)\033[0m"
+        elif p.kind == hub.active_provider:
+            state = " \033[36m[active]\033[0m"
+        modes = ", ".join(p.get_supported_modes()) if hasattr(p, "get_supported_modes") else ""
+        click.echo(f"  {marker} \033[1m{p.kind:12s}\033[0m{state}")
+        if modes:
+            click.echo(f"      Modes:   {modes}")
+        if p.base_url:
+            click.echo(f"      URL:     {p.base_url}")
+        key_val = p.api_key
+        if key_val and len(key_val) > 4:
+            click.echo(f"      API Key: ***{key_val[-4:]}")
+        elif key_val:
+            click.echo(f"      API Key: (set)")
+        else:
+            click.echo(f"      API Key: (not set)")
+        click.echo()
+
+
+@ai_hub_group.command("models")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_hub_models(output_format: str):
+    """Show available models from all configured providers.
+
+    Lists the default model assignments and the full model
+    catalog from each provider.
+
+    Examples:
+        aksara ai-hub models
+        aksara ai-hub models --format json
+    """
+    import json as json_mod
+    from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+
+    hub = load_aihub_settings()
+    defaults = resolve_defaults(hub)
+
+    if output_format == "json":
+        data = {
+            "defaults": {
+                "chat_model": defaults.chat_model,
+                "chat_provider": defaults.chat_provider,
+                "code_model": defaults.code_model,
+                "code_provider": defaults.code_provider,
+                "embeddings_model": defaults.embeddings_model,
+                "embeddings_provider": defaults.embeddings_provider,
+            },
+            "providers": [],
+        }
+        for p in hub.configured_providers():
+            entry = {"kind": p.kind, "modes": p.get_supported_modes() if hasattr(p, "get_supported_modes") else []}
+            if p.model:
+                entry["model"] = p.model
+            data["providers"].append(entry)
+        click.echo(json_mod.dumps(data, indent=2, default=str))
+        return
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — AI Hub Models")
+    click.echo()
+
+    click.echo("  \033[1mDefault Assignments\033[0m")
+    click.echo("  " + "─" * 50)
+    click.echo(f"  {'Role':<16} {'Model':<24} {'Provider'}")
+    click.echo(f"  {'─' * 16} {'─' * 24} {'─' * 12}")
+    click.echo(f"  {'Chat':<16} {defaults.chat_model or '(not set)':<24} {defaults.chat_provider or ''}")
+    click.echo(f"  {'Code':<16} {defaults.code_model or '(not set)':<24} {defaults.code_provider or ''}")
+    click.echo(f"  {'Embeddings':<16} {defaults.embeddings_model or '(not set)':<24} {defaults.embeddings_provider or ''}")
+    click.echo()
+
+
+@ai_hub_group.command("defaults")
+@click.option("--chat-model", default=None, help="Default chat model")
+@click.option("--code-model", default=None, help="Default code model")
+@click.option("--embeddings-model", default=None, help="Default embeddings model")
+@click.option("--chat-provider", default=None, help="Provider for chat")
+@click.option("--code-provider", default=None, help="Provider for code")
+@click.option("--embeddings-provider", default=None, help="Provider for embeddings")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_hub_defaults(
+    chat_model: Optional[str],
+    code_model: Optional[str],
+    embeddings_model: Optional[str],
+    chat_provider: Optional[str],
+    code_provider: Optional[str],
+    embeddings_provider: Optional[str],
+    output_format: str,
+):
+    """Get or set default model assignments.
+
+    Without arguments, shows current defaults.  With --chat-model etc.,
+    updates the defaults and saves to settings.
+
+    Examples:
+        aksara ai-hub defaults
+        aksara ai-hub defaults --chat-model gpt-4o --code-model gpt-4o
+        aksara ai-hub defaults --embeddings-model text-embedding-3-large
+        aksara ai-hub defaults --format json
+    """
+    import json as json_mod
+    from aksara.ai.hub_settings import load_aihub_settings, save_aihub_settings, resolve_defaults
+
+    hub = load_aihub_settings()
+    any_set = any([chat_model, code_model, embeddings_model, chat_provider, code_provider, embeddings_provider])
+
+    if any_set:
+        # Update defaults
+        if chat_model:
+            hub.defaults.chat_model = chat_model
+        if code_model:
+            hub.defaults.code_model = code_model
+        if embeddings_model:
+            hub.defaults.embeddings_model = embeddings_model
+        if chat_provider:
+            hub.defaults.chat_provider = chat_provider
+        if code_provider:
+            hub.defaults.code_provider = code_provider
+        if embeddings_provider:
+            hub.defaults.embeddings_provider = embeddings_provider
+        save_aihub_settings(hub)
+
+        if output_format == "json":
+            click.echo(json_mod.dumps({"saved": True, "defaults": hub.defaults.model_dump()}, indent=2))
+        else:
+            click.echo()
+            click.echo(f"  \033[32m✓\033[0m Defaults saved.")
+            click.echo()
+        return
+
+    # Show current defaults
+    defaults = resolve_defaults(hub)
+    if output_format == "json":
+        click.echo(json_mod.dumps(defaults.model_dump(), indent=2, default=str))
+        return
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — AI Hub Defaults")
+    click.echo()
+    click.echo(f"  Chat Model:       {defaults.chat_model or '(not set)'}")
+    click.echo(f"  Chat Provider:    {defaults.chat_provider or '(auto)'}")
+    click.echo(f"  Code Model:       {defaults.code_model or '(not set)'}")
+    click.echo(f"  Code Provider:    {defaults.code_provider or '(auto)'}")
+    click.echo(f"  Embeddings Model: {defaults.embeddings_model or '(not set)'}")
+    click.echo(f"  Embeddings Prov:  {defaults.embeddings_provider or '(auto)'}")
+    click.echo()
+
+
+@ai_hub_group.command("configure")
+@click.argument("provider_name", type=click.Choice(["openai", "azure", "anthropic", "ollama", "custom"]))
+@click.option("--api-key", default=None, help="API key")
+@click.option("--model", default=None, help="Default model name")
+@click.option("--base-url", default=None, help="Base URL override")
+@click.option("--enable/--disable", default=True, help="Enable or disable the provider")
+def ai_hub_configure(provider_name: str, api_key: Optional[str], model: Optional[str],
+                     base_url: Optional[str], enable: bool):
+    """Configure an AI Hub provider.
+
+    Sets credentials and options for the specified provider.
+    Saves to the hub settings file.
+
+    Examples:
+        aksara ai-hub configure openai --api-key sk-...
+        aksara ai-hub configure ollama --base-url http://gpu-server:11434
+        aksara ai-hub configure anthropic --disable
+    """
+    from aksara.ai.hub_settings import (
+        load_aihub_settings, save_aihub_settings,
+        OpenAIConfig, AzureOpenAIConfig, AnthropicConfig, OllamaConfig, CustomHttpConfig,
+        ProviderConfig,
+    )
+
+    hub = load_aihub_settings()
+    existing = hub.get_provider(provider_name)
+
+    if existing is None:
+        # Create new provider config
+        cfg_map = {
+            "openai": ("openai", OpenAIConfig),
+            "azure": ("azure", AzureOpenAIConfig),
+            "anthropic": ("anthropic", AnthropicConfig),
+            "ollama": ("ollama", OllamaConfig),
+            "custom": ("custom", CustomHttpConfig),
+        }
+        field_name, cfg_cls = cfg_map[provider_name]
+        kwargs = {}
+        if api_key:
+            kwargs["api_key"] = api_key
+        if model:
+            kwargs["model"] = model
+        if base_url:
+            kwargs["base_url"] = base_url
+        cfg = cfg_cls(**kwargs)
+        pc = ProviderConfig(kind=provider_name, enabled=enable, **{field_name: cfg})
+        hub.providers.append(pc)
+    else:
+        cfg = existing.active_config
+        if cfg:
+            if api_key:
+                if hasattr(cfg, "api_key"):
+                    cfg.api_key = api_key
+            if model:
+                if hasattr(cfg, "model"):
+                    cfg.model = model
+            if base_url:
+                if hasattr(cfg, "base_url"):
+                    cfg.base_url = base_url
+        existing.enabled = enable
+
+    save_aihub_settings(hub)
+
+    click.echo()
+    status = "\033[32m✓\033[0m" if enable else "\033[33m⚠\033[0m"
+    click.echo(f"  {status} Provider '{provider_name}' {'enabled' if enable else 'disabled'} and saved.")
+    if api_key:
+        click.echo(f"      API Key: ***{api_key[-4:]}" if len(api_key) > 4 else "      API Key: (set)")
+    if model:
+        click.echo(f"      Model:   {model}")
+    if base_url:
+        click.echo(f"      URL:     {base_url}")
+    click.echo()
+
+
+@ai_hub_group.command("doctor")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["pretty", "json"]),
+              default="pretty", help="Output format")
+def ai_hub_doctor(output_format: str):
+    """Run AI Hub health checks.
+
+    Validates provider configuration, tests connectivity where
+    possible, and checks that defaults are properly resolved.
+
+    Examples:
+        aksara ai-hub doctor
+        aksara ai-hub doctor --format json
+    """
+    import json as json_mod
+    from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+
+    hub = load_aihub_settings()
+    configured = hub.configured_providers()
+    defaults = resolve_defaults(hub)
+    issues = []
+
+    # Check 1: Any providers configured?
+    if not configured:
+        issues.append({
+            "severity": "warning",
+            "check": "providers",
+            "message": "No AI providers configured. AI features unavailable.",
+            "hint": "aksara ai-hub configure openai --api-key sk-...",
+        })
+
+    # Check 2: Active provider set?
+    if configured and not hub.active_provider:
+        issues.append({
+            "severity": "info",
+            "check": "active_provider",
+            "message": "No active provider set. Will use first configured provider.",
+            "hint": "Set active_provider in hub settings.",
+        })
+
+    # Check 3: Default chat model?
+    if not defaults.chat_model:
+        issues.append({
+            "severity": "warning",
+            "check": "chat_model",
+            "message": "No default chat model configured.",
+            "hint": "aksara ai-hub defaults --chat-model gpt-4o",
+        })
+
+    # Check 4: Default embeddings model?
+    if not defaults.embeddings_model:
+        issues.append({
+            "severity": "info",
+            "check": "embeddings_model",
+            "message": "No embeddings model set. Semantic search will use local TF-IDF.",
+            "hint": "aksara ai-hub defaults --embeddings-model text-embedding-3-large",
+        })
+
+    if output_format == "json":
+        data = {
+            "ok": len(issues) == 0,
+            "providers_configured": len(configured),
+            "active_provider": hub.active_provider,
+            "issues": issues,
+        }
+        click.echo(json_mod.dumps(data, indent=2))
+        sys.exit(1 if any(i["severity"] in ("error", "critical") for i in issues) else 0)
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — AI Hub Doctor  (v{CLI_VERSION})")
+    click.echo()
+
+    if not issues:
+        click.echo("  \033[32m✓ AI Hub is healthy. All checks passed.\033[0m")
+        click.echo()
+        click.echo(f"  Active Provider: {hub.active_provider}")
+        click.echo(f"  Configured:      {len(configured)}")
+        click.echo(f"  Chat Model:      {defaults.chat_model}")
+        click.echo(f"  Embeddings:      {defaults.embeddings_model or '(local TF-IDF)'}")
+        click.echo()
+        return
+
+    click.echo(f"  Found {len(issues)} issue{'s' if len(issues) != 1 else ''}:")
+    click.echo()
+
+    for iss in issues:
+        sev = iss["severity"]
+        c = _SEVERITY_COLORS.get(sev, "")
+        sym = _SEVERITY_SYMBOLS.get(sev, "·")
+        click.echo(f"  {c}{sym} [{sev.upper():8s}]{_RESET} {iss['message']}")
+        if iss.get("hint"):
+            click.echo(f"               \033[90mHint: {iss['hint']}\033[0m")
+    click.echo()
+
+    sys.exit(1 if any(i["severity"] in ("error", "critical") for i in issues) else 0)
 
 
 # =============================================================================

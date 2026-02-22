@@ -63,8 +63,9 @@ GapIssueCategory = Literal[
     "studio",
     "environment",
     "ai_pipeline",
+    "ai_hub",
 ]
-"""Eight check categories performed by the gap analysis engine."""
+"""Nine check categories performed by the gap analysis engine (v0.5.28: +ai_hub)."""
 
 
 # ---------------------------------------------------------------------------
@@ -1066,6 +1067,158 @@ async def check_ai_pipeline() -> List[GapIssue]:
 
 
 # ---------------------------------------------------------------------------
+# Category 9: AI Hub Checks (v0.5.28)
+# ---------------------------------------------------------------------------
+
+
+async def check_ai_hub() -> List[GapIssue]:
+    """Check AI Hub 2.0 configuration, defaults, and embedding setup."""
+    issues: List[GapIssue] = []
+    try:
+        from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+
+        hub = load_aihub_settings()
+        configured = hub.configured_providers()
+
+        # Gap 1: No providers configured at all
+        if not configured:
+            issues.append(
+                _make_issue(
+                    category="ai_hub",
+                    severity="warning",
+                    code="AI_HUB_NO_PROVIDER",
+                    title="No AI providers configured in AI Hub",
+                    message=(
+                        "The AI Hub has no providers with valid credentials. "
+                        "AI chat, code generation, and embedding features are unavailable."
+                    ),
+                    hint="Run: aksara ai-hub configure openai --api-key <key>",
+                    fix_commands=[
+                        GapFixCommand(
+                            description="Configure OpenAI provider",
+                            command='aksara ai-hub configure openai --api-key "$OPENAI_API_KEY"',
+                            env_required=["OPENAI_API_KEY"],
+                        ),
+                    ],
+                )
+            )
+
+        # Gap 2: Active provider unreachable (best-effort, no network call)
+        if hub.active_provider and configured:
+            active_prov = hub.get_provider(hub.active_provider)
+            if active_prov and not active_prov.is_configured:
+                issues.append(
+                    _make_issue(
+                        category="ai_hub",
+                        severity="error",
+                        code="AI_HUB_ACTIVE_PROVIDER_UNCONFIGURED",
+                        title=f"Active provider '{hub.active_provider}' is not configured",
+                        message=(
+                            f"The active provider '{hub.active_provider}' is set but lacks "
+                            f"required credentials. AI requests will fail."
+                        ),
+                        hint=f"aksara ai-hub configure {hub.active_provider} --api-key <key>",
+                    )
+                )
+
+        # Gap 3: Defaults missing after resolve
+        defaults = resolve_defaults(hub)
+        if configured:
+            if not defaults.chat_model:
+                issues.append(
+                    _make_issue(
+                        category="ai_hub",
+                        severity="warning",
+                        code="AI_HUB_DEFAULTS_NO_CHAT",
+                        title="AI Hub: No default chat model",
+                        message=(
+                            "No default chat model is configured or resolvable. "
+                            "AI agent and chat features will not work."
+                        ),
+                        hint="aksara ai-hub defaults --chat-model gpt-4o",
+                        fix_commands=[
+                            GapFixCommand(
+                                description="Set default chat model",
+                                command="aksara ai-hub defaults --chat-model gpt-4o",
+                            ),
+                        ],
+                    )
+                )
+            if not defaults.embeddings_model:
+                issues.append(
+                    _make_issue(
+                        category="ai_hub",
+                        severity="info",
+                        code="AI_HUB_DEFAULTS_NO_EMBEDDINGS",
+                        title="AI Hub: No embeddings model configured",
+                        message=(
+                            "No embeddings model is set. Semantic search will fall back "
+                            "to local TF-IDF matching, which may be less accurate."
+                        ),
+                        hint="aksara ai-hub defaults --embeddings-model text-embedding-3-large",
+                        fix_commands=[
+                            GapFixCommand(
+                                description="Set default embeddings model",
+                                command="aksara ai-hub defaults --embeddings-model text-embedding-3-large",
+                            ),
+                        ],
+                    )
+                )
+
+        # Gap 4: Search embeddings provider mismatch
+        try:
+            from aksara.search.embeddings import get_embedding_provider
+            emb_prov = get_embedding_provider()
+            if emb_prov == "local" and defaults.embeddings_model:
+                # Hub says to use a remote model, but search defaults to local
+                issues.append(
+                    _make_issue(
+                        category="ai_hub",
+                        severity="info",
+                        code="AI_HUB_SEARCH_EMBEDDING_MISMATCH",
+                        title="Embeddings model set but search uses local provider",
+                        message=(
+                            f"AI Hub has embeddings_model='{defaults.embeddings_model}' but "
+                            f"the search engine resolved to the 'local' provider. "
+                            f"Ensure the embedding provider is registered."
+                        ),
+                        hint="Register the embedding provider or update hub defaults.",
+                    )
+                )
+        except Exception:
+            pass
+
+        # Gap 5: Agent model not set when agents are used
+        try:
+            from aksara.ai.agent import AksaraAgent  # noqa: F401
+            if configured and not defaults.chat_model:
+                issues.append(
+                    _make_issue(
+                        category="ai_hub",
+                        severity="warning",
+                        code="AI_HUB_AGENT_NO_MODEL",
+                        title="Agent module available but no chat model set",
+                        message=(
+                            "The aksara.ai.agent module is available but no default "
+                            "chat model is configured. Agent workflows will not be able "
+                            "to execute."
+                        ),
+                        hint="aksara ai-hub defaults --chat-model gpt-4o",
+                    )
+                )
+        except ImportError:
+            pass
+
+    except ImportError:
+        # hub_settings module not available
+        pass
+    except Exception:
+        pass
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -1081,6 +1234,7 @@ _CATEGORY_CHECKERS: Dict[
     "studio": check_studio,
     "environment": check_environment,
     "ai_pipeline": check_ai_pipeline,
+    "ai_hub": check_ai_hub,
 }
 
 
@@ -1231,6 +1385,7 @@ __all__ = [
     "check_studio",
     "check_environment",
     "check_ai_pipeline",
+    "check_ai_hub",
     # Orchestrator
     "run_gap_analysis",
     "run_gap_analysis_for_category",

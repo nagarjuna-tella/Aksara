@@ -1794,6 +1794,140 @@ class StudioAiAgentRunResponse(BaseModel):
 
 
 # =============================================================================
+# v0.5.28: AI Hub 2.0 Models
+# =============================================================================
+
+
+class AiHubProvider(BaseModel):
+    """Provider card — used in AI Hub panel."""
+
+    kind: str = Field(description="Provider type key")
+    enabled: bool = Field(default=True)
+    configured: bool = Field(default=False)
+    reachable: Optional[bool] = Field(default=None)
+    model: str = Field(default="")
+    base_url: str = Field(default="")
+    modes: List[str] = Field(default_factory=list, description="chat, code, embeddings")
+    error: Optional[str] = Field(default=None)
+
+
+class AiHubModel(BaseModel):
+    """An available model as reported by a provider."""
+
+    model_id: str = Field(description="Model identifier")
+    provider: str = Field(description="Owning provider kind")
+    mode: str = Field(default="chat", description="Primary mode: chat, code, embeddings")
+
+
+class AiHubRouteMapping(BaseModel):
+    """Describes which provider/model a feature uses."""
+
+    feature: str = Field(description="agents, playbooks, search_embeddings, diagnostics")
+    provider: Optional[str] = Field(default=None)
+    model: Optional[str] = Field(default=None)
+    status: str = Field(default="ok", description="ok | fallback | missing")
+    warning: Optional[str] = Field(default=None)
+
+
+class AiHubOnboardingStatus(BaseModel):
+    """Step-by-step onboarding progress."""
+
+    providers_selected: bool = Field(default=False)
+    keys_entered: bool = Field(default=False)
+    providers_tested: bool = Field(default=False)
+    defaults_set: bool = Field(default=False)
+    sample_query_run: bool = Field(default=False)
+    completed: bool = Field(default=False)
+
+
+class AiHubStatus(BaseModel):
+    """Top-level AI Hub status — response for GET /studio/ai-hub/status."""
+
+    overall: str = Field(default="disabled", description="ready | partial | disabled")
+    active_provider: Optional[str] = Field(default=None)
+    configured_count: int = Field(default=0)
+    total_count: int = Field(default=0)
+    defaults: Dict[str, Any] = Field(default_factory=dict)
+    onboarding: AiHubOnboardingStatus = Field(default_factory=AiHubOnboardingStatus)
+    warnings: List[str] = Field(default_factory=list)
+
+
+class AiHubRoutes(BaseModel):
+    """Routing table for AI features — response for GET /studio/ai-hub/routes."""
+
+    routes: List[AiHubRouteMapping] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
+class AiHubConfigureRequest(BaseModel):
+    """Request body for POST /studio/ai-hub/configure."""
+
+    provider: str = Field(description="Provider kind to configure")
+    base_url: Optional[str] = Field(default=None)
+    model: Optional[str] = Field(default=None)
+    enabled: bool = Field(default=True)
+
+
+class AiHubConfigureSecretRequest(BaseModel):
+    """Request body for POST /studio/ai-hub/configure/secret."""
+
+    provider: str = Field(description="Provider kind")
+    api_key: str = Field(description="API key — handled securely, never logged")
+
+
+class AiHubDefaultsRequest(BaseModel):
+    """Request body for POST /studio/ai-hub/defaults."""
+
+    chat_model: Optional[str] = Field(default=None)
+    chat_provider: Optional[str] = Field(default=None)
+    code_model: Optional[str] = Field(default=None)
+    code_provider: Optional[str] = Field(default=None)
+    embeddings_model: Optional[str] = Field(default=None)
+    embeddings_provider: Optional[str] = Field(default=None)
+
+
+class AiHubConfigureResponse(BaseModel):
+    """Response for configure / configure/secret / defaults."""
+
+    ok: bool = Field(default=False)
+    message: str = Field(default="")
+    provider: Optional[str] = Field(default=None)
+
+
+class AiHubTestRequest(BaseModel):
+    """Request body for POST /studio/ai-hub/test."""
+
+    provider: str = Field(description="Provider kind to test")
+
+
+class AiHubTestResponse(BaseModel):
+    """Response for POST /studio/ai-hub/test."""
+
+    provider: str = Field(description="Provider tested")
+    reachable: bool = Field(default=False)
+    latency_ms: Optional[float] = Field(default=None)
+    model: str = Field(default="")
+    modes: List[str] = Field(default_factory=list)
+    error: Optional[str] = Field(default=None)
+
+
+class AiHubModelsResponse(BaseModel):
+    """Response for GET /studio/ai-hub/models."""
+
+    defaults: Dict[str, Any] = Field(default_factory=dict)
+    models: List[AiHubModel] = Field(default_factory=list)
+
+
+class AiHubProvidersResponse(BaseModel):
+    """Response for GET /studio/ai-hub/providers."""
+
+    providers: List[AiHubProvider] = Field(default_factory=list)
+    active_provider: Optional[str] = Field(default=None)
+    configured_count: int = Field(default=0)
+    total_count: int = Field(default=0)
+
+
+# =============================================================================
 # v0.5.26: Gap Analysis Models
 # =============================================================================
 

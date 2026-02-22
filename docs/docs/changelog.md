@@ -4,6 +4,49 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.28] — 2026-02-22
+
+### Added — AI Hub 2.0
+- **Unified AI Hub Config** (`aksara/ai/hub_settings.py`): Pydantic models for
+  centralised provider configuration — `AiHubSettings`, `ProviderConfig`,
+  `AiDefaultModels`, per-provider configs (OpenAI, Azure, Anthropic, Ollama,
+  Custom HTTP).  Functions: `load_aihub_settings()`, `save_aihub_settings()`,
+  `resolve_defaults()`.
+- **AI Hub API** (7 new endpoints under `/studio/ai-hub/`): `status`,
+  `providers`, `models`, `configure`, `configure/secret`, `defaults`, `test`.
+  15 new Pydantic models and 9 builder functions in Studio utils.
+- **Studio UI AI Hub Panel**: 4 new tabs (Overview, Models, Routing, Onboarding)
+  alongside existing 5 tabs.  Global sidebar AI status indicator with
+  ready/partial/disabled states.  Alt+A keyboard shortcut.  Onboarding wizard
+  with 5-step setup flow.
+- **AI Hub wiring**: `AiFullContext.ai_hub_summary` field,
+  `build_agent_workflow()` AI Hub metadata injection (try/except wrapped),
+  `get_embedding_provider()` falls back to AI Hub defaults,
+  `check_ai_hub_config()` diagnostics checker.
+- **CLI `aksara ai-hub` group**: Subcommands `status`, `providers`, `models`,
+  `defaults`, `configure`, `doctor`.  Supports `--format pretty|json`.
+- **Gap Analysis**: New `ai_hub` category (ninth check) with 6 gap codes:
+  `AI_HUB_NO_PROVIDER`, `AI_HUB_ACTIVE_PROVIDER_UNCONFIGURED`,
+  `AI_HUB_DEFAULTS_NO_CHAT`, `AI_HUB_DEFAULTS_NO_EMBEDDINGS`,
+  `AI_HUB_SEARCH_EMBEDDING_MISMATCH`, `AI_HUB_AGENT_NO_MODEL`.
+  Fix-plan commands for each actionable gap.
+- **Doctor**: `aksara doctor ai` now includes `check_ai_hub_config`.
+
+### Deprecated
+- `ai_profiles_enabled`, `ai_default_provider`, `ai_providers`,
+  `ai_secret_hints` settings in `aksara/conf.py` — superseded by AI Hub 2.0.
+  Will be removed in v0.6.
+- `embedding_provider`/`embedding_model` settings now fall back to AI Hub
+  defaults when set to `"local"`.
+
+### Changed
+- `aksara/search/embeddings.py`: `get_embedding_provider()` tries AI Hub
+  defaults before falling back to `"local"` (only if provider is registered).
+- `aksara/diagnostics.py`: Added `check_ai_hub_config` to `run_all_checks`.
+- Gap Analysis engine now has 9 categories (was 8).
+
+---
+
 ## [0.5.27] — 2026-02-21
 
 ### Fixed

@@ -100,12 +100,16 @@ class Settings:
     db_trace_max_queries: int = 500  # Max queries to capture per request
     
     # v0.5.11: AI Profiles & Provider Contracts
+    # DEPRECATED(v0.5.28): Use AI Hub 2.0 (aksara.ai.hub_settings) instead.
+    # These fields are kept for backward compatibility but will be removed in v0.6.
     ai_profiles_enabled: bool = True  # Enable AI profile discovery
     ai_default_provider: Optional[str] = None  # Default AI provider name
     ai_providers: Optional[List[dict]] = None  # List of AiProviderProfile dicts (no secrets)
     ai_secret_hints: Optional[List[dict]] = None  # List of AiProviderSecretHint dicts
     
     # v0.5.22: Semantic Search & AI Index
+    # NOTE(v0.5.28): embedding_provider/embedding_model now fall back to
+    # AI Hub defaults when set to "local".  See aksara.search.embeddings.
     semantic_search_enabled: bool = True  # Enable semantic search
     embedding_provider: str = "local"  # Embedding backend (local, openai, azure, anthropic)
     embedding_model: str = "local_tfidf"  # Model/strategy name

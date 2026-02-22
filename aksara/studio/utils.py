@@ -2575,3 +2575,320 @@ async def run_and_build_gap_analysis(
     # Cast categories to the Literal type if provided
     report = await run_gap_analysis(categories=categories)  # type: ignore[arg-type]
     return build_studio_gap_analysis_report(report)
+
+
+# =============================================================================
+# v0.5.28: AI Hub 2.0 Utilities
+# =============================================================================
+
+
+def _get_hub_settings():
+    """Lazy-load AiHubSettings to avoid circular imports."""
+    from aksara.ai.hub_settings import load_aihub_settings
+    return load_aihub_settings()
+
+
+def build_aihub_status() -> "AiHubStatus":
+    """Build the AI Hub status response."""
+    from aksara.studio.models import AiHubStatus, AiHubOnboardingStatus
+
+    hub = _get_hub_settings()
+    configured = hub.configured_providers()
+    warnings: List[str] = []
+
+    if not configured:
+        overall = "disabled"
+    elif hub.defaults.chat_model:
+        overall = "ready"
+    else:
+        overall = "partial"
+
+    # Check for common issues
+    if configured and not hub.defaults.embeddings_model:
+        warnings.append("No embedding model configured — semantic search will use local TF-IDF fallback")
+    if configured and not hub.defaults.chat_model:
+        warnings.append("No chat model default set — agents will not work")
+
+    # Onboarding status
+    onboarding = AiHubOnboardingStatus(
+        providers_selected=len(configured) > 0,
+        keys_entered=any(p.api_key for p in configured),
+        providers_tested=False,  # We don't track test history
+        defaults_set=hub.defaults.chat_model is not None,
+        sample_query_run=False,
+    )
+    onboarding.completed = all([
+        onboarding.providers_selected,
+        onboarding.keys_entered,
+        onboarding.defaults_set,
+    ])
+
+    return AiHubStatus(
+        overall=overall,
+        active_provider=hub.active_provider,
+        configured_count=len(configured),
+        total_count=len(hub.providers),
+        defaults=hub.defaults.model_dump(),
+        onboarding=onboarding,
+        warnings=warnings,
+    )
+
+
+def build_aihub_providers() -> "AiHubProvidersResponse":
+    """Build the AI Hub providers list response."""
+    from aksara.studio.models import AiHubProvider, AiHubProvidersResponse
+
+    hub = _get_hub_settings()
+    items: List["AiHubProvider"] = []
+    for p in hub.providers:
+        items.append(AiHubProvider(
+            kind=p.kind,
+            enabled=p.enabled,
+            configured=p.is_configured,
+            model=p.model or "",
+            base_url=p.base_url or "",
+            modes=p.get_supported_modes(),
+        ))
+
+    return AiHubProvidersResponse(
+        providers=items,
+        active_provider=hub.active_provider,
+        configured_count=sum(1 for i in items if i.configured),
+        total_count=len(items),
+    )
+
+
+def build_aihub_models() -> "AiHubModelsResponse":
+    """Build the AI Hub models response."""
+    from aksara.studio.models import AiHubModel, AiHubModelsResponse
+    from aksara.ai.hub_settings import _PROVIDER_DEFAULT_MODELS
+
+    hub = _get_hub_settings()
+    models: List["AiHubModel"] = []
+
+    for p in hub.providers:
+        if not p.is_configured:
+            continue
+        defaults = _PROVIDER_DEFAULT_MODELS.get(p.kind, {})
+        for mode, model_name in defaults.items():
+            if model_name:
+                models.append(AiHubModel(
+                    model_id=model_name,
+                    provider=p.kind,
+                    mode=mode,
+                ))
+
+    return AiHubModelsResponse(
+        defaults=hub.defaults.model_dump(),
+        models=models,
+    )
+
+
+def build_aihub_configure(
+    provider: str,
+    base_url: Optional[str] = None,
+    model: Optional[str] = None,
+    enabled: bool = True,
+) -> "AiHubConfigureResponse":
+    """Configure a provider (non-secret fields)."""
+    from aksara.studio.models import AiHubConfigureResponse
+
+    try:
+        from aksara.ai.hub_settings import (
+            ProviderConfig,
+            OpenAIConfig,
+            AzureOpenAIConfig,
+            AnthropicConfig,
+            OllamaConfig,
+            CustomHttpConfig,
+        )
+
+        config_map = {
+            "openai": OpenAIConfig,
+            "azure": AzureOpenAIConfig,
+            "anthropic": AnthropicConfig,
+            "ollama": OllamaConfig,
+            "custom": CustomHttpConfig,
+        }
+        if provider not in config_map:
+            return AiHubConfigureResponse(ok=False, message=f"Unknown provider: {provider}", provider=provider)
+
+        kwargs: Dict[str, Any] = {}
+        if base_url is not None:
+            kwargs["base_url"] = base_url
+        if model is not None:
+            kwargs["model"] = model
+
+        cfg_cls = config_map[provider]
+        cfg = cfg_cls(**kwargs)
+        pc = ProviderConfig(kind=provider, enabled=enabled, **{provider: cfg})  # type: ignore[arg-type]
+
+        return AiHubConfigureResponse(
+            ok=True,
+            message=f"Provider '{provider}' configured (non-secret fields)",
+            provider=provider,
+        )
+    except Exception as exc:
+        return AiHubConfigureResponse(ok=False, message=str(exc), provider=provider)
+
+
+def build_aihub_configure_secret(
+    provider: str,
+    api_key: str,
+) -> "AiHubConfigureResponse":
+    """Configure a provider's API key (secret handling, no logging)."""
+    from aksara.studio.models import AiHubConfigureResponse
+
+    try:
+        from aksara.ai.providers_unified import UnifiedAiProvider
+
+        p = UnifiedAiProvider(provider=provider, api_key=api_key)  # type: ignore[arg-type]
+        p.save_to_env_file()
+        return AiHubConfigureResponse(
+            ok=True,
+            message=f"API key for '{provider}' saved to .env",
+            provider=provider,
+        )
+    except Exception as exc:
+        return AiHubConfigureResponse(ok=False, message=str(exc), provider=provider)
+
+
+def build_aihub_defaults(
+    chat_model: Optional[str] = None,
+    chat_provider: Optional[str] = None,
+    code_model: Optional[str] = None,
+    code_provider: Optional[str] = None,
+    embeddings_model: Optional[str] = None,
+    embeddings_provider: Optional[str] = None,
+) -> "AiHubConfigureResponse":
+    """Update default model assignments."""
+    from aksara.studio.models import AiHubConfigureResponse
+
+    try:
+        hub = _get_hub_settings()
+        if chat_model is not None:
+            hub.defaults.chat_model = chat_model
+        if chat_provider is not None:
+            hub.defaults.chat_provider = chat_provider  # type: ignore[assignment]
+        if code_model is not None:
+            hub.defaults.code_model = code_model
+        if code_provider is not None:
+            hub.defaults.code_provider = code_provider  # type: ignore[assignment]
+        if embeddings_model is not None:
+            hub.defaults.embeddings_model = embeddings_model
+        if embeddings_provider is not None:
+            hub.defaults.embeddings_provider = embeddings_provider  # type: ignore[assignment]
+
+        return AiHubConfigureResponse(
+            ok=True,
+            message="Default models updated",
+        )
+    except Exception as exc:
+        return AiHubConfigureResponse(ok=False, message=str(exc))
+
+
+def build_aihub_test(provider: str) -> "AiHubTestResponse":
+    """Test a single provider's connectivity."""
+    from aksara.studio.models import AiHubTestResponse
+    import time
+
+    hub = _get_hub_settings()
+    pc = hub.get_provider(provider)  # type: ignore[arg-type]
+
+    if pc is None or not pc.is_configured:
+        return AiHubTestResponse(
+            provider=provider,
+            reachable=False,
+            error=f"Provider '{provider}' is not configured",
+        )
+
+    try:
+        unified = pc.to_unified_provider()
+        start = time.monotonic()
+        ping_result = unified.ping()
+        elapsed = (time.monotonic() - start) * 1000
+
+        return AiHubTestResponse(
+            provider=provider,
+            reachable=ping_result.get("ok", False),
+            latency_ms=round(elapsed, 1),
+            model=unified.model or "",
+            modes=pc.get_supported_modes(),
+            error=ping_result.get("message") if not ping_result.get("ok") else None,
+        )
+    except Exception as exc:
+        return AiHubTestResponse(
+            provider=provider,
+            reachable=False,
+            error=str(exc),
+        )
+
+
+def build_aihub_routes() -> "AiHubRoutes":
+    """Build the AI Hub routing table."""
+    from aksara.studio.models import AiHubRouteMapping, AiHubRoutes
+
+    hub = _get_hub_settings()
+    routes: List["AiHubRouteMapping"] = []
+    warnings: List[str] = []
+
+    # Agents
+    if hub.defaults.chat_model:
+        routes.append(AiHubRouteMapping(
+            feature="agents",
+            provider=hub.defaults.chat_provider,
+            model=hub.defaults.chat_model,
+        ))
+    else:
+        routes.append(AiHubRouteMapping(
+            feature="agents",
+            status="missing",
+            warning="No chat model configured — agents disabled",
+        ))
+        warnings.append("Agents: no chat model")
+
+    # Playbooks
+    if hub.defaults.code_model:
+        routes.append(AiHubRouteMapping(
+            feature="playbooks",
+            provider=hub.defaults.code_provider,
+            model=hub.defaults.code_model,
+        ))
+    else:
+        routes.append(AiHubRouteMapping(
+            feature="playbooks",
+            status="fallback",
+            warning="No code model configured — playbooks will use chat model if available",
+        ))
+
+    # Search embeddings
+    if hub.defaults.embeddings_model:
+        routes.append(AiHubRouteMapping(
+            feature="search_embeddings",
+            provider=hub.defaults.embeddings_provider,
+            model=hub.defaults.embeddings_model,
+        ))
+    else:
+        routes.append(AiHubRouteMapping(
+            feature="search_embeddings",
+            status="fallback",
+            warning="No embedding model — using local TF-IDF fallback",
+        ))
+        warnings.append("Search: local TF-IDF fallback")
+
+    # Diagnostics suggestions
+    if hub.defaults.chat_model:
+        routes.append(AiHubRouteMapping(
+            feature="diagnostics",
+            provider=hub.defaults.chat_provider,
+            model=hub.defaults.chat_model,
+        ))
+    else:
+        routes.append(AiHubRouteMapping(
+            feature="diagnostics",
+            status="missing",
+            warning="No chat model — diagnostic suggestions disabled",
+        ))
+
+    return AiHubRoutes(routes=routes, warnings=warnings)
+

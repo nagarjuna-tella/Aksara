@@ -523,6 +523,19 @@ def build_agent_workflow(
         except Exception:
             pass
 
+    # v0.5.28: Inject AI Hub defaults into metadata
+    try:
+        from aksara.ai.hub_settings import load_aihub_settings
+        hub = load_aihub_settings()
+        metadata["ai_hub"] = {
+            "active_provider": hub.active_provider,
+            "chat_model": hub.defaults.chat_model if hub.defaults else None,
+            "code_model": hub.defaults.code_model if hub.defaults else None,
+            "embeddings_model": hub.defaults.embeddings_model if hub.defaults else None,
+        }
+    except Exception:
+        pass
+
     # 1. Diagnostics (order 1–N)
     if include_diagnostics:
         diag_steps = _build_diagnostic_steps(
