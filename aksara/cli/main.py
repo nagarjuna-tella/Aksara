@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.25"
+CLI_VERSION = "0.5.26"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -5019,6 +5019,398 @@ def ai_provider_configure(provider_name: str, api_key: Optional[str], model: Opt
     except Exception as e:
         click.echo(f"  \033[31m✗\033[0m Error: {e}")
     click.echo()
+
+
+# =============================================================================
+# v0.5.26: Gap Analysis CLI Commands
+# =============================================================================
+
+
+@cli.group()
+def gaps():
+    """Pre-flight gap analysis for your Aksara project.
+
+    Scans eight categories of potential issues:
+      imports, db, migrations, routers, providers,
+      studio, environment, ai_pipeline
+
+    Exit codes:
+      0  –  no blocking issues (clean or warnings only)
+      1  –  at least one error or critical issue found
+
+    v0.5.26: Gap Analysis Engine
+    """
+    pass
+
+
+def _run_gap_analysis_sync(categories: Optional[List[str]] = None):
+    """Run the gap analysis engine synchronously."""
+    from aksara.gapanalysis import run_gap_analysis
+    return asyncio.run(run_gap_analysis(categories=categories))  # type: ignore[arg-type]
+
+
+_SEVERITY_COLORS = {
+    "critical": "\033[35m",   # Magenta
+    "error": "\033[31m",      # Red
+    "warning": "\033[33m",    # Yellow
+    "info": "\033[36m",       # Cyan
+}
+_SEVERITY_SYMBOLS = {
+    "critical": "✗",
+    "error": "✗",
+    "warning": "!",
+    "info": "·",
+}
+_RESET = "\033[0m"
+
+
+def _severity_badge(severity: str) -> str:
+    """Format a severity badge with color."""
+    color = _SEVERITY_COLORS.get(severity, "")
+    return f"{color}[{severity.upper():8s}]{_RESET}"
+
+
+@gaps.command("run")
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["pretty", "json"]),
+    default="pretty",
+    help="Output format (default: pretty)",
+)
+@click.option(
+    "--categories", "-c",
+    default=None,
+    help="Comma-separated categories to check (default: all)",
+)
+def gaps_run(output_format: str, categories: Optional[str]):
+    """Run the full gap analysis and display a rich issue table.
+
+    Examples:
+        aksara gaps run
+        aksara gaps run --format json
+        aksara gaps run --categories db,migrations,environment
+    """
+    import json as json_mod
+
+    cat_list = [c.strip() for c in categories.split(",")] if categories else None
+    report = _run_gap_analysis_sync(categories=cat_list)
+
+    if output_format == "json":
+        from aksara.studio.utils import build_studio_gap_analysis_report
+        studio_report = build_studio_gap_analysis_report(report)
+        click.echo(json_mod.dumps(studio_report.model_dump(mode="json"), indent=2, default=str))
+        sys.exit(1 if report.has_errors else 0)
+
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m — Gap Analysis  (v{CLI_VERSION})")
+    click.echo()
+
+    # Summary header
+    status_c = _SEVERITY_COLORS.get(report.overall_status, "")
+    click.echo(f"  Status:    {status_c}{report.overall_status.upper()}{_RESET}")
+    click.echo(f"  Summary:   {report.summary_line}")
+    click.echo(f"  Duration:  {report.duration_ms:.0f} ms")
+    click.echo()
+
+    if not report.issues:
+        click.echo("  \033[32m✓ No gaps found — your project looks good!\033[0m")
+        click.echo()
+        sys.exit(0)
+
+    # Group by category
+    by_cat: dict = {}
+    for issue in report.issues:
+        by_cat.setdefault(issue.category, []).append(issue)
+
+    for cat, issues in sorted(by_cat.items()):
+        click.echo(f"  \033[1m{cat.upper()}\033[0m ({len(issues)} issue{'s' if len(issues) != 1 else ''})")
+        click.echo("  " + "─" * 56)
+        for issue in issues:
+            sym = _SEVERITY_SYMBOLS.get(issue.severity, "·")
+            c = _SEVERITY_COLORS.get(issue.severity, "")
+            click.echo(f"  {c}{sym}{_RESET} {_severity_badge(issue.severity)} {issue.title}")
+            click.echo(f"               {issue.message}")
+            if issue.hint:
+                click.echo(f"               \033[90mHint: {issue.hint}\033[0m")
+            if issue.fix_commands:
+                for cmd in issue.fix_commands[:2]:
+                    click.echo(f"               \033[36m→ {cmd.command}\033[0m")
+            click.echo()
+
+    # Stat line
+    s = report.stats
+    counts = []
+    if s.critical:
+        counts.append(f"\033[35m{s.critical} critical{_RESET}")
+    if s.error:
+        counts.append(f"\033[31m{s.error} error{'s' if s.error != 1 else ''}{_RESET}")
+    if s.warning:
+        counts.append(f"\033[33m{s.warning} warning{'s' if s.warning != 1 else ''}{_RESET}")
+    if s.info:
+        counts.append(f"{s.info} info")
+    click.echo("  " + "  ".join(counts))
+    click.echo()
+
+    sys.exit(1 if report.has_errors else 0)
+
+
+@gaps.command("summary")
+def gaps_summary():
+    """Show a compact count of issues by severity and category.
+
+    Example:
+        aksara gaps summary
+    """
+    report = _run_gap_analysis_sync()
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Gap Analysis — Summary\033[0m")
+    click.echo()
+
+    if report.stats.total == 0:
+        click.echo("  \033[32m✓ All clear — no gaps detected.\033[0m")
+        click.echo()
+        sys.exit(0)
+
+    # Severity totals
+    s = report.stats
+    click.echo(f"  {'Severity':<12} {'Count':>6}")
+    click.echo(f"  {'─' * 12} {'─' * 6}")
+    if s.critical:
+        click.echo(f"  \033[35m{'critical':<12}{s.critical:>6}\033[0m")
+    if s.error:
+        click.echo(f"  \033[31m{'error':<12}{s.error:>6}\033[0m")
+    if s.warning:
+        click.echo(f"  \033[33m{'warning':<12}{s.warning:>6}\033[0m")
+    if s.info:
+        click.echo(f"  {'info':<12}{s.info:>6}")
+    click.echo(f"  {'─' * 12} {'─' * 6}")
+    click.echo(f"  {'TOTAL':<12}{s.total:>6}")
+    click.echo()
+
+    # Category breakdown
+    by_cat: dict = {}
+    for issue in report.issues:
+        by_cat.setdefault(issue.category, 0)
+        by_cat[issue.category] += 1
+
+    click.echo(f"  {'Category':<20} {'Issues':>7}")
+    click.echo(f"  {'─' * 20} {'─' * 7}")
+    for cat, count in sorted(by_cat.items()):
+        click.echo(f"  {cat:<20} {count:>7}")
+    click.echo()
+
+    sys.exit(1 if report.has_errors else 0)
+
+
+@gaps.command("json")
+@click.option(
+    "--categories", "-c",
+    default=None,
+    help="Comma-separated categories to check (default: all)",
+)
+def gaps_json(categories: Optional[str]):
+    """Output the full gap analysis report as JSON.
+
+    Suitable for piping to other tools or saving to a file.
+
+    Examples:
+        aksara gaps json
+        aksara gaps json --categories imports,environment
+        aksara gaps json > gaps.json
+    """
+    import json as json_mod
+
+    cat_list = [c.strip() for c in categories.split(",")] if categories else None
+    report = _run_gap_analysis_sync(categories=cat_list)
+
+    from aksara.studio.utils import build_studio_gap_analysis_report
+    studio_report = build_studio_gap_analysis_report(report)
+    click.echo(json_mod.dumps(studio_report.model_dump(mode="json"), indent=2, default=str))
+
+    sys.exit(1 if report.has_errors else 0)
+
+
+@gaps.command("list-errors")
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["pretty", "json"]),
+    default="pretty",
+    help="Output format (default: pretty)",
+)
+def gaps_list_errors(output_format: str):
+    """List only error and critical severity gap issues.
+
+    Example:
+        aksara gaps list-errors
+        aksara gaps list-errors --format json
+    """
+    import json as json_mod
+
+    report = _run_gap_analysis_sync()
+    errors = report.by_severity("error") + report.by_severity("critical")
+
+    if output_format == "json":
+        data = [
+            {
+                "severity": i.severity,
+                "category": i.category,
+                "code": i.code,
+                "title": i.title,
+                "message": i.message,
+                "hint": i.hint,
+            }
+            for i in errors
+        ]
+        click.echo(json_mod.dumps(data, indent=2))
+        sys.exit(1 if errors else 0)
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Gaps — Errors & Criticals\033[0m")
+    click.echo()
+
+    if not errors:
+        click.echo("  \033[32m✓ No error or critical issues found.\033[0m")
+        click.echo()
+        sys.exit(0)
+
+    click.echo(f"  Found {len(errors)} blocking issue{'s' if len(errors) != 1 else ''}:\n")
+    for issue in errors:
+        c = _SEVERITY_COLORS.get(issue.severity, "")
+        sym = _SEVERITY_SYMBOLS.get(issue.severity, "✗")
+        click.echo(f"  {c}{sym} [{issue.severity.upper()}] {issue.title}{_RESET}")
+        click.echo(f"     Category: {issue.category} | Code: {issue.code}")
+        click.echo(f"     {issue.message}")
+        if issue.hint:
+            click.echo(f"     \033[90mHint: {issue.hint}\033[0m")
+        click.echo()
+
+    sys.exit(1)
+
+
+@gaps.command("list-critical")
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["pretty", "json"]),
+    default="pretty",
+    help="Output format (default: pretty)",
+)
+def gaps_list_critical(output_format: str):
+    """List only critical severity gap issues.
+
+    Exit code is non-zero if any critical issues are found.
+    Suitable for CI/CD gates.
+
+    Examples:
+        aksara gaps list-critical
+        aksara gaps list-critical --format json
+        if ! aksara gaps list-critical --format json > /dev/null; then exit 1; fi
+    """
+    import json as json_mod
+
+    report = _run_gap_analysis_sync()
+    critical = report.by_severity("critical")
+
+    if output_format == "json":
+        data = [
+            {
+                "severity": i.severity,
+                "category": i.category,
+                "code": i.code,
+                "title": i.title,
+                "message": i.message,
+                "hint": i.hint,
+            }
+            for i in critical
+        ]
+        click.echo(json_mod.dumps(data, indent=2))
+        sys.exit(1 if critical else 0)
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Gaps — Critical Issues\033[0m")
+    click.echo()
+
+    if not critical:
+        click.echo("  \033[32m✓ No critical issues found.\033[0m")
+        click.echo()
+        sys.exit(0)
+
+    click.echo(f"  Found {len(critical)} critical issue{'s' if len(critical) != 1 else ''}:\n")
+    for issue in critical:
+        click.echo(f"  \033[35m✗ [CRITICAL] {issue.title}\033[0m")
+        click.echo(f"     Category: {issue.category} | Code: {issue.code}")
+        click.echo(f"     {issue.message}")
+        if issue.hint:
+            click.echo(f"     \033[90mHint: {issue.hint}\033[0m")
+        click.echo()
+
+    sys.exit(1)
+
+
+@gaps.command("fix-plan")
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["pretty", "json"]),
+    default="pretty",
+    help="Output format (default: pretty)",
+)
+@click.option(
+    "--only-blocking", is_flag=True, default=False,
+    help="Only include error and critical issues",
+)
+def gaps_fix_plan(output_format: str, only_blocking: bool):
+    """Generate a structured fix plan for all discovered gaps.
+
+    Prints every issue that has associated fix commands, sorted by
+    severity (critical first).  Use --only-blocking to skip
+    warnings and info.
+
+    Examples:
+        aksara gaps fix-plan
+        aksara gaps fix-plan --format json
+        aksara gaps fix-plan --only-blocking
+    """
+    import json as json_mod
+    from aksara.gapanalysis import build_fix_plan
+
+    report = _run_gap_analysis_sync()
+
+    if only_blocking:
+        from aksara.gapanalysis import GapAnalysisReport
+        # Filter to a temporary report-like object
+        filtered_issues = [i for i in report.issues if i.is_blocking]
+        report.issues = filtered_issues
+
+    plan = build_fix_plan(report)
+
+    if output_format == "json":
+        click.echo(json_mod.dumps(plan, indent=2))
+        sys.exit(1 if report.has_errors else 0)
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Gaps — Fix Plan\033[0m")
+    click.echo()
+
+    if not plan:
+        click.echo("  \033[32m✓ No actionable fixes needed.\033[0m")
+        click.echo()
+        sys.exit(0 if not report.has_errors else 1)
+
+    click.echo(f"  {len(plan)} fix action{'s' if len(plan) != 1 else ''} available:\n")
+    for idx, item in enumerate(plan, 1):
+        c = _SEVERITY_COLORS.get(item["severity"], "")
+        click.echo(f"  {idx}. {c}[{item['severity'].upper()}]{_RESET} {item['title']}")
+        click.echo(f"     Category: {item['category']} | Code: {item['code']}")
+        for cmd in item["commands"]:
+            click.echo(f"     \033[36m→ {cmd['description']}\033[0m")
+            click.echo(f"       \033[90m$ {cmd['command']}\033[0m")
+        click.echo()
+
+    total_cmds = sum(len(i["commands"]) for i in plan)
+    click.echo(f"  {len(plan)} issue(s), {total_cmds} command(s)")
+    click.echo()
+
+    sys.exit(1 if report.has_errors else 0)
 
 
 if __name__ == "__main__":

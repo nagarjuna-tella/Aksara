@@ -61,6 +61,10 @@ v0.5.25 Additions:
 - POST /studio/ai/hub/providers/save - Save provider configuration
 - POST /studio/ai/hub/providers/ping - Test provider connectivity
 - POST /studio/ai/hub/agent/run - Run AI agent with prompt
+
+v0.5.26 Additions:
+- GET /studio/gaps - Run gap analysis and return issues explorer report
+- POST /studio/gaps/run - Trigger a fresh gap analysis run
 """
 
 from __future__ import annotations
@@ -122,6 +126,9 @@ from aksara.studio.models import (
     StudioAiProviderPingResponse,
     StudioAiAgentRunRequest,
     StudioAiAgentRunResponse,
+    # v0.5.26: Gap Analysis models
+    StudioGapAnalysisReport,
+    StudioGapAnalysisRunResponse,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -166,6 +173,8 @@ from aksara.studio.utils import (
     build_ai_hub_provider_save,
     build_ai_hub_provider_ping,
     build_ai_hub_agent_run,
+    # v0.5.26: Gap Analysis utils
+    run_and_build_gap_analysis,
 )
 from aksara.ai.playbooks import get_builtin_playbooks, get_playbook_by_key
 from aksara.diagnostics import DiagnosticReport, run_all_checks
@@ -1367,6 +1376,68 @@ async def studio_ai_hub_agent_run(
         temperature=body.temperature,
         max_tokens=body.max_tokens,
     )
+
+
+# =============================================================================
+# v0.5.26: Gap Analysis Endpoints
+# =============================================================================
+
+
+@router.get("/studio/gaps", response_model=StudioGapAnalysisReport)
+async def studio_gaps(
+    request: Request,
+    categories: Optional[str] = Query(
+        default=None,
+        description="Comma-separated list of categories to check (default: all)",
+    ),
+    _dep: None = Depends(verify_studio_origin),
+) -> StudioGapAnalysisReport:
+    """
+    Run the gap analysis engine and return the report.
+
+    v0.5.26: Returns a full gap analysis report across up to eight
+    check categories.  Pass ``?categories=db,migrations`` to limit
+    the scan to specific categories.
+
+    Returns:
+        StudioGapAnalysisReport with all discovered issues and stats.
+    """
+    cats = None
+    if categories:
+        cats = [c.strip() for c in categories.split(",") if c.strip()]
+    return await run_and_build_gap_analysis(categories=cats)
+
+
+@router.post("/studio/gaps/run", response_model=StudioGapAnalysisRunResponse)
+async def studio_gaps_run(
+    request: Request,
+    _dep: None = Depends(verify_studio_origin),
+) -> StudioGapAnalysisRunResponse:
+    """
+    Trigger a fresh gap analysis run and return the full report.
+
+    v0.5.26: Runs all eight check categories and returns the
+    analysis result immediately (synchronous).
+
+    Returns:
+        StudioGapAnalysisRunResponse with the completed analysis.
+    """
+    from datetime import datetime, timezone
+
+    triggered_at = datetime.now(timezone.utc).isoformat()
+    try:
+        report = await run_and_build_gap_analysis()
+        return StudioGapAnalysisRunResponse(
+            triggered_at=triggered_at,
+            status="ok",
+            report=report,
+        )
+    except Exception as exc:
+        return StudioGapAnalysisRunResponse(
+            triggered_at=triggered_at,
+            status="error",
+            error=str(exc),
+        )
 
 
 # =============================================================================

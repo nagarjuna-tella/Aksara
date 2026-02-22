@@ -2496,3 +2496,82 @@ def build_ai_hub_agent_run(
             model=prov.model,
             error=str(exc),
         )
+
+
+# =============================================================================
+# v0.5.26: Gap Analysis Builder Functions
+# =============================================================================
+
+
+def build_studio_gap_issue(issue: Any) -> "StudioGapIssue":
+    """Convert a :class:`~aksara.gapanalysis.GapIssue` to its Studio representation."""
+    from aksara.studio.models import StudioGapIssue, StudioGapFixCommand
+
+    return StudioGapIssue(
+        category=issue.category,
+        severity=issue.severity,
+        code=issue.code,
+        title=issue.title,
+        message=issue.message,
+        hint=issue.hint,
+        fix_commands=[
+            StudioGapFixCommand(
+                description=cmd.description,
+                command=cmd.command,
+                env_required=cmd.env_required,
+            )
+            for cmd in issue.fix_commands
+        ],
+        meta=issue.meta,
+        is_blocking=issue.is_blocking,
+    )
+
+
+def build_studio_gap_analysis_report(report: Any) -> "StudioGapAnalysisReport":
+    """Convert a :class:`~aksara.gapanalysis.GapAnalysisReport` to its Studio representation."""
+    from aksara.studio.models import (
+        StudioGapAnalysisReport,
+        StudioGapAnalysisStats,
+    )
+
+    stats = StudioGapAnalysisStats(
+        critical=report.stats.critical,
+        error=report.stats.error,
+        warning=report.stats.warning,
+        info=report.stats.info,
+        total=report.stats.total,
+        has_blocking=report.stats.has_blocking,
+        overall_status=report.stats.overall_status,
+    )
+
+    issues = [build_studio_gap_issue(i) for i in report.issues]
+
+    ts = report.timestamp.isoformat() if hasattr(report.timestamp, "isoformat") else str(report.timestamp)
+
+    return StudioGapAnalysisReport(
+        issues=issues,
+        stats=stats,
+        categories_checked=list(report.categories_checked),
+        summary_line=report.summary_line,
+        timestamp=ts,
+        duration_ms=report.duration_ms,
+        system=dict(report.system),
+    )
+
+
+async def run_and_build_gap_analysis(
+    categories: Optional[List[str]] = None,
+) -> "StudioGapAnalysisReport":
+    """
+    Run the gap analysis engine and return a Studio-formatted report.
+
+    Parameters
+    ----------
+    categories:
+        Optional list of category names to check.  ``None`` means all.
+    """
+    from aksara.gapanalysis import run_gap_analysis
+
+    # Cast categories to the Literal type if provided
+    report = await run_gap_analysis(categories=categories)  # type: ignore[arg-type]
+    return build_studio_gap_analysis_report(report)

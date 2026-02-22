@@ -84,6 +84,7 @@ nav:
       - AI Debug: debugging/ai-debug.md
       - Observability: debugging/observability.md
       - Diagnostics & Doctor: diagnostics.md
+      - Gap Analysis: gapanalysis.md
       - Autoremediation: debugging/autoremediation.md
   - Inspectors:
       - inspectors/index.md

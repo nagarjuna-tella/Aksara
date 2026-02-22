@@ -1791,3 +1791,63 @@ class StudioAiAgentRunResponse(BaseModel):
     output: str = Field(default="", description="Generated text output")
     tokens_estimated: Optional[int] = Field(default=None, description="Rough token count")
     error: Optional[str] = Field(default=None, description="Error if generation failed")
+
+
+# =============================================================================
+# v0.5.26: Gap Analysis Models
+# =============================================================================
+
+
+class StudioGapFixCommand(BaseModel):
+    """A single shell command that can remedy a gap issue."""
+
+    description: str = Field(description="Human-readable description of what this command does")
+    command: str = Field(description="Shell command to run")
+    env_required: List[str] = Field(default_factory=list, description="Env vars required before running")
+
+
+class StudioGapIssue(BaseModel):
+    """A single gap issue found during analysis — Studio API representation."""
+
+    category: str = Field(description="Check category: imports, db, migrations, routers, providers, studio, environment, ai_pipeline")
+    severity: str = Field(description="Severity: info, warning, error, critical")
+    code: str = Field(description="Unique machine-readable code, e.g. 'DB_NO_URL'")
+    title: str = Field(description="Short human-readable title")
+    message: str = Field(description="Detailed explanation")
+    hint: Optional[str] = Field(default=None, description="Suggested fix (plain English)")
+    fix_commands: List[StudioGapFixCommand] = Field(default_factory=list, description="Ordered fix commands")
+    meta: Optional[Dict[str, Any]] = Field(default=None, description="Extra metadata")
+    is_blocking: bool = Field(default=False, description="True if severity is critical or error")
+
+
+class StudioGapAnalysisStats(BaseModel):
+    """Issue count breakdown by severity."""
+
+    critical: int = Field(default=0)
+    error: int = Field(default=0)
+    warning: int = Field(default=0)
+    info: int = Field(default=0)
+    total: int = Field(default=0)
+    has_blocking: bool = Field(default=False)
+    overall_status: str = Field(default="clean", description="clean | warning | error | critical")
+
+
+class StudioGapAnalysisReport(BaseModel):
+    """Full gap analysis report — response for GET /studio/gaps."""
+
+    issues: List[StudioGapIssue] = Field(default_factory=list)
+    stats: StudioGapAnalysisStats = Field(default_factory=StudioGapAnalysisStats)
+    categories_checked: List[str] = Field(default_factory=list)
+    summary_line: str = Field(default="", description="Human-readable summary, e.g. '3 issues (1 critical)'")
+    timestamp: str = Field(default="", description="ISO 8601 timestamp")
+    duration_ms: float = Field(default=0.0, description="Total analysis duration in milliseconds")
+    system: Dict[str, str] = Field(default_factory=dict)
+
+
+class StudioGapAnalysisRunResponse(BaseModel):
+    """Response for POST /studio/gaps/run — triggers a fresh analysis."""
+
+    triggered_at: str = Field(default="", description="ISO 8601 timestamp when analysis was triggered")
+    status: str = Field(default="ok", description="ok | error")
+    report: Optional[StudioGapAnalysisReport] = Field(default=None, description="Analysis report if completed synchronously")
+    error: Optional[str] = Field(default=None, description="Error message if analysis failed")
