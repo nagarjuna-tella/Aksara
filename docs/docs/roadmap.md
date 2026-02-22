@@ -1,6 +1,6 @@
 # Aksara Roadmap
 
-> **Updated Feb 20, 2026**
+> **Updated Feb 21, 2026**
 
 Aksara is now an AI-first application framework with a fully integrated
 developer studio, automatic diagnostics, code-generation agents, and
@@ -10,6 +10,34 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 ---
 
 ## Current Stable Version
+
+### v0.5.26 — Gap Analysis Engine (Feb 2026)
+
+- **Gap Analysis Engine** (`aksara/gapanalysis.py`) — static pre-flight scanner
+  with 8 check categories: `imports`, `db`, `migrations`, `routers`, `providers`,
+  `studio`, `environment`, `ai_pipeline`
+- `GapIssueSeverity` adds a `"critical"` tier above diagnostics' `"error"`
+- `aksara gaps` CLI group — 6 subcommands: `run`, `summary`, `json`,
+  `list-errors`, `list-critical`, `fix-plan`
+- Studio panel at `/studio/gaps` (`GET` + `POST /studio/gaps/run`)
+- `build_fix_plan()` — severity-ordered actionable fix list with per-issue
+  shell commands and required env vars
+- 112 new tests; full suite at **3409 passed**
+
+---
+
+## Recent Releases
+
+### v0.5.25 — AI Hub & Unified Provider System (Feb 2026)
+
+- AI Hub Studio panel — provider registration, health checks, model listing
+- Unified Provider abstraction (OpenAI, Anthropic, Azure OpenAI, Ollama)
+- `aksara ai` CLI group with `list-providers`, `test-provider`, `run-agent`
+- Internal API routes hidden from Swagger (`include_in_schema=False`)
+- `admin.py` added to `startapp` scaffold
+- Studio dark mode fixes; Studio menu simplification
+- Admin 2.0 UI audit + theme/logo unification pass
+- 3297 tests passing
 
 ### v0.5.24 — Stability & Refactor Pass (Feb 2026)
 
@@ -28,7 +56,9 @@ Includes everything from v0.5.0–v0.5.23 plus:
 - Lazy-import helper pattern for testability
 - CLI error handling hardened (exit codes, hints)
 - Studio error feedback (toast notifications)
-- 3250+ test suite
+- Complete migration system overhaul — new autodetector (1 060 lines), 22 migration bugs fixed, 27 new tests
+- ORM / Fields / Migrations deep audit — 35 bugs fixed
+- 3 250+ test suite
 
 ---
 
