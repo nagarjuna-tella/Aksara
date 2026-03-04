@@ -2920,7 +2920,7 @@ async function loadAiHubOverview() {
             if (ob && ob.completed) {
                 onboardEl.innerHTML = '<span class="text-success">✓ Complete</span>';
             } else {
-                const done = ob ? [ob.has_provider, ob.has_key, ob.has_test, ob.has_defaults, ob.has_sample].filter(Boolean).length : 0;
+                const done = ob ? [ob.providers_selected, ob.keys_entered, ob.providers_tested, ob.defaults_set, ob.sample_query_run].filter(Boolean).length : 0;
                 onboardEl.innerHTML = `<span class="text-warning">${done}/5 steps</span>`;
             }
         }
@@ -3024,32 +3024,25 @@ async function loadAiHubRouting() {
     const warningsEl = document.getElementById('ai-hub-routing-warnings');
 
     try {
-        const data = await jsonGet('/studio/ai-hub/status');
+        const data = await jsonGet('/studio/ai-hub/routes');
         state.aiHub.routing = data;
 
-        // Build routes from status data to simulate routing
-        let routeData;
-        try {
-            routeData = await jsonGet('/studio/ai-hub/providers');
-        } catch { routeData = { providers: [] }; }
-
-        const features = ['agents', 'playbooks', 'search', 'diagnostics'];
-        const activeProvider = data.active_provider || 'none';
-        const defaults = data.defaults || {};
-
         if (tbody) {
-            tbody.innerHTML = features.map(feature => {
-                const model = feature === 'search' ? (defaults.embeddings_model || '-') : (defaults.chat_model || '-');
-                const provider = activeProvider;
-                const status = data.overall === 'ready' ? '✓ Active' : (data.overall === 'partial' ? '⚠ Partial' : '○ Inactive');
-                const statusCls = data.overall === 'ready' ? 'text-success' : (data.overall === 'partial' ? 'text-warning' : 'text-muted');
-                return `<tr>
-                    <td><strong>${escapeHtml(feature)}</strong></td>
-                    <td>${escapeHtml(provider)}</td>
-                    <td><code>${escapeHtml(model)}</code></td>
-                    <td><span class="${statusCls}">${status}</span></td>
-                </tr>`;
-            }).join('');
+            const routes = data.routes || [];
+            if (routes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No routing data available.</td></tr>';
+            } else {
+                tbody.innerHTML = routes.map(r => {
+                    const statusCls = r.status === 'ok' ? 'text-success' : (r.status === 'fallback' ? 'text-warning' : 'text-muted');
+                    const statusIcon = r.status === 'ok' ? '✓ Active' : (r.status === 'fallback' ? '⚠ Fallback' : '○ Missing');
+                    return `<tr>
+                        <td><strong>${escapeHtml(r.feature)}</strong></td>
+                        <td>${escapeHtml(r.provider || '-')}</td>
+                        <td><code>${escapeHtml(r.model || '-')}</code></td>
+                        <td><span class="${statusCls}">${statusIcon}</span>${r.warning ? ` <span class="text-muted text-sm">${escapeHtml(r.warning)}</span>` : ''}</td>
+                    </tr>`;
+                }).join('');
+            }
         }
 
         // Warnings
@@ -3070,11 +3063,11 @@ async function loadAiHubOnboarding() {
         const data = await jsonGet('/studio/ai-hub/status');
         const ob = data.onboarding || {};
         const steps = [
-            { id: 1, done: ob.has_provider },
-            { id: 2, done: ob.has_key },
-            { id: 3, done: ob.has_test },
-            { id: 4, done: ob.has_defaults },
-            { id: 5, done: ob.has_sample },
+            { id: 1, done: ob.providers_selected },
+            { id: 2, done: ob.keys_entered },
+            { id: 3, done: ob.providers_tested },
+            { id: 4, done: ob.defaults_set },
+            { id: 5, done: ob.sample_query_run },
         ];
         steps.forEach(s => {
             const el = document.getElementById(`onboarding-step-${s.id}-status`);
@@ -3241,9 +3234,9 @@ async function aiHubTestProvider(providerKind) {
         const msg = resp.reachable
             ? `✓ ${providerKind} reachable (${resp.latency_ms || 0}ms)`
             : `✗ ${providerKind}: ${resp.error || 'Unreachable'}`;
-        alert(msg);
+        showToast(msg, resp.reachable ? 'success' : 'error');
     } catch (err) {
-        alert(`Error testing ${providerKind}: ${err.message}`);
+        showToast(`Error testing ${providerKind}: ${err.message}`, 'error');
     }
 }
 

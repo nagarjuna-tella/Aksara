@@ -1545,6 +1545,18 @@ async def studio_aihub_test(request: Request):
     return build_aihub_test(provider=body.get("provider", ""))
 
 
+@router.get("/studio/ai-hub/routes")
+async def studio_aihub_routes(request: Request):
+    """
+    AI feature routing table — which provider/model serves each feature.
+
+    v0.5.28: Returns per-feature route mapping (agents, playbooks,
+    search_embeddings, diagnostics) with status and warnings.
+    """
+    from aksara.studio.utils import build_aihub_routes
+    return build_aihub_routes()
+
+
 # =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
