@@ -70,6 +70,10 @@
     <td>🤖</td>
     <td><strong>Agentic Workflows</strong> (v0.5.23) – structured step-by-step execution plans from free-text goals; combines diagnostics, search, inspectors, and playbooks into ordered timelines with risk/effort badges; Studio Workflow tab, CLI <code>aksara agent workflow</code>, and Python API</td>
   </tr>
+  <tr>
+    <td>⚡</td>
+    <td><strong>Studio AI Flows</strong> (v0.5.29) – in-context AI actions for Models, Routes, Queries, Migrations, and Diagnostics panels; deterministic prompt packs with risk badges, copy buttons, and CLI parity (<code>aksara ai flows</code>)</td>
+  </tr>
 </table>
 
 ---

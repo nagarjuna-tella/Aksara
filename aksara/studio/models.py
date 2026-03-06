@@ -1794,6 +1794,99 @@ class StudioAiAgentRunResponse(BaseModel):
 
 
 # =============================================================================
+# v0.5.29: Studio AI Flows Models
+# =============================================================================
+
+
+class StudioAiFlowRequest(BaseModel):
+    """Generic request body for POST /studio/ai/flows/*."""
+
+    action_key: str = Field(description="Flow action key, e.g. explain_model")
+    hub_overrides: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Optional provider/model overrides: {provider, model}",
+    )
+
+
+class StudioAiFlowModelRequest(StudioAiFlowRequest):
+    """Request for POST /studio/ai/flows/model."""
+
+    model_name: str = Field(description="Registered model class name")
+
+
+class StudioAiFlowRouteRequest(StudioAiFlowRequest):
+    """Request for POST /studio/ai/flows/route."""
+
+    path: Optional[str] = Field(default=None, description="Route path, e.g. /api/users")
+    method: Optional[str] = Field(default="GET", description="HTTP method")
+    route_id: Optional[str] = Field(default=None, description="Alternative: route identifier")
+
+
+class StudioAiFlowQueryRequest(StudioAiFlowRequest):
+    """Request for POST /studio/ai/flows/query."""
+
+    sql: str = Field(description="SQL query text")
+    include_explain: bool = Field(default=True, description="Include EXPLAIN plan context")
+
+
+class StudioAiFlowMigrationRequest(StudioAiFlowRequest):
+    """Request for POST /studio/ai/flows/migration."""
+
+    migration_id: Optional[str] = Field(default=None, description="Migration identifier")
+    app: Optional[str] = Field(default=None, description="App label")
+    name: Optional[str] = Field(default=None, description="Migration name")
+
+
+class StudioAiFlowDiagnosticRequest(StudioAiFlowRequest):
+    """Request for POST /studio/ai/flows/diagnostic."""
+
+    issue_id: Optional[str] = Field(default=None, description="Diagnostic issue ID")
+    issue_payload: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Full issue object (category, severity, title, message, actions)",
+    )
+
+
+class StudioAiFlowResponse(BaseModel):
+    """Unified response for all AI flow endpoints."""
+
+    ok: bool = Field(default=True)
+    action_key: str = Field(default="", description="Action that was executed")
+    risk: str = Field(default="low", description="low | medium | high")
+    provider: str = Field(default="", description="AI provider used")
+    model: str = Field(default="", description="Model used")
+    system_prompt: str = Field(default="", description="System prompt for LLM")
+    user_prompt: str = Field(default="", description="User prompt for LLM")
+    result_markdown: str = Field(default="", description="Markdown-formatted result")
+    result_json: Optional[Dict[str, Any]] = Field(default=None, description="Structured result data")
+    suggested_next: List[str] = Field(default_factory=list, description="Recommended follow-up actions")
+    what_it_does: str = Field(default="", description="What this action does")
+    what_it_cannot_do: str = Field(default="", description="Limitations of this action")
+    error_code: Optional[str] = Field(default=None, description="Error code if ok=false")
+    error: Optional[str] = Field(default=None, description="Error message if ok=false")
+
+
+class StudioAiFlowActionDescriptor(BaseModel):
+    """Describes a single available AI flow action."""
+
+    action_key: str = Field(description="Unique action key")
+    kind: str = Field(description="Flow kind: model, route, query, migration, diagnostic")
+    title: str = Field(description="Human-readable title")
+    description: str = Field(description="What the action does")
+    risk: str = Field(description="low | medium | high")
+    what_it_does: str = Field(default="")
+    what_it_cannot_do: str = Field(default="")
+    recommended_next: List[str] = Field(default_factory=list)
+
+
+class StudioAiFlowActionsResponse(BaseModel):
+    """Response for GET /studio/ai/flows/actions."""
+
+    actions: List[StudioAiFlowActionDescriptor] = Field(default_factory=list)
+    total: int = Field(default=0)
+
+
+# =============================================================================
 # v0.5.28: AI Hub 2.0 Models
 # =============================================================================
 

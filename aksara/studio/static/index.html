@@ -255,6 +255,16 @@
         <div class="section-header">
             <h1>Models</h1>
             <p class="section-subtitle">Database models, schemas, and deep introspection</p>
+            <div class="ai-flow-dropdown" id="models-ai-dropdown">
+                <button class="btn btn-sm btn-ai-flow" id="models-ai-btn" title="AI actions for selected model" disabled>
+                    &#9889; AI
+                </button>
+                <div class="ai-flow-dropdown-menu" id="models-ai-menu" style="display:none;">
+                    <button class="ai-flow-dropdown-item" data-action="explain_model">Explain Model <span class="ai-flow-badge">low</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="suggest_constraints">Suggest Constraints <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="refactor_suggestions">Refactor Suggestions <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                </div>
+            </div>
         </div>
         
         <div class="section-tabs">
@@ -309,6 +319,16 @@
         <div class="section-header">
             <h1>Routes & API</h1>
             <p class="section-subtitle">All registered endpoints and API reference</p>
+            <div class="ai-flow-dropdown" id="routes-ai-dropdown">
+                <button class="btn btn-sm btn-ai-flow" id="routes-ai-btn" title="AI actions for selected route" disabled>
+                    &#9889; AI
+                </button>
+                <div class="ai-flow-dropdown-menu" id="routes-ai-menu" style="display:none;">
+                    <button class="ai-flow-dropdown-item" data-action="review_endpoint">Review Endpoint <span class="ai-flow-badge">low</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="harden_permissions">Harden Permissions <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="generate_examples">Generate Examples <span class="ai-flow-badge">low</span></button>
+                </div>
+            </div>
         </div>
         
         <div class="section-tabs">
@@ -397,6 +417,15 @@
         <div class="section-header">
             <h1>Migrations</h1>
             <p class="section-subtitle">Database migration status and history</p>
+            <div class="ai-flow-dropdown" id="migrations-ai-dropdown">
+                <button class="btn btn-sm btn-ai-flow" id="migrations-ai-btn" title="AI actions for migrations" disabled>
+                    &#9889; AI
+                </button>
+                <div class="ai-flow-dropdown-menu" id="migrations-ai-menu" style="display:none;">
+                    <button class="ai-flow-dropdown-item" data-action="explain_migration">Explain Impact <span class="ai-flow-badge">low</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="safe_rollout_plan">Safe Rollout Plan <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                </div>
+            </div>
         </div>
         
         <div class="cards-grid">
@@ -471,6 +500,14 @@
         <div class="section-header">
             <h1>Diagnostics</h1>
             <p class="section-subtitle">Self-diagnostics engine &mdash; health checks, security, and configuration</p>
+            <div class="ai-flow-dropdown" id="diagnostics-ai-dropdown">
+                <button class="btn btn-sm btn-ai-flow" id="diagnostics-ai-btn" title="Ask AI about diagnostic issues" disabled>
+                    &#9889; Ask AI
+                </button>
+                <div class="ai-flow-dropdown-menu" id="diagnostics-ai-menu" style="display:none;">
+                    <button class="ai-flow-dropdown-item" data-action="diagnostic_prioritize">Explain &amp; Prioritize <span class="ai-flow-badge">low</span></button>
+                </div>
+            </div>
         </div>
         
         <!-- Summary Banner -->
@@ -755,6 +792,16 @@
         <div class="section-header">
             <h1>DB & Queries</h1>
             <p class="section-subtitle">Database query inspector and performance profiler</p>
+            <div class="ai-flow-dropdown" id="queries-ai-dropdown">
+                <button class="btn btn-sm btn-ai-flow" id="queries-ai-btn" title="AI actions for queries" disabled>
+                    &#9889; AI
+                </button>
+                <div class="ai-flow-dropdown-menu" id="queries-ai-menu" style="display:none;">
+                    <button class="ai-flow-dropdown-item" data-action="explain_plan">Explain Query Plan <span class="ai-flow-badge">low</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="suggest_indexes">Suggest Indexes <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                    <button class="ai-flow-dropdown-item" data-action="rewrite_suggestions">Rewrite Suggestions <span class="ai-flow-badge ai-flow-badge-medium">medium</span></button>
+                </div>
+            </div>
         </div>
         
         <div id="tracing-disabled-banner" class="info-banner warning hidden">
@@ -1692,6 +1739,56 @@
                 <span><kbd>Esc</kbd> Close</span>
             </div>
         </div>
+    </div>
+
+    <!-- v0.5.29: AI Flow Panel (reusable slide-over) -->
+    <div id="ai-flow-panel" class="ai-flow-panel" style="display:none;">
+        <div class="ai-flow-panel-header">
+            <div class="ai-flow-panel-title-row">
+                <h3 id="ai-flow-panel-title">AI Flow</h3>
+                <span id="ai-flow-badge" class="ai-flow-badge">low</span>
+                <button id="ai-flow-panel-close" class="btn btn-sm" title="Close">&times;</button>
+            </div>
+            <div class="ai-flow-meta">
+                <span id="ai-flow-provider" class="ai-flow-meta-tag"></span>
+                <span id="ai-flow-model" class="ai-flow-meta-tag"></span>
+            </div>
+            <div class="ai-flow-about">
+                <p id="ai-flow-what-it-does" class="ai-flow-about-line"></p>
+                <p id="ai-flow-what-it-cannot" class="ai-flow-about-line text-muted"></p>
+            </div>
+        </div>
+        <div class="ai-flow-tabs">
+            <button class="ai-flow-tab active" data-ai-flow-tab="result">Result</button>
+            <button class="ai-flow-tab" data-ai-flow-tab="prompt">Prompt Pack</button>
+            <button class="ai-flow-tab" data-ai-flow-tab="json">Raw JSON</button>
+        </div>
+        <div class="ai-flow-tab-panels">
+            <div class="ai-flow-tab-panel" data-ai-flow-panel="result">
+                <div id="ai-flow-result" class="ai-flow-result"></div>
+                <div class="ai-flow-actions">
+                    <button class="ai-flow-copy-btn" id="ai-flow-copy-result" title="Copy result to clipboard">&#128203; Copy Result</button>
+                    <button class="ai-flow-copy-btn" id="ai-flow-copy-cli" title="Copy CLI command">&#9000; Copy CLI</button>
+                </div>
+                <div id="ai-flow-suggested-next" class="ai-flow-suggested-next"></div>
+            </div>
+            <div class="ai-flow-tab-panel" data-ai-flow-panel="prompt" style="display:none;">
+                <h4>System Prompt</h4>
+                <pre id="ai-flow-system-prompt" class="ai-flow-prompt-box"></pre>
+                <h4>User Prompt</h4>
+                <pre id="ai-flow-user-prompt" class="ai-flow-prompt-box"></pre>
+                <div class="ai-flow-actions">
+                    <button class="ai-flow-copy-btn" id="ai-flow-copy-prompts" title="Copy prompt pack">&#128203; Copy Prompt Pack</button>
+                </div>
+            </div>
+            <div class="ai-flow-tab-panel" data-ai-flow-panel="json" style="display:none;">
+                <pre id="ai-flow-raw-json" class="ai-flow-prompt-box"></pre>
+                <div class="ai-flow-actions">
+                    <button class="ai-flow-copy-btn" id="ai-flow-copy-json" title="Copy JSON">&#128203; Copy JSON</button>
+                </div>
+            </div>
+        </div>
+        <div id="ai-flow-error" class="ai-flow-error" style="display:none;"></div>
     </div>
     
     <script src="/studio/assets/app.js" defer></script>

@@ -65,6 +65,14 @@ v0.5.25 Additions:
 v0.5.26 Additions:
 - GET /studio/gaps - Run gap analysis and return issues explorer report
 - POST /studio/gaps/run - Trigger a fresh gap analysis run
+
+v0.5.29 Additions:
+- GET /studio/ai/flows/actions - List available AI flow actions
+- POST /studio/ai/flows/model - AI flow for model actions
+- POST /studio/ai/flows/route - AI flow for route actions
+- POST /studio/ai/flows/query - AI flow for query actions
+- POST /studio/ai/flows/migration - AI flow for migration actions
+- POST /studio/ai/flows/diagnostic - AI flow for diagnostic actions
 """
 
 from __future__ import annotations
@@ -129,6 +137,14 @@ from aksara.studio.models import (
     # v0.5.26: Gap Analysis models
     StudioGapAnalysisReport,
     StudioGapAnalysisRunResponse,
+    # v0.5.29: AI Flows models
+    StudioAiFlowModelRequest,
+    StudioAiFlowRouteRequest,
+    StudioAiFlowQueryRequest,
+    StudioAiFlowMigrationRequest,
+    StudioAiFlowDiagnosticRequest,
+    StudioAiFlowResponse,
+    StudioAiFlowActionsResponse,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -1555,6 +1571,122 @@ async def studio_aihub_routes(request: Request):
     """
     from aksara.studio.utils import build_aihub_routes
     return build_aihub_routes()
+
+
+# =============================================================================
+# v0.5.29: Studio AI Flows Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai/flows/actions")
+async def studio_ai_flow_actions(request: Request):
+    """
+    List all available AI flow actions with metadata.
+
+    v0.5.29: Returns action keys, titles, risk levels, descriptions.
+    """
+    from aksara.studio.ai_flows import list_flow_actions
+    from aksara.studio.models import StudioAiFlowActionDescriptor, StudioAiFlowActionsResponse
+
+    raw = list_flow_actions()
+    descriptors = [StudioAiFlowActionDescriptor(**a) for a in raw]
+    return StudioAiFlowActionsResponse(actions=descriptors, total=len(descriptors))
+
+
+@router.post("/studio/ai/flows/model")
+async def studio_ai_flow_model(request: Request):
+    """
+    AI flow for model actions: explain, suggest constraints, refactor.
+
+    v0.5.29: Returns a prompt pack (system + user prompt) for the chosen action.
+    """
+    from aksara.studio.ai_flows import build_model_flow
+
+    body = await request.json()
+    return build_model_flow(
+        model_name=body.get("model_name", ""),
+        action_key=body.get("action_key", ""),
+        hub_overrides=body.get("hub_overrides"),
+    )
+
+
+@router.post("/studio/ai/flows/route")
+async def studio_ai_flow_route(request: Request):
+    """
+    AI flow for route actions: review, harden, generate examples.
+
+    v0.5.29: Returns a prompt pack for the chosen action.
+    """
+    from aksara.studio.ai_flows import build_route_flow
+
+    body = await request.json()
+    path = body.get("path", "")
+    method = body.get("method", "GET")
+    # Support route_id as "METHOD:/path"
+    route_id = body.get("route_id")
+    if route_id and ":" in route_id and not path:
+        method, path = route_id.split(":", 1)
+    return build_route_flow(
+        path=path,
+        method=method,
+        action_key=body.get("action_key", ""),
+        hub_overrides=body.get("hub_overrides"),
+    )
+
+
+@router.post("/studio/ai/flows/query")
+async def studio_ai_flow_query(request: Request):
+    """
+    AI flow for query actions: explain plan, suggest indexes, rewrite.
+
+    v0.5.29: Returns a prompt pack for SQL query analysis.
+    """
+    from aksara.studio.ai_flows import build_query_flow
+
+    body = await request.json()
+    return build_query_flow(
+        sql=body.get("sql", ""),
+        action_key=body.get("action_key", ""),
+        include_explain=body.get("include_explain", True),
+        hub_overrides=body.get("hub_overrides"),
+    )
+
+
+@router.post("/studio/ai/flows/migration")
+async def studio_ai_flow_migration(request: Request):
+    """
+    AI flow for migration actions: explain impact, safe rollout plan.
+
+    v0.5.29: Returns a prompt pack for migration analysis.
+    """
+    from aksara.studio.ai_flows import build_migration_flow
+
+    body = await request.json()
+    return build_migration_flow(
+        action_key=body.get("action_key", ""),
+        migration_id=body.get("migration_id"),
+        app=body.get("app"),
+        name=body.get("name"),
+        hub_overrides=body.get("hub_overrides"),
+    )
+
+
+@router.post("/studio/ai/flows/diagnostic")
+async def studio_ai_flow_diagnostic(request: Request):
+    """
+    AI flow for diagnostic actions: explain & prioritize issues.
+
+    v0.5.29: Returns a prompt pack for diagnostic triage.
+    """
+    from aksara.studio.ai_flows import build_diagnostic_flow
+
+    body = await request.json()
+    return build_diagnostic_flow(
+        action_key=body.get("action_key", ""),
+        issue_id=body.get("issue_id"),
+        issue_payload=body.get("issue_payload"),
+        hub_overrides=body.get("hub_overrides"),
+    )
 
 
 # =============================================================================

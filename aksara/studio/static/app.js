@@ -406,6 +406,11 @@ function renderSection(section) {
             renderAiHub();
             break;
     }
+
+    // v0.5.29: init AI flow dropdowns + row selection hooks after render
+    initAiFlowDropdowns();
+    _hookAiFlowRowSelection();
+    _syncFlowButtonStates();
 }
 
 // v0.5.25: Generic section tab switching for merged sections (Models, Routes)
@@ -3363,6 +3368,291 @@ async function aiHubRunAgent() {
 }
 
 
+// =============================================================================
+// v0.5.29: Studio AI Flows
+// =============================================================================
+
+/** Track AI Hub configured state for flow button enable/disable. */
+let _aiHubConfigured = false;
+
+/** Selected context for AI flows (set when user clicks a model/route/query row). */
+const _aiFlowContext = { model: null, route: null, query: null, migration: null, diagnostic: null };
+
+/** Check AI Hub status and toggle flow buttons accordingly. */
+async function initAiFlowButtons() {
+    try {
+        const status = await jsonGet('/studio/ai-hub/status');
+        _aiHubConfigured = status.overall !== 'disabled';
+    } catch { _aiHubConfigured = false; }
+    _syncFlowButtonStates();
+}
+
+function _syncFlowButtonStates() {
+    document.querySelectorAll('.btn-ai-flow').forEach(btn => {
+        btn.disabled = !_aiHubConfigured;
+        if (!_aiHubConfigured) {
+            btn.title = 'Configure AI in AI Hub';
+        }
+    });
+}
+
+/** Attach dropdown toggles and item handlers to AI flow buttons in the current DOM. */
+function initAiFlowDropdowns() {
+    const dropdowns = document.querySelectorAll('.ai-flow-dropdown');
+    dropdowns.forEach(dd => {
+        const btn = dd.querySelector('.btn-ai-flow');
+        const menu = dd.querySelector('.ai-flow-dropdown-menu');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (btn.disabled) {
+                if (!_aiHubConfigured) {
+                    showToast('Configure AI in AI Hub first', 'error');
+                    navigateTo('ai-hub');
+                }
+                return;
+            }
+            // Toggle menu
+            const visible = menu.style.display !== 'none';
+            _closeAllAiMenus();
+            if (!visible) menu.style.display = 'block';
+        });
+
+        menu.querySelectorAll('.ai-flow-dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.getAttribute('data-action');
+                menu.style.display = 'none';
+                _dispatchAiFlow(dd.id, action);
+            });
+        });
+    });
+    // Close menus on outside click
+    document.addEventListener('click', _closeAllAiMenus);
+}
+
+function _closeAllAiMenus() {
+    document.querySelectorAll('.ai-flow-dropdown-menu').forEach(m => m.style.display = 'none');
+}
+
+/** Determine flow kind + payload from dropdown id and call openAiFlowPanel. */
+function _dispatchAiFlow(dropdownId, actionKey) {
+    let kind, payload;
+    if (dropdownId.startsWith('models')) {
+        kind = 'model';
+        payload = { model_name: _aiFlowContext.model || '', action_key: actionKey };
+    } else if (dropdownId.startsWith('routes')) {
+        kind = 'route';
+        const r = _aiFlowContext.route || {};
+        payload = { path: r.path || '', method: r.method || 'GET', action_key: actionKey };
+    } else if (dropdownId.startsWith('queries')) {
+        kind = 'query';
+        payload = { sql: _aiFlowContext.query || '', action_key: actionKey, include_explain: true };
+    } else if (dropdownId.startsWith('migrations')) {
+        kind = 'migration';
+        const m = _aiFlowContext.migration || {};
+        payload = { app: m.app || '', name: m.name || '', action_key: actionKey };
+    } else if (dropdownId.startsWith('diagnostics')) {
+        kind = 'diagnostic';
+        payload = { issue_payload: _aiFlowContext.diagnostic || null, action_key: actionKey };
+    } else {
+        showToast('Unknown AI flow kind', 'error');
+        return;
+    }
+    openAiFlowPanel({ kind, actionKey, payload });
+}
+
+/**
+ * Open the AI Flow side panel, call the backend, and render the result.
+ * @param {{kind: string, actionKey: string, payload: object}} opts
+ */
+async function openAiFlowPanel({ kind, actionKey, payload }) {
+    const panel = document.getElementById('ai-flow-panel');
+    if (!panel) return;
+    panel.style.display = 'flex';
+
+    // Reset UI
+    const resultEl = document.getElementById('ai-flow-result');
+    const errorEl = document.getElementById('ai-flow-error');
+    const titleEl = document.getElementById('ai-flow-panel-title');
+    const badgeEl = document.getElementById('ai-flow-badge');
+    const provEl = document.getElementById('ai-flow-provider');
+    const modEl = document.getElementById('ai-flow-model');
+    const whatDoesEl = document.getElementById('ai-flow-what-it-does');
+    const whatCannotEl = document.getElementById('ai-flow-what-it-cannot');
+    const sysPre = document.getElementById('ai-flow-system-prompt');
+    const usrPre = document.getElementById('ai-flow-user-prompt');
+    const rawPre = document.getElementById('ai-flow-raw-json');
+    const nextEl = document.getElementById('ai-flow-suggested-next');
+
+    if (titleEl) titleEl.textContent = actionKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (resultEl) resultEl.textContent = 'Loading…';
+    if (errorEl) errorEl.style.display = 'none';
+    if (badgeEl) { badgeEl.textContent = '…'; badgeEl.className = 'ai-flow-badge'; }
+
+    // Show first tab
+    _setAiFlowTab('result');
+
+    try {
+        const resp = await jsonPost(`/studio/ai/flows/${kind}`, payload);
+        if (!resp.ok) {
+            if (errorEl) {
+                errorEl.style.display = 'block';
+                errorEl.textContent = resp.error || 'AI Hub not configured';
+                if (resp.error_code === 'AI_HUB_NOT_CONFIGURED') {
+                    errorEl.innerHTML = resp.error + ' <a href="#" onclick="navigateTo(\'ai-hub\');return false;">Open AI Hub</a>';
+                }
+            }
+            if (resultEl) resultEl.textContent = '';
+            return;
+        }
+
+        // Populate panel
+        if (titleEl) titleEl.textContent = resp.action_key ? resp.action_key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : kind;
+        if (badgeEl) {
+            badgeEl.textContent = resp.risk;
+            badgeEl.className = 'ai-flow-badge' + (resp.risk === 'medium' ? ' ai-flow-badge-medium' : resp.risk === 'high' ? ' ai-flow-badge-high' : '');
+        }
+        if (provEl) provEl.textContent = resp.provider ? 'Provider: ' + resp.provider : '';
+        if (modEl) modEl.textContent = resp.model ? 'Model: ' + resp.model : '';
+        if (whatDoesEl) whatDoesEl.textContent = resp.what_it_does ? '✓ ' + resp.what_it_does : '';
+        if (whatCannotEl) whatCannotEl.textContent = resp.what_it_cannot_do ? '✗ ' + resp.what_it_cannot_do : '';
+        if (resultEl) resultEl.textContent = resp.result_markdown || '(No result)';
+        if (sysPre) sysPre.textContent = resp.system_prompt || '';
+        if (usrPre) usrPre.textContent = resp.user_prompt || '';
+        if (rawPre) rawPre.textContent = JSON.stringify(resp, null, 2);
+
+        // Suggested next actions
+        if (nextEl && resp.suggested_next && resp.suggested_next.length) {
+            nextEl.innerHTML = '<strong>Suggested next:</strong> ' +
+                resp.suggested_next.map(s => '<a href="#" onclick="_runSuggestedFlow(\'' + s + '\');return false;">' + s.replace(/_/g, ' ') + '</a>').join(' · ');
+        } else if (nextEl) {
+            nextEl.innerHTML = '';
+        }
+
+        // Wire copy buttons
+        _wireAiFlowCopy('ai-flow-copy-result', resp.result_markdown || '');
+        _wireAiFlowCopy('ai-flow-copy-prompts', 'SYSTEM:\n' + (resp.system_prompt || '') + '\n\nUSER:\n' + (resp.user_prompt || ''));
+        _wireAiFlowCopy('ai-flow-copy-json', JSON.stringify(resp, null, 2));
+        _wireAiFlowCopy('ai-flow-copy-cli', _buildCliCommand(kind, payload));
+    } catch (err) {
+        showToast('AI Flow error: ' + err.message, 'error');
+        if (resultEl) resultEl.textContent = '';
+        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = err.message; }
+    }
+}
+
+function _wireAiFlowCopy(btnId, text) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const handler = () => {
+        navigator.clipboard.writeText(text).then(
+            () => showToast('Copied to clipboard', 'success'),
+            () => showToast('Copy failed', 'error')
+        );
+    };
+    btn.onclick = handler;
+}
+
+function _buildCliCommand(kind, payload) {
+    const parts = ['aksara', 'ai', 'flows', kind];
+    if (kind === 'model' && payload.model_name) {
+        parts.push(payload.model_name);
+    } else if (kind === 'route' && payload.path) {
+        parts.push((payload.method || 'GET').toUpperCase() + ':' + payload.path);
+    } else if (kind === 'query' && payload.sql) {
+        parts.push('--sql', '"' + payload.sql.replace(/"/g, '\\"') + '"');
+    } else if (kind === 'migration') {
+        if (payload.app) parts.push('--app', payload.app);
+        if (payload.name) parts.push('--name', payload.name);
+    }
+    parts.push('--action', payload.action_key);
+    return parts.join(' ');
+}
+
+function _runSuggestedFlow(actionKey) {
+    // Re-dispatch with same context but new action
+    const panel = document.getElementById('ai-flow-panel');
+    if (!panel) return;
+    // Infer kind from action key
+    const action = { explain_model: 'model', suggest_constraints: 'model', refactor_suggestions: 'model',
+                     review_endpoint: 'route', harden_permissions: 'route', generate_examples: 'route',
+                     explain_plan: 'query', suggest_indexes: 'query', rewrite_suggestions: 'query',
+                     explain_migration: 'migration', safe_rollout_plan: 'migration',
+                     diagnostic_prioritize: 'diagnostic' };
+    const kind = action[actionKey];
+    if (!kind) return;
+    // Build a minimal payload
+    let payload = { action_key: actionKey };
+    if (kind === 'model') payload.model_name = _aiFlowContext.model || '';
+    else if (kind === 'route') { const r = _aiFlowContext.route || {}; payload.path = r.path || ''; payload.method = r.method || 'GET'; }
+    else if (kind === 'query') { payload.sql = _aiFlowContext.query || ''; payload.include_explain = true; }
+    else if (kind === 'migration') { const m = _aiFlowContext.migration || {}; payload.app = m.app || ''; payload.name = m.name || ''; }
+    else if (kind === 'diagnostic') { payload.issue_payload = _aiFlowContext.diagnostic || null; }
+    openAiFlowPanel({ kind, actionKey, payload });
+}
+
+function _setAiFlowTab(tabKey) {
+    document.querySelectorAll('.ai-flow-tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-ai-flow-tab') === tabKey));
+    document.querySelectorAll('.ai-flow-tab-panel').forEach(p => p.style.display = p.getAttribute('data-ai-flow-panel') === tabKey ? 'block' : 'none');
+}
+
+function _initAiFlowPanelControls() {
+    // Close button
+    const closeBtn = document.getElementById('ai-flow-panel-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+        const panel = document.getElementById('ai-flow-panel');
+        if (panel) panel.style.display = 'none';
+    });
+    // Tab switching
+    document.querySelectorAll('.ai-flow-tab').forEach(tab => {
+        tab.addEventListener('click', () => _setAiFlowTab(tab.getAttribute('data-ai-flow-tab')));
+    });
+}
+
+/** Keyboard shortcuts for AI flows. */
+function _initAiFlowKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Shift+A → open AI Hub
+        if (e.shiftKey && !e.ctrlKey && !e.metaKey && e.key === 'A') {
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+            e.preventDefault();
+            navigateTo('ai-hub');
+        }
+        // Escape → close AI flow panel
+        if (e.key === 'Escape') {
+            const panel = document.getElementById('ai-flow-panel');
+            if (panel && panel.style.display !== 'none') {
+                panel.style.display = 'none';
+                e.preventDefault();
+            }
+        }
+    });
+}
+
+/**
+ * Hook into existing row-click handlers to track selection context.
+ * Called after each section render.
+ */
+function _hookAiFlowRowSelection() {
+    // Models: track selected model name
+    document.querySelectorAll('#models-list .model-row, #models-list .list-item, #models-list tr[data-model]').forEach(row => {
+        row.addEventListener('click', () => {
+            const name = row.getAttribute('data-model') || row.querySelector('.model-name')?.textContent || row.querySelector('td')?.textContent || '';
+            _aiFlowContext.model = name.trim();
+            const btn = document.getElementById('models-ai-btn');
+            if (btn) btn.title = _aiHubConfigured ? 'AI actions for ' + name.trim() : 'Configure AI in AI Hub';
+        });
+    });
+    // Routes: track selected route
+    document.querySelectorAll('.routes-table tbody tr[data-path]').forEach(row => {
+        row.addEventListener('click', () => {
+            _aiFlowContext.route = { path: row.getAttribute('data-path') || '', method: row.getAttribute('data-method') || 'GET' };
+        });
+    });
+}
+
+
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
     if (state.diagnosticsInterval) {
@@ -3374,4 +3664,9 @@ window.addEventListener('beforeunload', () => {
 });
 
 // Start the app
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    _initAiFlowPanelControls();
+    _initAiFlowKeyboardShortcuts();
+    initAiFlowButtons();
+});

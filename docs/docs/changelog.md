@@ -4,6 +4,27 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.29] — 2026-02-23
+
+### Added — Studio AI Flows
+- **AI Flow Builders** (`aksara/studio/ai_flows.py`): 11 registered actions
+  across 5 kinds (model, route, query, migration, diagnostic).  Each action
+  returns a deterministic prompt pack (system prompt + user prompt) — no
+  external API calls.  Risk-tagged (`low`/`medium`/`high`).
+- **6 new API endpoints** under `/studio/ai/flows/`: `actions` (GET),
+  `model`, `route`, `query`, `migration`, `diagnostic` (all POST).
+  11 new Pydantic models in `aksara/studio/models.py`.
+- **Studio UI**: AI Flow dropdown buttons in all 5 section headers (Models,
+  Routes, Migrations, Diagnostics, DB Queries).  Reusable slide-over AI Flow
+  Panel with 3-tab layout (Result, Prompt Pack, Raw JSON), copy buttons,
+  risk badges, suggested next actions.  Buttons disabled until AI Hub
+  configured.  `Shift+A` keyboard shortcut.
+- **CLI `aksara ai flows`** subcommand group: `actions`, `model`, `route`,
+  `query`, `migration`, `diagnostic`.  Supports `--format text|json`.
+- **183 new tests** across 3 files: backend builders, UI wiring, CLI parity.
+
+---
+
 ## [0.5.28] — 2026-02-22
 
 ### Added — AI Hub 2.0

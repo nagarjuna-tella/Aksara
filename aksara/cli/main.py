@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.28"
+CLI_VERSION = "0.5.29"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1828,6 +1828,143 @@ def ai():
         aksara ai plan apply plan.json --yes           # Apply changes
     """
     pass
+
+
+# =============================================================================
+# v0.5.29: AI Flows CLI Subgroup
+# =============================================================================
+
+
+@ai.group("flows")
+def ai_flows_group():
+    """AI flow prompt-pack generation (v0.5.29).
+
+    Generate deterministic prompt packs for in-context AI actions.
+    No external API calls are made — output is a prompt pack you can
+    send to any LLM client.
+
+    Examples:
+        aksara ai flows model User --action explain_model
+        aksara ai flows route GET:/api/users --action review_endpoint
+        aksara ai flows query --sql "SELECT * FROM users" --action explain_plan
+        aksara ai flows migration --app blog --action explain_migration
+        aksara ai flows actions  # list all available actions
+    """
+    pass
+
+
+@ai_flows_group.command("actions")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_list_actions(fmt):
+    """List all available AI flow actions."""
+    from aksara.studio.ai_flows import list_flow_actions
+
+    actions = list_flow_actions()
+    if fmt == "json":
+        import json as _json
+        click.echo(_json.dumps(actions, indent=2))
+        return
+
+    click.echo(f"\n  AI Flow Actions ({len(actions)} available)\n")
+    for a in actions:
+        risk_color = {"low": "green", "medium": "yellow", "high": "red"}.get(a["risk"], "white")
+        click.echo(f"  {click.style(a['action_key'], bold=True):30s}  [{click.style(a['risk'], fg=risk_color)}]  {a['title']}")
+        click.echo(f"  {'':30s}  {a['description']}")
+        click.echo()
+
+
+@ai_flows_group.command("model")
+@click.argument("model_name")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_model)")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_model(model_name, action_key, fmt):
+    """Generate an AI flow prompt pack for a model."""
+    from aksara.studio.ai_flows import build_model_flow
+
+    discover_models()
+    resp = build_model_flow(model_name=model_name, action_key=action_key)
+    _print_flow_response(resp, fmt)
+
+
+@ai_flows_group.command("route")
+@click.argument("route_spec", required=True)
+@click.option("--action", "action_key", required=True, help="Action key (e.g. review_endpoint)")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_route(route_spec, action_key, fmt):
+    """Generate an AI flow prompt pack for a route. ROUTE_SPEC = METHOD:/path"""
+    from aksara.studio.ai_flows import build_route_flow
+
+    if ":" in route_spec:
+        method, path = route_spec.split(":", 1)
+    else:
+        method, path = "GET", route_spec
+    resp = build_route_flow(path=path, method=method, action_key=action_key)
+    _print_flow_response(resp, fmt)
+
+
+@ai_flows_group.command("query")
+@click.option("--sql", required=True, help="SQL query text")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_plan)")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_query(sql, action_key, fmt):
+    """Generate an AI flow prompt pack for a SQL query."""
+    from aksara.studio.ai_flows import build_query_flow
+
+    resp = build_query_flow(sql=sql, action_key=action_key)
+    _print_flow_response(resp, fmt)
+
+
+@ai_flows_group.command("migration")
+@click.option("--app", default=None, help="App label")
+@click.option("--name", default=None, help="Migration name")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_migration)")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_migration(app, name, action_key, fmt):
+    """Generate an AI flow prompt pack for a migration."""
+    from aksara.studio.ai_flows import build_migration_flow
+
+    resp = build_migration_flow(action_key=action_key, app=app, name=name)
+    _print_flow_response(resp, fmt)
+
+
+@ai_flows_group.command("diagnostic")
+@click.option("--issue-id", default=None, help="Diagnostic issue ID")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. diagnostic_prioritize)")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_flows_diagnostic(issue_id, action_key, fmt):
+    """Generate an AI flow prompt pack for a diagnostic issue."""
+    from aksara.studio.ai_flows import build_diagnostic_flow
+
+    resp = build_diagnostic_flow(action_key=action_key, issue_id=issue_id)
+    _print_flow_response(resp, fmt)
+
+
+def _print_flow_response(resp, fmt: str):
+    """Print an AI flow response in the requested format."""
+    if fmt == "json":
+        import json as _json
+        click.echo(_json.dumps(resp.model_dump(), indent=2, default=str))
+        return
+
+    if not resp.ok:
+        click.echo(click.style(f"  ✗ Error: {resp.error}", fg="red"))
+        return
+
+    click.echo(f"\n  ─── {resp.action_key} ({'risk: ' + resp.risk}) ───\n")
+    click.echo(f"  Provider: {resp.provider}  |  Model: {resp.model}")
+    if resp.what_it_does:
+        click.echo(f"  ✓ {resp.what_it_does}")
+    if resp.what_it_cannot_do:
+        click.echo(f"  ✗ {resp.what_it_cannot_do}")
+    click.echo()
+    click.echo("  ── System Prompt ──")
+    click.echo(f"  {resp.system_prompt}")
+    click.echo()
+    click.echo("  ── User Prompt ──")
+    click.echo(f"  {resp.user_prompt}")
+    if resp.suggested_next:
+        click.echo(f"\n  Suggested next: {', '.join(resp.suggested_next)}")
+    click.echo()
 
 
 def _setup_app_for_cli(database_url: Optional[str] = None) -> "FastAPI":
