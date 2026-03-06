@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.29"
+CLI_VERSION = "0.5.30"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -1965,6 +1965,161 @@ def _print_flow_response(resp, fmt: str):
     if resp.suggested_next:
         click.echo(f"\n  Suggested next: {', '.join(resp.suggested_next)}")
     click.echo()
+
+
+# ── v0.5.30: AI execution group ──────────────────────────────────────────────
+
+
+@ai.group("run")
+def ai_run_group():
+    """Execute AI flows through a configured connector (v0.5.30).
+
+    Unlike 'aksara ai flows' which produces prompt packs only,
+    'aksara ai run' actually sends the prompt pack to an AI provider
+    (OpenAI, Anthropic, Ollama, or a custom HTTP endpoint).
+
+    Requires at least one connector configured via AI Hub or env vars.
+
+    Examples:
+        aksara ai run model User --action explain_model
+        aksara ai run route GET:/api/users --action review_endpoint
+        aksara ai run query --sql "SELECT 1" --action explain_plan
+        aksara ai run migration --app blog --action explain_migration
+        aksara ai run diagnostic --issue-id DB_NO_URL --action diagnostic_prioritize
+    """
+    pass
+
+
+def _run_async(coro):
+    """Run an async coroutine from sync Click context."""
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            return pool.submit(asyncio.run, coro).result()
+    return asyncio.run(coro)
+
+
+def _print_execution_result(result: dict, fmt: str):
+    """Print an AI execution result."""
+    if fmt == "json":
+        import json as _json
+        click.echo(_json.dumps(result, indent=2, default=str))
+        return
+
+    if not result.get("ok"):
+        click.echo(click.style(f"  ✗ Execution failed: {result.get('error', 'Unknown error')}", fg="red"))
+        return
+
+    execution = result.get("execution", {})
+    pack = result.get("prompt_pack", {})
+
+    click.echo(f"\n  ─── {pack.get('action_key', '?')} (executed) ───\n")
+    click.echo(f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}")
+    elapsed = execution.get("elapsed_ms", 0)
+    tokens = execution.get("tokens", {})
+    click.echo(f"  Elapsed: {elapsed:.0f}ms  |  Tokens: {tokens.get('total', '?')}")
+    click.echo()
+    click.echo("  ── AI Response ──")
+    click.echo(f"  {execution.get('response', '(no response)')}")
+    click.echo()
+
+
+@ai_run_group.command("model")
+@click.argument("model_name")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_model)")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_run_model(model_name, action_key, provider_override, model_override, fmt):
+    """Execute an AI flow for a model."""
+    from aksara.studio.ai_flows import execute_model_flow
+
+    discover_models()
+    result = _run_async(execute_model_flow(
+        model_name=model_name,
+        action_key=action_key,
+        provider_override=provider_override,
+        model_override=model_override,
+    ))
+    _print_execution_result(result, fmt)
+
+
+@ai_run_group.command("route")
+@click.argument("route_spec", required=True)
+@click.option("--action", "action_key", required=True, help="Action key (e.g. review_endpoint)")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_run_route(route_spec, action_key, provider_override, model_override, fmt):
+    """Execute an AI flow for a route. ROUTE_SPEC = METHOD:/path"""
+    from aksara.studio.ai_flows import execute_route_flow
+
+    if ":" in route_spec:
+        method, path = route_spec.split(":", 1)
+    else:
+        method, path = "GET", route_spec
+    result = _run_async(execute_route_flow(
+        path=path, method=method, action_key=action_key,
+        provider_override=provider_override, model_override=model_override,
+    ))
+    _print_execution_result(result, fmt)
+
+
+@ai_run_group.command("query")
+@click.option("--sql", required=True, help="SQL query text")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_plan)")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_run_query(sql, action_key, provider_override, model_override, fmt):
+    """Execute an AI flow for a SQL query."""
+    from aksara.studio.ai_flows import execute_query_flow
+
+    result = _run_async(execute_query_flow(
+        sql=sql, action_key=action_key,
+        provider_override=provider_override, model_override=model_override,
+    ))
+    _print_execution_result(result, fmt)
+
+
+@ai_run_group.command("migration")
+@click.option("--app", default=None, help="App label")
+@click.option("--name", default=None, help="Migration name")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. explain_migration)")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_run_migration(app, name, action_key, provider_override, model_override, fmt):
+    """Execute an AI flow for a migration."""
+    from aksara.studio.ai_flows import execute_migration_flow
+
+    result = _run_async(execute_migration_flow(
+        action_key=action_key, app=app, name=name,
+        provider_override=provider_override, model_override=model_override,
+    ))
+    _print_execution_result(result, fmt)
+
+
+@ai_run_group.command("diagnostic")
+@click.option("--issue-id", default=None, help="Diagnostic issue ID")
+@click.option("--action", "action_key", required=True, help="Action key (e.g. diagnostic_prioritize)")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text", help="Output format")
+def ai_run_diagnostic(issue_id, action_key, provider_override, model_override, fmt):
+    """Execute an AI flow for a diagnostic issue."""
+    from aksara.studio.ai_flows import execute_diagnostic_flow
+
+    result = _run_async(execute_diagnostic_flow(
+        action_key=action_key, issue_id=issue_id,
+        provider_override=provider_override, model_override=model_override,
+    ))
+    _print_execution_result(result, fmt)
 
 
 def _setup_app_for_cli(database_url: Optional[str] = None) -> "FastAPI":

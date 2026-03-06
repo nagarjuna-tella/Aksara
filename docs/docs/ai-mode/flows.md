@@ -1,11 +1,16 @@
 # Studio AI Flows
 
-*Added in v0.5.29*
+*Added in v0.5.29 · Execution added in v0.5.30*
 
 Studio AI Flows bring **in-context AI actions** to every Studio panel.  Select a
 model, route, query, migration, or diagnostic issue and run an action — Aksara
 builds a deterministic **prompt pack** (system prompt + user prompt) that you can
 copy straight into your LLM of choice.
+
+**v0.5.30**: Flows can now optionally be *executed* through a configured AI
+connector.  Use the **Run AI** button in Studio, the `aksara ai run` CLI, or
+the `POST /studio/ai/flows/run` endpoint.  See [Execution Runtime](runtime.md)
+and [AI Connectors](connectors.md) for details.
 
 ---
 
@@ -16,11 +21,13 @@ copy straight into your LLM of choice.
 | **Flow**      | A deterministic builder that takes a Studio object + action key and returns a *prompt pack*. |
 | **Action**    | A registered operation (e.g. `explain_model`, `suggest_indexes`) with a risk level. |
 | **Prompt Pack** | `system_prompt` + `user_prompt` + metadata.  No external API call is made. |
+| **Execution** | *(v0.5.30)* Optionally send the prompt pack to a connector for real AI analysis. |
 | **Risk badge** | Each action is tagged `low`, `medium`, or `high` risk.  Displayed in Studio UI. |
 
 ### Architecture rule
 
-> Flows return **prompt packs** — they never call an external LLM API.
+> Flows return **prompt packs** — they never call an external LLM API *by default*.
+> Execution is **opt-in** via the Run AI button, CLI, or API endpoint.
 > The output is deterministic and fully copyable.
 
 ---

@@ -1769,6 +1769,17 @@
                 <div class="ai-flow-actions">
                     <button class="ai-flow-copy-btn" id="ai-flow-copy-result" title="Copy result to clipboard">&#128203; Copy Result</button>
                     <button class="ai-flow-copy-btn" id="ai-flow-copy-cli" title="Copy CLI command">&#9000; Copy CLI</button>
+                    <button class="ai-flow-copy-btn ai-flow-run-btn" id="ai-flow-run-ai" title="Execute via AI connector">&#9889; Run AI</button>
+                </div>
+                <div id="ai-flow-execution-result" class="ai-flow-execution-result" style="display:none;">
+                    <h4>AI Execution Result</h4>
+                    <pre id="ai-flow-execution-text" class="ai-flow-prompt-box"></pre>
+                    <div class="ai-flow-execution-meta">
+                        <span id="ai-flow-exec-provider" class="ai-flow-meta-tag"></span>
+                        <span id="ai-flow-exec-model" class="ai-flow-meta-tag"></span>
+                        <span id="ai-flow-exec-elapsed" class="ai-flow-meta-tag"></span>
+                        <span id="ai-flow-exec-tokens" class="ai-flow-meta-tag"></span>
+                    </div>
                 </div>
                 <div id="ai-flow-suggested-next" class="ai-flow-suggested-next"></div>
             </div>

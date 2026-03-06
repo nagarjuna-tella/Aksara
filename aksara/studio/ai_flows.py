@@ -1,11 +1,14 @@
 """
-Aksara Studio AI Flows  (v0.5.29)
+Aksara Studio AI Flows  (v0.5.29 builders, v0.5.30 execution)
 
 Deterministic prompt-pack builders for in-context AI actions.
 Each builder gathers project context, constructs a system + user prompt
 pair, and returns a ``StudioAiFlowResponse``.  No network calls are made
 to external AI vendors — the output is a *prompt pack* the user can
 run in any LLM client.
+
+v0.5.30 adds ``execute_*_flow()`` functions that optionally run the
+prompt pack through a connector via ``aksara.ai.runtime``.
 
 Flow kinds:
     - model   — explain / suggest constraints / refactor suggestions
@@ -648,3 +651,108 @@ def build_diagnostic_flow(
         what_it_does=action.get("what_it_does", ""),
         what_it_cannot_do=action.get("what_it_cannot_do", ""),
     )
+
+
+# ─── v0.5.30: Flow Execution ────────────────────────────────────────────────
+
+
+async def execute_flow(
+    flow_type: str,
+    action_key: str,
+    context: Dict[str, Any],
+    provider_override: Optional[str] = None,
+    model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Generic flow execution dispatcher.
+
+    1. Build the prompt pack via the appropriate ``build_*_flow()``
+    2. Execute via ``aksara.ai.runtime.run_prompt_pack()``
+    3. Return merged result preserving the original prompt pack.
+    """
+    pack = _dispatch_builder(flow_type, action_key, context)
+
+    if not pack.ok:
+        return {
+            "ok": False,
+            "prompt_pack": pack.model_dump(),
+            "execution": None,
+            "error": pack.error,
+            "error_code": pack.error_code,
+        }
+
+    from aksara.ai.runtime import run_prompt_pack
+
+    pack_dict = pack.model_dump()
+    execution = await run_prompt_pack(
+        pack_dict,
+        provider_override=provider_override,
+        model_override=model_override,
+    )
+
+    return {
+        "ok": execution.get("ok", False),
+        "prompt_pack": pack_dict,
+        "execution": execution,
+    }
+
+
+async def execute_model_flow(
+    model_name: str, action_key: str,
+    provider_override: Optional[str] = None, model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build and execute a model flow."""
+    return await execute_flow("model", action_key, {"model_name": model_name},
+                              provider_override=provider_override, model_override=model_override)
+
+
+async def execute_route_flow(
+    path: str, method: str, action_key: str,
+    provider_override: Optional[str] = None, model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build and execute a route flow."""
+    return await execute_flow("route", action_key, {"path": path, "method": method},
+                              provider_override=provider_override, model_override=model_override)
+
+
+async def execute_query_flow(
+    sql: str, action_key: str,
+    provider_override: Optional[str] = None, model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build and execute a query flow."""
+    return await execute_flow("query", action_key, {"sql": sql},
+                              provider_override=provider_override, model_override=model_override)
+
+
+async def execute_migration_flow(
+    action_key: str, app: Optional[str] = None, name: Optional[str] = None,
+    provider_override: Optional[str] = None, model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build and execute a migration flow."""
+    return await execute_flow("migration", action_key, {"app": app, "name": name},
+                              provider_override=provider_override, model_override=model_override)
+
+
+async def execute_diagnostic_flow(
+    action_key: str, issue_id: Optional[str] = None,
+    provider_override: Optional[str] = None, model_override: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build and execute a diagnostic flow."""
+    return await execute_flow("diagnostic", action_key, {"issue_id": issue_id},
+                              provider_override=provider_override, model_override=model_override)
+
+
+def _dispatch_builder(flow_type: str, action_key: str, context: Dict[str, Any]) -> StudioAiFlowResponse:
+    """Route to the correct ``build_*_flow()``."""
+    if flow_type == "model":
+        return build_model_flow(model_name=context.get("model_name", ""), action_key=action_key)
+    elif flow_type == "route":
+        return build_route_flow(path=context.get("path", ""), method=context.get("method", "GET"), action_key=action_key)
+    elif flow_type == "query":
+        return build_query_flow(sql=context.get("sql", ""), action_key=action_key)
+    elif flow_type == "migration":
+        return build_migration_flow(action_key=action_key, app=context.get("app"), name=context.get("name"))
+    elif flow_type == "diagnostic":
+        return build_diagnostic_flow(action_key=action_key, issue_id=context.get("issue_id"), issue_payload=context.get("issue_payload"))
+    else:
+        return StudioAiFlowResponse(ok=False, action_key=action_key, risk="low",
+                                    error_code="INVALID_FLOW_TYPE", error=f"Unknown flow type: {flow_type}")

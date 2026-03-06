@@ -3535,6 +3535,9 @@ async function openAiFlowPanel({ kind, actionKey, payload }) {
         _wireAiFlowCopy('ai-flow-copy-prompts', 'SYSTEM:\n' + (resp.system_prompt || '') + '\n\nUSER:\n' + (resp.user_prompt || ''));
         _wireAiFlowCopy('ai-flow-copy-json', JSON.stringify(resp, null, 2));
         _wireAiFlowCopy('ai-flow-copy-cli', _buildCliCommand(kind, payload));
+
+        // Wire Run AI button (v0.5.30)
+        _wireAiFlowRunButton(kind, payload);
     } catch (err) {
         showToast('AI Flow error: ' + err.message, 'error');
         if (resultEl) resultEl.textContent = '';
@@ -3552,6 +3555,72 @@ function _wireAiFlowCopy(btnId, text) {
         );
     };
     btn.onclick = handler;
+}
+
+/**
+ * Wire the "Run AI" button to execute a flow via the connector (v0.5.30).
+ */
+function _wireAiFlowRunButton(kind, payload) {
+    const btn = document.getElementById('ai-flow-run-ai');
+    if (!btn) return;
+    btn.onclick = () => _runAiFlow(kind, payload);
+}
+
+/**
+ * Execute an AI flow through a connector and display the result (v0.5.30).
+ * Posts to /studio/ai/flows/run and renders the execution response.
+ */
+async function _runAiFlow(kind, payload) {
+    const btn = document.getElementById('ai-flow-run-ai');
+    const execResult = document.getElementById('ai-flow-execution-result');
+    const execText = document.getElementById('ai-flow-execution-text');
+    const execProvider = document.getElementById('ai-flow-exec-provider');
+    const execModel = document.getElementById('ai-flow-exec-model');
+    const execElapsed = document.getElementById('ai-flow-exec-elapsed');
+    const execTokens = document.getElementById('ai-flow-exec-tokens');
+
+    if (btn) { btn.disabled = true; btn.textContent = '\u231B Running\u2026'; }
+    if (execResult) execResult.style.display = 'none';
+
+    // Build context from payload
+    const context = {};
+    if (kind === 'model') context.model_name = payload.model_name || '';
+    else if (kind === 'route') { context.path = payload.path || ''; context.method = payload.method || 'GET'; }
+    else if (kind === 'query') context.sql = payload.sql || '';
+    else if (kind === 'migration') { context.app = payload.app || ''; context.name = payload.name || ''; }
+    else if (kind === 'diagnostic') { context.issue_id = payload.issue_id || ''; context.issue_payload = payload.issue_payload || null; }
+
+    try {
+        const resp = await jsonPost('/studio/ai/flows/run', {
+            flow_type: kind,
+            action_key: payload.action_key,
+            context: context,
+            provider_override: payload.provider_override || null,
+            model_override: payload.model_override || null,
+        });
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#9889; Run AI'; }
+
+        if (!resp.ok) {
+            showToast('AI execution failed: ' + (resp.error || 'Unknown error'), 'error');
+            if (execText) execText.textContent = resp.error || 'Execution failed';
+            if (execResult) execResult.style.display = 'block';
+            return;
+        }
+
+        const exec = resp.execution || {};
+        if (execText) execText.textContent = exec.response || '(No response)';
+        if (execProvider) execProvider.textContent = exec.provider ? 'Provider: ' + exec.provider : '';
+        if (execModel) execModel.textContent = exec.model ? 'Model: ' + exec.model : '';
+        if (execElapsed) execElapsed.textContent = exec.elapsed_ms ? Math.round(exec.elapsed_ms) + 'ms' : '';
+        if (execTokens && exec.tokens && exec.tokens.total) execTokens.textContent = exec.tokens.total + ' tokens';
+        if (execResult) execResult.style.display = 'block';
+
+        showToast('AI execution complete', 'success');
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#9889; Run AI'; }
+        showToast('AI execution error: ' + err.message, 'error');
+    }
 }
 
 function _buildCliCommand(kind, payload) {

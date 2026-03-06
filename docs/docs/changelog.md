@@ -4,6 +4,40 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.30] — 2026-02-24
+
+### Added — AI Connectors & Execution Runtime
+- **AI Connectors** (`aksara/ai/connectors/`): Pluggable connector layer with
+  4 providers — `OpenAIConnector`, `AnthropicConnector`, `OllamaConnector`,
+  `HttpConnector`.  Common `AIConnector` base class with normalised response
+  shape.  Connector registry with `get_connector()` factory.
+- **Execution Runtime** (`aksara/ai/runtime.py`): `run_prompt_pack()` async
+  function that resolves provider/model, selects connector, executes prompt
+  pack, and returns normalised result.  Opt-in — existing prompt packs remain
+  deterministic.
+- **Flow Execution** (`aksara/studio/ai_flows.py`): 7 new functions —
+  `execute_flow()`, `execute_model_flow()`, `execute_route_flow()`,
+  `execute_query_flow()`, `execute_migration_flow()`,
+  `execute_diagnostic_flow()`, `_dispatch_builder()`.
+- **API endpoint** `POST /studio/ai/flows/run`: Execute a flow through a
+  connector.  New Pydantic models: `StudioAiFlowRunRequest`,
+  `StudioAiFlowRunResponse`.
+- **Studio UI "Run AI" button**: Execute flows directly from the AI Flow
+  panel.  Shows execution result with provider, model, elapsed time, and
+  token usage.
+- **CLI `aksara ai run`** subcommand group: `model`, `route`, `query`,
+  `migration`, `diagnostic`.  Supports `--provider`, `--model`, `--format`.
+- **120+ new tests** across 4 files: `test_connectors.py`, `test_runtime.py`,
+  `test_ai_execution.py`, `test_ai_run_cli.py`.
+- **Docs**: `ai-mode/connectors.md`, `ai-mode/runtime.md`, updated
+  `flows.md`, `changelog.md`, `mkdocs.yml`.
+
+### Safety
+- Execution is **opt-in** — flows still return prompt packs by default.
+- Runtime **never modifies code automatically** — only suggests/analyzes.
+
+---
+
 ## [0.5.29] — 2026-02-23
 
 ### Added — Studio AI Flows

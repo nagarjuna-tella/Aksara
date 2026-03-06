@@ -1689,6 +1689,40 @@ async def studio_ai_flow_diagnostic(request: Request):
     )
 
 
+@router.post("/studio/ai/flows/run")
+async def studio_ai_flow_run(request: Request):
+    """
+    Execute an AI flow through a connector (v0.5.30).
+
+    Builds the prompt pack, sends it to the configured AI provider,
+    and returns both the prompt pack and the execution result.
+
+    Body:
+        flow_type: model | route | query | migration | diagnostic
+        action_key: e.g. explain_model
+        context: { model_name?, path?, method?, sql?, app?, name?, issue_id? }
+        provider_override: optional provider override
+        model_override: optional model override
+    """
+    from aksara.studio.ai_flows import execute_flow
+
+    body = await request.json()
+    flow_type = body.get("flow_type", "")
+    action_key = body.get("action_key", "")
+    context = body.get("context", {})
+    provider_override = body.get("provider_override")
+    model_override = body.get("model_override")
+
+    result = await execute_flow(
+        flow_type=flow_type,
+        action_key=action_key,
+        context=context,
+        provider_override=provider_override,
+        model_override=model_override,
+    )
+    return result
+
+
 # =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================

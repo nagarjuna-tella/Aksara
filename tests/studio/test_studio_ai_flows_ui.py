@@ -72,7 +72,7 @@ class TestAiFlowEndpoints:
 
     def test_total_flow_endpoints(self, router):
         flow_paths = [r.path for r in router.routes if hasattr(r, "path") and "/studio/ai/flows/" in r.path]
-        assert len(flow_paths) == 6  # actions + 5 POST endpoints
+        assert len(flow_paths) == 7  # actions + 5 POST builders + 1 POST run (v0.5.30)
 
 
 # ─── 2. HTML Structure ──────────────────────────────────────────────────────

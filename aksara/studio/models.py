@@ -1886,6 +1886,28 @@ class StudioAiFlowActionsResponse(BaseModel):
     total: int = Field(default=0)
 
 
+# v0.5.30: AI Flow Execution models
+
+class StudioAiFlowRunRequest(BaseModel):
+    """Request for POST /studio/ai/flows/run — execute a prompt pack via connector."""
+
+    flow_type: str = Field(description="Flow type: model, route, query, migration, diagnostic")
+    action_key: str = Field(description="Action key, e.g. explain_model")
+    context: Dict[str, Any] = Field(default_factory=dict, description="Flow context (model_name, path, sql, etc.)")
+    provider_override: Optional[str] = Field(default=None, description="Override AI provider")
+    model_override: Optional[str] = Field(default=None, description="Override AI model")
+
+
+class StudioAiFlowRunResponse(BaseModel):
+    """Response for POST /studio/ai/flows/run — execution result."""
+
+    ok: bool = Field(default=True)
+    prompt_pack: Optional[Dict[str, Any]] = Field(default=None, description="The built prompt pack")
+    execution: Optional[Dict[str, Any]] = Field(default=None, description="Connector execution result")
+    error: Optional[str] = Field(default=None)
+    error_code: Optional[str] = Field(default=None)
+
+
 # =============================================================================
 # v0.5.28: AI Hub 2.0 Models
 # =============================================================================
