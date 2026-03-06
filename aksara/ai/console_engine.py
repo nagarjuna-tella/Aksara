@@ -88,6 +88,10 @@ async def run_console_query(
             confidence=match.confidence,
         )
 
+    # ── 2b. Debug flow shortcut (v0.5.33) ─────────────────────────────────
+    if match.flow_type == "debug":
+        return _run_debug_flow(message, match)
+
     # ── 3. Build / enrich context ─────────────────────────────────────────
     from aksara.ai.console_context import enrich_context
 
@@ -202,3 +206,36 @@ def _console_error(
         "error": error,
         "error_code": error_code,
     }
+
+
+def _run_debug_flow(message: str, match) -> Dict[str, Any]:
+    """Run the AI Debugger pipeline for debug-intent queries (v0.5.33)."""
+    try:
+        from aksara.ai.debugger import run_debugger
+
+        report = run_debugger(query=message)
+        _emit_console_event(match, {"ok": report.ok})
+
+        return {
+            "ok": report.ok,
+            "intent": match.intent,
+            "flow_type": "debug",
+            "action_key": match.action_key,
+            "confidence": match.confidence,
+            "extracted_context": match.extracted_context,
+            "prompt_pack": None,
+            "execution": {
+                "debug_report": report.to_summary_dict(),
+            },
+            "suggestions": ["debug_analyze"],
+            "elapsed_ms": report.elapsed_ms,
+            "error": None if report.ok else report.summary,
+            "error_code": None if report.ok else "DEBUG_FAILED",
+        }
+    except Exception as exc:
+        return _console_error(
+            f"Debug analysis failed: {exc}",
+            "DEBUG_ERROR",
+            intent=match.intent,
+            confidence=match.confidence,
+        )

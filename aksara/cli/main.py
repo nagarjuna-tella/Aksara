@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.32"
+CLI_VERSION = "0.5.33"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2269,6 +2269,93 @@ def _print_graph_events(graph):
         color = "red" if sev == "error" else "yellow" if sev == "warning" else None
         prefix = f"  [{sev:7s}] {kind}"
         click.echo(click.style(prefix, fg=color) + f"  {msg}  ({ts})")
+    click.echo()
+
+
+# ─── v0.5.33: aksara ai debug ───────────────────────────────────────────────
+
+
+@ai_flows_group.command("debug")
+@click.option("--query", default=None, help="Debug question, e.g. 'why is /api/users failing?'")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output full report as JSON")
+@click.option("--summary", "summary_only", is_flag=True, default=False, help="Compact summary only")
+@click.option("--model", "model_filter", default=None, help="Filter issues by model name")
+@click.option("--route", "route_filter", default=None, help="Filter issues by route path")
+def ai_debug(query, as_json, summary_only, model_filter, route_filter):
+    """Run the AI Debugger root-cause analysis.
+
+    Analyses the Project Context Graph, diagnostics, gaps, and event
+    timeline to identify, cluster, and rank issues.
+
+    Examples:
+
+        aksara ai debug
+
+        aksara ai debug --query "why is /api/users failing?"
+
+        aksara ai debug --json
+
+        aksara ai debug --summary
+    """
+    import json as _json
+    from aksara.ai.debugger import run_debugger
+
+    # Build query from filters if not explicitly provided
+    if not query:
+        parts = []
+        if model_filter:
+            parts.append(f"model {model_filter}")
+        if route_filter:
+            parts.append(f"route {route_filter}")
+        if parts:
+            query = "debug " + " ".join(parts)
+
+    report = run_debugger(query=query)
+
+    if as_json:
+        if summary_only:
+            click.echo(_json.dumps(report.to_summary_dict(), indent=2, default=str))
+        else:
+            click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
+        return
+
+    if not report.ok:
+        click.echo(click.style(f"  ✗ Debugger failed: {report.summary}", fg="red"))
+        return
+
+    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo("  AI Debugger — Root Cause Analysis")
+    click.echo("  " + "─" * 40)
+    click.echo(f"  Issues:      {report.issue_count}")
+    click.echo(f"  Clusters:    {report.cluster_count}")
+    click.echo(f"  Root Causes: {report.root_cause_count}")
+    click.echo(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
+
+    if summary_only:
+        click.echo(f"\n  {report.summary}")
+        click.echo()
+        return
+
+    if report.root_causes:
+        click.echo("\n  Root Causes (ranked by confidence):")
+        click.echo("  " + "─" * 40)
+        for rc in report.root_causes:
+            sev = rc.severity
+            color = "red" if sev == "error" else "yellow" if sev == "warning" else None
+            conf_pct = f"{rc.confidence * 100:.0f}%"
+            click.echo(click.style(f"  [{sev}]", fg=color) +
+                       f" {rc.title}  ({conf_pct} confidence)")
+            click.echo(f"    {rc.description}")
+            if rc.fix_suggestions:
+                for fix in rc.fix_suggestions[:2]:
+                    click.echo(f"    → {fix}")
+
+    if report.clusters:
+        click.echo(f"\n  Clusters ({report.cluster_count}):")
+        click.echo("  " + "─" * 40)
+        for cl in report.clusters[:10]:
+            click.echo(f"  {cl.label}  ({cl.size} issues, {cl.severity})")
+
     click.echo()
 
 

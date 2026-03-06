@@ -73,6 +73,9 @@ v0.5.29 Additions:
 - POST /studio/ai/flows/query - AI flow for query actions
 - POST /studio/ai/flows/migration - AI flow for migration actions
 - POST /studio/ai/flows/diagnostic - AI flow for diagnostic actions
+
+v0.5.33 Additions:
+- POST /studio/ai/debug - AI Debugger root-cause analysis
 """
 
 from __future__ import annotations
@@ -145,6 +148,9 @@ from aksara.studio.models import (
     StudioAiFlowDiagnosticRequest,
     StudioAiFlowResponse,
     StudioAiFlowActionsResponse,
+    # v0.5.33: AI Debugger models
+    StudioDebugRequest,
+    StudioDebugResponse,
 )
 from aksara.studio.utils import (
     build_context_summary,
@@ -1826,6 +1832,33 @@ async def studio_ai_project_graph_summary(request: Request):
 
     graph = build_project_graph(app=request.app)
     return graph.to_summary_dict()
+
+
+# =============================================================================
+# v0.5.33: AI Debugger Endpoint
+# =============================================================================
+
+
+@router.post("/studio/ai/debug")
+async def studio_ai_debug(request: Request):
+    """
+    AI Debugger endpoint (v0.5.33).
+
+    Runs the automated root-cause analysis pipeline: loads the Project
+    Context Graph, builds an issue pool from diagnostics + gaps + events,
+    clusters related issues, detects root causes, ranks by confidence,
+    and suggests safe fix plans.
+
+    Body (optional):
+        query: str — e.g. "why is /api/users failing?"
+    """
+    from aksara.ai.debugger import run_debugger
+
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    query = body.get("query") if isinstance(body, dict) else None
+
+    report = run_debugger(query=query, app=request.app)
+    return report.to_dict()
 
 
 # =============================================================================

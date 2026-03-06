@@ -4,6 +4,33 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.33] — 2026-03-01
+
+### Added — AI Debugger
+- **AI Debugger** (`aksara/ai/debugger.py`): Automated root-cause analysis
+  engine with a 6-step pipeline — loads the Project Graph, extracts an issue
+  pool from diagnostics/gaps/events, filters by optional query, clusters
+  issues by shared component, detects root causes via 6 heuristic patterns
+  (database, migration, AI provider, route errors, security, general),
+  ranks by confidence, and generates safe fix suggestions.
+- **Data models**: `DebugIssue`, `IssueCluster`, `RootCause`, `DebugReport`
+  with full serialisation (`to_dict`, `to_summary_dict`).
+- **Studio API endpoint**: `POST /studio/ai/debug` with optional query body.
+  New Pydantic models: `StudioDebugRequest`, `StudioDebugResponse`,
+  `StudioDebugIssue`, `StudioDebugCluster`, `StudioDebugRootCause`.
+- **Studio UI "AI Debugger" panel**: Query toolbar, summary grid, 4 tabbed
+  views (Root Causes, Clusters, Issues, Fix Plan) with severity colour-coding
+  and confidence badges.
+- **Console integration**: 12 new debug intent patterns in the intent router
+  (`debug`, `root cause`, `why fails`, `diagnose`, `troubleshoot`, etc.)
+  with dedicated `_run_debug_flow` handler in the console engine.
+- **CLI `aksara ai debug`**: Text and JSON output, `--query`, `--json`,
+  `--summary`, `--model`, and `--route` options.
+- **187 new tests** across 5 test files covering the core debugger module,
+  clustering logic, Studio API endpoint, Studio UI templates, and CLI command.
+
+---
+
 ## [0.5.32] — 2026-02-28
 
 ### Added — Project Context Graph + Event Timeline

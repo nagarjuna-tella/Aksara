@@ -104,6 +104,14 @@
                     </svg>
                     <span>AI Graph</span>
                 </a>
+                <a href="#/ai-debugger" class="nav-item" data-section="ai-debugger">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"></path>
+                        <circle cx="9" cy="14" r="1"></circle>
+                        <circle cx="15" cy="14" r="1"></circle>
+                    </svg>
+                    <span>AI Debugger</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -1802,7 +1810,34 @@
             <div class="ai-graph-loading">Loading graph&hellip;</div>
         </div>
     </template>
-    
+
+    <!-- v0.5.33: AI Debugger Template -->
+    <template id="template-ai-debugger">
+        <div class="section-header">
+            <h2>AI Debugger</h2>
+            <p class="section-subtitle">Automated root-cause analysis &mdash; identifies, clusters, and ranks issues across your project</p>
+        </div>
+
+        <div class="ai-debugger-toolbar">
+            <input type="text" id="ai-debugger-query" class="ai-debugger-query-input" placeholder="Optional: why is /api/users failing?" />
+            <button id="ai-debugger-run" class="btn btn-sm btn-accent">Run Debugger</button>
+            <span id="ai-debugger-status" class="ai-debugger-meta-text"></span>
+        </div>
+
+        <div class="ai-debugger-summary" id="ai-debugger-summary" style="display:none;"></div>
+
+        <div class="ai-debugger-tabs">
+            <button class="ai-debugger-tab active" data-debug-tab="root-causes">Root Causes</button>
+            <button class="ai-debugger-tab" data-debug-tab="clusters">Clusters</button>
+            <button class="ai-debugger-tab" data-debug-tab="issues">All Issues</button>
+            <button class="ai-debugger-tab" data-debug-tab="fix-plan">Fix Plan</button>
+        </div>
+
+        <div class="ai-debugger-panel" id="ai-debugger-panel">
+            <div class="ai-debugger-empty">Click <strong>Run Debugger</strong> to start analysis</div>
+        </div>
+    </template>
+
     <!-- v0.5.22: Spotlight Search Overlay -->
     <div id="spotlight-overlay" class="spotlight-overlay" style="display:none;">
         <div class="spotlight-backdrop" id="spotlight-backdrop"></div>

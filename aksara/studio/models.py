@@ -2148,3 +2148,70 @@ class StudioProjectGraphEventsResponse(BaseModel):
 
     events: List[Dict[str, Any]] = Field(default_factory=list, description="Recent graph events")
     count: int = Field(default=0, description="Number of events returned")
+
+
+# =============================================================================
+# v0.5.33: AI Debugger Models
+# =============================================================================
+
+
+class StudioDebugRequest(BaseModel):
+    """Request body for POST /studio/ai/debug."""
+
+    query: Optional[str] = Field(default=None, description="Natural-language debug question, e.g. 'why is /api/users failing?'")
+
+
+class StudioDebugRootCause(BaseModel):
+    """A single root cause in the debug report."""
+
+    cause_id: str = Field(default="", description="Unique ID for this root cause")
+    title: str = Field(default="", description="Short title")
+    description: str = Field(default="", description="Detailed explanation")
+    confidence: float = Field(default=0.0, description="Confidence score 0..1")
+    severity: str = Field(default="info", description="error | warning | info")
+    evidence: List[str] = Field(default_factory=list, description="Supporting evidence strings")
+    related_issues: List[str] = Field(default_factory=list, description="Related issue IDs")
+    related_clusters: List[str] = Field(default_factory=list, description="Related cluster IDs")
+    category: str = Field(default="general", description="Root cause category")
+    fix_suggestions: List[str] = Field(default_factory=list, description="Safe fix suggestions")
+
+
+class StudioDebugCluster(BaseModel):
+    """A cluster of related issues."""
+
+    cluster_id: str = Field(default="", description="Unique cluster ID")
+    label: str = Field(default="", description="Human-readable label")
+    component_type: str = Field(default="general", description="model | route | query | migration | general")
+    component_name: str = Field(default="", description="Component identifier")
+    issue_ids: List[str] = Field(default_factory=list, description="Issue IDs in this cluster")
+    severity: str = Field(default="info", description="Worst severity in the cluster")
+    size: int = Field(default=0, description="Number of issues")
+
+
+class StudioDebugIssue(BaseModel):
+    """A single issue in the debug report."""
+
+    id: str = Field(default="", description="Issue ID")
+    source: str = Field(default="", description="diagnostic | gap | event")
+    severity: str = Field(default="info", description="error | warning | info")
+    title: str = Field(default="", description="Issue title / code")
+    message: str = Field(default="", description="Description")
+    related_models: List[str] = Field(default_factory=list)
+    related_routes: List[str] = Field(default_factory=list)
+    related_queries: List[str] = Field(default_factory=list)
+
+
+class StudioDebugResponse(BaseModel):
+    """Response from POST /studio/ai/debug."""
+
+    ok: bool = Field(default=False)
+    query: Optional[str] = Field(default=None, description="The original query if provided")
+    issues: List[StudioDebugIssue] = Field(default_factory=list, description="All detected issues")
+    clusters: List[StudioDebugCluster] = Field(default_factory=list, description="Issue clusters")
+    root_causes: List[StudioDebugRootCause] = Field(default_factory=list, description="Detected root causes, ranked by confidence")
+    summary: str = Field(default="", description="Human-readable summary")
+    issue_count: int = Field(default=0)
+    cluster_count: int = Field(default=0)
+    root_cause_count: int = Field(default=0)
+    elapsed_ms: float = Field(default=0.0)
+    generated_at: str = Field(default="")

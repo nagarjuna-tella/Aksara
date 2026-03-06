@@ -114,6 +114,7 @@ nav:
       - Execution Runtime: ai-mode/runtime.md
       - Interactive Console: ai-mode/console.md
       - Project Graph: ai-mode/project-graph.md
+      - AI Debugger: ai-mode/debugger.md
       - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md

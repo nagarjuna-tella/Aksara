@@ -411,6 +411,9 @@ function renderSection(section) {
         case 'ai-graph':
             renderAiGraph();
             break;
+        case 'ai-debugger':
+            renderAiDebugger();
+            break;
     }
 
     // v0.5.29: init AI flow dropdowns + row selection hooks after render
@@ -4219,6 +4222,176 @@ function _renderGraphRelationships(panel) {
         html += '<div class="ai-graph-empty">No relationships found</div>';
     }
 
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+// =============================================================================
+// v0.5.33: AI Debugger
+// =============================================================================
+
+let _debuggerData = null;
+
+async function renderAiDebugger() {
+    const queryInput = document.getElementById('ai-debugger-query');
+    const runBtn = document.getElementById('ai-debugger-run');
+    const panel = document.getElementById('ai-debugger-panel');
+
+    // Tab switching
+    document.querySelectorAll('.ai-debugger-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ai-debugger-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (_debuggerData) _renderDebuggerTab(tab.getAttribute('data-debug-tab'));
+        });
+    });
+
+    if (runBtn) {
+        runBtn.addEventListener('click', async () => {
+            const query = queryInput ? queryInput.value.trim() : '';
+            await _runDebugger(query || null);
+        });
+    }
+}
+
+async function _runDebugger(query) {
+    const panel = document.getElementById('ai-debugger-panel');
+    const status = document.getElementById('ai-debugger-status');
+    const summary = document.getElementById('ai-debugger-summary');
+
+    if (panel) panel.innerHTML = '<div class="ai-debugger-loading">Analysing project\u2026</div>';
+    if (status) status.textContent = 'Running\u2026';
+
+    try {
+        const body = query ? { query: query } : {};
+        const resp = await fetch('/studio/ai/debug', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        _debuggerData = await resp.json();
+
+        if (status) status.textContent = _debuggerData.elapsed_ms ? _debuggerData.elapsed_ms.toFixed(0) + 'ms' : '';
+
+        if (summary) {
+            summary.style.display = 'block';
+            summary.innerHTML =
+                '<div class="ai-debugger-summary-grid">' +
+                '<div class="ai-debugger-stat"><span class="ai-debugger-stat-num">' + (_debuggerData.issue_count || 0) + '</span><span class="ai-debugger-stat-label">Issues</span></div>' +
+                '<div class="ai-debugger-stat"><span class="ai-debugger-stat-num">' + (_debuggerData.cluster_count || 0) + '</span><span class="ai-debugger-stat-label">Clusters</span></div>' +
+                '<div class="ai-debugger-stat"><span class="ai-debugger-stat-num">' + (_debuggerData.root_cause_count || 0) + '</span><span class="ai-debugger-stat-label">Root Causes</span></div>' +
+                '</div>' +
+                '<div class="ai-debugger-summary-text">' + _esc(_debuggerData.summary || '') + '</div>';
+        }
+
+        const active = document.querySelector('.ai-debugger-tab.active');
+        _renderDebuggerTab(active ? active.getAttribute('data-debug-tab') : 'root-causes');
+    } catch (err) {
+        if (panel) panel.innerHTML = '<div class="ai-debugger-error">Debugger failed: ' + _esc(err.message) + '</div>';
+        if (status) status.textContent = 'Error';
+    }
+}
+
+function _renderDebuggerTab(tab) {
+    const panel = document.getElementById('ai-debugger-panel');
+    if (!panel || !_debuggerData) return;
+
+    switch (tab) {
+        case 'root-causes': _renderDebugRootCauses(panel); break;
+        case 'clusters': _renderDebugClusters(panel); break;
+        case 'issues': _renderDebugIssues(panel); break;
+        case 'fix-plan': _renderDebugFixPlan(panel); break;
+        default: panel.innerHTML = '<div class="ai-debugger-empty">Unknown tab</div>';
+    }
+}
+
+function _renderDebugRootCauses(panel) {
+    const rcs = _debuggerData.root_causes || [];
+    if (!rcs.length) { panel.innerHTML = '<div class="ai-debugger-empty">No root causes detected</div>'; return; }
+
+    let html = '<div class="ai-debugger-root-causes">';
+    rcs.forEach(rc => {
+        const confPct = (rc.confidence * 100).toFixed(0);
+        html += '<div class="ai-debugger-rc-card severity-' + _esc(rc.severity) + '">' +
+            '<div class="ai-debugger-rc-header">' +
+            '<span class="severity-badge severity-' + _esc(rc.severity) + '">' + _esc(rc.severity) + '</span>' +
+            '<strong>' + _esc(rc.title) + '</strong>' +
+            '<span class="ai-debugger-confidence">' + confPct + '% confidence</span>' +
+            '</div>' +
+            '<p>' + _esc(rc.description) + '</p>';
+        if (rc.evidence && rc.evidence.length) {
+            html += '<details><summary>Evidence (' + rc.evidence.length + ')</summary><ul>';
+            rc.evidence.forEach(e => { html += '<li>' + _esc(e) + '</li>'; });
+            html += '</ul></details>';
+        }
+        if (rc.fix_suggestions && rc.fix_suggestions.length) {
+            html += '<div class="ai-debugger-fixes"><strong>Suggestions:</strong><ul>';
+            rc.fix_suggestions.forEach(f => { html += '<li>' + _esc(f) + '</li>'; });
+            html += '</ul></div>';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function _renderDebugClusters(panel) {
+    const cls = _debuggerData.clusters || [];
+    if (!cls.length) { panel.innerHTML = '<div class="ai-debugger-empty">No clusters found</div>'; return; }
+
+    let html = '<table class="ai-debugger-table"><thead><tr>' +
+        '<th>Cluster</th><th>Type</th><th>Component</th><th>Issues</th><th>Severity</th>' +
+        '</tr></thead><tbody>';
+    cls.forEach(c => {
+        html += '<tr>' +
+            '<td>' + _esc(c.label) + '</td>' +
+            '<td>' + _esc(c.component_type) + '</td>' +
+            '<td>' + _esc(c.component_name) + '</td>' +
+            '<td>' + c.size + '</td>' +
+            '<td><span class="severity-badge severity-' + _esc(c.severity) + '">' + _esc(c.severity) + '</span></td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderDebugIssues(panel) {
+    const issues = _debuggerData.issues || [];
+    if (!issues.length) { panel.innerHTML = '<div class="ai-debugger-empty">No issues found</div>'; return; }
+
+    let html = '<table class="ai-debugger-table"><thead><tr>' +
+        '<th>ID</th><th>Source</th><th>Severity</th><th>Title</th><th>Message</th>' +
+        '</tr></thead><tbody>';
+    issues.forEach(i => {
+        html += '<tr>' +
+            '<td>' + _esc(i.id) + '</td>' +
+            '<td>' + _esc(i.source) + '</td>' +
+            '<td><span class="severity-badge severity-' + _esc(i.severity) + '">' + _esc(i.severity) + '</span></td>' +
+            '<td>' + _esc(i.title) + '</td>' +
+            '<td>' + _esc(i.message).substring(0, 120) + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderDebugFixPlan(panel) {
+    const rcs = _debuggerData.root_causes || [];
+    const hasFixes = rcs.some(rc => (rc.fix_suggestions || []).length > 0);
+    if (!hasFixes) { panel.innerHTML = '<div class="ai-debugger-empty">No fix suggestions available</div>'; return; }
+
+    let html = '<div class="ai-debugger-fix-plan">';
+    let step = 0;
+    rcs.forEach(rc => {
+        if (!rc.fix_suggestions || !rc.fix_suggestions.length) return;
+        html += '<div class="ai-debugger-fix-group">' +
+            '<h4><span class="severity-badge severity-' + _esc(rc.severity) + '">' + _esc(rc.severity) + '</span> ' + _esc(rc.title) + '</h4><ol>';
+        rc.fix_suggestions.forEach(f => {
+            step++;
+            html += '<li>Step ' + step + ': ' + _esc(f) + '</li>';
+        });
+        html += '</ol></div>';
+    });
     html += '</div>';
     panel.innerHTML = html;
 }

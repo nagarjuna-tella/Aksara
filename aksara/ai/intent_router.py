@@ -108,6 +108,20 @@ _r(r"\btriage\b.*\bdiagnostic", "diagnostic", "diagnostic_prioritize", 0.85)
 _r(r"\bdiagnostic\b.*\bexplain\b", "diagnostic", "diagnostic_prioritize", 0.82)
 _r(r"\bfix\b.*\bdiagnostic", "diagnostic", "diagnostic_prioritize", 0.80)
 
+# ── Debug intents (v0.5.33) ──────────────────────────────────────────────────
+_r(r"\bdebug\b", "debug", "debug_analyze", 0.88)
+_r(r"\broot\s*cause\b", "debug", "debug_analyze", 0.90)
+_r(r"\bwhy\b.*\bfail", "debug", "debug_analyze", 0.87)
+_r(r"\bwhy\b.*\bbroken\b", "debug", "debug_analyze", 0.87)
+_r(r"\bwhy\b.*\berror\b", "debug", "debug_analyze", 0.85)
+_r(r"\bwhat\b.*\bbroke\b", "debug", "debug_analyze", 0.88)
+_r(r"\bwhat\b.*\bwrong\b", "debug", "debug_analyze", 0.82)
+_r(r"\banalyze\b.*\bissue", "debug", "debug_analyze", 0.85)
+_r(r"\banalyse\b.*\bissue", "debug", "debug_analyze", 0.85)
+_r(r"\bfind\b.*\bbug", "debug", "debug_analyze", 0.83)
+_r(r"\bdiagnose\b", "debug", "debug_analyze", 0.87)
+_r(r"\btroubleshoot\b", "debug", "debug_analyze", 0.86)
+
 # ── Generic explain (low confidence fallback) ────────────────────────────────
 _r(r"\bexplain\b", "model", "explain_model", 0.50)
 _r(r"\breview\b", "route", "review_endpoint", 0.45)
