@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.33"
+CLI_VERSION = "0.5.34"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2355,6 +2355,94 @@ def ai_debug(query, as_json, summary_only, model_filter, route_filter):
         click.echo("  " + "─" * 40)
         for cl in report.clusters[:10]:
             click.echo(f"  {cl.label}  ({cl.size} issues, {cl.severity})")
+
+    click.echo()
+
+
+# ─── v0.5.34: aksara ai review ──────────────────────────────────────────────
+
+
+@ai_flows_group.command("review")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output full report as JSON")
+@click.option("--summary", "summary_only", is_flag=True, default=False, help="Compact summary only")
+@click.option("--metrics", "show_metrics", is_flag=True, default=False, help="Show architecture metrics")
+def ai_review(as_json, summary_only, show_metrics):
+    """Run the AI Architecture Review.
+
+    Analyses the Project Context Graph to detect anti-patterns, coupling
+    risks, schema design issues, and performance concerns.
+
+    Examples:
+
+        aksara ai review
+
+        aksara ai review --json
+
+        aksara ai review --summary
+
+        aksara ai review --metrics
+    """
+    import json as _json
+    from aksara.ai.architecture_review import run_architecture_review
+
+    report = run_architecture_review()
+
+    if as_json:
+        if summary_only:
+            click.echo(_json.dumps(report.to_summary_dict(), indent=2, default=str))
+        else:
+            click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
+        return
+
+    if not report.ok:
+        click.echo(click.style("  ✗ Architecture review failed", fg="red"))
+        return
+
+    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo("  AI Architecture Review")
+    click.echo("  " + "─" * 40)
+
+    grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+    grade_color = grade_colors.get(report.grade, None)
+    click.echo(f"  Architecture Score: {report.score}  " +
+               click.style(f"({report.grade})", fg=grade_color, bold=True))
+    click.echo(f"  Findings:    {report.finding_count}")
+    click.echo(f"  Suggestions: {report.suggestion_count}")
+    click.echo(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
+
+    if show_metrics:
+        m = report.metrics
+        click.echo("\n  Metrics:")
+        click.echo("  " + "─" * 40)
+        click.echo(f"  Models:          {m.model_count}")
+        click.echo(f"  Routes:          {m.route_count}")
+        click.echo(f"  Queries:         {m.query_count}")
+        click.echo(f"  Migrations:      {m.migration_count}")
+        click.echo(f"  Diagnostics:     {m.diagnostic_count}")
+        click.echo(f"  Avg models/route: {m.avg_models_per_route:.1f}")
+        click.echo(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
+        click.echo(f"  Coupling score:  {m.coupling_score:.2f}")
+
+    if summary_only:
+        click.echo()
+        return
+
+    if report.findings:
+        click.echo("\n  Top Findings:")
+        click.echo("  " + "─" * 40)
+        for i, f in enumerate(report.findings[:10], 1):
+            sev = f.severity
+            color = "red" if sev in ("error", "critical") else "yellow" if sev == "warning" else None
+            click.echo(click.style(f"  {i}. [{sev}]", fg=color) +
+                       f" {f.title}")
+            click.echo(f"     {f.description}")
+
+    if report.suggestions:
+        click.echo("\n  Suggestions:")
+        click.echo("  " + "─" * 40)
+        for i, s in enumerate(report.suggestions[:5], 1):
+            click.echo(f"  {i}. {s.title}")
+            click.echo(f"     {s.description}")
 
     click.echo()
 

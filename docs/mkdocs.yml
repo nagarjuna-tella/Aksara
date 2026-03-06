@@ -115,6 +115,7 @@ nav:
       - Interactive Console: ai-mode/console.md
       - Project Graph: ai-mode/project-graph.md
       - AI Debugger: ai-mode/debugger.md
+      - Architecture Review: ai-mode/architecture-review.md
       - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md

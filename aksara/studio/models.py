@@ -2215,3 +2215,57 @@ class StudioDebugResponse(BaseModel):
     root_cause_count: int = Field(default=0)
     elapsed_ms: float = Field(default=0.0)
     generated_at: str = Field(default="")
+
+
+# =============================================================================
+# v0.5.34: AI Architecture Review
+# =============================================================================
+
+
+class StudioArchitectureMetrics(BaseModel):
+    """Computed architecture metrics."""
+
+    model_count: int = Field(default=0)
+    route_count: int = Field(default=0)
+    query_count: int = Field(default=0)
+    migration_count: int = Field(default=0)
+    diagnostic_count: int = Field(default=0)
+    avg_models_per_route: float = Field(default=0.0)
+    avg_queries_per_route: float = Field(default=0.0)
+    coupling_score: float = Field(default=0.0)
+
+
+class StudioArchitectureFinding(BaseModel):
+    """A single architectural finding."""
+
+    id: str = Field(default="")
+    severity: str = Field(default="info")
+    title: str = Field(default="")
+    description: str = Field(default="")
+    related_nodes: List[str] = Field(default_factory=list)
+    category: str = Field(default="general")
+
+
+class StudioArchitectureSuggestion(BaseModel):
+    """A refactoring suggestion."""
+
+    suggestion_id: str = Field(default="")
+    title: str = Field(default="")
+    description: str = Field(default="")
+    impact: str = Field(default="medium")
+    related_findings: List[str] = Field(default_factory=list)
+
+
+class StudioArchitectureReviewResponse(BaseModel):
+    """Response from POST /studio/ai/architecture-review."""
+
+    ok: bool = Field(default=False)
+    score: int = Field(default=0, description="Architecture health score 0-100")
+    grade: str = Field(default="F", description="Letter grade A-F")
+    findings: List[StudioArchitectureFinding] = Field(default_factory=list)
+    suggestions: List[StudioArchitectureSuggestion] = Field(default_factory=list)
+    metrics: StudioArchitectureMetrics = Field(default_factory=StudioArchitectureMetrics)
+    finding_count: int = Field(default=0)
+    suggestion_count: int = Field(default=0)
+    elapsed_ms: float = Field(default=0.0)
+    generated_at: str = Field(default="")

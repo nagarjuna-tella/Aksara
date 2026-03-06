@@ -112,6 +112,15 @@
                     </svg>
                     <span>AI Debugger</span>
                 </a>
+                <a href="#/ai-architecture" class="nav-item" data-section="ai-architecture">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Architecture</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -1835,6 +1844,32 @@
 
         <div class="ai-debugger-panel" id="ai-debugger-panel">
             <div class="ai-debugger-empty">Click <strong>Run Debugger</strong> to start analysis</div>
+        </div>
+    </template>
+
+    <!-- v0.5.34: AI Architecture Review Template -->
+    <template id="template-ai-architecture">
+        <div class="section-header">
+            <h2>AI Architecture Review</h2>
+            <p class="section-subtitle">Automated architectural analysis &mdash; scores health, detects anti-patterns, and suggests improvements</p>
+        </div>
+
+        <div class="ai-arch-toolbar">
+            <button id="ai-arch-run" class="btn btn-sm btn-accent">Run Review</button>
+            <span id="ai-arch-status" class="ai-arch-meta-text"></span>
+        </div>
+
+        <div class="ai-arch-score-card" id="ai-arch-score-card" style="display:none;"></div>
+
+        <div class="ai-arch-metrics" id="ai-arch-metrics" style="display:none;"></div>
+
+        <div class="ai-arch-tabs">
+            <button class="ai-arch-tab active" data-arch-tab="findings">Findings</button>
+            <button class="ai-arch-tab" data-arch-tab="suggestions">Suggestions</button>
+        </div>
+
+        <div class="ai-arch-panel" id="ai-arch-panel">
+            <div class="ai-arch-empty">Click <strong>Run Review</strong> to start analysis</div>
         </div>
     </template>
 

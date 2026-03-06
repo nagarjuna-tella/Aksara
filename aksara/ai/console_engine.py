@@ -91,7 +91,9 @@ async def run_console_query(
     # ── 2b. Debug flow shortcut (v0.5.33) ─────────────────────────────────
     if match.flow_type == "debug":
         return _run_debug_flow(message, match)
-
+    # ── 2c. Architecture review shortcut (v0.5.34) ─────────────────
+    if match.flow_type == "architecture_review":
+        return _run_architecture_review_flow(message, match)
     # ── 3. Build / enrich context ─────────────────────────────────────────
     from aksara.ai.console_context import enrich_context
 
@@ -236,6 +238,39 @@ def _run_debug_flow(message: str, match) -> Dict[str, Any]:
         return _console_error(
             f"Debug analysis failed: {exc}",
             "DEBUG_ERROR",
+            intent=match.intent,
+            confidence=match.confidence,
+        )
+
+
+def _run_architecture_review_flow(message: str, match) -> Dict[str, Any]:
+    """Run the AI Architecture Review pipeline for review-intent queries (v0.5.34)."""
+    try:
+        from aksara.ai.architecture_review import run_architecture_review
+
+        report = run_architecture_review()
+        _emit_console_event(match, {"ok": report.ok})
+
+        return {
+            "ok": report.ok,
+            "intent": match.intent,
+            "flow_type": "architecture_review",
+            "action_key": match.action_key,
+            "confidence": match.confidence,
+            "extracted_context": match.extracted_context,
+            "prompt_pack": None,
+            "execution": {
+                "architecture_report": report.to_summary_dict(),
+            },
+            "suggestions": ["architecture_review"],
+            "elapsed_ms": report.elapsed_ms,
+            "error": None if report.ok else "Architecture review failed",
+            "error_code": None if report.ok else "REVIEW_FAILED",
+        }
+    except Exception as exc:
+        return _console_error(
+            f"Architecture review failed: {exc}",
+            "REVIEW_ERROR",
             intent=match.intent,
             confidence=match.confidence,
         )

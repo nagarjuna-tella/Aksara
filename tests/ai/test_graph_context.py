@@ -82,7 +82,7 @@ def _make_populated_graph() -> ProjectGraph:
     g.metadata.diagnostic_count = len(g.diagnostics)
     g.metadata.gap_count = len(g.gaps)
     g.metadata.event_count = len(g.events)
-    g.metadata.version = "0.5.33"
+    g.metadata.version = "0.5.34"
     return g
 
 

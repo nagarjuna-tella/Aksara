@@ -414,6 +414,9 @@ function renderSection(section) {
         case 'ai-debugger':
             renderAiDebugger();
             break;
+        case 'ai-architecture':
+            renderAiArchitecture();
+            break;
     }
 
     // v0.5.29: init AI flow dropdowns + row selection hooks after render
@@ -4429,3 +4432,110 @@ document.addEventListener('DOMContentLoaded', () => {
     initAiFlowButtons();
     _initAiConsoleKeyboardShortcut();
 });
+
+// ─── v0.5.34: AI Architecture Review ─────────────────────────────────────
+
+let _archData = null;
+
+function renderAiArchitecture() {
+    const runBtn = document.getElementById('ai-arch-run');
+    if (runBtn) {
+        runBtn.addEventListener('click', () => _runArchReview());
+    }
+    // Tab switching
+    document.querySelectorAll('.ai-arch-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ai-arch-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _renderArchTab(btn.getAttribute('data-arch-tab'));
+        });
+    });
+}
+
+function _runArchReview() {
+    const status = document.getElementById('ai-arch-status');
+    const panel = document.getElementById('ai-arch-panel');
+    if (status) status.textContent = 'Analysing…';
+    if (panel) panel.innerHTML = '<div class="ai-arch-loading">Running review…</div>';
+
+    fetch('/studio/ai/architecture-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+        .then(r => r.json())
+        .then(data => {
+            _archData = data;
+            if (status) status.textContent = `${data.elapsed_ms || 0}ms`;
+
+            // Score card
+            const card = document.getElementById('ai-arch-score-card');
+            if (card) {
+                card.style.display = '';
+                const gradeClass = (data.grade || 'F').toLowerCase();
+                card.innerHTML = '<div class="ai-arch-score-inner">' +
+                    '<div class="ai-arch-grade ai-arch-grade-' + gradeClass + '">' + (data.grade || 'F') + '</div>' +
+                    '<div class="ai-arch-score-num">' + (data.score ?? 0) + '<span class="ai-arch-score-label"> / 100</span></div>' +
+                    '<div class="ai-arch-score-counts">' + (data.finding_count || 0) + ' findings · ' + (data.suggestion_count || 0) + ' suggestions</div>' +
+                    '</div>';
+            }
+
+            // Metrics
+            const metricsEl = document.getElementById('ai-arch-metrics');
+            if (metricsEl && data.metrics) {
+                metricsEl.style.display = '';
+                const m = data.metrics;
+                metricsEl.innerHTML = '<div class="ai-arch-metrics-grid">' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.model_count + '</div><div class="ai-arch-metric-label">Models</div></div>' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.route_count + '</div><div class="ai-arch-metric-label">Routes</div></div>' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.query_count + '</div><div class="ai-arch-metric-label">Queries</div></div>' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.migration_count + '</div><div class="ai-arch-metric-label">Migrations</div></div>' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.avg_models_per_route.toFixed(1) + '</div><div class="ai-arch-metric-label">Avg models/route</div></div>' +
+                    '<div class="ai-arch-metric"><div class="ai-arch-metric-num">' + m.avg_queries_per_route.toFixed(1) + '</div><div class="ai-arch-metric-label">Avg queries/route</div></div>' +
+                    '</div>';
+            }
+
+            _renderArchTab('findings');
+        })
+        .catch(err => {
+            if (status) status.textContent = 'Error';
+            if (panel) panel.innerHTML = '<div class="ai-arch-error">' + err.message + '</div>';
+        });
+}
+
+function _renderArchTab(tab) {
+    const panel = document.getElementById('ai-arch-panel');
+    if (!panel || !_archData) return;
+    if (tab === 'findings') _renderArchFindings(panel);
+    else if (tab === 'suggestions') _renderArchSuggestions(panel);
+}
+
+function _renderArchFindings(panel) {
+    const findings = _archData.findings || [];
+    if (!findings.length) { panel.innerHTML = '<div class="ai-arch-empty">No findings detected — architecture looks healthy!</div>'; return; }
+    let html = '';
+    findings.forEach(f => {
+        const sevClass = f.severity || 'info';
+        html += '<div class="ai-arch-finding-card ai-arch-sev-' + sevClass + '">';
+        html += '<div class="ai-arch-finding-header"><span class="ai-arch-sev-badge">' + f.severity + '</span>';
+        html += '<span class="ai-arch-finding-cat">' + (f.category || '').replace('_', ' ') + '</span></div>';
+        html += '<h4>' + f.title + '</h4>';
+        html += '<p>' + f.description + '</p>';
+        if (f.related_nodes && f.related_nodes.length) {
+            html += '<div class="ai-arch-related">Related: ' + f.related_nodes.join(', ') + '</div>';
+        }
+        html += '</div>';
+    });
+    panel.innerHTML = html;
+}
+
+function _renderArchSuggestions(panel) {
+    const suggestions = _archData.suggestions || [];
+    if (!suggestions.length) { panel.innerHTML = '<div class="ai-arch-empty">No suggestions — great work!</div>'; return; }
+    let html = '';
+    suggestions.forEach(s => {
+        const impactClass = s.impact || 'medium';
+        html += '<div class="ai-arch-suggestion-card">';
+        html += '<div class="ai-arch-suggestion-header"><span class="ai-arch-impact-badge ai-arch-impact-' + impactClass + '">' + s.impact + ' impact</span></div>';
+        html += '<h4>' + s.title + '</h4>';
+        html += '<p>' + s.description + '</p>';
+        html += '</div>';
+    });
+    panel.innerHTML = html;
+}

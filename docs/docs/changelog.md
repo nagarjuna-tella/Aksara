@@ -4,6 +4,37 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.34] — 2026-03-02
+
+### Added — AI Architecture Review
+- **AI Architecture Review** (`aksara/ai/architecture_review.py`): Automated
+  architectural analysis engine with a 9-step pipeline — loads the Project
+  Graph, computes metrics (counts, averages, coupling score), detects coupling
+  risks, schema design issues, API design problems, migration risks, and
+  performance concerns, computes a penalty-based health score (A–F grading),
+  and generates category-specific improvement suggestions.
+- **Data models**: `ArchitectureMetrics`, `ArchitectureFinding`,
+  `ArchitectureSuggestion`, `ArchitectureReport` with full serialisation
+  (`to_dict`, `to_summary_dict`).
+- **Studio API endpoint**: `POST /studio/ai/architecture-review`.
+  New Pydantic models: `StudioArchitectureMetrics`,
+  `StudioArchitectureFinding`, `StudioArchitectureSuggestion`,
+  `StudioArchitectureReviewResponse`.
+- **Studio UI "Architecture" panel**: Score card with letter grade, metrics
+  grid, two tabbed views (Findings with severity badges, Suggestions with
+  impact indicators), and colour-coded grading.
+- **Console integration**: 12 new architecture review intent patterns in the
+  intent router (`architecture review`, `health check`, `anti-pattern`,
+  `coupling`, `refactor`, `design review`, etc.) with dedicated
+  `_run_architecture_review_flow` handler in the console engine.
+- **CLI `aksara ai flows review`**: Text and JSON output, `--json`,
+  `--summary`, and `--metrics` options.
+- **206 new tests** across 5 test files covering the core review module,
+  metrics computation, Studio API endpoint, Studio UI templates, and CLI
+  command / console integration.
+
+---
+
 ## [0.5.33] — 2026-03-01
 
 ### Added — AI Debugger

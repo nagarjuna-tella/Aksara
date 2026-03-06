@@ -4793,3 +4793,193 @@ code {
 .ai-debugger-fix-group li {
     padding: 0.15rem 0;
 }
+
+/* ─── v0.5.34: AI Architecture Review ─────────────────────────────────── */
+
+.ai-arch-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.ai-arch-meta-text {
+    font-size: 0.78rem;
+    color: var(--text-secondary, #888);
+}
+
+/* Score card */
+.ai-arch-score-card {
+    margin-bottom: 1.2rem;
+}
+.ai-arch-score-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1rem 1.4rem;
+    border-radius: 0.5rem;
+    background: var(--card-bg, #1e1e2e);
+    border: 1px solid var(--border, #333);
+}
+.ai-arch-grade {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 2.8rem;
+    text-align: center;
+}
+.ai-arch-grade-a { color: #4ade80; }
+.ai-arch-grade-b { color: #60a5fa; }
+.ai-arch-grade-c { color: #fbbf24; }
+.ai-arch-grade-d { color: #fb923c; }
+.ai-arch-grade-f { color: #f87171; }
+.ai-arch-score-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.ai-arch-score-label {
+    font-size: 0.85rem;
+    font-weight: 400;
+    opacity: 0.6;
+}
+.ai-arch-score-counts {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #888);
+}
+
+/* Metrics grid */
+.ai-arch-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.2rem;
+}
+.ai-arch-metric {
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.4rem;
+    background: var(--card-bg, #1e1e2e);
+    border: 1px solid var(--border, #333);
+    text-align: center;
+}
+.ai-arch-metric-num {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.ai-arch-metric-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #888);
+    margin-top: 0.15rem;
+}
+
+/* Tabs */
+.ai-arch-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border, #333);
+    padding-bottom: 0.5rem;
+}
+.ai-arch-tab {
+    padding: 0.35rem 0.9rem;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 0.35rem 0.35rem 0 0;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #888);
+}
+.ai-arch-tab.active {
+    color: var(--accent, #6366f1);
+    border-color: var(--border, #333);
+    border-bottom-color: var(--card-bg, #1e1e2e);
+    background: var(--card-bg, #1e1e2e);
+}
+
+/* Panel */
+.ai-arch-panel {
+    min-height: 120px;
+}
+.ai-arch-empty, .ai-arch-loading, .ai-arch-error {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary, #888);
+    font-size: 0.85rem;
+}
+.ai-arch-error { color: #f87171; }
+
+/* Finding cards */
+.ai-arch-finding-card {
+    padding: 0.75rem 1rem;
+    border-radius: 0.4rem;
+    background: var(--card-bg, #1e1e2e);
+    border: 1px solid var(--border, #333);
+    border-left: 3px solid var(--border, #333);
+    margin-bottom: 0.6rem;
+}
+.ai-arch-sev-critical { border-left-color: #f87171; }
+.ai-arch-sev-error { border-left-color: #fb923c; }
+.ai-arch-sev-warning { border-left-color: #fbbf24; }
+.ai-arch-sev-info { border-left-color: #60a5fa; }
+.ai-arch-finding-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+.ai-arch-sev-badge {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.2rem;
+    background: rgba(255,255,255,0.06);
+}
+.ai-arch-finding-cat {
+    font-size: 0.7rem;
+    color: var(--text-secondary, #888);
+    text-transform: capitalize;
+}
+.ai-arch-finding-card h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.85rem;
+}
+.ai-arch-finding-card p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #aaa);
+}
+.ai-arch-related {
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary, #888);
+}
+
+/* Suggestion cards */
+.ai-arch-suggestion-card {
+    padding: 0.75rem 1rem;
+    border-radius: 0.4rem;
+    background: var(--card-bg, #1e1e2e);
+    border: 1px solid var(--border, #333);
+    margin-bottom: 0.6rem;
+}
+.ai-arch-suggestion-header {
+    margin-bottom: 0.3rem;
+}
+.ai-arch-impact-badge {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.2rem;
+}
+.ai-arch-impact-high { background: rgba(248,113,113,0.15); color: #f87171; }
+.ai-arch-impact-medium { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.ai-arch-impact-low { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.ai-arch-suggestion-card h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.85rem;
+}
+.ai-arch-suggestion-card p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #aaa);
+}

@@ -1862,6 +1862,27 @@ async def studio_ai_debug(request: Request):
 
 
 # =============================================================================
+# v0.5.34: AI Architecture Review Endpoint
+# =============================================================================
+
+
+@router.post("/studio/ai/architecture-review")
+async def studio_ai_architecture_review(request: Request):
+    """
+    AI Architecture Review endpoint (v0.5.34).
+
+    Runs the automated architectural analysis pipeline: loads the Project
+    Context Graph, computes metrics, detects coupling / schema / API /
+    migration / performance anti-patterns, scores the architecture, and
+    suggests improvements.
+    """
+    from aksara.ai.architecture_review import run_architecture_review
+
+    report = run_architecture_review(app=request.app)
+    return report.to_dict()
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 
