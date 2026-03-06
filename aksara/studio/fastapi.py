@@ -1724,6 +1724,56 @@ async def studio_ai_flow_run(request: Request):
 
 
 # =============================================================================
+# v0.5.31: Interactive AI Console
+# =============================================================================
+
+
+@router.post("/studio/ai/console")
+async def studio_ai_console(request: Request):
+    """
+    Interactive AI Console endpoint (v0.5.31).
+
+    Accepts a natural-language message, detects intent, routes to the
+    matching AI Flow, executes via runtime, and returns a structured response.
+
+    Body:
+        message: str — e.g. "explain the User model"
+        provider_override: optional provider override
+        model_override: optional model override
+    """
+    from aksara.ai.console_engine import run_console_query
+
+    body = await request.json()
+    message = body.get("message", "")
+    provider_override = body.get("provider_override")
+    model_override = body.get("model_override")
+
+    result = await run_console_query(
+        message,
+        provider_override=provider_override,
+        model_override=model_override,
+    )
+    return result
+
+
+@router.get("/studio/ai/console/suggest")
+async def studio_ai_console_suggest(request: Request):
+    """
+    Command suggestion endpoint for the AI Console (v0.5.31).
+
+    Query params:
+        q: prefix string for autocomplete
+    """
+    from aksara.ai.intent_router import suggest_commands, list_intents
+
+    q = request.query_params.get("q", "")
+    return {
+        "suggestions": suggest_commands(q),
+        "intents": list_intents(),
+    }
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 

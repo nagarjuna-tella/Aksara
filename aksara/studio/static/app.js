@@ -405,6 +405,9 @@ function renderSection(section) {
         case 'ai-hub':
             renderAiHub();
             break;
+        case 'ai-console':
+            renderAiConsole();
+            break;
     }
 
     // v0.5.29: init AI flow dropdowns + row selection hooks after render
@@ -3722,6 +3725,283 @@ function _hookAiFlowRowSelection() {
 }
 
 
+// =============================================================================
+// v0.5.31: Interactive AI Console
+// =============================================================================
+
+const _aiConsoleState = {
+    history: [],
+    historyIdx: -1,
+    sending: false,
+    suggestTimer: null,
+    suggestIdx: -1,
+};
+
+function renderAiConsole() {
+    // Hook example buttons
+    document.querySelectorAll('.ai-console-example-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cmd = btn.getAttribute('data-cmd');
+            const input = document.getElementById('ai-console-input');
+            if (input && cmd) {
+                input.value = cmd;
+                _sendConsoleMessage();
+            }
+        });
+    });
+    // Hook send
+    const sendBtn = document.getElementById('ai-console-send');
+    if (sendBtn) sendBtn.addEventListener('click', _sendConsoleMessage);
+    const input = document.getElementById('ai-console-input');
+    if (input) {
+        input.addEventListener('keydown', _handleConsoleInputKey);
+        input.addEventListener('input', _handleConsoleInputChange);
+        input.focus();
+    }
+}
+
+function _handleConsoleInputKey(e) {
+    const suggestEl = document.getElementById('ai-console-suggestions');
+    const items = suggestEl ? suggestEl.querySelectorAll('.ai-console-suggestion-item') : [];
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (items.length > 0 && _aiConsoleState.suggestIdx >= 0) {
+            const active = items[_aiConsoleState.suggestIdx];
+            if (active) {
+                e.target.value = active.textContent;
+                _hideConsoleSuggestions();
+            }
+        } else {
+            _sendConsoleMessage();
+        }
+        return;
+    }
+    if (e.key === 'ArrowUp') {
+        if (items.length > 0) {
+            e.preventDefault();
+            _aiConsoleState.suggestIdx = Math.max(0, _aiConsoleState.suggestIdx - 1);
+            _highlightConsoleSuggestion(items);
+        } else if (_aiConsoleState.history.length > 0) {
+            e.preventDefault();
+            if (_aiConsoleState.historyIdx < 0) _aiConsoleState.historyIdx = _aiConsoleState.history.length;
+            _aiConsoleState.historyIdx = Math.max(0, _aiConsoleState.historyIdx - 1);
+            e.target.value = _aiConsoleState.history[_aiConsoleState.historyIdx] || '';
+        }
+        return;
+    }
+    if (e.key === 'ArrowDown') {
+        if (items.length > 0) {
+            e.preventDefault();
+            _aiConsoleState.suggestIdx = Math.min(items.length - 1, _aiConsoleState.suggestIdx + 1);
+            _highlightConsoleSuggestion(items);
+        } else if (_aiConsoleState.historyIdx >= 0) {
+            e.preventDefault();
+            _aiConsoleState.historyIdx = Math.min(_aiConsoleState.history.length - 1, _aiConsoleState.historyIdx + 1);
+            e.target.value = _aiConsoleState.history[_aiConsoleState.historyIdx] || '';
+        }
+        return;
+    }
+    if (e.key === 'Escape') {
+        _hideConsoleSuggestions();
+    }
+}
+
+function _handleConsoleInputChange(e) {
+    const val = e.target.value.trim();
+    clearTimeout(_aiConsoleState.suggestTimer);
+    if (val.length < 2) {
+        _hideConsoleSuggestions();
+        return;
+    }
+    _aiConsoleState.suggestTimer = setTimeout(() => _fetchConsoleSuggestions(val), 200);
+}
+
+async function _fetchConsoleSuggestions(prefix) {
+    try {
+        const resp = await fetch(`/studio/ai/console/suggest?q=${encodeURIComponent(prefix)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        _showConsoleSuggestions(data.suggestions || []);
+    } catch (_) {
+        // ignore
+    }
+}
+
+function _showConsoleSuggestions(items) {
+    const el = document.getElementById('ai-console-suggestions');
+    if (!el || items.length === 0) {
+        _hideConsoleSuggestions();
+        return;
+    }
+    _aiConsoleState.suggestIdx = -1;
+    el.innerHTML = items.map(s => `<div class="ai-console-suggestion-item">${_esc(s)}</div>`).join('');
+    el.style.display = '';
+    el.querySelectorAll('.ai-console-suggestion-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const input = document.getElementById('ai-console-input');
+            if (input) input.value = item.textContent;
+            _hideConsoleSuggestions();
+            input && input.focus();
+        });
+    });
+}
+
+function _hideConsoleSuggestions() {
+    const el = document.getElementById('ai-console-suggestions');
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+    _aiConsoleState.suggestIdx = -1;
+}
+
+function _highlightConsoleSuggestion(items) {
+    items.forEach((it, i) => it.classList.toggle('active', i === _aiConsoleState.suggestIdx));
+}
+
+async function _sendConsoleMessage() {
+    const input = document.getElementById('ai-console-input');
+    if (!input) return;
+    const msg = input.value.trim();
+    if (!msg || _aiConsoleState.sending) return;
+
+    _aiConsoleState.sending = true;
+    _hideConsoleSuggestions();
+
+    // Save to history
+    _aiConsoleState.history.push(msg);
+    _aiConsoleState.historyIdx = -1;
+
+    // Clear welcome
+    const output = document.getElementById('ai-console-output');
+    const welcome = output ? output.querySelector('.ai-console-welcome') : null;
+    if (welcome) welcome.remove();
+
+    // Append user message
+    _appendConsoleMsg('user', msg);
+    input.value = '';
+
+    // Show loading
+    const loadingId = _appendConsoleLoading();
+
+    // Send
+    try {
+        const resp = await fetch('/studio/ai/console', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg }),
+        });
+        const data = await resp.json();
+        _removeConsoleLoading(loadingId);
+        _renderConsoleResponse(data);
+    } catch (err) {
+        _removeConsoleLoading(loadingId);
+        _renderConsoleResponse({
+            ok: false,
+            error: 'Network error: ' + err.message,
+            error_code: 'NETWORK_ERROR',
+        });
+    } finally {
+        _aiConsoleState.sending = false;
+    }
+}
+
+function _appendConsoleMsg(role, text, meta) {
+    const output = document.getElementById('ai-console-output');
+    if (!output) return;
+    const div = document.createElement('div');
+    div.className = `ai-console-msg ${role}`;
+    const label = role === 'user' ? 'You' : 'Aksara AI';
+    let html = `<div class="ai-console-msg-label">${label}</div>`;
+    html += `<div class="ai-console-msg-body">${_esc(text)}</div>`;
+    if (meta) {
+        html += `<div class="ai-console-msg-meta">${meta}</div>`;
+    }
+    div.innerHTML = html;
+    output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
+}
+
+function _appendConsoleLoading() {
+    const output = document.getElementById('ai-console-output');
+    if (!output) return '';
+    const id = 'ai-console-loading-' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'ai-console-loading';
+    div.innerHTML = '<div class="ai-console-loading-dots"><span></span><span></span><span></span></div> Thinking...';
+    output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
+    return id;
+}
+
+function _removeConsoleLoading(id) {
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function _renderConsoleResponse(data) {
+    const output = document.getElementById('ai-console-output');
+    if (!output) return;
+
+    if (!data.ok) {
+        const div = document.createElement('div');
+        div.className = 'ai-console-msg assistant ai-console-msg-error';
+        div.innerHTML = `<div class="ai-console-msg-label">Aksara AI</div>`
+            + `<div class="ai-console-msg-body">${_esc(data.error || 'Unknown error')}</div>`;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+        return;
+    }
+
+    // Main response text
+    const responseText = (data.execution && data.execution.response) || 'Done.';
+    const metaParts = [];
+    if (data.flow_type) metaParts.push(data.flow_type + '/' + data.action_key);
+    if (data.confidence) metaParts.push('confidence: ' + (data.confidence * 100).toFixed(0) + '%');
+    if (data.elapsed_ms) metaParts.push(data.elapsed_ms.toFixed(0) + 'ms');
+    if (data.execution && data.execution.provider) metaParts.push(data.execution.provider);
+
+    _appendConsoleMsg('assistant', responseText, metaParts.join(' &bull; '));
+
+    // Suggested next actions
+    if (data.suggestions && data.suggestions.length > 0) {
+        const row = document.createElement('div');
+        row.className = 'ai-console-suggestions-row';
+        data.suggestions.forEach(key => {
+            const chip = document.createElement('button');
+            chip.className = 'ai-console-suggestion-chip';
+            chip.textContent = key.replace(/_/g, ' ');
+            chip.addEventListener('click', () => {
+                const input = document.getElementById('ai-console-input');
+                if (input) {
+                    input.value = key.replace(/_/g, ' ');
+                    _sendConsoleMessage();
+                }
+            });
+            row.appendChild(chip);
+        });
+        output.appendChild(row);
+        output.scrollTop = output.scrollHeight;
+    }
+}
+
+function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// v0.5.31: Keyboard shortcut — Ctrl+I or Cmd+I opens AI Console
+function _initAiConsoleKeyboardShortcut() {
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+            e.preventDefault();
+            navigateTo('ai-console');
+            setTimeout(() => {
+                const input = document.getElementById('ai-console-input');
+                if (input) input.focus();
+            }, 100);
+        }
+    });
+}
+
+
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
     if (state.diagnosticsInterval) {
@@ -3738,4 +4018,5 @@ document.addEventListener('DOMContentLoaded', () => {
     _initAiFlowPanelControls();
     _initAiFlowKeyboardShortcuts();
     initAiFlowButtons();
+    _initAiConsoleKeyboardShortcut();
 });

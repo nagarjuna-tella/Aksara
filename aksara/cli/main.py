@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.30"
+CLI_VERSION = "0.5.31"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2120,6 +2120,73 @@ def ai_run_diagnostic(issue_id, action_key, provider_override, model_override, f
         provider_override=provider_override, model_override=model_override,
     ))
     _print_execution_result(result, fmt)
+
+
+# ─── v0.5.31: aksara ai chat ────────────────────────────────────────────────
+
+
+@ai_flows_group.command("chat")
+@click.argument("message")
+@click.option("--provider", "provider_override", default=None, help="Override AI provider")
+@click.option("--model", "model_override", default=None, help="Override AI model")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text",
+              help="Output format (text or json)")
+def ai_chat(message, provider_override, model_override, fmt):
+    """Send a natural-language command to the Interactive AI Console.
+
+    Examples:
+
+        aksara ai chat "explain the User model"
+
+        aksara ai chat "review GET /api/users" --format json
+    """
+    from aksara.ai.console_engine import run_console_query
+
+    result = _run_async(run_console_query(
+        message,
+        provider_override=provider_override,
+        model_override=model_override,
+    ))
+    _print_console_result(result, fmt)
+
+
+def _print_console_result(result: dict, fmt: str):
+    """Print an AI Console result to the terminal."""
+    if fmt == "json":
+        import json as _json
+        click.echo(_json.dumps(result, indent=2, default=str))
+        return
+
+    if not result.get("ok"):
+        click.echo(click.style(
+            f"  ✗ {result.get('error', 'Unknown error')}", fg="red"
+        ))
+        return
+
+    intent = result.get("intent", "?")
+    flow_type = result.get("flow_type", "?")
+    confidence = result.get("confidence", 0)
+    elapsed = result.get("elapsed_ms", 0)
+    execution = result.get("execution", {})
+
+    click.echo(f"\n  ─── AI Console ({flow_type}/{intent}) ───\n")
+    click.echo(f"  Confidence: {confidence * 100:.0f}%  |  Elapsed: {elapsed:.0f}ms")
+
+    if execution:
+        click.echo(f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}")
+        tokens = execution.get("tokens", {})
+        if tokens:
+            click.echo(f"  Tokens: {tokens.get('total', '?')}")
+        click.echo()
+        click.echo("  ── AI Response ──")
+        click.echo(f"  {execution.get('response', '(no response)')}")
+    else:
+        click.echo("  (no execution result)")
+
+    suggestions = result.get("suggestions", [])
+    if suggestions:
+        click.echo(f"\n  Suggested next: {', '.join(suggestions)}")
+    click.echo()
 
 
 def _setup_app_for_cli(database_url: Optional[str] = None) -> "FastAPI":

@@ -2100,3 +2100,39 @@ class StudioGapAnalysisRunResponse(BaseModel):
     status: str = Field(default="ok", description="ok | error")
     report: Optional[StudioGapAnalysisReport] = Field(default=None, description="Analysis report if completed synchronously")
     error: Optional[str] = Field(default=None, description="Error message if analysis failed")
+
+
+# =============================================================================
+# v0.5.31: Interactive AI Console
+# =============================================================================
+
+class StudioAiConsoleRequest(BaseModel):
+    """Request body for POST /studio/ai/console."""
+
+    message: str = Field(..., description="Natural-language command, e.g. 'explain the User model'")
+    provider_override: Optional[str] = Field(default=None, description="Override the AI provider")
+    model_override: Optional[str] = Field(default=None, description="Override the AI model")
+
+
+class StudioAiConsoleResponse(BaseModel):
+    """Response from the Interactive AI Console."""
+
+    ok: bool = Field(default=False)
+    intent: str = Field(default="unknown", description="Detected intent / action key")
+    flow_type: str = Field(default="", description="Flow type: model | route | query | migration | diagnostic")
+    action_key: str = Field(default="", description="Resolved AI Flow action key")
+    confidence: float = Field(default=0.0, description="Intent detection confidence 0..1")
+    extracted_context: Dict[str, Any] = Field(default_factory=dict, description="Context extracted from the message")
+    prompt_pack: Optional[Dict[str, Any]] = Field(default=None, description="The generated prompt pack")
+    execution: Optional[Dict[str, Any]] = Field(default=None, description="Execution result from the AI runtime")
+    suggestions: List[str] = Field(default_factory=list, description="Recommended follow-up action keys")
+    elapsed_ms: float = Field(default=0.0, description="Total pipeline time in ms")
+    error: Optional[str] = Field(default=None, description="Error message if not ok")
+    error_code: Optional[str] = Field(default=None, description="Machine-readable error code")
+
+
+class StudioAiConsoleSuggestResponse(BaseModel):
+    """Response from GET /studio/ai/console/suggest."""
+
+    suggestions: List[str] = Field(default_factory=list, description="Matching command suggestions")
+    intents: List[Dict[str, str]] = Field(default_factory=list, description="Available intent descriptors")

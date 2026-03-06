@@ -4,6 +4,43 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.31] — 2026-02-25
+
+### Added — Interactive AI Console
+- **Intent Router** (`aksara/ai/intent_router.py`): Rule-based intent
+  detection mapping natural-language commands to AI Flow actions.
+  `detect_intent()` returns `IntentMatch` with flow_type, action_key,
+  confidence, and extracted context.  `suggest_commands()` for autocomplete.
+  `list_intents()` for UI enumeration.
+- **Console Engine** (`aksara/ai/console_engine.py`): Full pipeline
+  orchestrator — `run_console_query()` detects intent → builds context →
+  dispatches to AI Flow → executes via runtime → returns structured response.
+- **Context Builder** (`aksara/ai/console_context.py`): Enriches extracted
+  context with live registry data (model names, route defaults, etc.).
+- **API endpoints**: `POST /studio/ai/console` (natural-language console
+  query) and `GET /studio/ai/console/suggest` (autocomplete suggestions).
+  New Pydantic models: `StudioAiConsoleRequest`, `StudioAiConsoleResponse`,
+  `StudioAiConsoleSuggestResponse`.
+- **Studio UI "AI Console" panel**: Interactive chat-style console with
+  message bubbles, loading animation, example command buttons, command
+  suggestions dropdown, and suggested next-action chips.  Sidebar nav item
+  with terminal icon.
+- **Keyboard shortcut**: `Ctrl+I` / `Cmd+I` opens the AI Console and focuses
+  the input field.  `↑/↓` for history and suggestion navigation.
+- **CLI `aksara ai chat`**: Send natural-language commands from the terminal.
+  Supports `--provider`, `--model`, `--format text|json`.
+- **150+ new tests** across 5 files: `test_intent_router.py`,
+  `test_console_engine.py`, `test_console_context.py`,
+  `test_ai_console.py`, `test_ai_chat_cli.py`.
+- **Docs**: `ai-mode/console.md`, updated `mkdocs.yml`, `changelog.md`.
+
+### Safety
+- Console follows "AI suggests, developer confirms" — never auto-modifies
+  code, executes migrations, or applies DB changes.
+- Intent router uses local heuristics only — no LLM calls for routing.
+
+---
+
 ## [0.5.30] — 2026-02-24
 
 ### Added — AI Connectors & Execution Runtime

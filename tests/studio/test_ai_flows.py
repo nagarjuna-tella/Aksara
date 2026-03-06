@@ -48,7 +48,7 @@ class _FakeHub:
     providers = [_FakeProvider()]
     defaults = _FakeDefaults()
     active_provider = "openai"
-    version = "0.5.30"
+    version = "0.5.31"
     def configured_providers(self): return [_FakeProvider()]
     def get_provider(self, kind): return _FakeProvider() if kind == "openai" else None
     def provider_status_summary(self): return {}
@@ -65,7 +65,7 @@ class _FakeHubEmpty:
         "embeddings_model": None, "embeddings_provider": None,
     })()
     active_provider = None
-    version = "0.5.30"
+    version = "0.5.31"
     def configured_providers(self): return []
     def get_provider(self, kind): return None
 
