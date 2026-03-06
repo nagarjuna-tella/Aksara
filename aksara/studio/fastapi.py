@@ -1774,6 +1774,61 @@ async def studio_ai_console_suggest(request: Request):
 
 
 # =============================================================================
+# v0.5.32: Project Context Graph Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai/project-graph")
+async def studio_ai_project_graph(request: Request):
+    """
+    Return the full Project Context Graph (v0.5.32).
+
+    Query params:
+        summary: if "true", return compact summary only
+        rebuild: if "true", bypass cache and rebuild
+    """
+    from aksara.ai.project_graph import build_project_graph
+
+    rebuild = request.query_params.get("rebuild", "").lower() == "true"
+    summary = request.query_params.get("summary", "").lower() == "true"
+
+    graph = build_project_graph(rebuild=rebuild, app=request.app)
+    if summary:
+        return graph.to_summary_dict()
+    return graph.to_dict()
+
+
+@router.get("/studio/ai/project-graph/events")
+async def studio_ai_project_graph_events(request: Request):
+    """
+    Return recent graph events (v0.5.32).
+
+    Query params:
+        limit: max events to return (default 100)
+    """
+    from aksara.ai.graph_events import get_recent_graph_events
+
+    try:
+        limit = int(request.query_params.get("limit", "100"))
+    except (ValueError, TypeError):
+        limit = 100
+
+    events = get_recent_graph_events(limit=limit)
+    return {"events": [e.to_dict() for e in events], "count": len(events)}
+
+
+@router.get("/studio/ai/project-graph/summary")
+async def studio_ai_project_graph_summary(request: Request):
+    """
+    Compact graph summary optimised for UI cards (v0.5.32).
+    """
+    from aksara.ai.project_graph import build_project_graph
+
+    graph = build_project_graph(app=request.app)
+    return graph.to_summary_dict()
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 

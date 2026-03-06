@@ -1309,6 +1309,22 @@ async def run_gap_analysis(
             )
 
     report.duration_ms = (time.monotonic() - start) * 1000
+
+    # v0.5.32: Emit graph event for gap report
+    try:
+        from aksara.ai.graph_events import emit_graph_event
+        if report.total_issues > 0:
+            emit_graph_event(
+                "gap_report_changed",
+                "gap_analysis",
+                "run_gap_analysis",
+                severity="warning" if report.has_critical else "info",
+                message=f"Gap analysis found {report.total_issues} issues",
+                total=report.total_issues,
+            )
+    except Exception:
+        pass  # event emission must never break gap analysis
+
     return report
 
 

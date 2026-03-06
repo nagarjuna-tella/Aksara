@@ -408,6 +408,9 @@ function renderSection(section) {
         case 'ai-console':
             renderAiConsole();
             break;
+        case 'ai-graph':
+            renderAiGraph();
+            break;
     }
 
     // v0.5.29: init AI flow dropdowns + row selection hooks after render
@@ -3986,6 +3989,239 @@ function _renderConsoleResponse(data) {
 }
 
 function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// =============================================================================
+// v0.5.32: AI Graph Explorer
+// =============================================================================
+
+let _aiGraphData = null;
+
+async function renderAiGraph() {
+    const tpl = document.getElementById('template-ai-graph');
+    if (!tpl) return;
+    const content = document.getElementById('content');
+    content.innerHTML = '';
+    content.appendChild(tpl.content.cloneNode(true));
+
+    // Wire toolbar
+    const rebuildBtn = document.getElementById('ai-graph-rebuild');
+    if (rebuildBtn) rebuildBtn.addEventListener('click', () => _fetchAiGraph(true));
+    const toConsoleBtn = document.getElementById('ai-graph-to-console');
+    if (toConsoleBtn) toConsoleBtn.addEventListener('click', () => navigateTo('ai-console'));
+
+    // Wire tabs
+    document.querySelectorAll('.ai-graph-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ai-graph-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            _renderAiGraphTab(tab.getAttribute('data-graph-tab'));
+        });
+    });
+
+    await _fetchAiGraph(false);
+}
+
+async function _fetchAiGraph(rebuild) {
+    const panel = document.getElementById('ai-graph-panel');
+    if (panel) panel.innerHTML = '<div class="ai-graph-loading">Loading graph\u2026</div>';
+
+    try {
+        const url = '/studio/ai/project-graph' + (rebuild ? '?rebuild=true' : '');
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Failed to fetch graph');
+        _aiGraphData = await resp.json();
+        _renderAiGraphCounts();
+        // Default tab
+        const active = document.querySelector('.ai-graph-tab.active');
+        _renderAiGraphTab(active ? active.getAttribute('data-graph-tab') : 'models');
+    } catch (e) {
+        if (panel) panel.innerHTML = '<div class="ai-graph-empty">Error loading graph: ' + _esc(e.message) + '</div>';
+    }
+}
+
+function _renderAiGraphCounts() {
+    const el = document.getElementById('ai-graph-counts');
+    if (!el || !_aiGraphData) return;
+    const m = _aiGraphData.metadata || {};
+    const items = [
+        { label: 'Models', count: m.model_count || 0, icon: '\u25A3' },
+        { label: 'Routes', count: m.route_count || 0, icon: '\u21C4' },
+        { label: 'Queries', count: m.query_count || 0, icon: '\u2318' },
+        { label: 'Migrations', count: m.migration_count || 0, icon: '\u21BB' },
+        { label: 'Diagnostics', count: m.diagnostic_count || 0, icon: '\u26A0' },
+        { label: 'Gaps', count: m.gap_count || 0, icon: '\u25CB' },
+        { label: 'Events', count: m.event_count || 0, icon: '\u23F1' },
+    ];
+    el.innerHTML = items.map(i =>
+        '<div class="ai-graph-count-card">' +
+        '<span class="ai-graph-count-icon">' + i.icon + '</span>' +
+        '<span class="ai-graph-count-num">' + i.count + '</span>' +
+        '<span class="ai-graph-count-label">' + i.label + '</span>' +
+        '</div>'
+    ).join('');
+
+    const gen = document.getElementById('ai-graph-generated');
+    if (gen && m.generated_at) gen.textContent = 'Generated: ' + new Date(m.generated_at).toLocaleTimeString();
+}
+
+function _renderAiGraphTab(tab) {
+    const panel = document.getElementById('ai-graph-panel');
+    if (!panel || !_aiGraphData) return;
+
+    switch (tab) {
+        case 'models': _renderGraphModels(panel); break;
+        case 'routes': _renderGraphRoutes(panel); break;
+        case 'queries': _renderGraphQueries(panel); break;
+        case 'diagnostics': _renderGraphDiagnostics(panel); break;
+        case 'migrations': _renderGraphMigrations(panel); break;
+        case 'events': _renderGraphEvents(panel); break;
+        case 'relationships': _renderGraphRelationships(panel); break;
+        default: panel.innerHTML = '<div class="ai-graph-empty">Select a tab</div>';
+    }
+}
+
+function _renderGraphModels(panel) {
+    const models = _aiGraphData.models || [];
+    if (!models.length) { panel.innerHTML = '<div class="ai-graph-empty">No models in graph</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Model</th><th>Table</th><th>Fields</th><th>Relations</th><th>Indexes</th></tr></thead><tbody>';
+    models.forEach(m => {
+        html += '<tr><td><strong>' + _esc(m.name) + '</strong></td><td>' + _esc(m.table) + '</td>'
+            + '<td>' + (m.fields || []).length + '</td>'
+            + '<td>' + (m.relations || []).map(r => _esc(r)).join(', ') + '</td>'
+            + '<td>' + (m.indexes || []).map(i => _esc(i)).join(', ') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphRoutes(panel) {
+    const routes = _aiGraphData.routes || [];
+    if (!routes.length) { panel.innerHTML = '<div class="ai-graph-empty">No routes in graph</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Method</th><th>Path</th><th>Name</th><th>Models</th></tr></thead><tbody>';
+    routes.forEach(r => {
+        html += '<tr><td><span class="method-badge">' + _esc(r.method) + '</span></td>'
+            + '<td>' + _esc(r.path) + '</td>'
+            + '<td>' + _esc(r.name || '') + '</td>'
+            + '<td>' + (r.models || []).map(m => _esc(m)).join(', ') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphQueries(panel) {
+    const queries = _aiGraphData.queries || [];
+    if (!queries.length) { panel.innerHTML = '<div class="ai-graph-empty">No queries captured</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Name</th><th>SQL</th><th>Models</th></tr></thead><tbody>';
+    queries.forEach(q => {
+        html += '<tr><td>' + _esc(q.name) + '</td>'
+            + '<td><code>' + _esc((q.sql || '').substring(0, 120)) + '</code></td>'
+            + '<td>' + (q.models || []).map(m => _esc(m)).join(', ') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphDiagnostics(panel) {
+    const diags = _aiGraphData.diagnostics || [];
+    if (!diags.length) { panel.innerHTML = '<div class="ai-graph-empty">No diagnostic issues</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Severity</th><th>Code</th><th>Message</th></tr></thead><tbody>';
+    diags.forEach(d => {
+        const cls = d.severity === 'error' ? 'severity-error' : d.severity === 'warning' ? 'severity-warning' : 'severity-info';
+        html += '<tr><td><span class="' + cls + '">' + _esc(d.severity) + '</span></td>'
+            + '<td>' + _esc(d.code) + '</td>'
+            + '<td>' + _esc(d.message) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphMigrations(panel) {
+    const migs = _aiGraphData.migrations || [];
+    if (!migs.length) { panel.innerHTML = '<div class="ai-graph-empty">No migrations found</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Name</th><th>App</th><th>Models</th></tr></thead><tbody>';
+    migs.forEach(m => {
+        html += '<tr><td>' + _esc(m.name) + '</td>'
+            + '<td>' + _esc(m.app) + '</td>'
+            + '<td>' + (m.models || []).map(x => _esc(x)).join(', ') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphEvents(panel) {
+    const events = _aiGraphData.events || [];
+    if (!events.length) { panel.innerHTML = '<div class="ai-graph-empty">No recent events</div>'; return; }
+    let html = '<table class="ai-graph-table"><thead><tr><th>Time</th><th>Kind</th><th>Severity</th><th>Source</th><th>Message</th></tr></thead><tbody>';
+    events.slice().reverse().forEach(e => {
+        const ts = e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '';
+        const cls = e.severity === 'error' ? 'severity-error' : e.severity === 'warning' ? 'severity-warning' : 'severity-info';
+        html += '<tr><td>' + _esc(ts) + '</td>'
+            + '<td>' + _esc(e.kind || '') + '</td>'
+            + '<td><span class="' + cls + '">' + _esc(e.severity || 'info') + '</span></td>'
+            + '<td>' + _esc(e.source_type || '') + '/' + _esc(e.source_id || '') + '</td>'
+            + '<td>' + _esc(e.message || '') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    panel.innerHTML = html;
+}
+
+function _renderGraphRelationships(panel) {
+    const models = _aiGraphData.models || [];
+    const routes = _aiGraphData.routes || [];
+    const queries = _aiGraphData.queries || [];
+    const migs = _aiGraphData.migrations || [];
+    const diags = _aiGraphData.diagnostics || [];
+
+    let html = '<div class="ai-graph-rels">';
+
+    // Route → Model
+    const routeModels = routes.filter(r => (r.models || []).length > 0);
+    if (routeModels.length) {
+        html += '<h4>Route \u2192 Model</h4><ul>';
+        routeModels.forEach(r => {
+            html += '<li><span class="method-badge">' + _esc(r.method) + '</span> '
+                + _esc(r.path) + ' \u2192 ' + (r.models || []).map(m => '<strong>' + _esc(m) + '</strong>').join(', ') + '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Query → Model
+    const queryModels = queries.filter(q => (q.models || []).length > 0);
+    if (queryModels.length) {
+        html += '<h4>Query \u2192 Model</h4><ul>';
+        queryModels.forEach(q => {
+            html += '<li>' + _esc(q.name) + ' \u2192 ' + (q.models || []).map(m => '<strong>' + _esc(m) + '</strong>').join(', ') + '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Migration → Model
+    const migModels = migs.filter(m => (m.models || []).length > 0);
+    if (migModels.length) {
+        html += '<h4>Migration \u2192 Model</h4><ul>';
+        migModels.forEach(m => {
+            html += '<li>' + _esc(m.name) + ' \u2192 ' + (m.models || []).map(x => '<strong>' + _esc(x) + '</strong>').join(', ') + '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Model relations
+    const modelRels = models.filter(m => (m.relations || []).length > 0);
+    if (modelRels.length) {
+        html += '<h4>Model Relations</h4><ul>';
+        modelRels.forEach(m => {
+            html += '<li><strong>' + _esc(m.name) + '</strong>: ' + (m.relations || []).map(r => _esc(r)).join(', ') + '</li>';
+        });
+        html += '</ul>';
+    }
+
+    if (!routeModels.length && !queryModels.length && !migModels.length && !modelRels.length) {
+        html += '<div class="ai-graph-empty">No relationships found</div>';
+    }
+
+    html += '</div>';
+    panel.innerHTML = html;
+}
 
 // v0.5.31: Keyboard shortcut — Ctrl+I or Cmd+I opens AI Console
 function _initAiConsoleKeyboardShortcut() {

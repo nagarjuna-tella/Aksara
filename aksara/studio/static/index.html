@@ -94,6 +94,16 @@
                     </svg>
                     <span>AI Console</span>
                 </a>
+                <a href="#/ai-graph" class="nav-item" data-section="ai-graph">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="5" r="3"></circle>
+                        <circle cx="5" cy="19" r="3"></circle>
+                        <circle cx="19" cy="19" r="3"></circle>
+                        <line x1="12" y1="8" x2="5" y2="16"></line>
+                        <line x1="12" y1="8" x2="19" y2="16"></line>
+                    </svg>
+                    <span>AI Graph</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -1760,6 +1770,36 @@
                     <kbd>Enter</kbd> to send &bull; <kbd>Ctrl+I</kbd> to focus &bull; <kbd>&uarr;</kbd> for history
                 </div>
             </div>
+        </div>
+    </template>
+    
+    <!-- v0.5.32: AI Graph Explorer Template -->
+    <template id="template-ai-graph">
+        <div class="section-header">
+            <h2>AI Graph Explorer</h2>
+            <p class="section-subtitle">Project Context Graph &mdash; structured view of your application for AI reasoning</p>
+        </div>
+        
+        <div class="ai-graph-toolbar">
+            <button id="ai-graph-rebuild" class="btn btn-sm">Rebuild Graph</button>
+            <button id="ai-graph-to-console" class="btn btn-sm btn-accent">Use in AI Console</button>
+            <span id="ai-graph-generated" class="ai-graph-meta-text"></span>
+        </div>
+        
+        <div class="ai-graph-counts" id="ai-graph-counts"></div>
+        
+        <div class="ai-graph-tabs">
+            <button class="ai-graph-tab active" data-graph-tab="models">Models</button>
+            <button class="ai-graph-tab" data-graph-tab="routes">Routes</button>
+            <button class="ai-graph-tab" data-graph-tab="queries">Queries</button>
+            <button class="ai-graph-tab" data-graph-tab="diagnostics">Diagnostics</button>
+            <button class="ai-graph-tab" data-graph-tab="migrations">Migrations</button>
+            <button class="ai-graph-tab" data-graph-tab="events">Events</button>
+            <button class="ai-graph-tab" data-graph-tab="relationships">Relationships</button>
+        </div>
+        
+        <div class="ai-graph-panel" id="ai-graph-panel">
+            <div class="ai-graph-loading">Loading graph&hellip;</div>
         </div>
     </template>
     

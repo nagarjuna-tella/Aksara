@@ -96,6 +96,14 @@ async def run_console_query(
         extracted=match.extracted_context,
     )
 
+    # ── 3b. Inject project-graph context (v0.5.32) ────────────────────────
+    try:
+        from aksara.ai.graph_context import build_graph_console_context
+        graph_ctx = build_graph_console_context(flow_type=match.flow_type)
+        context["_graph"] = graph_ctx
+    except Exception:
+        pass  # graph unavailable — continue without it
+
     # ── 4. Execute flow ───────────────────────────────────────────────────
     from aksara.studio.ai_flows import execute_flow
 
@@ -106,6 +114,9 @@ async def run_console_query(
         provider_override=provider_override,
         model_override=model_override,
     )
+
+    # ── 4b. Emit graph event (v0.5.32) ────────────────────────────────────
+    _emit_console_event(match, result)
 
     elapsed = (time.monotonic() - t0) * 1000
 
@@ -138,6 +149,35 @@ def _get_suggestions(action_key: str) -> list:
         return meta.get("recommended_next", [])
     except Exception:
         return []
+
+
+def _emit_console_event(match, result: Dict[str, Any]) -> None:
+    """Emit a graph event for the console execution (v0.5.32)."""
+    try:
+        from aksara.ai.graph_events import emit_graph_event
+
+        ok = result.get("ok", False)
+        if ok:
+            emit_graph_event(
+                "ai_flow_executed",
+                "console",
+                match.action_key,
+                severity="info",
+                message=f"Console executed {match.flow_type}/{match.action_key}",
+                flow_type=match.flow_type,
+                confidence=match.confidence,
+            )
+        else:
+            emit_graph_event(
+                "console_execution_failed",
+                "console",
+                match.action_key,
+                severity="warning",
+                message=result.get("error", "execution failed"),
+                flow_type=match.flow_type,
+            )
+    except Exception:
+        pass  # event emission must never break the main action
 
 
 def _console_error(

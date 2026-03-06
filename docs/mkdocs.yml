@@ -113,6 +113,7 @@ nav:
       - AI Connectors: ai-mode/connectors.md
       - Execution Runtime: ai-mode/runtime.md
       - Interactive Console: ai-mode/console.md
+      - Project Graph: ai-mode/project-graph.md
       - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md

@@ -832,6 +832,22 @@ async def run_all_checks() -> DiagnosticReport:
     report.issues.sort(key=lambda i: severity_order.get(i.severity, 3))
 
     report.duration_ms = round((time.monotonic() - start) * 1000, 2)
+
+    # v0.5.32: Emit graph events for discovered issues
+    try:
+        from aksara.ai.graph_events import emit_graph_event
+        for issue in report.issues:
+            if issue.severity in ("error", "warning"):
+                emit_graph_event(
+                    "diagnostic_issue_detected",
+                    "diagnostic",
+                    issue.kind,
+                    severity=issue.severity,
+                    message=issue.title or issue.message,
+                )
+    except Exception:
+        pass  # event emission must never break diagnostics
+
     return report
 
 

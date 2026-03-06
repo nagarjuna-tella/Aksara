@@ -689,6 +689,21 @@ async def execute_flow(
         model_override=model_override,
     )
 
+    # v0.5.32: Emit graph event for flow execution
+    try:
+        from aksara.ai.graph_events import emit_graph_event
+        ok = execution.get("ok", False)
+        emit_graph_event(
+            "ai_flow_executed" if ok else "console_execution_failed",
+            "ai_flow",
+            action_key,
+            severity="info" if ok else "warning",
+            message=f"{flow_type}/{action_key} {'succeeded' if ok else 'failed'}",
+            flow_type=flow_type,
+        )
+    except Exception:
+        pass
+
     return {
         "ok": execution.get("ok", False),
         "prompt_pack": pack_dict,

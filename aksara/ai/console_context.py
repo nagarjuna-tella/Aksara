@@ -98,6 +98,25 @@ def _enrich_diagnostic(ctx: Dict[str, Any]) -> Dict[str, Any]:
     return ctx
 
 
+# ─── v0.5.32: Graph context injection ────────────────────────────────────────
+
+def inject_graph_context(
+    ctx: Dict[str, Any],
+    flow_type: str,
+) -> Dict[str, Any]:
+    """Inject project graph context into the enriched context dict.
+
+    Called by the console engine after ``enrich_context()``.  This adds
+    a ``_graph`` key with the compact graph payload.
+    """
+    try:
+        from aksara.ai.graph_context import build_graph_console_context
+        ctx["_graph"] = build_graph_console_context(flow_type=flow_type)
+    except Exception:
+        pass
+    return ctx
+
+
 # ─── Registry helpers ────────────────────────────────────────────────────────
 
 def _first_model_name() -> str:

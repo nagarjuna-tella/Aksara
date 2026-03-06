@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.31"
+CLI_VERSION = "0.5.32"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2186,6 +2186,89 @@ def _print_console_result(result: dict, fmt: str):
     suggestions = result.get("suggestions", [])
     if suggestions:
         click.echo(f"\n  Suggested next: {', '.join(suggestions)}")
+    click.echo()
+
+
+# ─── v0.5.32: aksara ai graph ───────────────────────────────────────────────
+
+
+@ai_flows_group.command("graph")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output full graph as JSON")
+@click.option("--summary", "summary", is_flag=True, default=False, help="Compact summary only")
+@click.option("--events", "events", is_flag=True, default=False, help="Show recent events only")
+@click.option("--rebuild", is_flag=True, default=False, help="Force graph rebuild (ignore cache)")
+def ai_graph(as_json, summary, events, rebuild):
+    """Show the Project Context Graph.
+
+    Examples:
+
+        aksara ai graph
+
+        aksara ai graph --summary
+
+        aksara ai graph --json
+
+        aksara ai graph --events
+    """
+    import json as _json
+    from aksara.ai.project_graph import build_project_graph
+
+    graph = build_project_graph(rebuild=rebuild)
+
+    if as_json:
+        if events:
+            click.echo(_json.dumps({"events": graph.events}, indent=2, default=str))
+        elif summary:
+            click.echo(_json.dumps(graph.to_summary_dict(), indent=2, default=str))
+        else:
+            click.echo(_json.dumps(graph.to_dict(), indent=2, default=str))
+        return
+
+    if events:
+        _print_graph_events(graph)
+        return
+
+    if summary:
+        _print_graph_summary(graph)
+        return
+
+    # Default: text summary
+    _print_graph_summary(graph)
+
+
+def _print_graph_summary(graph):
+    m = graph.metadata
+    click.echo("\n  Project Graph")
+    click.echo("  " + "─" * 30)
+    click.echo(f"  Models:      {m.model_count}")
+    click.echo(f"  Routes:      {m.route_count}")
+    click.echo(f"  Queries:     {m.query_count}")
+    click.echo(f"  Migrations:  {m.migration_count}")
+    click.echo(f"  Diagnostics: {m.diagnostic_count}")
+    click.echo(f"  Gaps:        {m.gap_count}")
+    click.echo(f"  Events:      {m.event_count}")
+    hub = graph.ai_hub
+    if hub:
+        click.echo(f"  AI Hub:      {hub.status}")
+    click.echo(f"\n  Version: {m.version}  |  Generated: {m.generated_at}")
+    click.echo()
+
+
+def _print_graph_events(graph):
+    evts = graph.events
+    if not evts:
+        click.echo("  No recent events.")
+        return
+    click.echo(f"\n  Recent Events ({len(evts)})")
+    click.echo("  " + "─" * 50)
+    for e in reversed(evts[-20:]):
+        sev = e.get("severity", "info")
+        kind = e.get("kind", "?")
+        msg = e.get("message", "")
+        ts = e.get("timestamp", "")
+        color = "red" if sev == "error" else "yellow" if sev == "warning" else None
+        prefix = f"  [{sev:7s}] {kind}"
+        click.echo(click.style(prefix, fg=color) + f"  {msg}  ({ts})")
     click.echo()
 
 

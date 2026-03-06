@@ -100,6 +100,18 @@ async def run_prompt_pack(
         elapsed = (time.monotonic() - t0) * 1000
 
         if not result.get("ok"):
+            # v0.5.32: Emit provider_unreachable event
+            try:
+                from aksara.ai.graph_events import emit_graph_event
+                emit_graph_event(
+                    "provider_unreachable", "ai_provider", provider,
+                    severity="warning",
+                    message=result.get("error", "Connector error"),
+                    model=model,
+                )
+            except Exception:
+                pass
+
             return {
                 "ok": False,
                 "provider": provider,

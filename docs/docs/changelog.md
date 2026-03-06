@@ -4,6 +4,38 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.32] — 2026-02-28
+
+### Added — Project Context Graph + Event Timeline
+- **Project Graph** (`aksara/ai/project_graph.py`): Structured representation
+  of the application as nodes and relationships.  9 collectors gather data from
+  ModelRegistry, routes, DB tracing, migrations, diagnostics, gap analysis,
+  AI Hub, AI Flows, and graph events.  Heuristic model inference from routes,
+  SQL, and migration names.  Thread-safe 5-second cache with rebuild support.
+- **Graph Events** (`aksara/ai/graph_events.py`): Lightweight in-memory event
+  timeline (bounded deque, max 500).  `emit_graph_event()` records events;
+  hooks in diagnostics, AI flows, runtime, gap analysis, and console engine.
+  10 event kinds for AI correlation.
+- **Graph Context** (`aksara/ai/graph_context.py`): Transforms ProjectGraph
+  into AI-friendly payloads — summary, console (flow-type-aware), debug, and
+  formatted prompt section.
+- **Console Integration**: Graph context automatically injected into AI Console
+  prompts.  Events emitted after each console execution.
+- **API endpoints**: `GET /studio/ai/project-graph` (full or summary),
+  `GET /studio/ai/project-graph/events` (with limit), and
+  `GET /studio/ai/project-graph/summary`.
+- **Graph Explorer UI**: New Studio sidebar page with counts grid, 7 tabbed
+  panels (Models, Routes, Queries, Diagnostics, Migrations, Events,
+  Relationships), Rebuild button, and Use in Console link.
+- **CLI `aksara ai graph`**: Show graph summary, JSON output, events, or
+  force rebuild from the terminal.
+- **Event emission hooks**: Diagnostics, AI flows, runtime, gap analysis,
+  and console engine emit graph events for AI correlation.
+- **193 new tests** across 6 test files covering all new modules, endpoints,
+  UI templates, and CLI commands.
+
+---
+
 ## [0.5.31] — 2026-02-25
 
 ### Added — Interactive AI Console
