@@ -116,6 +116,7 @@ nav:
       - Project Graph: ai-mode/project-graph.md
       - AI Debugger: ai-mode/debugger.md
       - Architecture Review: ai-mode/architecture-review.md
+      - Performance Analyzer: ai-mode/performance-analyzer.md
       - Best Practices: ai-mode/best-practices.md
   - Studio:
       - studio/index.md

@@ -2269,3 +2269,56 @@ class StudioArchitectureReviewResponse(BaseModel):
     suggestion_count: int = Field(default=0)
     elapsed_ms: float = Field(default=0.0)
     generated_at: str = Field(default="")
+
+
+# ─── v0.5.35: AI Performance Analyzer ────────────────────────────────────────
+
+
+class StudioPerformanceMetrics(BaseModel):
+    """Computed performance metrics."""
+
+    total_routes: int = Field(default=0)
+    total_queries: int = Field(default=0)
+    slow_queries: int = Field(default=0)
+    n_plus_one_candidates: int = Field(default=0)
+    missing_indexes: int = Field(default=0)
+    avg_queries_per_route: float = Field(default=0.0)
+    max_queries_route: Optional[str] = Field(default=None)
+
+
+class StudioPerformanceIssue(BaseModel):
+    """A single performance issue."""
+
+    issue_id: str = Field(default="")
+    severity: str = Field(default="medium")
+    title: str = Field(default="")
+    description: str = Field(default="")
+    route: Optional[str] = Field(default=None)
+    model: Optional[str] = Field(default=None)
+    query: Optional[str] = Field(default=None)
+    category: str = Field(default="slow_query")
+
+
+class StudioPerformanceRecommendation(BaseModel):
+    """A performance improvement recommendation."""
+
+    recommendation_id: str = Field(default="")
+    title: str = Field(default="")
+    description: str = Field(default="")
+    impact: str = Field(default="medium")
+    related_issue_ids: List[str] = Field(default_factory=list)
+
+
+class StudioPerformanceAnalysisResponse(BaseModel):
+    """Response from POST /studio/ai/performance-analysis."""
+
+    ok: bool = Field(default=False)
+    score: int = Field(default=0, description="Performance score 0-100")
+    grade: str = Field(default="F", description="Letter grade A-F")
+    issues: List[StudioPerformanceIssue] = Field(default_factory=list)
+    recommendations: List[StudioPerformanceRecommendation] = Field(default_factory=list)
+    metrics: StudioPerformanceMetrics = Field(default_factory=StudioPerformanceMetrics)
+    issue_count: int = Field(default=0)
+    recommendation_count: int = Field(default=0)
+    elapsed_ms: float = Field(default=0.0)
+    generated_at: str = Field(default="")

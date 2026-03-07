@@ -94,6 +94,9 @@ async def run_console_query(
     # ── 2c. Architecture review shortcut (v0.5.34) ─────────────────
     if match.flow_type == "architecture_review":
         return _run_architecture_review_flow(message, match)
+    # ── 2d. Performance analysis shortcut (v0.5.35) ────────────────
+    if match.flow_type == "performance_analysis":
+        return _run_performance_analysis_flow(message, match)
     # ── 3. Build / enrich context ─────────────────────────────────────────
     from aksara.ai.console_context import enrich_context
 
@@ -271,6 +274,39 @@ def _run_architecture_review_flow(message: str, match) -> Dict[str, Any]:
         return _console_error(
             f"Architecture review failed: {exc}",
             "REVIEW_ERROR",
+            intent=match.intent,
+            confidence=match.confidence,
+        )
+
+
+def _run_performance_analysis_flow(message: str, match) -> Dict[str, Any]:
+    """Run the AI Performance Analyzer pipeline for perf-intent queries (v0.5.35)."""
+    try:
+        from aksara.ai.performance_analyzer import run_performance_analysis
+
+        report = run_performance_analysis()
+        _emit_console_event(match, {"ok": report.ok})
+
+        return {
+            "ok": report.ok,
+            "intent": match.intent,
+            "flow_type": "performance_analysis",
+            "action_key": match.action_key,
+            "confidence": match.confidence,
+            "extracted_context": match.extracted_context,
+            "prompt_pack": None,
+            "execution": {
+                "performance_report": report.to_summary_dict(),
+            },
+            "suggestions": ["performance_analysis"],
+            "elapsed_ms": report.elapsed_ms,
+            "error": None if report.ok else "Performance analysis failed",
+            "error_code": None if report.ok else "ANALYSIS_FAILED",
+        }
+    except Exception as exc:
+        return _console_error(
+            f"Performance analysis failed: {exc}",
+            "ANALYSIS_ERROR",
             intent=match.intent,
             confidence=match.confidence,
         )

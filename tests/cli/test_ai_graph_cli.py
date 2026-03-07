@@ -54,7 +54,7 @@ def _make_graph():
     g.metadata.diagnostic_count = 0
     g.metadata.gap_count = 0
     g.metadata.event_count = 2
-    g.metadata.version = "0.5.34"
+    g.metadata.version = "0.5.35"
     g.metadata.generated_at = "2025-01-01T00:00:00Z"
     return g
 
@@ -141,7 +141,7 @@ class TestGraphDefaultInvocation:
         group = _get_cli_group()
         with _patch_graph():
             result = runner.invoke(group, ["graph"])
-        assert "0.5.34" in result.output
+        assert "0.5.35" in result.output
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -121,6 +121,12 @@
                     </svg>
                     <span>Architecture</span>
                 </a>
+                <a href="#/ai-performance" class="nav-item" data-section="ai-performance">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Performance</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -1870,6 +1876,32 @@
 
         <div class="ai-arch-panel" id="ai-arch-panel">
             <div class="ai-arch-empty">Click <strong>Run Review</strong> to start analysis</div>
+        </div>
+    </template>
+
+    <!-- v0.5.35: AI Performance Analyzer Template -->
+    <template id="template-ai-performance">
+        <div class="section-header">
+            <h2>AI Performance Analyzer</h2>
+            <p class="section-subtitle">Automated performance analysis &mdash; detects slow queries, N+1 patterns, missing indexes, and route hotspots</p>
+        </div>
+
+        <div class="ai-perf-toolbar">
+            <button id="ai-perf-run" class="btn btn-sm btn-accent">Run Analysis</button>
+            <span id="ai-perf-status" class="ai-perf-meta-text"></span>
+        </div>
+
+        <div class="ai-perf-score-card" id="ai-perf-score-card" style="display:none;"></div>
+
+        <div class="ai-perf-metrics" id="ai-perf-metrics" style="display:none;"></div>
+
+        <div class="ai-perf-tabs">
+            <button class="ai-perf-tab active" data-perf-tab="issues">Issues</button>
+            <button class="ai-perf-tab" data-perf-tab="recommendations">Recommendations</button>
+        </div>
+
+        <div class="ai-perf-panel" id="ai-perf-panel">
+            <div class="ai-perf-empty">Click <strong>Run Analysis</strong> to start performance analysis</div>
         </div>
     </template>
 

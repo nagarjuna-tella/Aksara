@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.34"
+CLI_VERSION = "0.5.35"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2443,6 +2443,70 @@ def ai_review(as_json, summary_only, show_metrics):
         for i, s in enumerate(report.suggestions[:5], 1):
             click.echo(f"  {i}. {s.title}")
             click.echo(f"     {s.description}")
+
+    click.echo()
+
+
+@ai_flows_group.command("performance")
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+@click.option("--summary", "summary_only", is_flag=True, help="Show summary only")
+@click.option("--issues", "show_issues", is_flag=True, help="Show issues list")
+@click.option("--metrics", "show_metrics", is_flag=True, help="Show computed metrics")
+def ai_performance(as_json, summary_only, show_issues, show_metrics):
+    """Run AI Performance Analyzer (v0.5.35)."""
+    import json as _json
+
+    from aksara.ai.performance_analyzer import run_performance_analysis
+
+    report = run_performance_analysis()
+
+    if as_json:
+        click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
+        return
+
+    grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+    click.echo()
+    click.echo(click.style("  AI Performance Analyzer", bold=True))
+    click.echo("  " + "═" * 40)
+    click.echo(f"  Grade:           {click.style(report.grade, fg=grade_colors.get(report.grade, None))}")
+    click.echo(f"  Score:           {report.score}/100")
+    click.echo(f"  Issues:          {report.issue_count}")
+    click.echo(f"  Recommendations: {report.recommendation_count}")
+    click.echo(f"  Elapsed:         {report.elapsed_ms:.0f}ms")
+
+    if show_metrics:
+        m = report.metrics
+        click.echo("\n  Metrics:")
+        click.echo("  " + "─" * 40)
+        click.echo(f"  Total routes:      {m.total_routes}")
+        click.echo(f"  Total queries:     {m.total_queries}")
+        click.echo(f"  Slow queries:      {m.slow_queries}")
+        click.echo(f"  N+1 candidates:    {m.n_plus_one_candidates}")
+        click.echo(f"  Missing indexes:   {m.missing_indexes}")
+        click.echo(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
+        if m.max_queries_route:
+            click.echo(f"  Max queries route: {m.max_queries_route}")
+
+    if summary_only:
+        click.echo()
+        return
+
+    if show_issues and report.issues:
+        click.echo("\n  Issues:")
+        click.echo("  " + "─" * 40)
+        for i, issue in enumerate(report.issues[:15], 1):
+            sev = issue.severity
+            color = "red" if sev in ("critical", "high") else "yellow" if sev == "medium" else None
+            click.echo(click.style(f"  {i}. [{sev}]", fg=color) +
+                       f" {issue.title}")
+            click.echo(f"     {issue.description}")
+
+    if report.recommendations:
+        click.echo("\n  Recommendations:")
+        click.echo("  " + "─" * 40)
+        for i, r in enumerate(report.recommendations[:5], 1):
+            click.echo(f"  {i}. {r.title}")
+            click.echo(f"     {r.description}")
 
     click.echo()
 

@@ -4,6 +4,37 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.35] — 2026-03-03
+
+### Added — AI Performance Analyzer
+- **AI Performance Analyzer** (`aksara/ai/performance_analyzer.py`): Automated
+  performance analysis engine with a 10-step pipeline — loads the Project
+  Graph, collects query data, detects slow queries (> 200 ms), N+1 patterns,
+  query explosions, missing indexes, heavy joins, and route hotspots, computes
+  metrics and a penalty-based performance score (A–F grading), and generates
+  category-specific improvement recommendations.
+- **Data models**: `PerformanceMetrics`, `PerformanceIssue`,
+  `PerformanceRecommendation`, `PerformanceReport` with full serialisation
+  (`to_dict`, `to_summary_dict`).
+- **Studio API endpoint**: `POST /studio/ai/performance-analysis`.
+  New Pydantic models: `StudioPerformanceMetrics`,
+  `StudioPerformanceIssue`, `StudioPerformanceRecommendation`,
+  `StudioPerformanceAnalysisResponse`.
+- **Studio UI "Performance" panel**: Score card with letter grade, metrics
+  grid, two tabbed views (Issues with severity badges, Recommendations with
+  impact indicators), and colour-coded grading.
+- **Console integration**: 16 new performance analysis intent patterns in the
+  intent router (`analyze performance`, `slow queries`, `n+1`, `missing
+  index`, `why is my app slow`, etc.) with dedicated
+  `_run_performance_analysis_flow` handler in the console engine.
+- **CLI `aksara ai flows performance`**: Text and JSON output, `--json`,
+  `--summary`, `--metrics`, and `--issues` options.
+- **235 new tests** across 5 test files covering the core analyzer module,
+  metrics/scoring computation, Studio API endpoint, Studio UI templates, and
+  CLI command / console integration.
+
+---
+
 ## [0.5.34] — 2026-03-02
 
 ### Added — AI Architecture Review

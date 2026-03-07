@@ -417,6 +417,9 @@ function renderSection(section) {
         case 'ai-architecture':
             renderAiArchitecture();
             break;
+        case 'ai-performance':
+            renderAiPerformance();
+            break;
     }
 
     // v0.5.29: init AI flow dropdowns + row selection hooks after render
@@ -4535,6 +4538,109 @@ function _renderArchSuggestions(panel) {
         html += '<div class="ai-arch-suggestion-header"><span class="ai-arch-impact-badge ai-arch-impact-' + impactClass + '">' + s.impact + ' impact</span></div>';
         html += '<h4>' + s.title + '</h4>';
         html += '<p>' + s.description + '</p>';
+        html += '</div>';
+    });
+    panel.innerHTML = html;
+}
+
+// ─── v0.5.35: AI Performance Analyzer ────────────────────────────────────
+
+let _perfData = null;
+
+function renderAiPerformance() {
+    const runBtn = document.getElementById('ai-perf-run');
+    if (runBtn) {
+        runBtn.addEventListener('click', () => _runPerfAnalysis());
+    }
+    document.querySelectorAll('.ai-perf-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ai-perf-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _renderPerfTab(btn.getAttribute('data-perf-tab'));
+        });
+    });
+}
+
+function _runPerfAnalysis() {
+    const status = document.getElementById('ai-perf-status');
+    const panel = document.getElementById('ai-perf-panel');
+    if (status) status.textContent = 'Analysing…';
+    if (panel) panel.innerHTML = '<div class="ai-perf-loading">Running analysis…</div>';
+
+    fetch('/studio/ai/performance-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+        .then(r => r.json())
+        .then(data => {
+            _perfData = data;
+            if (status) status.textContent = `${data.elapsed_ms || 0}ms`;
+
+            const card = document.getElementById('ai-perf-score-card');
+            if (card) {
+                card.style.display = '';
+                const gradeClass = (data.grade || 'F').toLowerCase();
+                card.innerHTML = '<div class="ai-perf-score-inner">' +
+                    '<div class="ai-perf-grade ai-perf-grade-' + gradeClass + '">' + (data.grade || 'F') + '</div>' +
+                    '<div class="ai-perf-score-num">' + (data.score ?? 0) + '<span class="ai-perf-score-label"> / 100</span></div>' +
+                    '<div class="ai-perf-score-counts">' + (data.issue_count || 0) + ' issues · ' + (data.recommendation_count || 0) + ' recommendations</div>' +
+                    '</div>';
+            }
+
+            const metricsEl = document.getElementById('ai-perf-metrics');
+            if (metricsEl && data.metrics) {
+                metricsEl.style.display = '';
+                const m = data.metrics;
+                metricsEl.innerHTML = '<div class="ai-perf-metrics-grid">' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.total_routes + '</div><div class="ai-perf-metric-label">Routes</div></div>' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.total_queries + '</div><div class="ai-perf-metric-label">Queries</div></div>' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.slow_queries + '</div><div class="ai-perf-metric-label">Slow Queries</div></div>' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.n_plus_one_candidates + '</div><div class="ai-perf-metric-label">N+1 Candidates</div></div>' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.missing_indexes + '</div><div class="ai-perf-metric-label">Missing Indexes</div></div>' +
+                    '<div class="ai-perf-metric"><div class="ai-perf-metric-num">' + m.avg_queries_per_route.toFixed(1) + '</div><div class="ai-perf-metric-label">Avg queries/route</div></div>' +
+                    '</div>';
+            }
+
+            _renderPerfTab('issues');
+        })
+        .catch(err => {
+            if (status) status.textContent = 'Error';
+            if (panel) panel.innerHTML = '<div class="ai-perf-error">' + err.message + '</div>';
+        });
+}
+
+function _renderPerfTab(tab) {
+    const panel = document.getElementById('ai-perf-panel');
+    if (!panel || !_perfData) return;
+    if (tab === 'issues') _renderPerfIssues(panel);
+    else if (tab === 'recommendations') _renderPerfRecommendations(panel);
+}
+
+function _renderPerfIssues(panel) {
+    const issues = _perfData.issues || [];
+    if (!issues.length) { panel.innerHTML = '<div class="ai-perf-empty">No performance issues detected — excellent!</div>'; return; }
+    let html = '';
+    issues.forEach(i => {
+        const sevClass = i.severity || 'medium';
+        html += '<div class="ai-perf-issue-card ai-perf-sev-' + sevClass + '">';
+        html += '<div class="ai-perf-issue-header"><span class="ai-perf-sev-badge">' + i.severity + '</span>';
+        html += '<span class="ai-perf-issue-cat">' + i.category + '</span></div>';
+        html += '<h4>' + i.title + '</h4>';
+        html += '<p>' + i.description + '</p>';
+        if (i.route) html += '<div class="ai-perf-related">Route: ' + i.route + '</div>';
+        if (i.model) html += '<div class="ai-perf-related">Model: ' + i.model + '</div>';
+        html += '</div>';
+    });
+    panel.innerHTML = html;
+}
+
+function _renderPerfRecommendations(panel) {
+    const recs = _perfData.recommendations || [];
+    if (!recs.length) { panel.innerHTML = '<div class="ai-perf-empty">No recommendations — great performance!</div>'; return; }
+    let html = '';
+    recs.forEach(r => {
+        const impactClass = r.impact || 'medium';
+        html += '<div class="ai-perf-rec-card">';
+        html += '<div class="ai-perf-rec-header"><span class="ai-perf-impact-badge ai-perf-impact-' + impactClass + '">' + r.impact + ' impact</span></div>';
+        html += '<h4>' + r.title + '</h4>';
+        html += '<p>' + r.description + '</p>';
         html += '</div>';
     });
     panel.innerHTML = html;

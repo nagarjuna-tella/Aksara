@@ -39,7 +39,7 @@ def _make_graph() -> ProjectGraph:
     g.flows = [AiFlowNode(action_key="explain_model", title="Explain", flow_type="model", risk="low")]
     g.metadata.model_count = 1
     g.metadata.route_count = 1
-    g.metadata.version = "0.5.34"
+    g.metadata.version = "0.5.35"
     g.metadata.generated_at = "2025-01-01T00:00:00Z"
     return g
 

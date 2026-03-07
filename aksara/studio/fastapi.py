@@ -1883,6 +1883,27 @@ async def studio_ai_architecture_review(request: Request):
 
 
 # =============================================================================
+# v0.5.35: AI Performance Analyzer Endpoint
+# =============================================================================
+
+
+@router.post("/studio/ai/performance-analysis")
+async def studio_ai_performance_analysis(request: Request):
+    """
+    AI Performance Analyzer endpoint (v0.5.35).
+
+    Runs the automated performance analysis pipeline: loads the Project
+    Context Graph, collects query data, detects slow queries / N+1 /
+    missing indexes / query explosions / heavy joins / route hotspots,
+    scores the performance, and recommends improvements.
+    """
+    from aksara.ai.performance_analyzer import run_performance_analysis
+
+    report = run_performance_analysis(app=request.app)
+    return report.to_dict()
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 
