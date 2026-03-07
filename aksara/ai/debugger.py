@@ -1,5 +1,5 @@
 """
-Aksara AI Debugger  (v0.5.33)
+Aksara AI Debugger  (v0.5.36)
 
 Automated root-cause analysis pipeline that reads the Project Context
 Graph, diagnostics, gap analysis, and event timeline to identify,

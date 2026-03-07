@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.35"
+CLI_VERSION = "0.5.36"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2453,7 +2453,21 @@ def ai_review(as_json, summary_only, show_metrics):
 @click.option("--issues", "show_issues", is_flag=True, help="Show issues list")
 @click.option("--metrics", "show_metrics", is_flag=True, help="Show computed metrics")
 def ai_performance(as_json, summary_only, show_issues, show_metrics):
-    """Run AI Performance Analyzer (v0.5.35)."""
+    """Run the AI Performance Analyzer.
+
+    Analyses the Project Context Graph, query inspector data, and diagnostics
+    to detect slow queries, N+1 patterns, missing indexes, and route hotspots.
+
+    Examples:
+
+        aksara ai flows performance
+
+        aksara ai flows performance --json
+
+        aksara ai flows performance --summary
+
+        aksara ai flows performance --metrics
+    """
     import json as _json
 
     from aksara.ai.performance_analyzer import run_performance_analysis

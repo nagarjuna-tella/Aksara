@@ -11,8 +11,8 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-2500%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.28-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/tests-5300%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/version-0.5.36-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -73,6 +73,22 @@
   <tr>
     <td>⚡</td>
     <td><strong>Studio AI Flows</strong> (v0.5.29) – in-context AI actions for Models, Routes, Queries, Migrations, and Diagnostics panels; deterministic prompt packs with risk badges, copy buttons, and CLI parity (<code>aksara ai flows</code>)</td>
+  </tr>
+  <tr>
+    <td>🗺️</td>
+    <td><strong>AI Console & Project Graph</strong> (v0.5.31–0.5.32) – natural-language console with intent routing across 8 flow types; full project graph mapping models, routes, queries, migrations, diagnostics, gaps, and events</td>
+  </tr>
+  <tr>
+    <td>🐛</td>
+    <td><strong>AI Debugger</strong> (v0.5.33) – automated root-cause analysis: issue clustering, 6 heuristic patterns, confidence-ranked causes, and safe fix suggestions; Studio panel, CLI <code>aksara ai flows debug</code></td>
+  </tr>
+  <tr>
+    <td>🏗️</td>
+    <td><strong>AI Architecture Review</strong> (v0.5.34) – automated health scoring (A–F), coupling/schema/API/migration/performance findings with categorised suggestions; Studio panel, CLI <code>aksara ai flows review</code></td>
+  </tr>
+  <tr>
+    <td>📊</td>
+    <td><strong>AI Performance Analyzer</strong> (v0.5.35) – detects slow queries, N+1 patterns, query explosions, missing indexes, heavy joins, and route hotspots; penalty-based scoring with recommendations; Studio panel, CLI <code>aksara ai flows performance</code></td>
   </tr>
 </table>
 
@@ -175,7 +191,7 @@ class PostViewSet(ModelViewSet):
 
 ## Status & Roadmap
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.28**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.36**.
 
 See the [Roadmap](docs/docs/roadmap.md) for what's coming.
 

@@ -4471,9 +4471,9 @@ function _runArchReview() {
             const card = document.getElementById('ai-arch-score-card');
             if (card) {
                 card.style.display = '';
-                const gradeClass = (data.grade || 'F').toLowerCase();
+                const gradeClass = _esc((data.grade || 'F').toLowerCase());
                 card.innerHTML = '<div class="ai-arch-score-inner">' +
-                    '<div class="ai-arch-grade ai-arch-grade-' + gradeClass + '">' + (data.grade || 'F') + '</div>' +
+                    '<div class="ai-arch-grade ai-arch-grade-' + gradeClass + '">' + _esc(data.grade || 'F') + '</div>' +
                     '<div class="ai-arch-score-num">' + (data.score ?? 0) + '<span class="ai-arch-score-label"> / 100</span></div>' +
                     '<div class="ai-arch-score-counts">' + (data.finding_count || 0) + ' findings · ' + (data.suggestion_count || 0) + ' suggestions</div>' +
                     '</div>';
@@ -4498,7 +4498,7 @@ function _runArchReview() {
         })
         .catch(err => {
             if (status) status.textContent = 'Error';
-            if (panel) panel.innerHTML = '<div class="ai-arch-error">' + err.message + '</div>';
+            if (panel) panel.innerHTML = '<div class="ai-arch-error">' + _esc(err.message) + '</div>';
         });
 }
 
@@ -4514,14 +4514,14 @@ function _renderArchFindings(panel) {
     if (!findings.length) { panel.innerHTML = '<div class="ai-arch-empty">No findings detected — architecture looks healthy!</div>'; return; }
     let html = '';
     findings.forEach(f => {
-        const sevClass = f.severity || 'info';
+        const sevClass = _esc(f.severity || 'info');
         html += '<div class="ai-arch-finding-card ai-arch-sev-' + sevClass + '">';
-        html += '<div class="ai-arch-finding-header"><span class="ai-arch-sev-badge">' + f.severity + '</span>';
-        html += '<span class="ai-arch-finding-cat">' + (f.category || '').replace('_', ' ') + '</span></div>';
-        html += '<h4>' + f.title + '</h4>';
-        html += '<p>' + f.description + '</p>';
+        html += '<div class="ai-arch-finding-header"><span class="ai-arch-sev-badge">' + _esc(f.severity) + '</span>';
+        html += '<span class="ai-arch-finding-cat">' + _esc((f.category || '').replace('_', ' ')) + '</span></div>';
+        html += '<h4>' + _esc(f.title) + '</h4>';
+        html += '<p>' + _esc(f.description) + '</p>';
         if (f.related_nodes && f.related_nodes.length) {
-            html += '<div class="ai-arch-related">Related: ' + f.related_nodes.join(', ') + '</div>';
+            html += '<div class="ai-arch-related">Related: ' + _esc(f.related_nodes.join(', ')) + '</div>';
         }
         html += '</div>';
     });
@@ -4533,11 +4533,11 @@ function _renderArchSuggestions(panel) {
     if (!suggestions.length) { panel.innerHTML = '<div class="ai-arch-empty">No suggestions — great work!</div>'; return; }
     let html = '';
     suggestions.forEach(s => {
-        const impactClass = s.impact || 'medium';
+        const impactClass = _esc(s.impact || 'medium');
         html += '<div class="ai-arch-suggestion-card">';
-        html += '<div class="ai-arch-suggestion-header"><span class="ai-arch-impact-badge ai-arch-impact-' + impactClass + '">' + s.impact + ' impact</span></div>';
-        html += '<h4>' + s.title + '</h4>';
-        html += '<p>' + s.description + '</p>';
+        html += '<div class="ai-arch-suggestion-header"><span class="ai-arch-impact-badge ai-arch-impact-' + impactClass + '">' + _esc(s.impact) + ' impact</span></div>';
+        html += '<h4>' + _esc(s.title) + '</h4>';
+        html += '<p>' + _esc(s.description) + '</p>';
         html += '</div>';
     });
     panel.innerHTML = html;
@@ -4576,9 +4576,9 @@ function _runPerfAnalysis() {
             const card = document.getElementById('ai-perf-score-card');
             if (card) {
                 card.style.display = '';
-                const gradeClass = (data.grade || 'F').toLowerCase();
+                const gradeClass = _esc((data.grade || 'F').toLowerCase());
                 card.innerHTML = '<div class="ai-perf-score-inner">' +
-                    '<div class="ai-perf-grade ai-perf-grade-' + gradeClass + '">' + (data.grade || 'F') + '</div>' +
+                    '<div class="ai-perf-grade ai-perf-grade-' + gradeClass + '">' + _esc(data.grade || 'F') + '</div>' +
                     '<div class="ai-perf-score-num">' + (data.score ?? 0) + '<span class="ai-perf-score-label"> / 100</span></div>' +
                     '<div class="ai-perf-score-counts">' + (data.issue_count || 0) + ' issues · ' + (data.recommendation_count || 0) + ' recommendations</div>' +
                     '</div>';
@@ -4602,7 +4602,7 @@ function _runPerfAnalysis() {
         })
         .catch(err => {
             if (status) status.textContent = 'Error';
-            if (panel) panel.innerHTML = '<div class="ai-perf-error">' + err.message + '</div>';
+            if (panel) panel.innerHTML = '<div class="ai-perf-error">' + _esc(err.message) + '</div>';
         });
 }
 
@@ -4618,14 +4618,14 @@ function _renderPerfIssues(panel) {
     if (!issues.length) { panel.innerHTML = '<div class="ai-perf-empty">No performance issues detected — excellent!</div>'; return; }
     let html = '';
     issues.forEach(i => {
-        const sevClass = i.severity || 'medium';
+        const sevClass = _esc(i.severity || 'medium');
         html += '<div class="ai-perf-issue-card ai-perf-sev-' + sevClass + '">';
-        html += '<div class="ai-perf-issue-header"><span class="ai-perf-sev-badge">' + i.severity + '</span>';
-        html += '<span class="ai-perf-issue-cat">' + i.category + '</span></div>';
-        html += '<h4>' + i.title + '</h4>';
-        html += '<p>' + i.description + '</p>';
-        if (i.route) html += '<div class="ai-perf-related">Route: ' + i.route + '</div>';
-        if (i.model) html += '<div class="ai-perf-related">Model: ' + i.model + '</div>';
+        html += '<div class="ai-perf-issue-header"><span class="ai-perf-sev-badge">' + _esc(i.severity) + '</span>';
+        html += '<span class="ai-perf-issue-cat">' + _esc(i.category) + '</span></div>';
+        html += '<h4>' + _esc(i.title) + '</h4>';
+        html += '<p>' + _esc(i.description) + '</p>';
+        if (i.route) html += '<div class="ai-perf-related">Route: ' + _esc(i.route) + '</div>';
+        if (i.model) html += '<div class="ai-perf-related">Model: ' + _esc(i.model) + '</div>';
         html += '</div>';
     });
     panel.innerHTML = html;
@@ -4636,11 +4636,11 @@ function _renderPerfRecommendations(panel) {
     if (!recs.length) { panel.innerHTML = '<div class="ai-perf-empty">No recommendations — great performance!</div>'; return; }
     let html = '';
     recs.forEach(r => {
-        const impactClass = r.impact || 'medium';
+        const impactClass = _esc(r.impact || 'medium');
         html += '<div class="ai-perf-rec-card">';
-        html += '<div class="ai-perf-rec-header"><span class="ai-perf-impact-badge ai-perf-impact-' + impactClass + '">' + r.impact + ' impact</span></div>';
-        html += '<h4>' + r.title + '</h4>';
-        html += '<p>' + r.description + '</p>';
+        html += '<div class="ai-perf-rec-header"><span class="ai-perf-impact-badge ai-perf-impact-' + impactClass + '">' + _esc(r.impact) + ' impact</span></div>';
+        html += '<h4>' + _esc(r.title) + '</h4>';
+        html += '<p>' + _esc(r.description) + '</p>';
         html += '</div>';
     });
     panel.innerHTML = html;

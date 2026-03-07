@@ -1,5 +1,5 @@
 """
-Aksara AI Console Engine  (v0.5.31)
+Aksara AI Console Engine  (v0.5.36)
 
 Orchestrates the Interactive AI Console pipeline:
 
@@ -232,7 +232,7 @@ def _run_debug_flow(message: str, match) -> Dict[str, Any]:
             "execution": {
                 "debug_report": report.to_summary_dict(),
             },
-            "suggestions": ["debug_analyze"],
+            "suggestions": ["architecture_review", "performance_analyze"],
             "elapsed_ms": report.elapsed_ms,
             "error": None if report.ok else report.summary,
             "error_code": None if report.ok else "DEBUG_FAILED",
@@ -265,7 +265,7 @@ def _run_architecture_review_flow(message: str, match) -> Dict[str, Any]:
             "execution": {
                 "architecture_report": report.to_summary_dict(),
             },
-            "suggestions": ["architecture_review"],
+            "suggestions": ["debug_analyze", "performance_analyze"],
             "elapsed_ms": report.elapsed_ms,
             "error": None if report.ok else "Architecture review failed",
             "error_code": None if report.ok else "REVIEW_FAILED",
@@ -298,7 +298,7 @@ def _run_performance_analysis_flow(message: str, match) -> Dict[str, Any]:
             "execution": {
                 "performance_report": report.to_summary_dict(),
             },
-            "suggestions": ["performance_analysis"],
+            "suggestions": ["debug_analyze", "architecture_review"],
             "elapsed_ms": report.elapsed_ms,
             "error": None if report.ok else "Performance analysis failed",
             "error_code": None if report.ok else "ANALYSIS_FAILED",

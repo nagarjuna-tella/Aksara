@@ -290,7 +290,7 @@ class TestVersionConsistency:
         """aksara.__version__ should match current version."""
         import aksara
         
-        assert aksara.__version__ == "0.5.35"
+        assert aksara.__version__ == "0.5.36"
     
     def test_cli_version_matches(self):
         """CLI --version should match aksara.__version__."""

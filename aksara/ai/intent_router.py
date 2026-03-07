@@ -1,5 +1,5 @@
 """
-Aksara AI Intent Router  (v0.5.31)
+Aksara AI Intent Router  (v0.5.36)
 
 Rule-based intent detection for the Interactive AI Console.
 Maps natural-language commands to AI Flow actions without calling an LLM.
@@ -14,6 +14,9 @@ Supported intents (one per AI_FLOW_ACTIONS entry):
     query   — explain_plan, suggest_indexes, rewrite_suggestions
     migration — explain_migration, safe_rollout_plan
     diagnostic — diagnostic_prioritize
+    debug   — debug_analyze
+    architecture_review — architecture_review
+    performance_analysis — performance_analyze
 """
 
 from __future__ import annotations
@@ -182,6 +185,15 @@ _ISSUE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Common English words that look like model names
+_SKIP_MODEL_WORDS = {
+    "The", "This", "That", "What", "How", "Can", "Could",
+    "Should", "Would", "My", "Your", "Our", "All", "Any",
+    "Some", "Each", "Every", "About", "For", "With",
+    "Explain", "Describe", "Tell", "Review", "Check",
+    "Suggest", "Refactor", "Improve", "Generate", "Harden",
+}
+
 
 def _extract_context(message: str, flow_type: str) -> Dict[str, Any]:
     """Pull structured fields out of the user message."""
@@ -193,15 +205,7 @@ def _extract_context(message: str, flow_type: str) -> Dict[str, Any]:
             m = _MODEL_NAME_RE.search(message)
             if m:
                 name = m.group(1)
-                # Skip common English words that look like model names
-                _skip = {
-                    "The", "This", "That", "What", "How", "Can", "Could",
-                    "Should", "Would", "My", "Your", "Our", "All", "Any",
-                    "Some", "Each", "Every", "About", "For", "With",
-                    "Explain", "Describe", "Tell", "Review", "Check",
-                    "Suggest", "Refactor", "Improve", "Generate", "Harden",
-                }
-                if name not in _skip:
+                if name not in _SKIP_MODEL_WORDS:
                     ctx["model_name"] = name
 
     elif flow_type == "route":
@@ -225,6 +229,32 @@ def _extract_context(message: str, flow_type: str) -> Dict[str, Any]:
         m = _ISSUE_RE.search(message)
         if m:
             ctx["issue_id"] = m.group(1)
+
+    elif flow_type == "debug":
+        # Extract route context if present for debug queries
+        m = _ROUTE_RE.search(message)
+        if m:
+            ctx["method"] = m.group(1).upper()
+            ctx["path"] = m.group(2)
+        # Extract model name if present
+        else:
+            m = _MODEL_NAME_RE.search(message)
+            if m and m.group(1) not in _SKIP_MODEL_WORDS:
+                ctx["model_name"] = m.group(1)
+
+    elif flow_type == "architecture_review":
+        # Optionally extract a focus target
+        m = _ROUTE_RE.search(message)
+        if m:
+            ctx["method"] = m.group(1).upper()
+            ctx["path"] = m.group(2)
+
+    elif flow_type == "performance_analysis":
+        # Extract route context for performance queries
+        m = _ROUTE_RE.search(message)
+        if m:
+            ctx["method"] = m.group(1).upper()
+            ctx["path"] = m.group(2)
 
     return ctx
 

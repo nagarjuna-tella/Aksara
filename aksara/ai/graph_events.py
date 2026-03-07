@@ -1,5 +1,5 @@
 """
-Aksara AI Graph Events  (v0.5.32)
+Aksara AI Graph Events  (v0.5.36)
 
 Lightweight in-memory event timeline for AI reasoning.
 
@@ -61,6 +61,22 @@ _lock = threading.Lock()
 GRAPH_EVENTS: deque[GraphEvent] = deque(maxlen=_MAX_EVENTS)
 
 
+# ─── Known Event Kinds ───────────────────────────────────────────────────────
+
+EVENT_KINDS: frozenset[str] = frozenset({
+    "route_error",
+    "query_timeout",
+    "slow_query_detected",
+    "migration_applied",
+    "migration_failed",
+    "provider_unreachable",
+    "diagnostic_issue_detected",
+    "gap_report_changed",
+    "console_execution_failed",
+    "ai_flow_executed",
+})
+
+
 # ─── Public API ──────────────────────────────────────────────────────────────
 
 
@@ -104,6 +120,8 @@ def emit_graph_event(
         message=message,
         payload=dict(payload),
     )
+    if kind not in EVENT_KINDS:
+        logger.warning("Unknown event kind %r — consider adding it to EVENT_KINDS", kind)
     with _lock:
         GRAPH_EVENTS.append(event)
     logger.debug("graph_event: %s %s/%s", kind, source_type, source_id)
@@ -137,19 +155,3 @@ def event_count() -> int:
     """Return the current number of stored events."""
     with _lock:
         return len(GRAPH_EVENTS)
-
-
-# ─── Known Event Kinds ───────────────────────────────────────────────────────
-
-EVENT_KINDS: frozenset[str] = frozenset({
-    "route_error",
-    "query_timeout",
-    "slow_query_detected",
-    "migration_applied",
-    "migration_failed",
-    "provider_unreachable",
-    "diagnostic_issue_detected",
-    "gap_report_changed",
-    "console_execution_failed",
-    "ai_flow_executed",
-})

@@ -452,3 +452,155 @@ class TestExampleCommands:
         for cmd in EXAMPLE_COMMANDS:
             assert isinstance(cmd, str)
             assert len(cmd) > 3
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v0.5.36 — Intent Conflict Resolution Matrix
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestConflictResolution:
+    """Ensure overlapping phrases route to the MOST SPECIFIC intent."""
+
+    # ── Query-specific phrases must NOT be stolen by performance ──────────
+
+    def test_query_performance_analysis_routes_to_query(self):
+        """'query performance analysis' should match query/explain_plan."""
+        m = detect_intent("query performance analysis")
+        assert m.action_key == "explain_plan"
+
+    def test_analyse_query_performance_routes_to_query(self):
+        m = detect_intent("analyse query performance")
+        assert m.action_key == "explain_plan"
+
+    def test_missing_index_routes_to_query(self):
+        """'find missing indexes' should go to query/suggest_indexes."""
+        m = detect_intent("find missing indexes")
+        assert m.action_key == "suggest_indexes"
+
+    def test_missing_index_on_email(self):
+        """'missing index on users.email' → suggest_indexes."""
+        m = detect_intent("missing index on users.email")
+        assert m.action_key == "suggest_indexes"
+
+    def test_optimize_query_routes_to_rewrite(self):
+        m = detect_intent("optimize query for users")
+        assert m.action_key == "rewrite_suggestions"
+
+    def test_n_plus_one_routes_to_rewrite(self):
+        """Direct N+1 reference → query/rewrite_suggestions."""
+        m = detect_intent("detect N+1 issues")
+        assert m.action_key == "rewrite_suggestions"
+
+    # ── Performance-specific phrases must route correctly ─────────────────
+
+    def test_performance_analysis_routes_to_perf(self):
+        m = detect_intent("performance analysis")
+        assert m.flow_type == "performance_analysis"
+
+    def test_analyze_performance_routes_to_perf(self):
+        m = detect_intent("analyze performance")
+        assert m.flow_type == "performance_analysis"
+
+    def test_why_is_app_slow(self):
+        m = detect_intent("why is my app slow")
+        assert m.flow_type == "performance_analysis"
+
+    def test_slow_endpoint(self):
+        m = detect_intent("slow endpoint /api/orders")
+        assert m.flow_type == "performance_analysis"
+
+    def test_query_explosion(self):
+        m = detect_intent("query explosion on /api/orders")
+        assert m.flow_type == "performance_analysis"
+
+    # ── Architecture phrases must NOT go to debug or performance ──────────
+
+    def test_review_architecture_routes_to_arch(self):
+        m = detect_intent("review my architecture")
+        assert m.flow_type == "architecture_review"
+
+    def test_architecture_review_not_debugger(self):
+        m = detect_intent("architecture review")
+        assert m.flow_type == "architecture_review"
+        assert m.flow_type != "debug"
+
+    def test_health_check_routes_to_arch(self):
+        m = detect_intent("how healthy is my project")
+        assert m.flow_type == "architecture_review"
+
+    def test_anti_pattern_routes_to_arch(self):
+        m = detect_intent("find anti-patterns")
+        assert m.flow_type == "architecture_review"
+
+    # ── Debug phrases must NOT be intercepted by other flows ──────────────
+
+    def test_why_is_failing_routes_to_debug(self):
+        m = detect_intent("why is /api/users failing")
+        assert m.flow_type == "debug"
+
+    def test_root_cause_routes_to_debug(self):
+        m = detect_intent("find root cause")
+        assert m.flow_type == "debug"
+
+    def test_troubleshoot_routes_to_debug(self):
+        m = detect_intent("troubleshoot the errors")
+        assert m.flow_type == "debug"
+
+    # ── Model phrases must remain with model intents ─────────────────────
+
+    def test_explain_user_model_stays_model(self):
+        m = detect_intent("explain User model")
+        assert m.flow_type == "model"
+        assert m.action_key == "explain_model"
+
+    def test_refactor_model_stays_model(self):
+        m = detect_intent("refactor Order model")
+        assert m.flow_type == "model"
+        assert m.action_key == "refactor_suggestions"
+
+    # ── Confidence ordering: specific > generic ──────────────────────────
+
+    def test_specific_higher_than_generic_explain(self):
+        """'explain the User model' should have higher confidence than bare 'explain'."""
+        specific = detect_intent("explain the User model")
+        generic = detect_intent("explain")
+        assert specific.confidence > generic.confidence
+
+    def test_perf_higher_than_generic_review(self):
+        specific = detect_intent("performance analysis")
+        generic = detect_intent("review")
+        assert specific.confidence > generic.confidence
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v0.5.36 — Context Extraction for Debug/Arch/Perf flows
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestNewFlowContextExtraction:
+
+    def test_debug_extracts_route(self):
+        m = detect_intent("debug GET /api/users errors")
+        assert m.flow_type == "debug"
+        ctx = m.extracted_context
+        assert ctx.get("method") == "GET"
+        assert ctx.get("path") == "/api/users"
+
+    def test_debug_extracts_model(self):
+        m = detect_intent("debug Order model issues")
+        assert m.flow_type == "debug"
+        ctx = m.extracted_context
+        assert ctx.get("model_name") == "Order"
+
+    def test_arch_extracts_route(self):
+        m = detect_intent("review architecture of GET /api/orders")
+        ctx = m.extracted_context
+        assert ctx.get("method") == "GET"
+        assert ctx.get("path") == "/api/orders"
+
+    def test_perf_extracts_route(self):
+        m = detect_intent("why is GET /api/users slow")
+        ctx = m.extracted_context
+        assert ctx.get("method") == "GET"
+        assert ctx.get("path") == "/api/users"

@@ -1,5 +1,5 @@
 """
-Aksara AI Performance Analyzer  (v0.5.35)
+Aksara AI Performance Analyzer  (v0.5.36)
 
 Automated performance analysis pipeline that reads the Project Context
 Graph, query inspector data, diagnostics, and event timeline to detect

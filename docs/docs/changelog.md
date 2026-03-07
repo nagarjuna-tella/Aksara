@@ -4,6 +4,45 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.36] — 2026-03-04
+
+### Fixed — AI Sanity Sweep & Integration Hardening
+
+- **Intent Router**: Expanded `_extract_context()` to extract route/model
+  context for `debug`, `architecture_review`, and `performance_analysis` flow
+  types. Hoisted `_SKIP_MODEL_WORDS` to module level for reuse across
+  branches. Updated module docstring to v0.5.36 with expanded intent listing.
+- **Studio XSS Fixes**: Wrapped all dynamic content in architecture review
+  and performance analyzer render functions (`_renderArchFindings`,
+  `_renderArchSuggestions`, `_renderPerfIssues`, `_renderPerfRecommendations`)
+  with `_esc()` to prevent cross-site scripting. Escaped error handler
+  messages and grade values in score cards.
+- **Studio CSS**: Fixed version header from `v0.6.0` to `v0.5.36`.
+- **Console Engine**: Fixed self-referential suggestions — each analyzer flow
+  now suggests the other two analyzers instead of itself.
+- **Graph Events**: Added validation warning for unknown event kinds in
+  `emit_graph_event()`. Moved `EVENT_KINDS` frozenset above emitter function.
+- **CLI**: Expanded performance command help text with full docstring and
+  examples matching the review/debug pattern.
+- **Version Alignment**: Updated module docstrings in `debugger.py`,
+  `architecture_review.py`, `performance_analyzer.py`, `console_engine.py`,
+  and `graph_events.py` to v0.5.36.
+
+### Added — Tests
+- **94 new tests** across 3 test files:
+    - `tests/ai/test_intent_router.py`: 34 new tests in `TestConflictResolution`
+      (25 tests) and `TestNewFlowContextExtraction` (9 tests) covering
+      cross-flow routing precision and context extraction.
+    - `tests/studio/test_studio_sanity_sweep.py`: 25 new tests in
+      `TestV036AiPanelEscaping` (11), `TestV036AiPanelStates` (10), and
+      `TestV036CssVersionHeader` (4) covering XSS prevention and UI states.
+    - `tests/integration/test_ai_stack_smoke.py`: 35 new integration tests
+      verifying all three analyzers run coherently on the same realistic
+      project graph, console dispatch, CLI JSON purity, intent routing
+      reachability, and graph event validation.
+
+---
+
 ## [0.5.35] — 2026-03-03
 
 ### Added — AI Performance Analyzer

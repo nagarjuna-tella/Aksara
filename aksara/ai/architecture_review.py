@@ -1,5 +1,5 @@
 """
-Aksara AI Architecture Review  (v0.5.34)
+Aksara AI Architecture Review  (v0.5.36)
 
 Automated architectural analysis pipeline that reads the Project Context
 Graph to identify anti-patterns, coupling risks, schema design issues,

@@ -156,7 +156,7 @@ def _make_graph(models=None, routes=None, queries=None, migrations=None,
     g.flows = []
     g.ai_hub = None
     g.metadata = MagicMock()
-    g.metadata.version = "0.5.35"
+    g.metadata.version = "0.5.36"
     g.metadata.model_count = len(g.models)
     g.metadata.route_count = len(g.routes)
     return g

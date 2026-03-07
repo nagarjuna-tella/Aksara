@@ -1317,3 +1317,154 @@ class TestResolveDefaultsEdgeCases:
         hub.resolve_defaults()
         assert hub.defaults.chat_model == "default"
         assert hub.defaults.embeddings_model is None  # custom has "" for embeddings
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v0.5.36 — AI Panel Consistency Sweep
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestV036AiPanelEscaping:
+    """Ensure Architecture Review and Performance panels use _esc() for XSS prevention."""
+
+    @pytest.fixture
+    def js_src(self):
+        return (STATIC_DIR / "app.js").read_text()
+
+    def test_arch_findings_uses_esc(self, js_src):
+        """_renderArchFindings must escape severity, title, description."""
+        fn = _extract_js_function(js_src, "_renderArchFindings")
+        assert "_esc(f.title)" in fn
+        assert "_esc(f.description)" in fn
+        assert "_esc(f.severity)" in fn
+
+    def test_arch_suggestions_uses_esc(self, js_src):
+        fn = _extract_js_function(js_src, "_renderArchSuggestions")
+        assert "_esc(s.title)" in fn
+        assert "_esc(s.description)" in fn
+
+    def test_perf_issues_uses_esc(self, js_src):
+        fn = _extract_js_function(js_src, "_renderPerfIssues")
+        assert "_esc(i.title)" in fn
+        assert "_esc(i.description)" in fn
+        assert "_esc(i.severity)" in fn
+
+    def test_perf_recommendations_uses_esc(self, js_src):
+        fn = _extract_js_function(js_src, "_renderPerfRecommendations")
+        assert "_esc(r.title)" in fn
+        assert "_esc(r.description)" in fn
+
+    def test_arch_error_handler_uses_esc(self, js_src):
+        """Architecture fetch .catch must escape err.message."""
+        idx = js_src.find("ai-arch-error")
+        assert idx > 0
+        snippet = js_src[max(0, idx - 100): idx + 200]
+        assert "_esc(err.message)" in snippet
+
+    def test_perf_error_handler_uses_esc(self, js_src):
+        idx = js_src.find("ai-perf-error")
+        assert idx > 0
+        snippet = js_src[max(0, idx - 100): idx + 200]
+        assert "_esc(err.message)" in snippet
+
+    def test_arch_grade_escaping(self, js_src):
+        """Architecture score card should escape grade value."""
+        run_fn = _extract_js_function(js_src, "_runArchReview")
+        assert "_esc(" in run_fn
+
+    def test_perf_grade_escaping(self, js_src):
+        run_fn = _extract_js_function(js_src, "_runPerfAnalysis")
+        assert "_esc(" in run_fn
+
+    def test_no_alert_calls(self, js_src):
+        """No raw alert() calls should exist."""
+        import re
+        matches = re.findall(r"\balert\s*\(", js_src)
+        assert len(matches) == 0
+
+    def test_debugger_uses_esc(self, js_src):
+        """Debugger panel must use _esc for error messages."""
+        fn = _extract_js_function(js_src, "_runDebugger")
+        assert "_esc(" in fn
+
+
+class TestV036AiPanelStates:
+    """All AI panels must have loading/empty/error state markup."""
+
+    @pytest.fixture
+    def html_src(self):
+        return (STATIC_DIR / "index.html").read_text()
+
+    @pytest.fixture
+    def js_src(self):
+        return (STATIC_DIR / "app.js").read_text()
+
+    def test_debugger_loading_state(self, js_src):
+        assert "ai-debugger-loading" in js_src
+
+    def test_debugger_error_state(self, js_src):
+        assert "ai-debugger-error" in js_src
+
+    def test_arch_loading_state(self, js_src):
+        assert "ai-arch-loading" in js_src
+
+    def test_arch_error_state(self, js_src):
+        assert "ai-arch-error" in js_src
+
+    def test_arch_empty_state(self, js_src):
+        assert "ai-arch-empty" in js_src
+
+    def test_perf_loading_state(self, js_src):
+        assert "ai-perf-loading" in js_src
+
+    def test_perf_error_state(self, js_src):
+        assert "ai-perf-error" in js_src
+
+    def test_perf_empty_state(self, js_src):
+        assert "ai-perf-empty" in js_src
+
+    def test_all_ai_panels_in_nav(self, html_src):
+        """All AI panels should have nav links."""
+        for panel in ["ai-console", "ai-graph", "ai-debugger", "ai-architecture", "ai-performance"]:
+            assert panel in html_src, f"Missing nav item for {panel}"
+
+
+class TestV036CssVersionHeader:
+    """CSS version should match release."""
+
+    def test_css_version_is_current(self):
+        css = (STATIC_DIR / "styles.css").read_text()
+        assert "v0.5.36" in css[:200]
+
+    def test_css_has_arch_styles(self):
+        css = (STATIC_DIR / "styles.css").read_text()
+        assert ".ai-arch-finding-card" in css
+        assert ".ai-arch-sev-critical" in css
+
+    def test_css_has_perf_styles(self):
+        css = (STATIC_DIR / "styles.css").read_text()
+        assert ".ai-perf-issue-card" in css
+        assert ".ai-perf-sev-high" in css
+
+    def test_css_has_debugger_styles(self):
+        css = (STATIC_DIR / "styles.css").read_text()
+        assert ".ai-debugger-" in css
+
+
+def _extract_js_function(source: str, name: str) -> str:
+    """Extract a JS function body by name (simple brace-matching)."""
+    prefix = f"function {name}("
+    start = source.find(prefix)
+    if start < 0:
+        return ""
+    brace = source.index("{", start)
+    depth, i = 0, brace
+    while i < len(source):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start:i + 1]
+        i += 1
+    return source[start:]
