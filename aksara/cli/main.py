@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.36"
+CLI_VERSION = "0.5.37"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2521,6 +2521,116 @@ def ai_performance(as_json, summary_only, show_issues, show_metrics):
         for i, r in enumerate(report.recommendations[:5], 1):
             click.echo(f"  {i}. {r.title}")
             click.echo(f"     {r.description}")
+
+    click.echo()
+
+
+# ─── v0.5.37: aksara ai investigate ─────────────────────────────────────────
+
+
+@ai.command("investigate")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output full report as JSON")
+@click.option("--summary", "summary_only", is_flag=True, default=False, help="Compact summary only")
+def ai_investigate(as_json, summary_only):
+    """Run the full AI Investigation pipeline.
+
+    Executes all analysis steps and produces a System Intelligence Report:
+
+    - build_project_graph
+    - run_architecture_review
+    - run_performance_analysis
+    - run_debugger
+    - run_diagnostics
+
+    Examples:
+
+        aksara ai investigate
+
+        aksara ai investigate --json
+
+        aksara ai investigate --summary
+    """
+    import json as _json
+    from aksara.ai.intent_engine import run_investigation
+
+    result = run_investigation()
+
+    if as_json:
+        if summary_only:
+            click.echo(_json.dumps(result.to_summary_dict(), indent=2, default=str))
+        else:
+            click.echo(_json.dumps(result.to_dict(), indent=2, default=str))
+        return
+
+    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo("  AI Investigation — System Intelligence Report")
+    click.echo("  " + "═" * 48)
+
+    if not result.ok:
+        click.echo(click.style("  ✗ Investigation failed", fg="red"))
+        click.echo(f"  {result.summary}")
+        click.echo()
+        return
+
+    # Step results summary
+    ok_count = sum(1 for s in result.step_results if s.ok)
+    total = len(result.step_results)
+    click.echo(f"  Pipeline:    {ok_count}/{total} steps succeeded")
+    click.echo(f"  Elapsed:     {result.elapsed_ms:.0f}ms")
+
+    for sr in result.step_results:
+        status = click.style("✓", fg="green") if sr.ok else click.style("✗", fg="red")
+        click.echo(f"  {status} {sr.step}  ({sr.elapsed_ms:.0f}ms)")
+
+    # Architecture section
+    arch = result.report.get("architecture_report")
+    if arch:
+        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+        grade = arch.get("grade", "?")
+        score = arch.get("score", "?")
+        click.echo(f"\n  Architecture Score: {score}  " +
+                   click.style(f"({grade})", fg=grade_colors.get(grade), bold=True))
+        findings = arch.get("finding_count", 0)
+        click.echo(f"  Findings: {findings}")
+
+    # Performance section
+    perf = result.report.get("performance_report")
+    if perf:
+        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+        grade = perf.get("grade", "?")
+        score = perf.get("score", "?")
+        issues = perf.get("issue_count", 0)
+        click.echo(f"\n  Performance Score: {score}  " +
+                   click.style(f"({grade})", fg=grade_colors.get(grade), bold=True))
+        click.echo(f"  Issues: {issues}")
+        for ti in perf.get("top_issues", [])[:3]:
+            click.echo(f"    • {ti.get('title', '')}")
+
+    # Debug section
+    debug = result.report.get("debug_report")
+    if debug:
+        rc_count = debug.get("root_cause_count", 0)
+        click.echo(f"\n  Root Causes: {rc_count}")
+        for rc in debug.get("top_root_causes", [])[:3]:
+            conf = f"{rc.get('confidence', 0) * 100:.0f}%"
+            click.echo(f"    • {rc.get('title', '')}  ({conf})")
+
+    # Diagnostics section
+    diag_count = result.report.get("diagnostic_count", 0)
+    gap_count = result.report.get("gap_count", 0)
+    if diag_count or gap_count:
+        click.echo(f"\n  Diagnostics: {diag_count}  |  Gaps: {gap_count}")
+
+    if not summary_only:
+        # Graph summary
+        gs = result.report.get("graph_summary")
+        if gs:
+            counts = gs.get("counts", {})
+            click.echo(f"\n  Project Graph:")
+            click.echo(f"    Models: {counts.get('models', 0)}  "
+                       f"Routes: {counts.get('routes', 0)}  "
+                       f"Queries: {counts.get('queries', 0)}  "
+                       f"Migrations: {counts.get('migrations', 0)}")
 
     click.echo()
 

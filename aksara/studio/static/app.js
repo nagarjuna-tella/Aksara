@@ -3901,6 +3901,10 @@ async function _sendConsoleMessage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: msg }),
         });
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            throw new Error('Server returned non-JSON response (status ' + resp.status + ') \u2014 check server logs');
+        }
         const data = await resp.json();
         _removeConsoleLoading(loadingId);
         _renderConsoleResponse(data);
@@ -4006,12 +4010,6 @@ function _esc(s) { const d = document.createElement('div'); d.textContent = s; r
 let _aiGraphData = null;
 
 async function renderAiGraph() {
-    const tpl = document.getElementById('template-ai-graph');
-    if (!tpl) return;
-    const content = document.getElementById('content');
-    content.innerHTML = '';
-    content.appendChild(tpl.content.cloneNode(true));
-
     // Wire toolbar
     const rebuildBtn = document.getElementById('ai-graph-rebuild');
     if (rebuildBtn) rebuildBtn.addEventListener('click', () => _fetchAiGraph(true));
@@ -4275,6 +4273,14 @@ async function _runDebugger(query) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            throw new Error('Server returned non-JSON response (status ' + resp.status + ') \u2014 check server logs');
+        }
+        if (!resp.ok) {
+            const errData = await resp.json();
+            throw new Error(errData.error || 'Server error (' + resp.status + ')');
+        }
         _debuggerData = await resp.json();
 
         if (status) status.textContent = _debuggerData.elapsed_ms ? _debuggerData.elapsed_ms.toFixed(0) + 'ms' : '';
@@ -4462,7 +4468,14 @@ function _runArchReview() {
     if (panel) panel.innerHTML = '<div class="ai-arch-loading">Running review…</div>';
 
     fetch('/studio/ai/architecture-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-        .then(r => r.json())
+        .then(r => {
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                throw new Error('Server returned non-JSON response (status ' + r.status + ') — check server logs');
+            }
+            if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Server error (' + r.status + ')'); });
+            return r.json();
+        })
         .then(data => {
             _archData = data;
             if (status) status.textContent = `${data.elapsed_ms || 0}ms`;
@@ -4568,7 +4581,14 @@ function _runPerfAnalysis() {
     if (panel) panel.innerHTML = '<div class="ai-perf-loading">Running analysis…</div>';
 
     fetch('/studio/ai/performance-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-        .then(r => r.json())
+        .then(r => {
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                throw new Error('Server returned non-JSON response (status ' + r.status + ') — check server logs');
+            }
+            if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Server error (' + r.status + ')'); });
+            return r.json();
+        })
         .then(data => {
             _perfData = data;
             if (status) status.textContent = `${data.elapsed_ms || 0}ms`;

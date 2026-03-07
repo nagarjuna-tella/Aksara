@@ -1747,19 +1747,34 @@ async def studio_ai_console(request: Request):
         provider_override: optional provider override
         model_override: optional model override
     """
-    from aksara.ai.console_engine import run_console_query
+    try:
+        from aksara.ai.console_engine import run_console_query
 
-    body = await request.json()
-    message = body.get("message", "")
-    provider_override = body.get("provider_override")
-    model_override = body.get("model_override")
+        body = await request.json()
+        message = body.get("message", "")
+        provider_override = body.get("provider_override")
+        model_override = body.get("model_override")
 
-    result = await run_console_query(
-        message,
-        provider_override=provider_override,
-        model_override=model_override,
-    )
-    return result
+        result = await run_console_query(
+            message,
+            provider_override=provider_override,
+            model_override=model_override,
+        )
+        return result
+    except Exception as exc:
+        import traceback
+
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(
+            {
+                "ok": False,
+                "error": str(exc),
+                "error_code": "SERVER_ERROR",
+                "detail": traceback.format_exc(),
+            },
+            status_code=500,
+        )
 
 
 @router.get("/studio/ai/console/suggest")
@@ -1852,13 +1867,23 @@ async def studio_ai_debug(request: Request):
     Body (optional):
         query: str — e.g. "why is /api/users failing?"
     """
-    from aksara.ai.debugger import run_debugger
+    try:
+        from aksara.ai.debugger import run_debugger
 
-    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
-    query = body.get("query") if isinstance(body, dict) else None
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        query = body.get("query") if isinstance(body, dict) else None
 
-    report = run_debugger(query=query, app=request.app)
-    return report.to_dict()
+        report = run_debugger(query=query, app=request.app)
+        return report.to_dict()
+    except Exception as exc:
+        import traceback
+
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(
+            {"error": str(exc), "detail": traceback.format_exc()},
+            status_code=500,
+        )
 
 
 # =============================================================================
@@ -1876,10 +1901,20 @@ async def studio_ai_architecture_review(request: Request):
     migration / performance anti-patterns, scores the architecture, and
     suggests improvements.
     """
-    from aksara.ai.architecture_review import run_architecture_review
+    try:
+        from aksara.ai.architecture_review import run_architecture_review
 
-    report = run_architecture_review(app=request.app)
-    return report.to_dict()
+        report = run_architecture_review(app=request.app)
+        return report.to_dict()
+    except Exception as exc:
+        import traceback
+
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(
+            {"error": str(exc), "detail": traceback.format_exc()},
+            status_code=500,
+        )
 
 
 # =============================================================================
@@ -1897,10 +1932,20 @@ async def studio_ai_performance_analysis(request: Request):
     missing indexes / query explosions / heavy joins / route hotspots,
     scores the performance, and recommends improvements.
     """
-    from aksara.ai.performance_analyzer import run_performance_analysis
+    try:
+        from aksara.ai.performance_analyzer import run_performance_analysis
 
-    report = run_performance_analysis(app=request.app)
-    return report.to_dict()
+        report = run_performance_analysis(app=request.app)
+        return report.to_dict()
+    except Exception as exc:
+        import traceback
+
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(
+            {"error": str(exc), "detail": traceback.format_exc()},
+            status_code=500,
+        )
 
 
 # =============================================================================
@@ -2033,7 +2078,7 @@ async def studio_assets(request: Request, path: str) -> FileResponse:
         path=file_path,
         media_type=media_type,
         headers={
-            "Cache-Control": "public, max-age=3600",
+            "Cache-Control": "no-cache, must-revalidate",
         },
     )
 

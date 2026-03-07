@@ -316,6 +316,35 @@ from aksara.ai.hints import (
     DEFAULT_HINT_ATTR,
 )
 
+# v0.5.37: AI Consolidation & Orchestration
+from aksara.ai.intent_classifier import (
+    IntentMatch as OrchestratedIntentMatch,
+    classify_intent,
+    SUPPORTED_INTENTS,
+    ARCHITECTURE_REVIEW,
+    PERFORMANCE_INVESTIGATION,
+    DEBUG_ANALYSIS,
+    PROJECT_ANALYSIS,
+    SCHEMA_EXPLANATION,
+    ROUTE_ANALYSIS,
+)
+from aksara.ai.execution_planner import (
+    ExecutionPlan,
+    build_execution_plan,
+    build_investigation_plan,
+    INVESTIGATION_PIPELINE,
+)
+from aksara.ai.orchestrator import (
+    OrchestrationResult,
+    StepResult,
+    execute_plan,
+)
+from aksara.ai.intent_engine import (
+    handle_prompt,
+    run_investigation,
+    classify_and_plan,
+)
+
 __all__ = [
     # Models
     "AiTool",
@@ -476,4 +505,24 @@ __all__ = [
     "build_ai_hint_set_sync",
     "HINT_ATTR",
     "DEFAULT_HINT_ATTR",
+    # v0.5.37: AI Consolidation & Orchestration
+    "OrchestratedIntentMatch",
+    "classify_intent",
+    "SUPPORTED_INTENTS",
+    "ARCHITECTURE_REVIEW",
+    "PERFORMANCE_INVESTIGATION",
+    "DEBUG_ANALYSIS",
+    "PROJECT_ANALYSIS",
+    "SCHEMA_EXPLANATION",
+    "ROUTE_ANALYSIS",
+    "ExecutionPlan",
+    "build_execution_plan",
+    "build_investigation_plan",
+    "INVESTIGATION_PIPELINE",
+    "OrchestrationResult",
+    "StepResult",
+    "execute_plan",
+    "handle_prompt",
+    "run_investigation",
+    "classify_and_plan",
 ]

@@ -182,7 +182,7 @@ class TestStudioAssets:
         
         assert response.status_code == 200
         cache_control = response.headers.get("cache-control", "")
-        assert "max-age" in cache_control
+        assert "no-cache" in cache_control
 
 
 # =============================================================================

@@ -1330,3 +1330,178 @@ async def get_schema_diff(
         "db_only": db_only,
         "inspected_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+# =============================================================================
+# v0.5.37: AI Consolidation & Orchestration Endpoints
+# =============================================================================
+
+
+@router.post("/ai/intent/handle")
+async def ai_intent_handle(request: Request) -> Dict[str, Any]:
+    """Handle a natural-language prompt through the Intent Engine.
+
+    Routes the prompt through the full orchestration pipeline:
+    classify intent → build execution plan → execute plan → return result.
+
+    Request body::
+
+        {"prompt": "why is /api/users slow?"}
+
+    Returns
+    -------
+    dict
+        Unified orchestration result.
+    """
+    body = await request.json()
+    prompt = body.get("prompt", "")
+    if not prompt:
+        raise HTTPException(status_code=422, detail="prompt is required")
+
+    from aksara.ai.intent_engine import handle_prompt
+
+    result = handle_prompt(prompt)
+    return result.to_dict()
+
+
+@router.post("/ai/investigate")
+async def ai_investigate(request: Request) -> Dict[str, Any]:
+    """Run the full AI Investigation pipeline.
+
+    Executes all analysis steps and returns a System Intelligence Report:
+    - build_project_graph
+    - run_architecture_review
+    - run_performance_analysis
+    - run_debugger
+    - run_diagnostics
+
+    Returns
+    -------
+    dict
+        Complete investigation report.
+    """
+    from aksara.ai.intent_engine import run_investigation
+
+    result = run_investigation()
+    return result.to_dict()
+
+
+@router.get("/ai/hub/overview")
+async def ai_hub_overview(request: Request) -> Dict[str, Any]:
+    """AI Hub overview — status, default provider, active models, routing.
+
+    Returns a dashboard-style summary of the AI system configuration.
+    """
+    overview: Dict[str, Any] = {
+        "ai_status": "active",
+        "default_provider": None,
+        "active_models": [],
+        "routing": {},
+        "version": "0.5.37",
+    }
+
+    try:
+        from aksara.ai.providers_unified import detect_all_providers, get_active_provider
+        providers = detect_all_providers()
+        active = get_active_provider()
+        overview["default_provider"] = active.name if active else None
+        overview["active_models"] = [
+            {"provider": p.name, "models": p.models}
+            for p in providers
+            if p.available
+        ]
+    except Exception:
+        overview["ai_status"] = "not_configured"
+
+    try:
+        from aksara.ai.intent_classifier import list_supported_intents
+        overview["routing"] = {
+            "supported_intents": list_supported_intents(),
+            "engine": "intent_engine_v1",
+        }
+    except Exception:
+        pass
+
+    return overview
+
+
+@router.get("/ai/inspector/summary")
+async def ai_inspector_summary(request: Request) -> Dict[str, Any]:
+    """AI Inspector summary — unified view of debug, architecture, performance.
+
+    Returns a lightweight summary suitable for the Inspector overview tab.
+    """
+    summary: Dict[str, Any] = {
+        "debugger": {"available": True},
+        "architecture": {"available": True},
+        "performance": {"available": True},
+    }
+
+    try:
+        from aksara.ai.project_graph import build_project_graph
+        graph = build_project_graph()
+        summary["graph_summary"] = graph.to_summary_dict()
+    except Exception:
+        summary["graph_summary"] = None
+
+    return summary
+
+
+@router.get("/ai/graph/enhanced")
+async def ai_graph_enhanced(request: Request) -> Dict[str, Any]:
+    """AI Graph with summary panel metrics.
+
+    Returns the Project Context Graph plus computed summary metrics
+    suitable for the Graph system explorer view.
+    """
+    try:
+        from aksara.ai.project_graph import build_project_graph
+        graph = build_project_graph()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Graph build failed: {exc}")
+
+    m = graph.metadata
+    return {
+        "summary": {
+            "models": m.model_count,
+            "routes": m.route_count,
+            "queries": m.query_count,
+            "migrations": m.migration_count,
+            "diagnostics": m.diagnostic_count,
+            "gaps": m.gap_count,
+            "events": m.event_count,
+        },
+        "graph": graph.to_summary_dict(),
+        "model_names": [mod.name for mod in graph.models],
+        "route_paths": [f"{r.method} {r.path}" for r in graph.routes],
+        "generated_at": m.generated_at,
+    }
+
+
+@router.post("/ai/intent/classify")
+async def ai_intent_classify(request: Request) -> Dict[str, Any]:
+    """Classify a prompt without executing (preview mode).
+
+    Request body::
+
+        {"prompt": "explain my architecture"}
+
+    Returns
+    -------
+    dict
+        Intent match and planned execution steps.
+    """
+    body = await request.json()
+    prompt = body.get("prompt", "")
+    if not prompt:
+        raise HTTPException(status_code=422, detail="prompt is required")
+
+    from aksara.ai.intent_engine import classify_and_plan
+
+    match, plan = classify_and_plan(prompt)
+    return {
+        "intent": match.intent,
+        "confidence": match.confidence,
+        "entities": match.entities,
+        "planned_steps": plan.steps,
+    }

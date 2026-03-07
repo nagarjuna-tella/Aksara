@@ -1,19 +1,24 @@
 """
-Aksara AI Console Engine  (v0.5.36)
+Aksara AI Console Engine  (v0.5.37)
 
 Orchestrates the Interactive AI Console pipeline:
 
     1. Receive natural-language message from user
-    2. Detect intent via ``aksara.ai.intent_router``
-    3. Build context via ``aksara.ai.console_context``
-    4. Dispatch to the matching AI Flow builder
-    5. Execute the prompt pack via ``aksara.ai.runtime``
-    6. Return a structured ``ConsoleResponse``
+    2. Route through the Intent Engine (v0.5.37)
+    3. For orchestrable intents, delegate to the intent engine
+    4. For legacy flow intents, use the original flow pipeline
+    5. Return a structured ``ConsoleResponse``
 
 Entry point::
 
     from aksara.ai.console_engine import run_console_query
     result = await run_console_query("explain the User model")
+
+v0.5.37: All prompts now route through ``aksara.ai.intent_engine``
+first.  The intent engine classifies intents, builds execution plans,
+and orchestrates the analysis pipeline.  Legacy flow-based intents
+(model explain, route review, etc.) still fall through to the original
+AI Flow execution path.
 
 Safety:
     The engine NEVER modifies code automatically.  It only returns
@@ -74,7 +79,60 @@ async def run_console_query(
             "EMPTY_MESSAGE",
         )
 
-    # ── 2. Detect intent ──────────────────────────────────────────────────
+    # ── 2. Route through Intent Engine (v0.5.37) ─────────────────────────
+    # The intent engine handles *heavy* orchestrable intents (architecture,
+    # performance, debug, project analysis) that run multiple analyzers.
+    # Schema-explanation and route-analysis prompts are better served by the
+    # legacy provider-backed pipeline, so those fall through.
+    _ORCHESTRABLE_INTENTS = {
+        "architecture_review",
+        "performance_investigation",
+        "debug_analysis",
+        "project_analysis",
+    }
+    # Map intent engine names → legacy flow_type names for compatibility.
+    _INTENT_TO_FLOW_TYPE = {
+        "debug_analysis": "debug",
+        "architecture_review": "architecture_review",
+        "performance_investigation": "performance_analysis",
+        "project_analysis": "project_analysis",
+    }
+    try:
+        from aksara.ai.intent_classifier import classify_intent
+
+        intent_match = classify_intent(message)
+        if (
+            intent_match.intent in _ORCHESTRABLE_INTENTS
+            and intent_match.confidence >= 0.70
+        ):
+            from aksara.ai.intent_engine import handle_prompt
+
+            engine_result = handle_prompt(message)
+            if engine_result.ok:
+                flow = _INTENT_TO_FLOW_TYPE.get(
+                    engine_result.intent, engine_result.intent
+                )
+                elapsed = (time.monotonic() - t0) * 1000
+                return {
+                    "ok": True,
+                    "intent": engine_result.intent,
+                    "flow_type": flow,
+                    "action_key": engine_result.intent,
+                    "confidence": 1.0,
+                    "extracted_context": {},
+                    "prompt_pack": None,
+                    "execution": engine_result.report,
+                    "suggestions": [],
+                    "elapsed_ms": round(elapsed, 1),
+                    "error": None,
+                    "error_code": None,
+                    "orchestrated": True,
+                    "summary": engine_result.summary,
+                }
+    except Exception:
+        pass  # fall through to legacy pipeline
+
+    # ── 3. Legacy intent detection (pre-v0.5.37) ─────────────────────────
     from aksara.ai.intent_router import detect_intent
 
     match = detect_intent(message)
@@ -88,16 +146,16 @@ async def run_console_query(
             confidence=match.confidence,
         )
 
-    # ── 2b. Debug flow shortcut (v0.5.33) ─────────────────────────────────
+    # ── 3b. Debug flow shortcut (v0.5.33) ─────────────────────────────────
     if match.flow_type == "debug":
         return _run_debug_flow(message, match)
-    # ── 2c. Architecture review shortcut (v0.5.34) ─────────────────
+    # ── 3c. Architecture review shortcut (v0.5.34) ─────────────────
     if match.flow_type == "architecture_review":
         return _run_architecture_review_flow(message, match)
-    # ── 2d. Performance analysis shortcut (v0.5.35) ────────────────
+    # ── 3d. Performance analysis shortcut (v0.5.35) ────────────────
     if match.flow_type == "performance_analysis":
         return _run_performance_analysis_flow(message, match)
-    # ── 3. Build / enrich context ─────────────────────────────────────────
+    # ── 4. Build / enrich context ─────────────────────────────────────────
     from aksara.ai.console_context import enrich_context
 
     context = enrich_context(
@@ -105,7 +163,7 @@ async def run_console_query(
         extracted=match.extracted_context,
     )
 
-    # ── 3b. Inject project-graph context (v0.5.32) ────────────────────────
+    # ── 4b. Inject project-graph context (v0.5.32) ────────────────────────
     try:
         from aksara.ai.graph_context import build_graph_console_context
         graph_ctx = build_graph_console_context(flow_type=match.flow_type)
@@ -113,7 +171,7 @@ async def run_console_query(
     except Exception:
         pass  # graph unavailable — continue without it
 
-    # ── 4. Execute flow ───────────────────────────────────────────────────
+    # ── 5. Execute flow ───────────────────────────────────────────────────
     from aksara.studio.ai_flows import execute_flow
 
     result = await execute_flow(
@@ -124,12 +182,12 @@ async def run_console_query(
         model_override=model_override,
     )
 
-    # ── 4b. Emit graph event (v0.5.32) ────────────────────────────────────
+    # ── 5b. Emit graph event (v0.5.32) ────────────────────────────────────
     _emit_console_event(match, result)
 
     elapsed = (time.monotonic() - t0) * 1000
 
-    # ── 5. Build suggested next actions ───────────────────────────────────
+    # ── 6. Build suggested next actions ───────────────────────────────────
     suggestions = _get_suggestions(match.action_key)
 
     ok = result.get("ok", False)
