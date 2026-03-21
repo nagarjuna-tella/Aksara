@@ -427,12 +427,12 @@ class TestAiHubJsKeyboardShortcut:
     def test_alt_a_shortcut(self):
         js = (STATIC_DIR / "app.js").read_text()
         assert "e.altKey" in js
-        # Alt+A navigates to AI Hub
-        assert "v0.5.28: Alt/Option+A opens AI Hub" in js
+        # Alt+A navigates to AI Home (v0.5.38: changed from AI Hub)
+        assert "v0.5.28: Alt/Option+A opens AI Home" in js
 
     def test_existing_a_shortcut_preserved(self):
         js = (STATIC_DIR / "app.js").read_text()
-        assert "v0.5.25: 'A' opens AI Hub" in js
+        assert "v0.5.25: 'A' opens AI Home" in js
 
     def test_indicator_loaded_during_init(self):
         js = (STATIC_DIR / "app.js").read_text()

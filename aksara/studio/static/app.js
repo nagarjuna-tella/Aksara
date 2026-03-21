@@ -268,16 +268,16 @@ function initNavigation() {
                 if (searchInput) searchInput.focus();
             }, 200);
         }
-        // v0.5.25: 'A' opens AI Hub
+        // v0.5.25: 'A' opens AI Home (v0.5.38: changed from AI Hub)
         if (e.key === 'a' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
             e.preventDefault();
-            navigateTo('ai-hub');
+            navigateTo('ai-home');
             return;
         }
-        // v0.5.28: Alt/Option+A opens AI Hub (works from anywhere)
+        // v0.5.28: Alt/Option+A opens AI Home (works from anywhere)
         if (e.altKey && (e.key === 'a' || e.key === 'A') && !e.metaKey && !e.ctrlKey) {
             e.preventDefault();
-            navigateTo('ai-hub');
+            navigateTo('ai-home');
             return;
         }
         // v0.5.25: Cmd/Ctrl+Enter runs AI Hub agent prompt
@@ -294,12 +294,16 @@ function navigateTo(section, updateHash = true) {
     stopSectionTimers();
     
     // v0.5.25: Redirect consolidated sections to their new homes
+    // v0.5.38: Redirect individual AI tools to unified Inspector
     const redirects = {
         'api': 'routes',
         'model-inspector': 'models',
         'ai-helpers': 'ai-hub',
         'ai-profiles': 'ai-hub',
         'agent': 'ai-hub',
+        'ai-debugger': 'ai-inspector',
+        'ai-architecture': 'ai-inspector',
+        'ai-performance': 'ai-inspector',
     };
     const activateTab = {
         'api': { attr: 'data-routes-tab', value: 'api-ref' },
@@ -307,6 +311,9 @@ function navigateTo(section, updateHash = true) {
         'ai-helpers': { tab: 'helpers' },
         'ai-profiles': { tab: 'profiles' },
         'agent': { tab: 'agent' },
+        'ai-debugger': { inspectorTab: 'debug' },
+        'ai-architecture': { inspectorTab: 'architecture' },
+        'ai-performance': { inspectorTab: 'performance' },
     };
     const tabInfo = activateTab[section];
     const redirected = redirects[section];
@@ -330,9 +337,13 @@ function navigateTo(section, updateHash = true) {
     renderSection(section);
 
     // v0.5.25: Activate the right tab after rendering for redirected sections
+    // v0.5.38: Also handle inspector tab activation
     if (tabInfo) {
         setTimeout(() => {
-            if (tabInfo.tab) {
+            if (tabInfo.inspectorTab) {
+                const tabBtn = document.querySelector(`.ai-inspector-tab[data-inspector-tab="${tabInfo.inspectorTab}"]`);
+                if (tabBtn) tabBtn.click();
+            } else if (tabInfo.tab) {
                 // AI Hub tab
                 const tabBtn = document.querySelector(`.ai-hub-tab[data-tab="${tabInfo.tab}"]`);
                 if (tabBtn) tabBtn.click();
@@ -402,11 +413,17 @@ function renderSection(section) {
         case 'db-queries':
             renderDbQueries();
             break;
+        case 'ai-home':
+            renderAiHome();
+            break;
         case 'ai-hub':
             renderAiHub();
             break;
         case 'ai-console':
             renderAiConsole();
+            break;
+        case 'ai-inspector':
+            renderAiInspector();
             break;
         case 'ai-graph':
             renderAiGraph();
@@ -2780,6 +2797,304 @@ function escapeHtml(str) {
 
 
 // =============================================================================
+// v0.5.38: AI Home Section
+// =============================================================================
+
+async function renderAiHome() {
+    // Fetch home data
+    try {
+        const resp = await fetch('/studio/ai/home');
+        if (!resp.ok) throw new Error('Failed to load AI Home');
+        const data = await resp.json();
+
+        // Status pill
+        const pill = document.getElementById('ai-home-status');
+        if (pill) {
+            const statusMap = { ready: 'Ready', partial: 'Partial', not_configured: 'Not Configured' };
+            pill.textContent = statusMap[data.status] || 'Not Configured';
+            pill.className = 'ai-home-status-pill ai-home-status-' + (data.status || 'not_configured');
+        }
+
+        // Provider metadata
+        const meta = document.getElementById('ai-home-provider-meta');
+        if (meta && data.provider) {
+            const parts = [];
+            if (data.provider) parts.push('Provider: ' + _esc(data.provider));
+            if (data.model) parts.push('Model: ' + _esc(data.model));
+            if (data.embeddings_model) parts.push('Embeddings: ' + _esc(data.embeddings_model));
+            meta.innerHTML = parts.map(p => '<span class="ai-home-meta-item">' + p + '</span>').join('');
+        }
+
+        // System snapshot
+        const snap = data.snapshot || {};
+        const ids = ['models', 'routes', 'queries', 'migrations', 'diagnostics'];
+        ids.forEach(k => {
+            const el = document.getElementById('ai-home-snap-' + k);
+            if (el) el.textContent = snap[k] != null ? snap[k] : '-';
+        });
+
+        // Scores
+        const scoresEl = document.getElementById('ai-home-scores');
+        if (scoresEl) {
+            let html = '';
+            if (data.scores && data.scores.architecture) {
+                html += '<a href="#/ai-inspector" class="ai-home-score-link">' +
+                    'Architecture: <strong>' + _esc(data.scores.architecture.grade) + '</strong> (' + data.scores.architecture.score + ')' +
+                    '</a>';
+            }
+            if (data.scores && data.scores.performance) {
+                html += '<a href="#/ai-inspector" class="ai-home-score-link">' +
+                    'Performance: <strong>' + _esc(data.scores.performance.grade) + '</strong> (' + data.scores.performance.score + ')' +
+                    '</a>';
+            }
+            scoresEl.innerHTML = html;
+        }
+
+        // Recent observations
+        const obsEl = document.getElementById('ai-home-observations');
+        if (obsEl) {
+            const obs = data.observations || [];
+            if (obs.length) {
+                obsEl.innerHTML = obs.map(o =>
+                    '<div class="ai-home-observation-item">' + _esc(o) + '</div>'
+                ).join('');
+            } else {
+                obsEl.innerHTML = '<p class="text-muted">No recent observations</p>';
+            }
+        }
+
+        // Prompt suggestions
+        const sugEl = document.getElementById('ai-home-suggestions');
+        if (sugEl) {
+            const prompts = data.suggested_prompts || [];
+            let sugHtml = '<span class="ai-home-suggestion-label">Suggestions:</span>';
+            prompts.forEach(p => {
+                sugHtml += '<button class="ai-home-suggestion-chip">' + _esc(p) + '</button>';
+            });
+            sugEl.innerHTML = sugHtml;
+            // Wire chip clicks
+            sugEl.querySelectorAll('.ai-home-suggestion-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    _aiHomePrefillPrompt = chip.textContent;
+                    navigateTo('ai-console');
+                });
+            });
+        }
+
+        // Show/hide empty state
+        const setupCard = document.getElementById('ai-home-setup');
+        const heroCard = document.querySelector('.ai-home-hero');
+        if (data.status === 'not_configured') {
+            if (setupCard) setupCard.style.display = '';
+            if (heroCard) heroCard.style.display = 'none';
+        } else {
+            if (setupCard) setupCard.style.display = 'none';
+        }
+    } catch (e) {
+        // Silently handle — show defaults
+    }
+
+    // Wire hero prompt input
+    const input = document.getElementById('ai-home-prompt');
+    const goBtn = document.getElementById('ai-home-go');
+    if (input && goBtn) {
+        const submit = () => {
+            const val = input.value.trim();
+            if (val) {
+                _aiHomePrefillPrompt = val;
+                navigateTo('ai-console');
+            }
+        };
+        goBtn.addEventListener('click', submit);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    }
+
+    // Wire quick action cards
+    document.querySelectorAll('.ai-home-action-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const action = card.dataset.action;
+            if (action === 'investigate') {
+                _aiHomePrefillPrompt = 'Investigate my project';
+                navigateTo('ai-console');
+            } else if (action === 'console') {
+                navigateTo('ai-console');
+            } else if (action === 'inspector') {
+                navigateTo('ai-inspector');
+            } else if (action === 'graph') {
+                navigateTo('ai-graph');
+            }
+        });
+    });
+
+    // Wire setup button
+    const hubBtn = document.getElementById('ai-home-open-hub');
+    if (hubBtn) hubBtn.addEventListener('click', () => navigateTo('ai-hub'));
+}
+
+// v0.5.38: Prefill prompt for console navigation from AI Home
+let _aiHomePrefillPrompt = null;
+
+
+// =============================================================================
+// v0.5.38: AI Inspector Section
+// =============================================================================
+
+async function renderAiInspector() {
+    const panel = document.getElementById('ai-inspector-panel');
+    const _inspectorLoaded = { overview: false, debug: false, architecture: false, performance: false };
+
+    // Wire tab switching
+    document.querySelectorAll('.ai-inspector-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ai-inspector-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const target = tab.getAttribute('data-inspector-tab');
+            _renderInspectorTab(panel, target, _inspectorLoaded);
+        });
+    });
+
+    // Load default tab
+    _renderInspectorTab(panel, 'overview', _inspectorLoaded);
+}
+
+async function _renderInspectorTab(panel, tab, loaded) {
+    if (!panel) return;
+
+    if (tab === 'overview') {
+        panel.innerHTML = '<div class="ai-inspector-loading">Loading overview&hellip;</div>';
+        try {
+            const resp = await fetch('/studio/ai/inspector');
+            if (!resp.ok) throw new Error('Failed');
+            const data = await resp.json();
+            let html = '<div class="ai-inspector-overview">';
+            html += '<div class="cards-grid">';
+            html += '<div class="card"><div class="card-header"><h3>Architecture Score</h3></div><div class="card-body"><div class="metric"><span class="metric-value">' +
+                (data.architecture.grade || '—') + '</span></div><div class="text-muted">' + (data.architecture.score != null ? 'Score: ' + data.architecture.score : '') + '</div></div></div>';
+            html += '<div class="card"><div class="card-header"><h3>Performance Score</h3></div><div class="card-body"><div class="metric"><span class="metric-value">' +
+                (data.performance.grade || '—') + '</span></div><div class="text-muted">' + (data.performance.score != null ? 'Score: ' + data.performance.score : '') + '</div></div></div>';
+            html += '<div class="card"><div class="card-header"><h3>Diagnostics</h3></div><div class="card-body"><div class="metric"><span class="metric-value">' +
+                data.diagnostics_count + '</span><span class="text-muted"> issues</span></div></div></div>';
+            html += '</div>';
+
+            if (data.top_issues && data.top_issues.length) {
+                html += '<div class="card" style="margin-top:var(--spacing-md);"><div class="card-header"><h3>Top Issues</h3></div><div class="card-body">';
+                data.top_issues.forEach(i => {
+                    const cls = i.severity === 'error' ? 'severity-error' : i.severity === 'warning' ? 'severity-warning' : 'severity-info';
+                    html += '<div class="ai-inspector-issue"><span class="' + cls + '">' + _esc(i.severity) + '</span> <strong>' + _esc(i.code) + '</strong> — ' + _esc(i.message) + '</div>';
+                });
+                html += '</div></div>';
+            }
+
+            html += '</div>';
+            panel.innerHTML = html;
+        } catch (e) {
+            panel.innerHTML = '<div class="ai-inspector-empty">Error loading overview: ' + _esc(e.message) + '</div>';
+        }
+    } else if (tab === 'debug') {
+        panel.innerHTML = '<div class="ai-inspector-loading">Running debugger&hellip;</div>';
+        try {
+            const resp = await fetch('/studio/ai/debug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            if (!resp.ok) throw new Error('Debugger failed');
+            const data = await resp.json();
+            let html = '<div class="ai-inspector-debug">';
+            if (data.score != null) {
+                html += '<div class="ai-inspector-score-row"><span>Score: <strong>' + data.score + '</strong></span>';
+                if (data.grade) html += ' <span class="ai-inspector-grade">(' + _esc(data.grade) + ')</span>';
+                html += '</div>';
+            }
+            if (data.root_causes && data.root_causes.length) {
+                html += '<h4>Root Causes</h4>';
+                data.root_causes.forEach(rc => {
+                    html += '<div class="ai-inspector-finding"><strong>' + _esc(rc.title || rc.description || '') + '</strong>';
+                    if (rc.confidence) html += ' <span class="text-muted">(' + Math.round(rc.confidence * 100) + '%)</span>';
+                    html += '</div>';
+                });
+            }
+            if (data.issues && data.issues.length) {
+                html += '<h4>Issues (' + data.issues.length + ')</h4>';
+                data.issues.slice(0, 10).forEach(i => {
+                    html += '<div class="ai-inspector-finding">' + _esc(i.title || i.message || '') +
+                        ' <span class="text-muted">' + _esc(i.severity || '') + '</span></div>';
+                });
+                if (data.issues.length > 10) html += '<p class="text-muted">...and ' + (data.issues.length - 10) + ' more</p>';
+            }
+            if (!data.root_causes?.length && !data.issues?.length) {
+                html += '<p class="text-muted">No issues detected</p>';
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+        } catch (e) {
+            panel.innerHTML = '<div class="ai-inspector-empty">Error: ' + _esc(e.message) + '</div>';
+        }
+    } else if (tab === 'architecture') {
+        panel.innerHTML = '<div class="ai-inspector-loading">Running architecture review&hellip;</div>';
+        try {
+            const resp = await fetch('/studio/ai/architecture-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            if (!resp.ok) throw new Error('Architecture review failed');
+            const data = await resp.json();
+            let html = '<div class="ai-inspector-arch">';
+            if (data.score != null) {
+                html += '<div class="ai-inspector-score-row"><span>Score: <strong>' + data.score + '</strong></span>';
+                if (data.grade) html += ' <span class="ai-inspector-grade">(' + _esc(data.grade) + ')</span>';
+                html += '</div>';
+            }
+            if (data.findings && data.findings.length) {
+                html += '<h4>Findings (' + data.findings.length + ')</h4>';
+                data.findings.slice(0, 10).forEach(f => {
+                    html += '<div class="ai-inspector-finding"><span class="severity-' + _esc(f.severity || 'info') + '">' + _esc(f.severity || '') + '</span> ' + _esc(f.title || f.message || '') + '</div>';
+                });
+                if (data.findings.length > 10) html += '<p class="text-muted">...and ' + (data.findings.length - 10) + ' more</p>';
+            }
+            if (data.suggestions && data.suggestions.length) {
+                html += '<h4>Suggestions</h4>';
+                data.suggestions.slice(0, 5).forEach(s => {
+                    html += '<div class="ai-inspector-finding">' + _esc(s.title || s.description || '') +
+                        ' <span class="text-muted">' + _esc(s.impact || '') + ' impact</span></div>';
+                });
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+        } catch (e) {
+            panel.innerHTML = '<div class="ai-inspector-empty">Error: ' + _esc(e.message) + '</div>';
+        }
+    } else if (tab === 'performance') {
+        panel.innerHTML = '<div class="ai-inspector-loading">Running performance analysis&hellip;</div>';
+        try {
+            const resp = await fetch('/studio/ai/performance-analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            if (!resp.ok) throw new Error('Performance analysis failed');
+            const data = await resp.json();
+            let html = '<div class="ai-inspector-perf">';
+            if (data.score != null) {
+                html += '<div class="ai-inspector-score-row"><span>Score: <strong>' + data.score + '</strong></span>';
+                if (data.grade) html += ' <span class="ai-inspector-grade">(' + _esc(data.grade) + ')</span>';
+                html += '</div>';
+            }
+            if (data.issues && data.issues.length) {
+                html += '<h4>Issues (' + data.issues.length + ')</h4>';
+                data.issues.slice(0, 10).forEach(i => {
+                    const sevClass = _esc(i.severity || 'medium');
+                    html += '<div class="ai-inspector-finding"><span class="ai-perf-sev-badge">' + _esc(i.severity) + '</span> ' +
+                        _esc(i.title) + ' <span class="text-muted">' + _esc(i.category || '') + '</span></div>';
+                });
+                if (data.issues.length > 10) html += '<p class="text-muted">...and ' + (data.issues.length - 10) + ' more</p>';
+            }
+            if (data.recommendations && data.recommendations.length) {
+                html += '<h4>Recommendations</h4>';
+                data.recommendations.slice(0, 5).forEach(r => {
+                    html += '<div class="ai-inspector-finding">' + _esc(r.title) +
+                        ' <span class="text-muted">' + _esc(r.impact || '') + ' impact</span></div>';
+                });
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+        } catch (e) {
+            panel.innerHTML = '<div class="ai-inspector-empty">Error: ' + _esc(e.message) + '</div>';
+        }
+    }
+}
+
+
+// =============================================================================
 // v0.5.25: AI Hub Section
 // =============================================================================
 
@@ -2885,6 +3200,25 @@ async function renderAiHub() {
             }
         });
     }
+
+    // v0.5.38: Hub quick action buttons
+    const qaTest = document.getElementById('ai-hub-qa-test');
+    if (qaTest) qaTest.addEventListener('click', () => {
+        const pingBtn2 = document.getElementById('ai-hub-cfg-ping');
+        if (pingBtn2) {
+            // Switch to providers tab first
+            const provTab = document.querySelector('.ai-hub-tab[data-tab="providers"]');
+            if (provTab) provTab.click();
+            setTimeout(() => pingBtn2.click(), 200);
+        }
+    });
+    const qaConsole = document.getElementById('ai-hub-qa-console');
+    if (qaConsole) qaConsole.addEventListener('click', () => navigateTo('ai-console'));
+    const qaInvestigate = document.getElementById('ai-hub-qa-investigate');
+    if (qaInvestigate) qaInvestigate.addEventListener('click', () => {
+        _aiHomePrefillPrompt = 'Investigate my project';
+        navigateTo('ai-console');
+    });
 }
 
 // v0.5.28: Global AI status indicator (sidebar)
@@ -3769,6 +4103,13 @@ function renderAiConsole() {
         input.addEventListener('keydown', _handleConsoleInputKey);
         input.addEventListener('input', _handleConsoleInputChange);
         input.focus();
+
+        // v0.5.38: Prefill prompt from AI Home navigation
+        if (_aiHomePrefillPrompt) {
+            input.value = _aiHomePrefillPrompt;
+            _aiHomePrefillPrompt = null;
+            setTimeout(() => _sendConsoleMessage(), 100);
+        }
     }
 }
 
@@ -3891,6 +4232,25 @@ async function _sendConsoleMessage() {
     _appendConsoleMsg('user', msg);
     input.value = '';
 
+    // v0.5.38: Show plan preview for investigation-type prompts
+    const investigationPattern = /\b(investigate|analyze|architecture|performance|debug|review|diagnose)\b/i;
+    const planPreview = document.getElementById('ai-console-plan-preview');
+    if (planPreview && investigationPattern.test(msg)) {
+        planPreview.style.display = '';
+        const steps = planPreview.querySelectorAll('.ai-console-plan-step');
+        let stepIdx = 0;
+        const stepTimer = setInterval(() => {
+            if (stepIdx < steps.length) {
+                steps[stepIdx].classList.add('active');
+                stepIdx++;
+            } else {
+                clearInterval(stepTimer);
+            }
+        }, 400);
+        // Store timer so we can clear on response
+        planPreview._stepTimer = stepTimer;
+    }
+
     // Show loading
     const loadingId = _appendConsoleLoading();
 
@@ -3917,6 +4277,12 @@ async function _sendConsoleMessage() {
         });
     } finally {
         _aiConsoleState.sending = false;
+        // v0.5.38: Hide plan preview
+        if (planPreview) {
+            if (planPreview._stepTimer) clearInterval(planPreview._stepTimer);
+            planPreview.style.display = 'none';
+            planPreview.querySelectorAll('.ai-console-plan-step.active').forEach(s => s.classList.remove('active'));
+        }
     }
 }
 
@@ -4038,6 +4404,7 @@ async function _fetchAiGraph(rebuild) {
         if (!resp.ok) throw new Error('Failed to fetch graph');
         _aiGraphData = await resp.json();
         _renderAiGraphCounts();
+        _renderAiGraphSummaryCard();
         // Default tab
         const active = document.querySelector('.ai-graph-tab.active');
         _renderAiGraphTab(active ? active.getAttribute('data-graph-tab') : 'models');
@@ -4069,6 +4436,26 @@ function _renderAiGraphCounts() {
 
     const gen = document.getElementById('ai-graph-generated');
     if (gen && m.generated_at) gen.textContent = 'Generated: ' + new Date(m.generated_at).toLocaleTimeString();
+}
+
+// v0.5.38: Populate graph summary card
+function _renderAiGraphSummaryCard() {
+    const card = document.getElementById('ai-graph-summary-card');
+    const grid = document.getElementById('ai-graph-summary-grid');
+    if (!card || !grid || !_aiGraphData) return;
+    const m = _aiGraphData.metadata || {};
+    const items = [
+        { label: 'Models', value: m.model_count || 0 },
+        { label: 'Routes', value: m.route_count || 0 },
+        { label: 'Queries', value: m.query_count || 0 },
+        { label: 'Migrations', value: m.migration_count || 0 },
+        { label: 'Diagnostics', value: m.diagnostic_count || 0 },
+    ];
+    grid.innerHTML = items.map(i =>
+        '<div class="ai-graph-summary-item"><span class="ai-graph-summary-value">' + i.value + '</span>' +
+        '<span class="ai-graph-summary-label">' + i.label + '</span></div>'
+    ).join('');
+    card.style.display = '';
 }
 
 function _renderAiGraphTab(tab) {

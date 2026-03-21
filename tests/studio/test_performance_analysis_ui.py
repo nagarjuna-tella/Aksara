@@ -28,23 +28,25 @@ _CSS = (_ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 class TestNavigation:
-    def test_nav_data_section(self):
-        assert 'data-section="ai-performance"' in _HTML
+    # v0.5.38: sidebar nav item removed (consolidated into AI Inspector)
+    def test_nav_item_removed_from_sidebar(self):
+        sidebar_end = _HTML.find('</nav>')
+        sidebar_html = _HTML[:sidebar_end] if sidebar_end != -1 else _HTML
+        assert 'data-section="ai-performance"' not in sidebar_html
 
-    def test_nav_label(self):
-        assert ">Performance</span>" in _HTML
+    def test_nav_label_in_template(self):
+        assert "Performance" in _HTML
 
-    def test_nav_href(self):
-        assert '#/ai-performance' in _HTML
+    def test_redirect_to_inspector(self):
+        assert "'ai-performance'" in _JS
+        assert "'ai-inspector'" in _JS
 
     def test_nav_svg_icon(self):
         # The performance nav icon uses a polyline (pulse/chart)
         assert 'class="nav-icon"' in _HTML
 
-    def test_nav_order_after_architecture(self):
-        arch_pos = _HTML.index('data-section="ai-architecture"')
-        perf_pos = _HTML.index('data-section="ai-performance"')
-        assert perf_pos > arch_pos
+    def test_template_preserved(self):
+        assert 'id="template-ai-performance"' in _HTML
 
 
 # ═══════════════════════════════════════════════════════════════════════════

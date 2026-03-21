@@ -22,26 +22,23 @@ _STATIC = Path(__file__).resolve().parent.parent.parent / "aksara" / "studio" / 
 
 
 class TestNavigation:
-    def test_nav_item_exists(self):
+    # v0.5.38: sidebar nav item removed (consolidated into AI Inspector)
+    def test_nav_item_removed_from_sidebar(self):
         html = (_STATIC / "index.html").read_text()
-        assert 'data-section="ai-architecture"' in html
+        # Nav item removed but template preserved
+        sidebar_end = html.find('</nav>')
+        sidebar_html = html[:sidebar_end] if sidebar_end != -1 else html
+        assert 'data-section="ai-architecture"' not in sidebar_html
 
     def test_nav_label(self):
         html = (_STATIC / "index.html").read_text()
         assert "Architecture" in html
 
-    def test_nav_href(self):
-        html = (_STATIC / "index.html").read_text()
-        assert '#/ai-architecture' in html
-
-    def test_nav_icon_svg(self):
-        html = (_STATIC / "index.html").read_text()
-        # Grid/rect icon for architecture
-        idx = html.find('data-section="ai-architecture"')
-        assert idx != -1
-        # SVG should be nearby
-        chunk = html[max(0, idx - 200):idx + 200]
-        assert "<svg" in chunk
+    def test_redirect_to_inspector(self):
+        js = (_STATIC / "app.js").read_text()
+        # v0.5.38: ai-architecture redirects to ai-inspector
+        assert "'ai-architecture'" in js
+        assert "'ai-inspector'" in js
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -1949,6 +1949,159 @@ async def studio_ai_performance_analysis(request: Request):
 
 
 # =============================================================================
+# v0.5.38: AI Home & Inspector Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai/home")
+async def studio_ai_home(request: Request):
+    """
+    AI Home endpoint (v0.5.38).
+
+    Returns the data needed for the unified AI Home screen:
+    - AI status (ready / partial / not_configured)
+    - Provider metadata
+    - System snapshot from the Project Context Graph
+    - Recent observations from diagnostics / analyzers
+    - Suggested prompts
+    """
+    data: dict = {
+        "status": "not_configured",
+        "provider": None,
+        "model": None,
+        "embeddings_model": None,
+        "snapshot": {
+            "models": 0,
+            "routes": 0,
+            "queries": 0,
+            "migrations": 0,
+            "diagnostics": 0,
+        },
+        "scores": {
+            "architecture": None,
+            "performance": None,
+        },
+        "observations": [],
+        "suggested_prompts": [
+            "Explain my architecture",
+            "Investigate my project",
+            "Why is /api/users slow?",
+            "Review database schema",
+        ],
+    }
+
+    # Provider status
+    try:
+        from aksara.ai.hub_settings import load_aihub_settings
+
+        hub = load_aihub_settings()
+        configured = hub.configured_providers()
+        if configured:
+            active = configured[0]
+            data["provider"] = active.kind
+            data["model"] = getattr(hub.defaults, "chat_model", None)
+            data["embeddings_model"] = getattr(hub.defaults, "embeddings_model", None)
+            data["status"] = "ready" if len(configured) >= 1 else "partial"
+        else:
+            data["status"] = "not_configured"
+    except Exception:
+        data["status"] = "not_configured"
+
+    # System snapshot from project graph
+    try:
+        from aksara.ai.project_graph import build_project_graph
+
+        graph = build_project_graph(app=request.app)
+        m = graph.metadata
+        data["snapshot"] = {
+            "models": m.model_count,
+            "routes": m.route_count,
+            "queries": m.query_count,
+            "migrations": m.migration_count,
+            "diagnostics": m.diagnostic_count,
+        }
+
+        # Recent observations from diagnostics
+        observations = []
+        for d in graph.diagnostics[:3]:
+            observations.append(d.message)
+        data["observations"] = observations
+    except Exception:
+        pass
+
+    # Architecture / performance scores (lightweight — only if cached)
+    try:
+        from aksara.ai.architecture_review import run_architecture_review
+
+        arch = run_architecture_review(app=request.app)
+        data["scores"]["architecture"] = {
+            "score": arch.score,
+            "grade": arch.grade,
+        }
+    except Exception:
+        pass
+
+    try:
+        from aksara.ai.performance_analyzer import run_performance_analysis
+
+        perf = run_performance_analysis(app=request.app)
+        data["scores"]["performance"] = {
+            "score": perf.score,
+            "grade": perf.grade,
+        }
+    except Exception:
+        pass
+
+    return data
+
+
+@router.get("/studio/ai/inspector")
+async def studio_ai_inspector(request: Request):
+    """
+    AI Inspector overview endpoint (v0.5.38).
+
+    Returns a summary for the Inspector overview tab:
+    architecture score, performance score, diagnostics count.
+    """
+    data: dict = {
+        "architecture": {"score": None, "grade": None},
+        "performance": {"score": None, "grade": None},
+        "diagnostics_count": 0,
+        "top_issues": [],
+    }
+
+    try:
+        from aksara.ai.project_graph import build_project_graph
+
+        graph = build_project_graph(app=request.app)
+        data["diagnostics_count"] = graph.metadata.diagnostic_count
+        data["top_issues"] = [
+            {"severity": d.severity, "code": d.code, "message": d.message}
+            for d in graph.diagnostics[:5]
+        ]
+    except Exception:
+        pass
+
+    try:
+        from aksara.ai.architecture_review import run_architecture_review
+
+        arch = run_architecture_review(app=request.app)
+        data["architecture"] = {"score": arch.score, "grade": arch.grade}
+    except Exception:
+        pass
+
+    try:
+        from aksara.ai.performance_analyzer import run_performance_analysis
+
+        perf = run_performance_analysis(app=request.app)
+        data["performance"] = {"score": perf.score, "grade": perf.grade}
+    except Exception:
+        pass
+
+    return data
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 

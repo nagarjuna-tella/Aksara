@@ -5251,3 +5251,505 @@ code {
     font-size: 0.78rem;
     color: var(--text-secondary, #aaa);
 }
+
+/* =============================================================================
+   v0.5.38 — AI Home Page
+   ============================================================================= */
+
+.ai-home-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+.ai-home-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.ai-home-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #aaa);
+    flex: 1;
+}
+.ai-home-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.ai-home-status-pill.ready { background: rgba(52,211,153,0.15); color: #34d399; }
+.ai-home-status-pill.partial { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.ai-home-status-pill.not_configured { background: rgba(248,113,113,0.15); color: #f87171; }
+.ai-home-provider-meta {
+    font-size: 0.78rem;
+    color: var(--text-secondary, #aaa);
+}
+
+/* Hero / Ask card */
+.ai-home-hero {
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+.ai-home-hero h3 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 1.1rem;
+}
+.ai-home-hero p {
+    margin: 0 0 var(--spacing-md);
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+}
+.ai-home-prompt-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+.ai-home-prompt-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary, #0f0f23);
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.9rem;
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+.ai-home-prompt-input:focus {
+    border-color: var(--primary);
+}
+.ai-home-prompt-go {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+.ai-home-prompt-go:hover { background: var(--primary-hover); }
+.ai-home-suggestions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+.ai-home-suggestion-chip {
+    padding: 4px 12px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.ai-home-suggestion-chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Quick Action Cards */
+.ai-home-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.ai-home-action-card {
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.ai-home-action-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.ai-home-action-card .action-icon {
+    font-size: 1.3rem;
+    margin-bottom: var(--spacing-xs);
+}
+.ai-home-action-card h4 {
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.ai-home-action-card p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #aaa);
+}
+
+/* Snapshot & Observations */
+.ai-home-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+@media (max-width: 900px) {
+    .ai-home-bottom { grid-template-columns: 1fr; }
+}
+.ai-home-card {
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+.ai-home-card h3 {
+    margin: 0 0 var(--spacing-md);
+    font-size: 1rem;
+    font-weight: 600;
+}
+.ai-home-snapshot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+.ai-home-snapshot-item {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-tertiary, #252540);
+    border-radius: var(--radius-md);
+}
+.ai-home-snapshot-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.ai-home-snapshot-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ai-home-scores {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+}
+.ai-home-score {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+}
+.ai-home-score:hover { color: var(--primary); }
+.ai-home-score strong {
+    color: var(--text-primary, #e0e0e0);
+    font-size: 1rem;
+}
+.ai-home-observations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ai-home-observations-list li {
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-color, #333);
+    font-size: 0.82rem;
+    color: var(--text-secondary, #aaa);
+}
+.ai-home-observations-list li:last-child { border-bottom: none; }
+.ai-home-observations-link {
+    display: block;
+    margin-top: var(--spacing-sm);
+    font-size: 0.82rem;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: none;
+}
+.ai-home-observations-link:hover { text-decoration: underline; }
+
+/* Setup state */
+.ai-home-setup {
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+    text-align: center;
+}
+.ai-home-setup h3 { margin: 0 0 var(--spacing-sm); }
+.ai-home-setup p {
+    margin: 0 0 var(--spacing-md);
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+}
+.ai-home-setup-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 600;
+    cursor: pointer;
+}
+.ai-home-setup-btn:hover { background: var(--primary-hover); }
+
+/* =============================================================================
+   v0.5.38 — AI Inspector Page
+   ============================================================================= */
+
+.ai-inspector-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border-color, #333);
+    margin-bottom: var(--spacing-lg);
+}
+.ai-inspector-tab {
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+.ai-inspector-tab:hover { color: var(--text-primary, #e0e0e0); }
+.ai-inspector-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.ai-inspector-panel {
+    min-height: 300px;
+}
+.ai-inspector-loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary, #aaa);
+}
+.ai-inspector-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.ai-inspector-score-card {
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    text-align: center;
+}
+.ai-inspector-score-card h4 {
+    margin: 0 0 var(--spacing-xs);
+    font-size: 0.82rem;
+    color: var(--text-secondary, #aaa);
+    font-weight: 500;
+}
+.ai-inspector-score-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.ai-inspector-grade {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 6px;
+}
+.ai-inspector-grade-A { background: rgba(52,211,153,0.15); color: #34d399; }
+.ai-inspector-grade-B { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.ai-inspector-grade-C { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.ai-inspector-grade-D { background: rgba(248,113,113,0.15); color: #f87171; }
+.ai-inspector-grade-F { background: rgba(248,113,113,0.2); color: #f87171; }
+.ai-inspector-issues {
+    margin-top: var(--spacing-md);
+}
+.ai-inspector-issues h3 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.ai-inspector-issue {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.82rem;
+}
+.ai-inspector-issue strong {
+    color: var(--text-primary, #e0e0e0);
+}
+.ai-inspector-issue p {
+    margin: 4px 0 0;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.78rem;
+}
+.ai-inspector-empty {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary, #aaa);
+    font-size: 0.85rem;
+}
+.ai-inspector-findings {
+    margin-top: var(--spacing-md);
+}
+
+/* =============================================================================
+   v0.5.38 — Console Plan Preview
+   ============================================================================= */
+
+.ai-console-plan-preview {
+    display: none;
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+.ai-console-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+.ai-console-plan-header h4 {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.ai-console-plan-progress {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #aaa);
+}
+.ai-console-plan-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    margin-right: 6px;
+    animation: ai-plan-pulse 1s infinite;
+}
+@keyframes ai-plan-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+.ai-console-plan-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ai-console-plan-step {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 6px 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #666);
+    transition: all var(--transition-normal);
+}
+.ai-console-plan-step .plan-step-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #333);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+.ai-console-plan-step.active {
+    color: var(--text-primary, #e0e0e0);
+}
+.ai-console-plan-step.active .plan-step-icon {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+}
+.ai-console-plan-label {
+    flex: 1;
+}
+
+/* =============================================================================
+   v0.5.38 — Graph Summary Card
+   ============================================================================= */
+
+.ai-graph-summary-card {
+    display: none;
+    background: var(--bg-secondary, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+.ai-graph-summary-card h4 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.ai-graph-summary-grid {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+.ai-graph-summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 70px;
+}
+.ai-graph-summary-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.ai-graph-summary-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* =============================================================================
+   v0.5.38 — AI Hub Quick Actions
+   ============================================================================= */
+
+.ai-hub-quick-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color, #333);
+}
+.ai-hub-quick-actions button {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary, #252540);
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.ai-hub-quick-actions button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}

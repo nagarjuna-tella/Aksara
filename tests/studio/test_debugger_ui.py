@@ -27,28 +27,30 @@ def _read_static(name: str) -> str:
 
 
 class TestNavigation:
-    def test_ai_debugger_nav_item_exists(self):
+    # v0.5.38: sidebar nav item removed (consolidated into AI Inspector)
+    def test_ai_debugger_nav_item_removed_from_sidebar(self):
         html = _read_static("index.html")
-        assert 'data-section="ai-debugger"' in html
+        sidebar_end = html.find('</nav>')
+        sidebar_html = html[:sidebar_end] if sidebar_end != -1 else html
+        assert 'data-section="ai-debugger"' not in sidebar_html
 
     def test_ai_debugger_nav_label(self):
         html = _read_static("index.html")
         assert "AI Debugger" in html
 
-    def test_ai_debugger_nav_link(self):
-        html = _read_static("index.html")
-        assert 'href="#/ai-debugger"' in html
+    def test_redirect_to_inspector(self):
+        js = _read_static("app.js")
+        assert "'ai-debugger'" in js
+        assert "'ai-inspector'" in js
 
     def test_ai_debugger_nav_icon(self):
         html = _read_static("index.html")
         # Bug icon SVG path
         assert 'class="nav-icon"' in html
 
-    def test_nav_order_after_ai_graph(self):
+    def test_template_preserved(self):
         html = _read_static("index.html")
-        graph_pos = html.find('data-section="ai-graph"')
-        debug_pos = html.find('data-section="ai-debugger"')
-        assert graph_pos < debug_pos, "AI Debugger should appear after AI Graph"
+        assert 'id="template-ai-debugger"' in html
 
 
 # ═══════════════════════════════════════════════════════════════════════════

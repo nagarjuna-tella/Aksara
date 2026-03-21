@@ -5,3 +5,7 @@ __pycache__/
 .DS_Store
 # *.md
 !README.md
+.agents
+.agent
+.cursor
+.mypy_cache/
