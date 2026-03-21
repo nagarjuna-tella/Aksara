@@ -419,22 +419,40 @@ class TestEndpointRegistration:
 
 
 class TestBackwardCompatibility:
-    """Old templates/routes preserved for backward compat."""
+    """v0.5.38: Old standalone templates/functions removed; routing via redirect map."""
 
-    def test_old_ai_debugger_template_preserved(self):
+    def test_old_ai_debugger_template_removed(self):
+        # v0.5.38: standalone template removed, consolidated into AI Inspector
         html = _read_static("index.html")
-        assert 'id="template-ai-debugger"' in html
+        assert 'id="template-ai-debugger"' not in html
 
-    def test_old_ai_architecture_template_preserved(self):
+    def test_old_ai_architecture_template_removed(self):
+        # v0.5.38: standalone template removed, consolidated into AI Inspector
         html = _read_static("index.html")
-        assert 'id="template-ai-architecture"' in html
+        assert 'id="template-ai-architecture"' not in html
 
-    def test_old_ai_performance_template_preserved(self):
+    def test_old_ai_performance_template_removed(self):
+        # v0.5.38: standalone template removed, consolidated into AI Inspector
         html = _read_static("index.html")
-        assert 'id="template-ai-performance"' in html
+        assert 'id="template-ai-performance"' not in html
 
-    def test_old_render_functions_preserved(self):
+    def test_old_render_functions_removed(self):
+        # v0.5.38: old standalone render functions removed; replaced by _renderInspectorTab
         js = _read_static("app.js")
-        assert "renderAiDebugger" in js
-        assert "renderAiArchitecture" in js
-        assert "renderAiPerformance" in js
+        assert "function renderAiDebugger()" not in js
+        assert "function renderAiArchitecture()" not in js
+        assert "function renderAiPerformance()" not in js
+
+    def test_redirect_map_routes_old_sections(self):
+        # Redirect map still exists so old URLs navigate to AI Inspector
+        js = _read_static("app.js")
+        assert "'ai-debugger': 'ai-inspector'" in js
+        assert "'ai-architecture': 'ai-inspector'" in js
+        assert "'ai-performance': 'ai-inspector'" in js
+
+    def test_ai_inspector_has_consolidated_tabs(self):
+        # AI Inspector provides debug, architecture, and performance tabs
+        html = _read_static("index.html")
+        assert 'data-inspector-tab="debug"' in html
+        assert 'data-inspector-tab="architecture"' in html
+        assert 'data-inspector-tab="performance"' in html

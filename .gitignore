@@ -9,3 +9,4 @@ __pycache__/
 .agent
 .cursor
 .mypy_cache/
+.github/

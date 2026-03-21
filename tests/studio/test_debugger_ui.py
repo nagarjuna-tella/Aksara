@@ -1,17 +1,21 @@
 """
 v0.5.33 — Studio AI Debugger UI: template, navigation, JS, and CSS tests.
 
+v0.5.38 update: The standalone ai-debugger template/functions/CSS were
+removed and consolidated into the AI Inspector inline tabs. These tests now
+verify the consolidated state.
+
 Tests cover:
-    - Navigation item present in index.html
-    - Template structure for ai-debugger
-    - app.js rendering functions
-    - styles.css AI Debugger styles
-    - Correct section wiring
+    - Navigation item removed from sidebar
+    - Standalone template removed (consolidated into AI Inspector)
+    - AI Inspector has debug tab
+    - Redirect map routes ai-debugger → ai-inspector
+    - AI Inspector JS functions present; old standalone JS functions removed
+    - Old CSS classes removed; AI Inspector CSS classes present
 """
 
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
 
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "aksara" / "studio" / "static"
@@ -34,10 +38,6 @@ class TestNavigation:
         sidebar_html = html[:sidebar_end] if sidebar_end != -1 else html
         assert 'data-section="ai-debugger"' not in sidebar_html
 
-    def test_ai_debugger_nav_label(self):
-        html = _read_static("index.html")
-        assert "AI Debugger" in html
-
     def test_redirect_to_inspector(self):
         js = _read_static("app.js")
         assert "'ai-debugger'" in js
@@ -45,57 +45,45 @@ class TestNavigation:
 
     def test_ai_debugger_nav_icon(self):
         html = _read_static("index.html")
-        # Bug icon SVG path
         assert 'class="nav-icon"' in html
 
-    def test_template_preserved(self):
+    def test_standalone_template_removed(self):
+        # v0.5.38: standalone template removed; debug is a tab in AI Inspector
         html = _read_static("index.html")
-        assert 'id="template-ai-debugger"' in html
+        assert 'id="template-ai-debugger"' not in html
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Template tests
+# Template tests — standalone removed, consolidated into AI Inspector
 # ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestTemplate:
-    def test_template_id(self):
+    def test_ai_inspector_template_exists(self):
         html = _read_static("index.html")
-        assert 'id="template-ai-debugger"' in html
+        assert 'id="template-ai-inspector"' in html
 
-    def test_section_header(self):
+    def test_ai_inspector_has_debug_tab(self):
         html = _read_static("index.html")
-        assert "AI Debugger" in html
-        assert "root-cause analysis" in html.lower()
+        assert 'data-inspector-tab="debug"' in html
 
-    def test_toolbar_elements(self):
+    def test_ai_inspector_has_architecture_tab(self):
         html = _read_static("index.html")
-        assert 'id="ai-debugger-query"' in html
-        assert 'id="ai-debugger-run"' in html
-        assert 'id="ai-debugger-status"' in html
+        assert 'data-inspector-tab="architecture"' in html
 
-    def test_summary_container(self):
+    def test_ai_inspector_has_performance_tab(self):
         html = _read_static("index.html")
-        assert 'id="ai-debugger-summary"' in html
+        assert 'data-inspector-tab="performance"' in html
 
-    def test_tabs(self):
+    def test_ai_inspector_panel_exists(self):
         html = _read_static("index.html")
-        assert 'data-debug-tab="root-causes"' in html
-        assert 'data-debug-tab="clusters"' in html
-        assert 'data-debug-tab="issues"' in html
-        assert 'data-debug-tab="fix-plan"' in html
+        assert 'id="ai-inspector-panel"' in html
 
-    def test_panel(self):
+    def test_standalone_template_ids_removed(self):
         html = _read_static("index.html")
-        assert 'id="ai-debugger-panel"' in html
-
-    def test_query_input_placeholder(self):
-        html = _read_static("index.html")
-        assert "why is" in html.lower()
-
-    def test_run_button_label(self):
-        html = _read_static("index.html")
-        assert "Run Debugger" in html
+        assert 'id="ai-debugger-panel"' not in html
+        assert 'id="ai-debugger-run"' not in html
+        assert 'id="ai-debugger-summary"' not in html
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -104,39 +92,45 @@ class TestTemplate:
 
 
 class TestJavaScript:
-    def test_render_function_exists(self):
+    def test_inspector_render_function_exists(self):
         js = _read_static("app.js")
-        assert "renderAiDebugger" in js
+        assert "function renderAiInspector()" in js
 
-    def test_render_section_case(self):
+    def test_inspector_tab_render_function_exists(self):
         js = _read_static("app.js")
-        assert "case 'ai-debugger'" in js
+        assert "function _renderInspectorTab(" in js
 
-    def test_run_debugger_function(self):
+    def test_standalone_render_function_removed(self):
+        # v0.5.38: renderAiDebugger consolidated into _renderInspectorTab
         js = _read_static("app.js")
-        assert "_runDebugger" in js
+        assert "function renderAiDebugger()" not in js
 
-    def test_render_tab_function(self):
+    def test_standalone_switch_case_removed(self):
         js = _read_static("app.js")
-        assert "_renderDebuggerTab" in js
+        assert "case 'ai-debugger':" not in js
 
-    def test_root_causes_renderer(self):
+    def test_standalone_run_function_removed(self):
         js = _read_static("app.js")
-        assert "_renderDebugRootCauses" in js
+        assert "function _runDebugger()" not in js
 
-    def test_clusters_renderer(self):
+    def test_standalone_tab_renderer_removed(self):
         js = _read_static("app.js")
-        assert "_renderDebugClusters" in js
+        assert "function _renderDebuggerTab(" not in js
 
-    def test_issues_renderer(self):
+    def test_standalone_root_cause_renderer_removed(self):
         js = _read_static("app.js")
-        assert "_renderDebugIssues" in js
+        assert "function _renderDebugRootCauses(" not in js
 
-    def test_fix_plan_renderer(self):
+    def test_standalone_clusters_renderer_removed(self):
         js = _read_static("app.js")
-        assert "_renderDebugFixPlan" in js
+        assert "function _renderDebugClusters(" not in js
+
+    def test_standalone_data_variable_removed(self):
+        js = _read_static("app.js")
+        assert "_debuggerData" not in js
 
     def test_fetch_endpoint(self):
+        # Backend endpoint still served; now called from _renderInspectorTab
         js = _read_static("app.js")
         assert "/studio/ai/debug" in js
 
@@ -144,13 +138,9 @@ class TestJavaScript:
         js = _read_static("app.js")
         assert "method: 'POST'" in js
 
-    def test_debugger_data_variable(self):
-        js = _read_static("app.js")
-        assert "_debuggerData" in js
-
     def test_escaping_used(self):
         js = _read_static("app.js")
-        # _esc() should be used for XSS prevention
+        # _esc() used throughout for XSS prevention
         assert "_esc(" in js
 
 
@@ -160,68 +150,30 @@ class TestJavaScript:
 
 
 class TestStyles:
-    def test_toolbar_style(self):
+    def test_standalone_css_removed(self):
+        # v0.5.38: all .ai-debugger-* classes were removed with the dead section
         css = _read_static("styles.css")
-        assert ".ai-debugger-toolbar" in css
+        assert ".ai-debugger-toolbar" not in css
+        assert ".ai-debugger-panel" not in css
+        assert ".ai-debugger-tabs" not in css
+        assert ".ai-debugger-summary" not in css
 
-    def test_query_input_style(self):
+    def test_inspector_tabs_class(self):
         css = _read_static("styles.css")
-        assert ".ai-debugger-query-input" in css
+        assert ".ai-inspector-tabs" in css
 
-    def test_summary_style(self):
+    def test_inspector_tab_active_class(self):
         css = _read_static("styles.css")
-        assert ".ai-debugger-summary" in css
+        assert ".ai-inspector-tab.active" in css
 
-    def test_summary_grid(self):
+    def test_inspector_panel_class(self):
         css = _read_static("styles.css")
-        assert ".ai-debugger-summary-grid" in css
+        assert ".ai-inspector-panel" in css
 
-    def test_stat_styles(self):
+    def test_inspector_empty_class(self):
         css = _read_static("styles.css")
-        assert ".ai-debugger-stat" in css
-        assert ".ai-debugger-stat-num" in css
-        assert ".ai-debugger-stat-label" in css
+        assert ".ai-inspector-empty" in css
 
-    def test_tabs_style(self):
+    def test_inspector_findings_class(self):
         css = _read_static("styles.css")
-        assert ".ai-debugger-tabs" in css
-        assert ".ai-debugger-tab" in css
-        assert ".ai-debugger-tab.active" in css
-
-    def test_panel_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-panel" in css
-
-    def test_table_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-table" in css
-
-    def test_root_cause_card_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-rc-card" in css
-
-    def test_confidence_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-confidence" in css
-
-    def test_severity_styles(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-rc-card.severity-error" in css
-        assert ".ai-debugger-rc-card.severity-warning" in css
-
-    def test_fix_plan_styles(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-fix-plan" in css
-        assert ".ai-debugger-fix-group" in css
-
-    def test_loading_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-loading" in css
-
-    def test_error_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-error" in css
-
-    def test_empty_style(self):
-        css = _read_static("styles.css")
-        assert ".ai-debugger-empty" in css
+        assert ".ai-inspector-findings" in css

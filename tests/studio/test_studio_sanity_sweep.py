@@ -1325,56 +1325,30 @@ class TestResolveDefaultsEdgeCases:
 
 
 class TestV036AiPanelEscaping:
-    """Ensure Architecture Review and Performance panels use _esc() for XSS prevention."""
+    """Ensure AI Inspector uses _esc() for XSS prevention (v0.5.38: consolidated panel)."""
 
     @pytest.fixture
     def js_src(self):
         return (STATIC_DIR / "app.js").read_text()
 
-    def test_arch_findings_uses_esc(self, js_src):
-        """_renderArchFindings must escape severity, title, description."""
-        fn = _extract_js_function(js_src, "_renderArchFindings")
-        assert "_esc(f.title)" in fn
-        assert "_esc(f.description)" in fn
-        assert "_esc(f.severity)" in fn
+    def test_inspector_tab_uses_esc(self, js_src):
+        """_renderInspectorTab must escape user data to prevent XSS."""
+        fn = _extract_js_function(js_src, "_renderInspectorTab")
+        assert "_esc(" in fn
 
-    def test_arch_suggestions_uses_esc(self, js_src):
-        fn = _extract_js_function(js_src, "_renderArchSuggestions")
-        assert "_esc(s.title)" in fn
-        assert "_esc(s.description)" in fn
+    def test_inspector_error_handler_uses_esc(self, js_src):
+        """AI Inspector error paths must escape err.message."""
+        assert "_esc(e.message)" in js_src
 
-    def test_perf_issues_uses_esc(self, js_src):
-        fn = _extract_js_function(js_src, "_renderPerfIssues")
-        assert "_esc(i.title)" in fn
-        assert "_esc(i.description)" in fn
-        assert "_esc(i.severity)" in fn
+    def test_inspector_severity_escaping(self, js_src):
+        """AI Inspector must escape severity values."""
+        fn = _extract_js_function(js_src, "_renderInspectorTab")
+        assert "_esc(f.severity" in fn or "_esc(i.severity" in fn
 
-    def test_perf_recommendations_uses_esc(self, js_src):
-        fn = _extract_js_function(js_src, "_renderPerfRecommendations")
-        assert "_esc(r.title)" in fn
-        assert "_esc(r.description)" in fn
-
-    def test_arch_error_handler_uses_esc(self, js_src):
-        """Architecture fetch .catch must escape err.message."""
-        idx = js_src.find("ai-arch-error")
-        assert idx > 0
-        snippet = js_src[max(0, idx - 100): idx + 200]
-        assert "_esc(err.message)" in snippet
-
-    def test_perf_error_handler_uses_esc(self, js_src):
-        idx = js_src.find("ai-perf-error")
-        assert idx > 0
-        snippet = js_src[max(0, idx - 100): idx + 200]
-        assert "_esc(err.message)" in snippet
-
-    def test_arch_grade_escaping(self, js_src):
-        """Architecture score card should escape grade value."""
-        run_fn = _extract_js_function(js_src, "_runArchReview")
-        assert "_esc(" in run_fn
-
-    def test_perf_grade_escaping(self, js_src):
-        run_fn = _extract_js_function(js_src, "_runPerfAnalysis")
-        assert "_esc(" in run_fn
+    def test_inspector_grade_escaping(self, js_src):
+        """AI Inspector must escape grade values."""
+        fn = _extract_js_function(js_src, "_renderInspectorTab")
+        assert "_esc(data.grade)" in fn
 
     def test_no_alert_calls(self, js_src):
         """No raw alert() calls should exist."""
@@ -1382,14 +1356,19 @@ class TestV036AiPanelEscaping:
         matches = re.findall(r"\balert\s*\(", js_src)
         assert len(matches) == 0
 
-    def test_debugger_uses_esc(self, js_src):
-        """Debugger panel must use _esc for error messages."""
-        fn = _extract_js_function(js_src, "_runDebugger")
-        assert "_esc(" in fn
+    def test_standalone_arch_functions_removed(self, js_src):
+        # v0.5.38: old standalone functions removed; escaping now in _renderInspectorTab
+        assert "function _renderArchFindings(" not in js_src
+        assert "function _renderArchSuggestions(" not in js_src
+
+    def test_standalone_perf_functions_removed(self, js_src):
+        # v0.5.38: old standalone functions removed; escaping now in _renderInspectorTab
+        assert "function _renderPerfIssues(" not in js_src
+        assert "function _renderPerfRecommendations(" not in js_src
 
 
 class TestV036AiPanelStates:
-    """All AI panels must have loading/empty/error state markup."""
+    """AI Inspector must have loading and empty/error states (v0.5.38: consolidated panel)."""
 
     @pytest.fixture
     def html_src(self):
@@ -1399,56 +1378,59 @@ class TestV036AiPanelStates:
     def js_src(self):
         return (STATIC_DIR / "app.js").read_text()
 
-    def test_debugger_loading_state(self, js_src):
-        assert "ai-debugger-loading" in js_src
+    def test_inspector_loading_state(self, js_src):
+        assert "ai-inspector-loading" in js_src
 
-    def test_debugger_error_state(self, js_src):
-        assert "ai-debugger-error" in js_src
+    def test_inspector_empty_state(self, js_src):
+        assert "ai-inspector-empty" in js_src
 
-    def test_arch_loading_state(self, js_src):
-        assert "ai-arch-loading" in js_src
+    def test_standalone_states_removed(self, js_src):
+        # v0.5.38: old standalone state strings removed
+        assert "ai-debugger-loading" not in js_src
+        assert "ai-arch-loading" not in js_src
+        assert "ai-perf-loading" not in js_src
 
-    def test_arch_error_state(self, js_src):
-        assert "ai-arch-error" in js_src
-
-    def test_arch_empty_state(self, js_src):
-        assert "ai-arch-empty" in js_src
-
-    def test_perf_loading_state(self, js_src):
-        assert "ai-perf-loading" in js_src
-
-    def test_perf_error_state(self, js_src):
-        assert "ai-perf-error" in js_src
-
-    def test_perf_empty_state(self, js_src):
-        assert "ai-perf-empty" in js_src
-
-    def test_all_ai_panels_in_nav(self, html_src):
-        """All AI panels should have nav links."""
-        for panel in ["ai-console", "ai-graph", "ai-debugger", "ai-architecture", "ai-performance"]:
+    def test_live_panels_in_nav(self, html_src):
+        """Active nav sections should be present in sidebar."""
+        for panel in ["ai-console", "ai-graph", "ai-inspector"]:
             assert panel in html_src, f"Missing nav item for {panel}"
+
+    def test_old_panels_redirect_via_js(self, js_src):
+        """Old section names still handled via redirect map in app.js."""
+        for panel in ["ai-debugger", "ai-architecture", "ai-performance"]:
+            assert panel in js_src, f"Missing redirect entry for {panel}"
 
 
 class TestV036CssVersionHeader:
-    """CSS version should match release."""
+    """CSS version and AI Inspector styles (v0.5.38: standalone sections removed)."""
 
     def test_css_version_is_current(self):
         css = (STATIC_DIR / "styles.css").read_text()
         assert "v0.5.36" in css[:200]
 
-    def test_css_has_arch_styles(self):
+    def test_css_standalone_arch_styles_removed(self):
+        # v0.5.38: .ai-arch-* classes removed with the consolidated inspector
         css = (STATIC_DIR / "styles.css").read_text()
-        assert ".ai-arch-finding-card" in css
-        assert ".ai-arch-sev-critical" in css
+        assert ".ai-arch-finding-card" not in css
+        assert ".ai-arch-sev-critical" not in css
 
-    def test_css_has_perf_styles(self):
+    def test_css_standalone_perf_styles_removed(self):
+        # v0.5.38: most .ai-perf-* classes removed; .ai-perf-sev-badge preserved
         css = (STATIC_DIR / "styles.css").read_text()
-        assert ".ai-perf-issue-card" in css
-        assert ".ai-perf-sev-high" in css
+        assert ".ai-perf-issue-card" not in css
+        assert ".ai-perf-sev-high" not in css
 
-    def test_css_has_debugger_styles(self):
+    def test_css_standalone_debugger_styles_removed(self):
+        # v0.5.38: .ai-debugger-* classes removed
         css = (STATIC_DIR / "styles.css").read_text()
-        assert ".ai-debugger-" in css
+        assert ".ai-debugger-" not in css
+
+    def test_css_has_inspector_styles(self):
+        # v0.5.38: AI Inspector CSS is the live replacement
+        css = (STATIC_DIR / "styles.css").read_text()
+        assert ".ai-inspector-tabs" in css
+        assert ".ai-inspector-panel" in css
+        assert ".ai-perf-sev-badge" in css
 
 
 def _extract_js_function(source: str, name: str) -> str:

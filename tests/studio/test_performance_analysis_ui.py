@@ -1,19 +1,20 @@
 """
 v0.5.35 — AI Performance Analyzer: Studio UI tests.
 
+v0.5.38 update: The standalone ai-performance template/functions/CSS were
+removed and consolidated into the AI Inspector inline tabs. These tests now
+verify the consolidated state.
+
 Tests cover:
-    - Navigation: HTML data-section, label, href, SVG icon
-    - Template structure: template ID, header, run button, score card,
-      metrics, tabs, panel, status
-    - JavaScript: functions, switch case, data variable, fetch endpoint,
-      grade/score classes
-    - CSS: toolbar, score card, grade colours, metrics grid, tabs,
-      issue cards, severity borders, recommendation cards, impact badges
+    - Navigation: sidebar nav item removed, redirect map intact
+    - Standalone template removed (consolidated into AI Inspector)
+    - AI Inspector has performance tab
+    - JavaScript: inspector functions present, old standalone functions removed
+    - CSS: old .ai-perf-* classes removed, .ai-perf-sev-badge preserved in AI Inspector section
 """
 
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent.parent / "aksara" / "studio" / "static"
@@ -35,6 +36,7 @@ class TestNavigation:
         assert 'data-section="ai-performance"' not in sidebar_html
 
     def test_nav_label_in_template(self):
+        # "Performance" still appears as a tab in the AI Inspector
         assert "Performance" in _HTML
 
     def test_redirect_to_inspector(self):
@@ -42,52 +44,41 @@ class TestNavigation:
         assert "'ai-inspector'" in _JS
 
     def test_nav_svg_icon(self):
-        # The performance nav icon uses a polyline (pulse/chart)
         assert 'class="nav-icon"' in _HTML
 
-    def test_template_preserved(self):
-        assert 'id="template-ai-performance"' in _HTML
+    def test_standalone_template_removed(self):
+        # v0.5.38: standalone template removed; performance is a tab in AI Inspector
+        assert 'id="template-ai-performance"' not in _HTML
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Template Structure
+# Template Structure — consolidated into AI Inspector
 # ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestTemplateStructure:
-    def test_template_id(self):
-        assert 'id="template-ai-performance"' in _HTML
+    def test_ai_inspector_template_exists(self):
+        assert 'id="template-ai-inspector"' in _HTML
 
-    def test_section_header(self):
-        assert "AI Performance Analyzer" in _HTML
+    def test_ai_inspector_has_performance_tab(self):
+        assert 'data-inspector-tab="performance"' in _HTML
 
-    def test_section_subtitle(self):
-        assert "slow queries" in _HTML.lower()
-        assert "n+1" in _HTML.lower() or "n+1" in _HTML
+    def test_ai_inspector_has_debug_tab(self):
+        assert 'data-inspector-tab="debug"' in _HTML
 
-    def test_run_button(self):
-        assert 'id="ai-perf-run"' in _HTML
-        assert "Run Analysis" in _HTML
+    def test_ai_inspector_has_architecture_tab(self):
+        assert 'data-inspector-tab="architecture"' in _HTML
 
-    def test_score_card(self):
-        assert 'id="ai-perf-score-card"' in _HTML
+    def test_ai_inspector_has_overview_tab(self):
+        assert 'data-inspector-tab="overview"' in _HTML
 
-    def test_metrics_element(self):
-        assert 'id="ai-perf-metrics"' in _HTML
+    def test_ai_inspector_panel_exists(self):
+        assert 'id="ai-inspector-panel"' in _HTML
 
-    def test_tabs(self):
-        assert 'class="ai-perf-tabs"' in _HTML
-        assert 'data-perf-tab="issues"' in _HTML
-        assert 'data-perf-tab="recommendations"' in _HTML
-
-    def test_panel(self):
-        assert 'id="ai-perf-panel"' in _HTML
-
-    def test_status(self):
-        assert 'id="ai-perf-status"' in _HTML
-
-    def test_empty_state(self):
-        assert "ai-perf-empty" in _HTML
+    def test_standalone_template_ids_removed(self):
+        assert 'id="ai-perf-run"' not in _HTML
+        assert 'id="ai-perf-panel"' not in _HTML
+        assert 'id="ai-perf-score-card"' not in _HTML
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -96,48 +87,41 @@ class TestTemplateStructure:
 
 
 class TestJavaScript:
-    def test_render_function(self):
-        assert "function renderAiPerformance()" in _JS
+    def test_inspector_render_function_exists(self):
+        assert "function renderAiInspector()" in _JS
 
-    def test_run_analysis_function(self):
-        assert "function _runPerfAnalysis()" in _JS
+    def test_inspector_tab_render_function_exists(self):
+        assert "function _renderInspectorTab(" in _JS
 
-    def test_render_tab_function(self):
-        assert "function _renderPerfTab(" in _JS
+    def test_standalone_render_function_removed(self):
+        # v0.5.38: renderAiPerformance consolidated into _renderInspectorTab
+        assert "function renderAiPerformance()" not in _JS
 
-    def test_render_issues_function(self):
-        assert "function _renderPerfIssues(" in _JS
+    def test_standalone_run_function_removed(self):
+        assert "function _runPerfAnalysis()" not in _JS
 
-    def test_render_recommendations_function(self):
-        assert "function _renderPerfRecommendations(" in _JS
+    def test_standalone_tab_function_removed(self):
+        assert "function _renderPerfTab(" not in _JS
 
-    def test_switch_case(self):
-        assert "case 'ai-performance':" in _JS
+    def test_standalone_issues_function_removed(self):
+        assert "function _renderPerfIssues(" not in _JS
 
-    def test_data_variable(self):
-        assert "_perfData" in _JS
+    def test_standalone_recommendations_function_removed(self):
+        assert "function _renderPerfRecommendations(" not in _JS
+
+    def test_standalone_switch_case_removed(self):
+        assert "case 'ai-performance':" not in _JS
+
+    def test_standalone_data_variable_removed(self):
+        assert "_perfData" not in _JS
 
     def test_fetch_endpoint(self):
+        # Backend endpoint still served; now called from _renderInspectorTab
         assert "/studio/ai/performance-analysis" in _JS
 
-    def test_grade_classes(self):
-        # Grade classes are dynamically constructed in JS via gradeClass variable
-        assert "ai-perf-grade-" in _JS
-        # Specific grades are defined in CSS
-        for grade in ("a", "b", "c", "d", "f"):
-            assert f".ai-perf-grade-{grade}" in _CSS
-
-    def test_score_display(self):
-        assert "ai-perf-score-num" in _JS
-
     def test_severity_badge(self):
+        # ai-perf-sev-badge is still used in _renderInspectorTab performance tab
         assert "ai-perf-sev-badge" in _JS
-
-    def test_impact_badge(self):
-        assert "ai-perf-impact-badge" in _JS
-
-    def test_empty_states(self):
-        assert "ai-perf-empty" in _JS
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -146,58 +130,26 @@ class TestJavaScript:
 
 
 class TestCSS:
-    def test_toolbar(self):
-        assert ".ai-perf-toolbar" in _CSS
+    def test_standalone_css_removed(self):
+        # v0.5.38: all .ai-perf-* classes were removed (except ai-perf-sev-badge)
+        assert ".ai-perf-toolbar" not in _CSS
+        assert ".ai-perf-score-card" not in _CSS
+        assert ".ai-perf-tabs" not in _CSS
+        assert ".ai-perf-panel" not in _CSS
+        assert ".ai-perf-grade-a" not in _CSS
 
-    def test_score_card(self):
-        assert ".ai-perf-score-card" in _CSS
-        assert ".ai-perf-score-inner" in _CSS
-
-    def test_grade_colours(self):
-        for grade in ("a", "b", "c", "d", "f"):
-            assert f".ai-perf-grade-{grade}" in _CSS
-
-    def test_score_number(self):
-        assert ".ai-perf-score-num" in _CSS
-
-    def test_metrics_grid(self):
-        assert ".ai-perf-metrics-grid" in _CSS
-        assert ".ai-perf-metric" in _CSS
-        assert ".ai-perf-metric-num" in _CSS
-        assert ".ai-perf-metric-label" in _CSS
-
-    def test_tabs(self):
-        assert ".ai-perf-tabs" in _CSS
-        assert ".ai-perf-tab" in _CSS
-        assert ".ai-perf-tab.active" in _CSS
-
-    def test_issue_card(self):
-        assert ".ai-perf-issue-card" in _CSS
-        assert ".ai-perf-issue-header" in _CSS
-
-    def test_severity_borders(self):
-        for sev in ("critical", "high", "medium", "low"):
-            assert f".ai-perf-sev-{sev}" in _CSS
-
-    def test_severity_badge(self):
+    def test_severity_badge_preserved(self):
+        # .ai-perf-sev-badge was preserved; moved to AI Inspector CSS section
         assert ".ai-perf-sev-badge" in _CSS
 
-    def test_recommendation_card(self):
-        assert ".ai-perf-rec-card" in _CSS
-        assert ".ai-perf-rec-header" in _CSS
+    def test_inspector_tabs_class(self):
+        assert ".ai-inspector-tabs" in _CSS
 
-    def test_impact_badges(self):
-        for impact in ("high", "medium", "low"):
-            assert f".ai-perf-impact-{impact}" in _CSS
+    def test_inspector_tab_active_class(self):
+        assert ".ai-inspector-tab.active" in _CSS
 
-    def test_panel(self):
-        assert ".ai-perf-panel" in _CSS
+    def test_inspector_panel_class(self):
+        assert ".ai-inspector-panel" in _CSS
 
-    def test_empty_state(self):
-        assert ".ai-perf-empty" in _CSS
-
-    def test_loading_state(self):
-        assert ".ai-perf-loading" in _CSS
-
-    def test_error_state(self):
-        assert ".ai-perf-error" in _CSS
+    def test_inspector_empty_class(self):
+        assert ".ai-inspector-empty" in _CSS
