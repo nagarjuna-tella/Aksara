@@ -1332,6 +1332,37 @@
             </div>
         </div>
 
+        <!-- v0.5.40: Daily Briefing Card -->
+        <div class="card ai-home-briefing-card" id="ai-home-briefing-card">
+            <div class="card-header">
+                <h3>Daily Briefing</h3>
+                <button class="btn btn-sm btn-ghost" id="ai-home-refresh-briefing" title="Refresh briefing">&#8635;</button>
+            </div>
+            <div class="card-body">
+                <div id="ai-home-briefing-content">
+                    <p class="text-muted">Loading daily briefing&hellip;</p>
+                </div>
+                <div class="ai-home-briefing-scores" id="ai-home-briefing-scores" style="display:none;">
+                    <div class="ai-home-briefing-score-item">
+                        <span class="ai-home-briefing-score-label">Performance</span>
+                        <span class="ai-home-briefing-score-val" id="ai-home-briefing-perf">-</span>
+                    </div>
+                    <div class="ai-home-briefing-score-item">
+                        <span class="ai-home-briefing-score-label">Architecture</span>
+                        <span class="ai-home-briefing-score-val" id="ai-home-briefing-arch">-</span>
+                    </div>
+                </div>
+                <div class="ai-home-briefing-issues" id="ai-home-briefing-issues" style="display:none;">
+                    <h4>Top Issues</h4>
+                    <ul id="ai-home-briefing-issue-list"></ul>
+                </div>
+                <div class="ai-home-briefing-recs" id="ai-home-briefing-recs" style="display:none;">
+                    <h4>Recommended</h4>
+                    <ul id="ai-home-briefing-rec-list"></ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Observations -->
         <div class="card ai-home-observations-card">
             <div class="card-header"><h3>Recent Observations</h3></div>
@@ -1369,10 +1400,23 @@
             <button class="ai-inspector-tab" data-inspector-tab="debug">Debug</button>
             <button class="ai-inspector-tab" data-inspector-tab="architecture">Architecture</button>
             <button class="ai-inspector-tab" data-inspector-tab="performance">Performance</button>
+            <button class="ai-inspector-tab" data-inspector-tab="investigations">Investigations</button>
         </div>
 
         <div class="ai-inspector-panel" id="ai-inspector-panel">
             <div class="ai-inspector-loading">Loading inspector&hellip;</div>
+        </div>
+
+        <!-- v0.5.40: Investigation Timeline (hidden by default, shown when tab selected) -->
+        <div class="ai-inspector-investigations-panel" id="ai-inspector-investigations" style="display:none;">
+            <div class="card">
+                <div class="card-header"><h3>Investigation Timeline</h3></div>
+                <div class="card-body">
+                    <div id="ai-inspector-investigation-list">
+                        <p class="text-muted">No investigations yet.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -1384,6 +1428,21 @@
         </div>
         
         <div class="ai-console-container">
+            <!-- v0.5.40: Active Session Banner -->
+            <div class="ai-console-session-banner" id="ai-console-session-banner" style="display:none;">
+                <div class="ai-console-session-info">
+                    <span class="ai-console-session-label">Active Investigation:</span>
+                    <span class="ai-console-session-goal" id="ai-console-session-goal"></span>
+                </div>
+                <div class="ai-console-session-progress">
+                    <div class="ai-console-session-progress-bar">
+                        <div class="ai-console-session-progress-fill" id="ai-console-session-progress-fill" style="width:0%"></div>
+                    </div>
+                    <span class="ai-console-session-progress-text" id="ai-console-session-progress-text">0/0</span>
+                </div>
+                <button class="btn btn-sm btn-accent" id="ai-console-next-step">Next Step</button>
+            </div>
+
             <!-- Output area -->
             <div class="ai-console-output" id="ai-console-output">
                 <div class="ai-console-welcome">

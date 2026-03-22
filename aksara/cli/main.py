@@ -27,7 +27,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.39"
+CLI_VERSION = "0.5.40"
 
 
 def discover_models(app_path: Optional[str] = None) -> None:
@@ -2631,6 +2631,152 @@ def ai_investigate(as_json, summary_only):
                        f"Routes: {counts.get('routes', 0)}  "
                        f"Queries: {counts.get('queries', 0)}  "
                        f"Migrations: {counts.get('migrations', 0)}")
+
+    click.echo()
+
+
+# ─── v0.5.40: aksara ai investigate --continue ──────────────────────────────
+
+
+@ai.command("continue")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output as JSON")
+def ai_investigate_continue(as_json):
+    """Continue the most recent active investigation.
+
+    Resumes the last active investigation session and executes its next
+    pending step.  Equivalent to typing "continue" in the AI Console.
+
+    Examples:
+
+        aksara ai continue
+
+        aksara ai continue --json
+    """
+    import json as _json
+    from aksara.ai.session_store import get_active_session
+    from aksara.ai.investigation_runner import execute_next_step
+
+    session = get_active_session()
+    if session is None:
+        click.echo("  ⚠️  No active investigation session to continue.")
+        click.echo("  Start one with: aksara ai investigate")
+        click.echo()
+        return
+
+    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo(f"  Continuing investigation: {session.goal}")
+    click.echo("  " + "─" * 40)
+
+    session = execute_next_step(session)
+
+    if as_json:
+        click.echo(_json.dumps(session.to_dict(), indent=2, default=str))
+        return
+
+    # Show step results
+    if session.plan and session.plan.steps:
+        for step in session.plan.steps:
+            if step.status == "done":
+                click.echo(click.style(f"  ✓ {step.label}", fg="green"))
+            elif step.status == "running":
+                click.echo(click.style(f"  ▶ {step.label}", fg="yellow"))
+            elif step.status == "failed":
+                click.echo(click.style(f"  ✗ {step.label}: {step.error}", fg="red"))
+            elif step.status == "pending":
+                click.echo(f"  ○ {step.label}")
+
+    pending = sum(1 for s in (session.plan.steps if session.plan else []) if s.status == "pending")
+    if pending:
+        click.echo(f"\n  {pending} step(s) remaining. Run 'aksara ai continue' for the next step.")
+    else:
+        click.echo(f"\n  \033[32m✓ Investigation complete.\033[0m")
+
+    if session.findings:
+        click.echo("  " + "─" * 40)
+        click.echo("  Findings:")
+        for f in session.findings:
+            click.echo(f"    • {f}")
+
+    click.echo()
+
+
+# ─── v0.5.40: aksara ai briefing ────────────────────────────────────────────
+
+
+@ai.command("briefing")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Output full briefing as JSON")
+@click.option("--summary", "summary_only", is_flag=True, default=False, help="Compact summary only")
+def ai_briefing(as_json, summary_only):
+    """Generate a daily system health briefing.
+
+    Aggregates performance, architecture, debug signals, and recent
+    investigations into a single report.
+
+    Examples:
+
+        aksara ai briefing
+
+        aksara ai briefing --json
+
+        aksara ai briefing --summary
+    """
+    import json as _json
+    from aksara.ai.daily_briefing import generate_daily_briefing
+
+    briefing = generate_daily_briefing()
+
+    if as_json:
+        if summary_only:
+            click.echo(_json.dumps(briefing.to_summary_dict(), indent=2, default=str))
+        else:
+            click.echo(_json.dumps(briefing.to_dict(), indent=2, default=str))
+        return
+
+    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    click.echo("  Daily Briefing — System Health Summary")
+    click.echo("  " + "═" * 48)
+
+    click.echo(f"\n  {briefing.summary}")
+
+    # Scores
+    if briefing.performance_score >= 0:
+        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+        p_grade = "A" if briefing.performance_score >= 90 else "B" if briefing.performance_score >= 80 else "C" if briefing.performance_score >= 70 else "D" if briefing.performance_score >= 60 else "F"
+        click.echo(f"\n  Performance: {briefing.performance_score:.0f}/100  " +
+                   click.style(f"({p_grade})", fg=grade_colors.get(p_grade), bold=True))
+
+    if briefing.architecture_score >= 0:
+        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+        a_grade = "A" if briefing.architecture_score >= 90 else "B" if briefing.architecture_score >= 80 else "C" if briefing.architecture_score >= 70 else "D" if briefing.architecture_score >= 60 else "F"
+        click.echo(f"  Architecture: {briefing.architecture_score:.0f}/100  " +
+                   click.style(f"({a_grade})", fg=grade_colors.get(a_grade), bold=True))
+
+    if not summary_only:
+        # Issues
+        if briefing.issues:
+            click.echo(f"\n  Top Issues ({len(briefing.issues)}):")
+            for issue in briefing.issues[:5]:
+                click.echo(f"    • {issue}")
+
+        # Debug signals
+        if briefing.debug_signals:
+            click.echo(f"\n  Debug Signals ({len(briefing.debug_signals)}):")
+            for sig in briefing.debug_signals[:3]:
+                click.echo(f"    • {sig}")
+
+        # Recommendations
+        if briefing.recommendations:
+            click.echo(f"\n  Recommendations:")
+            for i, rec in enumerate(briefing.recommendations, 1):
+                click.echo(f"    {i}. {rec}")
+
+        # Recent investigations
+        if briefing.recent_investigations:
+            click.echo(f"\n  Recent Investigations ({len(briefing.recent_investigations)}):")
+            for inv in briefing.recent_investigations[:3]:
+                status = inv.get("status", "?")
+                goal = inv.get("goal", "?")
+                click.echo(f"    • [{status}] {goal}")
 
     click.echo()
 

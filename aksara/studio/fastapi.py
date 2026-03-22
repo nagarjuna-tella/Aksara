@@ -76,6 +76,10 @@ v0.5.29 Additions:
 
 v0.5.33 Additions:
 - POST /studio/ai/debug - AI Debugger root-cause analysis
+
+v0.5.40 Additions:
+- GET /studio/ai/daily-briefing - Daily system health briefing
+- POST /studio/ai/investigate/{id}/next - Execute next investigation step
 """
 
 from __future__ import annotations
@@ -2222,6 +2226,80 @@ async def studio_ai_investigate_list(request: Request):
     except Exception as exc:
         return JSONResponse(
             {"error": f"Failed to list sessions: {exc}"},
+            status_code=500,
+        )
+
+
+# =============================================================================
+# v0.5.40: Daily Briefing + Investigation Continuation Endpoints
+# =============================================================================
+
+
+@router.get("/studio/ai/daily-briefing")
+async def studio_ai_daily_briefing(request: Request):
+    """Generate a daily system health briefing.
+
+    Returns aggregated scores, issues, and recommendations from
+    the performance analyser, architecture review, debugger, and
+    recent investigation sessions.
+
+    v0.5.40: New endpoint.
+    """
+    try:
+        from aksara.ai.daily_briefing import generate_daily_briefing
+
+        briefing = generate_daily_briefing()
+        return briefing.to_dict()
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Failed to generate briefing: {exc}"},
+            status_code=500,
+        )
+
+
+@router.post("/studio/ai/investigate/{session_id}/next")
+async def studio_ai_investigate_next(request: Request, session_id: str):
+    """Execute only the next pending step in an investigation session.
+
+    This is the step-by-step interactive endpoint — the UI calls it
+    repeatedly to advance the investigation one step at a time, showing
+    progress between each step.
+
+    v0.5.40: New endpoint for step-by-step investigation.
+    """
+    try:
+        from aksara.ai.session_store import get_session
+        from aksara.ai.investigation_runner import execute_next_step
+
+        session = get_session(session_id)
+        if session is None:
+            return JSONResponse(
+                {"error": f"Session '{session_id}' not found"},
+                status_code=404,
+            )
+
+        session = execute_next_step(session)
+
+        # Include progress information
+        pending = sum(
+            1 for s in (session.plan.steps if session.plan else [])
+            if s.status == "pending"
+        )
+        done = sum(
+            1 for s in (session.plan.steps if session.plan else [])
+            if s.status == "done"
+        )
+
+        result = session.to_dict()
+        result["progress"] = {
+            "steps_done": done,
+            "steps_pending": pending,
+            "is_complete": session.status == "completed",
+        }
+        return result
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Failed to execute next step: {exc}"},
             status_code=500,
         )
 

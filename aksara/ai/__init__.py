@@ -374,6 +374,21 @@ from aksara.ai.investigation_runner import (
     execute_next_step,
 )
 
+# v0.5.40: Intent Engine v2, Investigation Continuation, Daily Briefing
+from aksara.ai.intent_engine_v2 import (
+    classify_intent_v2,
+    IntentResult,
+    INTENTS,
+)
+from aksara.ai.plan_builder import (
+    build_plan_from_intent,
+    get_step_dependencies,
+    get_step_priority,
+)
+from aksara.ai.session_store import get_active_session
+from aksara.ai.investigation_runner import get_next_step, run_step
+from aksara.ai.daily_briefing import DailyBriefing, generate_daily_briefing
+
 __all__ = [
     # Models
     "AiTool",
@@ -574,4 +589,16 @@ __all__ = [
     "STEP_SUMMARISE",
     "execute_investigation",
     "execute_next_step",
+    # v0.5.40: Intent Engine v2, Investigation Continuation, Daily Briefing
+    "classify_intent_v2",
+    "IntentResult",
+    "INTENTS",
+    "build_plan_from_intent",
+    "get_step_dependencies",
+    "get_step_priority",
+    "get_active_session",
+    "get_next_step",
+    "run_step",
+    "DailyBriefing",
+    "generate_daily_briefing",
 ]

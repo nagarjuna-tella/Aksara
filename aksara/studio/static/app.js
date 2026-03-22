@@ -2912,10 +2912,65 @@ async function renderAiHome() {
     // Wire setup button
     const hubBtn = document.getElementById('ai-home-open-hub');
     if (hubBtn) hubBtn.addEventListener('click', () => navigateTo('ai-hub'));
+
+    // v0.5.40: Load daily briefing
+    _loadDailyBriefing();
+
+    // Wire briefing refresh button
+    const refreshBtn = document.getElementById('ai-home-refresh-briefing');
+    if (refreshBtn) refreshBtn.addEventListener('click', () => _loadDailyBriefing());
 }
 
 // v0.5.38: Prefill prompt for console navigation from AI Home
 let _aiHomePrefillPrompt = null;
+
+
+// v0.5.40: Daily Briefing loader
+async function _loadDailyBriefing() {
+    const contentEl = document.getElementById('ai-home-briefing-content');
+    if (!contentEl) return;
+    contentEl.innerHTML = '<p class="text-muted">Loading daily briefing&hellip;</p>';
+
+    try {
+        const resp = await fetch('/studio/ai/daily-briefing');
+        if (!resp.ok) throw new Error('Failed to load briefing');
+        const data = await resp.json();
+
+        contentEl.innerHTML = '<p>' + _esc(data.summary || 'No summary available.') + '</p>';
+
+        // Scores
+        const scoresEl = document.getElementById('ai-home-briefing-scores');
+        if (scoresEl) {
+            scoresEl.style.display = '';
+            const perfEl = document.getElementById('ai-home-briefing-perf');
+            const archEl = document.getElementById('ai-home-briefing-arch');
+            if (perfEl) perfEl.textContent = data.performance_score >= 0 ? Math.round(data.performance_score) : '-';
+            if (archEl) archEl.textContent = data.architecture_score >= 0 ? Math.round(data.architecture_score) : '-';
+        }
+
+        // Issues
+        const issuesEl = document.getElementById('ai-home-briefing-issues');
+        const issueList = document.getElementById('ai-home-briefing-issue-list');
+        if (issuesEl && issueList && data.issues && data.issues.length) {
+            issuesEl.style.display = '';
+            issueList.innerHTML = data.issues.slice(0, 5).map(i =>
+                '<li>' + _esc(i) + '</li>'
+            ).join('');
+        }
+
+        // Recommendations
+        const recsEl = document.getElementById('ai-home-briefing-recs');
+        const recList = document.getElementById('ai-home-briefing-rec-list');
+        if (recsEl && recList && data.recommendations && data.recommendations.length) {
+            recsEl.style.display = '';
+            recList.innerHTML = data.recommendations.map(r =>
+                '<li>' + _esc(r) + '</li>'
+            ).join('');
+        }
+    } catch (e) {
+        contentEl.innerHTML = '<p class="text-muted">Briefing unavailable</p>';
+    }
+}
 
 
 // =============================================================================
@@ -3073,7 +3128,51 @@ async function _renderInspectorTab(panel, tab, loaded) {
         } catch (e) {
             panel.innerHTML = '<div class="ai-inspector-empty">Error: ' + _esc(e.message) + '</div>';
         }
+    } else if (tab === 'investigations') {
+        // v0.5.40: Investigation Timeline tab
+        const invPanel = document.getElementById('ai-inspector-investigations');
+        panel.style.display = 'none';
+        if (invPanel) {
+            invPanel.style.display = '';
+            const listEl = document.getElementById('ai-inspector-investigation-list');
+            if (listEl) {
+                listEl.innerHTML = '<p class="text-muted">Loading investigations&hellip;</p>';
+                try {
+                    const resp = await fetch('/studio/ai/investigate');
+                    if (!resp.ok) throw new Error('Failed to load investigations');
+                    const data = await resp.json();
+                    const sessions = data.sessions || [];
+                    if (!sessions.length) {
+                        listEl.innerHTML = '<p class="text-muted">No investigations yet. Start one from the Console or AI Home.</p>';
+                    } else {
+                        let html = '';
+                        sessions.forEach(s => {
+                            const statusClass = s.status === 'completed' ? 'severity-info' : s.status === 'running' ? 'severity-warning' : 'severity-error';
+                            html += '<div class="ai-inspector-investigation-item">';
+                            html += '<div class="ai-inspector-inv-header">';
+                            html += '<strong>' + _esc(s.goal) + '</strong>';
+                            html += ' <span class="' + statusClass + '">' + _esc(s.status) + '</span>';
+                            html += '</div>';
+                            html += '<div class="text-muted">';
+                            html += 'Strategy: ' + _esc(s.strategy || '-') + ' | ';
+                            html += 'Steps: ' + (s.steps_done || 0) + '/' + (s.steps_total || 0) + ' | ';
+                            html += 'Findings: ' + (s.findings_count || 0);
+                            html += '</div>';
+                            html += '</div>';
+                        });
+                        listEl.innerHTML = html;
+                    }
+                } catch (e) {
+                    listEl.innerHTML = '<div class="ai-inspector-empty">Error: ' + _esc(e.message) + '</div>';
+                }
+            }
+        }
+        return;  // don't show the main panel for this tab
     }
+    // Ensure main panel is visible for non-investigation tabs
+    const invPanel = document.getElementById('ai-inspector-investigations');
+    if (invPanel) invPanel.style.display = 'none';
+    if (panel) panel.style.display = '';
 }
 
 

@@ -1,9 +1,13 @@
 """
-AI Investigation Session Store  (v0.5.39)
+AI Investigation Session Store  (v0.5.40)
 
 In-memory store for investigation sessions.  Provides CRUD operations
 that the console engine and Studio API endpoints use to persist sessions
 across multiple user interactions within the same process lifetime.
+
+v0.5.40: Added ``get_active_session()`` for investigation continuation
+support — the console engine uses this to resume the most-recent
+non-completed session when the user types "continue" or "next".
 
 Usage::
 
@@ -13,16 +17,18 @@ Usage::
         update_session,
         list_sessions,
         delete_session,
+        get_active_session,
     )
 
     session = create_session("Why is the app slow?")
     session = get_session(session.id)
+    active  = get_active_session()
     all_sessions = list_sessions()
 
 Thread-safety note: the store uses a plain ``dict``.  In the single-process
 uvicorn dev-server scenario this is fine.  For production with workers,
 sessions would need to be moved to the database — but that is a future
-enhancement beyond v0.5.39.
+enhancement beyond v0.5.40.
 """
 
 from __future__ import annotations
@@ -118,3 +124,35 @@ def clear_sessions() -> int:
     count = len(_sessions)
     _sessions.clear()
     return count
+
+
+def get_active_session() -> Optional[InvestigationSession]:
+    """Return the most-recent session that is still in progress.
+
+    An "active" session is one whose status is ``"created"`` or
+    ``"running"`` — i.e. it has pending steps that have not yet
+    been executed.
+
+    This is used by the console engine's continuation flow: when the
+    user types ``"continue"`` or ``"next"``, the engine calls this to
+    find the session to resume.
+
+    Returns:
+        The most-recently-updated active session, or ``None`` if no such
+        session exists in the in-memory store.
+
+    Example::
+
+        session = create_session("Investigate performance")
+        active = get_active_session()
+        assert active is not None
+        assert active.id == session.id
+    """
+    active_statuses = {"created", "running"}
+    candidates = [
+        s for s in _sessions.values() if s.status in active_statuses
+    ]
+    if not candidates:
+        return None
+    # Return the most-recently updated session.
+    return max(candidates, key=lambda s: s.updated_at)

@@ -79,6 +79,17 @@ async def run_console_query(
             "EMPTY_MESSAGE",
         )
 
+    # ── 1a. Continuation shortcut (v0.5.40) ──────────────────────────────
+    # If the user types "continue" or "next", resume the most-recent active
+    # investigation session rather than starting a new one.
+    if message.strip().lower() in ("continue", "next"):
+        try:
+            cont_result = _continue_investigation(t0)
+            if cont_result is not None:
+                return cont_result
+        except Exception:
+            pass  # fall through if no active session
+
     # ── 1b. Investigation intent detection (v0.5.39) ─────────────────────
     # If the user asks to "investigate", "analyze the system", or "review
     # my project", create a persistent investigation session with a plan,
@@ -437,3 +448,57 @@ def _run_performance_analysis_flow(message: str, match) -> Dict[str, Any]:
             intent=match.intent,
             confidence=match.confidence,
         )
+
+
+# ─── Investigation Continuation (v0.5.40) ────────────────────────────────────
+
+
+def _continue_investigation(t0: float) -> Optional[Dict[str, Any]]:
+    """Resume the most-recent active investigation session.
+
+    Finds the active session via the session store, executes its next
+    pending step, and returns the updated session as a console response.
+
+    Returns ``None`` if there is no active session to continue.
+    """
+    from aksara.ai.session_store import get_active_session
+    from aksara.ai.investigation_runner import execute_next_step
+
+    session = get_active_session()
+    if session is None:
+        return None
+
+    session = execute_next_step(session)
+
+    elapsed = (time.monotonic() - t0) * 1000
+
+    # Determine progress info
+    pending = 0
+    done = 0
+    if session.plan and session.plan.steps:
+        for step in session.plan.steps:
+            if step.status == "pending":
+                pending += 1
+            elif step.status == "done":
+                done += 1
+
+    return {
+        "ok": session.status != "failed",
+        "intent": "investigation_continue",
+        "flow_type": "investigation",
+        "action_key": "continue_investigation",
+        "confidence": 1.0,
+        "extracted_context": {"goal": session.goal},
+        "prompt_pack": None,
+        "execution": {
+            "investigation_session": session.to_dict(),
+            "steps_done": done,
+            "steps_pending": pending,
+        },
+        "suggestions": ["continue"] if pending > 0 else ["investigate"],
+        "elapsed_ms": round(elapsed, 1),
+        "error": None if session.status != "failed" else "Investigation step failed",
+        "error_code": None if session.status != "failed" else "INVESTIGATION_STEP_FAILED",
+        "investigation": True,
+        "session_id": session.id,
+    }

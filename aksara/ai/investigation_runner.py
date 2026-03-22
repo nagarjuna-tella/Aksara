@@ -271,3 +271,81 @@ def _extract_finding(step_name: str, result: Dict[str, Any]) -> str | None:
         return f"Investigation complete with {total} findings."
 
     return None
+
+
+# ─── Step Query Helpers (v0.5.40) ────────────────────────────────────────────
+
+
+def get_next_step(session: InvestigationSession) -> "InvestigationStep | None":
+    """Return the next pending step in the session's plan.
+
+    Args:
+        session: The investigation session to inspect.
+
+    Returns:
+        The next :class:`~aksara.ai.investigation.InvestigationStep` with
+        status ``"pending"``, or ``None`` if all steps are done.
+    """
+    if not session.plan or not session.plan.steps:
+        return None
+    for step in session.plan.steps:
+        if step.status == "pending":
+            return step
+    return None
+
+
+def run_step(
+    session: InvestigationSession,
+    step: "InvestigationStep",
+) -> "InvestigationStep":
+    """Execute a single step within a session and update its status.
+
+    The step is mutated in-place (status, result, timestamps) and the
+    session is persisted through the session store.
+
+    Args:
+        session: The parent investigation session.
+        step: The step to execute.
+
+    Returns:
+        The same step object, updated with result/error and status.
+    """
+    from aksara.ai.session_store import update_session
+
+    step.status = "running"
+    step.started_at = datetime.now(timezone.utc).isoformat()
+    if session.status == "created":
+        session.status = "running"
+    update_session(session)
+
+    executor = _STEP_DISPATCH.get(step.name)
+    if executor is None:
+        step.status = "skipped"
+        step.error = f"Unknown step: {step.name}"
+        step.completed_at = datetime.now(timezone.utc).isoformat()
+        update_session(session)
+        return step
+
+    try:
+        result = executor(session.goal, session)
+        step.result = result
+        step.status = "done"
+        step.completed_at = datetime.now(timezone.utc).isoformat()
+        finding = _extract_finding(step.name, result)
+        if finding:
+            session.add_finding(finding)
+    except Exception as exc:
+        step.status = "failed"
+        step.error = str(exc)
+        step.completed_at = datetime.now(timezone.utc).isoformat()
+        logger.warning("Step %s failed: %s", step.name, exc)
+
+    update_session(session)
+
+    # Check if session is complete
+    pending = [s for s in session.plan.steps if s.status == "pending"]
+    if not pending:
+        session.status = "completed"
+        update_session(session)
+
+    return step
