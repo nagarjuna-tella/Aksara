@@ -5170,3 +5170,110 @@ code {
     border-color: var(--primary);
     color: var(--primary);
 }
+
+/* =============================================================================
+   v0.5.39 — AI Investigation Engine
+   ============================================================================= */
+
+.ai-console-investigation {
+    border-left: 3px solid var(--primary, #6C63FF);
+}
+.ai-investigation-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    margin-bottom: var(--spacing-sm, 8px);
+}
+.ai-investigation-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.ai-investigation-status-completed { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+.ai-investigation-status-running   { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+.ai-investigation-status-failed    { background: rgba(244, 67, 54, 0.15); color: #f44336; }
+.ai-investigation-status-created   { background: rgba(158, 158, 158, 0.15); color: #9e9e9e; }
+.ai-investigation-status-planning  { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
+.ai-investigation-status-paused    { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+
+.ai-investigation-id {
+    font-size: 0.7rem;
+    color: var(--text-secondary, #aaa);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+/* Plan */
+.ai-investigation-plan {
+    margin: var(--spacing-sm, 8px) 0;
+    padding: var(--spacing-sm, 8px);
+    background: var(--bg-tertiary, #252540);
+    border-radius: var(--radius-md, 8px);
+}
+.ai-investigation-plan-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary, #aaa);
+    margin-bottom: var(--spacing-xs, 4px);
+}
+.ai-investigation-step {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 4px);
+    padding: 4px 0;
+    font-size: 0.82rem;
+}
+.ai-investigation-step-icon {
+    width: 18px;
+    text-align: center;
+    font-weight: 700;
+}
+.ai-investigation-step-done .ai-investigation-step-icon { color: #4caf50; }
+.ai-investigation-step-failed .ai-investigation-step-icon { color: #f44336; }
+.ai-investigation-step-skipped .ai-investigation-step-icon { color: #9e9e9e; }
+.ai-investigation-step-pending .ai-investigation-step-icon { color: #666; }
+.ai-investigation-step-running .ai-investigation-step-icon { color: #2196f3; }
+
+.ai-investigation-step-label {
+    flex: 1;
+    color: var(--text-primary, #e0e0e0);
+}
+.ai-investigation-step-status {
+    font-size: 0.7rem;
+    color: var(--text-secondary, #aaa);
+    text-transform: lowercase;
+}
+.ai-investigation-step-error {
+    width: 100%;
+    font-size: 0.72rem;
+    color: #f44336;
+    padding-left: 22px;
+    margin-top: 2px;
+}
+
+/* Findings */
+.ai-investigation-findings {
+    margin: var(--spacing-sm, 8px) 0;
+}
+.ai-investigation-findings-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary, #aaa);
+    margin-bottom: var(--spacing-xs, 4px);
+}
+.ai-investigation-findings-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.82rem;
+    color: var(--text-primary, #e0e0e0);
+}
+.ai-investigation-findings-list li {
+    padding: 2px 0;
+}

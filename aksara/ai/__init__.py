@@ -345,6 +345,35 @@ from aksara.ai.intent_engine import (
     classify_and_plan,
 )
 
+# v0.5.39: AI Investigation Engine
+from aksara.ai.investigation import (
+    StepStatus,
+    SessionStatus,
+    InvestigationStep,
+    InvestigationPlan,
+    InvestigationSession,
+)
+from aksara.ai.session_store import (
+    create_session,
+    get_session,
+    update_session,
+    list_sessions,
+    delete_session,
+    clear_sessions,
+)
+from aksara.ai.plan_builder import (
+    build_plan,
+    STEP_PROJECT_GRAPH,
+    STEP_PERFORMANCE,
+    STEP_ARCHITECTURE,
+    STEP_DEBUG,
+    STEP_SUMMARISE,
+)
+from aksara.ai.investigation_runner import (
+    execute_investigation,
+    execute_next_step,
+)
+
 __all__ = [
     # Models
     "AiTool",
@@ -525,4 +554,24 @@ __all__ = [
     "handle_prompt",
     "run_investigation",
     "classify_and_plan",
+    # v0.5.39: AI Investigation Engine
+    "StepStatus",
+    "SessionStatus",
+    "InvestigationStep",
+    "InvestigationPlan",
+    "InvestigationSession",
+    "create_session",
+    "get_session",
+    "update_session",
+    "list_sessions",
+    "delete_session",
+    "clear_sessions",
+    "build_plan",
+    "STEP_PROJECT_GRAPH",
+    "STEP_PERFORMANCE",
+    "STEP_ARCHITECTURE",
+    "STEP_DEBUG",
+    "STEP_SUMMARISE",
+    "execute_investigation",
+    "execute_next_step",
 ]

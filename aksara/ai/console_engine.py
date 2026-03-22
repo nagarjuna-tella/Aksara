@@ -79,6 +79,18 @@ async def run_console_query(
             "EMPTY_MESSAGE",
         )
 
+    # ── 1b. Investigation intent detection (v0.5.39) ─────────────────────
+    # If the user asks to "investigate", "analyze the system", or "review
+    # my project", create a persistent investigation session with a plan,
+    # execute it, and return the full session.  This is an *enhancement*
+    # that does not replace any existing flow.
+    try:
+        inv_result = _try_investigation_flow(message, t0)
+        if inv_result is not None:
+            return inv_result
+    except Exception:
+        pass  # fall through to existing pipeline
+
     # ── 2. Route through Intent Engine (v0.5.37) ─────────────────────────
     # The intent engine handles *heavy* orchestrable intents (architecture,
     # performance, debug, project analysis) that run multiple analyzers.
@@ -245,6 +257,63 @@ def _emit_console_event(match, result: Dict[str, Any]) -> None:
             )
     except Exception:
         pass  # event emission must never break the main action
+
+
+# ─── Investigation Flow (v0.5.39) ────────────────────────────────────────────
+
+import re as _re
+
+_INVESTIGATE_RE = _re.compile(
+    r"\b(investigate|investigation|analyze\s+(?:the\s+)?(?:system|project|app|codebase)"
+    r"|review\s+(?:my\s+)?(?:project|system|app|codebase)"
+    r"|deep\s+(?:dive|analysis)"
+    r"|full\s+(?:analysis|review|investigation))\b",
+    _re.IGNORECASE,
+)
+
+
+def _try_investigation_flow(
+    message: str, t0: float
+) -> Optional[Dict[str, Any]]:
+    """Detect investigation intent and run a full investigation session.
+
+    Returns ``None`` if the message is not an investigation request,
+    allowing the caller to fall through to other pipelines.
+    """
+    if not _INVESTIGATE_RE.search(message):
+        return None
+
+    from aksara.ai.session_store import create_session
+    from aksara.ai.plan_builder import build_plan
+    from aksara.ai.investigation_runner import execute_investigation
+
+    session = create_session(message)
+    session.status = "planning"
+    plan = build_plan(message)
+    session.plan = plan
+    session.status = "running"
+
+    session = execute_investigation(session)
+
+    elapsed = (time.monotonic() - t0) * 1000
+    return {
+        "ok": session.status == "completed",
+        "intent": "investigation",
+        "flow_type": "investigation",
+        "action_key": "investigate",
+        "confidence": 1.0,
+        "extracted_context": {"goal": message},
+        "prompt_pack": None,
+        "execution": {
+            "investigation_session": session.to_dict(),
+        },
+        "suggestions": ["investigate"],
+        "elapsed_ms": round(elapsed, 1),
+        "error": None if session.status == "completed" else "Investigation failed",
+        "error_code": None if session.status == "completed" else "INVESTIGATION_FAILED",
+        "investigation": True,
+        "session_id": session.id,
+    }
 
 
 def _console_error(

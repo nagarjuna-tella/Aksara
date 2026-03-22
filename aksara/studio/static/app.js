@@ -4318,6 +4318,12 @@ function _renderConsoleResponse(data) {
         return;
     }
 
+    // v0.5.39: Investigation session response
+    if (data.investigation && data.execution && data.execution.investigation_session) {
+        _renderInvestigationResult(data, output);
+        return;
+    }
+
     // Main response text
     const responseText = (data.execution && data.execution.response) || 'Done.';
     const metaParts = [];
@@ -4348,6 +4354,63 @@ function _renderConsoleResponse(data) {
         output.appendChild(row);
         output.scrollTop = output.scrollHeight;
     }
+}
+
+// v0.5.39: Render investigation session result in console
+function _renderInvestigationResult(data, output) {
+    const session = data.execution.investigation_session;
+    const div = document.createElement('div');
+    div.className = 'ai-console-msg assistant ai-console-investigation';
+
+    let html = '<div class="ai-console-msg-label">Aksara AI &mdash; Investigation</div>';
+
+    // Session header
+    html += '<div class="ai-investigation-header">';
+    html += '<span class="ai-investigation-status ai-investigation-status-' + _esc(session.status) + '">'
+        + _esc(session.status) + '</span>';
+    html += '<span class="ai-investigation-id">Session: ' + _esc(session.id) + '</span>';
+    html += '</div>';
+
+    // Plan steps
+    if (session.plan && session.plan.steps) {
+        html += '<div class="ai-investigation-plan">';
+        html += '<div class="ai-investigation-plan-title">Plan (' + _esc(session.plan.strategy) + ')</div>';
+        session.plan.steps.forEach(function(step) {
+            const icon = step.status === 'done' ? '&#x2713;' : step.status === 'failed' ? '&#x2717;' : step.status === 'skipped' ? '&#x2014;' : '&#x25CB;';
+            html += '<div class="ai-investigation-step ai-investigation-step-' + _esc(step.status) + '">';
+            html += '<span class="ai-investigation-step-icon">' + icon + '</span>';
+            html += '<span class="ai-investigation-step-label">' + _esc(step.label) + '</span>';
+            html += '<span class="ai-investigation-step-status">' + _esc(step.status) + '</span>';
+            if (step.error) {
+                html += '<div class="ai-investigation-step-error">' + _esc(step.error) + '</div>';
+            }
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // Findings
+    if (session.findings && session.findings.length > 0) {
+        html += '<div class="ai-investigation-findings">';
+        html += '<div class="ai-investigation-findings-title">Key Findings</div>';
+        html += '<ul class="ai-investigation-findings-list">';
+        session.findings.forEach(function(f) {
+            html += '<li>' + _esc(f) + '</li>';
+        });
+        html += '</ul></div>';
+    }
+
+    // Meta
+    const metaParts = [];
+    if (data.elapsed_ms) metaParts.push(data.elapsed_ms.toFixed(0) + 'ms');
+    metaParts.push('investigation');
+    if (metaParts.length) {
+        html += '<div class="ai-console-msg-meta">' + metaParts.join(' &bull; ') + '</div>';
+    }
+
+    div.innerHTML = html;
+    output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
 }
 
 function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

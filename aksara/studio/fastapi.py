@@ -2102,6 +2102,131 @@ async def studio_ai_inspector(request: Request):
 
 
 # =============================================================================
+# v0.5.39: AI Investigation Engine Endpoints
+# =============================================================================
+
+
+@router.post("/studio/ai/investigate")
+async def studio_ai_investigate_start(request: Request):
+    """Start a new AI investigation session.
+
+    Body: ``{"goal": "Why is the app slow?"}``
+
+    Returns the session with its plan (not yet executed).
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            {"error": "Invalid JSON body"}, status_code=400
+        )
+
+    goal = body.get("goal", "").strip()
+    if not goal:
+        return JSONResponse(
+            {"error": "Missing 'goal' in request body"}, status_code=400
+        )
+
+    try:
+        from aksara.ai.session_store import create_session
+        from aksara.ai.plan_builder import build_plan
+
+        session = create_session(goal)
+        session.status = "planning"
+        plan = build_plan(goal)
+        session.plan = plan
+
+        from aksara.ai.session_store import update_session
+
+        update_session(session)
+        return session.to_dict()
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Failed to create investigation: {exc}"},
+            status_code=500,
+        )
+
+
+@router.post("/studio/ai/investigate/{session_id}/run")
+async def studio_ai_investigate_run(request: Request, session_id: str):
+    """Execute the next pending step (or all remaining steps) in a session.
+
+    Body (optional): ``{"mode": "all"}`` or ``{"mode": "step"}``
+    Default mode is ``"all"``.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    mode = body.get("mode", "all") if isinstance(body, dict) else "all"
+
+    try:
+        from aksara.ai.session_store import get_session
+
+        session = get_session(session_id)
+        if session is None:
+            return JSONResponse(
+                {"error": f"Session '{session_id}' not found"},
+                status_code=404,
+            )
+
+        if mode == "step":
+            from aksara.ai.investigation_runner import execute_next_step
+
+            session = execute_next_step(session)
+        else:
+            from aksara.ai.investigation_runner import execute_investigation
+
+            session = execute_investigation(session)
+
+        return session.to_dict()
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Investigation execution failed: {exc}"},
+            status_code=500,
+        )
+
+
+@router.get("/studio/ai/investigate/{session_id}")
+async def studio_ai_investigate_get(request: Request, session_id: str):
+    """Retrieve a single investigation session by ID."""
+    try:
+        from aksara.ai.session_store import get_session
+
+        session = get_session(session_id)
+        if session is None:
+            return JSONResponse(
+                {"error": f"Session '{session_id}' not found"},
+                status_code=404,
+            )
+        return session.to_dict()
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Failed to retrieve session: {exc}"},
+            status_code=500,
+        )
+
+
+@router.get("/studio/ai/investigate")
+async def studio_ai_investigate_list(request: Request):
+    """List all investigation sessions (newest first)."""
+    try:
+        from aksara.ai.session_store import list_sessions
+
+        sessions = list_sessions()
+        return {
+            "sessions": [s.to_summary_dict() for s in sessions],
+            "total": len(sessions),
+        }
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"Failed to list sessions: {exc}"},
+            status_code=500,
+        )
+
+
+# =============================================================================
 # v0.5.3: Studio UI Endpoints
 # =============================================================================
 
