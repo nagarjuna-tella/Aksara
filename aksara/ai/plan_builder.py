@@ -22,7 +22,7 @@ Usage::
     plan = build_plan("Why is the app slow?")
     assert plan.strategy == "performance"
 
-    from aksara.ai.intent_engine_v2 import classify_intent_v2
+    from aksara.ai.intent_engine import classify_intent_v2
     intent = classify_intent_v2("Investigate slow API performance")
     plan = build_plan_from_intent(intent)
     assert plan.strategy == "performance"
@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from aksara.ai.investigation import InvestigationPlan, InvestigationStep
 
 if TYPE_CHECKING:
-    from aksara.ai.intent_engine_v2 import IntentResult
+    from aksara.ai.intent_engine import IntentResult
 
 logger = logging.getLogger("aksara.ai.plan_builder")
 
@@ -188,8 +188,8 @@ def build_plan_from_intent(intent: "IntentResult") -> InvestigationPlan:
     5. Falls back to ``"generic"`` for unknown intents.
 
     Args:
-        intent: :class:`~aksara.ai.intent_engine_v2.IntentResult` from
-                :func:`~aksara.ai.intent_engine_v2.classify_intent_v2`.
+        intent: :class:`~aksara.ai.intent_engine.IntentResult` from
+                :func:`~aksara.ai.intent_engine.classify_intent_v2`.
 
     Returns:
         An :class:`~aksara.ai.investigation.InvestigationPlan` with ordered
@@ -197,7 +197,7 @@ def build_plan_from_intent(intent: "IntentResult") -> InvestigationPlan:
 
     Example::
 
-        from aksara.ai.intent_engine_v2 import classify_intent_v2
+        from aksara.ai.intent_engine import classify_intent_v2
         result = classify_intent_v2("Investigate slow API performance")
         plan = build_plan_from_intent(result)
         # plan.strategy == "performance"

@@ -6,6 +6,7 @@ Repeater-style widget for PostgreSQL array fields.
 
 from __future__ import annotations
 
+import html as _html
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -167,7 +168,7 @@ class ArrayAdminWidget(Widget):
         </svg>
         Add item
     </button>
-    <input type="hidden" name="{name}" id="{field_id}" value="{self._serialize_value(items)}"{required} />
+    <input type="hidden" name="{name}" id="{field_id}" value="{_html.escape(self._serialize_value(items))}"{required} />
 </div>
 '''
         

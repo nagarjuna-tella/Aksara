@@ -6,6 +6,7 @@ Base widget classes and built-in widgets for Aksara admin forms.
 
 from __future__ import annotations
 
+import html as _html
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from abc import ABC, abstractmethod
 
@@ -79,12 +80,12 @@ class TextInput(Widget):
     template_name = "admin/widgets/text_input.html"
     
     def render(self, name: str, value: Any, field: "Field") -> str:
-        attrs_str = " ".join(f'{k}="{v}"' for k, v in self.attrs.items())
-        input_type = self.attrs.get("type", "text")
-        value_str = str(value) if value is not None else ""
+        attrs_str = " ".join(f'{k}="{_html.escape(str(v))}"' for k, v in self.attrs.items())
+        input_type = _html.escape(self.attrs.get("type", "text"))
+        value_str = _html.escape(str(value)) if value is not None else ""
         required = " required" if not field.nullable else ""
         
-        return f'''<input type="{input_type}" name="{name}" value="{value_str}" {attrs_str}{required} class="form-input" />'''
+        return f'''<input type="{input_type}" name="{_html.escape(name)}" value="{value_str}" {attrs_str}{required} class="form-input" />'''
 
 
 class TextArea(Widget):
@@ -97,11 +98,11 @@ class TextArea(Widget):
         self.rows = rows
     
     def render(self, name: str, value: Any, field: "Field") -> str:
-        attrs_str = " ".join(f'{k}="{v}"' for k, v in self.attrs.items())
-        value_str = str(value) if value is not None else ""
+        attrs_str = " ".join(f'{k}="{_html.escape(str(v))}"' for k, v in self.attrs.items())
+        value_str = _html.escape(str(value)) if value is not None else ""
         required = " required" if not field.nullable else ""
         
-        return f'''<textarea name="{name}" rows="{self.rows}" {attrs_str}{required} class="form-textarea">{value_str}</textarea>'''
+        return f'''<textarea name="{_html.escape(name)}" rows="{self.rows}" {attrs_str}{required} class="form-textarea">{value_str}</textarea>'''
 
 
 class CheckboxInput(Widget):
@@ -128,12 +129,15 @@ class DateTimeInput(Widget):
                 if hasattr(value, "strftime"):
                     value_str = value.strftime("%Y-%m-%dT%H:%M")
                 else:
+                    import datetime as _dt
+                    # Only output if parseable as a datetime — rejects arbitrary strings
+                    _dt.datetime.fromisoformat(str(value))
                     value_str = str(value).replace(" ", "T")[:16]
             except:
                 value_str = ""
         
         required = " required" if not field.nullable else ""
-        return f'''<input type="datetime-local" name="{name}" value="{value_str}"{required} class="form-input" />'''
+        return f'''<input type="datetime-local" name="{_html.escape(name)}" value="{value_str}"{required} class="form-input" />'''
 
 
 class Select(Widget):
@@ -160,7 +164,7 @@ class Select(Widget):
         for choice_value, choice_label in self.choices:
             selected = " selected" if value == choice_value else ""
             options.append(
-                f'<option value="{choice_value}"{selected}>{choice_label}</option>'
+                f'<option value="{_html.escape(str(choice_value))}"{selected}>{_html.escape(str(choice_label))}</option>'
             )
         
         options_html = "\n".join(options)

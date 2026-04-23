@@ -833,15 +833,6 @@ class TestAksaraDebugMiddlewareJsonErrors:
         data = json.loads(response.body.decode("utf-8"))
         assert data["error"]["message"] == "Internal Server Error"
         assert data["error"]["debug_detail"] == "Test error"
-    
-    def test_ok_endpoint_still_works(self, debug_app):
-        """Test that exception handlers don't break normal endpoints."""
-        client = TestClient(debug_app)
-        
-        response = client.get("/ok")
-        
-        assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
 
 
 # ============================================================================

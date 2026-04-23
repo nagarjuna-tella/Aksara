@@ -374,8 +374,8 @@ from aksara.ai.investigation_runner import (
     execute_next_step,
 )
 
-# v0.5.40: Intent Engine v2, Investigation Continuation, Daily Briefing
-from aksara.ai.intent_engine_v2 import (
+# v0.5.41: Intent Engine v2 merged into intent_engine
+from aksara.ai.intent_engine import (
     classify_intent_v2,
     IntentResult,
     INTENTS,

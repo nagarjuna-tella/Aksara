@@ -12,9 +12,11 @@ Fully configurable:
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 from typing import Any, Dict, Iterator, TYPE_CHECKING
+from urllib.parse import urlparse
 
 from aksara.ai.llm_clients.base import (
     LlmClientError,
@@ -25,6 +27,44 @@ if TYPE_CHECKING:
     from aksara.ai.providers_unified import UnifiedAiProvider
 
 logger = logging.getLogger("aksara.ai.llm_clients.custom")
+
+
+def _validate_url(url: str) -> str:
+    """
+    Validate a URL for SSRF protection.
+
+    - Only http:// and https:// schemes are allowed.
+    - Requests to private/loopback/link-local IPs are blocked.
+    - The AWS/GCP/Azure metadata endpoint (169.254.169.254) is blocked.
+
+    Raises LlmClientError if the URL fails validation.
+    Returns the URL unchanged if it passes.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise LlmClientError(
+            f"Custom LLM URL has invalid scheme: {parsed.scheme!r}. "
+            "Only http and https are allowed."
+        )
+
+    hostname = parsed.hostname or ""
+    # Try to parse as IP and reject private/loopback/link-local ranges
+    try:
+        addr = ipaddress.ip_address(hostname)
+        if addr.is_private or addr.is_loopback or addr.is_link_local:
+            raise LlmClientError(
+                f"Custom LLM URL points to a private/loopback address: {hostname}. "
+                "This is blocked to prevent SSRF."
+            )
+    except ValueError:
+        # hostname is a domain name — check for well-known metadata hostnames
+        _blocked_hosts = {"metadata.google.internal", "metadata.internal"}
+        if hostname.lower() in _blocked_hosts:
+            raise LlmClientError(
+                f"Custom LLM URL points to blocked host: {hostname}."
+            )
+
+    return url
 
 
 class CustomHttpAdapter:
@@ -43,6 +83,7 @@ class CustomHttpAdapter:
         self.api_key = provider.api_key or ""
         self.model = provider.model or "default"
         self.base_url = (provider.base_url or "http://localhost:8080").rstrip("/")
+        _validate_url(self.base_url)
         self.extra = provider.extra
 
         # Configurable paths and field names

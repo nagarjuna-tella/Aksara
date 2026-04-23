@@ -34,10 +34,14 @@ class TestDiagnosticsActionsEndpoint:
     def _get_client(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from aksara.studio.fastapi import router
+        from aksara.studio.fastapi import router, verify_studio_auth
 
         app = FastAPI()
         app.include_router(router)
+        # Use dependency_overrides — the proper FastAPI pattern for bypassing
+        # router-level Depends() in tests (patch() cannot intercept callables
+        # that were already captured by Depends() at module import time).
+        app.dependency_overrides[verify_studio_auth] = lambda: None
         return TestClient(app)
 
     def test_actions_included_in_response(self):
@@ -50,9 +54,8 @@ class TestDiagnosticsActionsEndpoint:
             ],
         ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
-                client = self._get_client()
-                resp = client.get("/studio/diagnostics")
+            client = self._get_client()
+            resp = client.get("/studio/diagnostics")
         assert resp.status_code == 200
         data = resp.json()
         issue = data["issues"][0]
@@ -67,9 +70,8 @@ class TestDiagnosticsActionsEndpoint:
             kind="general", severity="info", title="No actions", message="m",
         ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
-                client = self._get_client()
-                resp = client.get("/studio/diagnostics")
+            client = self._get_client()
+            resp = client.get("/studio/diagnostics")
         data = resp.json()
         assert data["issues"][0]["actions"] == []
 
@@ -84,9 +86,8 @@ class TestDiagnosticsActionsEndpoint:
             ],
         ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
-                client = self._get_client()
-                resp = client.get("/studio/diagnostics")
+            client = self._get_client()
+            resp = client.get("/studio/diagnostics")
         data = resp.json()
         actions = data["issues"][0]["actions"]
         assert len(actions) == 2
@@ -106,9 +107,8 @@ class TestDiagnosticsActionsEndpoint:
             ],
         ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
-                client = self._get_client()
-                resp = client.get("/studio/diagnostics")
+            client = self._get_client()
+            resp = client.get("/studio/diagnostics")
         data = resp.json()
         action = data["issues"][0]["actions"][0]
         assert action["example"] == "pip install x"
@@ -122,9 +122,8 @@ class TestDiagnosticsActionsEndpoint:
                 actions=[build_action(kind=k, target="x", title=f"action-{k}")],
             ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
-                client = self._get_client()
-                resp = client.get("/studio/diagnostics")
+            client = self._get_client()
+            resp = client.get("/studio/diagnostics")
         data = resp.json()
         response_kinds = {issue["actions"][0]["kind"] for issue in data["issues"]}
         assert response_kinds == set(kinds)

@@ -137,6 +137,11 @@ class CheckConstraintError(DatabaseError):
         super().__init__(message, **kwargs)
 
 
+class ImproperlyConfigured(ConfigurationError):
+    """Raised when a feature is used with invalid configuration."""
+    pass
+
+
 class ValidationError(AksaraError):
     """
     Raised when field or model validation fails.
@@ -165,6 +170,11 @@ class ValidationError(AksaraError):
 
 class QueryError(DatabaseError):
     """Raised when a query fails for reasons other than constraints."""
+    pass
+
+
+class PatchRejectedError(AksaraError):
+    """Raised when an AI patch is rejected by the AST sandbox."""
     pass
 
 

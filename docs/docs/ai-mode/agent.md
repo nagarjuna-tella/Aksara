@@ -83,7 +83,7 @@ print(f"Estimated tokens: {response.tokens_estimate}")
 | `GET` | `/studio/agent/context` | Returns `StudioAgentContext` |
 | `POST` | `/studio/agent/prompt` | Accepts `StudioAgentPromptRequest`, returns `StudioAgentPromptResponse` |
 
-Both endpoints share the same `verify_studio_origin` security as all
+Both endpoints share the same `verify_studio_auth` security as all
 other Studio endpoints.
 
 ---

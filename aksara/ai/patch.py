@@ -385,16 +385,37 @@ def _is_protected_file(path: str) -> bool:
     return False
 
 
-def _contains_dangerous_code(content: str) -> Tuple[bool, Optional[str]]:
-    """Check if content contains dangerous patterns."""
-    for pattern in DANGEROUS_PATTERNS:
-        match = re.search(pattern, content)
-        if match:
-            return True, f"Dangerous pattern detected: {match.group()}"
-
-    for violation in _ast_dangerous_code_check(content):
-        return True, violation
-    return False, None
+def validate_patch_ast(content: str) -> Tuple[bool, str]:
+    """Validate that the AI-generated code is safe via AST whitelist."""
+    try:
+        tree = ast.parse(content)
+    except SyntaxError as e:
+        return False, f"Syntax error at line {e.lineno}: {e.msg}"
+        
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            return False, "Dangerous pattern detected: import statements are not allowed."
+            
+        if isinstance(node, ast.Call):
+            # Resolve function name
+            name = None
+            if isinstance(node.func, ast.Name):
+                name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                name = node.func.attr
+                
+            if name in {'eval', 'exec', 'compile', '__import__', 'open', 'vars', 'dir', 'getattr', 'setattr', 'delattr'}:
+                return False, f"Dangerous pattern detected: function call {name}"
+                
+        if isinstance(node, ast.Attribute):
+            if node.attr in {'__class__', '__bases__', '__subclasses__', '__globals__', '__builtins__', '__dict__'}:
+                return False, f"Dangerous pattern detected: attribute access {node.attr}"
+                
+        if isinstance(node, ast.Name):
+            if node.id in {'__class__', '__bases__', '__subclasses__', '__globals__', '__builtins__', '__dict__'}:
+                return False, f"Dangerous pattern detected: name access {node.id}"
+                
+    return True, ""
 
 
 def _resolve_call_name(node: ast.AST) -> Optional[str]:
@@ -559,22 +580,16 @@ def validate_operation(
     
     # Validate content-based operations
     if operation.text:
-        is_dangerous, danger_msg = _contains_dangerous_code(operation.text)
-        if is_dangerous:
-            return AiPatchValidationResult(
-                valid=False,
-                error_type=PatchValidationError.DANGEROUS_CODE.value,
-                error_message=danger_msg
-            )
+        valid, danger_msg = validate_patch_ast(operation.text)
+        if not valid:
+            from aksara.exceptions import PatchRejectedError
+            raise PatchRejectedError(danger_msg)
     
     if operation.new_text:
-        is_dangerous, danger_msg = _contains_dangerous_code(operation.new_text)
-        if is_dangerous:
-            return AiPatchValidationResult(
-                valid=False,
-                error_type=PatchValidationError.DANGEROUS_CODE.value,
-                error_message=danger_msg
-            )
+        valid, danger_msg = validate_patch_ast(operation.new_text)
+        if not valid:
+            from aksara.exceptions import PatchRejectedError
+            raise PatchRejectedError(danger_msg)
     
     # Validate operation-specific requirements
     op_type = operation.type

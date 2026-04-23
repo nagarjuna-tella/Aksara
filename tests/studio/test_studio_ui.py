@@ -15,7 +15,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from aksara.studio.fastapi import router, STATIC_DIR, get_static_dir
+from aksara.studio.fastapi import router, STATIC_DIR, get_static_dir, verify_studio_auth as _verify_studio_auth
 
 
 # =============================================================================
@@ -26,6 +26,7 @@ def create_test_app() -> FastAPI:
     """Create a test FastAPI app with Studio router."""
     app = FastAPI(title="Test App", version="1.0.0")
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     return app
 
 
@@ -43,6 +44,7 @@ def create_mock_settings(
     mock_settings.debug = debug
     mock_settings.studio_expose_in_production = studio_expose_in_production
     mock_settings.studio_allowed_origins = studio_allowed_origins or ["*"]
+    mock_settings.studio_require_auth = False
     return mock_settings
 
 

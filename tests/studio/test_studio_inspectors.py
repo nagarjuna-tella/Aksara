@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from aksara.studio.fastapi import router
+from aksara.studio.fastapi import router, verify_studio_auth as _verify_studio_auth
 from aksara.studio.models import (
     StudioQueryPlanRequest,
     StudioQueryPlanResult,
@@ -43,6 +43,7 @@ def create_test_app() -> FastAPI:
     """Create a test FastAPI app with Studio router."""
     app = FastAPI(title="Test App", version="1.0.0")
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     app._db = None
     app.state.db = None
     app.state.viewset_registry = []
@@ -64,6 +65,7 @@ def create_mock_settings():
     mock.app_title = "Test App"
     mock.app_version = "1.0.0"
     mock.enable_studio = True
+    mock.studio_secret_token = "test_token"
     mock.studio_expose_in_production = False
     mock.studio_allowed_origins = []
     mock.env = "development"
@@ -376,7 +378,7 @@ class TestConvertInspectorToStudio:
 class TestStudioDbPlanEndpoint:
     """Tests for POST /studio/db/plan endpoint."""
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     def test_select_plan(self, mock_verify):
         mock_verify.return_value = None
         app = create_test_app()
@@ -391,7 +393,7 @@ class TestStudioDbPlanEndpoint:
         assert len(data["plan"]) > 0
         assert data["estimated_cost"] is not None
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     def test_insert_plan(self, mock_verify):
         mock_verify.return_value = None
         app = create_test_app()
@@ -404,7 +406,7 @@ class TestStudioDbPlanEndpoint:
         data = response.json()
         assert any("Insert" in line for line in data["plan"])
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     def test_plan_with_analyze(self, mock_verify):
         mock_verify.return_value = None
         app = create_test_app()
@@ -417,7 +419,7 @@ class TestStudioDbPlanEndpoint:
         data = response.json()
         assert data["plan_type"] == "EXPLAIN ANALYZE"
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     def test_plan_warnings(self, mock_verify):
         mock_verify.return_value = None
         app = create_test_app()
@@ -434,7 +436,7 @@ class TestStudioDbPlanEndpoint:
 class TestStudioModelInspectEndpoint:
     """Tests for GET /studio/models/inspect/{model_name} endpoint."""
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_model_inspector")
     def test_model_found(self, mock_build, mock_verify):
         mock_verify.return_value = None
@@ -451,7 +453,7 @@ class TestStudioModelInspectEndpoint:
         assert data["name"] == "User"
         assert data["table_name"] == "users"
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_model_inspector")
     def test_model_not_found(self, mock_build, mock_verify):
         mock_verify.return_value = None
@@ -462,7 +464,7 @@ class TestStudioModelInspectEndpoint:
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_model_inspector")
     def test_response_has_fields(self, mock_build, mock_verify):
         mock_verify.return_value = None
@@ -486,7 +488,7 @@ class TestStudioModelInspectEndpoint:
 class TestStudioModelsInspectAllEndpoint:
     """Tests for GET /studio/models/inspect/all endpoint."""
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_all_models_inspector")
     def test_empty(self, mock_build, mock_verify):
         mock_verify.return_value = None
@@ -501,7 +503,7 @@ class TestStudioModelsInspectAllEndpoint:
         assert data["total_count"] == 0
         assert data["models"] == []
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_all_models_inspector")
     def test_with_models(self, mock_build, mock_verify):
         mock_verify.return_value = None
@@ -523,7 +525,7 @@ class TestStudioModelsInspectAllEndpoint:
         assert len(data["models"]) == 2
         assert data["total_fields"] == 8
 
-    @patch("aksara.studio.fastapi.verify_studio_origin")
+    @patch("aksara.studio.fastapi.verify_studio_auth")
     @patch("aksara.studio.fastapi.build_all_models_inspector")
     def test_aggregate_counts(self, mock_build, mock_verify):
         mock_verify.return_value = None

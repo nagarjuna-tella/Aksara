@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from aksara.studio.fastapi import router
+from aksara.studio.fastapi import router, verify_studio_auth as _verify_studio_auth
 
 
 # =============================================================================
@@ -24,6 +24,7 @@ def create_test_app() -> FastAPI:
     """Create a test FastAPI app with Studio router."""
     app = FastAPI(title="Test App", version="1.0.0")
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     
     # Mock database state
     app._db = None
@@ -48,6 +49,7 @@ def create_mock_settings():
     mock_settings.app_title = "Test App"
     mock_settings.app_version = "1.0.0"
     mock_settings.enable_studio = True
+    mock_settings.studio_secret_token = "test_token"
     mock_settings.studio_expose_in_production = False
     mock_settings.studio_allowed_origins = []  # Allow all
     mock_settings.env = "development"
@@ -77,7 +79,7 @@ class TestStudioDbQueriesEndpoint:
         """Set up mock environment."""
         mock_settings = create_mock_settings()
         
-        with patch("aksara.studio.fastapi.verify_studio_origin", return_value=None):
+        with patch("aksara.studio.fastapi.verify_studio_auth", return_value=None):
             with patch("aksara.conf.settings", mock_settings):
                 yield mock_settings
     
@@ -215,7 +217,7 @@ class TestStudioDbQueryDetailEndpoint:
         """Set up mock environment."""
         mock_settings = create_mock_settings()
         
-        with patch("aksara.studio.fastapi.verify_studio_origin", return_value=None):
+        with patch("aksara.studio.fastapi.verify_studio_auth", return_value=None):
             with patch("aksara.conf.settings", mock_settings):
                 yield mock_settings
     

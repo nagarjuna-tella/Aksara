@@ -7,6 +7,7 @@ Server-rendered views for the admin interface.
 from __future__ import annotations
 
 import hmac
+import logging
 import secrets
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
@@ -28,6 +29,31 @@ templates = Jinja2Templates(directory=str(_templates_dir))
 
 ADMIN_CSRF_COOKIE_NAME = "aksara_admin_csrf"
 ADMIN_CSRF_FORM_FIELD = "csrf_token"
+
+logger = logging.getLogger("aksara.contrib.admin")
+
+
+def _validate_next_url(url: str) -> str:
+    """
+    Validate a redirect URL to prevent open-redirect attacks.
+
+    Only relative paths starting with '/' are allowed.
+    Any absolute URL (with scheme or netloc) is rejected and replaced
+    with the safe default '/admin/'.
+    """
+    if not url:
+        return "/admin/"
+    parsed = urlparse(url)
+    # Reject absolute URLs: must have no scheme and no netloc
+    if parsed.scheme or parsed.netloc:
+        return "/admin/"
+    # Reject protocol-relative URLs like //evil.com
+    if url.startswith("//"):
+        return "/admin/"
+    # Must start with /
+    if not url.startswith("/"):
+        return "/admin/"
+    return url
 
 
 def get_admin_user(request: Request, redirect_to_login: bool = True):
@@ -821,7 +847,7 @@ async def admin_login(request: Request) -> HTMLResponse:
     settings = _get_settings()
     error = None
     username = ""
-    next_url = request.query_params.get("next", "/admin/")
+    next_url = _validate_next_url(request.query_params.get("next", "/admin/"))
     
     # Check if user is already logged in
     user = getattr(request.state, "user", None)
@@ -832,7 +858,7 @@ async def admin_login(request: Request) -> HTMLResponse:
         form_data = await _read_admin_form(request)
         username = form_data.get("username", "")
         password = form_data.get("password", "")
-        next_url = form_data.get("next", "/admin/")
+        next_url = _validate_next_url(form_data.get("next", "/admin/"))
         
         if username and password:
             # Try to authenticate
@@ -864,7 +890,7 @@ async def admin_login(request: Request) -> HTMLResponse:
                             value=token,
                             httponly=True,
                             secure=settings.cookie_secure,
-                            samesite="lax",
+                            samesite="strict",
                             max_age=60 * 60 * 24 * 7,  # 7 days
                         )
                         return response
@@ -873,7 +899,8 @@ async def admin_login(request: Request) -> HTMLResponse:
             except ImportError:
                 error = "Authentication module not configured. Please set up aksara.contrib.auth."
             except Exception as e:
-                error = f"Login failed: {str(e)}"
+                logger.exception("Admin login error: %s", e)
+                error = "Login failed. Please try again."
         else:
             error = "Please enter both username and password."
     
@@ -915,6 +942,12 @@ async def admin_logout(request: Request) -> RedirectResponse:
         url=str(request.url_for("admin:login")),
         status_code=status.HTTP_302_FOUND,
     )
-    response.delete_cookie(key="session_token")
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        httponly=True,
+        secure=_get_settings().cookie_secure,
+        samesite="strict",
+    )
     
     return response

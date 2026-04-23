@@ -67,11 +67,16 @@ class AdminRateLimitMiddleware(BaseHTTPMiddleware):
         if not request.url.path.startswith(f"{self.prefix}/"):
             return await call_next(request)
 
-        client_host = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-        if not client_host and request.client:
-            client_host = request.client.host
-        if not client_host:
-            client_host = "unknown"
+        # Only trust X-Forwarded-For when the direct client is a trusted
+        # proxy (loopback by default).  Otherwise an external client can
+        # spoof the header to get a fresh rate-limit bucket each time.
+        _TRUSTED_PROXIES = {"127.0.0.1", "::1"}
+        direct_host = request.client.host if request.client else ""
+        if direct_host in _TRUSTED_PROXIES:
+            forwarded = request.headers.get("x-forwarded-for", "")
+            client_host = forwarded.split(",")[0].strip() or direct_host
+        else:
+            client_host = direct_host or "unknown"
 
         now = time.monotonic()
         window_seconds = max(settings.admin_rate_limit_window_seconds, 1)

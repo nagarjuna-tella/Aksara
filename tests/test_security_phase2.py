@@ -3,7 +3,7 @@ Security Remediation Tests — Phase 2: Auth Hardening
 
 Tests for:
 - DB-backed session management (aksara_sessions table)
-- Studio access control (verify_studio_origin authentication)
+- Studio access control (verify_studio_auth authentication)
 """
 
 from __future__ import annotations
@@ -208,7 +208,7 @@ class TestStudioAccessControl:
 
         configure(studio_require_auth=True, studio_auth_token="secret-token")
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import verify_studio_auth
 
         mock_app = MagicMock()
         mock_app.db = None
@@ -218,7 +218,7 @@ class TestStudioAccessControl:
         # Patch request.app to return our mock
         with patch.object(type(request), 'app', new_callable=lambda: property(lambda self: mock_app)):
             with pytest.raises(HTTPException) as exc_info:
-                await verify_studio_origin(request)
+                await verify_studio_auth(request)
             assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
@@ -226,25 +226,25 @@ class TestStudioAccessControl:
         """Studio with studio_require_auth=False should allow unauthenticated requests."""
         configure(studio_require_auth=False)
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import verify_studio_auth
 
         request = _build_request()
         # Should not raise
-        await verify_studio_origin(request)
+        await verify_studio_auth(request)
 
     @pytest.mark.asyncio
     async def test_valid_bearer_token_passes(self):
         """Studio with valid bearer token should pass authentication."""
         configure(studio_require_auth=True, studio_auth_token="my-studio-token")
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import verify_studio_auth
 
         request = _build_request(
             headers=[(b"authorization", b"Bearer my-studio-token")]
         )
 
         # Should not raise
-        await verify_studio_origin(request)
+        await verify_studio_auth(request)
 
     @pytest.mark.asyncio
     async def test_invalid_bearer_token_rejected(self):
@@ -253,7 +253,7 @@ class TestStudioAccessControl:
 
         configure(studio_require_auth=True, studio_auth_token="correct-token")
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import verify_studio_auth
 
         mock_app = MagicMock()
         mock_app.db = None
@@ -264,7 +264,7 @@ class TestStudioAccessControl:
 
         with patch.object(type(request), 'app', new_callable=lambda: property(lambda self: mock_app)):
             with pytest.raises(HTTPException) as exc_info:
-                await verify_studio_origin(request)
+                await verify_studio_auth(request)
             assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
@@ -277,14 +277,14 @@ class TestStudioAccessControl:
             studio_allowed_origins=["https://studio.aksara.dev"],
         )
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import _check_studio_origin
 
         request = _build_request(
             headers=[(b"origin", b"https://evil.com")]
         )
 
         with pytest.raises(HTTPException) as exc_info:
-            await verify_studio_origin(request)
+            await _check_studio_origin(request)
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
@@ -295,14 +295,14 @@ class TestStudioAccessControl:
             studio_allowed_origins=["https://studio.aksara.dev"],
         )
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import _check_studio_origin
 
         request = _build_request(
             headers=[(b"origin", b"https://studio.aksara.dev")]
         )
 
         # Should not raise
-        await verify_studio_origin(request)
+        await _check_studio_origin(request)
 
     @pytest.mark.asyncio
     async def test_missing_origin_allowed(self):
@@ -312,12 +312,12 @@ class TestStudioAccessControl:
             studio_allowed_origins=["https://studio.aksara.dev"],
         )
 
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import _check_studio_origin
 
         request = _build_request()  # No origin header
 
         # Should not raise
-        await verify_studio_origin(request)
+        await _check_studio_origin(request)
 
     def test_studio_require_auth_default_true(self):
         """studio_require_auth should default to True."""
@@ -327,7 +327,7 @@ class TestStudioAccessControl:
     def test_verify_uses_hmac_compare(self):
         """Studio token comparison should use hmac.compare_digest."""
         import inspect
-        from aksara.studio.fastapi import verify_studio_origin
+        from aksara.studio.fastapi import verify_studio_auth
 
-        source = inspect.getsource(verify_studio_origin)
+        source = inspect.getsource(verify_studio_auth)
         assert "hmac.compare_digest" in source

@@ -380,6 +380,52 @@ class TestPathSafety:
 # Test Dangerous Code Detection
 # =============================================================================
 
+class TestDangerousCode:
+    """Tests for dangerous code detection."""
+    
+    def test_safe_code(self):
+        """Test safe code passes."""
+        code = "class User(Model):\n    name = fields.String()"
+        valid, msg = validate_patch_ast(code)
+        assert valid
+    
+    def test_detect_eval(self):
+        """Test eval() is detected."""
+        code = "result = eval(user_input)"
+        valid, msg = validate_patch_ast(code)
+        assert not valid
+        assert "eval" in msg
+    
+    def test_detect_exec(self):
+        """Test exec() is detected."""
+        code = "exec(user_code)"
+        valid, msg = validate_patch_ast(code)
+        assert not valid
+    
+    def test_detect_os_system(self):
+        """Test os.system() is detected."""
+        code = "os.system('rm -rf /')"
+        valid, msg = validate_patch_ast(code)
+        assert not valid
+    
+    def test_detect_subprocess(self):
+        """Test subprocess calls are detected."""
+        code = "subprocess.run(['ls'])"
+        valid, msg = validate_patch_ast(code)
+        assert not valid
+    
+    def test_detect_shutil_rmtree(self):
+        """Test shutil.rmtree() is detected."""
+        code = "shutil.rmtree('/important')"
+        valid, msg = validate_patch_ast(code)
+        assert not valid
+
+
+# =============================================================================
+# Test Syntax Validation
+# =============================================================================
+
+class TestSyntaxValidation:
     """Tests for Python syntax validation."""
     
     def test_valid_syntax(self):
@@ -483,10 +529,9 @@ class TestOperationValidation:
             path="app/models.py",
             text="import os; os.system('rm -rf /')"
         )
-        from aksara.exceptions import PatchRejectedError
-        with pytest.raises(PatchRejectedError) as exc_info:
-            validate_operation(op, temp_project)
-        assert "import statements are not allowed" in str(exc_info.value).lower() or "dangerous pattern" in str(exc_info.value).lower()
+        result = validate_operation(op, temp_project)
+        assert result.valid is False
+        assert result.error_type == PatchValidationError.DANGEROUS_CODE.value
     
     def test_delete_model_warning(self, temp_project):
         """Test delete_model generates migration warning."""

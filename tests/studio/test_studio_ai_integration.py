@@ -27,7 +27,7 @@ from aksara.studio.models import (
     StudioAiPrompts,
     StudioMigrationStatus,
 )
-from aksara.studio.fastapi import router
+from aksara.studio.fastapi import router, verify_studio_auth as _verify_studio_auth
 
 
 # =============================================================================
@@ -38,6 +38,7 @@ def create_test_app() -> FastAPI:
     """Create a test FastAPI app with Studio router."""
     app = FastAPI(title="Test App", version="1.0.0")
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     
     # Mock database state
     app._db = None
@@ -62,6 +63,7 @@ def create_mock_settings():
     mock_settings.app_title = "Test App"
     mock_settings.app_version = "1.0.0"
     mock_settings.enable_studio = True
+    mock_settings.studio_secret_token = "test_token"
     mock_settings.studio_expose_in_production = False
     mock_settings.env = "development"
     mock_settings.installed_apps = ["app"]

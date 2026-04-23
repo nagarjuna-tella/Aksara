@@ -35,6 +35,69 @@ def _validate_identifier(name: str, kind: str) -> str:
     return name
 
 
+# v0.5.40: public sanitization helpers for AI-generated SQL identifiers
+
+_ALLOWED_COLUMN_TYPES: frozenset[str] = frozenset({
+    "TEXT", "VARCHAR", "CHAR",
+    "INTEGER", "BIGINT", "SMALLINT", "SERIAL", "BIGSERIAL",
+    "BOOLEAN",
+    "FLOAT", "DOUBLE PRECISION", "REAL", "NUMERIC", "DECIMAL",
+    "UUID", "JSON", "JSONB",
+    "TIMESTAMP", "TIMESTAMPTZ", "DATE", "TIME", "TIMETZ",
+    "BYTEA",
+})
+
+
+def sanitize_identifier(name: str) -> str:
+    """Return *name* if it is a valid SQL/Python identifier, else raise.
+
+    A valid identifier matches ``^[a-zA-Z_][a-zA-Z0-9_]*$`` — no spaces,
+    hyphens, dollar signs, or SQL injection payloads.
+
+    Args:
+        name: The candidate identifier string.
+
+    Returns:
+        The unchanged *name* string when valid.
+
+    Raises:
+        ValueError: When *name* contains disallowed characters or is empty.
+    """
+    if not name:
+        raise ValueError("Identifier must not be empty")
+    if not IDENTIFIER_PATTERN.fullmatch(name):
+        raise ValueError(f"Invalid SQL identifier: {name!r}")
+    return name
+
+
+def sanitize_column_type(type_str: str) -> str:
+    """Return *type_str* if it matches an allowed PostgreSQL column type.
+
+    The check is done against an explicit allowlist of safe type tokens
+    (upper-cased) to prevent SQL injection via the type part of a column
+    definition.  ``VARCHAR(n)`` and ``NUMERIC(p,s)`` variants are supported
+    by extracting the base type before the first ``(``.
+
+    Args:
+        type_str: The candidate column-type string (case-insensitive).
+
+    Returns:
+        The original *type_str* when the base type is in the allowlist.
+
+    Raises:
+        ValueError: When the base type is not in the allowlist.
+    """
+    if not type_str:
+        raise ValueError("Column type must not be empty")
+
+    # Extract base type before any parenthesised modifiers, e.g. VARCHAR(255)
+    base_type = type_str.split("(")[0].strip().upper()
+
+    if base_type not in _ALLOWED_COLUMN_TYPES:
+        raise ValueError(f"Disallowed column type: {type_str!r}")
+    return type_str
+
+
 # =============================================================================
 # Type Aliases
 # =============================================================================

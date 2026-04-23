@@ -25,6 +25,43 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
+# Security: SQL Identifier Quoting
+# =============================================================================
+
+# Valid FK referential actions
+_VALID_FK_ACTIONS = frozenset({
+    "CASCADE", "SET NULL", "SET DEFAULT", "RESTRICT", "NO ACTION",
+})
+
+
+def _quote_ident(name: str) -> str:
+    """
+    Safely quote a SQL identifier by escaping embedded double quotes.
+
+    PostgreSQL identifier quoting: wrap in double quotes and double
+    any embedded ``"`` characters.  This prevents SQL injection via
+    table/column/index names supplied to DDL operations.
+    """
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _validate_fk_action(action: str) -> str:
+    """
+    Validate a foreign-key referential action against an allowlist.
+
+    Raises ValueError if the action is not a recognised PostgreSQL
+    referential action keyword.
+    """
+    normalised = action.strip().upper()
+    if normalised not in _VALID_FK_ACTIONS:
+        raise ValueError(
+            f"Invalid FK action: {action!r}. "
+            f"Allowed: {', '.join(sorted(_VALID_FK_ACTIONS))}"
+        )
+    return normalised
+
+
+# =============================================================================
 # Field Operations - For SQL Generation
 # =============================================================================
 
@@ -506,11 +543,13 @@ class OneToOneField(FieldOp):
     def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
         prefix = f"{table_name}_" if table_name else ""
+        on_del = _validate_fk_action(self.on_delete)
+        on_upd = _validate_fk_action(self.on_update)
         return (
             f"CONSTRAINT fk_{prefix}{column_name} "
             f"FOREIGN KEY ({column_name}) "
-            f'REFERENCES "{self.to_table}"({self.to_column}) '
-            f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
+            f"REFERENCES {_quote_ident(self.to_table)}({self.to_column}) "
+            f"ON DELETE {on_del} ON UPDATE {on_upd}"
         )
     
     def __repr__(self) -> str:
@@ -551,21 +590,24 @@ class ManyToManyField(FieldOp):
     
     def get_join_table_sql(self) -> str:
         """Generate CREATE TABLE SQL for the join table."""
-        return f'''CREATE TABLE IF NOT EXISTS "{self.join_table_name}" (
+        jtn = _quote_ident(self.join_table_name)
+        st = _quote_ident(self.source_table)
+        tt = _quote_ident(self.target_table)
+        return f'''CREATE TABLE IF NOT EXISTS {jtn} (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "source_id" UUID NOT NULL,
     "target_id" UUID NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_{self.join_table_name}_source 
-        FOREIGN KEY (source_id) REFERENCES "{self.source_table}"({self.source_column}) ON DELETE CASCADE,
+        FOREIGN KEY (source_id) REFERENCES {st}({self.source_column}) ON DELETE CASCADE,
     CONSTRAINT fk_{self.join_table_name}_target 
-        FOREIGN KEY (target_id) REFERENCES "{self.target_table}"({self.target_column}) ON DELETE CASCADE,
+        FOREIGN KEY (target_id) REFERENCES {tt}({self.target_column}) ON DELETE CASCADE,
     UNIQUE (source_id, target_id)
 )'''
     
     def get_drop_join_table_sql(self) -> str:
         """Generate DROP TABLE SQL for the join table."""
-        return f'DROP TABLE IF EXISTS "{self.join_table_name}" CASCADE'
+        return f'DROP TABLE IF EXISTS {_quote_ident(self.join_table_name)} CASCADE'
     
     def __repr__(self) -> str:
         return f"ManyToManyField(source='{self.source_table}', target='{self.target_table}')"
@@ -603,11 +645,13 @@ class ForeignKeyField(FieldOp):
     def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
         prefix = f"{table_name}_" if table_name else ""
+        on_del = _validate_fk_action(self.on_delete)
+        on_upd = _validate_fk_action(self.on_update)
         return (
             f"CONSTRAINT fk_{prefix}{column_name} "
             f"FOREIGN KEY ({column_name}) "
-            f'REFERENCES "{self.to_table}"({self.to_column}) '
-            f"ON DELETE {self.on_delete} ON UPDATE {self.on_update}"
+            f"REFERENCES {_quote_ident(self.to_table)}({self.to_column}) "
+            f"ON DELETE {on_del} ON UPDATE {on_upd}"
         )
     
     def __repr__(self) -> str:
@@ -651,8 +695,8 @@ class IndexOp:
     def to_sql(self) -> str:
         """Generate CREATE INDEX SQL."""
         unique_str = "UNIQUE " if self.unique else ""
-        cols = ", ".join(f'"{c}"' for c in self.columns)
-        sql = f'CREATE {unique_str}INDEX "{self.name}" ON "{self.table}" USING {self.method} ({cols})'
+        cols = ", ".join(_quote_ident(c) for c in self.columns)
+        sql = f'CREATE {unique_str}INDEX {_quote_ident(self.name)} ON {_quote_ident(self.table)} USING {self.method} ({cols})'
         
         if self.where:
             sql += f" WHERE {self.where}"
@@ -754,7 +798,7 @@ class CreateTable(Operation):
         constraints = []
         
         for col_name, field in self.fields:
-            columns.append(f'"{col_name}" {field.to_sql()}')
+            columns.append(f'{_quote_ident(col_name)} {field.to_sql()}')
             
             # Handle ForeignKey and OneToOne constraints
             if isinstance(field, (ForeignKeyField, OneToOneField)):
@@ -765,7 +809,7 @@ class CreateTable(Operation):
         columns_sql = ",\n    ".join(all_parts)
         
         exists_clause = "IF NOT EXISTS " if self.if_not_exists else ""
-        sql = f'CREATE TABLE {exists_clause}"{self.name}" (\n    {columns_sql}\n)'
+        sql = f'CREATE TABLE {exists_clause}{_quote_ident(self.name)} (\n    {columns_sql}\n)'
         
         # Execute table creation
         if hasattr(connection, 'execute'):
@@ -830,15 +874,18 @@ class CreateManyToManyTable(Operation):
     
     async def apply(self, connection) -> None:
         """Create the ManyToMany join table."""
-        sql = f'''CREATE TABLE IF NOT EXISTS "{self.join_table_name}" (
+        jtn = _quote_ident(self.join_table_name)
+        st = _quote_ident(self.source_table)
+        tt = _quote_ident(self.target_table)
+        sql = f'''CREATE TABLE IF NOT EXISTS {jtn} (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "source_id" UUID NOT NULL,
     "target_id" UUID NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_{self.join_table_name}_source 
-        FOREIGN KEY (source_id) REFERENCES "{self.source_table}"({self.source_column}) ON DELETE CASCADE,
+        FOREIGN KEY (source_id) REFERENCES {st}({self.source_column}) ON DELETE CASCADE,
     CONSTRAINT fk_{self.join_table_name}_target 
-        FOREIGN KEY (target_id) REFERENCES "{self.target_table}"({self.target_column}) ON DELETE CASCADE,
+        FOREIGN KEY (target_id) REFERENCES {tt}({self.target_column}) ON DELETE CASCADE,
     UNIQUE (source_id, target_id)
 )'''
         
@@ -881,7 +928,7 @@ class DropTable(Operation):
         """Drop the table."""
         exists_clause = "IF EXISTS " if self.if_exists else ""
         cascade_clause = " CASCADE" if self.cascade else ""
-        sql = f'DROP TABLE {exists_clause}"{self.name}"{cascade_clause}'
+        sql = f'DROP TABLE {exists_clause}{_quote_ident(self.name)}{cascade_clause}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -909,7 +956,7 @@ class RenameTable(Operation):
     
     async def apply(self, connection) -> None:
         """Rename the table."""
-        sql = f'ALTER TABLE "{self.old_name}" RENAME TO "{self.new_name}"'
+        sql = f'ALTER TABLE {_quote_ident(self.old_name)} RENAME TO {_quote_ident(self.new_name)}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -955,7 +1002,7 @@ class AddField(Operation):
     
     async def apply(self, connection) -> None:
         """Add the column to the table."""
-        sql = f'ALTER TABLE "{self.table}" ADD COLUMN "{self.name}" {self.field.to_sql()}'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} ADD COLUMN {_quote_ident(self.name)} {self.field.to_sql()}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -965,7 +1012,7 @@ class AddField(Operation):
         # Handle ForeignKey/OneToOne constraints as a separate statement
         if isinstance(self.field, (ForeignKeyField, OneToOneField)):
             constraint_sql = self.field.get_constraint_sql(self.name, self.table)
-            constraint_stmt = f'ALTER TABLE "{self.table}" ADD {constraint_sql}'
+            constraint_stmt = f'ALTER TABLE {_quote_ident(self.table)} ADD {constraint_sql}'
             await connection.execute(constraint_stmt)
     
     def reverse(self) -> "RemoveField":
@@ -1001,7 +1048,7 @@ class RemoveField(Operation):
     async def apply(self, connection) -> None:
         """Remove the column from the table."""
         exists_clause = "IF EXISTS " if self.if_exists else ""
-        sql = f'ALTER TABLE "{self.table}" DROP COLUMN {exists_clause}"{self.name}"'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} DROP COLUMN {exists_clause}{_quote_ident(self.name)}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1056,7 +1103,7 @@ class AlterFieldType(Operation):
             type_sql = type_sql[:min_idx].strip()
         
         using_clause = f" USING {self.using}" if self.using else ""
-        sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" TYPE {type_sql}{using_clause}'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} TYPE {type_sql}{using_clause}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1090,7 +1137,7 @@ class RenameField(Operation):
     
     async def apply(self, connection) -> None:
         """Rename the column."""
-        sql = f'ALTER TABLE "{self.table}" RENAME COLUMN "{self.old_name}" TO "{self.new_name}"'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} RENAME COLUMN {_quote_ident(self.old_name)} TO {_quote_ident(self.new_name)}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1133,9 +1180,9 @@ class AlterFieldNull(Operation):
     async def apply(self, connection) -> None:
         """Alter the column's nullability."""
         if self.nullable:
-            sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" DROP NOT NULL'
+            sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} DROP NOT NULL'
         else:
-            sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" SET NOT NULL'
+            sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} SET NOT NULL'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1183,7 +1230,7 @@ class AlterFieldDefault(Operation):
     async def apply(self, connection) -> None:
         """Alter the column's default value."""
         if self.drop_default:
-            sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" DROP DEFAULT'
+            sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} DROP DEFAULT'
         else:
             # Format the default value
             if self.new_default is None:
@@ -1198,7 +1245,7 @@ class AlterFieldDefault(Operation):
             else:
                 default_sql = str(self.new_default)
             
-            sql = f'ALTER TABLE "{self.table}" ALTER COLUMN "{self.name}" SET DEFAULT {default_sql}'
+            sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} SET DEFAULT {default_sql}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1305,7 +1352,7 @@ class RemoveIndex(Operation):
         """Drop the index."""
         exists_clause = "IF EXISTS " if self.if_exists else ""
         concurrent_clause = "CONCURRENTLY " if self.concurrently else ""
-        sql = f'DROP INDEX {concurrent_clause}{exists_clause}"{self.name}"'
+        sql = f'DROP INDEX {concurrent_clause}{exists_clause}{_quote_ident(self.name)}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1347,7 +1394,7 @@ class AddConstraint(Operation):
     
     async def apply(self, connection) -> None:
         """Add the constraint."""
-        sql = f'ALTER TABLE "{self.table}" ADD CONSTRAINT "{self.name}" {self.constraint_sql}'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} ADD CONSTRAINT {_quote_ident(self.name)} {self.constraint_sql}'
         
         if hasattr(connection, 'execute'):
             await connection.execute(sql)
@@ -1387,7 +1434,7 @@ class RemoveConstraint(Operation):
     async def apply(self, connection) -> None:
         """Drop the constraint."""
         # PostgreSQL doesn't support IF EXISTS for constraints directly
-        sql = f'ALTER TABLE "{self.table}" DROP CONSTRAINT "{self.name}"'
+        sql = f'ALTER TABLE {_quote_ident(self.table)} DROP CONSTRAINT {_quote_ident(self.name)}'
         
         if hasattr(connection, 'execute'):
             try:

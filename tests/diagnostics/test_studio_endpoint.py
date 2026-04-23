@@ -11,6 +11,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aksara.diagnostics import DiagnosticIssue, DiagnosticReport
+from aksara.studio.fastapi import verify_studio_auth as _verify_studio_auth
 
 
 def _make_report(**kwargs):
@@ -33,12 +34,13 @@ class TestStudioDiagnosticsEndpoint:
 
         app = FastAPI()
         app.include_router(router)
+        app.dependency_overrides[_verify_studio_auth] = lambda: None
         return TestClient(app)
 
     def test_endpoint_returns_200(self):
         report = _make_report()
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         assert resp.status_code == 200
@@ -47,7 +49,7 @@ class TestStudioDiagnosticsEndpoint:
         report = _make_report()
         report.add(DiagnosticIssue(kind="general", severity="info", title="Test", message="test"))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         data = resp.json()
@@ -65,7 +67,7 @@ class TestStudioDiagnosticsEndpoint:
             hint="Check DATABASE_URL", meta={"host": "localhost"},
         ))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         data = resp.json()
@@ -83,7 +85,7 @@ class TestStudioDiagnosticsEndpoint:
         report.add(DiagnosticIssue(kind="b", severity="warning", title="W", message="w"))
         report.add(DiagnosticIssue(kind="c", severity="info", title="I", message="i"))
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         data = resp.json()
@@ -94,7 +96,7 @@ class TestStudioDiagnosticsEndpoint:
     def test_endpoint_system_metadata(self):
         report = _make_report()
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         data = resp.json()
@@ -103,7 +105,7 @@ class TestStudioDiagnosticsEndpoint:
     def test_endpoint_empty_report(self):
         report = _make_report()
         with patch("aksara.studio.fastapi.run_all_checks", new_callable=AsyncMock, return_value=report):
-            with patch("aksara.studio.fastapi.verify_studio_origin", new_callable=AsyncMock):
+            with patch("aksara.studio.fastapi.verify_studio_auth", new_callable=AsyncMock):
                 client = self._get_client()
                 resp = client.get("/studio/diagnostics")
         data = resp.json()

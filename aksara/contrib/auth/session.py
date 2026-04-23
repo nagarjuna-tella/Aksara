@@ -56,7 +56,7 @@ async def authenticate(
         User instance if credentials are valid, None otherwise
     """
     from aksara.contrib.auth.models import User
-    from aksara.contrib.auth.hashing import verify_password
+    from aksara.contrib.auth.hashing import verify_password, _DUMMY_HASH
     
     # Try to find user by email (case-insensitive)
     username_lower = username.lower().strip()
@@ -70,6 +70,10 @@ async def authenticate(
             user = await User.objects.filter(username=username_lower).first()
         
         if user is None:
+            # Perform a dummy password check so the response time is
+            # indistinguishable from a real wrong-password attempt.
+            # This prevents user-enumeration via timing side-channel.
+            verify_password(password, _DUMMY_HASH)
             return None
         
         if not user.is_active:

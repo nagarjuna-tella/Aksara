@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from aksara.studio.fastapi import router
+from aksara.studio.fastapi import router, verify_studio_auth as _verify_studio_auth
 
 
 # =============================================================================
@@ -21,6 +21,7 @@ def test_client():
     """Create test client with Studio router."""
     app = FastAPI()
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     app.ai_provider_registry = None
     return TestClient(app)
 

@@ -89,7 +89,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from aksara.studio.models import (
     StudioContextSummary,
@@ -213,63 +213,81 @@ STATIC_DIR = Path(__file__).parent / "static"
 # v0.5.1: Origin Security
 # =============================================================================
 
-async def verify_studio_origin(request: Request) -> None:
-    """
-    Verify that the request Origin and Studio authentication are allowed.
-    
-    v0.5.1: Security dependency for Studio endpoints.
-    
+async def _check_studio_origin(request: Request) -> None:
+    """Reject requests whose Origin header is not in studio_allowed_origins.
+
     Rules:
-    - If studio_allowed_origins is empty or ["*"], allow all origins
-    - Otherwise, check Origin header against the allowed list
-    - Missing Origin header is allowed (same-origin requests, CLI)
-    
-    Raises:
-        HTTPException 403 if origin is not allowed
-        HTTPException 401 if authentication is required and missing/invalid
+    - No Origin header → allow (same-origin request or CLI)
+    - ``studio_allowed_origins = []`` → allow all origins
+    - ``"*"`` in allowed list → allow all origins
+    - Otherwise the origin must match exactly
+
+    Raises HTTP 403 when the origin is disallowed.
     """
-    import hmac
-
     from aksara.conf import settings
-    
-    allowed_origins = getattr(settings, 'studio_allowed_origins', [])
-    
-    if allowed_origins and "*" not in allowed_origins:
-        origin = request.headers.get("origin")
 
-        # Allow requests without Origin (same-origin, CLI, server-to-server)
-        if origin is not None and origin not in allowed_origins:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Origin '{origin}' is not allowed. Allowed origins: {allowed_origins}",
-            )
+    origin = request.headers.get("Origin")
+    if not origin:
+        return  # no Origin header — same-origin or CLI, allow through
 
-    if not getattr(settings, "studio_require_auth", True):
+    allowed_origins: list = getattr(settings, "studio_allowed_origins", [])
+    if not allowed_origins:
+        return  # empty list means unrestricted
+    if "*" in allowed_origins:
+        return  # wildcard — allow all
+    if origin in allowed_origins:
+        return  # exact match — allow
+
+    raise HTTPException(
+        status_code=403,
+        detail=f"Origin {origin!r} is not allowed",
+    )
+
+
+async def verify_studio_auth(request: Request) -> None:
+    """
+    Verify Studio authentication.
+
+    Checks ``settings.studio_require_auth``.  When True, accepts either:
+    - ``Authorization: Bearer <token>`` matching ``settings.studio_auth_token``
+    - A valid staff session cookie
+
+    Raises HTTP 401 when authentication is required but not provided.
+    """
+    from aksara.conf import settings
+
+    if not getattr(settings, "studio_require_auth", False):
         return
 
-    auth_header = request.headers.get("authorization", "")
+    # --- Bearer token check ---
+    auth_header = request.headers.get("Authorization", "")
     expected_token = getattr(settings, "studio_auth_token", None)
-    if expected_token and auth_header.startswith("Bearer "):
-        provided_token = auth_header.removeprefix("Bearer ").strip()
-        if hmac.compare_digest(provided_token, expected_token):
+    if auth_header.startswith("Bearer ") and expected_token:
+        import hmac
+        provided = auth_header[7:]
+        if hmac.compare_digest(provided, expected_token):
             return
 
+    # --- Session cookie check ---
     session_token = request.cookies.get("session_token")
-    db = getattr(request.app, "db", None)
-    if db is None:
-        db = getattr(getattr(request.app, "state", None), "db", None)
+    if session_token:
+        try:
+            from aksara.contrib.auth import get_user_from_session_token
+            user = await get_user_from_session_token(session_token)
+            if user and getattr(user, "is_staff", False):
+                return
+        except Exception:
+            pass
 
-    if session_token and db is not None:
-        from aksara.contrib.auth import get_user_from_session_token
+    raise HTTPException(
+        status_code=401,
+        detail="Studio requires authentication",
+    )
 
-        user = await get_user_from_session_token(db, session_token)
-        if user and getattr(user, "is_staff", False):
-            return
-
-    raise HTTPException(status_code=401, detail="Studio requires authentication")
-
-
-router = APIRouter(tags=["Studio"], dependencies=[Depends(verify_studio_origin)])
+router = APIRouter(
+    tags=["Studio"],
+    dependencies=[Depends(_check_studio_origin), Depends(verify_studio_auth)],
+)
 
 
 @router.get("/studio/handshake", response_model=StudioHandshake)
@@ -1432,7 +1450,7 @@ async def studio_gaps(
         default=None,
         description="Comma-separated list of categories to check (default: all)",
     ),
-    _dep: None = Depends(verify_studio_origin),
+    _dep: None = Depends(verify_studio_auth),
 ) -> StudioGapAnalysisReport:
     """
     Run the gap analysis engine and return the report.
@@ -1453,7 +1471,7 @@ async def studio_gaps(
 @router.post("/studio/gaps/run", response_model=StudioGapAnalysisRunResponse)
 async def studio_gaps_run(
     request: Request,
-    _dep: None = Depends(verify_studio_origin),
+    _dep: None = Depends(verify_studio_auth),
 ) -> StudioGapAnalysisRunResponse:
     """
     Trigger a fresh gap analysis run and return the full report.
@@ -2372,8 +2390,7 @@ async def studio_ui(request: Request) -> HTMLResponse:
         HTML page for the Studio dashboard.
     """
     _check_studio_ui_enabled()
-    await verify_studio_origin(request)
-    
+
     index_path = STATIC_DIR / "index.html"
     
     if not index_path.exists():
@@ -2409,8 +2426,7 @@ async def studio_assets(request: Request, path: str) -> FileResponse:
         Static file with appropriate Content-Type.
     """
     _check_studio_ui_enabled()
-    await verify_studio_origin(request)
-    
+
     # Security: prevent directory traversal
     safe_path = Path(path).as_posix()
     if ".." in safe_path or safe_path.startswith("/"):

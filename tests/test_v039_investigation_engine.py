@@ -1,5 +1,5 @@
 """
-v0.5.39 — AI Investigation Engine Tests
+v0.5.40 — AI Investigation Engine Tests
 
 Comprehensive tests for the investigation engine: data models, session store,
 plan builder, investigation runner, console integration, and API endpoints.
@@ -821,12 +821,12 @@ class TestVersion:
     def test_version_is_0_5_39(self):
         from aksara._version import __version__
 
-        assert __version__ == "0.5.39"
+        assert __version__ == "0.5.41"
 
     def test_cli_version_is_0_5_39(self):
         from aksara.cli.main import CLI_VERSION
 
-        assert CLI_VERSION == "0.5.39"
+        assert CLI_VERSION == "0.5.41"
 
 
 # =============================================================================

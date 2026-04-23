@@ -39,7 +39,7 @@ from aksara.studio.models import (
     StudioRuntimeInfo,
     StudioRouteInfo,
 )
-from aksara.studio.fastapi import router
+from aksara.studio.fastapi import router, verify_studio_auth as _verify_studio_auth
 
 
 # =============================================================================
@@ -50,8 +50,24 @@ def create_test_app() -> FastAPI:
     """Create a test FastAPI app with Studio router."""
     app = FastAPI(title="Test App", version="1.0.0")
     app.include_router(router)
+    app.dependency_overrides[_verify_studio_auth] = lambda: None
     
     # Mock database state
+    app._db = None
+    app.state.db = None
+    app.state.viewset_registry = []
+    app.ai_registry = None
+    
+    return app
+
+
+def create_test_app_with_auth() -> FastAPI:
+    """Create a test FastAPI app with Studio router (no auth override)."""
+    app = FastAPI(title="Test App", version="1.0.0")
+    app.include_router(router)
+    
+    # Do NOT override verify_studio_auth — tests that verify auth behavior need real auth
+    
     app._db = None
     app.state.db = None
     app.state.viewset_registry = []
@@ -74,6 +90,7 @@ def create_mock_settings():
     mock_settings.app_title = "Test App"
     mock_settings.app_version = "1.0.0"
     mock_settings.enable_studio = True
+    mock_settings.studio_secret_token = "test_token"
     mock_settings.studio_expose_in_production = False
     mock_settings.studio_require_auth = False
     mock_settings.studio_auth_token = None
@@ -728,7 +745,7 @@ class TestStudioOriginSecurity:
     
     def test_disallowed_origin_blocked(self):
         """Request with disallowed origin is blocked."""
-        app = create_test_app()
+        app = create_test_app_with_auth()
         client = TestClient(app)
         
         mock_settings = create_mock_settings()
@@ -781,7 +798,7 @@ class TestStudioAuthentication:
 
     def test_studio_requires_auth_when_enabled(self):
         """Studio endpoints should reject unauthenticated access by default."""
-        app = create_test_app()
+        app = create_test_app_with_auth()
         client = TestClient(app)
 
         mock_settings = create_mock_settings()

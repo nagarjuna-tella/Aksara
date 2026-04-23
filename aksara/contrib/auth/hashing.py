@@ -4,6 +4,7 @@ Password Hashing Utilities
 Secure password hashing using bcrypt.
 """
 
+import hashlib
 import secrets
 import string
 
@@ -15,6 +16,24 @@ __all__ = [
     "verify_password",
     "make_random_password",
 ]
+
+# Pre-computed dummy hash for timing-safe user-not-found responses.
+# authenticate() functions call verify_password against this when the
+# user doesn't exist, so the response time is the same as for a real
+# (wrong) password attempt.
+_DUMMY_HASH = "$2b$12$LJ3m4ys1LaQvVhIxnHVawe3rvyAMwBSJlNQoOEgJr1VdDnCjkh4vy"
+
+
+def _prehash(password: str) -> bytes:
+    """
+    SHA-256 pre-hash to work around bcrypt's 72-byte truncation.
+
+    Bcrypt silently ignores everything after byte 72.  By first hashing
+    through SHA-256 we compress any-length password into a fixed 64-char
+    hex string, which fits comfortably inside the 72-byte window while
+    preserving full entropy of the original password.
+    """
+    return hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8")
 
 
 def hash_password(password: str) -> str:
@@ -32,7 +51,7 @@ def hash_password(password: str) -> str:
         # Returns something like: $2b$12$...
     """
     return bcrypt.hashpw(
-        password.encode("utf-8"),
+        _prehash(password),
         bcrypt.gensalt()
     ).decode("utf-8")
 
@@ -54,7 +73,7 @@ def verify_password(password: str, hashed: str) -> bool:
     """
     try:
         return bcrypt.checkpw(
-            password.encode("utf-8"),
+            _prehash(password),
             hashed.encode("utf-8")
         )
     except Exception:

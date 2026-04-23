@@ -86,9 +86,11 @@ class Settings:
     ai_debug_enabled: bool = True  # Enabled by default in debug mode
     ai_debug_advisor_class: Optional[str] = None  # Custom advisor class path
     ai_agent_token: Optional[str] = None  # Shared token for server-side AI agent auth
+    patch_sandbox: str = "subprocess"  # "subprocess" or "in_process" (execution strategy)
     
-    # v0.5.0: Studio integration
-    enable_studio: bool = True  # Enable Studio endpoints by default
+    # v0.5.0: Studio settings
+    enable_studio: bool = False  # Disable Studio endpoints by default
+    studio_secret_token: Optional[str] = None  # Required when enable_studio is True
     studio_expose_in_production: bool = False  # Require explicit flag in production
     studio_require_auth: bool = True  # Require auth for Studio endpoints by default
     studio_auth_token: Optional[str] = None  # Shared bearer token for Studio access
@@ -215,9 +217,21 @@ class Settings:
         if self.ai_agent_token is None:
             self.ai_agent_token = os.environ.get("AKSARA_AI_AGENT_TOKEN")
         
+        env_patch_sandbox = os.environ.get("AKSARA_PATCH_SANDBOX")
+        if env_patch_sandbox:
+            self.patch_sandbox = env_patch_sandbox
+
         # v0.5.0: Studio settings
         if self.enable_studio:
             self.enable_studio = not _get_bool_env("AKSARA_STUDIO_DISABLED", False)
+            
+        if self.studio_secret_token is None:
+            self.studio_secret_token = os.environ.get("AKSARA_STUDIO_SECRET_TOKEN")
+            
+        if self.enable_studio and not self.studio_secret_token:
+            from aksara.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured("STUDIO_SECRET_TOKEN must be set when ENABLE_STUDIO=True")
+            
         if not self.studio_expose_in_production:
             self.studio_expose_in_production = _get_bool_env("AKSARA_STUDIO_EXPOSE_IN_PRODUCTION", False)
         if self.studio_require_auth:

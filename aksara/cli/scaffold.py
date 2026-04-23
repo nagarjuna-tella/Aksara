@@ -340,7 +340,7 @@ AKSARA = {{
     "ENABLE_ADMIN": True,  # Mount /admin (requires auth contrib)
     
     # Studio Integration (v0.5.0+)
-    "ENABLE_STUDIO": True,  # Mount /studio/* endpoints
+    "ENABLE_STUDIO": False,  # Mount /studio/* endpoints
     "STUDIO_UI_ENABLED": True,  # Enable /studio/ui dashboard
     "STUDIO_ALLOWED_ORIGINS": [
         "http://localhost:3000",
@@ -410,6 +410,9 @@ settings = Settings()
 
 def get_env_template(project_name: str) -> str:
     """Generate .env content."""
+    import secrets
+    studio_token = secrets.token_urlsafe(32)
+    
     return f'''# {project_name} - Environment Configuration
 
 # Database (PostgreSQL)
@@ -426,6 +429,9 @@ AKSARA_APP_TITLE={project_name}
 
 # Migrations directory
 AKSARA_MIGRATIONS_DIR=migrations
+
+# Studio Security Token
+AKSARA_STUDIO_SECRET_TOKEN={studio_token}
 '''
 
 
@@ -837,7 +843,7 @@ Edit `settings.py` to customize:
 ```python
 AKSARA = {{
     "ENABLE_ADMIN": True,       # /admin
-    "ENABLE_STUDIO": True,      # /studio/*
+    "ENABLE_STUDIO": False,     # /studio/*
     "AI_MODE_ENABLED": True,    # /ai/*
 }}
 ```

@@ -155,10 +155,13 @@ class UserManager(Manager):
             else:
                 print("Invalid credentials")
         """
-        from aksara.contrib.auth.hashing import verify_password
+        from aksara.contrib.auth.hashing import verify_password, _DUMMY_HASH
         
         user = await self.get_by_email(email)
         if user is None:
+            # Timing-safe: perform a dummy bcrypt check so the response
+            # time is the same as for a real wrong-password attempt.
+            verify_password(password, _DUMMY_HASH)
             return None
         
         if not user.is_active:
