@@ -61,6 +61,11 @@ class Settings:
     # Debug & Logging
     debug: bool = False
     log_level: str = "INFO"
+    cookie_secure: bool = True
+    admin_csrf_enabled: bool = True
+    admin_rate_limit_enabled: bool = True
+    admin_rate_limit_requests: int = 20
+    admin_rate_limit_window_seconds: int = 60
     
     # v0.3.13: Request logging
     log_requests: bool = True
@@ -80,10 +85,13 @@ class Settings:
     # v0.4.1: AI Debug Assistant
     ai_debug_enabled: bool = True  # Enabled by default in debug mode
     ai_debug_advisor_class: Optional[str] = None  # Custom advisor class path
+    ai_agent_token: Optional[str] = None  # Shared token for server-side AI agent auth
     
     # v0.5.0: Studio integration
     enable_studio: bool = True  # Enable Studio endpoints by default
     studio_expose_in_production: bool = False  # Require explicit flag in production
+    studio_require_auth: bool = True  # Require auth for Studio endpoints by default
+    studio_auth_token: Optional[str] = None  # Shared bearer token for Studio access
     studio_allowed_origins: List[str] = field(default_factory=lambda: [
         "https://studio.aksara.dev",
         "http://localhost:3000",  # Local Studio dev
@@ -164,6 +172,21 @@ class Settings:
         env_log_level = os.environ.get("AKSARA_LOG_LEVEL")
         if env_log_level:
             self.log_level = env_log_level
+
+        if self.cookie_secure:
+            self.cookie_secure = _get_bool_env("AKSARA_COOKIE_SECURE", True)
+        if self.admin_csrf_enabled:
+            self.admin_csrf_enabled = _get_bool_env("AKSARA_ADMIN_CSRF_ENABLED", True)
+        if self.admin_rate_limit_enabled:
+            self.admin_rate_limit_enabled = _get_bool_env("AKSARA_ADMIN_RATE_LIMIT_ENABLED", True)
+        self.admin_rate_limit_requests = _get_int_env(
+            "AKSARA_ADMIN_RATE_LIMIT_REQUESTS",
+            self.admin_rate_limit_requests,
+        )
+        self.admin_rate_limit_window_seconds = _get_int_env(
+            "AKSARA_ADMIN_RATE_LIMIT_WINDOW_SECONDS",
+            self.admin_rate_limit_window_seconds,
+        )
         
         # v0.3.13: Request logging
         if self.log_requests:
@@ -188,12 +211,19 @@ class Settings:
         
         if not self.mcp_enabled:
             self.mcp_enabled = _get_bool_env("AKSARA_MCP_ENABLED", False)
+
+        if self.ai_agent_token is None:
+            self.ai_agent_token = os.environ.get("AKSARA_AI_AGENT_TOKEN")
         
         # v0.5.0: Studio settings
         if self.enable_studio:
             self.enable_studio = not _get_bool_env("AKSARA_STUDIO_DISABLED", False)
         if not self.studio_expose_in_production:
             self.studio_expose_in_production = _get_bool_env("AKSARA_STUDIO_EXPOSE_IN_PRODUCTION", False)
+        if self.studio_require_auth:
+            self.studio_require_auth = _get_bool_env("AKSARA_STUDIO_REQUIRE_AUTH", True)
+        if self.studio_auth_token is None:
+            self.studio_auth_token = os.environ.get("AKSARA_STUDIO_AUTH_TOKEN")
         
         # Studio allowed origins from env (comma-separated)
         env_origins = os.environ.get("AKSARA_STUDIO_ALLOWED_ORIGINS")
@@ -245,6 +275,31 @@ class Settings:
     def DEBUG(self) -> bool:
         """Alias for debug (uppercase convention)."""
         return self.debug
+
+    @property
+    def COOKIE_SECURE(self) -> bool:
+        """Alias for cookie_secure (uppercase convention)."""
+        return self.cookie_secure
+
+    @property
+    def ADMIN_CSRF_ENABLED(self) -> bool:
+        """Alias for admin_csrf_enabled (uppercase convention)."""
+        return self.admin_csrf_enabled
+
+    @property
+    def ADMIN_RATE_LIMIT_ENABLED(self) -> bool:
+        """Alias for admin_rate_limit_enabled (uppercase convention)."""
+        return self.admin_rate_limit_enabled
+
+    @property
+    def ADMIN_RATE_LIMIT_REQUESTS(self) -> int:
+        """Alias for admin_rate_limit_requests (uppercase convention)."""
+        return self.admin_rate_limit_requests
+
+    @property
+    def ADMIN_RATE_LIMIT_WINDOW_SECONDS(self) -> int:
+        """Alias for admin_rate_limit_window_seconds (uppercase convention)."""
+        return self.admin_rate_limit_window_seconds
     
     @property
     def POOL_SIZE(self) -> int:
@@ -270,6 +325,11 @@ class Settings:
     def STUDIO_ENABLED(self) -> bool:
         """Alias for enable_studio (uppercase convention)."""
         return self.enable_studio
+
+    @property
+    def STUDIO_REQUIRE_AUTH(self) -> bool:
+        """Alias for studio_require_auth (uppercase convention)."""
+        return self.studio_require_auth
     
     @property
     def APPS(self) -> List[str]:
@@ -300,6 +360,11 @@ class Settings:
     def AI_DEFAULT_PROVIDER(self) -> Optional[str]:
         """Alias for ai_default_provider (uppercase convention)."""
         return self.ai_default_provider
+
+    @property
+    def AI_AGENT_TOKEN(self) -> Optional[str]:
+        """Alias for ai_agent_token (uppercase convention)."""
+        return self.ai_agent_token
 
 
 # Global settings instance

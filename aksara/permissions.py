@@ -281,7 +281,7 @@ class DenyAI(BasePermission):
     Deny access to AI agents.
     
     Use this to protect sensitive endpoints from AI agent access.
-    This checks for the X-AI-Agent header or ai_agent flag on request.
+    This checks only server-side request state set by AIAgentMiddleware.
     
     Usage:
         class SensitiveViewSet(ModelViewSet):
@@ -293,20 +293,9 @@ class DenyAI(BasePermission):
     ai_allow = False  # Explicitly deny AI
     
     def has_permission(self, request: Any, view: Any = None) -> bool:
-        # Check for AI agent indicators
-        
-        # Check header
-        ai_header = getattr(request, "headers", {}).get("X-AI-Agent")
-        if ai_header and ai_header.lower() in ("true", "1", "yes"):
-            return False
-        
-        # Check request state
-        if hasattr(request, "state"):
-            if getattr(request.state, "is_ai_agent", False):
-                return False
-        
-        # Check request attribute
-        if getattr(request, "is_ai_agent", False):
+        # AI identity must be set server-side by AIAgentMiddleware;
+        # client headers are never trusted.
+        if getattr(getattr(request, "state", None), "is_ai_agent", False) is True:
             return False
         
         return True

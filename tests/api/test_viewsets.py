@@ -149,6 +149,22 @@ class TestViewSetInit:
         with pytest.raises(ValueError, match="must define 'model'"):
             BadViewSet()
 
+    def test_is_ai_request_ignores_client_header(self, mock_request):
+        """ViewSet should not trust client-controlled AI headers."""
+        viewset = ProductViewSet()
+        mock_request.headers = {"X-AI-Agent": "true"}
+        mock_request.state.is_ai_agent = False
+
+        assert viewset._is_ai_request(mock_request) is False
+
+    def test_is_ai_request_uses_request_state(self, mock_request):
+        """ViewSet should trust server-side AI state only."""
+        viewset = ProductViewSet()
+        mock_request.headers = {}
+        mock_request.state.is_ai_agent = True
+
+        assert viewset._is_ai_request(mock_request) is True
+
 
 # =============================================================================
 # Schema Generation Tests

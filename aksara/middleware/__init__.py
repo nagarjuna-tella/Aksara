@@ -43,6 +43,7 @@ Context Variables:
 
 from __future__ import annotations
 
+from .ai_agent import AIAgentMiddleware
 from .context import request_id_var, tenant_id_var, user_id_var
 from .request_id import RequestIDMiddleware, RequestIdMiddleware
 from .tenant import TenantMiddleware
@@ -55,6 +56,7 @@ __all__ = [
     "tenant_id_var",
     "user_id_var",
     # Middleware classes
+    "AIAgentMiddleware",
     "RequestIDMiddleware",
     "RequestIdMiddleware",  # Backwards compat alias (v0.5.24+)
     "TenantMiddleware",

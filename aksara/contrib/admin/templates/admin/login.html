@@ -367,6 +367,7 @@
             {% endif %}
             
             <form method="POST" action="{{ request.url_for('admin:login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 

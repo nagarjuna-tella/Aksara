@@ -35,7 +35,7 @@ router.add_api_route(
 router.add_api_route(
     "/logout/",
     admin_logout,
-    methods=["GET", "POST"],
+    methods=["POST"],
     name="admin:logout",
 )
 

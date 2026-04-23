@@ -6,9 +6,11 @@ Server-rendered views for the admin interface.
 
 from __future__ import annotations
 
+import hmac
+import secrets
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -23,6 +25,9 @@ if TYPE_CHECKING:
 _package_dir = Path(__file__).parent
 _templates_dir = _package_dir / "templates"
 templates = Jinja2Templates(directory=str(_templates_dir))
+
+ADMIN_CSRF_COOKIE_NAME = "aksara_admin_csrf"
+ADMIN_CSRF_FORM_FIELD = "csrf_token"
 
 
 def get_admin_user(request: Request, redirect_to_login: bool = True):
@@ -111,6 +116,99 @@ def _get_settings():
     return settings
 
 
+def _generate_admin_csrf_token() -> str:
+    """Generate a CSRF token for the admin UI."""
+    return secrets.token_urlsafe(32)
+
+
+def _get_or_create_admin_csrf_token(request: Request) -> str:
+    """Return the admin CSRF token for this request."""
+    token = request.cookies.get(ADMIN_CSRF_COOKIE_NAME)
+    if token:
+        return token
+    return _generate_admin_csrf_token()
+
+
+def _is_same_origin(request: Request, origin_value: str) -> bool:
+    """Validate an Origin or Referer header against the current request."""
+    parsed = urlparse(origin_value)
+    request_url = urlparse(str(request.base_url))
+    return bool(parsed.scheme and parsed.netloc) and (
+        parsed.scheme == request_url.scheme and parsed.netloc == request_url.netloc
+    )
+
+
+def _set_admin_csrf_cookie(response: HTMLResponse, request: Request, token: str) -> None:
+    """Set the admin CSRF cookie on a response."""
+    settings = _get_settings()
+    response.set_cookie(
+        key=ADMIN_CSRF_COOKIE_NAME,
+        value=token,
+        secure=settings.cookie_secure and request.url.scheme == "https",
+        httponly=False,
+        samesite="strict",
+        path="/admin",
+    )
+
+
+def _render_admin_template(
+    request: Request,
+    template_name: str,
+    context: Dict[str, Any],
+) -> HTMLResponse:
+    """Render an admin template with CSRF context and cookie."""
+    settings = _get_settings()
+    csrf_token = _get_or_create_admin_csrf_token(request)
+    response = templates.TemplateResponse(
+        request,
+        template_name,
+        {
+            **context,
+            "csrf_token": csrf_token,
+        },
+    )
+    if settings.admin_csrf_enabled:
+        _set_admin_csrf_cookie(response, request, csrf_token)
+    return response
+
+
+async def _read_admin_form(request: Request) -> Any:
+    """Read and validate admin POST form data."""
+    form_data = await request.form()
+    settings = _get_settings()
+
+    if not settings.admin_csrf_enabled:
+        return form_data
+
+    origin = request.headers.get("origin")
+    referer = request.headers.get("referer")
+    if origin and not _is_same_origin(request, origin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin request origin.",
+        )
+    if referer and not _is_same_origin(request, referer):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin request referer.",
+        )
+
+    cookie_token = request.cookies.get(ADMIN_CSRF_COOKIE_NAME)
+    form_token = form_data.get(ADMIN_CSRF_FORM_FIELD)
+    if not cookie_token or not form_token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing admin CSRF token.",
+        )
+    if not hmac.compare_digest(str(cookie_token), str(form_token)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin CSRF token.",
+        )
+
+    return form_data
+
+
 # -----------------------------------------------------------------------------
 # Admin Index View: /admin/
 # -----------------------------------------------------------------------------
@@ -135,7 +233,7 @@ async def admin_index(request: Request) -> HTMLResponse:
         app_label = model.meta.app_label or "default"
         apps.setdefault(app_label, []).append(model)
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/index.html",
         {
@@ -178,7 +276,7 @@ async def app_index(request: Request, app_label: str) -> HTMLResponse:
             detail=f"App '{app_label}' not found or has no registered models",
         )
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/app_index.html",
         {
@@ -249,7 +347,7 @@ async def model_list(
             row["values"].append(value)
         objects_data.append(row)
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/model_list.html",
         {
@@ -301,7 +399,7 @@ async def model_add(
     
     if request.method == "POST":
         # Parse form data
-        raw_form = await request.form()
+        raw_form = await _read_admin_form(request)
         form_data = _parse_form_data(raw_form, model, form_fields)
         
         try:
@@ -324,7 +422,7 @@ async def model_add(
     # Prepare field info for template
     fields_info = await _get_fields_info(model, model_admin, form_fields, form_data, request)
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/model_form.html",
         {
@@ -386,7 +484,7 @@ async def model_change(
     
     if request.method == "POST":
         # Parse form data
-        raw_form = await request.form()
+        raw_form = await _read_admin_form(request)
         form_data = _parse_form_data(raw_form, model, form_fields)
         
         # Remove readonly fields from form_data
@@ -413,7 +511,7 @@ async def model_change(
         model, model_admin, form_fields, form_data, request, obj
     )
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/model_form.html",
         {
@@ -466,6 +564,8 @@ async def model_delete(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied",
         )
+
+    await _read_admin_form(request)
     
     await model_admin.delete_model(request, obj)
     
@@ -729,7 +829,7 @@ async def admin_login(request: Request) -> HTMLResponse:
         return RedirectResponse(url=next_url, status_code=status.HTTP_302_FOUND)
     
     if request.method == "POST":
-        form_data = await request.form()
+        form_data = await _read_admin_form(request)
         username = form_data.get("username", "")
         password = form_data.get("password", "")
         next_url = form_data.get("next", "/admin/")
@@ -763,7 +863,7 @@ async def admin_login(request: Request) -> HTMLResponse:
                             key="session_token",
                             value=token,
                             httponly=True,
-                            secure=not settings.debug,
+                            secure=settings.cookie_secure,
                             samesite="lax",
                             max_age=60 * 60 * 24 * 7,  # 7 days
                         )
@@ -777,7 +877,7 @@ async def admin_login(request: Request) -> HTMLResponse:
         else:
             error = "Please enter both username and password."
     
-    return templates.TemplateResponse(
+    return _render_admin_template(
         request,
         "admin/login.html",
         {
@@ -797,8 +897,10 @@ async def admin_logout(request: Request) -> RedirectResponse:
     """
     Admin logout - clears session and redirects to login.
     
-    Route: GET, POST /admin/logout/
+    Route: POST /admin/logout/
     """
+    await _read_admin_form(request)
+
     # Try to invalidate session in database
     try:
         token = request.cookies.get("session_token")

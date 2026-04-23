@@ -526,6 +526,11 @@ class Aksara(FastAPI):
                     max_size=self._max_pool_size,
                 )
                 await self._db.connect()
+
+                from aksara.conf import settings
+                if "aksara.contrib.auth" in settings.installed_apps:
+                    from aksara.contrib.auth.session import _ensure_sessions_table
+                    await _ensure_sessions_table(self._db)
                 
                 # Finalize relations for reverse access
                 from aksara.model.base import finalize_relations
@@ -554,6 +559,11 @@ class Aksara(FastAPI):
                 max_size=self._max_pool_size,
             )
             await self._db.connect()
+
+            from aksara.conf import settings
+            if "aksara.contrib.auth" in settings.installed_apps:
+                from aksara.contrib.auth.session import _ensure_sessions_table
+                await _ensure_sessions_table(self._db)
             
             # Finalize relations for reverse access
             from aksara.model.base import finalize_relations

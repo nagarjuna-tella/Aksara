@@ -126,9 +126,10 @@
                             {% if user.email %}{{ user.email[0]|upper }}{% else %}{{ (user.id|string)[0]|upper }}{% endif %}
                         </div>
                         <span>{{ user.email or user.id }}</span>
-                        <a href="{{ request.url_for('admin:logout') }}" class="btn btn-sm btn-ghost">
-                            Logout
-                        </a>
+                        <form method="post" action="{{ request.url_for('admin:logout') }}" style="display: inline; margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-sm btn-ghost">Logout</button>
+                        </form>
                     </div>
                     {% endif %}
                 </div>

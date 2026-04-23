@@ -8,8 +8,10 @@ Tests the built-in authentication functionality including:
 - FastAPI integration helpers
 """
 
-import pytest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 # =============================================================================
@@ -328,6 +330,115 @@ class TestFastAPIIntegration:
         user = await get_current_active_user(request)
         
         assert user is None
+
+
+# =============================================================================
+# Session Store Tests
+# =============================================================================
+
+class TestSessionStore:
+    """Tests for DB-backed auth sessions."""
+
+    @pytest.mark.asyncio
+    async def test_ensure_sessions_table_creates_table(self):
+        """Session table creation should be idempotent."""
+        from aksara.contrib.auth.session import SESSIONS_TABLE, _ensure_sessions_table
+
+        db = MagicMock()
+        db.execute = AsyncMock(return_value="CREATE TABLE")
+
+        await _ensure_sessions_table(db)
+
+        db.execute.assert_awaited_once()
+        assert SESSIONS_TABLE in db.execute.await_args.args[0]
+
+    @pytest.mark.asyncio
+    async def test_create_session_token_persists_to_db(self):
+        """Creating a session token should insert a DB row."""
+        from aksara.contrib.auth.session import SESSIONS_TABLE, create_session_token
+
+        db = MagicMock()
+        db.execute = AsyncMock(return_value="INSERT 0 1")
+        user = MagicMock()
+        user.id = "user-123"
+
+        with patch("aksara.contrib.auth.session.secrets.token_urlsafe", return_value="session-token"):
+            token = await create_session_token(db, user, expires_in=60)
+
+        assert token == "session-token"
+        query, stored_token, stored_user_id, expires_at = db.execute.await_args.args
+        assert SESSIONS_TABLE in query
+        assert stored_token == "session-token"
+        assert stored_user_id == "user-123"
+        assert isinstance(expires_at, datetime)
+
+    @pytest.mark.asyncio
+    async def test_get_user_from_session_token_returns_user(self):
+        """Valid session tokens should resolve to active users."""
+        from aksara.contrib.auth.models import User
+        from aksara.contrib.auth.session import get_user_from_session_token
+
+        db = MagicMock()
+        db.fetchrow = AsyncMock(
+            return_value={
+                "user_id": "user-123",
+                "expires_at": datetime.now(timezone.utc) + timedelta(minutes=5),
+            }
+        )
+        db.execute = AsyncMock(return_value="DELETE 0")
+
+        user = MagicMock()
+        user.is_active = True
+
+        with patch.object(User.objects, "get", new=AsyncMock(return_value=user)):
+            resolved = await get_user_from_session_token(db, "session-token")
+
+        assert resolved is user
+
+    @pytest.mark.asyncio
+    async def test_get_user_from_session_token_deletes_expired_row(self):
+        """Expired session tokens should be removed and rejected."""
+        from aksara.contrib.auth.session import get_user_from_session_token
+
+        db = MagicMock()
+        db.fetchrow = AsyncMock(
+            return_value={
+                "user_id": "user-123",
+                "expires_at": datetime.now(timezone.utc) - timedelta(minutes=5),
+            }
+        )
+        db.execute = AsyncMock(return_value="DELETE 1")
+
+        resolved = await get_user_from_session_token(db, "session-token")
+
+        assert resolved is None
+        db.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_invalidate_session_token_deletes_row(self):
+        """Invalidating a session token should delete the DB row."""
+        from aksara.contrib.auth.session import SESSIONS_TABLE, invalidate_session_token
+
+        db = MagicMock()
+        db.execute = AsyncMock(return_value="DELETE 1")
+
+        await invalidate_session_token(db, "session-token")
+
+        query, token = db.execute.await_args.args
+        assert SESSIONS_TABLE in query
+        assert token == "session-token"
+
+    @pytest.mark.asyncio
+    async def test_cleanup_expired_sessions_returns_deleted_count(self):
+        """Expired session cleanup should return the number of deleted rows."""
+        from aksara.contrib.auth.session import cleanup_expired_sessions
+
+        db = MagicMock()
+        db.execute = AsyncMock(return_value="DELETE 2")
+
+        deleted = await cleanup_expired_sessions(db)
+
+        assert deleted == 2
 
 
 # =============================================================================

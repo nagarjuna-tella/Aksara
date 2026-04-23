@@ -15,6 +15,7 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from aksara.debug.handlers import (
+    AksaraDebugMiddleware,
     DebugContext,
     collect_debug_context,
     render_debug_page,
@@ -407,6 +408,20 @@ class TestRenderJsonError:
         assert data["error"]["errors"] == errors
         assert len(data["error"]["errors"]) == 2
 
+    def test_render_json_error_with_debug_detail(self):
+        """Test JSON error includes debug detail when requested."""
+        import json
+
+        response = render_json_error(
+            500,
+            "Internal Server Error",
+            error_type="internal_error",
+            debug_detail="sensitive detail",
+        )
+
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["error"]["debug_detail"] == "sensitive detail"
+
 
 # ============================================================================
 # Test HTML Building Functions
@@ -778,6 +793,46 @@ class TestDebugExceptionHandlersIntegration:
         # Should NOT expose error details
         assert "Production error" not in str(data)
         assert data["error"]["message"] == "Internal Server Error"
+
+
+class TestAksaraDebugMiddlewareJsonErrors:
+    """Tests for JSON generic exception handling in middleware."""
+
+    @staticmethod
+    def _mock_json_request(host: str) -> MagicMock:
+        request = MagicMock(spec=Request)
+        request.headers = {"accept": "application/json"}
+        request.client = MagicMock()
+        request.client.host = host
+        return request
+
+    @pytest.mark.asyncio
+    async def test_debug_json_hides_exception_message_for_non_localhost(self):
+        """Test debug JSON does not expose exception detail for non-local clients."""
+        import json
+
+        middleware = AksaraDebugMiddleware(AsyncMock(), debug=True)
+        request = self._mock_json_request("testclient")
+
+        response = await middleware._handle_exception(request, ValueError("Test error"))
+
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["error"]["message"] == "Internal Server Error"
+        assert "debug_detail" not in data["error"]
+
+    @pytest.mark.asyncio
+    async def test_debug_json_includes_debug_detail_for_localhost(self):
+        """Test debug JSON includes debug detail only for localhost clients."""
+        import json
+
+        middleware = AksaraDebugMiddleware(AsyncMock(), debug=True)
+        request = self._mock_json_request("127.0.0.1")
+
+        response = await middleware._handle_exception(request, ValueError("Test error"))
+
+        data = json.loads(response.body.decode("utf-8"))
+        assert data["error"]["message"] == "Internal Server Error"
+        assert data["error"]["debug_detail"] == "Test error"
     
     def test_ok_endpoint_still_works(self, debug_app):
         """Test that exception handlers don't break normal endpoints."""

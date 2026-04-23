@@ -264,17 +264,7 @@ class ModelViewSet:
     
     def _is_ai_request(self, request: Request) -> bool:
         """Check if request is from an AI agent."""
-        # Check header
-        ai_header = request.headers.get("X-AI-Agent", "")
-        if ai_header.lower() in ("true", "1", "yes"):
-            return True
-        
-        # Check request state
-        if hasattr(request, "state"):
-            if getattr(request.state, "is_ai_agent", False):
-                return True
-        
-        return False
+        return getattr(getattr(request, "state", None), "is_ai_agent", False) is True
     
     # =========================================================================
     # v0.3.2: Serializer/Schema Resolution

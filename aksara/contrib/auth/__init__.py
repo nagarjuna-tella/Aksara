@@ -35,6 +35,7 @@ from aksara.contrib.auth.hashing import (
     make_random_password,
 )
 from aksara.contrib.auth.session import (
+    cleanup_expired_sessions,
     authenticate,
     create_session_token,
     get_user_from_session_token,
@@ -49,6 +50,7 @@ __all__ = [
     "verify_password",
     "make_random_password",
     "authenticate",
+    "cleanup_expired_sessions",
     "create_session_token",
     "get_user_from_session_token",
     "invalidate_session_token",

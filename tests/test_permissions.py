@@ -305,7 +305,7 @@ class TestDenyAI:
         assert perm.has_permission(request) is True
     
     def test_denies_ai_header(self):
-        """DenyAI should deny requests with X-AI-Agent header."""
+        """DenyAI should ignore client-controlled AI headers."""
         from aksara.permissions import DenyAI
         
         perm = DenyAI()
@@ -313,7 +313,7 @@ class TestDenyAI:
         request = MagicMock()
         request.headers = {"X-AI-Agent": "true"}
         
-        assert perm.has_permission(request) is False
+        assert perm.has_permission(request) is True
     
     def test_denies_ai_state(self):
         """DenyAI should deny requests with is_ai_agent state."""
@@ -326,6 +326,18 @@ class TestDenyAI:
         request.state.is_ai_agent = True
         
         assert perm.has_permission(request) is False
+
+    def test_ignores_request_is_ai_agent_attribute(self):
+        """DenyAI should ignore non-standard request attributes."""
+        from aksara.permissions import DenyAI
+
+        perm = DenyAI()
+
+        request = MagicMock()
+        request.headers = {}
+        request.is_ai_agent = True
+
+        assert perm.has_permission(request) is True
     
     def test_ai_allow_is_false(self):
         """DenyAI should have ai_allow=False."""

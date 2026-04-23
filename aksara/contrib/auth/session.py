@@ -6,18 +6,37 @@ Provides session-based authentication for admin and other cookie-based auth need
 
 from __future__ import annotations
 
-import secrets
-import hashlib
-from typing import TYPE_CHECKING, Optional, Any
 from datetime import datetime, timedelta, timezone
+import secrets
+from typing import Any, Optional
 
-if TYPE_CHECKING:
-    from asyncpg import Connection
+SESSIONS_TABLE = "aksara_sessions"
 
 
-# In-memory session store (simple implementation)
-# For production, consider using Redis or database-backed sessions
-_sessions: dict[str, dict] = {}
+def _parse_affected_rows(result: Any) -> int:
+    """Parse row counts from asyncpg-style status strings."""
+    if isinstance(result, str):
+        parts = result.rsplit(" ", 1)
+        if len(parts) == 2 and parts[1].isdigit():
+            return int(parts[1])
+    return 0
+
+
+async def _ensure_sessions_table(db: Any) -> None:
+    """Create the session table if it does not already exist."""
+    if db is None:
+        return
+
+    await db.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {SESSIONS_TABLE} (
+            token TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            expires_at TIMESTAMPTZ NOT NULL
+        )
+        """
+    )
 
 
 async def authenticate(
@@ -81,15 +100,15 @@ async def create_session_token(
     Returns:
         Session token string
     """
-    # Generate a secure random token
     token = secrets.token_urlsafe(32)
-    
-    # Store session (in-memory for now)
-    _sessions[token] = {
-        "user_id": str(user.id),
-        "created_at": datetime.now(timezone.utc),
-        "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
-    }
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+    await db.execute(
+        f"INSERT INTO {SESSIONS_TABLE} (token, user_id, expires_at) VALUES ($1, $2, $3)",
+        token,
+        str(user.id),
+        expires_at,
+    )
     
     return token
 
@@ -109,17 +128,18 @@ async def get_user_from_session_token(
         User instance if valid token, None otherwise
     """
     from aksara.contrib.auth.models import User
-    
-    session = _sessions.get(token)
+
+    session = await db.fetchrow(
+        f"SELECT user_id, expires_at FROM {SESSIONS_TABLE} WHERE token = $1",
+        token,
+    )
     if session is None:
         return None
-    
-    # Check expiry
+
     if datetime.now(timezone.utc) > session["expires_at"]:
-        # Token expired, clean it up
-        del _sessions[token]
+        await invalidate_session_token(db, token)
         return None
-    
+
     try:
         user = await User.objects.get(id=session["user_id"])
         if not user.is_active:
@@ -140,21 +160,15 @@ async def invalidate_session_token(
         db: Database connection pool (for future DB-backed sessions)
         token: Session token to invalidate
     """
-    _sessions.pop(token, None)
+    await db.execute(f"DELETE FROM {SESSIONS_TABLE} WHERE token = $1", token)
 
 
-def cleanup_expired_sessions() -> int:
+async def cleanup_expired_sessions(db: Any) -> int:
     """
-    Clean up expired sessions from memory.
+    Clean up expired sessions from the database.
     
     Returns:
         Number of sessions cleaned up
     """
-    now = datetime.now(timezone.utc)
-    expired = [
-        token for token, session in _sessions.items()
-        if now > session["expires_at"]
-    ]
-    for token in expired:
-        del _sessions[token]
-    return len(expired)
+    result = await db.execute(f"DELETE FROM {SESSIONS_TABLE} WHERE expires_at < NOW()")
+    return _parse_affected_rows(result)

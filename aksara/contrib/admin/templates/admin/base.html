@@ -623,7 +623,10 @@
         <div class="admin-user">
             {% if user %}
                 <span>{{ user.email or user.id }}</span>
-                <a href="{{ request.url_for('admin:logout') }}" class="logout-link">Logout</a>
+                <form method="post" action="{{ request.url_for('admin:logout') }}" style="display: inline; margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="logout-link" style="background: none; border: 0; padding: 0; cursor: pointer;">Logout</button>
+                </form>
             {% endif %}
         </div>
     </header>

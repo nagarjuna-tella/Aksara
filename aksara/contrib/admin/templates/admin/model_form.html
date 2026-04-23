@@ -49,6 +49,7 @@
 
 <div class="card form-card">
     <form method="post" class="admin-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="form-body">
             {% for field in fields %}
             <div class="form-group {% if errors and field.name in errors %}has-error{% endif %}">
@@ -191,6 +192,7 @@
     
     {% if not is_add and can_delete %}
     <form id="delete-form" method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     </form>
     {% endif %}
 </div>
@@ -209,6 +211,7 @@
         Permanently delete this {{ model_name }}. This action cannot be undone.
     </p>
     <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button 
             type="submit" 
             class="btn btn-danger" 

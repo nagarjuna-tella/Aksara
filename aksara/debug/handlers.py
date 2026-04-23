@@ -425,6 +425,7 @@ def render_json_error(
     error_type: Optional[str] = None,
     request_id: Optional[str] = None,
     errors: Optional[list[dict[str, Any]]] = None,
+    debug_detail: Optional[str] = None,
 ) -> JSONResponse:
     """
     Render a JSON error response for API consumers.
@@ -454,8 +455,22 @@ def render_json_error(
     
     if errors:
         content["error"]["errors"] = errors
+
+    if debug_detail:
+        content["error"]["debug_detail"] = debug_detail
     
     return JSONResponse(content=content, status_code=status_code)
+
+
+def _get_json_debug_detail(request: Request, exc: Exception, is_debug: bool) -> Optional[str]:
+    """Return debug detail only for localhost JSON requests in debug mode."""
+    client = getattr(request, "client", None)
+    host = getattr(client, "host", None)
+
+    if not is_debug or host not in {"127.0.0.1", "::1"}:
+        return None
+
+    return str(exc)
 
 
 class AksaraDebugMiddleware:
@@ -563,8 +578,12 @@ class AksaraDebugMiddleware:
                 request_id = self._get_request_id()
                 return render_minimal_error_page(500, "Internal Server Error", request_id)
             else:
-                message = str(exc) if self.debug else "Internal Server Error"
-                return render_json_error(500, message, error_type="internal_error")
+                return render_json_error(
+                    500,
+                    "Internal Server Error",
+                    error_type="internal_error",
+                    debug_detail=_get_json_debug_detail(request, exc, self.debug),
+                )
     
     def _wants_html(self, request: Request) -> bool:
         """Check if client prefers HTML response."""

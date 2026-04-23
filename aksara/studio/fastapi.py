@@ -215,7 +215,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 async def verify_studio_origin(request: Request) -> None:
     """
-    Verify that the request Origin is allowed for Studio access.
+    Verify that the request Origin and Studio authentication are allowed.
     
     v0.5.1: Security dependency for Studio endpoints.
     
@@ -226,31 +226,47 @@ async def verify_studio_origin(request: Request) -> None:
     
     Raises:
         HTTPException 403 if origin is not allowed
+        HTTPException 401 if authentication is required and missing/invalid
     """
+    import hmac
+
     from aksara.conf import settings
     
     allowed_origins = getattr(settings, 'studio_allowed_origins', [])
     
-    # If no origins configured or wildcard, allow all
-    if not allowed_origins or "*" in allowed_origins:
+    if allowed_origins and "*" not in allowed_origins:
+        origin = request.headers.get("origin")
+
+        # Allow requests without Origin (same-origin, CLI, server-to-server)
+        if origin is not None and origin not in allowed_origins:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Origin '{origin}' is not allowed. Allowed origins: {allowed_origins}",
+            )
+
+    if not getattr(settings, "studio_require_auth", True):
         return
-    
-    # Get the Origin header
-    origin = request.headers.get("origin")
-    
-    # Allow requests without Origin (same-origin, CLI, server-to-server)
-    if origin is None:
-        return
-    
-    # Check if origin is in allowed list
-    if origin in allowed_origins:
-        return
-    
-    # Origin not allowed
-    raise HTTPException(
-        status_code=403,
-        detail=f"Origin '{origin}' is not allowed. Allowed origins: {allowed_origins}",
-    )
+
+    auth_header = request.headers.get("authorization", "")
+    expected_token = getattr(settings, "studio_auth_token", None)
+    if expected_token and auth_header.startswith("Bearer "):
+        provided_token = auth_header.removeprefix("Bearer ").strip()
+        if hmac.compare_digest(provided_token, expected_token):
+            return
+
+    session_token = request.cookies.get("session_token")
+    db = getattr(request.app, "db", None)
+    if db is None:
+        db = getattr(getattr(request.app, "state", None), "db", None)
+
+    if session_token and db is not None:
+        from aksara.contrib.auth import get_user_from_session_token
+
+        user = await get_user_from_session_token(db, session_token)
+        if user and getattr(user, "is_staff", False):
+            return
+
+    raise HTTPException(status_code=401, detail="Studio requires authentication")
 
 
 router = APIRouter(tags=["Studio"], dependencies=[Depends(verify_studio_origin)])

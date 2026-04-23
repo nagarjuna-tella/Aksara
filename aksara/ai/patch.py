@@ -115,6 +115,57 @@ DANGEROUS_PATTERNS = [
     r"os\.unlink\s*\(",
 ]
 
+DANGEROUS_AST_MODULES = frozenset({
+    "os",
+    "subprocess",
+    "shutil",
+    "importlib",
+    "ctypes",
+    "cffi",
+})
+
+DIRECT_DANGEROUS_CALLS = frozenset({"eval", "exec", "compile", "__import__"})
+ATTRIBUTE_DANGEROUS_CALLS = frozenset({
+    "os.system",
+    "os.popen",
+    "os.remove",
+    "os.unlink",
+    "os.rmdir",
+    "os.execv",
+    "os.execve",
+    "subprocess.run",
+    "subprocess.call",
+    "subprocess.check_output",
+    "subprocess.Popen",
+    "shutil.rmtree",
+    "shutil.move",
+    "shutil.copyfileobj",
+    "importlib.import_module",
+    "importlib.util.spec_from_file_location",
+    "ctypes.CDLL",
+    "cffi.dlopen",
+})
+GETATTR_DANGEROUS_NAMES = frozenset({
+    "system",
+    "popen",
+    "remove",
+    "unlink",
+    "rmdir",
+    "execv",
+    "execve",
+    "run",
+    "call",
+    "check_output",
+    "Popen",
+    "rmtree",
+    "move",
+    "copyfileobj",
+    "import_module",
+    "spec_from_file_location",
+    "CDLL",
+    "dlopen",
+})
+
 
 # =============================================================================
 # Enums
@@ -340,7 +391,107 @@ def _contains_dangerous_code(content: str) -> Tuple[bool, Optional[str]]:
         match = re.search(pattern, content)
         if match:
             return True, f"Dangerous pattern detected: {match.group()}"
+
+    for violation in _ast_dangerous_code_check(content):
+        return True, violation
     return False, None
+
+
+def _resolve_call_name(node: ast.AST) -> Optional[str]:
+    """Resolve a function or attribute node to a dotted name when possible."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parent = _resolve_call_name(node.value)
+        if parent:
+            return f"{parent}.{node.attr}"
+    return None
+
+
+def _get_import_module_target(node: ast.AST) -> Optional[str]:
+    """Resolve importlib.import_module("module") targets from call nodes."""
+    if not isinstance(node, ast.Call):
+        return None
+    if _resolve_call_name(node.func) != "importlib.import_module":
+        return None
+    if not node.args:
+        return None
+    module_arg = node.args[0]
+    if isinstance(module_arg, ast.Constant) and isinstance(module_arg.value, str):
+        return module_arg.value
+    return None
+
+
+def _get_getattr_danger(node: ast.AST) -> Optional[str]:
+    """Detect getattr(..., "dangerous_name") indirection."""
+    if not isinstance(node, ast.Call):
+        return None
+    if _resolve_call_name(node.func) != "getattr" or len(node.args) < 2:
+        return None
+    attr_arg = node.args[1]
+    if isinstance(attr_arg, ast.Constant) and isinstance(attr_arg.value, str):
+        if attr_arg.value in GETATTR_DANGEROUS_NAMES:
+            return attr_arg.value
+    return None
+
+
+def _is_decoder_call(node: ast.AST) -> bool:
+    """Check if a node decodes potentially obfuscated code before execution."""
+    if not isinstance(node, ast.Call):
+        return False
+
+    call_name = _resolve_call_name(node.func)
+    if call_name in {"base64.b64decode", "codecs.decode", "bytes.decode"}:
+        return True
+
+    return isinstance(node.func, ast.Attribute) and node.func.attr == "decode"
+
+
+def _ast_dangerous_code_check(content: str) -> list[str]:
+    """Check for dangerous code patterns that evade the regex fast path."""
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return []
+
+    violations: list[str] = []
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+
+        if isinstance(node.func, ast.Call):
+            dangerous_getattr = _get_getattr_danger(node.func)
+            if dangerous_getattr:
+                violations.append(f"Dangerous getattr call detected: {dangerous_getattr}")
+                continue
+
+        call_name = _resolve_call_name(node.func)
+        if call_name in DIRECT_DANGEROUS_CALLS:
+            violations.append(f"Dangerous call detected: {call_name}")
+            continue
+
+        if call_name in ATTRIBUTE_DANGEROUS_CALLS:
+            violations.append(f"Dangerous call detected: {call_name}")
+            continue
+
+        dangerous_getattr = _get_getattr_danger(node)
+        if dangerous_getattr:
+            violations.append(f"Dangerous getattr access detected: {dangerous_getattr}")
+            continue
+
+        if isinstance(node.func, ast.Attribute):
+            import_target = _get_import_module_target(node.func.value)
+            if import_target in DANGEROUS_AST_MODULES:
+                violations.append(
+                    f"Dangerous dynamic import call detected: {import_target}.{node.func.attr}"
+                )
+                continue
+
+        if call_name in {"eval", "exec"} and any(_is_decoder_call(arg) for arg in node.args):
+            violations.append(f"Dangerous decoded execution detected: {call_name}")
+
+    return violations
 
 
 def _validate_python_syntax(content: str) -> Tuple[bool, Optional[str]]:

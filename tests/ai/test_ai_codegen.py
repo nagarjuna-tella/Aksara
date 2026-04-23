@@ -529,6 +529,47 @@ class TestGenerateMigrationStub:
         code = list(files.values())[0]
         assert "Article" in code or "article" in code.lower()
 
+    def test_migration_stub_quotes_identifiers(self):
+        """Test migration stub quotes table and column identifiers."""
+        spec = AiModelSpec(
+            app_label="blog",
+            name="Article",
+            fields=[
+                AiFieldSpec(name="title", type="string", max_length=200),
+            ],
+        )
+
+        code = list(generate_migration_stub(spec).values())[0]
+
+        assert 'from aksara.db import quote_identifier' in code
+        assert 'quote_identifier("id")' in code
+        assert 'quote_identifier("title")' in code
+        assert 'table_name = "\"blog_article\""' in code
+        assert 'DROP TABLE IF EXISTS "blog_article"' in code
+
+    def test_migration_stub_rejects_invalid_table_name(self):
+        """Test migration stub rejects invalid table names."""
+        spec = AiModelSpec(
+            app_label="blog",
+            name="Article",
+            table_name="blog; DROP TABLE users",
+            fields=[AiFieldSpec(name="title", type="string", max_length=200)],
+        )
+
+        with pytest.raises(ValueError, match="Invalid table identifier"):
+            generate_migration_stub(spec)
+
+    def test_migration_stub_rejects_invalid_field_name(self):
+        """Test migration stub rejects invalid field names."""
+        spec = AiModelSpec(
+            app_label="blog",
+            name="Article",
+            fields=[AiFieldSpec(name="title; DROP", type="string", max_length=200)],
+        )
+
+        with pytest.raises(ValueError, match="Invalid field identifier"):
+            generate_migration_stub(spec)
+
 
 class TestGenerateCode:
     """Tests for generate_code dispatcher function."""

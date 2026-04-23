@@ -17,7 +17,7 @@ Tests:
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
@@ -75,6 +75,9 @@ def create_mock_settings():
     mock_settings.app_version = "1.0.0"
     mock_settings.enable_studio = True
     mock_settings.studio_expose_in_production = False
+    mock_settings.studio_require_auth = False
+    mock_settings.studio_auth_token = None
+    mock_settings.studio_allowed_origins = []
     mock_settings.env = "development"  # v0.5.3: Required for runtime info
     mock_settings.installed_apps = ["app"]  # v0.5.3: Required for runtime info
     return mock_settings
@@ -770,6 +773,67 @@ class TestStudioOriginSecurity:
                 headers={"Origin": "https://any-origin.example.com"}
             )
         
+        assert response.status_code == 200
+
+
+class TestStudioAuthentication:
+    """Tests for Studio authentication requirements."""
+
+    def test_studio_requires_auth_when_enabled(self):
+        """Studio endpoints should reject unauthenticated access by default."""
+        app = create_test_app()
+        client = TestClient(app)
+
+        mock_settings = create_mock_settings()
+        mock_settings.studio_require_auth = True
+
+        with patch("aksara.conf.settings", mock_settings):
+            response = client.get("/studio/handshake")
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Studio requires authentication"
+
+    def test_studio_accepts_bearer_token(self):
+        """Studio endpoints should accept the configured bearer token."""
+        app = create_test_app()
+        client = TestClient(app)
+
+        mock_settings = create_mock_settings()
+        mock_settings.studio_require_auth = True
+        mock_settings.studio_auth_token = "studio-secret"
+
+        with patch("aksara.conf.settings", mock_settings):
+            with patch("aksara.registry.ModelRegistry") as mock_registry:
+                mock_registry.all.return_value = {}
+                response = client.get(
+                    "/studio/handshake",
+                    headers={"Authorization": "Bearer studio-secret"},
+                )
+
+        assert response.status_code == 200
+
+    def test_studio_accepts_staff_session_cookie(self):
+        """Studio endpoints should accept valid staff sessions."""
+        app = create_test_app()
+        app.state.db = MagicMock()
+        client = TestClient(app)
+
+        mock_settings = create_mock_settings()
+        mock_settings.studio_require_auth = True
+
+        mock_user = MagicMock()
+        mock_user.is_staff = True
+
+        with patch("aksara.conf.settings", mock_settings):
+            with patch("aksara.registry.ModelRegistry") as mock_registry:
+                mock_registry.all.return_value = {}
+                with patch("aksara.contrib.auth.get_user_from_session_token", new_callable=AsyncMock) as mock_get_user:
+                    mock_get_user.return_value = mock_user
+                    response = client.get(
+                        "/studio/handshake",
+                        cookies={"session_token": "session-token"},
+                    )
+
         assert response.status_code == 200
 
 
