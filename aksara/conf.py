@@ -222,6 +222,8 @@ class Settings:
             self.patch_sandbox = env_patch_sandbox
 
         # v0.5.0: Studio settings
+        if not self.enable_studio:
+            self.enable_studio = _get_bool_env("AKSARA_ENABLE_STUDIO", False)
         if self.enable_studio:
             self.enable_studio = not _get_bool_env("AKSARA_STUDIO_DISABLED", False)
             
@@ -380,6 +382,20 @@ class Settings:
         """Alias for ai_agent_token (uppercase convention)."""
         return self.ai_agent_token
 
+
+# Auto-load .env before creating the global singleton so AKSARA_* env vars
+# are available when Settings.__post_init__ runs, regardless of import order.
+# Search from CWD upward so that project .env files are found when uvicorn
+# starts from the project root.
+try:
+    from dotenv import load_dotenv as _load_dotenv, find_dotenv as _find_dotenv
+    _dotenv_path = _find_dotenv(usecwd=True)
+    if _dotenv_path:
+        _load_dotenv(_dotenv_path)
+    else:
+        _load_dotenv()  # fallback: default search
+except ImportError:
+    pass  # python-dotenv is optional; env vars may be set by other means
 
 # Global settings instance
 settings = Settings()

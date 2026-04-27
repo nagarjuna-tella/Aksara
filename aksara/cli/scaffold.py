@@ -19,7 +19,7 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application (v0.5.25)
+{project_name} - Aksara Application (v0.5.41)
 
 A modern async API with Admin, Studio, and AI Mode built-in.
 
@@ -314,7 +314,7 @@ def get_welcome_html_template(project_name: str) -> str:
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings (v0.5.25)
+{project_name} - Settings (v0.5.41)
 
 Aksara settings with environment variable support.
 Configure via .env file or environment variables.
@@ -340,12 +340,18 @@ AKSARA = {{
     "ENABLE_ADMIN": True,  # Mount /admin (requires auth contrib)
     
     # Studio Integration (v0.5.0+)
-    "ENABLE_STUDIO": False,  # Mount /studio/* endpoints
+    # NOTE: Set AKSARA_STUDIO_SECRET_TOKEN in .env before enabling
+    "ENABLE_STUDIO": False,  # Mount /studio/* endpoints (requires AKSARA_STUDIO_SECRET_TOKEN)
     "STUDIO_UI_ENABLED": True,  # Enable /studio/ui dashboard
     "STUDIO_ALLOWED_ORIGINS": [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
+    
+    # Security (v0.5.38+)
+    "COOKIE_SECURE": True,         # Secure flag on session cookies
+    "ADMIN_CSRF_ENABLED": True,    # CSRF protection for admin forms
+    "ADMIN_RATE_LIMIT_ENABLED": True,  # Rate limiting on admin login
     
     # AI Mode (v0.4.0+)
     "AI_MODE_ENABLED": True,  # Enable /ai/* endpoints
@@ -394,9 +400,17 @@ class Settings(AksaraSettings):
     
     # Admin & Studio (from AKSARA dict)
     enable_admin: bool = AKSARA.get("ENABLE_ADMIN", True)
-    enable_studio: bool = AKSARA.get("ENABLE_STUDIO", True)
+    enable_studio: bool = AKSARA.get("ENABLE_STUDIO", False)
     studio_ui_enabled: bool = AKSARA.get("STUDIO_UI_ENABLED", True)
     studio_allowed_origins: list = AKSARA.get("STUDIO_ALLOWED_ORIGINS", [])
+    # v0.5.38+: Studio requires a secret token when enabled
+    # Set AKSARA_STUDIO_SECRET_TOKEN in .env or provide via AKSARA dict
+    studio_secret_token: str | None = AKSARA.get("STUDIO_SECRET_TOKEN", None)
+    
+    # Security (v0.5.38+)
+    cookie_secure: bool = AKSARA.get("COOKIE_SECURE", True)
+    admin_csrf_enabled: bool = AKSARA.get("ADMIN_CSRF_ENABLED", True)
+    admin_rate_limit_enabled: bool = AKSARA.get("ADMIN_RATE_LIMIT_ENABLED", True)
     
     # AI Mode
     ai_enabled: bool = AKSARA.get("AI_MODE_ENABLED", True)
@@ -430,8 +444,20 @@ AKSARA_APP_TITLE={project_name}
 # Migrations directory
 AKSARA_MIGRATIONS_DIR=migrations
 
-# Studio Security Token
+# Studio (set AKSARA_ENABLE_STUDIO=true to mount /studio/* endpoints)
+AKSARA_ENABLE_STUDIO=true
 AKSARA_STUDIO_SECRET_TOKEN={studio_token}
+# Disable studio auth requirement in development (set to true in production)
+AKSARA_STUDIO_REQUIRE_AUTH=false
+
+# Security Settings (v0.5.38+)
+# Uncomment to override defaults:
+# AKSARA_COOKIE_SECURE=true
+# AKSARA_ADMIN_CSRF_ENABLED=true
+# AKSARA_ADMIN_RATE_LIMIT_ENABLED=true
+# AKSARA_ADMIN_RATE_LIMIT_REQUESTS=20
+# AKSARA_ADMIN_RATE_LIMIT_WINDOW_SECONDS=60
+# AKSARA_AI_AGENT_TOKEN=your-token-here
 '''
 
 
@@ -781,7 +807,7 @@ aksara dev
 | http://localhost:8000/docs | API Documentation (Swagger UI) |
 | http://localhost:8000/redoc | API Documentation (ReDoc) |
 | http://localhost:8000/admin | Admin Interface (debug mode) |
-| http://localhost:8000/studio/ui | Studio Dashboard |
+| http://localhost:8000/studio/ui | Studio Dashboard (disabled by default — see below) |
 | http://localhost:8000/api/posts | Posts API |
 | http://localhost:8000/ai/tools | AI Tools Discovery |
 | http://localhost:8000/health | Health Check |
@@ -836,6 +862,31 @@ aksara studio open             # Open Studio UI in browser
 aksara studio ai-context       # Export AI context (JSON)
 ```
 
+## Enabling Studio
+
+Studio is disabled by default to avoid accidental exposure. A secret token was
+already generated for you when you ran `aksara startproject` — it's in your `.env`:
+
+```
+AKSARA_STUDIO_SECRET_TOKEN=<already set>
+```
+
+To turn Studio on, open `settings.py` and change:
+
+```python
+"ENABLE_STUDIO": True,   # was False
+```
+
+Then restart the server. Studio will be available at http://localhost:8000/studio/ui.
+
+Need a fresh token? Generate one with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Paste the output into `.env` as `AKSARA_STUDIO_SECRET_TOKEN=<value>`.
+
 ## Configuration
 
 Edit `settings.py` to customize:
@@ -843,7 +894,7 @@ Edit `settings.py` to customize:
 ```python
 AKSARA = {{
     "ENABLE_ADMIN": True,       # /admin
-    "ENABLE_STUDIO": False,     # /studio/*
+    "ENABLE_STUDIO": False,     # /studio/* (see Enabling Studio above)
     "AI_MODE_ENABLED": True,    # /ai/*
 }}
 ```
@@ -872,7 +923,7 @@ version = "0.1.0"
 description = "A modern Aksara-powered async API with Admin, Studio, and AI Mode"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara>=0.5.25",
+    "aksara>=0.5.41",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]

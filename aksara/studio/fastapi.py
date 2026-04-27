@@ -259,6 +259,14 @@ async def verify_studio_auth(request: Request) -> None:
     if not getattr(settings, "studio_require_auth", False):
         return
 
+    # In debug mode with no auth token configured, allow through automatically.
+    # This prevents a misconfiguration from locking developers out of Studio
+    # in local development environments.
+    debug = getattr(settings, "debug", False)
+    expected_token = getattr(settings, "studio_auth_token", None)
+    if debug and not expected_token:
+        return
+
     # --- Bearer token check ---
     auth_header = request.headers.get("Authorization", "")
     expected_token = getattr(settings, "studio_auth_token", None)
