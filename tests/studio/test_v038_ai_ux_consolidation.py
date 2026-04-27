@@ -36,15 +36,15 @@ def _read_static(name: str) -> str:
 class TestVersion:
     def test_version_string(self):
         from aksara._version import __version__
-        assert __version__ == "0.5.41"
+        assert __version__ == "0.5.42"
 
     def test_pyproject_version(self):
         toml = (STATIC_DIR.parent.parent.parent / "pyproject.toml").read_text()
-        assert 'version = "0.5.41"' in toml
+        assert 'version = "0.5.42"' in toml
 
     def test_cli_version(self):
         cli = (STATIC_DIR.parent.parent / "cli" / "main.py").read_text()
-        assert 'CLI_VERSION = "0.5.41"' in cli
+        assert 'CLI_VERSION = "0.5.42"' in cli
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -53,9 +53,12 @@ class TestVersion:
 
 
 class TestSidebarNavigation:
-    def test_ai_home_nav_exists(self):
+    def test_ai_home_nav_removed(self):
+        # v0.5.42: ai-home removed from nav; redirect exists in app.js
         html = _read_static("index.html")
-        assert 'data-section="ai-home"' in html
+        assert 'data-section="ai-home"' not in html
+        js = _read_static("app.js")
+        assert "'ai-home': 'ai-console'" in js
 
     def test_ai_console_nav_exists(self):
         html = _read_static("index.html")
@@ -73,20 +76,21 @@ class TestSidebarNavigation:
         html = _read_static("index.html")
         assert 'data-section="ai-hub"' in html
 
-    def test_nav_order_home_first(self):
+    def test_nav_order(self):
+        # v0.5.42: ai-home removed; new order is console < inspector < graph < hub
         html = _read_static("index.html")
-        home_pos = html.find('data-section="ai-home"')
         console_pos = html.find('data-section="ai-console"')
         inspector_pos = html.find('data-section="ai-inspector"')
         graph_pos = html.find('data-section="ai-graph"')
         hub_pos = html.find('data-section="ai-hub"')
-        assert home_pos < console_pos < inspector_pos < graph_pos < hub_pos
+        assert console_pos < inspector_pos < graph_pos < hub_pos
 
-    def test_home_nav_label(self):
+    def test_ai_console_nav_label(self):
+        # v0.5.42: ai-home removed; verify ai-console has its label
         html = _read_static("index.html")
-        idx = html.find('data-section="ai-home"')
+        idx = html.find('data-section="ai-console"')
         snippet = html[idx:idx + 500]
-        assert "Home" in snippet
+        assert "AI Console" in snippet or "Console" in snippet
 
     def test_inspector_nav_label(self):
         html = _read_static("index.html")
@@ -288,10 +292,10 @@ class TestJavaScript:
         js = _read_static("app.js")
         assert "'ai-performance'" in js
 
-    def test_keyboard_shortcut_ai_home(self):
+    def test_keyboard_shortcut_ai_console(self):
+        # v0.5.42: 'A' key now navigates to ai-console
         js = _read_static("app.js")
-        # 'A' key should navigate to ai-home
-        assert "navigateTo('ai-home')" in js
+        assert "navigateTo('ai-console')" in js
 
     def test_prefill_prompt_variable(self):
         js = _read_static("app.js")

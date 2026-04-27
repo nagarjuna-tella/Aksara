@@ -264,16 +264,16 @@ function initNavigation() {
             e.preventDefault();
             navigateTo('ai-hub');
         }
-        // v0.5.25: 'A' opens AI Home (v0.5.38: changed from AI Hub)
+        // v0.5.42: 'A' opens AI Console (redirected from AI Home)
         if (e.key === 'a' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
             e.preventDefault();
-            navigateTo('ai-home');
+            navigateTo('ai-console');
             return;
         }
-        // v0.5.28: Alt/Option+A opens AI Home (works from anywhere)
+        // v0.5.42: Alt/Option+A opens AI Console (works from anywhere)
         if (e.altKey && (e.key === 'a' || e.key === 'A') && !e.metaKey && !e.ctrlKey) {
             e.preventDefault();
-            navigateTo('ai-home');
+            navigateTo('ai-console');
             return;
         }
         // v0.5.25: Cmd/Ctrl+Enter runs AI Hub agent prompt
@@ -291,6 +291,7 @@ function navigateTo(section, updateHash = true) {
     
     // v0.5.25: Redirect consolidated sections to their new homes
     // v0.5.38: Redirect individual AI tools to unified Inspector
+    // v0.5.42: Redirect ai-home to ai-console (ai-home removed from nav)
     const redirects = {
         'api': 'routes',
         'model-inspector': 'models',
@@ -300,6 +301,7 @@ function navigateTo(section, updateHash = true) {
         'ai-debugger': 'ai-inspector',
         'ai-architecture': 'ai-inspector',
         'ai-performance': 'ai-inspector',
+        'ai-home': 'ai-console',
     };
     const activateTab = {
         'api': { attr: 'data-routes-tab', value: 'api-ref' },
@@ -328,7 +330,18 @@ function navigateTo(section, updateHash = true) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.section === section);
     });
-    
+
+    // v0.5.42: Auto-expand Advanced nav group when navigating to an advanced section
+    const advancedSections = ['ai-graph', 'ai-hub'];
+    if (advancedSections.includes(section)) {
+        const advToggle = document.getElementById('nav-advanced-toggle');
+        const advItems = document.getElementById('nav-advanced-items');
+        if (advToggle && advItems && advItems.hidden) {
+            advToggle.setAttribute('aria-expanded', 'true');
+            advItems.hidden = false;
+        }
+    }
+
     // Render the section
     renderSection(section);
 
@@ -4794,4 +4807,15 @@ document.addEventListener('DOMContentLoaded', () => {
     _initAiFlowKeyboardShortcuts();
     initAiFlowButtons();
     _initAiConsoleKeyboardShortcut();
+
+    // v0.5.42: Collapsible Advanced nav group toggle
+    const advancedToggle = document.getElementById('nav-advanced-toggle');
+    const advancedItems = document.getElementById('nav-advanced-items');
+    if (advancedToggle && advancedItems) {
+        advancedToggle.addEventListener('click', () => {
+            const expanded = advancedToggle.getAttribute('aria-expanded') === 'true';
+            advancedToggle.setAttribute('aria-expanded', String(!expanded));
+            advancedItems.hidden = expanded;
+        });
+    }
 });

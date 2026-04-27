@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara"
-version = "0.5.41"
+version = "0.5.42"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"

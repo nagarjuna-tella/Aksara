@@ -21,10 +21,11 @@
                 <span class="version-badge" id="version-badge">v0.0.0</span>
             </div>
             
-            <nav class="sidebar-nav">
-                <div class="nav-group-label">App</div>
-                <a href="#/overview" class="nav-item active" data-section="overview">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- v0.5.42: Restructured nav IA — 5 groups with progressive disclosure for Advanced -->
+            <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+                <div class="nav-group-label">Understand</div>
+                <a href="#/overview" class="nav-item active" data-section="overview" aria-label="Overview">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="7"></rect>
                         <rect x="14" y="3" width="7" height="7"></rect>
                         <rect x="14" y="14" width="7" height="7"></rect>
@@ -32,16 +33,16 @@
                     </svg>
                     <span>Overview</span>
                 </a>
-                <a href="#/models" class="nav-item" data-section="models">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <a href="#/models" class="nav-item" data-section="models" aria-label="Models">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                         <path d="M2 17l10 5 10-5"></path>
                         <path d="M2 12l10 5 10-5"></path>
                     </svg>
                     <span>Models</span>
                 </a>
-                <a href="#/routes" class="nav-item" data-section="routes">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <a href="#/routes" class="nav-item" data-section="routes" aria-label="Routes &amp; API">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M16.5 9.4l-9-5.19"></path>
                         <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path>
                         <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
@@ -50,74 +51,82 @@
                     <span>Routes & API</span>
                 </a>
 
-                <div class="nav-group-label">Ops</div>
-                <a href="#/migrations" class="nav-item" data-section="migrations">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="nav-group-label">Operate</div>
+                <a href="#/migrations" class="nav-item" data-section="migrations" aria-label="Migrations">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path>
                     </svg>
                     <span>Migrations</span>
                 </a>
-                <a href="#/diagnostics" class="nav-item" data-section="diagnostics">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                    </svg>
-                    <span>Diagnostics</span>
-                </a>
-                <a href="#/db-queries" class="nav-item" data-section="db-queries">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <a href="#/db-queries" class="nav-item" data-section="db-queries" aria-label="DB &amp; Queries">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                         <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
                         <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
                     </svg>
                     <span>DB & Queries</span>
                 </a>
-                <a href="#/gaps" class="nav-item" data-section="gaps">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                <div class="nav-group-label">Diagnose</div>
+                <a href="#/diagnostics" class="nav-item" data-section="diagnostics" aria-label="Diagnostics">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                    <span>Diagnostics</span>
+                </a>
+                <a href="#/gaps" class="nav-item" data-section="gaps" aria-label="Gap Analysis">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
                         <path d="M12 8v4M12 16h.01"></path>
                     </svg>
                     <span>Gap Analysis</span>
                 </a>
 
-                <div class="nav-group-label">AI</div>
-                <a href="#/ai-home" class="nav-item" data-section="ai-home">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                    <span>Home</span>
-                </a>
-                <a href="#/ai-console" class="nav-item" data-section="ai-console">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="nav-group-label">AI Assist</div>
+                <a href="#/ai-console" class="nav-item" data-section="ai-console" aria-label="AI Console">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <polyline points="4 17 10 11 4 5"></polyline>
                         <line x1="12" y1="19" x2="20" y2="19"></line>
                     </svg>
-                    <span>Console</span>
+                    <span>AI Console</span>
                 </a>
-                <a href="#/ai-inspector" class="nav-item" data-section="ai-inspector">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <a href="#/ai-inspector" class="nav-item" data-section="ai-inspector" aria-label="AI Inspector">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="M21 21l-4.35-4.35"></path>
                     </svg>
-                    <span>Inspector</span>
+                    <span>AI Inspector</span>
                 </a>
-                <a href="#/ai-graph" class="nav-item" data-section="ai-graph">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="5" r="3"></circle>
-                        <circle cx="5" cy="19" r="3"></circle>
-                        <circle cx="19" cy="19" r="3"></circle>
-                        <line x1="12" y1="8" x2="5" y2="16"></line>
-                        <line x1="12" y1="8" x2="19" y2="16"></line>
-                    </svg>
-                    <span>Graph</span>
-                </a>
-                <a href="#/ai-hub" class="nav-item" data-section="ai-hub">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
-                    </svg>
-                    <span>Hub</span>
-                </a>
+
+                <!-- v0.5.42: Progressive disclosure — Advanced items collapsed by default -->
+                <div class="nav-group-label nav-group-advanced">
+                    <button class="nav-advanced-toggle" id="nav-advanced-toggle"
+                            aria-expanded="false" aria-controls="nav-advanced-items">
+                        <span>Advanced</span>
+                        <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div id="nav-advanced-items" class="nav-advanced-items" hidden>
+                    <a href="#/ai-graph" class="nav-item nav-item-advanced" data-section="ai-graph" aria-label="AI Graph">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="5" r="3"></circle>
+                            <circle cx="5" cy="19" r="3"></circle>
+                            <circle cx="19" cy="19" r="3"></circle>
+                            <line x1="12" y1="8" x2="5" y2="16"></line>
+                            <line x1="12" y1="8" x2="19" y2="16"></line>
+                        </svg>
+                        <span>AI Graph</span>
+                    </a>
+                    <a href="#/ai-hub" class="nav-item nav-item-advanced" data-section="ai-hub" aria-label="AI Hub &amp; Settings">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                        </svg>
+                        <span>AI Hub</span>
+                    </a>
+                </div>
             </nav>
             
             <div class="sidebar-footer">
