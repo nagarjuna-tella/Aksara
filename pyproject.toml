@@ -10,18 +10,21 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    { name = "Nagarjuna Reddy Tella" }
+    { name = "Nagarjuna Tella" }
 ]
 keywords = ["async", "postgres", "orm", "fastapi", "asyncpg", "ai-native"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Database",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
 
@@ -53,7 +56,10 @@ aksara = "aksara.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/aksara-framework/aksara"
-Documentation = "https://github.com/aksara-framework/aksara#readme"
+Documentation = "https://github.com/aksara-framework/aksara/blob/main/docs/docs/getting-started/ten-minutes.md"
+Changelog = "https://github.com/aksara-framework/aksara/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/aksara-framework/aksara/issues"
+Source = "https://github.com/aksara-framework/aksara"
 
 [tool.hatch.build.targets.wheel]
 packages = ["aksara"]

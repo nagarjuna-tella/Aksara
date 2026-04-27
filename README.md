@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
+  <img src="https://raw.githubusercontent.com/nagarjuna-tella/aksara/main/aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
 </p>
 
 <h1 align="center">Aksara – Async Postgres-first Web Framework</h1>
@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-5300%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-5795%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/version-0.5.41-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
@@ -124,7 +124,7 @@ Then visit:
 
 New to Aksara? Start here:
 
-**[Your First 10 Minutes with Aksara](docs/docs/getting-started/ten-minutes.md)**
+**[Your First 10 Minutes with Aksara](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/getting-started/ten-minutes.md)**
 
 This hands-on guide walks you from zero to a running app with a model, API, Admin, and Studio.
 
@@ -141,7 +141,7 @@ Aksara ships with real-world patterns and examples:
 | **Multitenant** | Tenant-aware SaaS apps | `aksara startproject saas --template multitenant` |
 | **AI Providers** | BYO LLM wiring examples | See `examples/ai_providers/` |
 
-Browse: [`examples/`](examples/) | Docs: [Patterns](docs/docs/patterns/index.md)
+Browse: [`examples/`](https://github.com/nagarjuna-tella/aksara/tree/main/examples/) | Docs: [Patterns](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/patterns/index.md)
 
 ---
 
@@ -193,7 +193,7 @@ class PostViewSet(ModelViewSet):
 
 Aksara is **pre-1.0** and actively evolving. Current version: **0.5.41**.
 
-See the [Roadmap](docs/docs/roadmap.md) for what's coming.
+See the [Roadmap](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/roadmap.md) for what's coming.
 
 **What's stable:**
 - ORM, migrations, queries
@@ -209,7 +209,7 @@ See the [Roadmap](docs/docs/roadmap.md) for what's coming.
 
 ## License
 
-[MIT License](LICENSE)
+[MIT License](https://github.com/nagarjuna-tella/aksara/blob/main/LICENSE)
 
 ---
 
@@ -230,9 +230,9 @@ See the codebase for style conventions.
 
 <p>
   <a href="https://pypi.org/project/aksara/"><img src="https://img.shields.io/badge/PyPI-aksara-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI"></a>
-  <a href="https://github.com/aksara-framework/aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+  <a href="https://github.com/nagarjuna-tella/aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
 </p>
 
 ---
 
-Built with ❤️ by the Aksara team.
+Built with ❤️ by Nagarjuna Tella.
