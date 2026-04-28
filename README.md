@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/nagarjuna-tella/aksara/main/aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
+  <img src="aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
 </p>
 
 <h1 align="center">Aksara – Async Postgres-first Web Framework</h1>
