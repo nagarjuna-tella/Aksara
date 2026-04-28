@@ -58,6 +58,16 @@ def enrich_context(
 
 def _enrich_model(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Try to resolve model_name from the registry."""
+    # v0.5.43: overview_models — expose all registered models instead of a single fallback
+    action_key = ctx.get("action_key", "")
+    if action_key == "overview_models":
+        try:
+            from aksara.registry import ModelRegistry
+            ctx["all_models"] = True
+            ctx["model_names"] = list(ModelRegistry.all().keys())
+        except Exception:
+            ctx["all_models"] = True
+        return ctx
     model_name = ctx.get("model_name", "")
     if not model_name:
         # Pick the first registered model as a default

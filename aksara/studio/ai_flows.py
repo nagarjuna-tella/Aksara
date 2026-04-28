@@ -142,6 +142,16 @@ AI_FLOW_ACTIONS: Dict[str, Dict[str, Any]] = {
         "what_it_cannot_do": "Cannot apply fixes or access runtime state.",
         "recommended_next": [],
     },
+    # v0.5.43: Overview all models
+    "overview_models": {
+        "kind": "model",
+        "title": "Overview All Models",
+        "description": "List all registered models with their fields, relationships, and usage.",
+        "risk": "low",
+        "what_it_does": "Reads all models from the registry and returns a structured overview.",
+        "what_it_cannot_do": "Cannot see live row counts or actual data values.",
+        "recommended_next": ["explain_model", "suggest_constraints"],
+    },
 }
 
 
@@ -253,6 +263,37 @@ def _build_model_context(model_name: str) -> str:
         return "\n".join(lines)
     except Exception as exc:
         return f"Error inspecting model '{model_name}': {exc}"
+
+
+def _build_all_models_context() -> str:
+    """Build schema-analysis context for all registered models (v0.5.43)."""
+    try:
+        from aksara.registry import ModelRegistry
+        from aksara.inspectors.models import inspect_model
+
+        models = ModelRegistry.all()
+        if not models:
+            return "No models are registered in this application."
+        parts = [f"# Application Models ({len(models)} total)\n"]
+        for model_name, model_cls in models.items():
+            try:
+                summary = inspect_model(model_cls)
+                lines = [
+                    f"## {summary.name}",
+                    f"Table: `{summary.table_name}` | Fields: {summary.num_fields} | Relations: {summary.num_relationships}",
+                ]
+                for f in summary.fields:
+                    nullable = "NULL" if f.nullable else "NOT NULL"
+                    lines.append(f"- `{f.name}`: {f.field_type} {nullable}")
+                if summary.relationships:
+                    for r in summary.relationships:
+                        lines.append(f"- `{r.field_name}` → {r.target_model} ({r.kind})")
+                parts.append("\n".join(lines))
+            except Exception as exc:
+                parts.append(f"## {model_name}\nError: {exc}")
+        return "\n\n".join(parts)
+    except Exception as exc:
+        return f"Error building models overview: {exc}"
 
 
 def _build_route_context(path: str, method: str) -> str:
@@ -438,6 +479,12 @@ _SYSTEM_PROMPTS: Dict[str, str] = {
         "- Estimated effort (quick/medium/long)\n"
         "Focus on blocking issues first."
     ),
+    # v0.5.43: Overview all models
+    "overview_models": (
+        "You are a senior database architect reviewing an Aksara (Python/Postgres) application.\n"
+        "Provide a structured overview of all registered models: their purpose, fields,\n"
+        "relationships, and how they relate to each other. Be concise and use tables where helpful."
+    ),
 }
 
 
@@ -464,9 +511,14 @@ def build_model_flow(
         return _hub_not_configured_response(action_key)
 
     provider, model = _resolve_provider_model(hub, hub_overrides)
-    context = _build_model_context(model_name)
+    # v0.5.43: overview_models uses all-models context instead of single-model
+    if action_key == "overview_models":
+        context = _build_all_models_context()
+        user_prompt = f"Provide an overview of all registered models in this application.\n\n{context}"
+    else:
+        context = _build_model_context(model_name)
+        user_prompt = f"Analyse the following model and {action['description'].lower()}\n\n{context}"
     system_prompt = _SYSTEM_PROMPTS.get(action_key, "You are a helpful assistant.")
-    user_prompt = f"Analyse the following model and {action['description'].lower()}\n\n{context}"
 
     return StudioAiFlowResponse(
         ok=True,

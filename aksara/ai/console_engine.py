@@ -184,7 +184,7 @@ async def run_console_query(
 
     context = enrich_context(
         flow_type=match.flow_type,
-        extracted=match.extracted_context,
+        extracted={**match.extracted_context, "action_key": match.action_key},
     )
 
     # ── 4b. Inject project-graph context (v0.5.32) ────────────────────────

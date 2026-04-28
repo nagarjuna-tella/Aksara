@@ -121,7 +121,7 @@ class TestAiFlowActionRegistry:
     def test_model_actions_exist(self):
         from aksara.studio.ai_flows import list_flow_actions
         model_actions = [a for a in list_flow_actions() if a["kind"] == "model"]
-        assert len(model_actions) == 3
+        assert len(model_actions) == 4  # v0.5.43: added overview_models
 
     def test_route_actions_exist(self):
         from aksara.studio.ai_flows import list_flow_actions

@@ -4648,6 +4648,25 @@ function _renderMarkdown(text) {
             out.push(`<ol class="md-ol">${li.join('')}</ol>`);
             continue;
         }
+        // Table — collect consecutive pipe-delimited lines
+        if (ln.startsWith('|')) {
+            const tableLines = [];
+            while (i < lines.length && lines[i].startsWith('|')) {
+                tableLines.push(lines[i]);
+                i++;
+            }
+            // row 0 = header, row 1 = separator (skip), rows 2+ = body
+            const headerCells = tableLines[0].split('|').slice(1, -1)
+                .map(c => `<th>${_inlineMd(c.trim())}</th>`).join('');
+            let bodyRows = '';
+            for (let r = 2; r < tableLines.length; r++) {
+                const cells = tableLines[r].split('|').slice(1, -1)
+                    .map(c => `<td>${_inlineMd(c.trim())}</td>`).join('');
+                bodyRows += `<tr>${cells}</tr>`;
+            }
+            out.push(`<table class="md-table"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`);
+            continue;
+        }
         // Blank line → paragraph separator
         if (!ln.trim()) { out.push(''); i++; continue; }
         // Horizontal rule
