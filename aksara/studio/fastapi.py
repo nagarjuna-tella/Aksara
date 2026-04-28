@@ -141,6 +141,8 @@ from aksara.studio.models import (
     StudioAiProviderPingResponse,
     StudioAiAgentRunRequest,
     StudioAiAgentRunResponse,
+    # v0.5.43: Ollama model discovery
+    StudioOllamaModelsResponse,
     # v0.5.26: Gap Analysis models
     StudioGapAnalysisReport,
     StudioGapAnalysisRunResponse,
@@ -199,6 +201,8 @@ from aksara.studio.utils import (
     build_ai_hub_provider_save,
     build_ai_hub_provider_ping,
     build_ai_hub_agent_run,
+    # v0.5.43: Ollama model discovery
+    build_ai_hub_ollama_models,
     # v0.5.26: Gap Analysis utils
     run_and_build_gap_analysis,
 )
@@ -1457,6 +1461,29 @@ async def studio_ai_hub_agent_run(
         temperature=body.temperature,
         max_tokens=body.max_tokens,
     )
+
+
+@router.get("/studio/ai/hub/providers/ollama/models", response_model=StudioOllamaModelsResponse)
+async def studio_ai_hub_ollama_models(
+    request: Request,
+    base_url: Optional[str] = None,
+) -> StudioOllamaModelsResponse:
+    """
+    Discover available models from a running Ollama instance.
+
+    v0.5.43: Queries Ollama's /api/tags endpoint to list locally pulled models.
+    Returns running=False and an empty model list if Ollama is not reachable,
+    so the Studio UI can degrade gracefully (show manual text input instead of
+    a dropdown).
+
+    Args:
+        base_url: Override the Ollama base URL (default: OLLAMA_BASE_URL env var
+            or http://localhost:11434).
+
+    Returns:
+        StudioOllamaModelsResponse with running status, model list, and queried URL.
+    """
+    return build_ai_hub_ollama_models(base_url=base_url)
 
 
 # =============================================================================

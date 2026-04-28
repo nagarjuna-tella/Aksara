@@ -240,7 +240,7 @@ class TestRunConsoleQueryErrors:
     async def test_unknown_intent(self):
         result = await run_console_query("xyzzy plugh nothing")
         assert result["ok"] is False
-        assert result["error_code"] == "UNKNOWN_INTENT"
+        assert result["error_code"] == "NO_PROVIDER"
 
     @pytest.mark.asyncio
     async def test_runtime_failure(self):

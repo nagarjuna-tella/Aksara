@@ -1793,6 +1793,19 @@ class StudioAiAgentRunResponse(BaseModel):
     error: Optional[str] = Field(default=None, description="Error if generation failed")
 
 
+class StudioOllamaModelsResponse(BaseModel):
+    """Response for GET /studio/ai/hub/providers/ollama/models.
+
+    v0.5.43: Returns running status and list of locally available Ollama models.
+    Enables Studio to populate a dynamic model dropdown when Ollama is selected
+    as the active provider.
+    """
+
+    running: bool = Field(default=False, description="Whether Ollama is running and reachable")
+    models: List[str] = Field(default_factory=list, description="List of available model names")
+    base_url: str = Field(default="", description="Ollama base URL that was queried")
+
+
 # =============================================================================
 # v0.5.29: Studio AI Flows Models
 # =============================================================================

@@ -2498,6 +2498,38 @@ def build_ai_hub_agent_run(
         )
 
 
+def build_ai_hub_ollama_models(base_url: Optional[str] = None) -> "StudioOllamaModelsResponse":
+    """Discover available models from a running Ollama instance.
+
+    v0.5.43: Thin wrapper around OllamaAdapter.list_models() that queries the
+    Ollama /api/tags endpoint.  Returns running=False + empty list when Ollama
+    is not reachable so callers can degrade gracefully.
+
+    Args:
+        base_url: Optional override for Ollama base URL.  Defaults to the value
+            stored in the environment (OLLAMA_BASE_URL) or localhost:11434.
+
+    Returns:
+        StudioOllamaModelsResponse with running status, model list, and the URL
+        that was actually queried.
+    """
+    from aksara.ai.providers_unified import UnifiedAiProvider
+    from aksara.ai.llm_clients.ollama_adapter import OllamaAdapter
+    from aksara.studio.models import StudioOllamaModelsResponse
+
+    provider = UnifiedAiProvider.from_env(provider="ollama")
+    if base_url:
+        provider = provider.model_copy(update={"base_url": base_url})
+    adapter = OllamaAdapter(provider)
+    running = adapter.is_available()
+    models = adapter.list_models() if running else []
+    return StudioOllamaModelsResponse(
+        running=running,
+        models=models,
+        base_url=provider.base_url or "http://localhost:11434",
+    )
+
+
 # =============================================================================
 # v0.5.26: Gap Analysis Builder Functions
 # =============================================================================
@@ -2659,7 +2691,12 @@ def build_aihub_providers() -> "AiHubProvidersResponse":
 
 
 def build_aihub_models() -> "AiHubModelsResponse":
-    """Build the AI Hub models response."""
+    """Build the AI Hub models response.
+
+    v0.5.43: For ollama providers, uses live model discovery instead of
+    hardcoded defaults so the Available Models table reflects what is
+    actually running.
+    """
     from aksara.studio.models import AiHubModel, AiHubModelsResponse
     from aksara.ai.hub_settings import _PROVIDER_DEFAULT_MODELS
 
@@ -2669,6 +2706,28 @@ def build_aihub_models() -> "AiHubModelsResponse":
     for p in hub.providers:
         if not p.is_configured:
             continue
+
+        # v0.5.43: Live discovery for Ollama
+        if p.kind == "ollama":
+            try:
+                from aksara.ai.providers_unified import UnifiedAiProvider
+                from aksara.ai.llm_clients.ollama_adapter import OllamaAdapter
+
+                provider = UnifiedAiProvider.from_env(provider="ollama")
+                adapter = OllamaAdapter(provider)
+                if adapter.is_available():
+                    live_models = adapter.list_models()
+                    if live_models:
+                        embed_candidates = [m for m in live_models if any(k in m.lower() for k in ("embed", "nomic"))]
+                        chat_model = live_models[0]
+                        embed_model = embed_candidates[0] if embed_candidates else live_models[-1]
+                        for mode in ("chat", "code"):
+                            models.append(AiHubModel(model_id=chat_model, provider="ollama", mode=mode))
+                        models.append(AiHubModel(model_id=embed_model, provider="ollama", mode="embeddings"))
+                        continue
+            except Exception:
+                pass  # Fall through to hardcoded defaults
+
         defaults = _PROVIDER_DEFAULT_MODELS.get(p.kind, {})
         for mode, model_name in defaults.items():
             if model_name:

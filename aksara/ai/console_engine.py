@@ -90,6 +90,13 @@ async def run_console_query(
         except Exception:
             pass  # fall through if no active session
 
+    # ── 1c. Conversational handler (v0.5.43) ──────────────────────────────
+    # Greetings, identity questions, and help requests are answered instantly
+    # without involving the intent engine or any LLM provider.
+    conv_result = _handle_conversational(message, t0)
+    if conv_result is not None:
+        return conv_result
+
     # ── 1b. Investigation intent detection (v0.5.39) ─────────────────────
     # If the user asks to "investigate", "analyze the system", or "review
     # my project", create a persistent investigation session with a plan,
@@ -161,13 +168,7 @@ async def run_console_query(
     match = detect_intent(message)
 
     if match.intent == "unknown" or match.confidence < 0.30:
-        return _console_error(
-            f"Could not understand: '{message}'. "
-            "Try 'explain the User model' or 'review GET /api/users'.",
-            "UNKNOWN_INTENT",
-            intent=match.intent,
-            confidence=match.confidence,
-        )
+        return _llm_freeform_fallback(message, provider_override, model_override, t0)
 
     # ── 3b. Debug flow shortcut (v0.5.33) ─────────────────────────────────
     if match.flow_type == "debug":
@@ -502,3 +503,229 @@ def _continue_investigation(t0: float) -> Optional[Dict[str, Any]]:
         "investigation": True,
         "session_id": session.id,
     }
+
+
+# ─── Conversational / Identity / Help patterns (v0.5.43) ─────────────────────
+
+_GREET_RE = _re.compile(
+    r"^\s*(?:hi|hey|hello|howdy|yo|greetings|hiya|heya)\b"
+    r"|^(?:good\s+)?(?:morning|afternoon|evening|day)\b",
+    _re.IGNORECASE,
+)
+_IDENTITY_RE = _re.compile(
+    r"\b(?:who|what)\s+(?:are|r)\s+you\b"
+    r"|\bintroduce\s+yourself\b"
+    r"|\bwhat\s+(?:can|do)\s+you\s+(?:do|help|know)\b"
+    r"|\byour\s+(?:name|purpose|role|job)\b",
+    _re.IGNORECASE,
+)
+_HELP_RE = _re.compile(
+    r"^\s*(?:help|commands|usage)\s*$"
+    r"|\bshow\s+(?:me\s+)?commands\b"
+    r"|\bwhat\s+commands\b"
+    r"|\blist\s+(?:commands|capabilities|features|options)\b"
+    r"|\bwhat\s+can\s+I\s+(?:do|ask|type)\b",
+    _re.IGNORECASE,
+)
+
+
+def _console_conversational(
+    content: str,
+    intent_name: str,
+    t0: float,
+) -> Dict[str, Any]:
+    """Build a successful conversational (non-LLM) response dict."""
+    elapsed = (time.monotonic() - t0) * 1000
+    return {
+        "ok": True,
+        "intent": intent_name,
+        "flow_type": "conversational",
+        "action_key": intent_name,
+        "confidence": 1.0,
+        "extracted_context": {},
+        "prompt_pack": None,
+        "execution": {"response": content, "mode": "conversational"},
+        "suggestions": [],
+        "elapsed_ms": round(elapsed, 1),
+        "error": None,
+        "error_code": None,
+        "conversational": True,
+    }
+
+
+def _build_help_text() -> str:
+    """Return markdown help text listing all available console commands."""
+    return (
+        "## Aksara AI — Available Commands\n\n"
+        "### Exploration\n"
+        "- `explain the User model` — deep dive into any model\n"
+        "- `review GET /api/users` — analyze a specific route\n"
+        "- `suggest indexes for users` — index recommendations\n"
+        "- `explain migration impact` — understand migration effects\n\n"
+        "### Architecture & Performance\n"
+        "- `architecture review` — score your project A–F\n"
+        "- `performance analysis` — find slow queries and N+1 issues\n"
+        "- `debug analysis` — automated root cause analysis\n\n"
+        "### Investigation\n"
+        "- `investigate my project` — full multi-step deep investigation\n"
+        "- `continue` or `next` — continue an active investigation\n\n"
+        "### Freeform (requires AI provider)\n"
+        "- Ask anything about your codebase in plain English\n"
+        "- Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `OLLAMA_BASE_URL` to unlock\n\n"
+        "_Type any of the above or describe what you need in plain English._"
+    )
+
+
+def _handle_conversational(
+    message: str, t0: float
+) -> Optional[Dict[str, Any]]:
+    """Handle greetings, identity questions, and help requests without LLM.
+
+    Returns a conversational response dict on match, or ``None`` to allow
+    the caller to fall through to structured-intent pipelines.
+    """
+    msg = message.strip()
+
+    if _GREET_RE.search(msg):
+        return _console_conversational(
+            "Hello! I'm **Aksara AI**, your embedded development assistant.\n\n"
+            "I can help you:\n"
+            "- **Explore** models, routes, and schema — `explain the User model`\n"
+            "- **Review** architecture and performance — `architecture review`\n"
+            "- **Debug** issues — `debug analysis`\n"
+            "- **Investigate** your entire project — `investigate my project`\n"
+            "- **Answer** anything about your codebase (with an AI provider configured)\n\n"
+            "Type `help` to see all available commands.",
+            "greet",
+            t0,
+        )
+
+    if _IDENTITY_RE.search(msg):
+        return _console_conversational(
+            "I'm **Aksara AI** — an intelligent assistant built into the Aksara framework.\n\n"
+            "I have full context of your project:\n"
+            "- **Models** and database schema\n"
+            "- **API routes** and endpoint definitions\n"
+            "- **Migrations** and schema history\n"
+            "- **Performance** metrics and architecture health\n\n"
+            "I work in two modes:\n"
+            "1. **Built-in analysis** — always available, no API key needed\n"
+            "2. **Freeform AI** — answer any question using your project context "
+            "(requires `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `OLLAMA_BASE_URL`)\n\n"
+            "Type `help` to see everything I can do.",
+            "identity",
+            t0,
+        )
+
+    if _HELP_RE.search(msg):
+        return _console_conversational(_build_help_text(), "help", t0)
+
+    return None
+
+
+# ─── LLM Freeform Fallback (v0.5.43) ─────────────────────────────────────────
+
+
+def _build_aksara_system_prompt(registry_summary: Optional[str] = None) -> str:
+    """Build the LLM system prompt for freeform Aksara AI queries."""
+    lines = [
+        "You are Aksara AI, an intelligent development assistant embedded inside the "
+        "Aksara backend framework.",
+        "You help developers understand, debug, optimize, and extend their backend "
+        "applications built with Aksara (FastAPI + asyncpg + PostgreSQL).",
+        "",
+        "You have deep knowledge of:",
+        "- The Aksara ORM (async, PostgreSQL-first, Django-inspired syntax)",
+        "- FastAPI routes, middleware, and dependency injection",
+        "- Pydantic v2 schemas and validation",
+        "- Database migrations and schema management",
+        "- REST API design best practices",
+        "",
+        "When answering:",
+        "- Be concise, technical, and actionable",
+        "- Use Python code examples when helpful",
+        "- Reference specific models, routes, or files when you know them",
+        "- If you are unsure about project specifics, say so clearly",
+    ]
+    if registry_summary:
+        lines += ["", "Current project context:", registry_summary]
+    return "\n".join(lines)
+
+
+def _llm_freeform_fallback(
+    message: str,
+    provider_override: Optional[str],
+    model_override: Optional[str],
+    t0: float,
+) -> Dict[str, Any]:
+    """LLM-backed freeform handler — last resort before returning an error.
+
+    When no structured intent matches, sends the user's message to the
+    configured LLM provider with full project context as the system prompt.
+    Falls back to a helpful NO_PROVIDER error when no provider is configured.
+    """
+    try:
+        from aksara.ai.providers_unified import UnifiedAiProvider
+
+        provider = UnifiedAiProvider.from_env(provider=provider_override)
+        if not provider.is_configured():
+            return _console_error(
+                f"I couldn't understand: '{message}'.\n\n"
+                "Try built-in commands like `explain the User model`, "
+                "`architecture review`, or `investigate my project`.\n\n"
+                "**Unlock freeform AI** by setting one of:\n"
+                "- `OPENAI_API_KEY` in your `.env`\n"
+                "- `ANTHROPIC_API_KEY` in your `.env`\n"
+                "- `OLLAMA_BASE_URL=http://localhost:11434` (local)\n\n"
+                "Type `help` to see all available commands.",
+                "NO_PROVIDER",
+                intent="unknown",
+                confidence=0.0,
+            )
+
+        # Gather minimal project context from the model registry.
+        registry_summary: Optional[str] = None
+        try:
+            from aksara.registry import ModelRegistry
+
+            models = list(ModelRegistry._models.keys())
+            if models:
+                registry_summary = f"Registered models: {', '.join(models[:20])}"
+        except Exception:
+            pass
+
+        system_prompt = _build_aksara_system_prompt(registry_summary)
+        client = provider.get_llm_client()
+        full_prompt = f"{system_prompt}\n\nUser question: {message}\n\nAnswer:"
+
+        kwargs: Dict[str, Any] = {"max_tokens": 1200}
+        if model_override:
+            kwargs["model"] = model_override
+        response_text = client.generate(full_prompt, **kwargs)
+
+        elapsed = (time.monotonic() - t0) * 1000
+        return {
+            "ok": True,
+            "intent": "freeform",
+            "flow_type": "freeform",
+            "action_key": "freeform_query",
+            "confidence": 0.5,
+            "extracted_context": {},
+            "prompt_pack": None,
+            "execution": {"response": response_text, "mode": "freeform_llm"},
+            "suggestions": [
+                "explain the User model",
+                "architecture review",
+                "investigate my project",
+            ],
+            "elapsed_ms": round(elapsed, 1),
+            "error": None,
+            "error_code": None,
+            "freeform": True,
+        }
+    except Exception as exc:
+        return _console_error(
+            f"Freeform query failed: {exc}. "
+            "Try a structured command like `explain the User model` or `architecture review`.",
+            "FREEFORM_ERROR",
+        )

@@ -121,7 +121,7 @@ class TestConsoleEndpoint:
 
         result = await run_console_query("xyzzy foo bar baz")
         assert result["ok"] is False
-        assert result["error_code"] == "UNKNOWN_INTENT"
+        assert result["error_code"] == "NO_PROVIDER"
 
     @pytest.mark.asyncio
     async def test_console_route_flow(self):

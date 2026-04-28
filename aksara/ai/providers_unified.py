@@ -372,6 +372,12 @@ class UnifiedAiProvider(BaseModel):
                 updated_lines.append(f"{key}={val}")
 
         env_path.write_text("\n".join(updated_lines) + "\n")
+
+        # Also update os.environ so changes take effect immediately in the running
+        # process without requiring a server restart.
+        for key, val in new_vars.items():
+            os.environ[key] = val
+
         return path
 
     def save_to_json(self, path: Optional[str] = None) -> str:

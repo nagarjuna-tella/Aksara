@@ -2439,9 +2439,9 @@ code {
 }
 
 .diag-filter-btn.active {
-    background: var(--accent-color, #3b82f6);
+    background: var(--accent-primary, #6366f1);
     color: white;
-    border-color: var(--accent-color, #3b82f6);
+    border-color: var(--accent-primary, #6366f1);
 }
 
 .diag-search-wrap {
@@ -2507,7 +2507,7 @@ code {
     flex-wrap: wrap;
 }
 
-.diag-sev-badge {
+.diag-sev-badge, .diag-severity-badge {
     font-size: 0.72rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -2516,9 +2516,9 @@ code {
     letter-spacing: 0.03em;
 }
 
-.diag-sev-badge.diag-sev-error { background: rgba(239, 68, 68, 0.14); color: var(--color-error, #ef4444); }
-.diag-sev-badge.diag-sev-warning { background: rgba(245, 158, 11, 0.14); color: var(--color-warning, #f59e0b); }
-.diag-sev-badge.diag-sev-info { background: rgba(59, 130, 246, 0.14); color: var(--accent-color, #3b82f6); }
+.diag-sev-badge.diag-sev-error, .diag-severity-badge.diag-sev-error { background: rgba(239, 68, 68, 0.14); color: var(--color-error, #ef4444); }
+.diag-sev-badge.diag-sev-warning, .diag-severity-badge.diag-sev-warning { background: rgba(245, 158, 11, 0.14); color: var(--color-warning, #f59e0b); }
+.diag-sev-badge.diag-sev-info, .diag-severity-badge.diag-sev-info { background: rgba(59, 130, 246, 0.14); color: var(--accent-color, #3b82f6); }
 
 .diag-kind-badge {
     font-size: 0.72rem;
@@ -4088,6 +4088,7 @@ code {
     font-size: 0.8rem;
     cursor: pointer;
     transition: opacity 0.15s, background 0.15s;
+    box-shadow: 0 1px 4px rgba(99, 102, 241, 0.25);
 }
 .btn-ai-flow:hover:not(:disabled) {
     background: var(--accent-hover, #4f46e5);
@@ -5362,6 +5363,60 @@ code {
 /* =============================================================================
    v0.5.42: Motion sensitivity — respect user preferences
    ============================================================================= */
+/* v0.5.43: Flash highlight — "Use" button feedback in AI Hub Models tab */
+@keyframes flashHighlight {
+    0%   { background-color: rgba(99, 102, 241, 0.28); }
+    100% { background-color: transparent; }
+}
+.flash-highlight {
+    animation: flashHighlight 0.9s ease-out;
+}
+
+/* v0.5.43: Markdown rendering in AI Console assistant messages */
+.ai-console-msg-body .md-p { margin: 0.3em 0; }
+.ai-console-msg-body .md-h {
+    margin: 0.6em 0 0.25em;
+    font-weight: 600;
+    line-height: 1.3;
+}
+.ai-console-msg-body h2.md-h { font-size: 1.05em; }
+.ai-console-msg-body h3.md-h { font-size: 1.0em; }
+.ai-console-msg-body h4.md-h { font-size: 0.95em; }
+.ai-console-msg-body .md-code {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.84em;
+    background: var(--surface-2, rgba(0, 0, 0, 0.15));
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+}
+.ai-console-msg-body .md-pre {
+    background: var(--surface-2, rgba(0, 0, 0, 0.18));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    border-radius: 6px;
+    padding: 0.7em 1em;
+    overflow-x: auto;
+    margin: 0.5em 0;
+    font-size: 0.82em;
+    font-family: var(--font-mono, monospace);
+}
+.ai-console-msg-body .md-pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+}
+.ai-console-msg-body .md-ul,
+.ai-console-msg-body .md-ol {
+    margin: 0.3em 0 0.3em 1.5em;
+    padding: 0;
+}
+.ai-console-msg-body .md-ul li,
+.ai-console-msg-body .md-ol li { margin: 0.15em 0; }
+.ai-console-msg-body hr {
+    border: none;
+    border-top: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    margin: 0.6em 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;

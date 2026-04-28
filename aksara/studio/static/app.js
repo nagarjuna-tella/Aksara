@@ -3251,6 +3251,20 @@ async function renderAiHub() {
     const pingBtn = document.getElementById('ai-hub-cfg-ping');
     if (pingBtn) pingBtn.addEventListener('click', aiHubPingProvider);
 
+    // v0.5.43: Switch model input to dropdown when Ollama is selected
+    const providerSelectEl = document.getElementById('ai-hub-cfg-provider');
+    if (providerSelectEl) {
+        providerSelectEl.addEventListener('change', () => {
+            const resultEl = document.getElementById('ai-hub-cfg-result');
+            if (resultEl) resultEl.innerHTML = '';
+            if (providerSelectEl.value === 'ollama') {
+                loadOllamaModels();
+            } else {
+                restoreModelTextInput();
+            }
+        });
+    }
+
     const runBtn = document.getElementById('ai-hub-agent-run');
     if (runBtn) runBtn.addEventListener('click', aiHubRunAgent);
 
@@ -3430,19 +3444,37 @@ async function loadAiHubModels() {
             if (embeddingsInput) embeddingsInput.value = data.defaults.embeddings_model || '';
         }
 
-        // Fill models table
+        // Fill models table — v0.5.43: 4 columns with "Use as default" button
         if (tbody) {
             if (!data.models || data.models.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No models available</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No models available</td></tr>';
             } else {
-                tbody.innerHTML = data.models.map(m =>
-                    `<tr><td><code>${escapeHtml(m.model_id)}</code></td><td>${escapeHtml(m.provider)}</td><td>${escapeHtml(m.mode)}</td></tr>`
-                ).join('');
+                tbody.innerHTML = data.models.map(m => {
+                    const btn = `<button class="btn btn-xs btn-ghost" onclick="aiHubUseModel('${escapeHtml(m.model_id)}','${escapeHtml(m.mode)}')" title="Set as ${escapeHtml(m.mode)} default">Use</button>`;
+                    return `<tr>
+                        <td><code>${escapeHtml(m.model_id)}</code></td>
+                        <td>${escapeHtml(m.provider)}</td>
+                        <td>${escapeHtml(m.mode)}</td>
+                        <td>${btn}</td>
+                    </tr>`;
+                }).join('');
             }
         }
     } catch (err) {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="3" class="text-danger">Error: ${escapeHtml(err.message)}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Error: ${escapeHtml(err.message)}</td></tr>`;
     }
+}
+
+// v0.5.43: Populate a default model field from the Available Models table
+function aiHubUseModel(modelId, mode) {
+    const modeToId = { chat: 'ai-hub-default-chat', code: 'ai-hub-default-code', embeddings: 'ai-hub-default-embeddings' };
+    const inputId = modeToId[mode];
+    if (!inputId) return;
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.value = modelId;
+    input.classList.add('flash-highlight');
+    setTimeout(() => input.classList.remove('flash-highlight'), 900);
 }
 
 async function aiHubSaveDefaults() {
@@ -3695,6 +3727,55 @@ function aiHubSelectProvider(providerKind) {
     if (select) select.value = providerKind;
     const panel = document.getElementById('ai-hub-provider-config-panel');
     if (panel) panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+// v0.5.43: Ollama live model discovery — replace text input with a <select> when Ollama is chosen
+async function loadOllamaModels() {
+    const baseUrl = document.getElementById('ai-hub-cfg-baseurl')?.value || '';
+    const resultEl = document.getElementById('ai-hub-cfg-result');
+    const existingInput = document.getElementById('ai-hub-cfg-model');
+    if (existingInput) existingInput.placeholder = 'Loading models…';
+    try {
+        const params = baseUrl ? `?base_url=${encodeURIComponent(baseUrl)}` : '';
+        const data = await jsonGet(`/studio/ai/hub/providers/ollama/models${params}`);
+        if (!data.running) {
+            if (resultEl) resultEl.innerHTML = '<span class="text-warning">⚠ Ollama not running — enter model name manually or start Ollama</span>';
+            if (existingInput) existingInput.placeholder = 'llama3';
+            return;
+        }
+        if (data.models && data.models.length > 0) {
+            const currentVal = existingInput?.value || '';
+            const select = document.createElement('select');
+            select.id = 'ai-hub-cfg-model';
+            select.className = 'form-select';
+            data.models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === currentVal || (!currentVal && m.includes('llama3'))) opt.selected = true;
+                select.appendChild(opt);
+            });
+            existingInput?.replaceWith(select);
+            if (resultEl) resultEl.innerHTML = `<span class="text-success">✓ Ollama running — ${data.models.length} model(s) available</span>`;
+        } else {
+            if (resultEl) resultEl.innerHTML = '<span class="text-warning">⚠ Ollama running but no models pulled — run: <code>ollama pull llama3</code></span>';
+            if (existingInput) existingInput.placeholder = 'llama3';
+        }
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error querying Ollama: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
+function restoreModelTextInput() {
+    const existing = document.getElementById('ai-hub-cfg-model');
+    if (existing && existing.tagName === 'SELECT') {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'ai-hub-cfg-model';
+        input.className = 'form-input';
+        input.placeholder = 'gpt-4o';
+        existing.replaceWith(input);
+    }
 }
 
 async function aiHubSaveProvider() {
@@ -4388,7 +4469,7 @@ function _appendConsoleMsg(role, text, meta) {
     div.className = `ai-console-msg ${role}`;
     const label = role === 'user' ? 'You' : 'Aksara AI';
     let html = `<div class="ai-console-msg-label">${label}</div>`;
-    html += `<div class="ai-console-msg-body">${_esc(text)}</div>`;
+    html += `<div class="ai-console-msg-body">${role === 'assistant' ? _renderMarkdown(text) : _esc(text)}</div>`;
     if (meta) {
         html += `<div class="ai-console-msg-meta">${meta}</div>`;
     }
@@ -4523,6 +4604,90 @@ function _renderInvestigationResult(data, output) {
     div.innerHTML = html;
     output.appendChild(div);
     output.scrollTop = output.scrollHeight;
+}
+
+// v0.5.43: Lightweight markdown → HTML for AI Console assistant messages.
+// No CDN. XSS-safe: _esc() guards all text content before markup is applied.
+function _renderMarkdown(text) {
+    if (!text) return '';
+    // 1. Extract fenced code blocks (protected from inline processing)
+    const codeBlocks = [];
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, body) => {
+        const i = codeBlocks.length;
+        const cls = lang ? ` class="language-${lang.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}"` : '';
+        codeBlocks.push(`<pre class="md-pre"><code${cls}>${_esc(body.trimEnd())}</code></pre>`);
+        return `\uFFF0B${i}\uFFF1`;
+    });
+    // 2. Line-by-line processing
+    const out = [];
+    const lines = text.split('\n');
+    let i = 0;
+    while (i < lines.length) {
+        const ln = lines[i];
+        // Code block placeholder — pass through as-is
+        if (/^\uFFF0B\d+\uFFF1$/.test(ln.trim())) { out.push(ln.trim()); i++; continue; }
+        // Heading
+        const hm = ln.match(/^(#{1,4})\s+(.*)/);
+        if (hm) {
+            out.push(`<h${hm[1].length} class="md-h">${_inlineMd(hm[2])}</h${hm[1].length}>`);
+            i++; continue;
+        }
+        // Unordered list — collect consecutive items
+        if (/^[-*+] /.test(ln)) {
+            const li = [];
+            while (i < lines.length && /^[-*+] /.test(lines[i]))
+                li.push(`<li>${_inlineMd(lines[i++].replace(/^[-*+] /, ''))}</li>`);
+            out.push(`<ul class="md-ul">${li.join('')}</ul>`);
+            continue;
+        }
+        // Ordered list — collect consecutive items
+        if (/^\d+\. /.test(ln)) {
+            const li = [];
+            while (i < lines.length && /^\d+\. /.test(lines[i]))
+                li.push(`<li>${_inlineMd(lines[i++].replace(/^\d+\. /, ''))}</li>`);
+            out.push(`<ol class="md-ol">${li.join('')}</ol>`);
+            continue;
+        }
+        // Blank line → paragraph separator
+        if (!ln.trim()) { out.push(''); i++; continue; }
+        // Horizontal rule
+        if (/^[-*_]{3,}$/.test(ln.trim())) { out.push('<hr>'); i++; continue; }
+        // Normal text line
+        out.push(_inlineMd(ln));
+        i++;
+    }
+    // 3. Join lines and normalise whitespace/breaks
+    let html = out.join('\n');
+    html = html.replace(/\n\n+/g, '</p><p class="md-p">');
+    html = html.replace(/\n/g, '<br>');
+    // Suppress <br> immediately before/after block elements
+    html = html.replace(/<br>(<(?:h[1-4]|ul|ol|hr|pre))/g, '$1');
+    html = html.replace(/(<\/(?:h[1-4]|ul|ol|pre)>)<br>/g, '$1');
+    // 4. Restore fenced code blocks
+    codeBlocks.forEach((b, i) => { html = html.replace(`\uFFF0B${i}\uFFF1`, b); });
+    return html;
+}
+
+// v0.5.43: Inline markdown → HTML helper used by _renderMarkdown.
+function _inlineMd(text) {
+    // Extract inline code before HTML-escaping
+    const codes = [];
+    text = text.replace(/`([^`\n]+)`/g, (_, c) => {
+        const i = codes.length;
+        codes.push(`<code class="md-code">${_esc(c)}</code>`);
+        return `\uFFF0I${i}\uFFF1`;
+    });
+    // HTML-escape remaining text (* _ # are not HTML-special — safe to process after)
+    text = _esc(text);
+    // Bold + italic (order: *** before ** before *)
+    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    text = text.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+    // Restore inline codes
+    codes.forEach((c, i) => { text = text.replace(`\uFFF0I${i}\uFFF1`, c); });
+    return text;
 }
 
 function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
