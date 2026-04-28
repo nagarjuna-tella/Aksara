@@ -218,17 +218,30 @@ async def _check_studio_origin(request: Request) -> None:
 
     Rules:
     - No Origin header → allow (same-origin request or CLI)
+    - Origin matches server's own origin → allow (Studio UI → its own API)
     - ``studio_allowed_origins = []`` → allow all origins
     - ``"*"`` in allowed list → allow all origins
     - Otherwise the origin must match exactly
 
     Raises HTTP 403 when the origin is disallowed.
+
+    Note: Modern browsers send the Origin header even on same-origin POST
+    requests (WHATWG Fetch spec, 2018+).  Without the self-origin check below,
+    any POST from the Studio UI would be 403-ed by the configured allow-list
+    (which typically does not enumerate every localhost port).
     """
     from aksara.conf import settings
 
     origin = request.headers.get("Origin")
     if not origin:
         return  # no Origin header — same-origin or CLI, allow through
+
+    # Allow requests that originate from the Studio UI itself.
+    # Modern browsers set Origin even on same-origin POSTs, so we must
+    # explicitly recognise "this server's own origin" as trusted.
+    server_origin = f"{request.url.scheme}://{request.url.netloc}"
+    if origin == server_origin:
+        return
 
     allowed_origins: list = getattr(settings, "studio_allowed_origins", [])
     if not allowed_origins:
