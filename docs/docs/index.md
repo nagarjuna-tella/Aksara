@@ -334,4 +334,6 @@ The latest release includes:
 
 **Aksara** — *Simple, fast, AI-ready backends for Python.*
 
+Designed and built by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
+
 </div>

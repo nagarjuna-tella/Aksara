@@ -1,6 +1,8 @@
 # Aksara Roadmap
 
-> **Updated Feb 22, 2026**
+Maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
+
+> **Updated Apr 2026**
 
 Aksara is now an AI-first application framework with a fully integrated
 developer studio, automatic diagnostics, code-generation agents, and
@@ -11,8 +13,11 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 
 ## Current Stable Version
 
-### v0.5.28 — AI Hub 2.0 (Feb 2026)
+### v0.5.43 (Apr 2026)
 
+- **AI Console, Debugger, Architecture Review, Performance Analyzer** — full AI analysis stack
+- **MCP tool export** at `/ai/tools/mcp`
+- **Studio UX Redesign** — 5 semantic nav groups, ARIA accessibility, keyboard navigation
 - **AI Hub 2.0** — unified configuration layer for all AI providers:
   `AiHubSettings`, `ProviderConfig`, `AiDefaultModels` in `aksara/ai/hub_settings.py`
 - **7 REST endpoints** under `/studio/ai-hub/` for provider management
@@ -36,16 +41,6 @@ intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
 - Studio Gap Analysis panel, severity filter buttons, Re-scan action
 - Studio UX consolidation, CLI help fixes, keyboard shortcut reorg
 - Full suite at **3551+ passed**
-
-## Recent Releases
-
-### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
-
-- Studio Gap Analysis panel, severity filter buttons, Re-scan action
-- Studio UX consolidation, CLI help fixes, keyboard shortcut reorg
-- Full suite at **3551+ passed**
-
-## Recent Releases
 
 ### v0.5.26 — Gap Analysis Engine (Feb 2026)
 
@@ -96,7 +91,7 @@ Includes everything from v0.5.0–v0.5.23 plus:
 
 ## v0.6.0 — Production Mode
 
-**Target: Feb–Mar 2026**
+**Status: In active development**
 
 Focus: Make Aksara production-ready for real applications and enterprise loads.
 
@@ -122,7 +117,7 @@ Focus: Make Aksara production-ready for real applications and enterprise loads.
 
 ## v0.7.0 — AI Mode 3.0
 
-**Target: Apr–May 2026**
+**Status: Planned**
 
 Next-gen agent capabilities.
 
@@ -150,7 +145,7 @@ Next-gen agent capabilities.
 
 ## v0.8.0 — Enterprise Data & Permissions
 
-**Target: Jun–Jul 2026**
+**Status: Planned**
 
 ### Multi-Tenancy 2.0
 
@@ -176,7 +171,7 @@ Next-gen agent capabilities.
 
 ## v0.9.0 — Plugins & Ecosystem
 
-**Target: Aug–Sep 2026**
+**Status: Planned**
 
 ### Plugin Architecture
 
@@ -200,7 +195,7 @@ Next-gen agent capabilities.
 
 ## v1.0.0 — General Availability (GA)
 
-**Target: Oct–Dec 2026**
+**Status: Planned**
 
 ### Release Goals
 

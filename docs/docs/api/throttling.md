@@ -1,88 +1,6 @@
 # Throttling
 
-Rate limiting for API endpoints.
-
----
-
-## Overview
-
-!!! note "Roadmap Feature"
-    Built-in throttling is on the roadmap. The API below shows the planned design. Until then, use the [slowapi workaround](#current-workaround) at the bottom of this page.
-
-Throttling will prevent API abuse by limiting request rates:
-
-```python
-from aksara.api import ModelViewSet
-from aksara.throttling import UserRateThrottle
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    throttle_classes = [UserRateThrottle]
-```
-
----
-
-## Planned Features
-
-### Rate Limits
-
-```python
-class UserRateThrottle(BaseThrottle):
-    """Limit requests per user."""
-    rate = "100/hour"  # 100 requests per hour
-
-class AnonRateThrottle(BaseThrottle):
-    """Limit requests for anonymous users."""
-    rate = "20/hour"
-
-class BurstRateThrottle(BaseThrottle):
-    """Limit burst requests."""
-    rate = "10/minute"
-```
-
-### Configuration
-
-```python
-# settings.py
-THROTTLE_RATES = {
-    "anon": "100/day",
-    "user": "1000/day",
-    "premium": "10000/day",
-}
-```
-
-### ViewSet Integration
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    throttle_classes = [UserRateThrottle, BurstRateThrottle]
-    
-    # Per-action throttling
-    def get_throttles(self):
-        if self.action == "create":
-            return [CreateRateThrottle()]
-        return super().get_throttles()
-```
-
-### Custom Throttles
-
-```python
-class CustomThrottle(BaseThrottle):
-    def allow_request(self, request, view):
-        # Custom logic
-        return True
-    
-    def wait(self):
-        # Seconds until next allowed request
-        return 60
-```
-
----
-
-## Current Workaround
-
-Until built-in throttling is available, use middleware:
+Rate limiting is on the roadmap. Until built-in throttling ships, use middleware-based rate limiting:
 
 ```python
 from slowapi import Limiter
@@ -96,9 +14,11 @@ async def list_posts(request):
     ...
 ```
 
+See [slowapi documentation](https://github.com/laurentS/slowapi) for configuration options.
+
 ---
 
 ## Related Documentation
 
 - [Permissions](permissions.md) — Access control
-- [Middleware](../middleware/index.md) — Custom middleware
+- [Running Your App](../getting-started/running-your-app.md) — Server configuration and middleware

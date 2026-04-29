@@ -1,5 +1,7 @@
 # Changelog
 
+Aksara is maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
+
 All notable changes to Aksara.
 
 ---
