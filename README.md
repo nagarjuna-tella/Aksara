@@ -89,7 +89,9 @@ That's what makes Aksara different from `pip install fastapi && pip install sqla
 ---
 
 Aksara is built on FastAPI.
+
 You get FastAPI's performance and full ecosystem.
+
 We built everything you'd otherwise assemble yourself.
 
 ---
