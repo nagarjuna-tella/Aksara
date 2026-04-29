@@ -11,33 +11,38 @@ Start, debug, and deploy your Aksara application.
 The recommended way to run your app during development:
 
 ```bash
-aksara run main:app --reload
+aksara dev
 ```
+
+`aksara dev` defaults to `main:app`, enables auto-reload, and shows a rich banner with all relevant URLs (API docs, Studio, admin).
 
 Options:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--reload` | Auto-reload on code changes | Off |
+| `--reload` / `--no-reload` | Auto-reload on code changes | On |
 | `--host` | Bind address | `127.0.0.1` |
 | `--port` | Port number | `8000` |
-| `--workers` | Number of workers | `1` |
+| `--log-level` | Log level | `info` |
 
 Examples:
 
 ```bash
-# Development with auto-reload
-aksara run main:app --reload
+# Development (auto-reload enabled by default)
+aksara dev
 
 # Custom port
-aksara run main:app --port 3000 --reload
+aksara dev --port 3000
 
 # Bind to all interfaces
-aksara run main:app --host 0.0.0.0 --port 8000
+aksara dev --host 0.0.0.0 --port 8000
 
-# Multiple workers (production-like)
-aksara run main:app --workers 4
+# Custom app path (if not main:app)
+aksara dev myproject.main:app
 ```
+
+!!! note "Multi-worker testing"
+    `aksara dev` always runs with a single worker. For production-like multi-worker testing, use `aksara run main:app --workers 4`.
 
 ### Using Uvicorn Directly
 
@@ -100,7 +105,7 @@ Enable debug mode for development:
 ### Via Environment
 
 ```bash
-AKSARA_DEBUG=true aksara run main:app --reload
+AKSARA_DEBUG=true aksara dev
 ```
 
 ### Via Settings
@@ -458,5 +463,5 @@ FastAPIInstrumentor.instrument_app(app)
 ## Related Documentation
 
 - [Settings](settings.md) — Configuration options
-- [Middleware](../middleware/overview.md) — Request processing
-- [Observability](../debugging/observability.md) — Monitoring and tracing
+- [Middleware](../middleware/index.md) — Request processing
+- [Debugging](../debugging/index.md) — Runtime inspection and troubleshooting

@@ -115,8 +115,8 @@ other Studio endpoints.
 - **Temperature** defaults to `0.5`. It drops to `0.3` when:
   - Any selected `ai_hints` section reports `high_risk_count > 0`
   - The `diagnostics` section has `errors > 0`
-- **Model** defaults to `gpt-4o`. If an AI profile with `client_ready: true`
-  is configured, the first ready model is recommended instead.
+- **Model** falls back to the active provider's configured default. If an AI profile
+  with `client_ready: true` is configured, the first ready model is recommended instead.
 
 ---
 

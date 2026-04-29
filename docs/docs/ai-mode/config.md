@@ -236,7 +236,7 @@ AKSARA = {
 AKSARA = {
     "AI_AGENT_RUNTIME": {
         # Model
-        "model": "gpt-4",
+        "model": "gpt-4",  # e.g. "gpt-4o", "claude-3-5-sonnet-20241022", "llama3"
         "temperature": 0.1,
         
         # Tools
@@ -454,7 +454,7 @@ AKSARA = {
     "AI_MODE": True,
     "AI_PROVIDER": "openai",
     "AI_API_KEY": os.getenv("OPENAI_API_KEY"),
-    "AI_MODEL": "gpt-4",
+    "AI_MODEL": "gpt-4",  # e.g. "gpt-4o", "claude-3-5-sonnet-20241022", "llama3"
     "AI_TEMPERATURE": 0.1,
     
     # Context Engine

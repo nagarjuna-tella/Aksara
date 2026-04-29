@@ -36,8 +36,8 @@ aksara --help
 # Show version
 aksara --version
 
-# Run a command
-aksara run main:app
+# Start development server
+aksara dev
 ```
 
 ---
@@ -224,7 +224,7 @@ Output:
 ```
 Aksara Project Information
 ==========================
-Version: 0.4.11
+Version: 0.5.43
 Python: 3.11.0
 Database: postgresql://localhost/mydb
 

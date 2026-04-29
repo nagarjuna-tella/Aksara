@@ -113,6 +113,16 @@ class Task(Model):
         return self.title
 ```
 
+!!! info "Why `ai_description` shows up in your first model"
+    `ai_description` gives Aksara's AI surfaces a human-readable explanation of what
+    each field means. The Studio AI Console, MCP tool export, and other AI features
+    all reuse that metadata when they describe your schema.
+
+    Write the intent of the field, not just its type. When a field should stay hidden
+    from AI output, use `ai_sensitive=True`. When agents may read a field but must not
+    change it, use `ai_agent_writable=False`. The full guidance lives in
+    [Fields](../orm/fields.md#ai-metadata-and-guardrails).
+
 ---
 
 ## Step 4: Create Migrations
@@ -314,13 +324,13 @@ configure(
 ## Step 8: Run the Application
 
 ```bash
-aksara run main:app --reload
+aksara dev
 ```
 
 You should see:
 
 ```
-⚡ Aksara v0.4.11
+⚡ Aksara 0.5.43
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
 INFO:     Started server process
@@ -417,6 +427,16 @@ In this guide, you:
 6. ✅ Tested the API using curl
 7. ✅ Explored the admin interface
 
+!!! tip "AI Agent / MCP Integration"
+    Every Aksara app automatically exposes an MCP (Model Context Protocol) endpoint at
+    `/ai/tools/mcp`. Any MCP-compatible AI agent can connect to it and read or write
+    your data with no extra setup. See [MCP Integration](../ai-mode/mcp.md).
+
+!!! tip "When setup fails"
+    Run `aksara doctor run` for a live health report across your app, database, and AI
+    configuration. If Aksara can describe a remediation path, `aksara doctor fix-plan`
+    prints the exact CLI-ready sequence.
+
 ---
 
 ## Next Steps
@@ -445,7 +465,7 @@ In this guide, you:
 
     Make your app AI-native.
 
-    [:octicons-arrow-right-24: AI Overview](../ai/overview.md)
+    [:octicons-arrow-right-24: AI Overview](../ai-mode/index.md)
 
 -   :material-book-open:{ .lg .middle } **Full Tutorial**
 
@@ -453,6 +473,6 @@ In this guide, you:
 
     Build a complete blog application.
 
-    [:octicons-arrow-right-24: Blog Tutorial](../tutorials/build-a-blog.md)
+    [:octicons-arrow-right-24: Blog Tutorial](../tutorials/blog-api.md)
 
 </div>

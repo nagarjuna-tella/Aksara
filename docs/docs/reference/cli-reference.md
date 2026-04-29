@@ -248,7 +248,7 @@ aksara info [OPTIONS]
 ```
 Aksara Project Information
 ==========================
-Version: 0.4.11
+Version: 0.5.43
 Python: 3.11.0
 Settings: myproject.settings
 

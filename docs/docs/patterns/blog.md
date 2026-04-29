@@ -10,7 +10,7 @@ cd myblog
 pip install -e ".[dev]"
 aksara makemigrations --app app.models
 aksara migrate
-aksara run main:app --reload
+aksara dev
 ```
 
 ## Models

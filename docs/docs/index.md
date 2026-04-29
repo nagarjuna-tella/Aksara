@@ -1,10 +1,10 @@
 # Aksara Framework
 
-## Build Web APIs in Python — Fast, Simple, AI-Ready
+## Async Python Backend — ORM, Auto-REST, AI Console, and MCP Tools in One Framework
 
 <div class="hero-section" markdown>
 
-**Aksara** is a Python framework for building web APIs that connect to databases. If you want to create a backend for a mobile app, website, or any application that stores data, Aksara helps you do it quickly.
+**Aksara** is a Python backend framework that ships with everything you need to go from an empty directory to a running, AI-ready API. Define your models, get a full REST API, an admin interface, a visual Studio dashboard, an interactive AI Console, and auto-generated MCP tools — all from the same codebase.
 
 [Get Started →](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/aksara-orm/aksara){ .md-button }
@@ -15,16 +15,19 @@
 
 ## What is Aksara?
 
-**Aksara is a backend framework.** It helps you:
+**Aksara gives you everything out of the box:**
 
-| What You Need | How Aksara Helps |
-|---------------|------------------|
-| Store data | Define **Models** that create database tables |
-| Retrieve data | Use **QuerySets** to search without writing SQL |
-| Build an API | Create **ViewSets** that auto-generate REST endpoints |
-| Secure access | Set up **Permissions** to control who can do what |
-| Manage data | Use the **Admin** dashboard to view and edit data |
-| Work with AI | Use **AI Mode** so AI agents can interact with your data |
+| What You Get | How |
+|--------------|-----|
+| **Async ORM** | Define Python models → Aksara creates database tables and handles all SQL |
+| **Auto REST API** | One `ModelViewSet` class → full CRUD endpoints with pagination and validation |
+| **Built-in Admin** | Browse and edit your data at `/admin` with zero configuration |
+| **Studio UI** | Visual dashboard at `/studio/ui` — inspect models, routes, queries, and migrations |
+| **AI Console** | Natural-language interface inside Studio — ask questions about your data, routes, and schema in plain English |
+| **AI Review Tools** | Run AI Debugger, Architecture Review, and Performance Analyzer against the same live project context |
+| **MCP Tools** | Your models become MCP tools automatically — connect any MCP-compatible AI agent |
+| **Doctor & Fix Plans** | `aksara doctor` checks app health and `aksara doctor fix-plan` prints the remediation path |
+| **Migration System** | Schema changes tracked and applied with `aksara migrate` |
 
 ---
 
@@ -32,17 +35,17 @@
 
 **Aksara is for Python developers who:**
 
-- ✅ Want to build APIs without writing repetitive code
-- ✅ Need a database but don't want to write raw SQL
-- ✅ Want modern async Python (not slow threads)
-- ✅ Like Django's patterns but want FastAPI's speed
-- ✅ Want their app to work with AI agents
+- ✅ Want a complete backend stack, not just a web framework
+- ✅ Need async PostgreSQL without writing raw SQL
+- ✅ Like Django's ergonomics but want FastAPI's async performance
+- ✅ Want their data instantly accessible to AI agents via MCP
+- ✅ Value built-in tooling (Studio, AI Console, Doctor) over plugin sprawl
 
 **You don't need:**
 
-- ❌ Previous Django experience
+- ❌ Previous Django or FastAPI experience
 - ❌ Deep database knowledge
-- ❌ To understand async internals
+- ❌ To configure AI integrations from scratch
 
 ---
 
@@ -106,7 +109,7 @@ app.include_viewset(TaskViewSet, prefix="/tasks")
 
 ```bash
 aksara migrate    # Create the database table
-aksara run        # Start the server
+aksara dev        # Start the development server
 ```
 
 **Test it:**
@@ -120,6 +123,8 @@ curl -X POST http://localhost:8000/tasks/ \
 # List all tasks
 curl http://localhost:8000/tasks/
 ```
+
+Once running, open **http://localhost:8000/studio/ui** to explore your models and queries in the built-in Studio dashboard.
 
 ---
 
@@ -215,6 +220,8 @@ context = await build_full_ai_context(app)
 
 **What this means:** AI agents can understand and interact with your data.
 
+The same AI layer also powers the built-in Studio AI Console, the Architecture Review, and the Performance Analyzer, so you do not have to maintain separate schemas for internal tooling and external agents.
+
 👉 [Learn about AI Mode](ai-mode/index.md)
 
 ---
@@ -293,12 +300,14 @@ pip install aksara
 
 ---
 
-## What's New in v0.4.11
+## What's New in v0.5.43
 
 The latest release includes:
 
 - **Admin UI Overhaul** — New modern widget system with JSON and Array field widgets
 - **AI Schema Doctor** — Detect schema drift and health issues
+- **Architecture Review** — Inspect coupling and structural pressure across the app
+- **Performance Analyzer** — Surface slow queries, missing indexes, and ORM hot spots
 - **AI Agent Runtime** — Mini agent loop for external AI coordination
 - **Enhanced Debug Pages** — AI-powered debugging suggestions
 - **1920+ Tests** — Comprehensive test coverage

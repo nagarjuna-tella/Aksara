@@ -350,4 +350,4 @@ export OPENAI_API_KEY=sk-...  # Check it's in your shell
 
 - [AI Profiles & Providers](providers.md) - Core AI profile system
 - [AI Route Hints](hints.md) - Per-route AI metadata
-- [aksara ai examples CLI](../cli/reference.md#ai-examples) - Copy examples
+- [AI Commands CLI](../cli/ai-commands.md) - Copy command examples

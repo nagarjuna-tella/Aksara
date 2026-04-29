@@ -26,9 +26,9 @@ All fields support these options:
 | `unique` | `bool` | `False` | Enforce uniqueness |
 | `primary_key` | `bool` | `False` | Mark as primary key |
 | `db_index` | `bool` | `False` | Create database index |
-| `ai_description` | `str` | `""` | Description for AI agents |
-| `ai_sensitive` | `bool` | `False` | Hide from AI context |
-| `ai_agent_writable` | `bool` | `True` | Allow AI to modify |
+| `ai_description` | `str` | `""` | Human-readable field purpose used in AI context and tool exports |
+| `ai_sensitive` | `bool` | `False` | Hide the field from AI context, Studio AI features, and MCP exports |
+| `ai_agent_writable` | `bool` | `True` | Whether AI-driven write paths are allowed to modify the field |
 
 Example:
 
@@ -447,9 +447,38 @@ class User(Model):
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `ai_description` | `str` | `""` | Human-readable description for LLMs |
-| `ai_sensitive` | `bool` | `False` | Exclude from AI context exports |
-| `ai_agent_writable` | `bool` | `True` | Whether AI agents can modify |
+| `ai_description` | `str` | `""` | Human-readable field purpose used in AI context and tool exports |
+| `ai_sensitive` | `bool` | `False` | Hide the field from AI context, Studio AI features, and MCP exports |
+| `ai_agent_writable` | `bool` | `True` | Whether AI-driven write paths are allowed to modify the field |
+
+---
+
+## AI Metadata and Guardrails
+
+These three options control how Aksara presents your schema to AI features.
+
+`ai_description` gives the field intent instead of just a type name. That description is reused in Studio AI Console prompts, exported tool schemas, and other AI-facing context builders, so it is worth writing as if another developer has to understand the field without opening the model.
+
+`ai_sensitive=True` removes a field from AI-facing exports. Use it for hashed passwords, secret tokens, internal identifiers, or any value that should never appear in generated context for external agents.
+
+`ai_agent_writable=False` keeps a field visible while blocking agent-initiated updates. That is the right choice for computed totals, audit fields, approval states, or any value a human or a trusted backend process owns.
+
+```python
+class Customer(Model):
+    email = fields.Email(
+        ai_description="Primary contact email for the customer"
+    )
+    stripe_customer_id = fields.String(
+        ai_sensitive=True,
+        ai_description="Internal billing identifier"
+    )
+    lifetime_value = fields.Decimal(
+        precision=10,
+        scale=2,
+        ai_description="Computed revenue total in USD",
+        ai_agent_writable=False,
+    )
+```
 
 ---
 

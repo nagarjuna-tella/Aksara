@@ -522,7 +522,7 @@ AKSARA = {
 ## Next Steps
 
 - Explore the [AI Mode documentation](../ai-mode/index.md) for advanced features
-- Learn about [AI schema descriptions](../ai-mode/schema.md)
+- Learn about [AI schema descriptions](../orm/fields.md#ai-metadata-and-guardrails)
 - Set up [AI safety guardrails](../ai-mode/safety.md)
 
 ---

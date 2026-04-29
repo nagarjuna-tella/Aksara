@@ -96,28 +96,32 @@ nav:
       - Studio Spotlight: search/studio.md
   - AI Mode:
       - ai-mode/index.md
-      - Overview: ai-mode/overview.md
+      - Interactive Console: ai-mode/console.md
+      - AI Flows: ai-mode/flows.md
+      - MCP Integration: ai-mode/mcp.md
       - Tools: ai-mode/tools.md
+      - AI Hub: ai-mode/hub.md
+      - Providers: ai-mode/providers.md
+      - Bring Your Own LLM: ai-mode/bring-your-own-llm.md
+      - Ollama: ai-mode/ollama.md
+      - Agent Mode: ai-mode/agent.md
+      - Agent Workflows: ai-mode/workflows.md
+      - Planner: ai-mode/planner.md
+      - Agent Runtime: ai-mode/agent-runtime.md
+      - Execution Runtime: ai-mode/runtime.md
       - Context Engine: ai-mode/context-engine.md
+      - Project Graph: ai-mode/project-graph.md
       - Query Engine: ai-mode/query-engine.md
       - CodeGen: ai-mode/codegen.md
       - Patch Engine: ai-mode/patch-engine.md
-      - Planner: ai-mode/planner.md
-      - Agent Runtime: ai-mode/agent-runtime.md
-      - Schema Doctor: ai-mode/schema-doctor.md
-      - Providers: ai-mode/providers.md
       - Route Hints: ai-mode/hints.md
-      - Agent Mode: ai-mode/agent.md
-      - Agent Workflows: ai-mode/workflows.md
-      - AI Flows: ai-mode/flows.md
-      - AI Connectors: ai-mode/connectors.md
-      - Execution Runtime: ai-mode/runtime.md
-      - Interactive Console: ai-mode/console.md
-      - Project Graph: ai-mode/project-graph.md
+      - Schema Doctor: ai-mode/schema-doctor.md
       - AI Debugger: ai-mode/debugger.md
       - Architecture Review: ai-mode/architecture-review.md
       - Performance Analyzer: ai-mode/performance-analyzer.md
-      - Best Practices: ai-mode/best-practices.md
+      - AI Connectors: ai-mode/connectors.md
+      - Custom HTTP Connector: ai-mode/custom-http.md
+      - Safety: ai-mode/safety.md
   - Studio:
       - studio/index.md
       - Studio API: studio/api.md

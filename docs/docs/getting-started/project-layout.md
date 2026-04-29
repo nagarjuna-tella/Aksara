@@ -356,4 +356,4 @@ Use different `.env` files for environments:
 
 - [Settings](settings.md) — Configuration options
 - [First App](first-app.md) — Build your first application
-- [Multi-App Projects](../advanced/multi-app-projects.md) — Advanced project organization
+- [Multitenant Pattern](../patterns/multitenant.md) — Example of a larger application layout

@@ -252,5 +252,5 @@ app.mount("/admin", admin)
 ## Related Documentation
 
 - [Models](../orm/models.md) — Define your data structure
-- [Authentication](../getting-started/authentication.md) — User login system
+- [Authentication](../api/authentication.md) — User login system
 - [Permissions](admin-permissions.md) — Control access to admin

@@ -522,4 +522,4 @@ ALLOWED_HOSTS=myapp.com,www.myapp.com
 
 - [Settings](../getting-started/settings.md) — All configuration options
 - [Middleware](../middleware/index.md) — Request processing
-- [Security](../advanced/security.md) — Security best practices
+- [Authentication](../api/authentication.md) — User auth and access control

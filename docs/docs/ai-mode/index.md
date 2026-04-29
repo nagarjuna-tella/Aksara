@@ -1,422 +1,93 @@
 # AI Mode
 
-AI-powered development tools built into Aksara.
+AI Mode is the AI layer of an Aksara application. It powers the Studio AI Console and AI Flows, exports your app as MCP-compatible tools, and adds analysis surfaces such as Schema Doctor, AI Debugger, Architecture Review, and Performance Analyzer.
 
 ---
 
-## Overview
+## Start Here
 
-Aksara's AI Mode provides developer tools that understand your codebase:
+Use this section in the same order you would adopt the features in a real project:
 
-| Tool | Purpose |
-|------|---------|
-| [Tools](tools.md) | AI-callable functions for CRUD, queries, migrations |
-| [Context Engine](context-engine.md) | Gathers relevant code context |
-| [Query Engine](query-engine.md) | Natural language to SQL |
-| [Codegen](codegen.md) | Generate models, viewsets, tests |
-| [Patch Engine](patch-engine.md) | Safe code modifications |
-| [Planner](planner.md) | Multi-step task planning |
-| [Agent Runtime](agent-runtime.md) | Execute AI agents |
-| [Schema Doctor](schema-doctor.md) | Schema analysis and fixes |
-| [Providers](providers.md) | Vendor-agnostic AI profiles |
-| [Route Hints](hints.md) | Per-view AI metadata *(v0.5.13)* |
+| Goal | Read First | Then Continue With |
+|------|------------|--------------------|
+| Explore your app in Studio | [Interactive Console](console.md) | [AI Flows](flows.md), [AI Debugger](debugger.md), [Architecture Review](architecture-review.md), [Performance Analyzer](performance-analyzer.md) |
+| Connect an external AI agent | [MCP Integration](mcp.md) | [Tools](tools.md), [Providers](providers.md), [AI Connectors](connectors.md) |
+| Automate larger tasks | [Agent Mode](agent.md) | [Agent Workflows](workflows.md), [Planner](planner.md), [Agent Runtime](agent-runtime.md) |
+| Generate or refactor code safely | [CodeGen](codegen.md) | [Patch Engine](patch-engine.md), [Safety](safety.md) |
+| Inspect schema and query health | [Schema Doctor](schema-doctor.md) | [Project Graph](project-graph.md), [Query Engine](query-engine.md) |
 
 ---
 
-## Quick Start
+## Studio vs AI Mode Docs
 
-### Enable AI Mode
+The documentation is split by responsibility.
 
-```python
-# settings.py
-AKSARA = {
-    "AI_MODE": True,
-    "AI_PROVIDER": "openai",  # or "anthropic", "local"
-}
-```
-
-### Use AI Commands
-
-```bash
-# Generate a model
-aksara ai generate "User model with email and name fields"
-
-# Query data
-aksara ai query "Find all users who signed up this week"
-
-# Fix schema issues  
-aksara ai doctor --fix
-```
-
-### Integrate in Code
-
-```python
-from aksara.ai import query_natural_language
-
-# Natural language queries
-users = await query_natural_language(
-    "active users who haven't logged in for 30 days"
-)
-```
+Read [Studio](../studio/index.md) when you need the built-in web UI, Studio endpoints, or Studio configuration. Read AI Mode when you need the AI surfaces that live inside Studio or when you want to connect external agents and model providers.
 
 ---
 
-## Architecture
+## Five-Minute Tour
 
+Start your app:
+
+```bash
+aksara dev
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      AI Mode Layer                           │
-├─────────────────────────────────────────────────────────────┤
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐ │
-│  │   Tools   │  │  Context  │  │   Query   │  │  Codegen  │ │
-│  │           │  │  Engine   │  │  Engine   │  │           │ │
-│  └───────────┘  └───────────┘  └───────────┘  └───────────┘ │
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐ │
-│  │   Patch   │  │  Planner  │  │   Agent   │  │  Schema   │ │
-│  │  Engine   │  │           │  │  Runtime  │  │  Doctor   │ │
-│  └───────────┘  └───────────┘  └───────────┘  └───────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                    Safety Layer                              │
-├─────────────────────────────────────────────────────────────┤
-│                   Aksara Core (ORM, API, Admin)              │
-└─────────────────────────────────────────────────────────────┘
-```
+
+Then try the three entry points that matter most:
+
+1. Open **http://127.0.0.1:8000/studio/ui** and use the **AI Console**.
+2. Fetch the MCP tool catalog from **http://127.0.0.1:8000/ai/tools/mcp**.
+3. Run `aksara doctor fix-plan` to see the remediation workflow Aksara can generate from live diagnostics.
 
 ---
 
-## Key Features
+## Core Surfaces
 
-### 🔧 AI Tools
-
-Functions that AI can call to interact with your app:
-
-```python
-from aksara.ai.tools import get_tools
-
-tools = get_tools()
-# Returns: create_record, update_record, query_records, 
-#          run_migration, generate_code, etc.
-```
-
-See [Tools](tools.md) for the full list.
-
-### 🔍 Context Engine
-
-Automatically gathers relevant context for AI:
-
-```python
-from aksara.ai import ContextEngine
-
-engine = ContextEngine()
-context = await engine.gather(
-    query="How do I add a tags field to Post?",
-    include_models=True,
-    include_migrations=True,
-)
-```
-
-See [Context Engine](context-engine.md).
-
-### 💬 Query Engine
-
-Natural language to database queries:
-
-```python
-from aksara.ai import QueryEngine
-
-engine = QueryEngine()
-result = await engine.query(
-    "Posts published this month with more than 10 comments"
-)
-```
-
-See [Query Engine](query-engine.md).
-
-### 📝 Codegen
-
-Generate boilerplate code:
-
-```python
-from aksara.ai import Codegen
-
-gen = Codegen()
-code = await gen.model("BlogPost with title, content, author FK")
-# Returns Model class definition
-```
-
-See [Codegen](codegen.md).
-
-### 🔨 Patch Engine
-
-Safe code modifications:
-
-```python
-from aksara.ai import PatchEngine
-
-engine = PatchEngine()
-patch = await engine.create_patch(
-    file="models.py",
-    instruction="Add 'is_featured' boolean field to Post"
-)
-await engine.apply(patch, dry_run=True)  # Preview changes
-```
-
-See [Patch Engine](patch-engine.md).
-
-### 📋 Planner
-
-Multi-step task planning:
-
-```python
-from aksara.ai import Planner
-
-planner = Planner()
-plan = await planner.create(
-    "Add a tagging system to the blog"
-)
-# Returns: CreateModel(Tag), AddM2M(Post.tags), CreateViewSet, etc.
-```
-
-See [Planner](planner.md).
-
-### 🤖 Agent Runtime
-
-Execute AI agents:
-
-```python
-from aksara.ai import AgentRuntime
-
-runtime = AgentRuntime()
-result = await runtime.execute(
-    "Review the User model and suggest improvements"
-)
-```
-
-See [Agent Runtime](agent-runtime.md).
-
-### 🏥 Schema Doctor
-
-Analyze and fix schema issues:
-
-```bash
-aksara ai doctor
-```
-
-```
-🔍 Analyzing schema...
-
-⚠️ Issues Found:
-  1. Post.author has no index (FK without index)
-  2. User.email should be unique
-  3. Comment.created_at has no default
-
-💡 Suggested Fixes:
-  aksara ai doctor --fix
-```
-
-See [Schema Doctor](schema-doctor.md).
+| Surface | What It Does | Where to Learn More |
+|---------|---------------|---------------------|
+| **AI Console** | Natural-language interface inside Studio for asking questions about models, routes, queries, and migrations | [console.md](console.md) |
+| **AI Flows** | Guided actions for model review, route review, query analysis, migration explanation, and diagnostics | [flows.md](flows.md) |
+| **MCP Tools** | Exports your models and routes as MCP-shaped tools at `/ai/tools/mcp` for external agents | [mcp.md](mcp.md) |
+| **Schema Doctor** | Finds schema health problems and pairs them with actionable remediation output | [schema-doctor.md](schema-doctor.md) |
+| **AI Debugger** | Explains failures and points at likely root causes | [debugger.md](debugger.md) |
+| **Architecture Review** | Reviews coupling, structure, and design pressure across the codebase | [architecture-review.md](architecture-review.md) |
+| **Performance Analyzer** | Surfaces slow queries, missing indexes, and common ORM performance traps | [performance-analyzer.md](performance-analyzer.md) |
 
 ---
 
-## Use Cases
+## Provider Configuration
 
-### Development Assistant
-
-```bash
-# "How do I..." questions
-aksara ai ask "How do I add pagination to my viewset?"
-
-# Generate code
-aksara ai generate "UserProfile model linked to User"
-```
-
-### Data Exploration
-
-```bash
-# Query data naturally
-aksara ai query "Users who registered but never made a purchase"
-
-# Analyze patterns
-aksara ai analyze "What's the most common user flow?"
-```
-
-### Code Review
-
-```bash
-# Review recent changes
-aksara ai review
-
-# Check for issues
-aksara ai doctor
-```
-
-### Automated Tasks
-
-```python
-# In CI/CD
-from aksara.ai import SchemaDoctor
-
-doctor = SchemaDoctor()
-issues = await doctor.analyze()
-if issues.has_critical:
-    raise Exception("Critical schema issues found")
-```
-
----
-
-## Safety Features
-
-AI Mode includes multiple safety layers:
-
-### 1. Confirmation Prompts
-
-Destructive operations require confirmation:
-
-```bash
-aksara ai query "Delete all inactive users"
-
-⚠️ This will delete 1,234 records.
-Proceed? [y/N]
-```
-
-### 2. Dry Run Mode
-
-Preview changes before applying:
-
-```bash
-aksara ai patch --dry-run "Add status field to Order"
-
-Would modify:
-  models.py: +3 lines
-  migrations/0005_add_order_status.py: new file
-```
-
-### 3. Sandboxed Execution
-
-Queries run in read-only transactions by default:
-
-```python
-from aksara.ai import QueryEngine
-
-engine = QueryEngine(read_only=True)  # Default
-```
-
-### 4. Audit Logging
-
-All AI operations are logged:
+AI Mode is provider-agnostic. Configure the provider and the model name that make sense for your environment.
 
 ```python
 AKSARA = {
-    "AI_AUDIT_LOG": True,  # Log all AI operations
+    "AI_PROVIDER": "anthropic",  # or "openai", "ollama", "custom_http"
+    "AI_MODEL": "<provider-model-name>",
 }
 ```
 
-See [Safety](safety.md) for details.
+See [Providers](providers.md), [Bring Your Own LLM](bring-your-own-llm.md), and [Ollama](ollama.md) for concrete setups.
 
 ---
 
-## Configuration
+## Why Metadata Matters
 
-```python
-# settings.py
-AKSARA = {
-    # Enable AI Mode
-    "AI_MODE": True,
-    
-    # Provider settings
-    "AI_PROVIDER": "openai",
-    "AI_MODEL": "gpt-4",
-    "AI_API_KEY": os.getenv("OPENAI_API_KEY"),
-    
-    # Safety settings
-    "AI_REQUIRE_CONFIRMATION": True,
-    "AI_READ_ONLY_QUERIES": True,
-    "AI_AUDIT_LOG": True,
-    
-    # Context settings
-    "AI_CONTEXT_MAX_TOKENS": 8000,
-    "AI_INCLUDE_MIGRATIONS": True,
-}
-```
+AI Mode works best when the rest of your Aksara app is well described. Field metadata such as `ai_description`, `ai_sensitive`, and `ai_agent_writable` influences what the AI Console sees, what MCP exports expose, and what agent-driven write paths are allowed to change.
 
-See [Configuration](config.md) for all options.
+If you are new to those flags, start with [Fields](../orm/fields.md#ai-metadata-and-guardrails) before you wire external agents into a production app.
 
 ---
 
-## Requirements
+## Next Reads
 
-- Python 3.10+
-- OpenAI API key (or Anthropic, or local LLM)
-- Aksara 0.4.0+
-
-```bash
-pip install aksara[ai]
-```
-
----
-
-## Studio Integration
-
-*Added in v0.5.4*
-
-Aksara Studio now includes an **AI Helpers** panel that bridges Studio with external AI assistants.
-
-### AI Context Export
-
-Export your entire project context as JSON for AI consumption:
-
-```bash
-# Via CLI
-aksara studio ai-context
-aksara studio ai-context --format summary
-```
-
-Or via REST API:
-
-```bash
-curl http://localhost:8000/studio/ai/context
-```
-
-### AI Schemas Endpoint
-
-Get Pydantic schemas for AI API integration:
-
-```bash
-curl http://localhost:8000/studio/ai/schemas
-```
-
-Returns schemas for `AiPlan`, `AiPatchRequest`, `AiQueryPlan`, `AiFullContext`, and `AiCodegenRequest`.
-
-### Prompt Templates
-
-Pre-built prompts for common AI tasks:
-
-```bash
-curl http://localhost:8000/studio/ai/prompts
-```
-
-Templates available: `add-field`, `refactor-model`, `fix-migrations`, `natural-query`, `generate-model`, `explain-schema`.
-
-### Use with External AI
-
-These endpoints are **LLM-agnostic** — no model calls are made by Aksara. Use them with any AI provider:
-
-```python
-import httpx
-import openai
-
-# Fetch project context from Studio
-context = httpx.get("http://localhost:8000/studio/ai/context").json()
-
-# Use with your preferred AI
-response = openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[
-        {"role": "system", "content": f"Project context: {context}"},
-        {"role": "user", "content": "Add a 'tags' field to the Post model"}
-    ]
-)
-```
+- [Interactive Console](console.md)
+- [MCP Integration](mcp.md)
+- [Providers](providers.md)
+- [Schema Doctor](schema-doctor.md)
+- [AI Debugger](debugger.md)
+- [Architecture Review](architecture-review.md)
+- [Performance Analyzer](performance-analyzer.md)
 
 See [Studio UI](../studio/ui.md#ai-helpers) for the visual interface.
 

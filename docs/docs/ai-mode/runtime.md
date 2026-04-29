@@ -52,8 +52,8 @@ result = await run_prompt_pack(
 ```json
 {
     "ok": true,
-    "provider": "openai",
-    "model": "gpt-4o",
+    "provider": "configured-provider",
+    "model": "configured-model",
     "response": "The User model has 5 fields...",
     "tokens": {"prompt": 20, "completion": 50, "total": 70},
     "elapsed_ms": 150.0,
@@ -70,7 +70,7 @@ The runtime resolves provider and model in this order:
 1. **Explicit overrides** — `provider_override` / `model_override` args
 2. **Pack metadata** — `pack["provider"]` / `pack["model"]`
 3. **AI Hub defaults** — loaded from `aihub.json` settings
-4. **Fallback defaults** — e.g. `gpt-4o` for OpenAI, `llama3` for Ollama
+4. **Fallback defaults** — the connector's provider-specific default model
 
 ---
 
@@ -125,8 +125,8 @@ POST /studio/ai/flows/run
     "prompt_pack": { "...": "..." },
     "execution": {
         "ok": true,
-        "provider": "openai",
-        "model": "gpt-4o",
+        "provider": "configured-provider",
+        "model": "configured-model",
         "response": "...",
         "tokens": {"prompt": 20, "completion": 50, "total": 70},
         "elapsed_ms": 150.0

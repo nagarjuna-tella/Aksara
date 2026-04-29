@@ -419,4 +419,4 @@ This returns the full `AiFullContext` which includes:
 - Admin configuration
 - AI tool registry
 
-See [AI Context Documentation](../ai-mode/context.md) for details.
+See [AI Context Documentation](../ai-mode/context-engine.md) for details.

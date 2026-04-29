@@ -560,7 +560,7 @@ aksara makemigrations
 aksara migrate
 
 # Start server
-aksara run
+aksara dev
 ```
 
 ### Create a Tenant

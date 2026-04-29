@@ -90,7 +90,7 @@ aksara makemigrations
 aksara migrate
 
 # Start the development server
-aksara run
+aksara dev
 ```
 
 👉 [CLI Reference](cli-reference.md)
@@ -99,11 +99,11 @@ aksara run
 
 ## Version Information
 
-Current version: **0.4.11**
+Current version: **0.5.43**
 
 ```python
 import aksara
-print(aksara.__version__)  # 0.4.11
+print(aksara.__version__)  # 0.5.43
 ```
 
 Check your installed version:

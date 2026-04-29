@@ -12,8 +12,6 @@ When `debug=True`, Aksara displays detailed error pages instead of generic 500 e
 app = Aksara(debug=True)
 ```
 
-![Debug Error Page](../assets/images/debug-error-page.png)
-
 ---
 
 ## Error Page Features

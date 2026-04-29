@@ -182,7 +182,7 @@ aksara makemigrations
 aksara migrate
 
 # Start development server
-aksara run
+aksara dev
 ```
 
 Then visit `http://localhost:8000/docs` for interactive API documentation.

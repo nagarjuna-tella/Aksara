@@ -523,4 +523,4 @@ class PostAdmin(ModelAdmin):
 
 - [AdminSite](admin-site.md) — Configure the admin interface
 - [ModelAdmin](model-admin.md) — Customize model display
-- [Authentication](../getting-started/authentication.md) — User login system
+- [Authentication](../api/authentication.md) — User login system

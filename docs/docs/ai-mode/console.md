@@ -23,8 +23,10 @@ returns a structured result.
 ```bash
 aksara ai chat "explain the User model"
 aksara ai chat "review GET /api/users" --format json
-aksara ai chat "suggest indexes" --provider openai --model gpt-4o
+aksara ai chat "suggest indexes" --provider <provider> --model <model-name>
 ```
+
+Use any provider and model combination that your AI setup supports.
 
 ### HTTP API
 
@@ -103,8 +105,8 @@ All console responses follow this structure:
   "prompt_pack": { "..." },
   "execution": {
     "ok": true,
-    "provider": "openai",
-    "model": "gpt-4o",
+    "provider": "configured-provider",
+    "model": "configured-model",
     "response": "The User model has 5 fields...",
     "tokens": {"prompt": 20, "completion": 50, "total": 70},
     "elapsed_ms": 1234.5

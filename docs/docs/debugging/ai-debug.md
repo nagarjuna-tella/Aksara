@@ -91,7 +91,7 @@ async def get_user(request, user_id: str):
 Links to relevant documentation:
 
 - [Querying Data](../orm/querying.md)
-- [Error Handling](../advanced/error-handling.md)
+- [Exceptions Reference](../reference/exceptions.md)
 - [Validation](../advanced/validation.md)
 
 ---

@@ -423,7 +423,7 @@ aksara ai agent "Analyze models" --tools query_records,list_models,describe_mode
 AKSARA = {
     "AI_AGENT_RUNTIME": {
         # Model
-        "model": "gpt-4",
+        "model": "<provider-model-name>",
         "temperature": 0.1,
         
         # Tools

@@ -583,5 +583,5 @@ class TaskSerializer(ModelSerializer):
 ## Related Documentation
 
 - [ViewSets](viewsets.md) — Use serializers in API endpoints
-- [Validation](validation.md) — Advanced validation techniques
+- [Validation](../advanced/validation.md) — Advanced validation techniques
 - [Fields](../orm/fields.md) — Model field types

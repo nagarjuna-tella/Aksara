@@ -187,7 +187,7 @@ This is normal - the CLI handshake doesn't start the database connection pool. U
 
 ```bash
 # Start your app
-aksara run main:app
+aksara dev
 
 # Test via HTTP
 curl http://localhost:8000/studio/health | jq

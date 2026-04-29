@@ -1,59 +1,72 @@
-# Aksara Studio Integration
+# Aksara Studio
 
-Aksara Studio is an IDE integration that provides visual tools for working with your Aksara applications. This section covers how to set up and use Studio integration.
+Aksara Studio is a **built-in web UI** that comes with every Aksara application. It runs inside your app — no external tool, no IDE plugin, no extra installation required.
+
+Start your app with `aksara dev`, then open **http://localhost:8000/studio/ui** in your browser.
 
 ## What is Aksara Studio?
 
-Aksara Studio is a companion IDE that connects to your running Aksara application to provide:
+Studio is a visual dashboard embedded in your Aksara application. It gives you a live view of everything happening in your backend:
 
-- **Visual Model Browser** - Explore your database schema visually
-- **Query Builder** - Build and test queries without writing code
-- **Migration Manager** - Visualize and manage database migrations
-- **AI Assistant** - Get AI-powered help with your codebase
-- **Real-time Monitoring** - View logs, queries, and performance
+- **Model Browser** — Explore your database schema and field definitions
+- **Query Explorer** — Inspect live queries, query plans, and N+1 alerts
+- **Migration Manager** — View pending and applied migrations
+- **API Inspector** — Browse your auto-generated REST endpoints
+- **AI Console** — Ask questions about your data in plain English
+- **Runtime Panel** — View settings, connection pool status, and health checks
+
+!!! info "Studio docs vs AI Mode docs"
+    Read the Studio docs for the built-in web UI, Studio endpoints, and Studio configuration.
+    Read [AI Mode](../ai-mode/index.md) for the AI Console, AI Flows, MCP tools,
+    AI Debugger, Architecture Review, and Performance Analyzer that run inside Studio
+    or connect to external agents.
 
 ## Quick Start
 
-### 1. Enable Studio (Default)
+### 1. Enable Studio (On By Default)
 
-Studio is enabled by default in debug mode. No additional setup is required.
+Studio is enabled automatically in debug mode. No configuration needed.
 
 ```python
 from aksara import Aksara
 
 app = Aksara(
     database_url="postgresql://...",
-    debug=True,  # Studio automatically enabled
+    debug=True,  # Studio UI is on at /studio/ui
 )
 ```
 
-### 2. Check Studio Endpoints
+### 2. Start Your App
 
-Your app exposes these Studio endpoints:
+```bash
+aksara dev
+```
+
+### 3. Open Studio in Your Browser
+
+Navigate to **http://localhost:8000/studio/ui**
+
+That's it. Studio reads your app's live state — models, routes, queries, and migrations — all from the same process.
+
+### 4. Studio API Endpoints
+
+Studio also exposes a JSON API used by the UI. These are available while your app runs:
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /studio/handshake` | Complete project info for Studio |
+| `GET /studio/handshake` | Full project schema and route manifest |
 | `GET /studio/context/summary` | Lightweight schema summary |
-| `GET /studio/health` | Health check with DB status |
+| `GET /studio/health` | Database and service health check |
 
-### 3. Test Locally with CLI
+### 5. CLI Utilities
 
 ```bash
-# Test handshake locally
+# Test the handshake endpoint from the terminal
 aksara studio handshake
 
-# View endpoint URLs
+# Print Studio endpoint URLs for your running app
 aksara studio url
 ```
-
-### 4. Connect Aksara Studio
-
-In Aksara Studio, add your application:
-
-1. Click "Add Project"
-2. Enter your app URL (e.g., `http://localhost:8000`)
-3. Studio will automatically discover your schema
 
 ## Documentation
 
@@ -76,6 +89,12 @@ In Aksara Studio, add your application:
     ---
 
     Settings and environment variables
+
+-   :material-robot: **[AI Mode](../ai-mode/index.md)**
+
+    ---
+
+    Console, flows, MCP tools, and AI analysis features
 
 </div>
 

@@ -44,8 +44,8 @@ Every `chat()` call returns this same shape:
 ```json
 {
     "ok": true,
-    "provider": "openai",
-    "model": "gpt-4o",
+    "provider": "configured-provider",
+    "model": "configured-model",
     "text": "The User model has 5 fields...",
     "tokens": {"prompt": 20, "completion": 50, "total": 70},
     "raw": {},
@@ -67,7 +67,7 @@ from aksara.ai.connectors.registry import get_connector
 connector = get_connector("openai")
 result = await connector.chat(
     messages=[{"role": "user", "content": "Hello"}],
-    model="gpt-4o",
+    model="<provider-model-name>",
 )
 ```
 
