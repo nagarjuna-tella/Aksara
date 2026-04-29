@@ -6,10 +6,10 @@ Rate limiting for API endpoints.
 
 ## Overview
 
-!!! warning "Not Yet Implemented"
-    Throttling is planned for a future release. This page outlines the planned API.
+!!! note "Roadmap Feature"
+    Built-in throttling is on the roadmap. The API below shows the planned design. Until then, use the [slowapi workaround](#current-workaround) at the bottom of this page.
 
-Throttling prevents API abuse by limiting request rates:
+Throttling will prevent API abuse by limiting request rates:
 
 ```python
 from aksara.api import ModelViewSet

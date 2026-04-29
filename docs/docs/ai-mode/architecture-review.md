@@ -1,7 +1,5 @@
 # AI Architecture Review
 
-*Added in v0.5.34*
-
 The **AI Architecture Review** is an automated architectural analysis engine
 that reads the Project Context Graph to detect anti-patterns, coupling risks,
 schema design issues, API design problems, migration risks, and performance

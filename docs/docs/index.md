@@ -92,8 +92,14 @@ from aksara.api import ModelViewSet
 # 1. Define your data structure
 class Task(Model):
     """A task in a todo list."""
-    title = fields.String(max_length=200)
-    completed = fields.Boolean(default=False)
+    title = fields.String(
+        max_length=200,
+        ai_description="Short title describing the task",
+    )
+    completed = fields.Boolean(
+        default=False,
+        ai_description="Whether the task has been finished",
+    )
     created_at = fields.DateTime(auto_now_add=True)
 
 # 2. Create the API
@@ -124,7 +130,7 @@ curl -X POST http://localhost:8000/tasks/ \
 curl http://localhost:8000/tasks/
 ```
 
-Once running, open **http://localhost:8000/studio/ui** to explore your models and queries in the built-in Studio dashboard.
+Once running, open **http://localhost:8000/studio/ui** to explore your models and queries in the built-in Studio dashboard. The `ai_description` metadata you wrote above flows through to the AI Console and to the MCP tool catalog at `/ai/tools/mcp` — no second schema required.
 
 ---
 

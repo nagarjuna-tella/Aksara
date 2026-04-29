@@ -1,7 +1,5 @@
 # AI Route Hints
 
-> **v0.5.13** Per-View AI Hints (Route-Level AI Metadata)
-
 AI Route Hints provide structured metadata for each view/route in your Aksara application. This metadata helps LLMs understand what each endpoint does, how risky operations are, and how to use them effectively.
 
 ## Overview

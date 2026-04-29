@@ -1,6 +1,6 @@
 # Bring Your Own LLM
 
-v0.5.14: Wire Aksara's AI contracts to your preferred LLM provider.
+Wire Aksara's AI contracts to your preferred LLM provider.
 
 ## Overview
 

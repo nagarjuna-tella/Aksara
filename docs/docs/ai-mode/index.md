@@ -67,6 +67,13 @@ AKSARA = {
 }
 ```
 
+!!! warning "API key required"
+    AI features that call an external LLM need a provider API key in the environment
+    (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). Ollama runs locally and needs no key.
+    If no key is set, Aksara still works — Studio, MCP exports, and prompt packs are
+    fully functional — but the AI Console and AI Flows cannot execute prompts.
+    See [Connectors](connectors.md) for the full list of environment variables.
+
 See [Providers](providers.md), [Bring Your Own LLM](bring-your-own-llm.md), and [Ollama](ollama.md) for concrete setups.
 
 ---

@@ -26,6 +26,8 @@ Welcome to Aksara! This guide will help you build your first web API from scratc
 | "I need an API" | **ViewSets** create REST endpoints automatically |
 | "I need to protect data" | **Permissions** control who can access what |
 | "I need an admin panel" | **Admin** gives you a dashboard to manage data |
+| "I want AI agents to use my API" | **MCP Tools** auto-generated from your models at `/ai/tools/mcp` |
+| "I need to debug my app" | **Doctor & Fix Plans** diagnose issues and print the remediation path |
 
 ---
 
@@ -80,6 +82,14 @@ Connect Aksara to PostgreSQL.
 Start your development server and test your API.
 
 **What you'll do:** Run your app and make your first API calls.
+
+### After Getting Started
+
+Once your app is running, explore the built-in tooling:
+
+- **[Studio](../studio/index.md)** — Visual dashboard at `/studio/ui` with an AI Console for natural-language queries
+- **[AI Mode](../ai-mode/index.md)** — MCP tool export, AI Debugger, Architecture Review, Performance Analyzer
+- **[Diagnostics](../diagnostics.md)** — `aksara doctor` checks app health; `aksara doctor fix-plan` prints the fix sequence
 
 ---
 

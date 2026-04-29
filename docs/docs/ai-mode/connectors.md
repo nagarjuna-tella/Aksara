@@ -1,7 +1,5 @@
 # AI Connectors
 
-*Added in v0.5.30*
-
 AI Connectors are pluggable adapters that translate Aksara prompt packs into
 real API calls to LLM providers.  Each connector implements a common
 `AIConnector` interface and returns a normalised response.

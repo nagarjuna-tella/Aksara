@@ -1,7 +1,5 @@
 # Interactive AI Console
 
-*Added in v0.5.31*
-
 The **Interactive AI Console** is the first AI-native development surface inside
 Aksara Studio.  Developers type natural-language commands — like
 *"explain the User model"* — and the console automatically detects intent,

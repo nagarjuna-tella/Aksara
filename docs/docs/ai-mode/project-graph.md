@@ -1,7 +1,5 @@
 # Project Context Graph
 
-*Added in v0.5.32*
-
 The **Project Context Graph** is a structured representation of your entire
 application — models, routes, queries, migrations, diagnostics, gap analysis
 results, AI Hub configuration, and AI flow actions — assembled into a single

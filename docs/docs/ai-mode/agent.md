@@ -1,14 +1,11 @@
 # Agent Mode
 
-> *v0.5.19 — Build LLM-ready system prompts from project context.*
-> *v0.5.20 — Agent Playbooks: reusable recipes for common tasks.*
-
 Agent Mode gathers structured context from your entire Aksara project and
 assembles it into a system prompt that any LLM can consume. It covers
 models, routes, migrations, diagnostics, AI profiles, AI hints, DB
 queries, and schema checksums — all in one shot.
 
-**Playbooks** (v0.5.20) are opinionated, step-by-step recipes that
+**Playbooks** are opinionated, step-by-step recipes that
 pre-configure the goal, context sections, and prompt structure for common
 development tasks like adding a field, fixing migrations, or hardening
 permissions.
@@ -120,7 +117,7 @@ other Studio endpoints.
 
 ---
 
-## Playbooks (v0.5.20)
+## Playbooks
 
 Playbooks are pre-built recipes for common LLM-assisted tasks. Each
 playbook defines a kind, category, risk level, default goal template,

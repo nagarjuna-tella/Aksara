@@ -1,7 +1,5 @@
 # AI Debugger
 
-*Added in v0.5.33*
-
 The **AI Debugger** is an automated root-cause analysis engine that examines
 your entire application — the Project Graph, event timeline, diagnostics, and
 gap analysis — to identify, cluster, and rank issues, then suggest safe fixes.

@@ -1,7 +1,5 @@
 # Agent Workflows
 
-> *v0.5.23 — Agentic Workflows v1: Plans, Not Pushes.*
-
 Agent Workflows transform a free-text goal into a **structured,
 step-by-step execution plan** that combines diagnostics, search,
 inspectors, and playbooks into a single ordered timeline. Nothing is

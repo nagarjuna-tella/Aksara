@@ -1,7 +1,5 @@
 # AI Performance Analyzer
 
-*Added in v0.5.35*
-
 The **AI Performance Analyzer** automatically analyses your application's
 query patterns, detects performance issues, and recommends improvements —
 all without modifying any code.

@@ -1,8 +1,5 @@
 # AI Profiles & Provider Contracts
 
-!!! info "v0.5.11 Feature"
-    This feature was added in Aksara v0.5.11.
-
 Aksara's AI Profiles system provides a **vendor-agnostic, pluggable description layer** for AI providers and models. This enables external agents and tools to discover your AI configuration without Aksara depending on any vendor SDKs.
 
 ## Overview
@@ -317,12 +314,9 @@ This enables a clean separation:
 
 ---
 
-## Unified AI Provider System (v0.5.25)
+## Unified AI Provider System
 
-!!! info "v0.5.25 Feature"
-    The Unified Provider System was added in Aksara v0.5.25.
-
-Starting in v0.5.25, Aksara provides a **UnifiedAiProvider** class that replaces ad-hoc
+Aksara provides a **UnifiedAiProvider** class that replaces ad-hoc
 environment variable handling with a single configuration object. See [AI Hub](hub.md)
 for the full documentation.
 

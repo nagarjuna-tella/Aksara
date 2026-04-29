@@ -1,6 +1,6 @@
 # AI Hub
 
-The **AI Hub** is Aksara's unified AI provider management interface, introduced in v0.5.25. It provides a single pane of glass for configuring, monitoring, and using AI providers across your Aksara application.
+The **AI Hub** is Aksara's unified AI provider management interface. It provides a single pane of glass for configuring, monitoring, and using AI providers across your Aksara application.
 
 ## Overview
 

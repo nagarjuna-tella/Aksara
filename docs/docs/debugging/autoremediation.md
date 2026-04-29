@@ -1,14 +1,14 @@
 # Autoremediation Hints
 
-> **v0.5.18** — Every diagnostic issue now includes structured **fix actions**
+> Every diagnostic issue includes structured **fix actions**
 > that the Studio UI, CLI, and future agents can surface and apply.
 
 ---
 
 ## Overview
 
-In v0.5.17, Aksara introduced Doctor Mode with `DiagnosticIssue` objects
-containing free-text `hint` strings. In v0.5.18, every issue also carries
+Aksara's Doctor Mode includes `DiagnosticIssue` objects
+containing free-text `hint` strings. Every issue also carries
 a list of **`DiagnosticAction`** objects — machine-readable instructions
 that UIs and automation tools can render, copy, or execute.
 

@@ -1,7 +1,5 @@
 # AI Execution Runtime
 
-*Added in v0.5.30*
-
 The execution runtime sits between AI Flow prompt packs and AI connectors.
 It resolves the provider, model, and credentials, then executes the prompt
 pack through the appropriate connector.
