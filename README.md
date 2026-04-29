@@ -92,7 +92,7 @@ Aksara is built on FastAPI.
 
 You get FastAPI's performance and full ecosystem.
 
-We built everything you'd otherwise assemble yourself.
+I built everything you'd otherwise assemble yourself.
 
 ---
 
