@@ -72,6 +72,7 @@ The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote
 ```bash
 pip install aksara
 aksara startproject myapp && cd myapp
+aksara dbsetup
 aksara migrate
 aksara dev
 ```

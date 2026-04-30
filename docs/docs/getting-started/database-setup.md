@@ -95,6 +95,16 @@ docker run -d \
 
 ## Create a Database
 
+### Using `aksara dbsetup` (Recommended)
+
+The fastest way to set up your database:
+
+```bash
+aksara dbsetup
+```
+
+This interactively checks PostgreSQL, prompts for credentials, creates the database, and writes `DATABASE_URL` to `.env`. See the [Quickstart](../quickstart.md) for the full output.
+
 ### Using psql
 
 ```bash

@@ -38,18 +38,19 @@ You now have a complete project structure.
 
 ## Step 2: Configure the Database
 
-Edit `.env` with your database connection:
+Run the interactive database setup:
 
 ```bash
-DATABASE_URL=postgresql://postgres:password@localhost:5432/taskapi
-AKSARA_DEBUG=true
+aksara dbsetup
 ```
 
-Create the database if it doesn't exist:
+This checks for PostgreSQL, prompts for credentials, creates the `taskapi` database, and writes `DATABASE_URL` to `.env`.
 
-```bash
-createdb taskapi
-```
+!!! tip "Manual alternative"
+    You can also edit `.env` directly:
+    ```bash
+    DATABASE_URL=postgresql://postgres:password@localhost:5432/taskapi
+    ```
 
 ---
 

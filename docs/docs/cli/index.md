@@ -11,7 +11,7 @@ The Aksara CLI provides commands for:
 | Category | Commands |
 |----------|----------|
 | **Project** | `startproject`, `startapp` |
-| **Database** | `makemigrations`, `migrate`, `shell` |
+| **Database** | `dbsetup`, `makemigrations`, `migrate`, `shell` |
 | **Development** | `run`, `routes`, `info` |
 | **AI** | `ai query`, `ai generate`, `ai doctor` |
 
@@ -93,6 +93,22 @@ blog/
 ---
 
 ## Database Commands
+
+### dbsetup
+
+Interactively set up a PostgreSQL database for the current project:
+
+```bash
+aksara dbsetup
+```
+
+This checks for PostgreSQL, prompts for credentials, tests the connection, creates the database, and writes `DATABASE_URL` to `.env`.
+
+Options:
+```bash
+aksara dbsetup --host db.example.com  # Custom host
+aksara dbsetup --port 5433            # Custom port
+```
 
 ### makemigrations
 

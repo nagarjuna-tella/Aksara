@@ -95,35 +95,39 @@ opsdesk/
 
 ## Step 3: Configure Your Database
 
-### Option A: Using a `.env` File (Recommended)
-
-Edit `.env`:
+Run the interactive database setup:
 
 ```bash
-DATABASE_URL=postgresql://postgres:password@localhost:5432/opsdesk
-AKSARA_DEBUG=true
+aksara dbsetup
 ```
 
-### Option B: Environment Variables
+This will:
 
-Set them in your shell:
+1. Check that PostgreSQL is running
+2. Prompt for database name, username, and password
+3. Test the connection
+4. Create the database if it doesn't exist
+5. Write `DATABASE_URL` to your `.env` file
 
-```bash
-export DATABASE_URL=postgresql://postgres:password@localhost:5432/opsdesk
-export AKSARA_DEBUG=true
+```
+  ⚡ Aksara v0.5.43 — Database Setup
+
+  → Checking for PostgreSQL...        ✓ found (localhost:5432)
+  → Database name [opsdesk]:
+  → Username [postgres]:
+  → Password:
+  → Testing connection...             ✓ connected
+  → Creating database "opsdesk"...    ✓ created
+  → Writing DATABASE_URL to .env...   ✓ done
+
+  Ready. Run `aksara migrate` to continue.
 ```
 
-### Create the Database
-
-If the database doesn't exist yet:
-
-```bash
-# Using psql
-createdb opsdesk
-
-# Or connect to PostgreSQL and create it
-psql -U postgres -c "CREATE DATABASE opsdesk;"
-```
+!!! tip "Manual configuration"
+    You can also configure the database manually by editing `.env`:
+    ```bash
+    DATABASE_URL=postgresql://postgres:password@localhost:5432/opsdesk
+    ```
 
 ---
 
@@ -448,6 +452,9 @@ pip install aksara
 ```bash
 # Create a new project
 aksara startproject <name>
+
+# Set up the database interactively
+aksara dbsetup
 
 # Create migrations
 aksara makemigrations

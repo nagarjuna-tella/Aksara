@@ -153,13 +153,19 @@ def register_routes(app):
 
 ## Step 6: Configure Database
 
-Edit your `.env` file:
+Run the interactive database setup:
 
 ```bash
-# .env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp
-DEBUG=true
+aksara dbsetup
 ```
+
+This checks for PostgreSQL, prompts for credentials, creates the database, and writes `DATABASE_URL` to `.env`.
+
+!!! tip "Manual alternative"
+    You can also edit `.env` directly:
+    ```bash
+    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/myapp
+    ```
 
 ---
 

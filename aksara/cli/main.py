@@ -359,6 +359,7 @@ def startproject(project_name: str, directory: str, template: str):
         click.echo()
         click.echo(f"    cd {project_name}")
         click.echo('    pip install -e ".[dev]"')
+        click.echo("    aksara dbsetup")
         click.echo("    aksara makemigrations --app app.models")
         click.echo("    aksara migrate")
         click.echo("    aksara run main:app --reload")
@@ -369,6 +370,273 @@ def startproject(project_name: str, directory: str, template: str):
     except Exception as e:
         click.echo(f"❌ Error creating project: {e}")
         return
+
+
+# =============================================================================
+# Database Setup Command
+# =============================================================================
+
+def _mask_password(url: str) -> str:
+    """Mask the password in a DATABASE_URL for display."""
+    # postgresql://user:pass@host:port/db → postgresql://user:***@host:port/db
+    import re as _re
+    return _re.sub(r"(://[^:]+:)[^@]+(@)", r"\1***\2", url)
+
+
+def _read_env_database_url(env_path: Path) -> Optional[str]:
+    """Read DATABASE_URL from a .env file, if present."""
+    if not env_path.exists():
+        return None
+    for line in env_path.read_text().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, _, value = stripped.partition("=")
+        if key.strip() == "DATABASE_URL":
+            return value.strip()
+    return None
+
+
+def _write_env_database_url(env_path: Path, url: str) -> None:
+    """Write or update DATABASE_URL in a .env file.
+    
+    - If .env does not exist, create it with DATABASE_URL.
+    - If .env exists but has no DATABASE_URL, append it.
+    - If .env exists and already has DATABASE_URL, replace the line.
+    """
+    if not env_path.exists():
+        env_path.write_text(f"DATABASE_URL={url}\n")
+        return
+
+    lines = env_path.read_text().splitlines(keepends=True)
+    found = False
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("#") and "=" in stripped:
+            key, _, _ = stripped.partition("=")
+            if key.strip() == "DATABASE_URL":
+                new_lines.append(f"DATABASE_URL={url}\n")
+                found = True
+                continue
+        new_lines.append(line)
+
+    if not found:
+        # Ensure trailing newline before appending
+        if new_lines and not new_lines[-1].endswith("\n"):
+            new_lines[-1] += "\n"
+        new_lines.append(f"DATABASE_URL={url}\n")
+
+    env_path.write_text("".join(new_lines))
+
+
+@cli.command()
+@click.option("--host", default="localhost", help="PostgreSQL host (default: localhost)")
+@click.option("--port", default=5432, type=int, help="PostgreSQL port (default: 5432)")
+def dbsetup(host: str, port: int):
+    """Set up a PostgreSQL database for this project.
+
+    Interactively configure database credentials, test the connection,
+    create the database, and write DATABASE_URL to .env.
+
+    Run this immediately after `aksara startproject`:
+
+        aksara startproject myapp
+        cd myapp
+        aksara dbsetup
+        aksara migrate
+
+    Example:
+        aksara dbsetup
+        aksara dbsetup --host db.example.com --port 5433
+    """
+    import getpass as _getpass
+
+    env_path = Path.cwd() / ".env"
+
+    # --- Banner ---
+    click.echo()
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m v{CLI_VERSION} — Database Setup")
+    click.echo()
+
+    # --- Check for existing DATABASE_URL ---
+    existing_url = _read_env_database_url(env_path)
+    if existing_url:
+        click.echo(f"  DATABASE_URL is already set in .env:")
+        click.echo(f"  {_mask_password(existing_url)}")
+        click.echo()
+        overwrite = click.confirm("  Overwrite it?", default=False)
+        if not overwrite:
+            click.echo()
+            click.echo("  Keeping existing configuration.")
+            click.echo()
+            return
+        click.echo()
+
+    # --- Step 1: Check PostgreSQL reachability ---
+    click.echo(f"  \033[36m→\033[0m Checking for PostgreSQL...", nl=False)
+
+    async def _check_pg():
+        import asyncpg as _asyncpg
+        try:
+            conn = await _asyncpg.connect(
+                host=host, port=port,
+                user="postgres", password="postgres",
+                database="postgres",
+                timeout=5,
+            )
+            await conn.close()
+            return True
+        except _asyncpg.InvalidPasswordError:
+            # Server is reachable but password wrong — that's fine,
+            # it means PG is running. We'll get the real creds next.
+            return True
+        except (OSError, ConnectionRefusedError, _asyncpg.CannotConnectNowError):
+            return False
+        except Exception:
+            return False
+
+    try:
+        pg_reachable = asyncio.run(_check_pg())
+    except Exception:
+        pg_reachable = False
+
+    if not pg_reachable:
+        click.echo(f"        \033[31m✗\033[0m not found on {host}:{port}")
+        click.echo()
+        click.echo("  PostgreSQL is not running or not reachable.")
+        click.echo()
+        click.echo("  Start it with one of these:")
+        click.echo()
+        click.echo("  \033[1mmacOS (Homebrew):\033[0m")
+        click.echo("    brew services start postgresql@15")
+        click.echo()
+        click.echo("  \033[1mLinux:\033[0m")
+        click.echo("    sudo systemctl start postgresql")
+        click.echo()
+        click.echo("  \033[1mDocker:\033[0m")
+        click.echo("    docker run -d --name postgres \\")
+        click.echo("      -e POSTGRES_PASSWORD=postgres \\")
+        click.echo("      -p 5432:5432 postgres:15")
+        click.echo()
+        click.echo(f"  Then run \033[1maksara dbsetup\033[0m again.")
+        click.echo()
+        sys.exit(1)
+
+    click.echo(f"        \033[32m✓\033[0m found ({host}:{port})")
+
+    # --- Step 2: Collect credentials ---
+    # Default database name: current directory name
+    default_dbname = Path.cwd().name.lower().replace("-", "_")
+    if not default_dbname.isidentifier():
+        default_dbname = "aksara_app"
+
+    db_name = click.prompt(
+        f"  \033[36m→\033[0m Database name",
+        default=default_dbname,
+    )
+    db_user = click.prompt(
+        f"  \033[36m→\033[0m Username",
+        default="postgres",
+    )
+    db_password = _getpass.getpass(
+        f"  \033[36m→\033[0m Password: ",
+    )
+
+    # --- Step 3: Test connection ---
+    click.echo(f"  \033[36m→\033[0m Testing connection...", nl=False)
+
+    async def _test_connection():
+        import asyncpg as _asyncpg
+        conn = await _asyncpg.connect(
+            host=host, port=port,
+            user=db_user, password=db_password,
+            database="postgres",  # Connect to default db first
+            timeout=5,
+        )
+        await conn.close()
+
+    try:
+        asyncio.run(_test_connection())
+    except Exception as e:
+        click.echo(f"             \033[31m✗\033[0m failed")
+        click.echo()
+        err_msg = str(e)
+        if "password authentication failed" in err_msg.lower():
+            click.echo(f"  Could not connect: password authentication failed for user \"{db_user}\"")
+        elif "does not exist" in err_msg.lower() and "role" in err_msg.lower():
+            click.echo(f"  Could not connect: role \"{db_user}\" does not exist")
+        else:
+            click.echo(f"  Could not connect: {err_msg}")
+        click.echo()
+        click.echo("  Check your username and password and try again.")
+        click.echo()
+        sys.exit(1)
+
+    click.echo(f"             \033[32m✓\033[0m connected")
+
+    # --- Step 4: Create database ---
+    click.echo(f"  \033[36m→\033[0m Creating database \"{db_name}\"...", nl=False)
+
+    async def _create_database():
+        import asyncpg as _asyncpg
+        conn = await _asyncpg.connect(
+            host=host, port=port,
+            user=db_user, password=db_password,
+            database="postgres",
+            timeout=5,
+        )
+        try:
+            # Check if database already exists
+            exists = await conn.fetchval(
+                "SELECT 1 FROM pg_database WHERE datname = $1", db_name
+            )
+            if exists:
+                return "exists"
+            # CREATE DATABASE cannot run inside a transaction block
+            await conn.execute(f'CREATE DATABASE "{db_name}"')
+            return "created"
+        finally:
+            await conn.close()
+
+    try:
+        result = asyncio.run(_create_database())
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m failed")
+        click.echo()
+        click.echo(f"  Could not create database: {e}")
+        click.echo()
+        sys.exit(1)
+
+    if result == "exists":
+        click.echo(f"  \033[36mℹ\033[0m already exists, skipping")
+    else:
+        click.echo(f"  \033[32m✓\033[0m created")
+
+    # --- Step 5: Write .env ---
+    # Build the DATABASE_URL
+    # URL-encode password in case it contains special characters
+    from urllib.parse import quote as _url_quote
+    encoded_password = _url_quote(db_password, safe="")
+    database_url = f"postgresql://{db_user}:{encoded_password}@{host}:{port}/{db_name}"
+
+    click.echo(f"  \033[36m→\033[0m Writing DATABASE_URL to .env...", nl=False)
+
+    try:
+        _write_env_database_url(env_path, database_url)
+    except Exception as e:
+        click.echo(f"  \033[31m✗\033[0m failed")
+        click.echo()
+        click.echo(f"  Could not write .env: {e}")
+        click.echo()
+        sys.exit(1)
+
+    click.echo(f"   \033[32m✓\033[0m done")
+
+    # --- Done ---
+    click.echo()
+    click.echo(f"  \033[32mReady.\033[0m Run \033[1maksara migrate\033[0m to continue.")
+    click.echo()
 
 
 # =============================================================================

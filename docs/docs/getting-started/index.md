@@ -182,8 +182,8 @@ pip install aksara
 aksara startproject myproject
 cd myproject
 
-# Configure database (edit .env)
-DATABASE_URL=postgresql://user:pass@localhost/mydb
+# Set up the database
+aksara dbsetup
 
 # Create migrations
 aksara makemigrations

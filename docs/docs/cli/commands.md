@@ -60,6 +60,33 @@ aksara startapp blog
 
 ## Database Commands
 
+### dbsetup
+
+Interactively set up a PostgreSQL database for the current project.
+
+```bash
+aksara dbsetup [options]
+```
+
+**Options:**
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--host` | PostgreSQL host | `localhost` |
+| `--port` | PostgreSQL port | `5432` |
+
+Checks for PostgreSQL, prompts for database name, username, and password, tests the connection, creates the database if needed, and writes `DATABASE_URL` to `.env`.
+
+**Examples:**
+```bash
+# Default (localhost:5432)
+aksara dbsetup
+
+# Custom host and port
+aksara dbsetup --host db.example.com --port 5433
+```
+
+---
+
 ### makemigrations
 
 Generate migrations from model changes.

@@ -114,6 +114,7 @@ app.include_viewset(TaskViewSet, prefix="/tasks")
 **Run it:**
 
 ```bash
+aksara dbsetup    # Set up the database interactively
 aksara migrate    # Create the database table
 aksara dev        # Start the development server
 ```
