@@ -430,7 +430,7 @@ docker start postgres
 
 **Solution:**
 ```bash
-createdb taskmanager
+aksara dbsetup
 ```
 
 ### "Module not found" errors

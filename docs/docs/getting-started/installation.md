@@ -104,7 +104,6 @@ Aksara requires PostgreSQL. Here are common setup methods:
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
-createdb myapp
 ```
 
 ### Ubuntu/Debian
@@ -113,7 +112,6 @@ createdb myapp
 sudo apt update
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
-sudo -u postgres createdb myapp
 ```
 
 ### Docker

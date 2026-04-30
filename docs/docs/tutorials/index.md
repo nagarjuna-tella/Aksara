@@ -143,5 +143,5 @@ cd examples/blog-api
 # Install and run
 pip install -e .
 aksara migrate
-aksara run
+aksara dev
 ```
