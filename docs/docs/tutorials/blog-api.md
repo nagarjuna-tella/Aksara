@@ -61,30 +61,13 @@ pip install aksara[all]
 
 ### Configure the Database
 
-Edit `blog_api/settings.py`:
-
-```python
-# blog_api/settings.py
-import os
-
-AKSARA = {
-    "DEBUG": True,  # Enable debug mode for development
-    "DATABASE_URL": os.getenv(
-        "DATABASE_URL",
-        "postgresql://localhost/blog_api"  # Your database connection
-    ),
-    "INSTALLED_APPS": ["blog"],  # Apps in your project
-}
-```
-
-**What this does:** Tells Aksara where your database is and which apps to load.
-
-### Create the Database
+Run the setup wizard to configure your PostgreSQL connection:
 
 ```bash
-# Using psql
-createdb blog_api
+aksara dbsetup
 ```
+
+**What this does:** Prompts for credentials, creates the `blog_api` database, and saves them to a `.env` file.
 
 ### Create the Blog App
 
@@ -119,7 +102,7 @@ class User(Model):
     """
     
     # Login fields
-    email = fields.Email(unique=True)  # unique=True means no duplicates
+    email = fields.Email(unique=True, ai_sensitive=True)  # unique=True means no duplicates, ai_sensitive protects PII from AI
     username = fields.String(max_length=150, unique=True)
     password = fields.String(max_length=128)  # Will store hashed password
     
@@ -178,7 +161,7 @@ class Post(Model):
     published_at = fields.DateTime(nullable=True)
     
     # Stats
-    view_count = fields.Integer(default=0)
+    view_count = fields.Integer(default=0, ai_agent_writable=False)  # AI should not spoof views
     
     class Meta:
         table_name = "posts"
@@ -225,7 +208,7 @@ class Comment(Model):
     )
     
     content = fields.Text()
-    is_approved = fields.Boolean(default=True)
+    is_approved = fields.Boolean(default=True, ai_agent_writable=False)  # AI cannot auto-approve comments
     
     # For nested comments (replies)
     parent = fields.ForeignKey(
@@ -658,14 +641,16 @@ app.include_router(router, prefix="/api")
 ### Start the Server
 
 ```bash
-aksara run
+aksara dev
 ```
 
 You should see:
 
 ```
+INFO:     Started server process
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     Started reloader process
 ```
 
 ### Register a User

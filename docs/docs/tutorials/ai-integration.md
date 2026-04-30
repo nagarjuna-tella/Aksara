@@ -484,7 +484,9 @@ class Post(Model):
 engine = QueryEngine(read_only=True)  # Safe!
 ```
 
-### 2. Add Descriptions to Models
+### 2. Add AI Metadata to Models
+
+Enhance AI understanding and protect sensitive data by adding AI metadata to your fields:
 
 ```python
 class Post(Model):
@@ -496,6 +498,15 @@ class Post(Model):
     title = fields.String(
         max_length=200,
         ai_description="The post's headline"
+    )
+    author_email = fields.Email(
+        ai_description="Author's email address",
+        ai_sensitive=True  # PII — excluded from AI context and tool exports
+    )
+    view_count = fields.Integer(
+        default=0,
+        ai_description="Number of times viewed",
+        ai_agent_writable=False  # AI cannot modify this field directly
     )
 ```
 

@@ -83,7 +83,7 @@ import os
 
 AKSARA = {
     "DEBUG": True,
-    "DATABASE_URL": os.getenv("DATABASE_URL", "postgresql://localhost/saas_app"),
+    "DATABASE_URL": os.getenv("DATABASE_URL"),
     "INSTALLED_APPS": ["tenants", "core"],
     
     # Multi-tenant settings
@@ -127,7 +127,7 @@ class Tenant(Model):
     )
     
     # Status
-    is_active = fields.Boolean(default=True)
+    is_active = fields.Boolean(default=True, ai_agent_writable=False)
     
     # Custom settings per tenant
     settings = fields.JSON(default=dict)
@@ -188,10 +188,10 @@ class User(Model):
     Users can belong to multiple tenants.
     """
     
-    email = fields.Email(unique=True)
+    email = fields.Email(unique=True, ai_sensitive=True)
     name = fields.String(max_length=100)
     password = fields.String(max_length=128)
-    is_active = fields.Boolean(default=True)
+    is_active = fields.Boolean(default=True, ai_agent_writable=False)
     
     class Meta:
         table_name = "users"
