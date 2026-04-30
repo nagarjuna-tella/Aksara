@@ -2,9 +2,10 @@
 CRM Example - Models
 
 Demonstrates:
-- Customer model with contact info
-- Deal model with pipeline stages and probability
-- FK relationship between Deal and Customer
+- Customer model with contact info and PII protection
+- Deal model with pipeline stages and AI write guards
+- Activity model with FK chain (Customer → Deal → Activity)
+- AI metadata: ai_description, ai_sensitive, ai_agent_writable
 """
 
 from aksara import Model, fields
@@ -15,6 +16,8 @@ class Customer(Model):
     Customer record for CRM.
     
     Stores contact information and notes about the customer.
+    Email and phone are marked ai_sensitive=True because they are PII —
+    this excludes them from AI Console context and MCP tool exports.
     """
     
     name = fields.String(
@@ -25,11 +28,13 @@ class Customer(Model):
         max_length=255,
         nullable=True,
         ai_description="Primary contact email",
+        ai_sensitive=True,  # PII — excluded from AI context and MCP exports
     )
     phone = fields.String(
         max_length=50,
         nullable=True,
         ai_description="Phone number",
+        ai_sensitive=True,  # PII — excluded from AI context and MCP exports
     )
     industry = fields.String(
         max_length=100,
@@ -43,7 +48,7 @@ class Customer(Model):
     )
     notes = fields.Text(
         nullable=True,
-        ai_description="Internal notes about the customer",
+        ai_description="Internal notes about the customer — useful for AI-powered account summaries",
     )
     created_at = fields.DateTime(
         auto_now_add=True,
@@ -66,6 +71,10 @@ class Deal(Model):
     - Pipeline stages (lead, qualified, proposal, negotiation, closed_won, closed_lost)
     - Probability percentage for forecasting
     - Expected close date
+    
+    amount and stage are marked ai_agent_writable=False because deal values
+    and stage transitions should go through explicit actions (advance_stage,
+    close_won, mark_lost), not raw AI writes.
     """
     
     # Pipeline stage choices
@@ -89,11 +98,13 @@ class Deal(Model):
         max_digits=12,
         decimal_places=2,
         ai_description="Deal value in currency",
+        ai_agent_writable=False,  # Deal values should be set by humans, not AI agents
     )
     stage = fields.String(
         max_length=50,
         default="lead",
         ai_description="Pipeline stage: lead, qualified, proposal, negotiation, closed_won, closed_lost",
+        ai_agent_writable=False,  # Use advance_stage/close_won/mark_lost actions instead
     )
     probability = fields.Integer(
         default=10,
@@ -126,3 +137,47 @@ class Deal(Model):
     def expected_revenue(self) -> float:
         """Calculate expected revenue: amount * probability / 100."""
         return float(self.amount) * (self.probability / 100)
+
+
+class Activity(Model):
+    """
+    Activity log entry for a deal.
+    
+    Tracks calls, emails, meetings, and other interactions.
+    Demonstrates a three-level FK chain: Customer → Deal → Activity.
+    
+    notes has a rich ai_description because it's exactly the kind of
+    free-text field an AI assistant would query when summarizing
+    account history.
+    """
+    
+    # Activity type choices
+    TYPE_CALL = "call"
+    TYPE_EMAIL = "email"
+    TYPE_MEETING = "meeting"
+    TYPE_NOTE = "note"
+    
+    deal = fields.ForeignKey(
+        "Deal",
+        on_delete="CASCADE",
+        ai_description="The deal this activity is associated with",
+    )
+    type = fields.String(
+        max_length=50,
+        default="note",
+        ai_description="Activity type: call, email, meeting, or note",
+    )
+    notes = fields.Text(
+        nullable=True,
+        ai_description="Free-text description of what happened — AI assistants use this to summarize deal history and recommend next steps",
+    )
+    occurred_at = fields.DateTime(
+        auto_now_add=True,
+        ai_description="When this activity took place",
+    )
+    
+    class Meta:
+        table_name = "activities"
+        ai_name = "Activity"
+        ai_description = "Interaction log entry (call, email, meeting) for a deal"
+        ai_agent_exposed = True

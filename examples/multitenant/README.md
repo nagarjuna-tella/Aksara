@@ -8,11 +8,12 @@ A minimal multi-tenant SaaS backend demonstrating Aksara patterns.
   - Name, slug (unique URL identifier)
   - Custom domain support
   - Subscription plan
-  - Active status
+  - Active status (`ai_agent_writable=False` — admin decisions only)
 
 - **User model** (tenant-scoped) with:
   - Foreign key to Tenant
-  - Email, name, role
+  - Email (`ai_sensitive=True` — PII excluded from AI context)
+  - Name, role (`ai_agent_writable=False` — access control is human-managed)
   - Roles: admin, member, viewer
 
 - **Project model** (tenant-scoped) with:
@@ -25,15 +26,39 @@ A minimal multi-tenant SaaS backend demonstrating Aksara patterns.
   - Domain-based tenant resolution
   - Query scoping to current tenant
 
+## AI Metadata Patterns
+
+| Attribute | Used On | Why |
+|-----------|---------|-----|
+| `ai_description` | Every field | Tells AI Console and MCP what each field means |
+| `ai_sensitive=True` | `User.email` | PII — excluded from AI context |
+| `ai_agent_writable=False` | `User.role`, `Tenant.is_active` | Access control and activation are human decisions |
+
+## GDPR / DPDPA — AI Context Isolation
+
+> **Important for SaaS developers**: In a multi-tenant system, AI context
+> (the data sent to the AI Console, MCP exports, and LLM prompts) **must**
+> be scoped to the current tenant. If your AI queries cross tenant boundaries,
+> you leak data between organizations.
+>
+> Aksara's tenant middleware + query scoping handles this at the ORM level,
+> but you must also ensure that any custom AI endpoints or prompt builders
+> filter by `tenant_id` before sending data to an LLM.
+
 ## Quick Start
 
 ```bash
 cd examples/multitenant
-export DATABASE_URL=postgresql://postgres:password@localhost:5432/aksara_multitenant
-createdb aksara_multitenant
+
+# Set up database interactively
+aksara dbsetup
+
+# Run migrations
 aksara makemigrations --app examples.multitenant.models
 aksara migrate
-uvicorn examples.multitenant.main:app --reload
+
+# Start server
+aksara dev
 ```
 
 ## Tenant Resolution

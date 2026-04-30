@@ -5,11 +5,10 @@ A minimal multi-tenant SaaS backend with Aksara.
 
 Quick Start:
     cd examples/multitenant
-    export DATABASE_URL=postgresql://postgres:password@localhost:5432/aksara_multitenant
-    createdb aksara_multitenant
+    aksara dbsetup
     aksara makemigrations --app examples.multitenant.models
     aksara migrate
-    uvicorn main:app --reload
+    aksara dev
 
 Endpoints:
     Welcome:   http://localhost:8000/

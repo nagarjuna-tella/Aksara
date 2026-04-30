@@ -21,25 +21,21 @@ basic_app/
 ## Setup
 
 1. Make sure you have PostgreSQL running locally
-2. Create a database:
-   ```bash
-   createdb aksara_example
-   ```
 
-3. Install dependencies:
+2. Install dependencies:
    ```bash
    cd /path/to/aksara
    pip install -e ".[dev]"
    ```
 
-4. Set database URL:
-   ```bash
-   export DATABASE_URL="postgresql://postgres:password@localhost:5432/aksara_example"
-   ```
-
-5. Apply migrations using Aksara CLI:
+3. Set up database:
    ```bash
    cd examples/basic_app
+   aksara dbsetup
+   ```
+
+4. Apply migrations using Aksara CLI:
+   ```bash
    aksara migrate --migrations-dir migrations
    ```
 
@@ -58,7 +54,7 @@ basic_app/
 
 ```bash
 cd examples/basic_app
-uvicorn main:app --reload
+aksara dev
 ```
 
 The API will be available at http://localhost:8000

@@ -5,11 +5,10 @@ A complete blogging backend with Aksara.
 
 Quick Start:
     cd examples/blog
-    export DATABASE_URL=postgresql://postgres:password@localhost:5432/aksara_blog
-    createdb aksara_blog
+    aksara dbsetup
     aksara makemigrations --app examples.blog.models
     aksara migrate
-    uvicorn main:app --reload
+    aksara dev
 
 Endpoints:
     Welcome:   http://localhost:8000/

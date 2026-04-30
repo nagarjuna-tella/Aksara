@@ -8,10 +8,11 @@ Includes API key auth, pagination defaults, and AI mode settings.
 import os
 from aksara import configure
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/aksara_crm"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Run `aksara dbsetup` or add it to .env"
+    )
 
 DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
 

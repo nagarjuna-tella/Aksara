@@ -13,8 +13,8 @@ Demonstrates:
 from typing import Optional
 from aksara import ModelViewSet, action, Request
 from fastapi import Depends, Query
-from .models import Customer, Deal
-from .serializers import CustomerSerializer, DealSerializer
+from .models import Customer, Deal, Activity
+from .serializers import CustomerSerializer, DealSerializer, ActivitySerializer
 from .auth import require_api_key
 from .settings import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
@@ -346,6 +346,15 @@ class DealViewSet(ModelViewSet):
         return {"error": "Deal is already at final stage"}
     
     @action(detail=True, methods=["POST"])
+    async def close_won(self, pk: str, request: Request):
+        """Mark a deal as won."""
+        deal = await self.model.objects.get(id=pk)
+        deal.stage = "closed_won"
+        deal.probability = 100
+        await deal.save()
+        return {"id": str(deal.id), "stage": deal.stage, "probability": 100}
+
+    @action(detail=True, methods=["POST"])
     async def mark_lost(self, pk: str, request: Request):
         """Mark a deal as lost."""
         deal = await self.model.objects.get(id=pk)
@@ -354,3 +363,28 @@ class DealViewSet(ModelViewSet):
         await deal.save()
         
         return {"id": str(deal.id), "stage": deal.stage}
+
+
+class ActivityViewSet(ModelViewSet):
+    """
+    ViewSet for deal activities.
+    
+    Endpoints:
+        GET    /api/activities/           - List activities
+        POST   /api/activities/           - Log an activity
+        GET    /api/activities/{id}/      - Get an activity
+        DELETE /api/activities/{id}/      - Delete an activity
+    
+    Query Parameters:
+        ?deal_id=<uuid>   - Filter by deal
+        ?type=call        - Filter by activity type
+    """
+    
+    model = Activity
+    serializer_class = ActivitySerializer
+    prefix = "/api/activities"
+    tags = ["CRM API"]
+    ai_exposed = True
+    
+    # Apply auth to all endpoints in this ViewSet
+    dependencies = [Depends(require_api_key)]

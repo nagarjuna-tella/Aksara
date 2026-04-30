@@ -60,15 +60,51 @@ class DemoPost(Model):
     Demo blog post model for AI examples.
     
     In a real app, you'd use your actual models.
+    
+    This model demonstrates all three AI metadata attributes:
+    - ai_description: Tells AI Console and MCP what each field means
+    - ai_sensitive: Excludes PII from AI context and MCP tool exports
+    - ai_agent_writable: Controls whether AI agents can modify the field
+    
+    These attributes flow through to:
+    - /ai/tools (AI tools discovery)
+    - /ai/tools/mcp (MCP tool catalog for AI agents)
+    - Studio AI Console context
     """
     
-    title = fields.String(max_length=200)
-    content = fields.Text()
-    tags = fields.JSON(default=[])
-    summary = fields.Text(nullable=True)
+    title = fields.String(
+        max_length=200,
+        ai_description="Post title — used by AI for content analysis and search",
+    )
+    content = fields.Text(
+        ai_description="Full post body (Markdown supported) — AI uses this for summarization and tag suggestion",
+    )
+    tags = fields.JSON(
+        default=[],
+        ai_description="List of categorization tags (e.g., ['python', 'tutorial'])",
+    )
+    summary = fields.Text(
+        nullable=True,
+        ai_description="AI-generated summary of the post content",
+    )
+    author_email = fields.String(
+        max_length=255,
+        nullable=True,
+        ai_description="Author's contact email",
+        ai_sensitive=True,  # PII — this field is excluded from AI context and MCP exports
+    )
+    is_featured = fields.Boolean(
+        default=False,
+        ai_description="Whether this post is editorially featured",
+        ai_agent_writable=False,  # Editorial decisions should be made by humans, not AI agents
+    )
     
     class Meta:
         table_name = "demo_posts"
+        ai_name = "DemoPost"
+        ai_description = "Blog posts for AI analysis, summarization, and tag suggestion demos"
+        ai_agent_exposed = True  # This model appears in /ai/tools and /ai/tools/mcp
+        ai_permissions = ["read", "write"]
 
 
 # =============================================================================

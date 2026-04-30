@@ -136,8 +136,8 @@ Most examples can be run directly:
 ```bash
 cd examples/blog
 
-# Create and configure .env
-echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/blog" > .env
+# Set up database interactively
+aksara dbsetup
 
 # Run migrations
 aksara migrate

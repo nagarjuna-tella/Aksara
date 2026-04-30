@@ -5,11 +5,10 @@ A simple CRM backend with Aksara.
 
 Quick Start:
     cd examples/crm
-    export DATABASE_URL=postgresql://postgres:password@localhost:5432/aksara_crm
-    createdb aksara_crm
+    aksara dbsetup
     aksara makemigrations --app examples.crm.models
     aksara migrate
-    uvicorn main:app --reload
+    aksara dev
 
 Endpoints:
     Welcome:    http://localhost:8000/

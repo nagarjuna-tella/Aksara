@@ -53,6 +53,7 @@ class Post(Model):
     view_count = fields.Integer(
         default=0,
         ai_description="Number of times the post has been viewed",
+        ai_agent_writable=False,  # AI agents should not modify view counts
     )
     created_at = fields.DateTime(
         auto_now_add=True,
@@ -93,6 +94,7 @@ class Comment(Model):
         max_length=255,
         nullable=True,
         ai_description="Optional email for notifications",
+        ai_sensitive=True,  # PII — excluded from AI context and MCP exports
     )
     text = fields.Text(
         ai_description="Comment content",
@@ -100,6 +102,7 @@ class Comment(Model):
     is_approved = fields.Boolean(
         default=True,
         ai_description="Whether the comment is visible (for moderation)",
+        ai_agent_writable=False,  # Moderation decisions should be made by humans, not AI agents
     )
     created_at = fields.DateTime(
         auto_now_add=True,

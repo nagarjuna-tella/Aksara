@@ -8,13 +8,13 @@ A complete blogging backend demonstrating real-world Aksara patterns.
   - Title, slug, content, excerpt
   - Tags as JSON array
   - Publish workflow (draft → published)
-  - View counter
+  - View counter (`ai_agent_writable=False` — AI can read but not modify)
   - Timestamps
 
 - **Comment model** with:
   - Foreign key to Post
-  - Author name and email
-  - Moderation (approve/reject)
+  - Author name and email (`ai_sensitive=True` — excluded from AI context)
+  - Moderation via `is_approved` (`ai_agent_writable=False` — humans moderate, not agents)
 
 - **API endpoints**:
   - `GET /api/posts/` - List posts
@@ -31,17 +31,24 @@ A complete blogging backend demonstrating real-world Aksara patterns.
 - **Studio** at `/studio/ui`
 - **AI Tools** at `/ai/tools`
 
+## AI Metadata Patterns
+
+This template demonstrates three AI metadata attributes:
+
+| Attribute | Used On | Why |
+|-----------|---------|-----|
+| `ai_description` | Every field | Tells the AI Console and MCP tool catalog what each field means |
+| `ai_sensitive=True` | `Comment.author_email` | Excludes PII from AI context and MCP exports |
+| `ai_agent_writable=False` | `Post.view_count`, `Comment.is_approved` | AI agents can read these fields but cannot modify them |
+
 ## Quick Start
 
 ```bash
 # Navigate to blog example
 cd examples/blog
 
-# Set database URL
-export DATABASE_URL=postgresql://postgres:password@localhost:5432/aksara_blog
-
-# Create database
-createdb aksara_blog
+# Set up database interactively
+aksara dbsetup
 
 # Run migrations
 aksara makemigrations --app examples.blog.models
@@ -51,7 +58,7 @@ aksara migrate
 aksara createsuperuser
 
 # Start server
-uvicorn examples.blog.main:app --reload
+aksara dev
 ```
 
 ## Endpoints

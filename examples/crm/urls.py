@@ -3,12 +3,13 @@ CRM Example - URL Configuration
 """
 
 from aksara import include_viewset
-from .views import CustomerViewSet, DealViewSet
+from .views import CustomerViewSet, DealViewSet, ActivityViewSet
 
 
 urlpatterns = [
     CustomerViewSet,
     DealViewSet,
+    ActivityViewSet,
 ]
 
 

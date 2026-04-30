@@ -3,7 +3,7 @@ CRM Example - Admin Registration
 """
 
 from aksara.contrib.admin import ModelAdmin, admin_site
-from .models import Customer, Deal
+from .models import Customer, Deal, Activity
 
 
 @admin_site.register(Customer)
@@ -22,3 +22,12 @@ class DealAdmin(ModelAdmin):
     list_display = ["title", "amount", "stage", "probability", "close_date"]
     list_filter = ["stage"]
     search_fields = ["title"]
+
+
+@admin_site.register(Activity)
+class ActivityAdmin(ModelAdmin):
+    """Admin configuration for Activity model."""
+    
+    list_display = ["type", "notes", "occurred_at"]
+    list_filter = ["type"]
+    search_fields = ["notes"]

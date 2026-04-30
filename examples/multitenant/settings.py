@@ -5,10 +5,11 @@ Multitenant Example - Settings
 import os
 from aksara import configure
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/aksara_multitenant"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Run `aksara dbsetup` or add it to .env"
+    )
 
 DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
 
@@ -21,7 +22,7 @@ configure(
     apps=["examples.multitenant"],
     enable_admin=True,
     enable_studio=True,
-    AI_MODE_ENABLED=True,
+    ai_enabled=True,
 )
 
 from aksara import settings  # noqa: E402

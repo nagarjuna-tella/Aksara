@@ -10,7 +10,7 @@ This demonstrates:
 4. Runtime client instantiation
 
 Run with:
-    uvicorn examples.ai_providers.main:app --reload
+    aksara dev
 
 Required environment variables:
     OPENAI_API_KEY=sk-...
@@ -88,8 +88,8 @@ async def lifespan(app: Aksara):
 # Create the Aksara app
 app = Aksara(
     title="AI Providers Example",
-    description="Demonstrates AI provider wiring patterns for Aksara v0.5.14",
-    version="0.5.14",
+    description="Demonstrates AI provider wiring patterns for Aksara",
+    version="0.5.43",
     lifespan=lifespan,
     settings=settings,
 )

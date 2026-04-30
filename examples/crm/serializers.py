@@ -5,7 +5,7 @@ Pydantic-based serializers for data validation.
 """
 
 from aksara.api import ModelSerializer
-from .models import Customer, Deal
+from .models import Customer, Deal, Activity
 
 
 class CustomerSerializer(ModelSerializer):
@@ -40,3 +40,14 @@ class DealForecastSerializer(ModelSerializer):
         fields = [
             "id", "title", "amount", "stage", "probability", "close_date"
         ]
+
+
+class ActivitySerializer(ModelSerializer):
+    """Serializer for Activity model."""
+    
+    class Meta:
+        model = Activity
+        fields = [
+            "id", "deal_id", "type", "notes", "occurred_at"
+        ]
+        read_only_fields = ["id", "occurred_at"]

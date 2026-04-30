@@ -5,6 +5,15 @@ Demonstrates:
 - Tenant model for SaaS multi-tenancy
 - User model scoped to Tenant
 - TenantQuerySetMixin for automatic filtering
+- AI metadata: ai_sensitive for PII, ai_agent_writable for access control
+
+IMPORTANT — GDPR / DPDPA / Data Isolation:
+    In a multi-tenant system, AI context (the data sent to the AI Console,
+    MCP exports, and LLM prompts) MUST be scoped to the current tenant.
+    If your AI queries cross tenant boundaries, you leak data between
+    organizations. Aksara's tenant middleware + query scoping handles this
+    at the ORM level, but you must also ensure that any custom AI endpoints
+    or prompt builders filter by tenant_id before sending data to an LLM.
 """
 
 from aksara import Model, fields
@@ -43,6 +52,7 @@ class Tenant(Model):
     is_active = fields.Boolean(
         default=True,
         ai_description="Whether the tenant is active",
+        ai_agent_writable=False,  # Tenant activation is an admin decision, not an AI action
     )
     metadata = fields.JSON(
         nullable=True,
@@ -81,6 +91,7 @@ class User(Model):
     email = fields.String(
         max_length=255,
         ai_description="User's email address (unique within tenant)",
+        ai_sensitive=True,  # PII — excluded from AI context and MCP exports
     )
     name = fields.String(
         max_length=200,
@@ -90,6 +101,7 @@ class User(Model):
         max_length=50,
         default="member",
         ai_description="User's role: admin, member, viewer",
+        ai_agent_writable=False,  # Role assignments are sensitive — humans control access levels
     )
     is_active = fields.Boolean(
         default=True,
