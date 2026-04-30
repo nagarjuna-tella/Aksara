@@ -6,6 +6,19 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.43] — 2026-04-30
+
+### Added — CLI Database Setup
+- **`aksara dbsetup` Command**: Introduced a new interactive CLI command to securely configure PostgreSQL database connections during onboarding. Replaces manual `createdb` and raw `psql` instructions across the framework.
+- **Environment Variables**: Enforced environment-variable-first configuration for `DATABASE_URL`, removing hardcoded credentials from project scaffold templates.
+
+### Changed — Documentation & Pedagogy Modernization
+- **AI Security Patterns**: Updated all tutorials (`Blog API`, `CRM`, `Multi-Tenant`, etc.) to explicitly teach `ai_sensitive` and `ai_agent_writable` metadata on fields. PII and mutation-restricted fields are now secure-by-default in examples.
+- **Router Correction**: Purged widespread documentation hallucination involving a DRF-style `Router` class. All tutorials, quickstarts, and API references now correctly demonstrate Aksara's actual `urlpatterns` list and `include_viewset` auto-discovery paradigms.
+- **Project Scaffold**: Overhauled the `aksara startproject` base template to include modern AI metadata parameters and rely on the new `aksara dbsetup` flow.
+
+---
+
 ## [0.5.42] — 2026-04-27
 
 ### Studio UX Redesign & Accessibility
