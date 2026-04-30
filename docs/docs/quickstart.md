@@ -200,11 +200,16 @@ class PlaybookViewSet(ModelViewSet):
 Open `app/urls.py`:
 
 ```python
-from aksara.api import Router
+from aksara import include_viewset
 from app.views import PlaybookViewSet
 
-router = Router()
-router.register("playbooks", PlaybookViewSet)
+urlpatterns = [
+    PlaybookViewSet,
+]
+
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 
 # This creates these URLs:
 # - /api/playbooks/

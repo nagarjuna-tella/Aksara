@@ -378,29 +378,33 @@ class PostViewSet(ModelViewSet):
 
 ## Routing
 
-### Router
+### URL Configuration
 
 ```python
-from aksara.api import Router
+from aksara import include_viewset
+from .views import UserViewSet, PostViewSet
 
-router = Router()
-router.register("users", UserViewSet)
-router.register("posts", PostViewSet)
+# List your ViewSets here
+urlpatterns = [
+    UserViewSet,
+    PostViewSet,
+]
 
-# Get routes
-routes = router.routes
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
-### Include ViewSet
+### Auto-Discovery (v0.3.14+)
 
 ```python
-from aksara.api import include_viewset
+from aksara.api import include_app_viewsets, include_all_app_viewsets
 
-# In urls.py
-routes = [
-    include_viewset("/users", UserViewSet),
-    include_viewset("/posts", PostViewSet, basename="post"),
-]
+# Register all ViewSets in a specific app
+include_app_viewsets(app, "blog")
+
+# Register all ViewSets across all INSTALLED_APPS
+include_all_app_viewsets(app)
 ```
 
 ### Manual Routes

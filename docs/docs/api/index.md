@@ -172,19 +172,24 @@ class TaskViewSet(ModelViewSet):
 
 ---
 
-### Routers
+### Routing
 
-**What they are:** Tools that connect URLs to ViewSets.
+**What it is:** Tools that connect URLs to ViewSets.
 
-**What they do:** Automatically create all the URL patterns.
+**What it does:** Automatically create all the URL patterns.
 
 ```python
-from aksara.api import Router
+from aksara import include_viewset
 from myapp.views import TaskViewSet, ProjectViewSet
 
-router = Router()
-router.register("tasks", TaskViewSet)      # → /api/tasks/
-router.register("projects", ProjectViewSet)  # → /api/projects/
+urlpatterns = [
+    TaskViewSet,      # → /api/tasks/
+    ProjectViewSet,   # → /api/projects/
+]
+
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 👉 **Learn more:** [Routing](routing.md)
@@ -246,11 +251,16 @@ class TaskViewSet(ModelViewSet):
 
 ```python
 # urls.py
-from aksara.api import Router
+from aksara import include_viewset
 from myapp.views import TaskViewSet
 
-router = Router()
-router.register("tasks", TaskViewSet)
+urlpatterns = [
+    TaskViewSet,
+]
+
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 **This creates:**

@@ -604,17 +604,20 @@ Create `blog/urls.py`:
 
 ```python
 # blog/urls.py
-from aksara.api import Router
+from aksara import include_viewset
 from .views import AuthViewSet, UserViewSet, PostViewSet, CommentViewSet, TagViewSet
 
-router = Router()
+urlpatterns = [
+    AuthViewSet,
+    UserViewSet,
+    PostViewSet,
+    CommentViewSet,
+    TagViewSet,
+]
 
-# Register all ViewSets
-router.register("auth", AuthViewSet, basename="auth")
-router.register("users", UserViewSet)
-router.register("posts", PostViewSet)
-router.register("comments", CommentViewSet)
-router.register("tags", TagViewSet)
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 Update your main app:
@@ -622,7 +625,7 @@ Update your main app:
 ```python
 # blog_api/app.py
 from aksara import Aksara
-from blog.urls import router
+from blog.urls import register_routes
 
 app = Aksara(
     database_url="postgresql://localhost/blog_api",
@@ -630,8 +633,8 @@ app = Aksara(
     debug=True,
 )
 
-# Register all routes under /api/
-app.include_router(router, prefix="/api")
+# Register all routes
+register_routes(app)
 ```
 
 ---

@@ -1635,7 +1635,7 @@ class UserSerializer(ModelSerializer):
 router.add_route("/users", UserViewSet)
 
 # New
-router.register("users", UserViewSet)
+include_viewset(app, UserViewSet)
 ```
 
 ### 0.2.x → 0.3.x

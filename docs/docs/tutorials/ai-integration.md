@@ -172,6 +172,7 @@ class AIQueryViewSet(ViewSet):
     Lets users ask questions in natural language.
     """
     permission_classes = [IsAuthenticated]
+    prefix = "/api/ai"
     
     @action(detail=False, methods=["POST"])
     async def query(self, request):
@@ -207,11 +208,16 @@ class AIQueryViewSet(ViewSet):
 
 ```python
 # myapp/urls.py
-from aksara.api import Router
+from aksara import include_viewset
 from .views import AIQueryViewSet
 
-router = Router()
-router.register("ai", AIQueryViewSet, basename="ai")
+urlpatterns = [
+    AIQueryViewSet,
+]
+
+def register_routes(app):
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 ### Test It

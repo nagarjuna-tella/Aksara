@@ -522,8 +522,7 @@ class TaskSerializer(ModelSerializer):
 
 ```python
 # saas_app/app.py
-from aksara import Aksara
-from aksara.api import Router
+from aksara import Aksara, include_viewset
 from tenants.middleware import TenantMiddleware
 from tenants.views import TenantViewSet, TenantMemberViewSet
 from core.views import ProjectViewSet, TaskViewSet
@@ -536,18 +535,19 @@ app = Aksara(
 # Add middleware
 app.add_middleware(TenantMiddleware)
 
-# Create router
-router = Router()
+# List your ViewSets here
+urlpatterns = [
+    # Admin routes (no tenant context needed)
+    TenantViewSet,
+    # Tenant-scoped routes
+    TenantMemberViewSet,
+    ProjectViewSet,
+    TaskViewSet,
+]
 
-# Admin routes (no tenant context needed)
-router.register("admin/tenants", TenantViewSet)
-
-# Tenant-scoped routes
-router.register("members", TenantMemberViewSet, basename="members")
-router.register("projects", ProjectViewSet)
-router.register("tasks", TaskViewSet)
-
-app.include_router(router, prefix="/api")
+# Register all routes directly on the app
+for viewset in urlpatterns:
+    include_viewset(app, viewset)
 ```
 
 ---
