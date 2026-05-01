@@ -25,7 +25,7 @@ You define a model once. Aksara generates everything else from it:
 
 ```python
 from aksara import Aksara, Model, fields
-from aksara.api import ModelViewSet
+from aksara.api import ModelViewSet, action
 
 class Incident(Model):
     title = fields.String(
@@ -47,6 +47,17 @@ class Incident(Model):
 
 class IncidentViewSet(ModelViewSet):
     model = Incident
+    
+    @action(detail=True, methods=["POST"], ai_exposed=True)
+    async def escalate(self, pk: str, request):
+        """
+        Escalate incident to critical.
+        This custom action is automatically exported as an MCP tool!
+        """
+        incident = await self.model.objects.get(id=pk)
+        incident.severity = "critical"
+        await incident.save()
+        return {"status": "escalated"}
 
 app = Aksara(database_url="postgresql://localhost/myapp")
 app.include_viewset(IncidentViewSet, prefix="/incidents")
