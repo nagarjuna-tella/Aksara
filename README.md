@@ -123,7 +123,7 @@ Most frameworks stop at the database and the HTTP layer. You define a model, you
 The same `ai_description="Short summary of the incident"` you put on a field:
 
 1. **Describes the column** for any developer reading the code
-2. **Appears in the MCP tool catalog** at `/ai/tools/mcp` so Claude, Cursor, or any MCP-compatible agent knows what that field means before calling your API
+2. **Appears in the MCP tool catalog** at `/ai/tools/mcp` so Claude, Cursor, or any MCP-compatible agent knows what that field means before calling your API. (Note: Custom ViewSet endpoints using the `@action` decorator are also automatically exported as tools).
 3. **Populates the AI Console context** so you can type "show me all critical unresolved incidents" in Studio and the AI knows which fields to query
 4. **Drives the Schema Doctor** which checks that your AI metadata is complete and consistent
 

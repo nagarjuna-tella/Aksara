@@ -63,6 +63,34 @@ async def featured(self, request):
 | `url_path` | `str` | Method name | Custom URL segment |
 | `url_name` | `str` | Method name | Route name for reverse lookups |
 | `permission_classes` | `list` | ViewSet's | Override permissions |
+| `ai_exposed` | `bool` | `True` | Expose this endpoint to AI tools and MCP exports |
+
+---
+
+## AI & MCP Integration
+
+Any action decorated with `@action` is automatically discovered by the `AiToolRegistry` and exposed to AI agents, provided `ai_exposed` is true (which is the default). 
+
+This means that if you enable the Model Context Protocol (MCP) in your app, your custom actions are automatically serialized as MCP tools available at `/ai/tools/mcp`. AI agents will read the method's docstring to understand its purpose and read its type hints to construct the JSON `inputSchema`.
+
+```python
+@action(detail=True, methods=["POST"], ai_exposed=True)
+async def submit_for_review(self, request, id: str):
+    """
+    Submit a draft for editorial review.
+    This description becomes the MCP tool description.
+    """
+    ...
+```
+
+If an endpoint is internal or sensitive, you can hide it from AI agents and MCP exports by setting `ai_exposed=False`:
+
+```python
+@action(detail=False, methods=["GET"], ai_exposed=False)
+async def internal_metrics(self, request):
+    """This will not be exported to MCP."""
+    ...
+```
 
 ---
 

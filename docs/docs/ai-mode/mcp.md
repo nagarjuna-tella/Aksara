@@ -56,6 +56,8 @@ You will receive a response shaped like this:
 
 Aksara builds MCP tool definitions from the same application surface that powers the REST API and Studio. Models, viewsets, route metadata, permissions, and AI field annotations all affect what an external agent sees.
 
+Specifically, any custom ViewSet method decorated with `@action` (which defaults to `ai_exposed=True`) is automatically parsed into an MCP tool. The AI registry uses the method's docstring for the tool's description and its type hints for the `inputSchema`.
+
 That gives you one source of truth. You define a model once, register a viewset once, and Aksara can expose that capability through HTTP, Studio, and MCP without duplicating configuration.
 
 ---
