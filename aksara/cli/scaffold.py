@@ -24,6 +24,7 @@ def get_main_py_template(project_name: str) -> str:
 A modern async API with Admin, Studio, and AI Mode built-in.
 
 Quick Start:
+    aksara dbsetup                       # Configure PostgreSQL
     aksara makemigrations --app app.models
     aksara migrate
     aksara createsuperuser  # Optional: create admin user

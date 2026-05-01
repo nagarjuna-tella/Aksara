@@ -261,13 +261,20 @@ Open `app/urls.py`:
 ```python
 """URL Configuration"""
 
-from fastapi import APIRouter
-from aksara.api import include_viewset
-
+from aksara import include_viewset
 from app.views import TaskViewSet
 
-router = APIRouter()
-include_viewset(router, TaskViewSet)
+
+# URL Patterns — list your ViewSets here
+urlpatterns = [
+    TaskViewSet,
+]
+
+
+def register_routes(app):
+    """Register all routes with the Aksara app."""
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 ---
@@ -280,7 +287,7 @@ Open `main.py` and update it:
 """Task API Application"""
 
 from aksara import Aksara
-from app.urls import router
+from app.urls import register_routes
 
 # Import settings to configure Aksara
 import settings
@@ -292,8 +299,8 @@ app = Aksara(
     debug=True,
 )
 
-# Include the API router
-app.include_router(router, prefix="/api")
+# Register ViewSets from app/urls.py
+register_routes(app)
 ```
 
 Make sure `settings.py` exists and configures the database:

@@ -242,8 +242,8 @@ An object containing information about an HTTP request (method, headers, body, u
 ### Response
 An object containing information about an HTTP response (status, headers, body).
 
-### Router
-A component that maps URL patterns to ViewSet actions.
+### Routing
+The process of connecting ViewSets to the application. In Aksara, this is done via `urlpatterns` lists in `urls.py` and `include_viewset(app, ViewSet)` — there is no separate `Router` class.
 
 ---
 

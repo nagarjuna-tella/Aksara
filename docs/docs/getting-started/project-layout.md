@@ -35,21 +35,24 @@ myproject/
 
 ### `main.py`
 
-The application entry point. Initializes the `Aksara` app and includes routers:
+The application entry point. Initializes the `Aksara` app and registers routes:
 
 ```python
 from aksara import Aksara
-from app.urls import router
+from app.urls import register_routes
+
+import settings  # noqa: F401 — configures Aksara
 
 app = Aksara(
-    database_url="postgresql://localhost/myproject",
+    database_url=settings.DATABASE_URL,
     title="My Project",
-    description="A Aksara application",
+    description="An Aksara application",
     enable_admin=True,
     debug=True,
 )
 
-app.include_router(router, prefix="/api")
+# Register ViewSets from app/urls.py
+register_routes(app)
 ```
 
 ### `settings.py`
@@ -110,12 +113,17 @@ class ArticleViewSet(ModelViewSet):
 Register your ViewSets:
 
 ```python
-from aksara.api import include_viewset
-from fastapi import APIRouter
+from aksara import include_viewset
 from app.views import ArticleViewSet
 
-router = APIRouter()
-include_viewset(router, ArticleViewSet)
+urlpatterns = [
+    ArticleViewSet,
+]
+
+def register_routes(app):
+    """Register all routes with the Aksara app."""
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
 ```
 
 ### `app/serializers.py`
@@ -223,11 +231,11 @@ installed_apps=[
 ]
 ```
 
-And include the router in `main.py`:
+And include routes in `main.py`:
 
 ```python
-from myapp.urls import router as myapp_router
-app.include_router(myapp_router, prefix="/api/myapp")
+from myapp.urls import register_routes as register_myapp
+register_myapp(app)
 ```
 
 ---

@@ -13,10 +13,11 @@ Aksara provides multiple ways to register API routes:
 - **Manual registration** — Fine-grained control
 
 ```python
-from aksara.api import include_viewset
-from myapp.viewsets import PostViewSet
+from aksara import include_viewset
+from myapp.views import PostViewSet
 
-routes = include_viewset(PostViewSet, prefix="/posts")
+# Register a ViewSet with the app
+include_viewset(app, PostViewSet)
 ```
 
 ---
@@ -26,18 +27,20 @@ routes = include_viewset(PostViewSet, prefix="/posts")
 Register a ViewSet with all its routes:
 
 ```python
-from aksara.api import include_viewset
-from myapp.viewsets import PostViewSet
+from aksara import include_viewset
+from myapp.views import PostViewSet
 
-# Basic usage
-routes = include_viewset(PostViewSet, prefix="/posts")
+# Basic usage — registers all CRUD routes at PostViewSet.prefix
+include_viewset(app, PostViewSet)
+```
 
-# With custom tags for OpenAPI
-routes = include_viewset(
-    PostViewSet,
-    prefix="/posts",
-    tags=["Blog Posts"],
-)
+`include_viewset` reads the `prefix` and `tags` from the ViewSet class:
+
+```python
+class PostViewSet(ModelViewSet):
+    model = Post
+    prefix = "/api/posts"  # Routes registered here
+    tags = ["Blog Posts"]   # OpenAPI grouping
 ```
 
 ### Generated Routes
@@ -113,69 +116,55 @@ class PostViewSet(ModelViewSet):
 
 ---
 
-## Including in App
+## Registering ViewSets
 
-### Single Router
+### Direct Registration
 
 ```python
 # main.py
-from aksara import Aksara
-from myapp.routes import routes
+from aksara import Aksara, include_viewset
+from myapp.views import PostViewSet
 
 app = Aksara()
-app.include_router(routes)
+include_viewset(app, PostViewSet)
 ```
 
-### Multiple Routers
+### Using urlpatterns (Recommended)
+
+```python
+# app/urls.py
+from aksara import include_viewset
+from app.views import UserViewSet, PostViewSet, CommentViewSet
+
+urlpatterns = [
+    UserViewSet,
+    PostViewSet,
+    CommentViewSet,
+]
+
+def register_routes(app):
+    """Register all routes with the Aksara app."""
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
+```
 
 ```python
 # main.py
 from aksara import Aksara
-from aksara.api import include_viewset
-from users.viewsets import UserViewSet
-from posts.viewsets import PostViewSet
-from comments.viewsets import CommentViewSet
+from app.urls import register_routes
 
 app = Aksara()
-
-# Add each router
-app.include_router(include_viewset(UserViewSet, prefix="/users"))
-app.include_router(include_viewset(PostViewSet, prefix="/posts"))
-app.include_router(include_viewset(CommentViewSet, prefix="/comments"))
+register_routes(app)
 ```
 
 ### With API Prefix
 
-```python
-from aksara import Aksara
-from aksara.api import include_viewset
-
-app = Aksara()
-
-# All API routes under /api/v1/
-api_v1 = include_viewset(PostViewSet, prefix="/posts")
-app.include_router(api_v1, prefix="/api/v1")
-
-# Results in: /api/v1/posts/
-```
-
-### Versioned APIs
+ViewSets define their own prefix via the `prefix` class attribute:
 
 ```python
-from aksara import Aksara
-from aksara.api import include_viewset
-from myapp.viewsets.v1 import PostViewSetV1
-from myapp.viewsets.v2 import PostViewSetV2
-
-app = Aksara()
-
-# Version 1
-v1_routes = include_viewset(PostViewSetV1, prefix="/posts")
-app.include_router(v1_routes, prefix="/api/v1", tags=["v1"])
-
-# Version 2
-v2_routes = include_viewset(PostViewSetV2, prefix="/posts")
-app.include_router(v2_routes, prefix="/api/v2", tags=["v2"])
+class PostViewSet(ModelViewSet):
+    model = Post
+    prefix = "/api/v1/posts"  # Full prefix on the ViewSet
 ```
 
 ---
@@ -235,10 +224,12 @@ app.add_route("/posts/", list_posts, methods=["GET"])
 app.add_route("/posts/{id}/", get_post, methods=["GET"])
 ```
 
-### Using APIRouter
+### Using FastAPI APIRouter
+
+For endpoints that don't fit into a ViewSet, you can use FastAPI's `APIRouter` directly:
 
 ```python
-from aksara.api import APIRouter
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -330,23 +321,25 @@ app.include_router(comment_routes)
 ## Complete Example
 
 ```python
-# routes.py
-from aksara.api import include_viewset, discover_viewsets, APIRouter
-from myapp.viewsets import (
+# app/urls.py
+from aksara import include_viewset
+from fastapi import APIRouter
+from myapp.views import (
     PostViewSet,
     AuthorViewSet,
     CategoryViewSet,
     TagViewSet,
 )
 
-# Method 1: Individual ViewSets
-post_routes = include_viewset(PostViewSet, prefix="/posts", tags=["Posts"])
-author_routes = include_viewset(AuthorViewSet, prefix="/authors", tags=["Authors"])
+# Method 1: urlpatterns list (recommended)
+urlpatterns = [
+    PostViewSet,
+    AuthorViewSet,
+    CategoryViewSet,
+    TagViewSet,
+]
 
-# Method 2: Auto-discover
-# content_routes = discover_viewsets("myapp.viewsets")
-
-# Method 3: Custom router for misc endpoints
+# Method 2: Manual FastAPI router for misc endpoints
 misc_router = APIRouter(prefix="/misc", tags=["Miscellaneous"])
 
 @misc_router.get("/health")
@@ -361,20 +354,19 @@ async def site_stats():
     }
 
 
+def register_routes(app):
+    """Register all routes with the Aksara app."""
+    for viewset in urlpatterns:
+        include_viewset(app, viewset)
+    app.include_router(misc_router)
+
+
 # main.py
 from aksara import Aksara
-from myapp.routes import post_routes, author_routes, misc_router
+from app.urls import register_routes
 
 app = Aksara()
-
-# Register all routes under /api/v1
-app.include_router(post_routes, prefix="/api/v1")
-app.include_router(author_routes, prefix="/api/v1")
-app.include_router(misc_router, prefix="/api/v1")
-
-# Or use discover_viewsets for automatic registration
-# from aksara.api import discover_viewsets
-# app.include_router(discover_viewsets("myapp"), prefix="/api/v1")
+register_routes(app)
 ```
 
 ### URLs Generated

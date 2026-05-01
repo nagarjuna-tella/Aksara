@@ -409,8 +409,10 @@ include_all_app_viewsets(app)
 
 ### Manual Routes
 
+For endpoints outside of ViewSets, use FastAPI's `APIRouter` directly:
+
 ```python
-from aksara.api import APIRouter
+from fastapi import APIRouter
 
 router = APIRouter()
 
@@ -421,6 +423,9 @@ async def custom_endpoint(request):
 @router.post("/custom/{id}")
 async def custom_action(request, id: str):
     return {"id": id}
+
+# Include in your Aksara app
+app.include_router(router)
 ```
 
 ---

@@ -122,7 +122,9 @@ GRANT ALL PRIVILEGES ON DATABASE myapp TO myappuser;
 \q
 ```
 
-### Using createdb
+### Using `createdb` (Manual Alternative)
+
+If you prefer manual database creation instead of `aksara dbsetup`:
 
 ```bash
 createdb myapp
@@ -362,6 +364,10 @@ asyncpg.exceptions.InvalidCatalogNameError: database "myapp" does not exist
 
 **Solution:**
 ```bash
+# Recommended:
+aksara dbsetup
+
+# Or manually:
 createdb myapp
 ```
 

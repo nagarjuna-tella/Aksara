@@ -41,7 +41,7 @@ app.add_middleware(
 |--------|------|---------|-------------|
 | `log_level` | `str` | `"INFO"` | Logging level |
 | `logger_name` | `str` | `"aksara.http"` | Logger name |
-| `log_request_body` | `bool` | `False` | Log request bodies |
+| `log_body` | `bool` | `False` | Log request bodies |
 | `log_response_body` | `bool` | `False` | Log response bodies |
 | `exclude_paths` | `list` | `[]` | Paths to skip |
 | `exclude_methods` | `list` | `["OPTIONS"]` | Methods to skip |
@@ -63,7 +63,7 @@ app.add_middleware(
 ```python
 app.add_middleware(
     LoggingMiddleware,
-    log_request_body=True,
+    log_body=True,
 )
 ```
 
@@ -126,7 +126,7 @@ Automatically mask sensitive fields in logs:
 ```python
 app.add_middleware(
     LoggingMiddleware,
-    log_request_body=True,
+    log_body=True,
     mask_fields=[
         "password",
         "token",
@@ -305,7 +305,7 @@ app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     LoggingMiddleware,
     log_level="INFO",
-    log_request_body=True,
+    log_body=True,
     log_response_body=False,
     exclude_paths=[
         "/health",

@@ -501,7 +501,7 @@ async def verify_email(request):
 
 ```python
 # auth/routes.py
-from aksara.api import APIRouter
+from fastapi import APIRouter
 from aksara.contrib.auth import (
     User, authenticate, login, logout,
     hash_password, check_password,

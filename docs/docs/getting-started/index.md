@@ -160,7 +160,7 @@ Each piece has a specific job:
 | **Model** | Define what data looks like | `app/models.py` |
 | **Serializer** | Convert between Python and JSON | `app/serializers.py` |
 | **ViewSet** | Handle API requests | `app/views.py` |
-| **Router** | Map URLs to ViewSets | `app/urls.py` |
+| **URL Config** | Register ViewSets with the app | `app/urls.py` |
 
 ---
 
