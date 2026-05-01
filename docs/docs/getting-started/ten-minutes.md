@@ -74,10 +74,23 @@ Open `app/models.py` and add a `Book` model:
 from aksara import Model, fields
 
 class Book(Model):
-    title = fields.String(max_length=200)
-    author = fields.String(max_length=200)
-    published = fields.Boolean(default=False)
-    pages = fields.Integer(nullable=True)
+    title = fields.String(
+        max_length=200,
+        ai_description="Title of the book"
+    )
+    author = fields.String(
+        max_length=200,
+        ai_description="Author's full name"
+    )
+    published = fields.Boolean(
+        default=False,
+        ai_description="Whether the book is published",
+        ai_agent_writable=False
+    )
+    pages = fields.Integer(
+        nullable=True,
+        ai_description="Total number of pages"
+    )
 
     class Meta:
         table_name = "books"

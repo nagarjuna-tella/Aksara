@@ -167,6 +167,8 @@ Default `installed_apps`:
 | `mcp_enabled` | `bool` | `False` | Enable MCP protocol |
 | `ai_debug_enabled` | `bool` | `True` | Enable AI debug suggestions |
 
+> *`mcp_enabled` and `ai_enabled` default to `False` for explicit opt-in. In practice, enabling `ai_enabled=True` is sufficient — MCP tool generation activates automatically. Set both to `True` if you need granular control.*
+
 ```python
 configure(
     ai_enabled=True,

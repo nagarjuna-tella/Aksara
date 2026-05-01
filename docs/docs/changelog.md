@@ -33,6 +33,20 @@ All notable changes to Aksara.
 
 ---
 
+## [0.5.41] — Security Hardening & AI Module Consolidation
+
+### Security
+- **S1** — Added `validate_patch_ast()` which parses AI-generated code patches with `ast.parse` before applying them and rejects dangerous built-ins, imports, and attribute accesses.
+- **S2** — Split Studio protection into two independent FastAPI router dependencies: `_check_studio_origin` (CSRF prevention via Origin/Referer) and `verify_studio_auth` (session credentials).
+- **S3** — Added HMAC-SHA256 signed agent tokens using stdlib only. Prevents timing attacks with `hmac.compare_digest`.
+- **S4** — Added `sanitize_identifier()` and `sanitize_column_type()` for strict input sanitization for AI-generated SQL to prevent SQL injection.
+
+### Refactoring
+- **A1** — Audited LLM client adapters to confirm all HTTP communication uses Python stdlib `urllib`.
+- **A2** — Merged intent engine v2.
+
+---
+
 ## [0.5.36] — 2026-03-04
 
 ### Fixed — AI Sanity Sweep & Integration Hardening

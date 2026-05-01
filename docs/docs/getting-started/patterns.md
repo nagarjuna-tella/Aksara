@@ -198,7 +198,7 @@ ls examples/ai_providers/
 
 After creating your project:
 
-1. **Configure your database** – Edit `.env` with your DATABASE_URL
+1. **Configure your database** – Run `aksara dbsetup` locally, or edit `.env` directly for remote/production environments
 2. **Run migrations** – `aksara migrate`
 3. **Start the server** – `aksara dev`
 4. **Explore** – Visit `/admin/` and `/studio/ui`

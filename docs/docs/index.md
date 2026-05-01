@@ -7,7 +7,7 @@
 **Aksara** is a Python backend framework that ships with everything you need to go from an empty directory to a running, AI-ready API. Define your models, get a full REST API, an admin interface, a visual Studio dashboard, an interactive AI Console, and auto-generated MCP tools — all from the same codebase.
 
 [Get Started →](quickstart.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/aksara-orm/aksara){ .md-button }
+[View on GitHub](https://github.com/nagarjuna-tella/Aksara){ .md-button }
 
 </div>
 
@@ -326,8 +326,8 @@ The latest release includes:
 ## Getting Help
 
 - **Documentation** — You're reading it!
-- **GitHub Issues** — [Report bugs or request features](https://github.com/aksara-orm/aksara/issues)
-- **Discussions** — [Ask questions](https://github.com/aksara-orm/aksara/discussions)
+- **GitHub Issues** — [Report bugs or request features](https://github.com/nagarjuna-tella/Aksara/issues)
+- **Discussions** — [Ask questions](https://github.com/nagarjuna-tella/Aksara/discussions)
 
 ---
 

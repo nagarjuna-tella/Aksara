@@ -43,7 +43,7 @@ poetry add aksara
 For development or the latest unreleased features:
 
 ```bash
-git clone https://github.com/aksara-orm/aksara.git
+git clone https://github.com/nagarjuna-tella/Aksara.git
 cd aksara
 pip install -e ".[dev]"
 ```
