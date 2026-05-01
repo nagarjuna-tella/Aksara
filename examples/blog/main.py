@@ -47,7 +47,7 @@ app = Aksara(
     enable_admin=True,
     middlewares=[
         (RequestIdMiddleware, {}),
-        (LoggingMiddleware, {"log_request_body": False}),
+        (LoggingMiddleware, {"log_body": False}),
     ],
 )
 
