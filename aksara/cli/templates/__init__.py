@@ -13,6 +13,7 @@ Available templates:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
@@ -160,6 +161,7 @@ def apply_project_name_substitutions(
     Replaces:
     - Template-specific names (e.g., "Blog Example" -> "MyProject")
     - Module references (e.g., "examples.blog" -> "app")
+    - Relative imports (e.g., "from . import X" -> "import X")
     """
     # Title substitutions
     title_map = {
@@ -184,5 +186,12 @@ def apply_project_name_substitutions(
         
         # Replace module paths (examples.X -> app)
         content = content.replace(f"examples.{template_name}", "app")
+
+    # Convert relative imports to absolute imports so the generated project
+    # works as a standalone app (not a sub-package).
+    # `from . import X [as Y]` -> `import X [as Y]`
+    content = re.sub(r'^(\s*)from \. import ', r'\1import ', content, flags=re.MULTILINE)
+    # `from .module import X` -> `from module import X`
+    content = re.sub(r'^(\s*)from \.(\w)', r'\1from \2', content, flags=re.MULTILINE)
     
     return content

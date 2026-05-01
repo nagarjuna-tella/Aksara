@@ -174,6 +174,28 @@ class TestProjectNameSubstitutions:
         assert "from app.models import Post" in result
         assert "examples.blog" not in result
 
+    def test_relative_imports_converted_to_absolute(self):
+        """Relative imports must be rewritten as absolute imports."""
+        from aksara.cli.templates import apply_project_name_substitutions
+
+        content = (
+            "from . import settings as _  # noqa: F401\n"
+            "from . import models  # noqa: F401\n"
+            "from .urls import register_routes\n"
+            "from .settings import DATABASE_URL, DEBUG\n"
+            "from .models import Post, Comment\n"
+        )
+        result = apply_project_name_substitutions(content, "blog", "myproject")
+
+        assert "import settings as _  # noqa: F401" in result
+        assert "import models  # noqa: F401" in result
+        assert "from urls import register_routes" in result
+        assert "from settings import DATABASE_URL, DEBUG" in result
+        assert "from models import Post, Comment" in result
+        # Ensure no relative dot imports remain
+        assert "from . import" not in result
+        assert "from ." not in result
+
 
 class TestCLIIntegration:
     """Test CLI command integration."""
