@@ -142,11 +142,12 @@ class PostViewSet(ModelViewSet):
             "total": total,
         }
     
-    @action(detail=True, methods=["POST"])
+    @action(detail=True, methods=["POST"], ai_exposed=True)
     async def publish(self, pk: str, request: Request):
         """
         Publish a post.
         
+        This description becomes the MCP tool description for AI agents.
         Sets is_published=True and records published_at timestamp.
         """
         post = await self.model.objects.get(id=pk)
@@ -159,9 +160,9 @@ class PostViewSet(ModelViewSet):
             "published_at": post.published_at.isoformat()
         }
     
-    @action(detail=True, methods=["POST"])
+    @action(detail=True, methods=["POST"], ai_exposed=False)
     async def unpublish(self, pk: str, request: Request):
-        """Unpublish a post."""
+        """Unpublish a post. (Hidden from AI/MCP via ai_exposed=False)"""
         post = await self.model.objects.get(id=pk)
         post.is_published = False
         await post.save()

@@ -146,18 +146,21 @@ class UserViewSet(ModelViewSet):
             data["tenant_id"] = str(tenant.id)
         return await super().perform_create(data, request)
     
-    @action(detail=False, methods=["GET"])
+    @action(detail=False, methods=["GET"], ai_exposed=False)
     async def me(self, request: Request):
-        """Get current user info (placeholder)."""
+        """Get current user info. (Hidden from AI/MCP via ai_exposed=False)"""
         tenant = get_current_tenant()
         return {
             "tenant_id": str(tenant.id) if tenant else None,
             "tenant_name": tenant.name if tenant else None,
         }
     
-    @action(detail=False, methods=["GET"])
+    @action(detail=False, methods=["GET"], ai_exposed=True)
     async def admins(self, request: Request):
-        """List admin users in current tenant."""
+        """
+        List admin users in current tenant.
+        This description becomes the MCP tool description for AI agents.
+        """
         tenant = get_current_tenant()
         if not tenant:
             return {"error": "Tenant required"}

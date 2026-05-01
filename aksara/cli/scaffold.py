@@ -697,17 +697,20 @@ class PostViewSet(ModelViewSet):
     # AI exposure (default: True for ModelViewSet)
     ai_exposed = True
     
-    @action(detail=True, methods=["POST"])
+    @action(detail=True, methods=["POST"], ai_exposed=True)
     async def publish(self, pk: str, request: Request):
-        """Publish a post (custom action example)."""
+        """
+        Publish a post (custom action example).
+        This description becomes the MCP tool description for AI agents.
+        """
         post = await self.model.objects.get(id=pk)
         post.is_published = True
         await post.save()
         return {{"status": "published", "id": str(post.id)}}
     
-    @action(detail=True, methods=["POST"])
+    @action(detail=True, methods=["POST"], ai_exposed=False)
     async def increment_views(self, pk: str, request: Request):
-        """Increment view count (custom action example)."""
+        """Increment view count. (Hidden from AI/MCP via ai_exposed=False)."""
         post = await self.model.objects.get(id=pk)
         post.view_count += 1
         await post.save()

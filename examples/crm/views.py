@@ -257,10 +257,11 @@ class DealViewSet(ModelViewSet):
             "total": total,
         }
     
-    @action(detail=True, methods=["GET"])
+    @action(detail=True, methods=["GET"], ai_exposed=True)
     async def forecast(self, pk: str, request: Request):
         """
         Get forecast for a specific deal.
+        This description becomes the MCP tool description for AI agents.
         
         Returns:
             - Deal details
@@ -345,9 +346,9 @@ class DealViewSet(ModelViewSet):
         
         return {"error": "Deal is already at final stage"}
     
-    @action(detail=True, methods=["POST"])
+    @action(detail=True, methods=["POST"], ai_exposed=False)
     async def close_won(self, pk: str, request: Request):
-        """Mark a deal as won."""
+        """Mark a deal as won. (Hidden from AI/MCP via ai_exposed=False)"""
         deal = await self.model.objects.get(id=pk)
         deal.stage = "closed_won"
         deal.probability = 100
