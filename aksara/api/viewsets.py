@@ -60,6 +60,8 @@ if TYPE_CHECKING:
     from aksara.manager import QuerySet
     from aksara.api.serializers import ModelSerializer
     from aksara.permissions import BasePermission
+    from aksara.api.filters import BaseFilterBackend
+    from aksara.api.pagination import BasePagination
 
 
 class ModelViewSet:
@@ -101,9 +103,16 @@ class ModelViewSet:
     tags: Optional[List[str]] = None
     lookup_field: str = "id"
     
-    # Pagination defaults
+    # Pagination
     default_limit: int = 20
     max_limit: int = 100
+    pagination_class: Optional[Type["BasePagination"]] = None
+    
+    # Filtering
+    filter_backends: List[Type["BaseFilterBackend"]] = []
+    search_fields: List[str] = []
+    ordering_fields: List[str] = []
+    ordering: Optional[Union[str, List[str]]] = None
     
     # v0.3.10: Permission classes
     permission_classes: List[Type["BasePermission"]] = []
@@ -351,7 +360,7 @@ class ModelViewSet:
         self.check_permissions(request)
         self.check_ai_access(request)
         
-        queryset = self.get_queryset(**filters)
+        queryset = self.get_queryset(request=request, **filters)
         return await self._paginate(queryset, limit, offset, request=request)
     
     async def retrieve(
@@ -543,13 +552,14 @@ class ModelViewSet:
     # Helper Methods
     # =========================================================================
     
-    def get_queryset(self, **filters: Any) -> "QuerySet":
+    def get_queryset(self, request: Optional[Request] = None, **filters: Any) -> "QuerySet":
         """
         Get the base queryset for list operations.
         
         Override this to customize filtering logic.
         
         Args:
+            request: Optional FastAPI request for filter backends
             **filters: Filter parameters from query string
             
         Returns:
@@ -558,9 +568,17 @@ class ModelViewSet:
         # Remove None values from filters
         valid_filters = {k: v for k, v in filters.items() if v is not None}
         
+        queryset = self.model.objects.filter()
         if valid_filters:
-            return self.model.objects.filter(**valid_filters)
-        return self.model.objects.filter()
+            queryset = queryset.filter(**valid_filters)
+            
+        # Apply filter backends
+        if request and self.filter_backends:
+            for backend_class in self.filter_backends:
+                backend = backend_class()
+                queryset = backend.filter_queryset(request, queryset, self)
+                
+        return queryset
     
     async def _paginate(
         self,
@@ -581,6 +599,23 @@ class ModelViewSet:
         Returns:
             Dict with count and results
         """
+        if self.pagination_class and request:
+            paginator = self.pagination_class()
+            queryset = await paginator.paginate_queryset(queryset, request)
+            
+            # Use limit/offset from paginator for fetch_with_pagination
+            limit = getattr(paginator, "limit", limit)
+            offset = getattr(paginator, "offset", offset)
+            
+            results = await self._fetch_with_pagination(queryset, limit, offset)
+            serialized_data = [
+                self._serialize(item, action='list', request=request)
+                for item in results
+            ]
+            
+            return paginator.get_paginated_response(serialized_data)
+        
+        # Fallback to default limit/offset pagination if no class defined
         # Enforce max limit
         limit = min(limit, self.max_limit)
         

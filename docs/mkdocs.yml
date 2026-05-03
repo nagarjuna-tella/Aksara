@@ -56,6 +56,10 @@ nav:
       - Fields: orm/fields.md
       - Relations: orm/relations.md
       - Querying: orm/querying.md
+      - Bulk Operations: orm/bulk-operations.md
+      - Soft Deletes: orm/soft-deletes.md
+      - Signals: orm/signals.md
+      - Fixtures: orm/fixtures.md
       - Migrations: orm/migrations.md
       - Model Meta: orm/model-meta.md
   - API:
@@ -63,6 +67,8 @@ nav:
       - ViewSets: api/viewsets.md
       - Actions: api/actions.md
       - Serializers: api/serializers.md
+      - Filtering & Search: api/filtering.md
+      - Pagination: api/pagination.md
       - Routing: api/routing.md
       - Permissions: api/permissions.md
       - Authentication: api/authentication.md

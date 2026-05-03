@@ -80,6 +80,18 @@ from aksara.api.prefetch import (
     prefetch_foreign_keys,
     prefetch_for_serializer,
 )
+from aksara.api.filters import (
+    BaseFilterBackend,
+    DjangoFilterBackend,
+    SearchFilter,
+    OrderingFilter,
+)
+from aksara.api.pagination import (
+    BasePagination,
+    LimitOffsetPagination,
+    PageNumberPagination,
+    CursorPagination,
+)
 
 __all__ = [
     # ViewSet
@@ -111,4 +123,14 @@ __all__ = [
     "generate_read_schema",
     "get_schemas_for_model",
     "clear_schema_cache",
+    # Filter Backends (v0.5.44)
+    "BaseFilterBackend",
+    "DjangoFilterBackend",
+    "SearchFilter",
+    "OrderingFilter",
+    # Pagination Classes (v0.5.44)
+    "BasePagination",
+    "LimitOffsetPagination",
+    "PageNumberPagination",
+    "CursorPagination",
 ]

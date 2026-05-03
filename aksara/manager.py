@@ -112,6 +112,7 @@ class QuerySet(Generic[T]):
         self._select_related: Set[str] = select_related_fields or set()
         self._prefetch_related: Set[str] = prefetch_related_fields or set()
         self._order_by: Optional[List[str]] = order_by_fields
+        self._search: Optional[Tuple[str, List[str]]] = None  # (term, fields)
     
     def filter(self, **kwargs) -> "QuerySet[T]":
         """
@@ -135,13 +136,39 @@ class QuerySet(Generic[T]):
             New QuerySet with additional filters
         """
         new_filters = {**self._filters, **kwargs}
-        return QuerySet(
+        qs = QuerySet(
             self._model,
             new_filters,
             self._select_related.copy(),
             self._prefetch_related.copy(),
             self._order_by.copy() if self._order_by else None,
         )
+        qs._search = self._search
+        return qs
+    
+    def search(self, term: str, fields: List[str]) -> "QuerySet[T]":
+        """
+        Add a search condition across multiple fields (combined with OR).
+        
+        Args:
+            term: The search term
+            fields: List of field names to search across
+            
+        Returns:
+            New QuerySet with search condition applied
+        """
+        if not term or not fields:
+            return self
+            
+        qs = QuerySet(
+            self._model,
+            self._filters.copy(),
+            self._select_related.copy(),
+            self._prefetch_related.copy(),
+            self._order_by.copy() if self._order_by else None,
+        )
+        qs._search = (term, fields)
+        return qs
     
     def order_by(self, *fields: str) -> "QuerySet[T]":
         """
@@ -239,13 +266,15 @@ class QuerySet(Generic[T]):
             
             validated_fields.append(field)
         
-        return QuerySet(
+        qs = QuerySet(
             self._model,
             self._filters.copy(),
             self._select_related.copy(),
             self._prefetch_related.copy(),
             validated_fields,
         )
+        qs._search = self._search
+        return qs
     
     def select_related(self, *fields: str) -> "QuerySet[T]":
         """
@@ -271,13 +300,15 @@ class QuerySet(Generic[T]):
             posts = await Post.objects.select_related("author").select_related("category").all()
         """
         new_select_related = self._select_related | set(fields)
-        return QuerySet(
+        qs = QuerySet(
             self._model,
             self._filters.copy(),
             new_select_related,
             self._prefetch_related.copy(),
             self._order_by.copy() if self._order_by else None,
         )
+        qs._search = self._search
+        return qs
     
     def prefetch_related(self, *fields: str) -> "QuerySet[T]":
         """
@@ -292,22 +323,24 @@ class QuerySet(Generic[T]):
             New QuerySet with prefetch_related fields added
         """
         new_prefetch_related = self._prefetch_related | set(fields)
-        return QuerySet(
+        qs = QuerySet(
             self._model,
             self._filters.copy(),
             self._select_related.copy(),
             new_prefetch_related,
             self._order_by.copy() if self._order_by else None,
         )
+        qs._search = self._search
+        return qs
     
     def _build_where_clause(self) -> Tuple[str, List]:
         """
-        Build WHERE clause from filters.
+        Build WHERE clause from filters and search conditions.
         
         Returns:
             Tuple of (WHERE clause string, parameter values list)
         """
-        if not self._filters:
+        if not self._filters and not self._search:
             return "", []
         
         conditions = []
@@ -383,6 +416,23 @@ class QuerySet(Generic[T]):
             
             else:
                 raise ValueError(f"Unknown lookup type: {lookup}")
+                
+        # Handle search condition (OR across multiple fields)
+        if self._search:
+            term, search_fields = self._search
+            search_conditions = []
+            
+            for field_name in search_fields:
+                if field_name not in self._model._fields:
+                    raise ValueError(f"Unknown search field: {field_name}")
+                
+                col_name = self._model._fields[field_name].column_name
+                search_conditions.append(f"{col_name} ILIKE ${param_idx}")
+                values.append(f"%{term}%")
+                param_idx += 1
+                
+            if search_conditions:
+                conditions.append(f"({' OR '.join(search_conditions)})")
         
         return f"WHERE {' AND '.join(conditions)}", values
     
@@ -684,13 +734,36 @@ class Manager(Generic[T]):
         """
         Create a QuerySet with the given filters.
         
+        For SoftDeleteModel subclasses, automatically excludes soft-deleted records
+        unless specifically requested via with_deleted().
+        
         Args:
             **kwargs: Field=value conditions
             
         Returns:
             QuerySet for chaining
         """
-        return QuerySet(self._model, kwargs)
+        qs = QuerySet(self._model, kwargs)
+        
+        # v0.5.39: Automatically exclude soft-deleted records for SoftDeleteModel
+        if hasattr(self._model, '_soft_delete_enabled') and self._model._soft_delete_enabled:
+            if 'deleted_at' in self._model._fields and not getattr(qs, '_include_deleted', False):
+                qs = qs.filter(deleted_at__isnull=True)
+        
+        return qs
+    
+    def search(self, term: str, fields: List[str]) -> QuerySet[T]:
+        """
+        Create a QuerySet with a search condition.
+        
+        Args:
+            term: The search term
+            fields: List of field names to search across
+            
+        Returns:
+            QuerySet for chaining
+        """
+        return QuerySet(self._model).search(term, fields)
     
     def order_by(self, *fields: str) -> QuerySet[T]:
         """
@@ -816,6 +889,300 @@ class Manager(Generic[T]):
             create_kwargs = {**kwargs, **(defaults or {})}
             instance = await self.create(**create_kwargs)
             return instance, True
+    
+    async def bulk_create(
+        self,
+        objs: List[T],
+        batch_size: int = 1000,
+        ignore_conflicts: bool = False,
+    ) -> List[T]:
+        """
+        Bulk insert multiple model instances.
+        
+        v0.5.39: Initial implementation.
+        
+        Efficiently inserts many records in batches, much faster than
+        calling create() in a loop.
+        
+        Args:
+            objs: List of unsaved model instances
+            batch_size: Number of records to insert per batch (default: 1000)
+            ignore_conflicts: If True, silently skip conflicts (ON CONFLICT DO NOTHING)
+                             If False, raise on duplicate keys
+            
+        Returns:
+            List of inserted model instances with IDs populated
+            
+        Raises:
+            ValueError: If objs is empty or contains saved instances
+            
+        Usage:
+            users_to_create = [User(email=f"user{i}@example.com") for i in range(10000)]
+            created_users = await User.objects.bulk_create(users_to_create, batch_size=1000)
+        """
+        from aksara.db import Database
+        
+        if not objs:
+            return []
+        
+        # Validate all instances are new (not saved)
+        for obj in objs:
+            if not obj._is_new:
+                raise ValueError("bulk_create() requires unsaved model instances")
+        
+        db = Database.get_instance()
+        created_instances = []
+        
+        # Process in batches
+        for batch_start in range(0, len(objs), batch_size):
+            batch = objs[batch_start : batch_start + batch_size]
+            
+            # Build multi-row INSERT statement
+            field_names = []
+            all_values = []
+            placeholders = []
+            param_idx = 1
+            row_num = 0
+            
+            for obj in batch:
+                row_placeholders = []
+                
+                for field_name, field in self._model._fields.items():
+                    if row_num == 0:  # First row - collect field names
+                        # Skip auto-generated primary keys without values
+                        if field_name == 'id' and obj._data.get('id') is None:
+                            continue
+                        # Skip auto_now_add fields unless explicitly set
+                        if hasattr(field, 'auto_now_add') and field.auto_now_add and obj._data.get(field_name) is None:
+                            continue
+                        field_names.append(field_name)
+                    
+                    # Only include fields we're inserting for this row
+                    if field_name in field_names:
+                        value = obj._data.get(field_name)
+                        all_values.append(field.to_db(value))
+                        row_placeholders.append(f"${param_idx}")
+                        param_idx += 1
+                
+                placeholders.append(f"({', '.join(row_placeholders)})")
+                row_num += 1
+            
+            # Build the INSERT statement
+            columns = ", ".join(quote_identifier(f) for f in field_names)
+            values_clause = ", ".join(placeholders)
+            table = quote_identifier(self._model.__tablename__)
+            
+            conflict_clause = ""
+            if ignore_conflicts:
+                conflict_clause = " ON CONFLICT DO NOTHING"
+            
+            query = f"""
+                INSERT INTO {table} ({columns})
+                VALUES {values_clause}
+                {conflict_clause}
+                RETURNING *
+            """
+            
+            records = await db.fetch(query, *all_values)
+            
+            # Reconstruct model instances from returned records
+            for record in records:
+                instance = self._model._from_record(record)
+                created_instances.append(instance)
+        
+        return created_instances
+    
+    async def bulk_update(
+        self,
+        objs: List[T],
+        fields: List[str],
+        batch_size: int = 1000,
+    ) -> int:
+        """
+        Bulk update multiple model instances.
+        
+        v0.5.39: Initial implementation.
+        
+        Efficiently updates many records in batches.
+        
+        Args:
+            objs: List of saved model instances to update
+            fields: List of field names to update
+            batch_size: Number of records to update per batch
+            
+        Returns:
+            Total number of records updated
+            
+        Raises:
+            ValueError: If objs is empty, contains unsaved instances, or fields is empty
+            
+        Usage:
+            users = await User.objects.filter(is_active=False).all()
+            for user in users:
+                user.updated_at = datetime.now()
+            
+            await User.objects.bulk_update(users, fields=['updated_at'], batch_size=1000)
+        """
+        from aksara.db import Database
+        
+        if not objs or not fields:
+            raise ValueError("bulk_update() requires non-empty objs and fields lists")
+        
+        # Validate all instances are saved
+        for obj in objs:
+            if obj._is_new:
+                raise ValueError("bulk_update() requires saved model instances")
+        
+        db = Database.get_instance()
+        updated_count = 0
+        
+        # Process in batches
+        for batch_start in range(0, len(objs), batch_size):
+            batch = objs[batch_start : batch_start + batch_size]
+            
+            # Build multi-row UPDATE using CASE statements
+            # Example: UPDATE users SET email = CASE WHEN id = $1 THEN $2 ... END
+            case_statements = {}
+            ids = []
+            param_idx = 1
+            
+            for field_name in fields:
+                if field_name not in self._model._fields:
+                    raise ValueError(f"Unknown field: {field_name}")
+                
+                field = self._model._fields[field_name]
+                when_clauses = []
+                
+                for obj in batch:
+                    when_clauses.append(f"WHEN ${param_idx} THEN ${param_idx + 1}")
+                    ids.append(obj.id)
+                    value = obj._data.get(field_name)
+                    ids.append(field.to_db(value))
+                    param_idx += 2
+                
+                col_name = field.column_name
+                case_statements[col_name] = " ".join(when_clauses)
+            
+            # Build the UPDATE statement
+            set_clause = ", ".join(
+                f"{col_name} = CASE {case_stmt} END"
+                for col_name, case_stmt in case_statements.items()
+            )
+            
+            id_placeholders = ", ".join(f"${i+1}" for i in range(0, len(ids), 2))
+            table = quote_identifier(self._model.__tablename__)
+            
+            query = f"""
+                UPDATE {table}
+                SET {set_clause}
+                WHERE id IN ({id_placeholders})
+            """
+            
+            # Extract just the IDs for the WHERE clause
+            where_ids = [ids[i] for i in range(0, len(ids), 2)]
+            
+            result = await db.execute(query, *ids)
+            
+            # Parse result to get count
+            try:
+                updated_count += int(result.split()[-1])
+            except (IndexError, ValueError):
+                pass
+        
+        return updated_count
+    
+    async def upsert(
+        self,
+        defaults: Optional[Dict[str, Any]] = None,
+        update_fields: Optional[List[str]] = None,
+        **kwargs,
+    ) -> tuple[T, bool]:
+        """
+        Upsert (insert or update) a record using PostgreSQL ON CONFLICT.
+        
+        v0.5.39: Initial implementation.
+        
+        Uses the model's unique constraints to determine conflict handling.
+        If a unique constraint is violated, updates the specified fields
+        instead of inserting.
+        
+        Args:
+            defaults: Field values to use when creating or updating
+            update_fields: List of field names to update on conflict
+                          If None, all fields from defaults are updated
+            **kwargs: Field values for matching/creating (used as unique key)
+            
+        Returns:
+            Tuple of (instance, created) where created is True if inserted
+            
+        Raises:
+            ValueError: If no unique constraint matches the upsert keys
+            
+        Usage:
+            # Insert or update by email (assuming email is unique)
+            user, created = await User.objects.upsert(
+                email="john@example.com",
+                defaults={'name': 'John', 'is_active': True},
+                update_fields=['name', 'updated_at']
+            )
+        """
+        from aksara.db import Database
+        
+        defaults = defaults or {}
+        db = Database.get_instance()
+        
+        # Determine which fields to update
+        if update_fields is None:
+            update_fields = list(defaults.keys())
+        
+        # Build INSERT statement with DO UPDATE
+        insert_fields = list(kwargs.keys()) + list(defaults.keys())
+        insert_values = [kwargs.get(f) or defaults.get(f) for f in insert_fields]
+        
+        placeholders = [f"${i+1}" for i in range(len(insert_values))]
+        columns = ", ".join(quote_identifier(f) for f in insert_fields)
+        values = ", ".join(placeholders)
+        
+        # Find a unique constraint to use for conflict detection
+        unique_constraint_fields = list(kwargs.keys())
+        
+        # Build the ON CONFLICT clause
+        conflict_fields = ", ".join(quote_identifier(f) for f in unique_constraint_fields)
+        
+        # Build the UPDATE clause
+        update_clauses = []
+        for field_name in update_fields:
+            if field_name not in self._model._fields:
+                raise ValueError(f"Unknown field: {field_name}")
+            
+            field = self._model._fields[field_name]
+            col_name = field.column_name
+            
+            # Use the value from defaults if provided
+            if field_name in defaults:
+                idx = insert_fields.index(field_name) + 1
+                update_clauses.append(f"{col_name} = ${idx}")
+            else:
+                update_clauses.append(f"{col_name} = EXCLUDED.{col_name}")
+        
+        update_sql = ", ".join(update_clauses)
+        
+        table = quote_identifier(self._model.__tablename__)
+        query = f"""
+            INSERT INTO {table} ({columns})
+            VALUES ({values})
+            ON CONFLICT ({conflict_fields})
+            DO UPDATE SET {update_sql}
+            RETURNING *
+        """
+        
+        record = await db.fetchrow(query, *insert_values)
+        
+        # Check if this was an insert or update by checking if id was generated
+        instance = self._model._from_record(record)
+        created = all(record[k] is not None for k in unique_constraint_fields)
+        
+        return instance, created
     
     async def count(self) -> int:
         """

@@ -99,6 +99,10 @@ from aksara.app import (
     Middleware,
 )
 
+# v0.5.44: DX Features
+from aksara.fixtures import dump_data, load_data, dump_database
+from aksara.contrib.soft_delete import SoftDeleteModel, with_deleted, only_deleted
+
 # v0.3.8: Relationships & Delete Semantics
 from aksara.relations import (
     OnDelete,
@@ -257,4 +261,11 @@ __all__ = [
     "get_ai_tools_for_request",
     "export_tools_as_generic",
     "export_tools_as_mcp",
+    # v0.5.44: DX Features
+    "dump_data",
+    "load_data",
+    "dump_database",
+    "SoftDeleteModel",
+    "with_deleted",
+    "only_deleted",
 ]

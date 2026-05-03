@@ -728,6 +728,10 @@ class Model(metaclass=ModelMeta):
         """
         from aksara.db import Database
         from aksara.exceptions import ValidationError
+        from aksara.signals import pre_save, post_save
+        
+        # Fire pre_save signal
+        await pre_save.send(sender=self.__class__, instance=self, is_new=self._is_new)
         
         # Validate all fields before saving
         await self._validate_fields()
@@ -743,6 +747,9 @@ class Model(metaclass=ModelMeta):
             self._is_new = False
         else:
             await self._update(db)
+            
+        # Fire post_save signal
+        await post_save.send(sender=self.__class__, instance=self)
     
     async def _insert(self, db: "Database") -> None:
         """Insert a new record."""
@@ -854,9 +861,13 @@ class Model(metaclass=ModelMeta):
         from aksara.fields import ForeignKey
         from aksara.relations import RelationRegistry, OnDelete
         from aksara.exceptions import RestrictedError
+        from aksara.signals import pre_delete, post_delete
         
         if self._is_new:
             raise ValueError("Cannot delete a model that hasn't been saved yet")
+            
+        # Fire pre_delete signal
+        await pre_delete.send(sender=self.__class__, instance=self)
         
         db = Database.get_instance()
         
@@ -904,10 +915,12 @@ class Model(metaclass=ModelMeta):
                 await db.execute(update_query, self._data['id'])
             
             # CASCADE is handled by database constraint
-        
         table = quote_identifier(self.__tablename__)
         query = f"DELETE FROM {table} WHERE id = $1"
         await db.execute(query, self._data['id'])
+        
+        # Fire post_delete signal
+        await post_delete.send(sender=self.__class__, instance=self)
     
     @classmethod
     def get_create_table_sql(cls) -> str:

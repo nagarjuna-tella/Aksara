@@ -5,6 +5,99 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures
+
+### Category 1: API & ViewSet DX
+
+#### Added
+- **DjangoFilterBackend** (`aksara/api/filters.py`): Automatic query parameter filtering with Django ORM lookup syntax support
+  - Supports 9 lookup types: `exact`, `gt`, `gte`, `lt`, `lte`, `in`, `isnull`, `icontains`, `contains`
+  - Example: `?price__gte=50&category__in=tech,news&in_stock=true`
+  - Automatically coerces values (booleans, None, numbers)
+  - Integrates seamlessly with `ModelViewSet` via `filter_backends` and `filterable_fields`
+
+- **CursorPagination** (`aksara/api/pagination.py`): Keyset-based pagination for high-performance infinite scroll
+  - Much more efficient than offset-based pagination for large datasets
+  - Uses base64-encoded cursor values to track position
+  - Ideal for mobile and infinite-scroll UIs
+  - Includes `get_paginated_response()` with `next_cursor` support
+
+- **Enhanced Filter/Search/Order Exports** (`aksara/api/__init__.py`): Centralized re-export of all pagination classes
+  - `BaseFilterBackend`, `DjangoFilterBackend`, `SearchFilter`, `OrderingFilter`
+  - `BasePagination`, `LimitOffsetPagination`, `PageNumberPagination`, `CursorPagination`
+
+### Category 2: Database & ORM DX
+
+#### Added
+- **Bulk Operations** (`aksara/manager.py`): High-performance batch insert/update
+  - `bulk_create(objs, batch_size=1000, ignore_conflicts=False)`: Efficiently insert thousands of records
+    - Automatically handles batching for very large datasets
+    - `ignore_conflicts=True` uses PostgreSQL `ON CONFLICT DO NOTHING`
+    - Returns created instances with populated IDs
+  - `bulk_update(objs, fields, batch_size=1000)`: Efficiently update thousands of records
+    - Uses PostgreSQL `CASE` statements for atomic multi-row updates
+    - Returns total number of updated records
+
+- **Upsert Operations** (`aksara/manager.py`): PostgreSQL-native insert-or-update
+  - `upsert(defaults=None, update_fields=None, **kwargs)`: Insert or update in single operation
+    - Uses native `ON CONFLICT` clause for atomicity
+    - Automatically updates specified fields on conflict
+    - Returns `(instance, created)` tuple indicating whether it was inserted or updated
+
+- **Soft Deletes** (`aksara/contrib/soft_delete.py`): Logical deletion pattern
+  - `SoftDeleteModel`: Mixin class with automatic `deleted_at` field
+  - Overrides `.delete()` to set `deleted_at` timestamp instead of removing records
+  - `Manager.filter()` automatically excludes soft-deleted records
+  - `undelete()` method to restore deleted records
+  - Helper functions: `with_deleted()` to include soft-deleted records, `only_deleted()` to query only deleted
+
+- **Fixture Management** (`aksara/fixtures.py`): Export/import model data
+  - `dump_data(model, filters=None, fields=None, format="json")`: Export single model to JSON/YAML
+    - Supports filtering exported records
+    - Supports selecting specific fields
+    - Automatic `FixtureEncoder` handles UUID and datetime serialization
+  - `load_data(data, models=None, format="json", strict=False)`: Import fixture data
+    - Returns stats dict with `{"loaded": N, "errors": M, "skipped": K}`
+    - Handles both inserts and updates based on presence of PK
+    - Strict mode raises on validation errors, lenient mode logs and continues
+  - `dump_database(app_label=None, models=None, filters=None, format="json")`: Export entire database or filtered subset
+    - Optional JSON/YAML format selection
+    - Optional app_label filtering
+    - Optional model name filtering
+
+#### Enhanced
+- **Manager.filter()** now supports soft delete models automatically
+  - Transparently excludes `deleted_at IS NOT NULL` for SoftDeleteModel subclasses
+  - Can be overridden with `with_deleted()` helper
+
+### Category 3: Integration & Documentation
+
+#### Added
+- Comprehensive test suite with 50+ test cases covering:
+  - Filter backend parameter parsing and coercion
+  - Search and ordering functionality
+  - All three pagination backends
+  - Bulk create/update with large datasets
+  - Upsert with conflict scenarios
+  - Soft delete lifecycle and queries
+  - Fixture export/import with various formats
+  - Database dumping and restoration
+  
+- Full documentation in `docs/dx-features-guide.md`
+  - Step-by-step usage examples for all features
+  - Enterprise blog application example
+  - Migration guide for Django/DRF developers
+  - Performance tips and best practices
+
+### Breaking Changes
+- None. All features are backward compatible and additive.
+
+### Migration Path
+- Existing code continues to work unchanged
+- DX features are opt-in (use `filter_backends`, `SoftDeleteModel`, etc. when needed)
+- Signals were already firing; no changes required for existing signal listeners
+
+---
 ## [0.5.42] — Studio UX Redesign & Accessibility
 
 ### Studio

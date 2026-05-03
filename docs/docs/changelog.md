@@ -5,6 +5,15 @@ Aksara is maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
 All notable changes to Aksara.
 
 ---
+## [0.5.44] — Framework DX Enhancements (Phase 1)
+
+### Added
+- **API Filtering**: Pluggable DRF-style `SearchFilter` and `OrderingFilter` for `ModelViewSet`.
+- **QuerySet DX**: Added `search(term, fields)` method for robust multi-field OR conditions.
+- **Pagination DX**: Pluggable `LimitOffsetPagination` and `PageNumberPagination` backends.
+- **Event Signals**: Added `aksara.signals` with `pre_save`, `post_save`, `pre_delete`, and `post_delete` model lifecycle hooks.
+
+---
 
 ## [0.5.43] — 2026-04-30
 
