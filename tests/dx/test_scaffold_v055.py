@@ -96,7 +96,7 @@ class TestScaffoldV055Structure:
         content = views_path.read_text()
         
         # Should have publish action
-        assert '@action(detail=True, methods=["POST"])' in content
+        assert '@action(detail=True, methods=["POST"], ai_exposed=True)' in content
         assert 'async def publish(' in content
         
         # Should have increment_views action

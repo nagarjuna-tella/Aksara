@@ -803,6 +803,7 @@ class TestStudioAuthentication:
 
         mock_settings = create_mock_settings()
         mock_settings.studio_require_auth = True
+        mock_settings.debug = False
 
         with patch("aksara.conf.settings", mock_settings):
             response = client.get("/studio/handshake")
@@ -817,6 +818,7 @@ class TestStudioAuthentication:
 
         mock_settings = create_mock_settings()
         mock_settings.studio_require_auth = True
+        mock_settings.debug = False
         mock_settings.studio_auth_token = "studio-secret"
 
         with patch("aksara.conf.settings", mock_settings):
@@ -837,6 +839,7 @@ class TestStudioAuthentication:
 
         mock_settings = create_mock_settings()
         mock_settings.studio_require_auth = True
+        mock_settings.debug = False
 
         mock_user = MagicMock()
         mock_user.is_staff = True
