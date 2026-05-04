@@ -15,6 +15,7 @@ from uuid import UUID
 
 from aksara.db import quote_identifier
 from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField
+from aksara.i18n import serialize_value
 from aksara.registry import ModelRegistry
 
 
@@ -683,7 +684,7 @@ class Model(metaclass=ModelMeta):
             # Convert UUID to string for JSON serialization
             if isinstance(value, UUID):
                 value = str(value)
-            result[field_name] = value
+            result[field_name] = serialize_value(value)
         return result
     
     async def _validate_fields(self) -> None:

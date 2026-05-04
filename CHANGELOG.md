@@ -52,6 +52,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added `ConsoleBackend`, `LocMemBackend`, and `SMTPBackend`
   - Added `EmailMessage`, `send_mail()`, `send_mass_mail()`, and configurable `EMAIL_BACKEND` settings
 
+- **Request-scoped locale and timezone context** (`aksara/i18n.py`, `aksara/middleware/locale.py`, `aksara/middleware/timezone.py`)
+  - Added `LocaleMiddleware` and `TimezoneMiddleware`
+  - Added lazy `_()` translations backed by gettext catalogs in `locale_paths`
+  - Added UTC-normalized `DateTime` storage with request-timezone serialization in model and API exports
+
 ### Changed
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
@@ -79,6 +84,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - SSE stream route wiring and PostgreSQL event publication
   - media storage persistence, image validation, schema typing, and migration mapping
   - console, locmem, and SMTP email backends
+  - locale middleware, timezone middleware, and timezone-aware datetime serialization
 - Validated surrounding ORM, relation, and public export tests with PostgreSQL configured
 
 ## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures

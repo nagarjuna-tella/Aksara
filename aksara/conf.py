@@ -43,6 +43,12 @@ def _get_float_env(key: str, default: float) -> float:
         return default
 
 
+def _split_list_env(value: str) -> List[str]:
+    """Split comma or path-separated environment values into a list."""
+    raw_parts = value.replace(os.pathsep, ",").split(",")
+    return [part.strip() for part in raw_parts if part.strip()]
+
+
 @dataclass
 class Settings:
     """
@@ -110,6 +116,13 @@ class Settings:
     email_use_tls: bool = False
     email_use_ssl: bool = False
     email_timeout: float = 10.0
+
+    # v0.5.45: i18n and timezone handling
+    supported_locales: List[str] = field(default_factory=lambda: ["en"])
+    default_locale: str = "en"
+    locale_paths: List[str] = field(default_factory=lambda: ["locale"])
+    use_tz: bool = True
+    time_zone: str = "UTC"
     
     # v0.4.0: AI features
     ai_enabled: bool = False
@@ -287,6 +300,26 @@ class Settings:
         self.email_use_tls = _get_bool_env("AKSARA_EMAIL_USE_TLS", self.email_use_tls)
         self.email_use_ssl = _get_bool_env("AKSARA_EMAIL_USE_SSL", self.email_use_ssl)
         self.email_timeout = _get_float_env("AKSARA_EMAIL_TIMEOUT", self.email_timeout)
+
+        env_supported_locales = os.environ.get("AKSARA_SUPPORTED_LOCALES")
+        if env_supported_locales:
+            self.supported_locales = [
+                locale for locale in _split_list_env(env_supported_locales)
+            ]
+
+        env_default_locale = os.environ.get("AKSARA_DEFAULT_LOCALE")
+        if env_default_locale:
+            self.default_locale = env_default_locale
+
+        env_locale_paths = os.environ.get("AKSARA_LOCALE_PATHS")
+        if env_locale_paths:
+            self.locale_paths = _split_list_env(env_locale_paths)
+
+        self.use_tz = _get_bool_env("AKSARA_USE_TZ", self.use_tz)
+
+        env_time_zone = os.environ.get("AKSARA_TIME_ZONE")
+        if env_time_zone:
+            self.time_zone = env_time_zone
         
         # Future: AI features
         if not self.ai_enabled:
@@ -432,6 +465,31 @@ class Settings:
     def DEFAULT_FROM_EMAIL(self) -> str:
         """Alias for default_from_email (uppercase convention)."""
         return self.default_from_email
+
+    @property
+    def SUPPORTED_LOCALES(self) -> List[str]:
+        """Alias for supported_locales (uppercase convention)."""
+        return self.supported_locales
+
+    @property
+    def DEFAULT_LOCALE(self) -> str:
+        """Alias for default_locale (uppercase convention)."""
+        return self.default_locale
+
+    @property
+    def LOCALE_PATHS(self) -> List[str]:
+        """Alias for locale_paths (uppercase convention)."""
+        return self.locale_paths
+
+    @property
+    def USE_TZ(self) -> bool:
+        """Alias for use_tz (uppercase convention)."""
+        return self.use_tz
+
+    @property
+    def TIME_ZONE(self) -> str:
+        """Alias for time_zone (uppercase convention)."""
+        return self.time_zone
     
     @property
     def AI_ENABLED(self) -> bool:
@@ -520,6 +578,13 @@ def _replace_settings(source: Settings, *, configured: Optional[bool] = None) ->
         from aksara.storage import clear_storage_cache
 
         clear_storage_cache()
+    except Exception:
+        pass
+
+    try:
+        from aksara.i18n import clear_i18n_cache
+
+        clear_i18n_cache()
     except Exception:
         pass
 

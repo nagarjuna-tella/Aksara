@@ -47,6 +47,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field as PydanticField, ValidationError, create_model
 
 from aksara.model.base import Model
+from aksara.i18n import serialize_value
 from aksara import fields as aksara_fields
 
 
@@ -704,10 +705,8 @@ class ModelSerializer(metaclass=SerializerMetaclass):
             # Serialize value
             if isinstance(value, UUID):
                 result[key] = value
-            elif isinstance(value, datetime):
-                result[key] = value
             else:
-                result[key] = value
+                result[key] = serialize_value(value)
         
         # Include ManyToMany field IDs if cached
         if hasattr(instance.__class__, '_m2m_fields'):

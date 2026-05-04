@@ -28,6 +28,8 @@ Context Variables:
     - request_id_var: Correlation ID for the request
     - tenant_id_var: Multi-tenant identifier
     - user_id_var: Authenticated user ID
+    - locale_var: Resolved locale for the request
+    - timezone_var: Resolved timezone for the request
     
     These can be accessed anywhere in your code:
     
@@ -44,9 +46,11 @@ Context Variables:
 from __future__ import annotations
 
 from .ai_agent import AIAgentMiddleware
-from .context import request_id_var, tenant_id_var, user_id_var
+from .context import request_id_var, tenant_id_var, user_id_var, locale_var, timezone_var
+from .locale import LocaleMiddleware
 from .request_id import RequestIDMiddleware, RequestIdMiddleware
 from .tenant import TenantMiddleware
+from .timezone import TimezoneMiddleware
 from .logging import LoggingMiddleware
 from .tracing import QueryTraceMiddleware
 
@@ -55,11 +59,15 @@ __all__ = [
     "request_id_var",
     "tenant_id_var",
     "user_id_var",
+    "locale_var",
+    "timezone_var",
     # Middleware classes
     "AIAgentMiddleware",
+    "LocaleMiddleware",
     "RequestIDMiddleware",
     "RequestIdMiddleware",  # Backwards compat alias (v0.5.24+)
     "TenantMiddleware",
+    "TimezoneMiddleware",
     "LoggingMiddleware",
     "QueryTraceMiddleware",  # v0.5.10
 ]

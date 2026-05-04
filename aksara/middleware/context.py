@@ -23,28 +23,12 @@ Usage:
 
 from __future__ import annotations
 
-from contextvars import ContextVar
-from typing import Optional
-
-# Request correlation ID - set by RequestIDMiddleware
-# Used for tracing requests across services and in logs
-request_id_var: ContextVar[Optional[str]] = ContextVar(
-    "aksara_request_id",
-    default=None,
-)
-
-# Tenant identifier - set by TenantMiddleware
-# Used for multi-tenant applications to scope data access
-tenant_id_var: ContextVar[Optional[str]] = ContextVar(
-    "aksara_tenant_id",
-    default=None,
-)
-
-# Authenticated user ID - set by auth dependencies
-# Used for audit logging and user context
-user_id_var: ContextVar[Optional[str]] = ContextVar(
-    "aksara_user_id",
-    default=None,
+from aksara.context_state import (
+    locale_var,
+    request_id_var,
+    tenant_id_var,
+    timezone_var,
+    user_id_var,
 )
 
 
@@ -52,4 +36,6 @@ __all__ = [
     "request_id_var",
     "tenant_id_var",
     "user_id_var",
+    "locale_var",
+    "timezone_var",
 ]

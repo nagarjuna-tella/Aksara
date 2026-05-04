@@ -19,10 +19,12 @@ All notable changes to Aksara.
 - **`GET /<prefix>/stream`** SSE endpoints backed by PostgreSQL `LISTEN/NOTIFY`.
 - **`FileField` and `ImageField`** with `FieldFile` wrappers, filesystem/S3 storage backends, and debug-mode media mounting.
 - **Async email backends** with `ConsoleBackend`, `LocMemBackend`, `SMTPBackend`, `send_mail()`, and `send_mass_mail()`.
+- **Request-scoped locale and timezone context** with `LocaleMiddleware`, `TimezoneMiddleware`, lazy `_()` strings, and UTC-normalized `DateTime` serialization.
 
 ### Documentation
 - Added a dedicated ORM page covering expressions, aggregates, relation paths, and transactions.
 - Added field, advanced, and settings docs for storage-backed media fields and async email configuration.
+- Added advanced and settings docs for locale/timezone middleware and request-aware datetime serialization.
 - Refreshed the release notes, API docs, and CLI docs for the full v0.5.45 feature set.
 
 ---

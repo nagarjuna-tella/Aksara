@@ -77,11 +77,10 @@ nav:
   - Admin:
       - admin/index.md
       - Admin Site: admin/admin-site.md
-      - ModelAdmin: admin/modeladmin.md
-      - Customization: admin/customization.md
+      - Model Admin: admin/model-admin.md
+      - Admin Permissions: admin/admin-permissions.md
   - Middleware:
       - middleware/index.md
-      - Overview: middleware/overview.md
       - Request ID: middleware/request-id.md
       - Tenant: middleware/tenant.md
       - Logging: middleware/logging.md
@@ -89,7 +88,7 @@ nav:
       - debugging/index.md
       - Error Pages: debugging/error-pages.md
       - AI Debug: debugging/ai-debug.md
-      - Observability: debugging/observability.md
+      - Query Profiling: debugging/query-profiling.md
       - Diagnostics & Doctor: diagnostics.md
       - Gap Analysis: gapanalysis.md
       - Autoremediation: debugging/autoremediation.md
@@ -104,6 +103,7 @@ nav:
   - AI Mode:
       - ai-mode/index.md
       # — Getting Started with AI —
+      - Configuration: ai-mode/config.md
       - Interactive Console: ai-mode/console.md
       - MCP Integration: ai-mode/mcp.md
       - AI Flows: ai-mode/flows.md
@@ -139,12 +139,13 @@ nav:
       - Studio API: studio/api.md
       - CLI Commands: studio/cli.md
       - Configuration: studio/configuration.md
+      - UI: studio/ui.md
   - CLI:
       - cli/index.md
-      - Overview: cli/overview.md
-      - Project Management: cli/manage.md
+      - Commands: cli/commands.md
       - AI Commands: cli/ai-commands.md
       - Dev Tools: cli/dev-tools.md
+      - Extending: cli/extending.md
   - Patterns:
       - patterns/index.md
       - Blog Pattern: patterns/blog.md
@@ -152,26 +153,27 @@ nav:
       - Multitenant Pattern: patterns/multitenant.md
   - Tutorials:
       - tutorials/index.md
-      - Build a Blog: tutorials/build-a-blog.md
-      - Add Auth & Admin: tutorials/add-auth-admin.md
-      - AI Refactor Tutorial: tutorials/ai-refactor-tutorial.md
-      - Schema Drift Tutorial: tutorials/schema-drift-tutorial.md
+      - Blog API: tutorials/blog-api.md
+      - AI Integration: tutorials/ai-integration.md
+      - Multi-Tenant: tutorials/multi-tenant.md
+      - Deployment: tutorials/deployment.md
   - Advanced:
       - advanced/index.md
       - Custom Fields: advanced/custom-fields.md
-      - Custom Migrations: advanced/custom-migrations.md
       - Media and Email: advanced/media-and-email.md
-      - Extending Admin: advanced/extending-admin.md
-      - Custom Permissions: advanced/custom-permissions.md
-      - Integrating with FastAPI: advanced/integrating-with-pure-fastapi.md
-      - Multi-App Projects: advanced/multi-app-projects.md
+      - Internationalization and Timezones: advanced/internationalization-and-timezones.md
+      - Caching: advanced/caching.md
+      - Performance: advanced/performance.md
+      - Signals: advanced/signals.md
+      - Testing: advanced/testing.md
+      - Validation: advanced/validation.md
   - Reference:
       - reference/index.md
       - Settings Reference: reference/settings-reference.md
-      - Model API Reference: reference/model-api-reference.md
-      - ViewSet API Reference: reference/viewset-api-reference.md
-      - Serializer API Reference: reference/serializer-api-reference.md
-      - AI API Reference: reference/ai-api-reference.md
+      - API Reference: reference/api-reference.md
+      - ORM Reference: reference/orm-reference.md
+      - Exceptions: reference/exceptions.md
+      - Types: reference/types.md
       - CLI Reference: reference/cli-reference.md
   - Roadmap: roadmap.md
   - Changelog: changelog.md

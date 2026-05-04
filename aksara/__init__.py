@@ -30,6 +30,20 @@ from aksara.registry import (
 )
 from aksara.manager import DoesNotExist, MultipleObjectsReturned
 from aksara.conf import Settings, settings, configure
+from aksara.i18n import (
+    LazyString,
+    _,
+    activate_locale,
+    activate_timezone,
+    get_locale,
+    get_timezone,
+    get_timezone_name,
+    localtime,
+    parse_accept_language,
+    reset_locale,
+    reset_timezone,
+    translate,
+)
 from aksara.storage import FieldFile, Storage, FileSystemStorage, S3Storage, get_default_storage
 from aksara.exceptions import (
     AksaraError,
@@ -203,11 +217,20 @@ __all__ = [
     "Settings",
     "settings",
     "configure",
+    "LazyString",
+    "_",
+    "activate_locale",
+    "activate_timezone",
     "FieldFile",
     "Storage",
     "FileSystemStorage",
     "S3Storage",
+    "get_locale",
     "get_default_storage",
+    "get_timezone",
+    "get_timezone_name",
+    "localtime",
+    "parse_accept_language",
     "EmailMessage",
     "BaseEmailBackend",
     "ConsoleBackend",
@@ -217,7 +240,10 @@ __all__ = [
     "send_mail",
     "send_mass_mail",
     "outbox",
+    "reset_locale",
     "reset_outbox",
+    "reset_timezone",
+    "translate",
     # Exceptions
     "AksaraError",
     "DatabaseError",

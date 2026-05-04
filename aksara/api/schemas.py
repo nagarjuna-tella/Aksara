@@ -30,6 +30,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field as PydanticField, create_model
 
 from aksara.model.base import Model
+from aksara.i18n import serialize_value
 from aksara import fields as aksara_fields
 
 
@@ -388,10 +389,8 @@ def model_to_dict(instance: Model) -> Dict[str, Any]:
         # Serialize values
         if isinstance(value, UUID):
             result[key] = value
-        elif isinstance(value, datetime):
-            result[key] = value
         else:
-            result[key] = value
+            result[key] = serialize_value(value)
     
     return result
 

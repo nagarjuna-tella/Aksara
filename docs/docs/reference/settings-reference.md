@@ -245,6 +245,70 @@ See [Advanced Media & Email](../advanced/media-and-email.md) for usage examples.
 
 ---
 
+## Internationalization and Timezone Settings
+
+### SUPPORTED_LOCALES
+
+Type: `list[str]`
+Default: `["en"]`
+
+Locales matched by `LocaleMiddleware` against the incoming
+`Accept-Language` header.
+
+### DEFAULT_LOCALE
+
+Type: `str`
+Default: `"en"`
+
+Fallback locale used when no supported locale can be resolved.
+
+### LOCALE_PATHS
+
+Type: `list[str]`
+Default: `["locale"]`
+
+Filesystem paths searched for gettext catalogs.
+
+### USE_TZ
+
+Type: `bool`
+Default: `True`
+
+When enabled, `DateTime` fields normalize incoming datetimes to UTC on write
+and serialize them in the active request timezone on read/export.
+
+### TIME_ZONE
+
+Type: `str`
+Default: `"UTC"`
+
+Fallback timezone used when a request does not provide `X-Timezone`.
+
+```python
+configure(Settings(
+    supported_locales=["en", "fr", "de"],
+    default_locale="en",
+    locale_paths=["locale"],
+    use_tz=True,
+    time_zone="UTC",
+))
+```
+
+Environment variables:
+
+```python
+export AKSARA_SUPPORTED_LOCALES=en,fr,de
+export AKSARA_DEFAULT_LOCALE=en
+export AKSARA_LOCALE_PATHS=locale
+export AKSARA_USE_TZ=true
+export AKSARA_TIME_ZONE=UTC
+```
+
+See [Internationalization and Timezones](../advanced/internationalization-and-timezones.md)
+for request middleware examples.
+
+---
+
 ## Application Settings
 
 ### INSTALLED_APPS
