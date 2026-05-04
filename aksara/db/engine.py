@@ -14,6 +14,7 @@ from aksara.logging import QueryLogger, logger
 from aksara.db.session import get_session
 from aksara.exceptions import map_database_error, ConnectionError as AksaraConnectionError
 from aksara.db.debug import log_query
+from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
 
 
 class Database:
@@ -143,7 +144,12 @@ class Database:
             return
 
         async with self.pool.acquire() as connection:
-            yield connection
+            tenant_applied = await apply_tenant_context(connection)
+            try:
+                yield connection
+            finally:
+                if tenant_applied:
+                    await reset_tenant_context(connection)
     
     async def execute(
         self,

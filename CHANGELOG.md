@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.5.45] — ORM Expressions, Relation Aggregates, and Atomic Transactions
+## [0.5.45] — ORM Expressions, Native Multi-Tenancy, SDK Generation, and Real-Time Streams
 
 ### Added
 - **ORM expression primitives** (`aksara/db/expressions.py`)
@@ -29,6 +29,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Reuses the active request or transaction-scoped connection through `ContextVar`
   - Nested `atomic()` blocks use asyncpg nested transactions on the same connection
 
+- **Native PostgreSQL multi-tenancy** (`aksara/tenancy.py`, `aksara/db/tenant_context.py`)
+  - `TenantModel` adds a first-class tenant-scoped base model with a required `tenant_id`
+  - Tenant context is applied automatically to pooled, request-scoped, and transaction-owned connections
+  - Migration autodetection emits `RunSQL` operations to enable and disable PostgreSQL RLS policies for tenant tables
+
+- **TypeScript SDK generation** (`aksara/sdk/typescript.py`, `aksara/cli/main.py`)
+  - New `aksara generate sdk --language typescript` command generates a fetch-based CRUD client from discovered `ModelViewSet` classes
+  - Generated SDKs include resolved create, update, and read interfaces plus typed list parameter helpers and paginated response types
+
+- **Real-time SSE broadcasting** (`aksara/api/streaming.py`, `aksara/api/router.py`)
+  - `ModelViewSet` now exposes `GET /<prefix>/stream` by default for server-sent event subscriptions
+  - Model lifecycle events publish through PostgreSQL `LISTEN/NOTIFY` from `post_save` and `post_delete`
+  - Tenant-scoped stream payloads are filtered so subscribers only see events for their active tenant
+
 ### Changed
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
@@ -41,7 +55,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Documentation
 - Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
-- Updated the ORM docs navigation and release documentation to reflect v0.5.45
+- Updated API and CLI docs for stream endpoints, multi-tenant RLS behavior, and TypeScript SDK generation
+- Refreshed the README and release notes to reflect the full v0.5.45 feature set
 
 ### Tests
 - Added focused coverage for:
@@ -50,6 +65,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - annotation hydration
   - reverse FK and M2M aggregate joins
   - transaction connection reuse and nested atomic scopes
+  - tenant connection context application and migration RLS SQL generation
+  - TypeScript SDK generation and CLI output
+  - SSE stream route wiring and PostgreSQL event publication
 - Validated surrounding ORM, relation, and public export tests with PostgreSQL configured
 
 ## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures

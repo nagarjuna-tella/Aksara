@@ -9,6 +9,8 @@ from __future__ import annotations
 from contextvars import ContextVar, Token
 from typing import Optional, TYPE_CHECKING
 
+from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
+
 if TYPE_CHECKING:
     import asyncpg
 
@@ -63,10 +65,12 @@ class session_context:
         self.db = db
         self._connection: Optional["asyncpg.Connection"] = None
         self._token = None
+        self._tenant_applied = False
     
     async def __aenter__(self) -> "asyncpg.Connection":
         """Acquire connection and set in context."""
         self._connection = await self.db.pool.acquire()
+        self._tenant_applied = await apply_tenant_context(self._connection)
         self._token = _session_context.set(self._connection)
         return self._connection
     
@@ -75,5 +79,8 @@ class session_context:
         if self._token is not None:
             _session_context.reset(self._token)
         if self._connection is not None:
+            if self._tenant_applied:
+                await reset_tenant_context(self._connection)
             await self.db.pool.release(self._connection)
             self._connection = None
+        self._tenant_applied = False

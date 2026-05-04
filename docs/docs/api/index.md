@@ -42,14 +42,14 @@ class TaskViewSet(ModelViewSet):
     model = Task
 ```
 
-**That's 4 lines. You get 6 endpoints:**
+**That's 4 lines. You get 6 endpoints by default:**
 
 | Method | URL | What It Does |
 |--------|-----|--------------|
 | `GET` | `/tasks/` | List all tasks |
 | `POST` | `/tasks/` | Create a task |
+| `GET` | `/tasks/stream/` | Subscribe to task lifecycle events via SSE |
 | `GET` | `/tasks/{id}/` | Get one task |
-| `PUT` | `/tasks/{id}/` | Update a task |
 | `PATCH` | `/tasks/{id}/` | Partial update |
 | `DELETE` | `/tasks/{id}/` | Delete a task |
 
@@ -73,6 +73,8 @@ class TaskViewSet(ModelViewSet):
     # Optional: who can access this?
     permission_classes = [IsAuthenticated]
 ```
+
+Every `ModelViewSet` also exposes a built-in `GET /<prefix>/stream/` endpoint unless `stream_enabled = False`, so frontend clients can subscribe to model lifecycle events over server-sent events.
 
 👉 **Learn more:** [ViewSets](viewsets.md)
 
@@ -272,7 +274,7 @@ def register_routes(app):
 | `GET /api/tasks/?search=groceries` | Search tasks |
 | `POST /api/tasks/` | Create a task |
 | `GET /api/tasks/{id}/` | Get one task |
-| `PUT /api/tasks/{id}/` | Update a task |
+| `PATCH /api/tasks/{id}/` | Update a task |
 | `DELETE /api/tasks/{id}/` | Delete a task |
 | `POST /api/tasks/{id}/toggle/` | Toggle completion |
 
@@ -305,7 +307,7 @@ curl -X POST http://localhost:8000/api/tasks/ \
 curl http://localhost:8000/api/tasks/abc123/
 
 # Update a task
-curl -X PUT http://localhost:8000/api/tasks/abc123/ \
+curl -X PATCH http://localhost:8000/api/tasks/abc123/ \
   -H "Content-Type: application/json" \
   -d '{"title": "Buy milk", "completed": true}'
 
@@ -331,7 +333,7 @@ new_task = client.post(
 ).json()
 
 # Update a task
-client.put(
+client.patch(
     f"/api/tasks/{new_task['id']}/",
     json={"title": "Learn Aksara", "completed": True}
 )

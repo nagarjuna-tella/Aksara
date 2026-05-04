@@ -10,6 +10,7 @@ from functools import wraps
 from typing import Any, Awaitable, Callable, Optional, TYPE_CHECKING, TypeVar
 
 from aksara.db.session import get_session, push_session, reset_session
+from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
 
 if TYPE_CHECKING:
     import asyncpg
@@ -30,6 +31,7 @@ class TransactionManager:
         self._transaction: Optional[Any] = None
         self._session_token: Optional["Token"] = None
         self._owns_connection = False
+        self._tenant_applied = False
 
     async def __aenter__(self) -> "asyncpg.Connection":
         """Start a transaction, reusing the active session connection when present."""
@@ -39,6 +41,7 @@ class TransactionManager:
         existing_connection = get_session()
         if existing_connection is None:
             self._connection = await self._db.pool.acquire()
+            self._tenant_applied = await apply_tenant_context(self._connection)
             self._session_token = push_session(self._connection)
             self._owns_connection = True
         else:
@@ -61,10 +64,13 @@ class TransactionManager:
                 if self._session_token is not None:
                     reset_session(self._session_token)
                     self._session_token = None
+                if self._tenant_applied:
+                    await reset_tenant_context(self._connection)
                 await self._db.pool.release(self._connection)
             self._connection = None
             self._transaction = None
             self._owns_connection = False
+            self._tenant_applied = False
 
     def __call__(self, func: F) -> F:
         """Allow the manager to be used directly as an async decorator."""

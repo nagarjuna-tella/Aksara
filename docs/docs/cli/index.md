@@ -13,6 +13,7 @@ The Aksara CLI provides commands for:
 | **Project** | `startproject`, `startapp` |
 | **Database** | `dbsetup`, `makemigrations`, `migrate`, `shell` |
 | **Development** | `run`, `routes`, `info` |
+| **Codegen** | `generate sdk` |
 | **AI** | `ai query`, `ai generate`, `ai doctor` |
 
 ---
@@ -227,6 +228,28 @@ Options:
 aksara routes --format json
 aksara routes --filter posts
 ```
+
+### generate sdk
+
+Generate a TypeScript client from discovered `ModelViewSet` classes:
+
+```bash
+aksara generate sdk --language typescript --output frontend/api.ts
+```
+
+Print the generated SDK to stdout:
+
+```bash
+aksara generate sdk --language typescript --stdout
+```
+
+Target a specific views module instead of auto-discovery from installed apps:
+
+```bash
+aksara generate sdk --language typescript --views-module myapp.viewsets --stdout
+```
+
+The generated SDK includes resolved create, update, and read interfaces, typed list parameters, and a fetch-based `AksaraClient` with CRUD methods.
 
 ### info
 

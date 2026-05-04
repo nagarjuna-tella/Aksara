@@ -687,6 +687,49 @@ def templates_list():
     click.echo()
 
 
+# =============================================================================
+# SDK Generation Commands (v0.5.45)
+# =============================================================================
+
+
+@cli.group("generate")
+def generate_group():
+    """Code and SDK generation commands."""
+    pass
+
+
+@generate_group.command("sdk")
+@click.option("--language", type=click.Choice(["typescript"]), default="typescript", show_default=True)
+@click.option("--output", "output_path", default="api.ts", show_default=True, help="File path for the generated SDK")
+@click.option("--views-module", default=None, help="Optional views module to inspect instead of settings.apps")
+@click.option("--stdout", "to_stdout", is_flag=True, help="Print the SDK instead of writing a file")
+def generate_sdk(language: str, output_path: str, views_module: Optional[str], to_stdout: bool):
+    """Generate a frontend SDK from discovered Aksara ViewSets."""
+    from aksara.sdk.typescript import discover_viewset_sdk_specs, generate_typescript_sdk
+
+    if language != "typescript":
+        click.echo("❌ Only TypeScript SDK generation is currently supported.")
+        raise SystemExit(1)
+
+    specs = discover_viewset_sdk_specs(views_module=views_module)
+    if not specs:
+        click.echo("❌ No ViewSets discovered. Nothing to generate.")
+        raise SystemExit(1)
+    content = generate_typescript_sdk(specs)
+
+    if to_stdout:
+        click.echo(content, nl=False)
+        return
+
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(content)
+
+    click.echo()
+    click.echo(f"  \033[32m✓\033[0m Generated TypeScript SDK: \033[1m{output}\033[0m")
+    click.echo()
+
+
 @cli.command()
 @click.argument("app_name")
 @click.option("--directory", "-d", default=".", help="Directory to create app in (default: current)")

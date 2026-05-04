@@ -68,6 +68,7 @@ app.include_viewset(IncidentViewSet, prefix="/incidents")
 | What             | Where                                                                               |
 | ---------------- | ----------------------------------------------------------------------------------- |
 | REST API         | `GET/POST/PATCH/DELETE /incidents/`                                                 |
+| Real-time stream | `GET /incidents/stream` — subscribe to insert/update/delete events via SSE          |
 | MCP tool catalog | `/ai/tools/mcp` — any MCP-compatible agent (Claude, Cursor, etc.) can call your API |
 | AI Console       | `/studio/ui` → natural-language queries against your live backend                   |
 | Studio dashboard | `/studio/ui` — models, routes, queries, migrations, diagnostics                     |
@@ -121,6 +122,9 @@ I built everything you'd otherwise assemble yourself.
 | ⚡  | **AI Flows**             | In-context AI actions for models, routes, queries, migrations with risk badges                   |
 | 🗄️  | **Async ORM**            | Postgres-first: models, typed fields, relations, migrations, asyncpg                             |
 | 🔁  | **Auto-REST**            | `ModelViewSet` → full CRUD endpoints, serializers, pagination                                    |
+| 🏢  | **Native Multi-Tenancy** | `TenantModel` + PostgreSQL RLS + tenant-aware connection context                                 |
+| 📦  | **TypeScript SDK**       | `aksara generate sdk --language typescript` builds a typed fetch client from your ViewSets       |
+| 📡  | **Real-Time Streams**    | `GET /<prefix>/stream` emits model lifecycle events through tenant-safe SSE                       |
 | 🖥️  | **Studio**               | Built-in web UI at `/studio/ui` — inspect models, routes, queries, migrations                    |
 | 🛡️  | **Admin**                | Browse and edit data without extra setup                                                         |
 | 🔎  | **Semantic Search**      | ⌘K spotlight across models, routes, settings, playbooks                                          |
@@ -167,7 +171,7 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/aksara/tree/main/exampl
 | [AI Mode](docs/docs/ai-mode/index.md)     | MCP, AI Console, Debugger, Architecture Review |
 | [Studio Guide](docs/docs/studio/index.md) | Visual inspector & debugging                   |
 | [Admin Guide](docs/docs/admin/index.md)   | Admin site customization                       |
-| [CLI Reference](docs/docs/cli/index.md)   | All CLI commands                               |
+| [CLI Reference](docs/docs/cli/index.md)   | All CLI commands, including SDK generation     |
 
 ---
 

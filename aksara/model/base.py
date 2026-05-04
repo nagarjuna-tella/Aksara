@@ -735,6 +735,8 @@ class Model(metaclass=ModelMeta):
         from aksara.db import Database
         from aksara.exceptions import ValidationError
         from aksara.signals import pre_save, post_save
+
+        self._stream_action = "INSERT" if self._is_new else "UPDATE"
         
         # Fire pre_save signal
         await pre_save.send(sender=self.__class__, instance=self, is_new=self._is_new)

@@ -115,6 +115,7 @@ from aksara.app import (
 # v0.5.44: DX Features
 from aksara.fixtures import dump_data, load_data, dump_database
 from aksara.contrib.soft_delete import SoftDeleteModel, with_deleted, only_deleted
+from aksara.tenancy import TenantModel
 
 # v0.3.8: Relationships & Delete Semantics
 from aksara.relations import (
@@ -290,6 +291,7 @@ __all__ = [
     "load_data",
     "dump_database",
     "SoftDeleteModel",
+    "TenantModel",
     "with_deleted",
     "only_deleted",
 ]

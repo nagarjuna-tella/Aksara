@@ -21,6 +21,7 @@
 |--------------|-----|
 | **Async ORM** | Define Python models → Aksara creates database tables and handles all SQL |
 | **Auto REST API** | One `ModelViewSet` class → full CRUD endpoints with pagination and validation |
+| **Real-Time Streams** | Every `ModelViewSet` can expose `GET /<prefix>/stream` for live model events |
 | **Built-in Admin** | Browse and edit your data at `/admin` with zero configuration |
 | **Studio UI** | Visual dashboard at `/studio/ui` — inspect models, routes, queries, and migrations |
 | **AI Console** | Natural-language interface inside Studio — ask questions about your data, routes, and schema in plain English |
@@ -28,6 +29,8 @@
 | **MCP Tools** | Your models become MCP tools automatically — connect any MCP-compatible AI agent |
 | **Doctor & Fix Plans** | `aksara doctor` checks app health and `aksara doctor fix-plan` prints the remediation path |
 | **Migration System** | Schema changes tracked and applied with `aksara migrate` |
+| **TypeScript SDKs** | `aksara generate sdk --language typescript` emits a fetch-ready frontend client |
+| **Native Multi-Tenancy** | `TenantModel` and PostgreSQL RLS keep tenant data isolated at the database layer |
 
 ---
 

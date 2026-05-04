@@ -195,6 +195,25 @@ def include_viewset(
         summary=f"Create {viewset.model.__name__}",
         description=f"Create a new {viewset.model.__name__}.",
     )
+
+    # =========================================================================
+    # STREAM endpoint (no {pk}) - MUST come before {pk} routes!
+    # =========================================================================
+    if viewset.stream_enabled:
+        @router.get(
+            f"{prefix}/stream",
+            tags=tags,
+            summary=f"Stream {viewset.model.__name__}",
+            description=f"Subscribe to real-time {viewset.model.__name__} lifecycle events via SSE.",
+        )
+        async def stream_items(request: Request):
+            """Stream model lifecycle events as server-sent events."""
+            try:
+                return await viewset.stream(request=request)
+            except HTTPException:
+                raise
+            except Exception as e:
+                return _handle_exception(e)
     
     # =========================================================================
     # COLLECTION @action endpoints (no {pk}) - MUST come before {pk} routes!

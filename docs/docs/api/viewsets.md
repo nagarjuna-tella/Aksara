@@ -22,7 +22,7 @@ async def delete_task(request, id): ...
 ```python
 class TaskViewSet(ModelViewSet):
     model = Task
-# Done! All 6 endpoints are created automatically.
+# Done! The default CRUD routes and stream endpoint are created automatically.
 ```
 
 ---
@@ -46,10 +46,14 @@ class TaskViewSet(ModelViewSet):
 |----------|--------|--------------|
 | `/tasks/` | GET | List all tasks |
 | `/tasks/` | POST | Create a new task |
+| `/tasks/stream/` | GET | Stream task lifecycle events via SSE |
 | `/tasks/{id}/` | GET | Get one task |
-| `/tasks/{id}/` | PUT | Replace a task |
 | `/tasks/{id}/` | PATCH | Update some fields |
 | `/tasks/{id}/` | DELETE | Delete a task |
+
+### Real-Time Streams
+
+Every `ModelViewSet` includes `GET /<prefix>/stream/` by default. The endpoint uses server-sent events and emits model lifecycle payloads for `INSERT`, `UPDATE`, and `DELETE` operations. Set `stream_enabled = False` on a ViewSet if you do not want the built-in stream route.
 
 ### With Options
 

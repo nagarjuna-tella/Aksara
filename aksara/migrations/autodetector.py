@@ -674,6 +674,7 @@ def generate_operations_from_diff(
     """
     from aksara.migrations import operations as op
     from aksara.fields import ForeignKey, OneToOne
+    from aksara.tenancy import build_disable_rls_sql, build_enable_rls_sql, is_tenant_model
 
     operations = []
 
@@ -700,6 +701,14 @@ def generate_operations_from_diff(
             fields_list.append((col_name, field_op))
 
         operations.append(op.CreateTable(name=table_name, fields=fields_list))
+
+        if is_tenant_model(model_class):
+            operations.append(
+                op.RunSQL(
+                    sql=build_enable_rls_sql(table_name),
+                    reverse_sql=build_disable_rls_sql(table_name),
+                )
+            )
 
     # 2. Add fields to existing tables
     for table_name, added_fields in diff.added_fields.items():
@@ -728,6 +737,13 @@ def generate_operations_from_diff(
                 name=col_name,
                 field=field_op,
             ))
+            if col_name == "tenant_id" and is_tenant_model(model_class):
+                operations.append(
+                    op.RunSQL(
+                        sql=build_enable_rls_sql(table_name),
+                        reverse_sql=build_disable_rls_sql(table_name),
+                    )
+                )
 
     # 3. Remove fields from existing tables
     for table_name, removed_fields in diff.removed_fields.items():
@@ -931,6 +947,19 @@ def operations_to_code(operations: list) -> str:
                 f'            table="{operation.table}",\n'
                 f'            name="{operation.name}",\n'
                 f'            new_default={default_val!r},\n'
+                f'        )'
+            )
+
+        elif isinstance(operation, op.RunSQL):
+            kwargs = [f'sql={operation.sql!r}']
+            if operation.reverse_sql is not None:
+                kwargs.append(f'reverse_sql={operation.reverse_sql!r}')
+            if operation.dangerous:
+                kwargs.append('dangerous=True')
+            joined = ",\n            ".join(kwargs)
+            code_parts.append(
+                f'        op.RunSQL(\n'
+                f'            {joined},\n'
                 f'        )'
             )
 

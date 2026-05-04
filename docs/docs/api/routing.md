@@ -51,8 +51,8 @@ For a ViewSet with default actions:
 |--------|------|------|--------|
 | GET | `/posts/` | `post-list` | list |
 | POST | `/posts/` | `post-create` | create |
+| GET | `/posts/stream` | `post-stream` | stream |
 | GET | `/posts/{id}/` | `post-detail` | retrieve |
-| PUT | `/posts/{id}/` | `post-update` | update |
 | PATCH | `/posts/{id}/` | `post-partial-update` | partial_update |
 | DELETE | `/posts/{id}/` | `post-delete` | destroy |
 
@@ -61,6 +61,8 @@ Plus custom actions:
 |--------|------|------|--------|
 | POST | `/posts/{id}/publish/` | `post-publish` | publish |
 | GET | `/posts/featured/` | `post-featured` | featured |
+
+The built-in stream route is registered before `/{pk}` paths so `/posts/stream` is never captured by the detail route.
 
 ---
 

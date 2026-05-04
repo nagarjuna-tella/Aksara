@@ -521,11 +521,12 @@ class TestNoActionsScenario:
         
         # Should have standard CRUD routes
         assert "/plain/" in paths
+        assert "/plain/stream" in paths
         assert "/plain/{pk}" in paths
         
         # Should NOT have any unexpected routes
         plain_routes = [p for p in paths if p.startswith("/plain")]
-        assert len(plain_routes) == 2  # list/create and retrieve/update/delete
+        assert len(plain_routes) == 3  # list/create, stream, and retrieve/update/delete
 
 
 class TestMultipleActionsCoexist:

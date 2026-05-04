@@ -49,6 +49,7 @@ from fastapi import Request, HTTPException
 
 from aksara.model.base import Model
 from aksara.manager import DoesNotExist
+from aksara.api.streaming import build_model_stream_response
 from aksara.api.schemas import (
     generate_create_schema,
     generate_update_schema,
@@ -117,6 +118,7 @@ class ModelViewSet:
     # v0.3.10: Permission classes
     permission_classes: List[Type["BasePermission"]] = []
     ai_exposed: bool = True  # Whether exposed to AI agents
+    stream_enabled: bool = True
     
     # v0.3.2: Serializer classes (optional, takes precedence over schemas)
     list_serializer_class: Optional[Type["ModelSerializer"]] = None
@@ -547,6 +549,12 @@ class ModelViewSet:
         
         await instance.delete()
         return {"deleted": True, "id": pk}
+
+    async def stream(self, request: Request):
+        """Stream model lifecycle events as server-sent events."""
+        self.check_permissions(request)
+        self.check_ai_access(request)
+        return build_model_stream_response(request, self.model)
     
     # =========================================================================
     # Helper Methods
