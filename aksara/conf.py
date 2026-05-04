@@ -32,6 +32,17 @@ def _get_int_env(key: str, default: int) -> int:
         return default
 
 
+def _get_float_env(key: str, default: float) -> float:
+    """Parse float from environment variable."""
+    value = os.environ.get(key)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 @dataclass
 class Settings:
     """
@@ -77,6 +88,28 @@ class Settings:
     
     # Migrations
     migrations_dir: str = "migrations"
+
+    # v0.5.45: Media storage
+    media_root: str = "media"
+    media_url: str = "/media/"
+    media_storage: str = "filesystem"
+    media_s3_bucket: Optional[str] = None
+    media_s3_region: Optional[str] = None
+    media_s3_endpoint_url: Optional[str] = None
+    media_s3_access_key: Optional[str] = None
+    media_s3_secret_key: Optional[str] = None
+    media_public_base_url: Optional[str] = None
+
+    # v0.5.45: Email backends
+    email_backend: str = "console"
+    default_from_email: str = "webmaster@localhost"
+    email_host: str = "localhost"
+    email_port: int = 25
+    email_host_user: Optional[str] = None
+    email_host_password: Optional[str] = None
+    email_use_tls: bool = False
+    email_use_ssl: bool = False
+    email_timeout: float = 10.0
     
     # v0.4.0: AI features
     ai_enabled: bool = False
@@ -206,6 +239,54 @@ class Settings:
         env_migrations = os.environ.get("AKSARA_MIGRATIONS_DIR")
         if env_migrations:
             self.migrations_dir = env_migrations
+
+        env_media_root = os.environ.get("AKSARA_MEDIA_ROOT")
+        if env_media_root:
+            self.media_root = env_media_root
+
+        env_media_url = os.environ.get("AKSARA_MEDIA_URL")
+        if env_media_url:
+            self.media_url = env_media_url
+
+        env_media_storage = os.environ.get("AKSARA_MEDIA_STORAGE")
+        if env_media_storage:
+            self.media_storage = env_media_storage
+
+        if self.media_s3_bucket is None:
+            self.media_s3_bucket = os.environ.get("AKSARA_MEDIA_S3_BUCKET")
+        if self.media_s3_region is None:
+            self.media_s3_region = os.environ.get("AKSARA_MEDIA_S3_REGION")
+        if self.media_s3_endpoint_url is None:
+            self.media_s3_endpoint_url = os.environ.get("AKSARA_MEDIA_S3_ENDPOINT_URL")
+        if self.media_s3_access_key is None:
+            self.media_s3_access_key = os.environ.get("AKSARA_MEDIA_S3_ACCESS_KEY")
+        if self.media_s3_secret_key is None:
+            self.media_s3_secret_key = os.environ.get("AKSARA_MEDIA_S3_SECRET_KEY")
+        if self.media_public_base_url is None:
+            self.media_public_base_url = os.environ.get("AKSARA_MEDIA_PUBLIC_BASE_URL")
+
+        env_email_backend = os.environ.get("AKSARA_EMAIL_BACKEND")
+        if env_email_backend:
+            self.email_backend = env_email_backend
+
+        env_default_from_email = os.environ.get("AKSARA_DEFAULT_FROM_EMAIL")
+        if env_default_from_email:
+            self.default_from_email = env_default_from_email
+
+        env_email_host = os.environ.get("AKSARA_EMAIL_HOST")
+        if env_email_host:
+            self.email_host = env_email_host
+
+        self.email_port = _get_int_env("AKSARA_EMAIL_PORT", self.email_port)
+
+        if self.email_host_user is None:
+            self.email_host_user = os.environ.get("AKSARA_EMAIL_HOST_USER")
+        if self.email_host_password is None:
+            self.email_host_password = os.environ.get("AKSARA_EMAIL_HOST_PASSWORD")
+
+        self.email_use_tls = _get_bool_env("AKSARA_EMAIL_USE_TLS", self.email_use_tls)
+        self.email_use_ssl = _get_bool_env("AKSARA_EMAIL_USE_SSL", self.email_use_ssl)
+        self.email_timeout = _get_float_env("AKSARA_EMAIL_TIMEOUT", self.email_timeout)
         
         # Future: AI features
         if not self.ai_enabled:
@@ -326,6 +407,31 @@ class Settings:
     def MIGRATIONS_DIR(self) -> str:
         """Alias for migrations_dir (uppercase convention)."""
         return self.migrations_dir
+
+    @property
+    def MEDIA_ROOT(self) -> str:
+        """Alias for media_root (uppercase convention)."""
+        return self.media_root
+
+    @property
+    def MEDIA_URL(self) -> str:
+        """Alias for media_url (uppercase convention)."""
+        return self.media_url
+
+    @property
+    def MEDIA_STORAGE(self) -> str:
+        """Alias for media_storage (uppercase convention)."""
+        return self.media_storage
+
+    @property
+    def EMAIL_BACKEND(self) -> str:
+        """Alias for email_backend (uppercase convention)."""
+        return self.email_backend
+
+    @property
+    def DEFAULT_FROM_EMAIL(self) -> str:
+        """Alias for default_from_email (uppercase convention)."""
+        return self.default_from_email
     
     @property
     def AI_ENABLED(self) -> bool:
@@ -401,6 +507,25 @@ except ImportError:
 settings = Settings()
 
 
+def _replace_settings(source: Settings, *, configured: Optional[bool] = None) -> Settings:
+    """Copy settings values into the global instance without rebinding it."""
+    values = dict(source.__dict__)
+    if configured is not None:
+        values["_configured"] = configured
+
+    settings.__dict__.clear()
+    settings.__dict__.update(values)
+
+    try:
+        from aksara.storage import clear_storage_cache
+
+        clear_storage_cache()
+    except Exception:
+        pass
+
+    return settings
+
+
 def configure(new_settings: Optional[Settings] = None, **kwargs: Any) -> Settings:
     """
     Configure Aksara settings.
@@ -423,34 +548,21 @@ def configure(new_settings: Optional[Settings] = None, **kwargs: Any) -> Setting
         The configured settings instance
     """
     global settings
-    
+
     if new_settings is not None:
-        # Use the provided Settings object
-        new_settings._configured = True
-        settings = new_settings
+        return _replace_settings(new_settings, configured=True)
     elif kwargs:
         # Create new Settings from kwargs (marked as configured to skip env loading)
-        # First, get current values as base
         current_values = {
-            "database_url": settings.database_url,
-            "pool_min_size": settings.pool_min_size,
-            "pool_max_size": settings.pool_max_size,
-            "debug": settings.debug,
-            "log_level": settings.log_level,
-            "log_requests": settings.log_requests,
-            "log_json": settings.log_json,
-            "app_title": settings.app_title,
-            "app_version": settings.app_version,
-            "migrations_dir": settings.migrations_dir,
-            "ai_enabled": settings.ai_enabled,
-            "mcp_enabled": settings.mcp_enabled,
-            "apps": settings.apps,
+            key: value
+            for key, value in settings.__dict__.items()
+            if not key.startswith("_")
         }
         # Override with kwargs
         current_values.update(kwargs)
         current_values["_configured"] = True
-        settings = Settings(**current_values)
-    
+        return _replace_settings(Settings(**current_values))
+
     return settings
 
 
@@ -463,9 +575,7 @@ def reset_settings() -> Settings:
     Returns:
         The reset settings instance
     """
-    global settings
-    settings = Settings()
-    return settings
+    return _replace_settings(Settings())
 
 
 __all__ = [

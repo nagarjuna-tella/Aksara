@@ -449,6 +449,46 @@ class EmailField(FieldOp):
         return f"EmailField(max_length={self.max_length})"
 
 
+class FileField(FieldOp):
+    """File field type for migrations (VARCHAR storing storage-relative paths)."""
+
+    def __init__(
+        self,
+        max_length: int = 500,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.max_length = max_length
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = [f"VARCHAR({self.max_length})"]
+
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return f"FileField(max_length={self.max_length})"
+
+
+class ImageField(FileField):
+    """Image field type for migrations (same storage representation as FileField)."""
+
+    def __repr__(self) -> str:
+        return f"ImageField(max_length={self.max_length})"
+
+
 class URLField(FieldOp):
     """URL field type for migrations (TEXT with format=uri)."""
     
@@ -1598,6 +1638,8 @@ __all__ = [
     "ForeignKeyField",
     # v0.3.5: New field types
     "EmailField",
+    "FileField",
+    "ImageField",
     "URLField",
     "EnumField",
     "OneToOneField",

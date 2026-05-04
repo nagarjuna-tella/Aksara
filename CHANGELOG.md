@@ -43,6 +43,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Model lifecycle events publish through PostgreSQL `LISTEN/NOTIFY` from `post_save` and `post_delete`
   - Tenant-scoped stream payloads are filtered so subscribers only see events for their active tenant
 
+- **Media storage abstraction** (`aksara/storage.py`, `aksara/fields.py`, `aksara/app.py`)
+  - Added `FileField` and `ImageField` with storage-backed persistence through async model saves
+  - Added `FieldFile` helpers for URLs, local paths, reads, deletes, existence checks, and file sizing
+  - Added `FileSystemStorage` and `S3Storage`, plus debug-mode automatic mounting of `MEDIA_URL` for local media
+
+- **Async email backends** (`aksara/core/mail.py`, `aksara/conf.py`)
+  - Added `ConsoleBackend`, `LocMemBackend`, and `SMTPBackend`
+  - Added `EmailMessage`, `send_mail()`, `send_mass_mail()`, and configurable `EMAIL_BACKEND` settings
+
 ### Changed
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
@@ -68,6 +77,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - tenant connection context application and migration RLS SQL generation
   - TypeScript SDK generation and CLI output
   - SSE stream route wiring and PostgreSQL event publication
+  - media storage persistence, image validation, schema typing, and migration mapping
+  - console, locmem, and SMTP email backends
 - Validated surrounding ORM, relation, and public export tests with PostgreSQL configured
 
 ## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures

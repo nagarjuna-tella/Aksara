@@ -247,6 +247,8 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        FileField as RuntimeFileField,
+        ImageField as RuntimeImageField,
     )
 
     # Map runtime field classes to migration operation names
@@ -262,6 +264,8 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         Float: "FloatField",
         Decimal: "DecimalField",
         Email: "EmailField",
+        RuntimeFileField: "FileField",
+        RuntimeImageField: "ImageField",
         URL: "URLField",
         Enum: "EnumField",
         OneToOne: "OneToOneField",
@@ -272,6 +276,10 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
     # OneToOne must be checked before ForeignKey (it inherits from FK)
     if isinstance(field, OneToOne):
         field_type = "OneToOneField"
+    elif isinstance(field, RuntimeImageField):
+        field_type = "ImageField"
+    elif isinstance(field, RuntimeFileField):
+        field_type = "FileField"
     elif isinstance(field, Email):
         field_type = "EmailField"
     elif isinstance(field, URL):
@@ -478,6 +486,8 @@ def _model_field_to_op(field_name: str, field):
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        FileField as RuntimeFileField,
+        ImageField as RuntimeImageField,
     )
     from aksara.migrations import operations as op
 
@@ -504,6 +514,32 @@ def _model_field_to_op(field_name: str, field):
         if field.nullable:
             kwargs['nullable'] = True
         return op.OneToOneField(target_table, **kwargs)
+
+    elif isinstance(field, RuntimeImageField):
+        kwargs = {}
+        if hasattr(field, 'max_length') and field.max_length:
+            kwargs['max_length'] = field.max_length
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.ImageField(**kwargs)
+
+    elif isinstance(field, RuntimeFileField):
+        kwargs = {}
+        if hasattr(field, 'max_length') and field.max_length:
+            kwargs['max_length'] = field.max_length
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.FileField(**kwargs)
 
     elif isinstance(field, Email):
         kwargs = {}
@@ -1092,6 +1128,32 @@ def _field_op_to_code(field_op) -> str:
         if field_op.unique:
             parts.append("unique=True")
         return f"op.EmailField({', '.join(parts)})" if parts else "op.EmailField()"
+
+    elif isinstance(field_op, op.ImageField):
+        parts = []
+        ml = getattr(field_op, 'max_length', None)
+        if ml:
+            parts.append(str(ml))
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return f"op.ImageField({', '.join(parts)})" if parts else "op.ImageField()"
+
+    elif isinstance(field_op, op.FileField):
+        parts = []
+        ml = getattr(field_op, 'max_length', None)
+        if ml:
+            parts.append(str(ml))
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return f"op.FileField({', '.join(parts)})" if parts else "op.FileField()"
 
     elif isinstance(field_op, op.URLField):
         parts = []

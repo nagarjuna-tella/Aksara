@@ -100,6 +100,27 @@ class JSON(Field[Any]):
     ) -> None: ...
 
 
+class FileField(Field[str]):
+    """File field storing a storage-relative path."""
+
+    max_length: int
+
+    def __init__(
+        self,
+        max_length: int = 500,
+        *,
+        upload_to: Any = "",
+        storage: Any = None,
+        nullable: bool = False,
+        default: Optional[str] = None,
+        unique: bool = False,
+    ) -> None: ...
+
+
+class ImageField(FileField):
+    """Image-specialized file field."""
+
+
 # Aliases
 StringField = String
 IntegerField = Integer

@@ -11,7 +11,9 @@ If you change behavior or supported options here, check if migrations also need 
 
 from __future__ import annotations
 
+import io
 import json
+import os
 import re
 import uuid as uuid_lib
 from abc import ABC, abstractmethod
@@ -23,6 +25,8 @@ from typing import Any, Optional, Type, Union, Callable, TYPE_CHECKING, List
 if TYPE_CHECKING:
     from aksara.model.base import Model
     from aksara.relations import OnDelete as OnDeleteType
+
+from aksara.storage import FieldFile, build_upload_name, get_default_storage, read_uploaded_content
 
 
 # =============================================================================
@@ -200,6 +204,10 @@ class Field(ABC):
     
     def to_db(self, value: Any) -> Any:
         """Convert Python value to database type."""
+        return value
+
+    async def async_prepare(self, value: Any, *, instance: Optional["Model"] = None) -> Any:
+        """Prepare a value asynchronously before model persistence."""
         return value
     
     def get_ai_metadata(self) -> dict:
@@ -781,6 +789,255 @@ class Text(Field):
         return s
 
 
+class FileField(Field):
+    """
+    File field that stores a storage-relative file path in PostgreSQL.
+
+    Accessing the field on a model instance returns a FieldFile wrapper with
+    helpers for reading, sizing, and URL generation.
+    """
+
+    def __init__(
+        self,
+        max_length: int = 500,
+        *,
+        upload_to: Any = "",
+        storage: Any = None,
+        allowed_extensions: Optional[List[str]] = None,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            db_index=db_index,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.max_length = max_length
+        self.upload_to = upload_to
+        self.storage = storage
+        self.allowed_extensions = {
+            extension.lower().lstrip(".")
+            for extension in (allowed_extensions or [])
+            if extension
+        } or None
+
+    @property
+    def sql_type(self) -> str:
+        return f"VARCHAR({self.max_length})"
+
+    def get_storage(self):
+        """Return the field-specific or global storage backend."""
+        if self.storage is not None:
+            return self.storage
+        return get_default_storage()
+
+    def to_field_file(self, value: Any, *, instance: Optional["Model"] = None) -> FieldFile:
+        """Wrap a stored path in a FieldFile helper object."""
+        if isinstance(value, FieldFile):
+            return value
+        return FieldFile(instance=instance, field=self, name=value)
+
+    def _normalize_name(self, name: Any) -> str:
+        normalized = str(name or "").strip().replace("\\", "/")
+        normalized = normalized.lstrip("/")
+        if not normalized:
+            raise ValueError("File name cannot be empty")
+        if len(normalized) > self.max_length:
+            raise ValueError(f"File path exceeds maximum length of {self.max_length}")
+        return normalized
+
+    def _validate_extension(self, name: str) -> None:
+        if not self.allowed_extensions:
+            return
+        extension = os.path.splitext(name)[1].lstrip(".").lower()
+        if extension not in self.allowed_extensions:
+            allowed = ", ".join(sorted(self.allowed_extensions))
+            raise ValueError(f"Invalid file extension for '{name}'. Allowed: {allowed}")
+
+    def validate(self, value: Any) -> Any:
+        """Validate stored file references or upload-like inputs."""
+        if value is None:
+            if self.nullable:
+                return None
+            raise ValueError("File cannot be null")
+
+        if isinstance(value, FieldFile):
+            value = value.name
+
+        if isinstance(value, tuple):
+            if len(value) != 2:
+                raise ValueError("File uploads must be provided as (name, content)")
+            upload_name = self._normalize_name(value[0])
+            self._validate_extension(upload_name)
+            return value
+
+        filename = getattr(value, "filename", None)
+        if filename:
+            upload_name = self._normalize_name(filename)
+            self._validate_extension(upload_name)
+            return value
+
+        if isinstance(value, (bytes, bytearray)):
+            return value
+
+        if hasattr(value, "read"):
+            upload_name = getattr(value, "name", None)
+            if upload_name:
+                upload_name = self._normalize_name(upload_name)
+                self._validate_extension(upload_name)
+            return value
+
+        stored_name = self._normalize_name(value)
+        self._validate_extension(stored_name)
+        return stored_name
+
+    def to_python(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        return self._normalize_name(value)
+
+    def to_db(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, FieldFile):
+            value = value.name
+        if not isinstance(value, str):
+            raise ValueError(
+                "FileField values must be prepared before database writes; "
+                "use model.save() or assign a stored path string"
+            )
+        return self._normalize_name(value)
+
+    def _extract_upload(self, value: Any) -> tuple[Optional[str], Any]:
+        """Normalize supported upload-like objects to a name/content pair."""
+        if isinstance(value, FieldFile):
+            return value.name, value.name
+        if isinstance(value, tuple) and len(value) == 2:
+            return str(value[0]), value[1]
+        filename = getattr(value, "filename", None)
+        if filename:
+            return str(filename), value
+        if hasattr(value, "read"):
+            return getattr(value, "name", None), value
+        if isinstance(value, (bytes, bytearray)):
+            return None, value
+        raise ValueError(f"Unsupported file upload value for field '{self.name}'")
+
+    async def async_prepare(self, value: Any, *, instance: Optional["Model"] = None) -> Any:
+        """Persist unresolved file uploads and return the stored path."""
+        if value is None:
+            return None
+        if isinstance(value, FieldFile):
+            return value.name
+        if isinstance(value, str):
+            return self._normalize_name(value)
+
+        original_name, payload = self._extract_upload(value)
+        data = await read_uploaded_content(payload)
+        upload_name = build_upload_name(
+            field_name=self.name or "file",
+            upload_to=self.upload_to,
+            original_name=original_name,
+            instance=instance,
+        )
+        normalized_name = self._normalize_name(upload_name)
+        self._validate_extension(normalized_name)
+        return await self.get_storage().save(normalized_name, data)
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with file-specific hints."""
+        base = super().get_ai_metadata()
+        base["format"] = "file"
+        base["max_length"] = self.max_length
+        return base
+
+
+class ImageField(FileField):
+    """Image-specialized file field validated with Pillow."""
+
+    def __init__(
+        self,
+        max_length: int = 500,
+        *,
+        upload_to: Any = "",
+        storage: Any = None,
+        allowed_extensions: Optional[List[str]] = None,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            max_length=max_length,
+            upload_to=upload_to,
+            storage=storage,
+            allowed_extensions=allowed_extensions or ["jpg", "jpeg", "png", "gif", "webp", "bmp"],
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            db_index=db_index,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+
+    def _validate_image_bytes(self, data: bytes) -> str:
+        """Validate image binary content and return the detected format."""
+        try:
+            from PIL import Image
+        except ImportError as exc:
+            raise ValueError(
+                "ImageField requires Pillow for validation. Install with: pip install pillow"
+            ) from exc
+
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                image.verify()
+                return (image.format or "").lower()
+        except Exception as exc:
+            raise ValueError("Uploaded file is not a valid image") from exc
+
+    async def async_prepare(self, value: Any, *, instance: Optional["Model"] = None) -> Any:
+        if value is None or isinstance(value, (str, FieldFile)):
+            return await super().async_prepare(value, instance=instance)
+
+        original_name, payload = self._extract_upload(value)
+        data = await read_uploaded_content(payload)
+        image_format = self._validate_image_bytes(data)
+
+        normalized_name = original_name or f"{self.name or 'image'}.{image_format}"
+        if not os.path.splitext(normalized_name)[1]:
+            normalized_name = f"{normalized_name}.{image_format}"
+
+        upload_name = build_upload_name(
+            field_name=self.name or "image",
+            upload_to=self.upload_to,
+            original_name=normalized_name,
+            instance=instance,
+        )
+        final_name = self._normalize_name(upload_name)
+        self._validate_extension(final_name)
+        return await self.get_storage().save(final_name, data)
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with image-specific hints."""
+        base = super().get_ai_metadata()
+        base["format"] = "image"
+        return base
+
+
 class Email(Field):
     """
     Email field with validation, mapping to VARCHAR.
@@ -1195,6 +1452,8 @@ EmailField = Email
 URLField = URL
 DecimalField = Decimal
 EnumField = Enum
+FileFieldType = FileField
+ImageFieldType = ImageField
 
 
 class Float(Field):

@@ -6,26 +6,25 @@ Complete reference for all Aksara configuration options.
 
 ## Configuration
 
-Settings are defined in `settings.py` as an `AKSARA` dictionary:
+The current Aksara configuration surface is the `Settings` dataclass in
+`aksara.conf`.
 
 ```python
-# settings.py
-AKSARA = {
-    "DEBUG": True,
-    "DATABASE_URL": "postgresql://localhost/myapp",
-    # ... more settings
-}
+from aksara.conf import Settings, configure
+
+configure(Settings(
+    database_url="postgresql://user:pass@localhost:5432/myapp",
+    debug=True,
+))
 ```
 
 Or load from environment:
 
 ```python
-import os
-
-AKSARA = {
-    "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
-    "DATABASE_URL": os.environ["DATABASE_URL"],
-}
+export DATABASE_URL=postgresql://user:pass@localhost:5432/myapp
+export AKSARA_DEBUG=true
+export AKSARA_MEDIA_ROOT=media
+export AKSARA_EMAIL_BACKEND=console
 ```
 
 ---
@@ -100,10 +99,11 @@ Database connection URL.
 ```python
 # PostgreSQL
 "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
-
-# SQLite
-"DATABASE_URL": "sqlite:///./app.db"
 ```
+
+!!! note
+    Aksara is PostgreSQL-only. SQLite and other database engines are not
+    supported as of now. New engines will be added when we find time. 😅
 
 ### DATABASE_POOL
 
@@ -127,6 +127,121 @@ Connection pool configuration.
 | `max_size` | int | 20 | Maximum connections |
 | `max_queries` | int | 50000 | Max queries per connection |
 | `max_inactive_connection_lifetime` | int | 300 | Idle timeout (seconds) |
+
+---
+
+## Media Storage Settings
+
+### MEDIA_ROOT
+
+Type: `str`
+Default: `"media"`
+
+Local directory used by `FileSystemStorage`.
+
+### MEDIA_URL
+
+Type: `str`
+Default: `"/media/"`
+
+Public URL prefix for locally served media. In debug mode, `Aksara` mounts this
+path automatically when filesystem storage is active.
+
+### MEDIA_STORAGE
+
+Type: `str`
+Default: `"filesystem"`
+
+Storage backend selector.
+
+Supported values:
+
+- `filesystem`
+- `s3`
+- Dotted import path to a custom storage backend class
+
+### Filesystem Example
+
+```python
+from aksara.conf import Settings, configure
+
+configure(Settings(
+    media_root="media",
+    media_url="/media/",
+    media_storage="filesystem",
+))
+```
+
+### S3 Settings
+
+These settings are used when `media_storage="s3"`:
+
+| Setting | Type | Description |
+|--------|------|-------------|
+| `media_s3_bucket` | `str` | Bucket name |
+| `media_s3_region` | `str` | AWS region |
+| `media_s3_endpoint_url` | `str` | Optional S3-compatible endpoint |
+| `media_s3_access_key` | `str` | Access key |
+| `media_s3_secret_key` | `str` | Secret key |
+| `media_public_base_url` | `str` | Optional public CDN/base URL |
+
+```python
+configure(Settings(
+    media_storage="s3",
+    media_s3_bucket="my-app-media",
+    media_s3_region="us-east-1",
+    media_public_base_url="https://cdn.example.com/media",
+))
+```
+
+---
+
+## Email Settings
+
+### EMAIL_BACKEND
+
+Type: `str`
+Default: `"console"`
+
+Supported values:
+
+- `console`
+- `locmem`
+- `smtp`
+- Dotted import path to a custom backend class
+
+### DEFAULT_FROM_EMAIL
+
+Type: `str`
+Default: `"webmaster@localhost"`
+
+Sender address used when `send_mail()` is called without `from_email`.
+
+### SMTP Settings
+
+| Setting | Type | Default |
+|--------|------|---------|
+| `email_host` | `str` | `localhost` |
+| `email_port` | `int` | `25` |
+| `email_host_user` | `str \| None` | `None` |
+| `email_host_password` | `str \| None` | `None` |
+| `email_use_tls` | `bool` | `False` |
+| `email_use_ssl` | `bool` | `False` |
+| `email_timeout` | `float` | `10.0` |
+
+```python
+configure(Settings(
+    email_backend="smtp",
+    default_from_email="noreply@example.com",
+    email_host="smtp.example.com",
+    email_port=587,
+    email_host_user="mailer",
+    email_host_password="super-secret",
+    email_use_tls=True,
+))
+```
+
+See [Advanced Media & Email](../advanced/media-and-email.md) for usage examples.
 
 ---
 

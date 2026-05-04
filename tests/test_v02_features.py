@@ -115,6 +115,22 @@ class TestSettings:
         # Reset for other tests
         reset_settings()
 
+    def test_configure_and_reset_preserve_settings_identity(self):
+        """Direct imports of settings should remain valid across reconfiguration."""
+        original_settings = settings
+
+        configured = configure(debug=True, database_url="postgresql://identity/db")
+
+        assert configured is original_settings
+        assert settings is original_settings
+        assert settings.debug is True
+        assert settings.database_url == "postgresql://identity/db"
+
+        reset_result = reset_settings()
+
+        assert reset_result is original_settings
+        assert settings is original_settings
+
 
 # =============================================================================
 # Test Exceptions

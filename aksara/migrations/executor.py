@@ -710,6 +710,8 @@ def model_to_create_table(model_class) -> str:
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        FileField as RuntimeFileField,
+        ImageField as RuntimeImageField,
     )
     
     # Get table name (try both attributes)
@@ -756,6 +758,22 @@ def model_to_create_table(model_class) -> str:
             field_name = field.db_column_name
             field_code = f"op.OneToOneField({', '.join(parts)})"
         
+        elif isinstance(field, RuntimeImageField):
+            parts = [f"{field.max_length}"]
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            field_code = f"op.ImageField({', '.join(parts)})"
+
+        elif isinstance(field, RuntimeFileField):
+            parts = [f"{field.max_length}"]
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.unique:
+                parts.append("unique=True")
+            field_code = f"op.FileField({', '.join(parts)})"
+
         elif isinstance(field, Email):
             parts = [f"{field.max_length}"]
             if field.nullable:

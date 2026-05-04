@@ -160,6 +160,7 @@ nav:
       - advanced/index.md
       - Custom Fields: advanced/custom-fields.md
       - Custom Migrations: advanced/custom-migrations.md
+      - Media and Email: advanced/media-and-email.md
       - Extending Admin: advanced/extending-admin.md
       - Custom Permissions: advanced/custom-permissions.md
       - Integrating with FastAPI: advanced/integrating-with-pure-fastapi.md

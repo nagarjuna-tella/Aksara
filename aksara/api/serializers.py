@@ -70,6 +70,8 @@ def _get_python_type(field: aksara_fields.Field) -> type:
     """
     if isinstance(field, aksara_fields.UUID):
         return UUID
+    elif isinstance(field, aksara_fields.FileField):
+        return str
     elif isinstance(field, aksara_fields.String):
         return str
     elif isinstance(field, aksara_fields.Text):

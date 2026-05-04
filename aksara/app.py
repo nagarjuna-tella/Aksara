@@ -207,6 +207,9 @@ class Aksara(FastAPI):
         
         # v0.3.15: Maybe mount admin interface
         self._maybe_mount_admin()
+
+        # v0.5.45: Mount local media files automatically in debug mode
+        self._maybe_mount_media()
         
         # v0.4.0: Initialize AI registry and endpoints
         self._setup_ai_registry()
@@ -269,6 +272,30 @@ class Aksara(FastAPI):
                 include_admin(self)
         
         # else: enable_admin is False → never mount admin
+
+    def _maybe_mount_media(self) -> None:
+        """Mount MEDIA_URL when filesystem storage is active in debug mode."""
+        from aksara.conf import settings
+        from aksara.storage import FileSystemStorage, get_default_storage
+
+        is_debug = self._debug or getattr(settings, "debug", False)
+        if not is_debug:
+            return
+
+        storage = get_default_storage()
+        if not isinstance(storage, FileSystemStorage):
+            return
+
+        media_url = getattr(settings, "media_url", "/media/")
+        mount_path = media_url.rstrip("/") or "/media"
+        if mount_path == "/":
+            return
+
+        route_paths = {getattr(route, "path", None) for route in self.routes}
+        if mount_path in route_paths:
+            return
+
+        self.mount(mount_path, StaticFiles(directory=str(storage.location)), name="aksara-media")
     
     def _setup_custom_docs(
         self,

@@ -17,9 +17,12 @@ All notable changes to Aksara.
 - **Tenant-aware connection context** across pooled, session-owned, and transaction-owned database access.
 - **`aksara generate sdk --language typescript`** for fetch-based TypeScript CRUD clients.
 - **`GET /<prefix>/stream`** SSE endpoints backed by PostgreSQL `LISTEN/NOTIFY`.
+- **`FileField` and `ImageField`** with `FieldFile` wrappers, filesystem/S3 storage backends, and debug-mode media mounting.
+- **Async email backends** with `ConsoleBackend`, `LocMemBackend`, `SMTPBackend`, `send_mail()`, and `send_mass_mail()`.
 
 ### Documentation
 - Added a dedicated ORM page covering expressions, aggregates, relation paths, and transactions.
+- Added field, advanced, and settings docs for storage-backed media fields and async email configuration.
 - Refreshed the release notes, API docs, and CLI docs for the full v0.5.45 feature set.
 
 ---

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
 from aksara.db import quote_identifier
-from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager
+from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField
 from aksara.registry import ModelRegistry
 
 
@@ -520,7 +520,11 @@ class Model(metaclass=ModelMeta):
         
         # Check regular fields
         if name in self._fields:
-            return self._data.get(name)
+            field = self._fields[name]
+            value = self._data.get(name)
+            if isinstance(field, FileField):
+                return field.to_field_file(value, instance=self)
+            return value
         
         # Check ManyToMany fields - return manager
         if name in self._m2m_fields:
@@ -545,6 +549,10 @@ class Model(metaclass=ModelMeta):
             return
         
         if name in self._fields:
+            field = self._fields[name]
+            if isinstance(field, FileField) and hasattr(value, "name") and hasattr(value, "field"):
+                self._data[name] = value.name
+                return
             self._data[name] = value
             return
         
@@ -740,6 +748,12 @@ class Model(metaclass=ModelMeta):
         
         # Fire pre_save signal
         await pre_save.send(sender=self.__class__, instance=self, is_new=self._is_new)
+
+        for field_name, field in self._fields.items():
+            self._data[field_name] = await field.async_prepare(
+                self._data.get(field_name),
+                instance=self,
+            )
         
         # Validate all fields before saving
         await self._validate_fields()

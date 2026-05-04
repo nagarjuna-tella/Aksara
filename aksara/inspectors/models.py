@@ -155,6 +155,8 @@ _FIELD_TYPE_MAP: Dict[str, str] = {
     "BooleanField": "bool",
     "CharField": "str",
     "TextField": "str",
+    "FileField": "str",
+    "ImageField": "str",
     "SlugField": "str",
     "EmailField": "str",
     "URLField": "str",

@@ -30,6 +30,7 @@ from aksara.registry import (
 )
 from aksara.manager import DoesNotExist, MultipleObjectsReturned
 from aksara.conf import Settings, settings, configure
+from aksara.storage import FieldFile, Storage, FileSystemStorage, S3Storage, get_default_storage
 from aksara.exceptions import (
     AksaraError,
     DatabaseError,
@@ -74,6 +75,18 @@ from aksara.migrations import (
 from aksara.core.discovery import (
     discover_viewsets_from_module,
     auto_discover_viewsets,
+)
+from aksara.core.mail import (
+    EmailMessage,
+    BaseEmailBackend,
+    ConsoleBackend,
+    LocMemBackend,
+    SMTPBackend,
+    get_email_backend,
+    send_mail,
+    send_mass_mail,
+    outbox,
+    reset_outbox,
 )
 
 # v0.3.14: App discovery
@@ -190,6 +203,21 @@ __all__ = [
     "Settings",
     "settings",
     "configure",
+    "FieldFile",
+    "Storage",
+    "FileSystemStorage",
+    "S3Storage",
+    "get_default_storage",
+    "EmailMessage",
+    "BaseEmailBackend",
+    "ConsoleBackend",
+    "LocMemBackend",
+    "SMTPBackend",
+    "get_email_backend",
+    "send_mail",
+    "send_mass_mail",
+    "outbox",
+    "reset_outbox",
     # Exceptions
     "AksaraError",
     "DatabaseError",

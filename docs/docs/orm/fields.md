@@ -106,6 +106,63 @@ Validation: Must be a valid HTTP/HTTPS URL.
 
 ---
 
+## Media Fields
+
+### FileField
+
+Store files through Aksara's media storage abstraction.
+
+```python
+class Document(Model):
+    title = fields.String(max_length=200)
+    attachment = fields.FileField(upload_to="documents")
+```
+
+PostgreSQL type: `VARCHAR(500)` by default.
+
+When you access the field on a model instance, Aksara returns a `FieldFile`
+wrapper instead of a raw string:
+
+```python
+document = await Document.objects.get(id=doc_id)
+
+document.attachment.url          # "/media/documents/..." or S3 URL
+document.attachment.path         # Local filesystem path when available
+await document.attachment.exists()
+await document.attachment.size()
+await document.attachment.read()
+```
+
+You can assign either an existing stored path string or an upload-like value:
+
+```python
+document.attachment = ("report.pdf", pdf_bytes)
+await document.save()
+```
+
+### ImageField
+
+Image-specialized file field with Pillow-backed validation.
+
+```python
+class Profile(Model):
+    avatar = fields.ImageField(upload_to="avatars", nullable=True)
+```
+
+`ImageField` accepts the same inputs as `FileField`, but verifies that the
+uploaded content is a real image before saving it.
+
+!!! tip "Custom upload endpoints"
+    `ModelViewSet` schemas still expose file and image fields as strings.
+    For browser uploads, add a custom FastAPI endpoint that accepts
+    `UploadFile`, then assign that object to the model field and call
+    `await instance.save()`.
+
+See [Advanced Media & Email](../advanced/media-and-email.md) for storage
+configuration, S3 usage, and upload endpoint examples.
+
+---
+
 ## Numeric Fields
 
 ### Integer
