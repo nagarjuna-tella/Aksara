@@ -89,7 +89,7 @@ async def lifespan(app: Aksara):
 app = Aksara(
     title="AI Providers Example",
     description="Demonstrates AI provider wiring patterns for Aksara",
-    version="0.5.43",
+    version="0.5.45",
     lifespan=lifespan,
     settings=settings,
 )

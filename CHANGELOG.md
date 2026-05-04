@@ -5,6 +5,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.45] — ORM Expressions, Relation Aggregates, and Atomic Transactions
+
+### Added
+- **ORM expression primitives** (`aksara/db/expressions.py`)
+  - `Q()` objects for nested boolean logic with `&`, `|`, and `~`
+  - `F()` expressions for database-side field references and arithmetic
+  - Aggregate classes: `Count`, `Sum`, `Avg`, `Min`, and `Max`
+
+- **QuerySet expression support** (`aksara/manager.py`)
+  - `filter(*q_objects, **kwargs)` now accepts positional `Q()` objects
+  - `update(**kwargs)` supports `F()` expressions for atomic updates
+  - `annotate(**kwargs)` adds computed values and aggregates to model instances
+  - `aggregate(**kwargs)` returns summary dictionaries from database aggregates
+
+- **Relation-aware aggregation** (`aksara/manager.py`)
+  - One-hop aggregate paths now compile JOINs automatically
+  - Supported paths include reverse FK/O2O related names, forward M2M fields, reverse M2M related names, and forward FK/O2O fields
+  - Examples: `Count("comments")`, `Sum("comments__views")`, `Count("tags")`, `Count("posts")`
+
+- **Atomic transaction DX** (`aksara/db/transaction.py`)
+  - `transaction.atomic` works as an async context manager and decorator
+  - Reuses the active request or transaction-scoped connection through `ContextVar`
+  - Nested `atomic()` blocks use asyncpg nested transactions on the same connection
+
+### Changed
+- **Database connection reuse** (`aksara/db/engine.py`)
+  - `Database.acquire()` now reuses the active session connection when one exists
+
+- **Model hydration** (`aksara/model/base.py`)
+  - `Model._from_record()` now preserves annotated columns by attaching undeclared fields to instances
+
+- **Insert safeguards**
+  - Expressions are rejected in insert-like operations (`Model._insert()`, `bulk_create()`, `bulk_update()`, `upsert()`) to prevent invalid SQL generation in create paths
+
+### Documentation
+- Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
+- Updated the ORM docs navigation and release documentation to reflect v0.5.45
+
+### Tests
+- Added focused coverage for:
+  - recursive `Q()` compilation
+  - `F()` filters and updates
+  - annotation hydration
+  - reverse FK and M2M aggregate joins
+  - transaction connection reuse and nested atomic scopes
+- Validated surrounding ORM, relation, and public export tests with PostgreSQL configured
+
 ## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures
 
 ### Category 1: API & ViewSet DX

@@ -5,6 +5,20 @@ Aksara is maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
 All notable changes to Aksara.
 
 ---
+## [0.5.45] — ORM Expressions, Relation Aggregates, and Atomic Transactions
+
+### Added
+- **`Q()` objects** for nested boolean filtering with `&`, `|`, and `~`.
+- **`F()` expressions** for database-side field references in filters and updates.
+- **`annotate()` and `aggregate()`** for model-level and summary aggregation.
+- **Relation-aware aggregates** for one-hop reverse FK/O2O, forward M2M, reverse M2M, and forward FK/O2O paths.
+- **`transaction.atomic`** as both an async decorator and context manager.
+
+### Documentation
+- Added a dedicated ORM page covering expressions, aggregates, relation paths, and transactions.
+- Refreshed the release notes and ORM index for the v0.5.45 feature set.
+
+---
 ## [0.5.44] — Framework DX Enhancements (Phase 1)
 
 ### Added

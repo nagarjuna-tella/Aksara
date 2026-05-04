@@ -10,3 +10,5 @@ __pycache__/
 .cursor
 .mypy_cache/
 .github/
+
+v0.5.45-DX-PLAN.md

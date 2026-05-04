@@ -6,7 +6,20 @@ A lightweight, async-native ORM designed specifically for PostgreSQL and FastAPI
 
 from aksara.model.base import Model
 from aksara import fields
-from aksara.db import Database
+from aksara.db import (
+    Aggregate,
+    Avg,
+    Count,
+    Database,
+    F,
+    Max,
+    Min,
+    Q,
+    Sum,
+    TransactionManager,
+    atomic,
+    transaction,
+)
 from aksara.registry import (
     ModelRegistry,
     get_models,
@@ -153,6 +166,17 @@ __all__ = [
     "Model",
     "fields", 
     "Database",
+    "Q",
+    "F",
+    "Aggregate",
+    "Count",
+    "Sum",
+    "Avg",
+    "Min",
+    "Max",
+    "TransactionManager",
+    "atomic",
+    "transaction",
     "ModelRegistry",
     "DoesNotExist",
     "MultipleObjectsReturned",

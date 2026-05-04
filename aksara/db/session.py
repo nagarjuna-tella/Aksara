@@ -6,7 +6,7 @@ Context variable based session management for request lifecycle.
 
 from __future__ import annotations
 
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -36,6 +36,16 @@ def set_session(session: Optional["asyncpg.Connection"]) -> None:
         session: Database connection to set
     """
     _session_context.set(session)
+
+
+def push_session(session: Optional["asyncpg.Connection"]) -> Token:
+    """Push a session value and return the reset token."""
+    return _session_context.set(session)
+
+
+def reset_session(token: Token) -> None:
+    """Reset the session context using a previously returned token."""
+    _session_context.reset(token)
 
 
 class session_context:

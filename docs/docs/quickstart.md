@@ -48,7 +48,7 @@ Verify it worked:
 
 ```bash
 aksara --version
-# Output: aksara, version 0.5.43
+# Output: aksara, version 0.5.45
 ```
 
 ---
@@ -110,7 +110,7 @@ This will:
 5. Write `DATABASE_URL` to your `.env` file
 
 ```
-  ⚡ Aksara v0.5.43 — Database Setup
+  ⚡ Aksara v0.5.45 — Database Setup
 
   → Checking for PostgreSQL...        ✓ found (localhost:5432)
   → Database name [opsdesk]:
@@ -254,7 +254,7 @@ aksara dev main:app
 **What you'll see:**
 
 ```
-  ⚡ Aksara 0.5.43 — Dev Server
+  ⚡ Aksara 0.5.45 — Dev Server
 
   Env:        dev
   Debug:      True

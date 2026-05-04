@@ -579,6 +579,7 @@ class Model(metaclass=ModelMeta):
         instance._is_new = False
         
         record_keys = set(record.keys())
+        consumed_keys = set()
         
         for field_name, field in cls._fields.items():
             # Handle ForeignKey - look for the _id column
@@ -587,9 +588,14 @@ class Model(metaclass=ModelMeta):
                 if col_name in record_keys:
                     value = field.to_python(record[col_name])
                     instance._data[field_name] = value
+                    consumed_keys.add(col_name)
             elif field_name in record_keys:
                 value = field.to_python(record[field_name])
                 instance._data[field_name] = value
+                consumed_keys.add(field_name)
+
+        for extra_key in record_keys - consumed_keys:
+            setattr(instance, extra_key, record[extra_key])
         
         return instance
     
@@ -753,6 +759,8 @@ class Model(metaclass=ModelMeta):
     
     async def _insert(self, db: "Database") -> None:
         """Insert a new record."""
+        from aksara.db.expressions import is_expression
+
         fields_to_insert = []
         values = []
         placeholders = []
@@ -767,6 +775,8 @@ class Model(metaclass=ModelMeta):
             
             value = self._data.get(field_name)
             if value is not None or field.nullable:
+                if is_expression(value):
+                    raise ValueError("Expressions are only supported in update operations")
                 # For ForeignKey, use the column name (e.g., author_id)
                 if isinstance(field, ForeignKey):
                     col_name = field.db_column_name
@@ -801,6 +811,8 @@ class Model(metaclass=ModelMeta):
     
     async def _update(self, db: "Database") -> None:
         """Update an existing record."""
+        from aksara.db.expressions import compile_expression, is_expression
+
         set_clauses = []
         values = []
         
@@ -810,15 +822,20 @@ class Model(metaclass=ModelMeta):
                 continue
             
             value = self._data.get(field_name)
-            values.append(field.to_db(value))
             
             # For ForeignKey, use the column name (e.g., author_id)
             if isinstance(field, ForeignKey):
                 col_name = field.db_column_name
             else:
                 col_name = field_name
-            
-            set_clauses.append(f"{quote_identifier(col_name)} = ${len(values)}")
+
+            if is_expression(value):
+                set_clauses.append(
+                    f"{quote_identifier(col_name)} = {compile_expression(self.__class__, value, values)}"
+                )
+            else:
+                values.append(field.to_db(value))
+                set_clauses.append(f"{quote_identifier(col_name)} = ${len(values)}")
         
         # Add the id for the WHERE clause
         values.append(self._data['id'])

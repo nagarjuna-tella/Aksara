@@ -11,6 +11,7 @@ from typing import Any, Optional, Sequence
 from contextlib import asynccontextmanager
 
 from aksara.logging import QueryLogger, logger
+from aksara.db.session import get_session
 from aksara.exceptions import map_database_error, ConnectionError as AksaraConnectionError
 from aksara.db.debug import log_query
 
@@ -136,6 +137,11 @@ class Database:
             async with db.acquire() as conn:
                 await conn.execute(...)
         """
+        current_session = get_session()
+        if current_session is not None:
+            yield current_session
+            return
+
         async with self.pool.acquire() as connection:
             yield connection
     

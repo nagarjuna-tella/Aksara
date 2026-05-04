@@ -307,17 +307,15 @@ pip install aksara
 
 ---
 
-## What's New in v0.5.43
+## What's New in v0.5.45
 
 The latest release includes:
 
-- **Admin UI Overhaul** — New modern widget system with JSON and Array field widgets
-- **AI Schema Doctor** — Detect schema drift and health issues
-- **Architecture Review** — Inspect coupling and structural pressure across the app
-- **Performance Analyzer** — Surface slow queries, missing indexes, and ORM hot spots
-- **AI Agent Runtime** — Mini agent loop for external AI coordination
-- **Enhanced Debug Pages** — AI-powered debugging suggestions
-- **1920+ Tests** — Comprehensive test coverage
+- **`Q()` Objects** — Nested boolean filtering with explicit `AND`, `OR`, and `NOT`
+- **`F()` Expressions** — Database-side arithmetic and field comparisons
+- **Relation-Aware Aggregates** — One-hop aggregate joins for reverse FK/O2O and M2M paths
+- **`transaction.atomic`** — Async context manager and decorator for safe multi-step writes
+- **Expanded ORM Coverage** — New tests for expressions, aggregate joins, and transaction reuse
 
 [View Full Changelog](changelog.md){ .md-button }
 

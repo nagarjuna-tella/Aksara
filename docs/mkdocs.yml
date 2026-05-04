@@ -56,6 +56,7 @@ nav:
       - Fields: orm/fields.md
       - Relations: orm/relations.md
       - Querying: orm/querying.md
+      - Expressions & Transactions: orm/expressions-and-transactions.md
       - Bulk Operations: orm/bulk-operations.md
       - Soft Deletes: orm/soft-deletes.md
       - Signals: orm/signals.md

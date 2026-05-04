@@ -271,35 +271,35 @@ class TestQueryLookups:
         """Test building WHERE clause with __gt."""
         qs = queryset.filter(age__gt=18)
         clause, params = qs._build_where_clause()
-        assert "age > $1" in clause
+        assert '"age" > $1' in clause
         assert params == [18]
     
     def test_build_where_clause_in(self, queryset):
         """Test building WHERE clause with __in."""
         qs = queryset.filter(age__in=[18, 21, 25])
         clause, params = qs._build_where_clause()
-        assert "age IN ($1, $2, $3)" in clause
+        assert '"age" IN ($1, $2, $3)' in clause
         assert params == [18, 21, 25]
     
     def test_build_where_clause_isnull_true(self, queryset):
         """Test building WHERE clause with __isnull=True."""
         qs = queryset.filter(name__isnull=True)
         clause, params = qs._build_where_clause()
-        assert "name IS NULL" in clause
+        assert '"name" IS NULL' in clause
         assert params == []
     
     def test_build_where_clause_isnull_false(self, queryset):
         """Test building WHERE clause with __isnull=False."""
         qs = queryset.filter(name__isnull=False)
         clause, params = qs._build_where_clause()
-        assert "name IS NOT NULL" in clause
+        assert '"name" IS NOT NULL' in clause
         assert params == []
     
     def test_build_where_clause_icontains(self, queryset):
         """Test building WHERE clause with __icontains."""
         qs = queryset.filter(name__icontains="john")
         clause, params = qs._build_where_clause()
-        assert "name ILIKE $1" in clause
+        assert '"name" ILIKE $1' in clause
         assert params == ["%john%"]
 
 

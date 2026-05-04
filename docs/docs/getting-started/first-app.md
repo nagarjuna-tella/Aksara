@@ -338,7 +338,7 @@ aksara dev
 You should see:
 
 ```
-⚡ Aksara 0.5.43
+⚡ Aksara 0.5.45
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
 INFO:     Started server process

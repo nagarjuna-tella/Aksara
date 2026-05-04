@@ -12,9 +12,11 @@ if TYPE_CHECKING:
     from aksara.model.base import Model
 
 from aksara.db import quote_identifier
+from aksara.db.expressions import Aggregate, Q, compile_expression, is_expression
 from aksara.exceptions import ConfigurationError
 
 T = TypeVar("T", bound="Model")
+_UNSET = object()
 
 
 # Supported lookup types
@@ -96,6 +98,8 @@ class QuerySet(Generic[T]):
         select_related_fields: Optional[Set[str]] = None,
         prefetch_related_fields: Optional[Set[str]] = None,
         order_by_fields: Optional[List[str]] = None,
+        q_objects: Optional[List[Q]] = None,
+        annotations: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a QuerySet.
@@ -112,9 +116,35 @@ class QuerySet(Generic[T]):
         self._select_related: Set[str] = select_related_fields or set()
         self._prefetch_related: Set[str] = prefetch_related_fields or set()
         self._order_by: Optional[List[str]] = order_by_fields
+        self._q_objects: List[Q] = list(q_objects or [])
+        self._annotations: Dict[str, Any] = dict(annotations or {})
         self._search: Optional[Tuple[str, List[str]]] = None  # (term, fields)
     
-    def filter(self, **kwargs) -> "QuerySet[T]":
+    def _clone(
+        self,
+        *,
+        filters: Any = _UNSET,
+        select_related_fields: Any = _UNSET,
+        prefetch_related_fields: Any = _UNSET,
+        order_by_fields: Any = _UNSET,
+        q_objects: Any = _UNSET,
+        annotations: Any = _UNSET,
+        search: Any = _UNSET,
+    ) -> "QuerySet[T]":
+        """Clone the queryset while overriding selected state."""
+        qs = QuerySet(
+            self._model,
+            self._filters.copy() if filters is _UNSET else filters,
+            self._select_related.copy() if select_related_fields is _UNSET else select_related_fields,
+            self._prefetch_related.copy() if prefetch_related_fields is _UNSET else prefetch_related_fields,
+            (self._order_by.copy() if self._order_by else None) if order_by_fields is _UNSET else order_by_fields,
+            self._q_objects.copy() if q_objects is _UNSET else q_objects,
+            self._annotations.copy() if annotations is _UNSET else annotations,
+        )
+        qs._search = self._search if search is _UNSET else search
+        return qs
+
+    def filter(self, *args: Q, **kwargs) -> "QuerySet[T]":
         """
         Add filter conditions to the query.
         
@@ -135,16 +165,13 @@ class QuerySet(Generic[T]):
         Returns:
             New QuerySet with additional filters
         """
+        for q_object in args:
+            if not isinstance(q_object, Q):
+                raise TypeError("filter() positional arguments must be Q objects")
+
         new_filters = {**self._filters, **kwargs}
-        qs = QuerySet(
-            self._model,
-            new_filters,
-            self._select_related.copy(),
-            self._prefetch_related.copy(),
-            self._order_by.copy() if self._order_by else None,
-        )
-        qs._search = self._search
-        return qs
+        new_q_objects = self._q_objects + list(args)
+        return self._clone(filters=new_filters, q_objects=new_q_objects)
     
     def search(self, term: str, fields: List[str]) -> "QuerySet[T]":
         """
@@ -159,16 +186,8 @@ class QuerySet(Generic[T]):
         """
         if not term or not fields:
             return self
-            
-        qs = QuerySet(
-            self._model,
-            self._filters.copy(),
-            self._select_related.copy(),
-            self._prefetch_related.copy(),
-            self._order_by.copy() if self._order_by else None,
-        )
-        qs._search = (term, fields)
-        return qs
+
+        return self._clone(search=(term, fields))
     
     def order_by(self, *fields: str) -> "QuerySet[T]":
         """
@@ -266,15 +285,7 @@ class QuerySet(Generic[T]):
             
             validated_fields.append(field)
         
-        qs = QuerySet(
-            self._model,
-            self._filters.copy(),
-            self._select_related.copy(),
-            self._prefetch_related.copy(),
-            validated_fields,
-        )
-        qs._search = self._search
-        return qs
+        return self._clone(order_by_fields=validated_fields)
     
     def select_related(self, *fields: str) -> "QuerySet[T]":
         """
@@ -300,15 +311,7 @@ class QuerySet(Generic[T]):
             posts = await Post.objects.select_related("author").select_related("category").all()
         """
         new_select_related = self._select_related | set(fields)
-        qs = QuerySet(
-            self._model,
-            self._filters.copy(),
-            new_select_related,
-            self._prefetch_related.copy(),
-            self._order_by.copy() if self._order_by else None,
-        )
-        qs._search = self._search
-        return qs
+        return self._clone(select_related_fields=new_select_related)
     
     def prefetch_related(self, *fields: str) -> "QuerySet[T]":
         """
@@ -323,100 +326,368 @@ class QuerySet(Generic[T]):
             New QuerySet with prefetch_related fields added
         """
         new_prefetch_related = self._prefetch_related | set(fields)
-        qs = QuerySet(
-            self._model,
-            self._filters.copy(),
-            self._select_related.copy(),
-            new_prefetch_related,
-            self._order_by.copy() if self._order_by else None,
+        return self._clone(prefetch_related_fields=new_prefetch_related)
+
+    def annotate(self, **kwargs: Any) -> "QuerySet[T]":
+        """Add computed or aggregate annotations to the SELECT list."""
+        if not kwargs:
+            raise ValueError("annotate() requires at least one named expression")
+
+        new_annotations = {**self._annotations, **kwargs}
+        return self._clone(annotations=new_annotations)
+
+    def _qualified_column(self, table_or_alias: str, column_name: str) -> str:
+        """Build a qualified, quoted column reference."""
+        return f"{quote_identifier(table_or_alias)}.{quote_identifier(column_name)}"
+
+    def _base_column_reference(self, field_name: str, qualify: bool = False) -> str:
+        """Resolve a column on the base model, optionally qualifying it."""
+        if field_name == "id":
+            column_name = "id"
+        elif field_name in self._model._fields:
+            column_name = self._model._fields[field_name].column_name
+        elif field_name.endswith("_id"):
+            base_field_name = field_name[:-3]
+            field = self._model._fields.get(base_field_name)
+            if field is None or field.column_name != field_name:
+                raise ValueError(f"Unknown field reference: {field_name}")
+            column_name = field_name
+        else:
+            raise ValueError(f"Unknown field reference: {field_name}")
+
+        if not qualify:
+            return quote_identifier(column_name)
+        return self._qualified_column(self._model.__tablename__, column_name)
+
+    def _new_join_state(self) -> Dict[str, Any]:
+        """Create state for deterministic join registration during compilation."""
+        return {"joins": [], "seen": {}}
+
+    def _register_join(self, join_state: Dict[str, Any], key: str, alias: str, join_sql: str) -> str:
+        """Register a join once and return its alias."""
+        if key not in join_state["seen"]:
+            join_state["seen"][key] = alias
+            join_state["joins"].append(join_sql)
+        return join_state["seen"][key]
+
+    def _build_join_clause(self, join_state: Optional[Dict[str, Any]] = None) -> str:
+        """Build the SQL JOIN clause from a join state."""
+        if not join_state or not join_state["joins"]:
+            return ""
+        return " ".join(join_state["joins"])
+
+    def _resolve_joined_field_column(self, model: Type[T], alias: str, field_name: Optional[str]) -> str:
+        """Resolve a field reference on a joined relation target."""
+        resolved_name = field_name or "id"
+        if resolved_name == "id":
+            return self._qualified_column(alias, "id")
+
+        if resolved_name in model._fields:
+            return self._qualified_column(alias, model._fields[resolved_name].column_name)
+
+        if resolved_name.endswith("_id"):
+            base_field_name = resolved_name[:-3]
+            field = model._fields.get(base_field_name)
+            if field is not None and field.column_name == resolved_name:
+                return self._qualified_column(alias, resolved_name)
+
+        raise ValueError(
+            f"Unknown related field '{resolved_name}' on {model.__name__}"
         )
-        qs._search = self._search
-        return qs
-    
-    def _build_where_clause(self) -> Tuple[str, List]:
+
+    def _ensure_forward_fk_join(self, field_name: str, join_state: Dict[str, Any]) -> tuple[str, Type[T]]:
+        """Ensure a JOIN exists for a forward FK/O2O relation."""
+        field = self._model._fk_fields[field_name]
+        related_model = field.to_model
+        alias = f"{field_name}__rel"
+        join_sql = (
+            f"LEFT JOIN {quote_identifier(related_model.__tablename__)} AS {quote_identifier(alias)} "
+            f"ON {self._qualified_column(alias, 'id')} = "
+            f"{self._qualified_column(self._model.__tablename__, field.column_name)}"
+        )
+        self._register_join(join_state, f"forward_fk:{field_name}", alias, join_sql)
+        return alias, related_model
+
+    def _ensure_forward_m2m_join(self, field_name: str, join_state: Dict[str, Any]) -> tuple[str, Type[T]]:
+        """Ensure JOINs exist for a forward many-to-many relation."""
+        field = self._model._m2m_fields[field_name]
+        related_model = field.to_model
+        through_alias = f"{field_name}__through"
+        relation_alias = f"{field_name}__rel"
+        self._register_join(
+            join_state,
+            f"forward_m2m_through:{field_name}",
+            through_alias,
+            (
+                f"LEFT JOIN {quote_identifier(field.join_table_name)} AS {quote_identifier(through_alias)} "
+                f"ON {self._qualified_column(through_alias, field.source_column)} = "
+                f"{self._qualified_column(self._model.__tablename__, 'id')}"
+            ),
+        )
+        self._register_join(
+            join_state,
+            f"forward_m2m_target:{field_name}",
+            relation_alias,
+            (
+                f"LEFT JOIN {quote_identifier(related_model.__tablename__)} AS {quote_identifier(relation_alias)} "
+                f"ON {self._qualified_column(relation_alias, 'id')} = "
+                f"{self._qualified_column(through_alias, field.target_column)}"
+            ),
+        )
+        return relation_alias, related_model
+
+    def _ensure_reverse_relation_join(self, relation_name: str, join_state: Dict[str, Any]) -> tuple[str, Type[T]]:
+        """Ensure JOINs exist for a reverse relation registered on the model."""
+        from aksara.fields import ForeignKey
+        from aksara.relations import RelationRegistry
+
+        for relation in RelationRegistry.get_relations_to(self._model):
+            if relation.related_name != relation_name:
+                continue
+
+            relation_alias = f"{relation_name}__rel"
+            if relation.relation_type in ("fk", "o2o"):
+                field = relation.source_model._fields.get(relation.field_name)
+                if isinstance(field, ForeignKey):
+                    fk_column = field.db_column_name
+                else:
+                    fk_column = f"{relation.field_name}_id"
+                join_sql = (
+                    f"LEFT JOIN {quote_identifier(relation.source_table)} AS {quote_identifier(relation_alias)} "
+                    f"ON {self._qualified_column(relation_alias, fk_column)} = "
+                    f"{self._qualified_column(self._model.__tablename__, 'id')}"
+                )
+                self._register_join(
+                    join_state,
+                    f"reverse_relation:{relation_name}",
+                    relation_alias,
+                    join_sql,
+                )
+                return relation_alias, relation.source_model
+
+            if relation.relation_type == "m2m":
+                through_alias = f"{relation_name}__through"
+                m2m_field = relation.source_model._m2m_fields.get(relation.field_name)
+                if m2m_field is None:
+                    raise ValueError(
+                        f"ManyToMany metadata for relation '{relation_name}' is not available"
+                    )
+                self._register_join(
+                    join_state,
+                    f"reverse_m2m_through:{relation_name}",
+                    through_alias,
+                    (
+                        f"LEFT JOIN {quote_identifier(m2m_field.join_table_name)} AS {quote_identifier(through_alias)} "
+                        f"ON {self._qualified_column(through_alias, m2m_field.target_column)} = "
+                        f"{self._qualified_column(self._model.__tablename__, 'id')}"
+                    ),
+                )
+                self._register_join(
+                    join_state,
+                    f"reverse_m2m_target:{relation_name}",
+                    relation_alias,
+                    (
+                        f"LEFT JOIN {quote_identifier(relation.source_table)} AS {quote_identifier(relation_alias)} "
+                        f"ON {self._qualified_column(relation_alias, 'id')} = "
+                        f"{self._qualified_column(through_alias, m2m_field.source_column)}"
+                    ),
+                )
+                return relation_alias, relation.source_model
+
+        raise ValueError(f"Unknown relation reference: {relation_name}")
+
+    def _resolve_aggregate_source(self, source: str, join_state: Dict[str, Any]) -> str:
+        """Resolve a direct or one-hop relation aggregate source to SQL."""
+        parts = source.split("__")
+        if len(parts) > 2:
+            raise ValueError(
+                "Aggregate relation paths currently support one relation hop, "
+                f"got '{source}'"
+            )
+
+        if len(parts) == 1 and (
+            source == "id"
+            or source in self._model._fields
+            or source.endswith("_id")
+        ):
+            return self._base_column_reference(source)
+
+        relation_name = parts[0]
+        related_field_name = parts[1] if len(parts) == 2 else None
+
+        if relation_name in self._model._m2m_fields:
+            alias, related_model = self._ensure_forward_m2m_join(relation_name, join_state)
+            return self._resolve_joined_field_column(related_model, alias, related_field_name)
+
+        if relation_name in self._model._fk_fields:
+            alias, related_model = self._ensure_forward_fk_join(relation_name, join_state)
+            return self._resolve_joined_field_column(related_model, alias, related_field_name)
+
+        alias, related_model = self._ensure_reverse_relation_join(relation_name, join_state)
+        return self._resolve_joined_field_column(related_model, alias, related_field_name)
+
+    def _compile_annotation_expression(
+        self,
+        expression: Any,
+        values: List[Any],
+        join_state: Dict[str, Any],
+    ) -> str:
+        """Compile an annotation or aggregate expression, registering joins when needed."""
+        if isinstance(expression, Aggregate):
+            if expression.source == "*":
+                source_sql = "*"
+            elif isinstance(expression.source, str):
+                source_sql = self._resolve_aggregate_source(expression.source, join_state)
+            else:
+                source_sql = compile_expression(self._model, expression.source, values)
+
+            distinct_sql = "DISTINCT " if expression.distinct and source_sql != "*" else ""
+            return f"{expression.function_name}({distinct_sql}{source_sql})"
+
+        return compile_expression(self._model, expression, values)
+
+    def _compile_filter_condition(
+        self,
+        key: str,
+        value: Any,
+        values: List[Any],
+        qualify_base: bool = False,
+    ) -> str:
+        """Compile a single filter condition to SQL."""
+        field_name, lookup = parse_lookup(key)
+
+        if field_name not in self._model._fields:
+            raise ValueError(f"Unknown field: {field_name}")
+
+        field = self._model._fields[field_name]
+        col_name = self._base_column_reference(field_name, qualify=qualify_base)
+
+        if lookup == "exact":
+            if is_expression(value):
+                return f"{col_name} = {compile_expression(self._model, value, values)}"
+            values.append(field.to_db(value))
+            return f"{col_name} = ${len(values)}"
+
+        if lookup == "gt":
+            if is_expression(value):
+                return f"{col_name} > {compile_expression(self._model, value, values)}"
+            values.append(field.to_db(value))
+            return f"{col_name} > ${len(values)}"
+
+        if lookup == "gte":
+            if is_expression(value):
+                return f"{col_name} >= {compile_expression(self._model, value, values)}"
+            values.append(field.to_db(value))
+            return f"{col_name} >= ${len(values)}"
+
+        if lookup == "lt":
+            if is_expression(value):
+                return f"{col_name} < {compile_expression(self._model, value, values)}"
+            values.append(field.to_db(value))
+            return f"{col_name} < ${len(values)}"
+
+        if lookup == "lte":
+            if is_expression(value):
+                return f"{col_name} <= {compile_expression(self._model, value, values)}"
+            values.append(field.to_db(value))
+            return f"{col_name} <= ${len(values)}"
+
+        if lookup == "in":
+            if not isinstance(value, (list, tuple, set)):
+                raise ValueError(f"__in lookup requires a list, got {type(value)}")
+            if not value:
+                return "FALSE"
+
+            placeholders = []
+            for item in value:
+                values.append(field.to_db(item))
+                placeholders.append(f"${len(values)}")
+            return f"{col_name} IN ({', '.join(placeholders)})"
+
+        if lookup == "isnull":
+            return f"{col_name} IS NULL" if value else f"{col_name} IS NOT NULL"
+
+        if lookup == "icontains":
+            if is_expression(value):
+                raise ValueError("Expression values are not supported for __icontains lookups")
+            values.append(f"%{value}%")
+            return f"{col_name} ILIKE ${len(values)}"
+
+        if lookup == "contains":
+            if is_expression(value):
+                raise ValueError("Expression values are not supported for __contains lookups")
+            values.append(f"%{value}%")
+            return f"{col_name} LIKE ${len(values)}"
+
+        raise ValueError(f"Unknown lookup type: {lookup}")
+
+    def _compile_q_object(
+        self,
+        q_object: Q,
+        values: List[Any],
+        qualify_base: bool = False,
+    ) -> str:
+        """Recursively compile a Q object tree into SQL."""
+        parts = []
+
+        for child in q_object.children:
+            if isinstance(child, Q):
+                child_sql = self._compile_q_object(child, values, qualify_base=qualify_base)
+            else:
+                child_sql = self._compile_filter_condition(
+                    child[0],
+                    child[1],
+                    values,
+                    qualify_base=qualify_base,
+                )
+
+            if child_sql:
+                parts.append(child_sql)
+
+        if not parts:
+            return ""
+
+        compiled = f" {q_object.connector} ".join(parts)
+        if len(parts) > 1:
+            compiled = f"({compiled})"
+        if q_object.negated:
+            compiled = f"NOT ({compiled})"
+        return compiled
+
+    def _build_where_clause(
+        self,
+        existing_values: Optional[List[Any]] = None,
+        qualify_base: bool = False,
+    ) -> Tuple[str, List[Any]]:
         """
         Build WHERE clause from filters and search conditions.
         
         Returns:
             Tuple of (WHERE clause string, parameter values list)
         """
-        if not self._filters and not self._search:
-            return "", []
-        
+        values = existing_values if existing_values is not None else []
+
+        if not self._filters and not self._q_objects and not self._search:
+            return "", values
+
         conditions = []
-        values = []
-        param_idx = 1
-        
-        for key, value in self._filters.items():
-            field_name, lookup = parse_lookup(key)
-            
-            # Validate field exists
-            if field_name not in self._model._fields:
-                raise ValueError(f"Unknown field: {field_name}")
-            
-            field = self._model._fields[field_name]
-            # Use the actual database column name (e.g., author_id for ForeignKey)
-            col_name = field.column_name
-            
-            # Build condition based on lookup type
-            if lookup == "exact":
-                conditions.append(f"{col_name} = ${param_idx}")
-                values.append(field.to_db(value))
-                param_idx += 1
-            
-            elif lookup == "gt":
-                conditions.append(f"{col_name} > ${param_idx}")
-                values.append(field.to_db(value))
-                param_idx += 1
-            
-            elif lookup == "gte":
-                conditions.append(f"{col_name} >= ${param_idx}")
-                values.append(field.to_db(value))
-                param_idx += 1
-            
-            elif lookup == "lt":
-                conditions.append(f"{col_name} < ${param_idx}")
-                values.append(field.to_db(value))
-                param_idx += 1
-            
-            elif lookup == "lte":
-                conditions.append(f"{col_name} <= ${param_idx}")
-                values.append(field.to_db(value))
-                param_idx += 1
-            
-            elif lookup == "in":
-                if not isinstance(value, (list, tuple, set)):
-                    raise ValueError(f"__in lookup requires a list, got {type(value)}")
-                if not value:
-                    # Empty list - nothing can match
-                    conditions.append("FALSE")
-                else:
-                    placeholders = []
-                    for item in value:
-                        placeholders.append(f"${param_idx}")
-                        values.append(field.to_db(item))
-                        param_idx += 1
-                    conditions.append(f"{col_name} IN ({', '.join(placeholders)})")
-            
-            elif lookup == "isnull":
-                if value:
-                    conditions.append(f"{col_name} IS NULL")
-                else:
-                    conditions.append(f"{col_name} IS NOT NULL")
-            
-            elif lookup == "icontains":
-                conditions.append(f"{col_name} ILIKE ${param_idx}")
-                values.append(f"%{value}%")
-                param_idx += 1
-            
-            elif lookup == "contains":
-                conditions.append(f"{col_name} LIKE ${param_idx}")
-                values.append(f"%{value}%")
-                param_idx += 1
-            
-            else:
-                raise ValueError(f"Unknown lookup type: {lookup}")
-                
+
+        for q_object in self._q_objects:
+            q_sql = self._compile_q_object(q_object, values, qualify_base=qualify_base)
+            if q_sql:
+                conditions.append(q_sql)
+
+        if self._filters:
+            filter_conditions = [
+                self._compile_filter_condition(key, value, values, qualify_base=qualify_base)
+                for key, value in self._filters.items()
+            ]
+            if filter_conditions:
+                compiled_filters = " AND ".join(filter_conditions)
+                if len(filter_conditions) > 1:
+                    compiled_filters = f"({compiled_filters})"
+                conditions.append(compiled_filters)
+
         # Handle search condition (OR across multiple fields)
         if self._search:
             term, search_fields = self._search
@@ -426,17 +697,49 @@ class QuerySet(Generic[T]):
                 if field_name not in self._model._fields:
                     raise ValueError(f"Unknown search field: {field_name}")
                 
-                col_name = self._model._fields[field_name].column_name
-                search_conditions.append(f"{col_name} ILIKE ${param_idx}")
+                col_name = self._base_column_reference(field_name, qualify=qualify_base)
                 values.append(f"%{term}%")
-                param_idx += 1
+                search_conditions.append(f"{col_name} ILIKE ${len(values)}")
                 
             if search_conditions:
                 conditions.append(f"({' OR '.join(search_conditions)})")
         
         return f"WHERE {' AND '.join(conditions)}", values
+
+    def _build_select_clause(
+        self,
+        existing_values: Optional[List[Any]] = None,
+        join_state: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[str, List[Any]]:
+        """Build the SELECT clause including annotations when present."""
+        values = existing_values if existing_values is not None else []
+        if not self._annotations:
+            return "*", values
+
+        active_join_state = join_state or self._new_join_state()
+        table = quote_identifier(self._model.__tablename__)
+        select_parts = [f"{table}.*"]
+
+        for alias, expression in self._annotations.items():
+            select_parts.append(
+                f"{self._compile_annotation_expression(expression, values, active_join_state)} AS {quote_identifier(alias)}"
+            )
+
+        return ", ".join(select_parts), values
+
+    def _build_group_by_clause(self, join_state: Optional[Dict[str, Any]] = None) -> str:
+        """Build a GROUP BY clause when annotations include aggregates."""
+        if not any(isinstance(expression, Aggregate) for expression in self._annotations.values()):
+            return ""
+
+        qualify_base = bool(join_state and join_state["joins"])
+        columns = [
+            self._base_column_reference(field.name, qualify=qualify_base)
+            for field in self._model._fields.values()
+        ]
+        return f"GROUP BY {', '.join(columns)}"
     
-    def _build_order_by_clause(self) -> str:
+    def _build_order_by_clause(self, qualify_base: bool = False) -> str:
         """
         Build ORDER BY clause from ordering fields.
         
@@ -458,15 +761,20 @@ class QuerySet(Generic[T]):
             
             # Get column name
             if field_name == "id":
-                col_name = "id"
+                col_name = self._base_column_reference("id", qualify=qualify_base) if qualify_base else "id"
             elif field_name in self._model._fields:
-                col_name = self._model._fields[field_name].column_name
+                if qualify_base:
+                    col_name = self._base_column_reference(field_name, qualify=True)
+                else:
+                    col_name = self._model._fields[field_name].column_name
             elif field_name.endswith("_id"):
                 # Check if it's a FK column name (e.g., author_id for FK field 'author')
                 base_field_name = field_name[:-3]
                 if base_field_name in self._model._fields:
-                    # Use the field's column_name (which should be field_name)
-                    col_name = self._model._fields[base_field_name].column_name
+                    if qualify_base:
+                        col_name = self._base_column_reference(field_name, qualify=True)
+                    else:
+                        col_name = field_name
                 else:
                     col_name = field_name  # Fallback
             else:
@@ -486,11 +794,20 @@ class QuerySet(Generic[T]):
         from aksara.db import Database
         
         db = Database.get_instance()
-        
-        where_clause, values = self._build_where_clause()
-        order_by_clause = self._build_order_by_clause()
+
+        join_state = self._new_join_state()
+        select_clause, values = self._build_select_clause(join_state=join_state)
+        join_clause = self._build_join_clause(join_state)
+        qualify_base = bool(join_state["joins"])
+        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
+        group_by_clause = self._build_group_by_clause(join_state)
+        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
         table = quote_identifier(self._model.__tablename__)
-        query = f"SELECT * FROM {table} {where_clause} {order_by_clause}".strip()
+        query = (
+            f"SELECT {select_clause} FROM {table} {join_clause} {where_clause} "
+            f"{group_by_clause} {order_by_clause}"
+        ).strip()
+        query = " ".join(query.split())
         
         records = await db.fetch(query, *values)
         
@@ -637,11 +954,19 @@ class QuerySet(Generic[T]):
         from aksara.db import Database
         
         db = Database.get_instance()
-        
-        where_clause, values = self._build_where_clause()
-        order_by_clause = self._build_order_by_clause()
+
+        join_state = self._new_join_state()
+        select_clause, values = self._build_select_clause(join_state=join_state)
+        join_clause = self._build_join_clause(join_state)
+        qualify_base = bool(join_state["joins"])
+        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
+        group_by_clause = self._build_group_by_clause(join_state)
+        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
         table = quote_identifier(self._model.__tablename__)
-        query = f"SELECT * FROM {table} {where_clause} {order_by_clause} LIMIT 1".strip()
+        query = (
+            f"SELECT {select_clause} FROM {table} {join_clause} {where_clause} "
+            f"{group_by_clause} {order_by_clause} LIMIT 1"
+        ).strip()
         # Clean up any double spaces
         query = " ".join(query.split())
         
@@ -703,6 +1028,71 @@ class QuerySet(Generic[T]):
         except (IndexError, ValueError):
             return 0
 
+    async def update(self, **kwargs: Any) -> int:
+        """Update all rows in the queryset, supporting F expressions."""
+        from aksara.db import Database
+
+        if not kwargs:
+            raise ValueError("update() requires at least one field assignment")
+
+        values: List[Any] = []
+        set_clauses = []
+
+        for field_name, value in kwargs.items():
+            if field_name not in self._model._fields:
+                raise ValueError(f"Unknown field: {field_name}")
+
+            field = self._model._fields[field_name]
+            col_name = quote_identifier(field.column_name)
+            if is_expression(value):
+                set_clauses.append(f"{col_name} = {compile_expression(self._model, value, values)}")
+            else:
+                values.append(field.to_db(value))
+                set_clauses.append(f"{col_name} = ${len(values)}")
+
+        where_clause, values = self._build_where_clause(values)
+        table = quote_identifier(self._model.__tablename__)
+        query = f"UPDATE {table} SET {', '.join(set_clauses)} {where_clause}".strip()
+        query = " ".join(query.split())
+
+        db = Database.get_instance()
+        result = await db.execute(query, *values)
+
+        try:
+            return int(result.split()[-1])
+        except (IndexError, ValueError):
+            return 0
+
+    async def aggregate(self, **kwargs: Any) -> Dict[str, Any]:
+        """Execute aggregate expressions and return a summary dictionary."""
+        from aksara.db import Database
+
+        if not kwargs:
+            raise ValueError("aggregate() requires at least one named aggregate")
+
+        values: List[Any] = []
+        join_state = self._new_join_state()
+        select_parts = []
+        for alias, expression in kwargs.items():
+            if not isinstance(expression, Aggregate):
+                raise ValueError("aggregate() values must be Aggregate instances")
+            select_parts.append(
+                f"{self._compile_annotation_expression(expression, values, join_state)} AS {quote_identifier(alias)}"
+            )
+
+        qualify_base = bool(join_state["joins"])
+        join_clause = self._build_join_clause(join_state)
+        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
+        table = quote_identifier(self._model.__tablename__)
+        query = f"SELECT {', '.join(select_parts)} FROM {table} {join_clause} {where_clause}".strip()
+        query = " ".join(query.split())
+
+        db = Database.get_instance()
+        row = await db.fetchrow(query, *values)
+        if row is None:
+            return {alias: None for alias in kwargs}
+        return dict(row)
+
 
 class Manager(Generic[T]):
     """
@@ -730,7 +1120,7 @@ class Manager(Generic[T]):
         """
         self._model = model
     
-    def filter(self, **kwargs) -> QuerySet[T]:
+    def filter(self, *args: Q, **kwargs) -> QuerySet[T]:
         """
         Create a QuerySet with the given filters.
         
@@ -743,7 +1133,7 @@ class Manager(Generic[T]):
         Returns:
             QuerySet for chaining
         """
-        qs = QuerySet(self._model, kwargs)
+        qs = QuerySet(self._model).filter(*args, **kwargs)
         
         # v0.5.39: Automatically exclude soft-deleted records for SoftDeleteModel
         if hasattr(self._model, '_soft_delete_enabled') and self._model._soft_delete_enabled:
@@ -764,6 +1154,14 @@ class Manager(Generic[T]):
             QuerySet for chaining
         """
         return QuerySet(self._model).search(term, fields)
+
+    def annotate(self, **kwargs: Any) -> QuerySet[T]:
+        """Create a QuerySet with annotations."""
+        return QuerySet(self._model).annotate(**kwargs)
+
+    async def aggregate(self, **kwargs: Any) -> Dict[str, Any]:
+        """Execute aggregate expressions for the model."""
+        return await QuerySet(self._model).aggregate(**kwargs)
     
     def order_by(self, *fields: str) -> QuerySet[T]:
         """
@@ -829,7 +1227,7 @@ class Manager(Generic[T]):
         await instance.save()
         return instance
     
-    async def get(self, **kwargs) -> T:
+    async def get(self, *args: Q, **kwargs) -> T:
         """
         Get a single record matching the given conditions.
         
@@ -843,7 +1241,7 @@ class Manager(Generic[T]):
             DoesNotExist: If no matching record is found
             MultipleObjectsReturned: If multiple records match
         """
-        queryset = QuerySet(self._model, kwargs)
+        queryset = QuerySet(self._model).filter(*args, **kwargs)
         results = await queryset.all()
         
         if len(results) == 0:
@@ -856,7 +1254,7 @@ class Manager(Generic[T]):
         
         return results[0]
     
-    async def get_or_none(self, **kwargs) -> Optional[T]:
+    async def get_or_none(self, *args: Q, **kwargs) -> Optional[T]:
         """
         Get a single record or None if not found.
         
@@ -867,9 +1265,13 @@ class Manager(Generic[T]):
             The matching model instance or None
         """
         try:
-            return await self.get(**kwargs)
+            return await self.get(*args, **kwargs)
         except DoesNotExist:
             return None
+
+    async def update(self, **kwargs: Any) -> int:
+        """Update all rows for this model."""
+        return await QuerySet(self._model).update(**kwargs)
     
     async def get_or_create(self, defaults: Optional[Dict[str, Any]] = None, **kwargs) -> tuple[T, bool]:
         """
@@ -921,6 +1323,7 @@ class Manager(Generic[T]):
             created_users = await User.objects.bulk_create(users_to_create, batch_size=1000)
         """
         from aksara.db import Database
+        from aksara.db.expressions import is_expression
         
         if not objs:
             return []
@@ -960,6 +1363,8 @@ class Manager(Generic[T]):
                     # Only include fields we're inserting for this row
                     if field_name in field_names:
                         value = obj._data.get(field_name)
+                        if is_expression(value):
+                            raise ValueError("Expressions are not supported in bulk_create()")
                         all_values.append(field.to_db(value))
                         row_placeholders.append(f"${param_idx}")
                         param_idx += 1
@@ -1024,6 +1429,7 @@ class Manager(Generic[T]):
             await User.objects.bulk_update(users, fields=['updated_at'], batch_size=1000)
         """
         from aksara.db import Database
+        from aksara.db.expressions import is_expression
         
         if not objs or not fields:
             raise ValueError("bulk_update() requires non-empty objs and fields lists")
@@ -1057,6 +1463,8 @@ class Manager(Generic[T]):
                     when_clauses.append(f"WHEN ${param_idx} THEN ${param_idx + 1}")
                     ids.append(obj.id)
                     value = obj._data.get(field_name)
+                    if is_expression(value):
+                        raise ValueError("Expressions are not supported in bulk_update()")
                     ids.append(field.to_db(value))
                     param_idx += 2
                 
@@ -1127,6 +1535,7 @@ class Manager(Generic[T]):
             )
         """
         from aksara.db import Database
+        from aksara.db.expressions import is_expression
         
         defaults = defaults or {}
         db = Database.get_instance()
@@ -1137,7 +1546,12 @@ class Manager(Generic[T]):
         
         # Build INSERT statement with DO UPDATE
         insert_fields = list(kwargs.keys()) + list(defaults.keys())
-        insert_values = [kwargs.get(f) or defaults.get(f) for f in insert_fields]
+        insert_values = []
+        for field_name in insert_fields:
+            value = kwargs[field_name] if field_name in kwargs else defaults.get(field_name)
+            if is_expression(value):
+                raise ValueError("Expressions are not supported in upsert() insert values")
+            insert_values.append(value)
         
         placeholders = [f"${i+1}" for i in range(len(insert_values))]
         columns = ", ".join(quote_identifier(f) for f in insert_fields)

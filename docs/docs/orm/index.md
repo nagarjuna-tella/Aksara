@@ -103,6 +103,17 @@ This is called **lazy evaluation** — queries only run when you need the result
 
 👉 [Learn more about Querying](querying.md)
 
+### Expressions, Aggregates, and Transactions
+
+For more advanced ORM work, Aksara now supports:
+
+- `Q()` objects for complex boolean filters
+- `F()` expressions for database-side arithmetic
+- `annotate()` and `aggregate()` for summary and per-row aggregation
+- `transaction.atomic` for safe multi-query transactions
+
+👉 [Learn about Expressions & Transactions](expressions-and-transactions.md)
+
 ---
 
 ### Relationships = Table Connections

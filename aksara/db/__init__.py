@@ -47,6 +47,21 @@ def quote_identifier(name: str) -> str:
     return f'"{escaped}"'
 
 
+from aksara.db.expressions import (
+    Aggregate,
+    Avg,
+    CombinedExpression,
+    Count,
+    F,
+    Max,
+    Min,
+    Q,
+    Sum,
+)
+from aksara.db.transaction import TransactionManager, atomic
+from . import transaction
+
+
 __all__ = [
     "Database",
     "get_session",
@@ -59,6 +74,20 @@ __all__ = [
     "log_query",
     # SQL utilities
     "quote_identifier",
+    # v0.5.45: ORM expressions
+    "Aggregate",
+    "Avg",
+    "CombinedExpression",
+    "Count",
+    "F",
+    "Max",
+    "Min",
+    "Q",
+    "Sum",
+    # v0.5.45: Transactions
+    "TransactionManager",
+    "atomic",
+    "transaction",
     # v0.5.10: Query tracing
     "DbQueryTrace",
     "DbQueryBatch",

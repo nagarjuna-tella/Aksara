@@ -74,7 +74,7 @@ class TestQuerySet:
         qs = QuerySet(User).filter(is_active=True)
         where, values = qs._build_where_clause()
         
-        assert "is_active = $1" in where
+        assert '"is_active" = $1' in where
         assert values == [True]
     
     def test_queryset_build_where_clause_multiple_filters(self):
