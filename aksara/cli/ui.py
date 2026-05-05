@@ -400,8 +400,10 @@ class CliUI:
         # ── URL bullets ──
         dot = "●" if self.config.unicode else "*"
         urls: list[tuple[str, str]] = [("App", f"{base_url}/")]
-        urls.append(("Admin", f"{base_url}/admin/"))
-        urls.append(("Studio", f"{base_url}/studio/ui"))
+        if admin_enabled:
+            urls.append(("Admin", f"{base_url}/admin/"))
+        if studio_enabled:
+            urls.append(("Studio", f"{base_url}/studio/ui"))
         urls.append(("Docs", f"{base_url}/docs"))
 
         for label, url in urls:
