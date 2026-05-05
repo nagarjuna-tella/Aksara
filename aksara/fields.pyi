@@ -121,6 +121,31 @@ class ImageField(FileField):
     """Image-specialized file field."""
 
 
+class GenericForeignKeyAccessor:
+    """Async accessor for generic relations."""
+
+    async def __call__(self) -> Any: ...
+    async def set(self, value: Any) -> None: ...
+
+
+class GenericForeignKey:
+    """Virtual relation backed by content_type_id/object_id."""
+
+    name: Optional[str]
+    content_type_field: str
+    object_id_field: str
+    nullable: bool
+
+    def __init__(
+        self,
+        *,
+        content_type_field: str = "content_type_id",
+        object_id_field: str = "object_id",
+        nullable: bool = True,
+        object_id_max_length: int = 255,
+    ) -> None: ...
+
+
 # Aliases
 StringField = String
 IntegerField = Integer
@@ -128,3 +153,4 @@ BooleanField = Boolean
 DateTimeField = DateTime
 UUIDField = UUID
 JSONField = JSON
+GenericForeignKeyField = GenericForeignKey

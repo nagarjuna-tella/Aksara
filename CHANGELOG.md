@@ -57,6 +57,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added lazy `_()` translations backed by gettext catalogs in `locale_paths`
   - Added UTC-normalized `DateTime` storage with request-timezone serialization in model and API exports
 
+- **Generic relations and durable workflow state** (`aksara/contenttypes.py`, `aksara/fields.py`, `aksara/workflows.py`)
+  - Added `ContentType` syncing and `fields.GenericForeignKey()` for model-agnostic relations
+  - Added `DurableStep` with PostgreSQL-backed result reuse and retry-after-failure behavior
+
 ### Changed
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
@@ -70,6 +74,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Documentation
 - Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
 - Updated API and CLI docs for stream endpoints, multi-tenant RLS behavior, and TypeScript SDK generation
+- Added advanced docs for generic relations and durable workflow execution
 - Refreshed the README and release notes to reflect the full v0.5.45 feature set
 
 ### Tests
@@ -85,6 +90,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - media storage persistence, image validation, schema typing, and migration mapping
   - console, locmem, and SMTP email backends
   - locale middleware, timezone middleware, and timezone-aware datetime serialization
+  - GenericForeignKey resolution across multiple target models
+  - DurableStep result reuse, retry handling, and force-rerun behavior
 - Validated surrounding ORM, relation, and public export tests with PostgreSQL configured
 
 ## [0.5.44] — Enterprise DX Features: Filtering, Pagination, Bulk Operations, Soft Deletes, Fixtures

@@ -595,6 +595,10 @@ class Aksara(FastAPI):
             # Finalize relations for reverse access
             from aksara.model.base import finalize_relations
             finalize_relations()
+
+            from aksara.contenttypes import clear_content_type_cache, sync_content_types
+            clear_content_type_cache()
+            await sync_content_types(self._db, prune_stale=True)
             
             self._print_startup()
         

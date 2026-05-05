@@ -162,6 +162,7 @@ nav:
       - Custom Fields: advanced/custom-fields.md
       - Media and Email: advanced/media-and-email.md
       - Internationalization and Timezones: advanced/internationalization-and-timezones.md
+      - Generic Relations and Durable Workflows: advanced/generic-relations-and-durable-workflows.md
       - Caching: advanced/caching.md
       - Performance: advanced/performance.md
       - Signals: advanced/signals.md

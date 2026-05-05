@@ -12,6 +12,7 @@ These guides cover advanced patterns and features:
 |-------|-------------|
 | [Signals](signals.md) | Model lifecycle hooks |
 | [Custom Fields](custom-fields.md) | Creating custom field types |
+| [Generic Relations and Durable Workflows](generic-relations-and-durable-workflows.md) | Model-agnostic relations and resumable step execution |
 | [Validation](validation.md) | Advanced validation patterns |
 | [Caching](caching.md) | Query and response caching |
 | [Testing](testing.md) | Testing patterns and fixtures |

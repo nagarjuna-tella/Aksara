@@ -2037,6 +2037,138 @@ class ManyToMany(Field):
 ManyToManyField = ManyToMany
 
 
+class GenericForeignKeyAccessor:
+    """Async accessor for a GenericForeignKey relation."""
+
+    def __init__(
+        self,
+        field: "GenericForeignKey",
+        instance: "Model",
+    ):
+        self._field = field
+        self._instance = instance
+
+    async def __call__(self) -> Optional["Model"]:
+        """Resolve the related object for this generic relation."""
+        cached = self._instance._generic_fk_cache.get(self._field.name)
+        if cached is not None:
+            return cached
+
+        content_type_id = self._instance._data.get(self._field.content_type_field)
+        object_id = self._instance._data.get(self._field.object_id_field)
+
+        if content_type_id is None or object_id is None:
+            return None
+
+        from aksara.contenttypes import resolve_generic_related_object
+
+        related = await resolve_generic_related_object(content_type_id, object_id)
+        self._instance._generic_fk_cache[self._field.name] = related
+        return related
+
+    async def set(self, value: Optional["Model"]) -> None:
+        """Assign and prepare a generic relation asynchronously."""
+        self._field.__set__(self._instance, value)
+        await self._field.async_prepare(self._instance)
+
+    def __repr__(self) -> str:
+        return f"<GenericForeignKeyAccessor: {self._instance.__class__.__name__}.{self._field.name}>"
+
+
+class GenericForeignKey:
+    """
+    Virtual relation backed by content_type_id and object_id columns.
+
+    The descriptor returns an async accessor, so callers use:
+
+        related = await comment.content_object()
+    """
+
+    def __init__(
+        self,
+        *,
+        content_type_field: str = "content_type_id",
+        object_id_field: str = "object_id",
+        nullable: bool = True,
+        object_id_max_length: int = 255,
+    ):
+        self.name: Optional[str] = None
+        self.content_type_field = content_type_field
+        self.object_id_field = object_id_field
+        self.nullable = nullable
+        self.object_id_max_length = object_id_max_length
+
+    def __set_name__(self, owner: Type["Model"], name: str) -> None:
+        self.name = name
+
+    def build_support_fields(self) -> dict[str, Field]:
+        """Build the concrete fields required to store this relation."""
+        content_type_field = UUID(nullable=self.nullable)
+        content_type_field.name = self.content_type_field
+
+        object_id_field = String(
+            max_length=self.object_id_max_length,
+            nullable=self.nullable,
+        )
+        object_id_field.name = self.object_id_field
+
+        return {
+            self.content_type_field: content_type_field,
+            self.object_id_field: object_id_field,
+        }
+
+    def __get__(
+        self,
+        instance: Optional["Model"],
+        owner: Type["Model"],
+    ) -> Union["GenericForeignKey", GenericForeignKeyAccessor]:
+        if instance is None:
+            return self
+        return GenericForeignKeyAccessor(self, instance)
+
+    def __set__(self, instance: "Model", value: Optional["Model"]) -> None:
+        if self.name is None:
+            raise AttributeError("GenericForeignKey is not bound to a model field")
+
+        if value is None:
+            instance._generic_fk_pending[self.name] = None
+            instance._generic_fk_cache.pop(self.name, None)
+            instance._data[self.content_type_field] = None
+            instance._data[self.object_id_field] = None
+            return
+
+        if not hasattr(value, "id"):
+            raise TypeError(
+                f"{self.name} expects a model instance or None, got {type(value).__name__}"
+            )
+
+        instance._generic_fk_pending[self.name] = value
+        instance._generic_fk_cache[self.name] = value
+        instance._data[self.object_id_field] = str(value.id)
+
+    async def async_prepare(self, instance: "Model") -> None:
+        """Resolve pending model assignments into stored content type fields."""
+        if self.name is None or self.name not in instance._generic_fk_pending:
+            return
+
+        value = instance._generic_fk_pending.pop(self.name)
+        if value is None:
+            instance._data[self.content_type_field] = None
+            instance._data[self.object_id_field] = None
+            instance._generic_fk_cache.pop(self.name, None)
+            return
+
+        from aksara.contenttypes import get_content_type_for_model
+
+        content_type = await get_content_type_for_model(value.__class__)
+        instance._data[self.content_type_field] = content_type.id
+        instance._data[self.object_id_field] = str(value.id)
+        instance._generic_fk_cache[self.name] = value
+
+
+GenericForeignKeyField = GenericForeignKey
+
+
 # =============================================================================
 # ManyToMany Manager
 # =============================================================================

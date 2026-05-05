@@ -80,6 +80,15 @@ class TestModelDefinition:
         
         assert "TestRegisteredModel" in ModelRegistry.all()
 
+    def test_generic_foreign_key_adds_support_fields(self):
+        class Activity(Model):
+            label = fields.String()
+            subject = fields.GenericForeignKey()
+
+        assert "content_type_id" in Activity._fields
+        assert "object_id" in Activity._fields
+        assert "subject" in Activity._generic_fk_fields
+
 
 class TestModelInstance:
     """Tests for model instance creation and attributes."""

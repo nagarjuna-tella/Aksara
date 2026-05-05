@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
 from aksara.db import quote_identifier
-from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField
+from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField, GenericForeignKey
 from aksara.i18n import serialize_value
 from aksara.registry import ModelRegistry
 
@@ -282,6 +282,7 @@ class ModelMeta(type):
         fields: Dict[str, Field] = {}
         fk_fields: Dict[str, ForeignKey] = {}
         m2m_fields: Dict[str, ManyToMany] = {}
+        generic_fk_fields: Dict[str, GenericForeignKey] = {}
         
         # Inherit fields from parent classes
         for base in bases:
@@ -291,6 +292,8 @@ class ModelMeta(type):
                 fk_fields.update(base._fk_fields)
             if hasattr(base, '_m2m_fields'):
                 m2m_fields.update(base._m2m_fields)
+            if hasattr(base, '_generic_fk_fields'):
+                generic_fk_fields.update(base._generic_fk_fields)
         
         # Collect new fields defined in this class and REMOVE them from namespace
         # This is crucial so __getattr__ gets called for field access
@@ -319,6 +322,17 @@ class ModelMeta(type):
         # Remove field definitions from namespace so __getattr__ works
         for key in field_keys_to_remove:
             del namespace[key]
+
+        for key, value in list(namespace.items()):
+            if isinstance(value, GenericForeignKey):
+                value.name = key
+                generic_fk_fields[key] = value
+
+        for generic_field in generic_fk_fields.values():
+            for support_name, support_field in generic_field.build_support_fields().items():
+                if support_name in fields:
+                    continue
+                fields[support_name] = support_field
         
         # Add default fields if not a base class
         if not is_base:
@@ -343,6 +357,7 @@ class ModelMeta(type):
         namespace['_fields'] = fields
         namespace['_fk_fields'] = fk_fields
         namespace['_m2m_fields'] = m2m_fields
+        namespace['_generic_fk_fields'] = generic_fk_fields
         
         # Extract AI metadata from nested Meta class
         meta_class = namespace.get('Meta')
@@ -480,6 +495,7 @@ class Model(metaclass=ModelMeta):
     _fields: ClassVar[Dict[str, Field]]
     _fk_fields: ClassVar[Dict[str, ForeignKey]]
     _m2m_fields: ClassVar[Dict[str, ManyToMany]]
+    _generic_fk_fields: ClassVar[Dict[str, GenericForeignKey]]
     _ai_meta: ClassVar[ModelAIMeta]
     meta: ClassVar["ModelMetaInfo"]  # v0.3.14: Model introspection
     objects: ClassVar["Manager"]  # type: ignore
@@ -493,6 +509,8 @@ class Model(metaclass=ModelMeta):
         """
         self._data: Dict[str, Any] = {}
         self._m2m_managers: Dict[str, ManyToManyManager] = {}
+        self._generic_fk_cache: Dict[str, Any] = {}
+        self._generic_fk_pending: Dict[str, Any] = {}
         self._prefetched_relations: Dict[str, Any] = {}  # Cache for select_related
         self._is_new = True
         
@@ -513,6 +531,10 @@ class Model(metaclass=ModelMeta):
                 value = field.get_default_value()
             
             self._data[field_name] = value
+
+        for field_name in self._generic_fk_fields:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs[field_name])
     
     def __getattr__(self, name: str) -> Any:
         """Get field value or ManyToMany manager."""
@@ -584,6 +606,8 @@ class Model(metaclass=ModelMeta):
         instance = cls.__new__(cls)
         instance._data = {}
         instance._m2m_managers = {}
+        instance._generic_fk_cache = {}
+        instance._generic_fk_pending = {}
         instance._prefetched_relations = {}  # Cache for select_related
         instance._is_new = False
         
@@ -755,6 +779,9 @@ class Model(metaclass=ModelMeta):
                 self._data.get(field_name),
                 instance=self,
             )
+
+        for field in self._generic_fk_fields.values():
+            await field.async_prepare(self)
         
         # Validate all fields before saving
         await self._validate_fields()

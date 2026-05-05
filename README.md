@@ -126,6 +126,8 @@ I built everything you'd otherwise assemble yourself.
 | 🗂️  | **Media Storage**        | `FileField` / `ImageField` + `FieldFile` helpers + filesystem or S3-backed storage               |
 | ✉️  | **Async Email**          | Console, locmem, and SMTP backends with `send_mail()` and `send_mass_mail()`                     |
 | 🌐  | **i18n & Timezones**     | `LocaleMiddleware`, `TimezoneMiddleware`, lazy `_()` strings, and UTC-normalized datetime storage |
+| 🔗  | **Generic Relations**    | `fields.GenericForeignKey()` with auto-managed `ContentType` resolution across registered models  |
+| ♻️  | **Durable Workflows**    | `DurableStep` persists successful step results in PostgreSQL and reuses them on resume            |
 | 📦  | **TypeScript SDK**       | `aksara generate sdk --language typescript` builds a typed fetch client from your ViewSets       |
 | 📡  | **Real-Time Streams**    | `GET /<prefix>/stream` emits model lifecycle events through tenant-safe SSE                       |
 | 🖥️  | **Studio**               | Built-in web UI at `/studio/ui` — inspect models, routes, queries, migrations                    |
@@ -184,7 +186,7 @@ Aksara is **pre-1.0** and actively evolving. Current version: **0.5.45**.
 
 **Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor.
 
-**Evolving:** AI Debugger, Architecture Review, Performance Analyzer, Agent Workflows.
+**Evolving:** AI Debugger, Architecture Review, Performance Analyzer.
 
 See the [Roadmap](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/roadmap.md) for what's next.
 
