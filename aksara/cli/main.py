@@ -13,9 +13,14 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import click
+
+from aksara.cli.ui import build_ui, get_ui, resolve_ui_config
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 # Load .env file from current directory
 # This must happen before any settings are read
@@ -30,7 +35,7 @@ except ImportError:
 CLI_VERSION = "0.5.45"
 
 
-def discover_models(app_path: Optional[str] = None) -> None:
+def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
     """
     Discover and import model modules to populate the registry.
     
@@ -51,11 +56,14 @@ def discover_models(app_path: Optional[str] = None) -> None:
     
     if app_path:
         model_paths.insert(0, app_path)
+
+    ui = get_ui()
     
     for path in model_paths:
         try:
             __import__(path)
-            click.echo(f"  ✓ Discovered models from '{path}'")
+            if not silent:
+                ui.success(f"Discovered models from '{path}'")
         except ImportError:
             pass
 
@@ -83,6 +91,17 @@ def generate_migration_name(prefix: str = "migration") -> str:
     """Generate a timestamped migration name."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{timestamp}_{prefix}"
+
+
+def _run_async_command(coro):
+    """Run a coroutine from sync CLI code and always close the object."""
+
+    try:
+        return asyncio.run(coro)
+    finally:
+        close = getattr(coro, "close", None)
+        if callable(close):
+            close()
 
 
 def get_migration_files(migrations_dir: Path) -> List[Tuple[str, Path]]:
@@ -142,42 +161,43 @@ def _handle_merge_migration(
         build_migration_graph,
     )
     from aksara.migrations.graph import find_conflicts
+    ui = get_ui()
     
-    click.echo("⚡ Aksara Makemigrations --merge")
-    click.echo("-" * 40)
+    ui.aksara_banner(f"v{CLI_VERSION}", "Makemigrations --merge")
     
     # Get migrations directory
     mig_dir = Path(output) if output else Path(settings.migrations_dir)
     
     if not mig_dir.exists():
-        click.echo(f"\n❌ Migrations directory not found: {mig_dir}")
+        ui.error(f"Migrations directory not found: {mig_dir}")
         return
     
     # Build migration graph
     migration_files = discover_migrations(mig_dir)
     if not migration_files:
-        click.echo(f"\n⚠️  No migrations found in {mig_dir}")
+        ui.warning(f"No migrations found in {mig_dir}")
         return
     
     graph = build_migration_graph(migrations_list=migration_files)
     conflicts = find_conflicts(graph)
     
     if not conflicts:
-        click.echo("\n✓ No conflicts detected. Nothing to merge.")
+        ui.success("No conflicts detected. Nothing to merge.")
         return
     
     # If app_label specified, only merge that app
     if app_label:
         if app_label not in conflicts:
-            click.echo(f"\n✓ No conflicts in app '{app_label}'.")
+            ui.success(f"No conflicts in app '{app_label}'.")
             return
         conflicts = {app_label: conflicts[app_label]}
     
     # Create merge migrations for each conflicting app
     for target_app, heads in conflicts.items():
-        click.echo(f"\nMerging conflicts for '{target_app}':")
+        ui.blank()
+        ui.section(f"Merging conflicts for '{target_app}'")
         for head in heads:
-            click.echo(f"  • {head.name}")
+            ui.bullet(head.name)
         
         # Determine next migration number
         app_migrations = [
@@ -237,12 +257,14 @@ class Migration(Migration):
         
         merge_path.write_text(content)
         
-        click.echo(f"\n✓ Created merge migration: {merge_path}")
-        click.echo(f"  Dependencies: {len(heads)} heads merged")
+        ui.success(f"Created merge migration: {merge_path}")
+        ui.text(f"  Dependencies: {len(heads)} heads merged")
     
-    click.echo("\n" + "=" * 40)
-    click.echo("✓ Merge migration(s) created!")
-    click.echo("\nRun 'aksara migrate' to apply.")
+    ui.blank()
+    ui.separator(40)
+    ui.success("Merge migration(s) created!")
+    ui.blank()
+    ui.command("aksara migrate")
 
 
 # =============================================================================
@@ -250,10 +272,29 @@ class Migration(Migration):
 # =============================================================================
 
 @click.group()
+@click.option("--quiet", is_flag=True, help="Suppress non-error output.")
+@click.option("--plain", is_flag=True, help="Disable rich rendering and animations.")
+@click.option("--no-color", is_flag=True, help="Disable colored terminal output.")
+@click.option("--force-color", is_flag=True, help="Force colored output when supported.")
 @click.version_option(version=CLI_VERSION, prog_name="aksara")
-def cli():
+@click.pass_context
+def cli(
+    ctx: click.Context,
+    quiet: bool,
+    plain: bool,
+    no_color: bool,
+    force_color: bool,
+):
     """⚡ Aksara - Async Framework"""
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj["ui"] = build_ui(
+        resolve_ui_config(
+            quiet=quiet,
+            plain=plain,
+            no_color=no_color,
+            force_color=force_color,
+        )
+    )
 
 
 @cli.command()
@@ -291,19 +332,20 @@ def startproject(project_name: str, directory: str, template: str):
     """
     from aksara.cli.scaffold import write_scaffold_files
     from aksara.cli.templates import get_template_info, copy_template_project, list_templates
+    ui = get_ui()
     
     # Validate project name
     if not project_name.isidentifier():
-        click.echo(f"❌ Invalid project name: '{project_name}'")
-        click.echo("   Project name must be a valid Python identifier")
-        click.echo("   (letters, numbers, underscores, cannot start with number)")
+        ui.error(f"Invalid project name: '{project_name}'")
+        ui.dim("Project name must be a valid Python identifier")
+        ui.dim("(letters, numbers, underscores, cannot start with number)")
         return
     
     # Validate template
     template_info = get_template_info(template)
     if not template_info:
-        click.echo(f"❌ Unknown template: '{template}'")
-        click.echo()
+        ui.error(f"Unknown template: '{template}'")
+        ui.blank()
         click.echo(list_templates())
         return
     
@@ -312,63 +354,70 @@ def startproject(project_name: str, directory: str, template: str):
     
     # Check if project already exists
     if project_path.exists():
-        click.echo(f"❌ Directory already exists: {project_path}")
+        ui.error(f"Directory already exists: {project_path}")
         return
     
-    click.echo()
-    click.echo(f"  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
+    subtitle = (
+        f"Creating new project from template: {template}"
+        if template != "basic"
+        else "Creating new project"
+    )
+    ui.aksara_banner(f"v{CLI_VERSION}", subtitle)
+
     if template != "basic":
-        click.echo(f"  \033[90mCreating new project from template: {template}\033[0m")
-    else:
-        click.echo("  \033[90mCreating new project...\033[0m")
-    click.echo()
-    
+        subtitle = f"Using template: {template}"
+
     try:
         # Generate and write scaffold files using template
-        files = copy_template_project(template, project_name, base_path)
-        write_scaffold_files(files)
-        
-        click.echo(f"  \033[32m✓\033[0m Created project: \033[1m{project_name}\033[0m")
+        with ui.status("Scaffolding project files", animate=False):
+            files = copy_template_project(template, project_name, base_path)
+            write_scaffold_files(files)
+
+        ui.success(f"Created project: {project_name}")
         if template != "basic":
-            click.echo(f"  \033[32m✓\033[0m Using template: \033[1m{template}\033[0m ({template_info['description']})")
-        click.echo()
-        click.echo("  Project structure:")
-        click.echo(f"  \033[36m{project_name}/\033[0m")
-        click.echo("  ├── main.py              # App entry point")
-        click.echo("  ├── settings.py          # AKSARA configuration")
-        click.echo("  ├── pyproject.toml")
-        click.echo("  ├── .env")
-        click.echo("  ├── README.md")
-        click.echo("  ├── app/")
-        click.echo("  │   ├── models.py        # Post model (ready)")
-        click.echo("  │   ├── views.py         # PostViewSet (ready)")
-        click.echo("  │   ├── serializers.py   # PostSerializer (ready)")
-        click.echo("  │   ├── urls.py")
-        click.echo("  │   └── admin.py         # Post admin (ready)")
-        click.echo("  └── migrations/")
-        click.echo()
-        click.echo("  \033[90m" + "─" * 40 + "\033[0m")
-        click.echo()
-        click.echo("  \033[1m✨ What's included:\033[0m")
-        click.echo("     • Post model + API + Admin (working example)")
-        click.echo("     • Admin at /admin")
-        click.echo("     • Studio at /studio/ui")
-        click.echo("     • AI tools at /ai/tools")
-        click.echo()
-        click.echo("  \033[1mNext steps:\033[0m")
-        click.echo()
-        click.echo(f"    cd {project_name}")
-        click.echo('    pip install -e ".[dev]"')
-        click.echo("    aksara dbsetup")
-        click.echo("    aksara makemigrations --app app.models")
-        click.echo("    aksara migrate")
-        click.echo("    aksara run main:app --reload")
-        click.echo()
-        click.echo("  Then open: http://localhost:8000/docs")
-        click.echo()
+            ui.success(
+                f"Using template: {template} ({template_info['description']})"
+            )
+
+        ui.blank()
+        ui.section("Project structure")
+        ui.text(f"  {project_name}/")
+        ui.text("  ├── main.py              # App entry point")
+        ui.text("  ├── settings.py          # AKSARA configuration")
+        ui.text("  ├── pyproject.toml")
+        ui.text("  ├── .env")
+        ui.text("  ├── README.md")
+        ui.text("  ├── app/")
+        ui.text("  │   ├── models.py        # Post model (ready)")
+        ui.text("  │   ├── views.py         # PostViewSet (ready)")
+        ui.text("  │   ├── serializers.py   # PostSerializer (ready)")
+        ui.text("  │   ├── urls.py")
+        ui.text("  │   └── admin.py         # Post admin (ready)")
+        ui.text("  └── migrations/")
+        ui.blank()
+        ui.separator(40)
+        ui.blank()
+        ui.section("What's included")
+        ui.bullet("Post model + API + Admin (working example)")
+        ui.bullet("Admin at /admin")
+        ui.bullet("Studio at /studio/ui")
+        ui.bullet("AI tools at /ai/tools")
+        ui.next_steps(
+            [
+                f"cd {project_name}",
+                'pip install -e ".[dev]"',
+                "aksara dbsetup",
+                "aksara makemigrations --app app.models",
+                "aksara migrate",
+                "aksara run main:app --reload",
+            ]
+        )
+        ui.blank()
+        ui.text("  Then open: http://localhost:8000/docs")
+        ui.blank()
         
     except Exception as e:
-        click.echo(f"❌ Error creating project: {e}")
+        ui.error(f"Error creating project: {e}")
         return
 
 
@@ -451,31 +500,28 @@ def dbsetup(host: str, port: int):
         aksara dbsetup --host db.example.com --port 5433
     """
     import getpass as _getpass
+    ui = get_ui()
 
     env_path = Path.cwd() / ".env"
 
     # --- Banner ---
-    click.echo()
-    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m v{CLI_VERSION} — Database Setup")
-    click.echo()
+    ui.aksara_banner(f"v{CLI_VERSION}", "Database Setup")
 
     # --- Check for existing DATABASE_URL ---
     existing_url = _read_env_database_url(env_path)
     if existing_url:
-        click.echo(f"  DATABASE_URL is already set in .env:")
-        click.echo(f"  {_mask_password(existing_url)}")
-        click.echo()
+        ui.info("DATABASE_URL is already set in .env:")
+        ui.text(f"  {_mask_password(existing_url)}")
+        ui.blank()
         overwrite = click.confirm("  Overwrite it?", default=False)
         if not overwrite:
-            click.echo()
-            click.echo("  Keeping existing configuration.")
-            click.echo()
+            ui.blank()
+            ui.info("Keeping existing configuration.")
+            ui.blank()
             return
-        click.echo()
+        ui.blank()
 
     # --- Step 1: Check PostgreSQL reachability ---
-    click.echo(f"  \033[36m→\033[0m Checking for PostgreSQL...", nl=False)
-
     async def _check_pg():
         import asyncpg as _asyncpg
         try:
@@ -497,33 +543,34 @@ def dbsetup(host: str, port: int):
             return False
 
     try:
-        pg_reachable = asyncio.run(_check_pg())
+        with ui.status("Checking for PostgreSQL"):
+            pg_reachable = _run_async_command(_check_pg())
     except Exception:
         pg_reachable = False
 
     if not pg_reachable:
-        click.echo(f"        \033[31m✗\033[0m not found on {host}:{port}")
-        click.echo()
-        click.echo("  PostgreSQL is not running or not reachable.")
-        click.echo()
-        click.echo("  Start it with one of these:")
-        click.echo()
-        click.echo("  \033[1mmacOS (Homebrew):\033[0m")
-        click.echo("    brew services start postgresql@15")
-        click.echo()
-        click.echo("  \033[1mLinux:\033[0m")
-        click.echo("    sudo systemctl start postgresql")
-        click.echo()
-        click.echo("  \033[1mDocker:\033[0m")
-        click.echo("    docker run -d --name postgres \\")
-        click.echo("      -e POSTGRES_PASSWORD=postgres \\")
-        click.echo("      -p 5432:5432 postgres:15")
-        click.echo()
-        click.echo(f"  Then run \033[1maksara dbsetup\033[0m again.")
-        click.echo()
+        ui.error(f"not found on {host}:{port}")
+        ui.blank()
+        ui.text("  PostgreSQL is not running or not reachable.")
+        ui.blank()
+        ui.section("Start it with one of these")
+        ui.blank()
+        ui.text("  macOS (Homebrew):")
+        ui.command("brew services start postgresql@15")
+        ui.blank()
+        ui.text("  Linux:")
+        ui.command("sudo systemctl start postgresql")
+        ui.blank()
+        ui.text("  Docker:")
+        ui.command("docker run -d --name postgres \\")
+        ui.command("  -e POSTGRES_PASSWORD=postgres \\")
+        ui.command("  -p 5432:5432 postgres:15")
+        ui.blank()
+        ui.text("  Then run aksara dbsetup again.")
+        ui.blank()
         sys.exit(1)
 
-    click.echo(f"        \033[32m✓\033[0m found ({host}:{port})")
+    ui.success(f"found ({host}:{port})")
 
     # --- Step 2: Collect credentials ---
     # Default database name: current directory name
@@ -532,20 +579,18 @@ def dbsetup(host: str, port: int):
         default_dbname = "aksara_app"
 
     db_name = click.prompt(
-        f"  \033[36m→\033[0m Database name",
+        "  > Database name",
         default=default_dbname,
     )
     db_user = click.prompt(
-        f"  \033[36m→\033[0m Username",
+        "  > Username",
         default="postgres",
     )
     db_password = _getpass.getpass(
-        f"  \033[36m→\033[0m Password: ",
+        "  > Password: ",
     )
 
     # --- Step 3: Test connection ---
-    click.echo(f"  \033[36m→\033[0m Testing connection...", nl=False)
-
     async def _test_connection():
         import asyncpg as _asyncpg
         conn = await _asyncpg.connect(
@@ -557,27 +602,28 @@ def dbsetup(host: str, port: int):
         await conn.close()
 
     try:
-        asyncio.run(_test_connection())
+        with ui.status("Testing connection"):
+            _run_async_command(_test_connection())
     except Exception as e:
-        click.echo(f"             \033[31m✗\033[0m failed")
-        click.echo()
+        ui.error("failed")
+        ui.blank()
         err_msg = str(e)
         if "password authentication failed" in err_msg.lower():
-            click.echo(f"  Could not connect: password authentication failed for user \"{db_user}\"")
+            ui.text(
+                f"  Could not connect: password authentication failed for user \"{db_user}\""
+            )
         elif "does not exist" in err_msg.lower() and "role" in err_msg.lower():
-            click.echo(f"  Could not connect: role \"{db_user}\" does not exist")
+            ui.text(f"  Could not connect: role \"{db_user}\" does not exist")
         else:
-            click.echo(f"  Could not connect: {err_msg}")
-        click.echo()
-        click.echo("  Check your username and password and try again.")
-        click.echo()
+            ui.text(f"  Could not connect: {err_msg}")
+        ui.blank()
+        ui.text("  Check your username and password and try again.")
+        ui.blank()
         sys.exit(1)
 
-    click.echo(f"             \033[32m✓\033[0m connected")
+    ui.success("connected")
 
     # --- Step 4: Create database ---
-    click.echo(f"  \033[36m→\033[0m Creating database \"{db_name}\"...", nl=False)
-
     async def _create_database():
         import asyncpg as _asyncpg
         conn = await _asyncpg.connect(
@@ -600,18 +646,19 @@ def dbsetup(host: str, port: int):
             await conn.close()
 
     try:
-        result = asyncio.run(_create_database())
+        with ui.status(f"Creating database \"{db_name}\""):
+            result = _run_async_command(_create_database())
     except Exception as e:
-        click.echo(f"  \033[31m✗\033[0m failed")
-        click.echo()
-        click.echo(f"  Could not create database: {e}")
-        click.echo()
+        ui.error("failed")
+        ui.blank()
+        ui.text(f"  Could not create database: {e}")
+        ui.blank()
         sys.exit(1)
 
     if result == "exists":
-        click.echo(f"  \033[36mℹ\033[0m already exists, skipping")
+        ui.warning("already exists, skipping")
     else:
-        click.echo(f"  \033[32m✓\033[0m created")
+        ui.success("created")
 
     # --- Step 5: Write .env ---
     # Build the DATABASE_URL
@@ -620,23 +667,22 @@ def dbsetup(host: str, port: int):
     encoded_password = _url_quote(db_password, safe="")
     database_url = f"postgresql://{db_user}:{encoded_password}@{host}:{port}/{db_name}"
 
-    click.echo(f"  \033[36m→\033[0m Writing DATABASE_URL to .env...", nl=False)
-
     try:
-        _write_env_database_url(env_path, database_url)
+        with ui.status("Writing DATABASE_URL to .env"):
+            _write_env_database_url(env_path, database_url)
     except Exception as e:
-        click.echo(f"  \033[31m✗\033[0m failed")
-        click.echo()
-        click.echo(f"  Could not write .env: {e}")
-        click.echo()
+        ui.error("failed")
+        ui.blank()
+        ui.text(f"  Could not write .env: {e}")
+        ui.blank()
         sys.exit(1)
 
-    click.echo(f"   \033[32m✓\033[0m done")
+    ui.success("done")
 
     # --- Done ---
-    click.echo()
-    click.echo(f"  \033[32mReady.\033[0m Run \033[1maksara migrate\033[0m to continue.")
-    click.echo()
+    ui.blank()
+    ui.success("Ready. Run aksara migrate to continue.")
+    ui.blank()
 
 
 # =============================================================================
@@ -839,35 +885,33 @@ def makemigrations(
     from aksara.conf import settings
     from aksara.migrations.executor import (
         generate_migration_filename,
-        models_to_migration_code,
         discover_migrations,
-        build_migration_graph,
     )
-    from aksara.migrations.graph import find_conflicts
+    ui = get_ui()
     
     # Handle --merge mode
     if merge:
         _handle_merge_migration(merge_app, output, settings)
         return
     
-    click.echo("⚡ Aksara Makemigrations")
-    click.echo("-" * 40)
+    ui.aksara_banner(f"v{CLI_VERSION}", "Makemigrations")
     
     # Discover models
-    click.echo("\nDiscovering models...")
-    discover_models(app)
+    with ui.status("Discovering models"):
+        discover_models(app)
     
     models = ModelRegistry.all()
     
     if not models:
-        click.echo("\n⚠️  No models found!")
-        click.echo("   Make sure your models are in a 'models.py' file")
-        click.echo("   or specify the module with --app")
+        ui.warning("No models found!")
+        ui.dim("Make sure your models are in a 'models.py' file")
+        ui.dim("or specify the module with --app")
         return
     
-    click.echo(f"\nFound {len(models)} model(s):")
+    ui.blank()
+    ui.info(f"Found {len(models)} model(s):")
     for model_name in models:
-        click.echo(f"  • {model_name}")
+        ui.bullet(model_name)
     
     # Get migrations directory
     migrations_dir = Path(output) if output else Path(settings.migrations_dir)
@@ -901,12 +945,13 @@ def makemigrations(
 -- Models: {', '.join(models.keys())}
 
 """
-        
-        with open(migration_file, "w") as f:
-            f.write(header + full_sql)
-        
-        click.echo(f"\n✓ SQL Migration created: {migration_file}")
-        click.echo(f"  Checksum: {compute_checksum(full_sql)}")
+
+        with ui.status("Writing SQL migration", animate=False):
+            with open(migration_file, "w") as f:
+                f.write(header + full_sql)
+
+        ui.success(f"SQL Migration created: {migration_file}")
+        ui.text(f"  Checksum: {compute_checksum(full_sql)}")
     
     else:
         # Python migration mode with AUTODETECTION (v0.5.26)
@@ -915,36 +960,40 @@ def makemigrations(
         # Discover existing migrations
         existing_migrations = discover_migrations(migrations_dir) if migrations_dir.exists() else []
         
-        click.echo(f"\nExisting migrations: {len(existing_migrations)}")
+        ui.blank()
+        ui.info(f"Existing migrations: {len(existing_migrations)}")
         
         # Run autodetector: compare existing migrations vs current models
-        diff, operations = detect_changes(existing_migrations, models)
+        with ui.status("Diffing models against migration state"):
+            diff, operations = detect_changes(existing_migrations, models)
         
         if not diff.has_changes:
-            click.echo("\n✓ No changes detected.")
-            click.echo("  Your models match the current migration state.")
+            ui.blank()
+            ui.success("No changes detected.")
+            ui.dim("Your models match the current migration state.")
             return
         
         # Report what was detected
-        click.echo("\nDetected changes:")
+        ui.blank()
+        ui.section("Detected changes")
         if diff.new_tables:
             for t in diff.new_tables:
-                click.echo(f"  + New table: {t}")
+                ui.text(f"  + New table: {t}")
         if diff.added_fields:
             for t, fields in diff.added_fields.items():
                 for f in fields:
-                    click.echo(f"  + Add field: {t}.{f}")
+                    ui.text(f"  + Add field: {t}.{f}")
         if diff.removed_fields:
             for t, fields in diff.removed_fields.items():
                 for f in fields:
-                    click.echo(f"  - Remove field: {t}.{f}")
+                    ui.text(f"  - Remove field: {t}.{f}")
         if diff.removed_tables:
             for t in diff.removed_tables:
-                click.echo(f"  - Drop table: {t}")
+                ui.text(f"  - Drop table: {t}")
         if diff.altered_fields:
             for t, fields in diff.altered_fields.items():
                 for f in fields:
-                    click.echo(f"  ~ Alter field: {t}.{f}")
+                    ui.text(f"  ~ Alter field: {t}.{f}")
         
         # Generate operations code
         operations_code = operations_to_code(operations)
@@ -1008,13 +1057,16 @@ class Migration(Migration):
         
         filename = generate_migration_filename(name)
         migration_file = migrations_dir / filename
-        
-        with open(migration_file, "w") as f:
-            f.write(content)
-        
-        click.echo(f"\n✓ Python Migration created: {migration_file}")
-        click.echo(f"  Operations: {len(operations)}")
-        click.echo("\n  To apply: aksara migrate")
+
+        with ui.status("Writing Python migration", animate=False):
+            with open(migration_file, "w") as f:
+                f.write(content)
+
+        ui.blank()
+        ui.success(f"Python Migration created: {migration_file}")
+        ui.text(f"  Operations: {len(operations)}")
+        ui.blank()
+        ui.command("aksara migrate")
 
 
 @cli.command()
@@ -1047,15 +1099,15 @@ def migrate(
         check_migration_conflicts,
     )
     from aksara.migrations.graph import format_conflict_message
+    ui = get_ui()
     
-    click.echo("⚡ Aksara Migrate")
-    click.echo("-" * 40)
+    ui.aksara_banner(f"v{CLI_VERSION}", "Migrate")
     
     # Get database URL from args or settings
     db_url = database_url or settings.database_url
     if not db_url:
-        click.echo("\n❌ No database URL provided!", err=True)
-        click.echo("   Set DATABASE_URL or use --database-url", err=True)
+        ui.error("No database URL provided!", err=True)
+        ui.dim("Set DATABASE_URL or use --database-url")
         sys.exit(1)
     
     # Get migrations directory
@@ -1065,148 +1117,185 @@ def migrate(
     migration_files = discover_migrations(mig_dir)
     
     if migration_files:
-        click.echo(f"\nFound {len(migration_files)} migration file(s) in {mig_dir}")
+        ui.info(f"Found {len(migration_files)} migration file(s) in {mig_dir}")
         
         # v0.3.16: Build migration graph and check for conflicts
-        graph = build_migration_graph(migrations_list=migration_files)
+        with ui.status("Building migration graph", animate=False):
+            graph = build_migration_graph(migrations_list=migration_files)
         
     else:
         # Fall back to model-based migration (v0.1 behavior)
-        click.echo(f"\nNo migration files in {mig_dir}")
-        click.echo("Falling back to model-based migration...")
+        ui.warning(f"No migration files in {mig_dir}")
+        ui.info("Falling back to model-based migration...")
         
         # Discover models
-        click.echo("\nDiscovering models...")
-        discover_models(app)
+        with ui.status("Discovering models"):
+            discover_models(app)
         
         models = ModelRegistry.all()
         
         if not models:
-            click.echo("\n⚠️  No models found!")
+            ui.warning("No models found!")
             return
         
-        click.echo(f"Found {len(models)} model(s)")
+        ui.info(f"Found {len(models)} model(s)")
         graph = None  # No graph for model-based migrations
     
     async def run_migrations():
         db = Database(db_url)
         
         try:
-            await db.connect()
-            click.echo(f"\n✓ Connected to database")
+            with ui.status("Connecting to database"):
+                await db.connect()
+            ui.success("Connected to database")
             
             # Ensure migrations table exists
-            await ensure_migrations_table(db)
+            with ui.status("Ensuring migrations table", animate=False):
+                await ensure_migrations_table(db)
             
             if migration_files:
                 # File-based migrations (v0.3.3 path)
                 applied = await get_applied_migs(db)
-                click.echo(f"  {len(applied)} migration(s) already applied")
+                ui.info(f"{len(applied)} migration(s) already applied")
                 
                 # v0.3.16: Check for conflicts before proceeding
                 if graph is not None:
                     conflicts = check_migration_conflicts(graph, applied)
                     if conflicts:
-                        click.echo("\n" + click.style("❌ Migration Conflicts Detected!", fg="red", bold=True))
-                        click.echo(format_conflict_message(conflicts))
-                        click.echo("\nMigration aborted. Resolve conflicts first.")
+                        ui.blank()
+                        ui.error("Migration Conflicts Detected!")
+                        ui.text(format_conflict_message(conflicts))
+                        ui.blank()
+                        ui.text("Migration aborted. Resolve conflicts first.")
                         return
                 
                 pending = get_pending_migrations(migration_files, applied)
                 
                 if not pending:
-                    click.echo("\n✓ All migrations already applied!")
+                    ui.blank()
+                    ui.success("All migrations already applied!")
                     return
                 
-                click.echo(f"\n{len(pending)} pending migration(s):")
-                
-                for name, path in pending:
-                    if path.suffix == ".py":
-                        # Python migration
-                        if dry_run:
-                            click.echo(f"\n[DRY RUN] Would apply: {name}")
-                            try:
-                                migration_class = load_migration_module(path)
-                                migration = migration_class()
-                                for op in migration.operations:
-                                    click.echo(f"    → {op.describe()}")
-                            except Exception as e:
-                                click.echo(f"    ⚠️  Error loading: {e}")
-                        elif fake:
-                            click.echo(f"\n→ Marking as applied: {name}")
-                            await record_migration(db, name)
-                            click.echo(f"  ✓ Marked (not executed)")
-                        else:
-                            click.echo(f"\nApplying {name}...")
-                            try:
-                                migration_class = load_migration_module(path)
-                                migration = migration_class()
-                                for op in migration.operations:
-                                    click.echo(f"    → {op.describe()}")
-                                    await op.apply(db)
+                ui.blank()
+                ui.info(f"{len(pending)} pending migration(s):")
+
+                with ui.progress(len(pending), "Applying migrations") as progress:
+                    for name, path in pending:
+                        if path.suffix == ".py":
+                            if dry_run:
+                                ui.blank()
+                                ui.info(f"[DRY RUN] Would apply: {name}")
+                                try:
+                                    migration_class = load_migration_module(path)
+                                    migration = migration_class()
+                                    for op in migration.operations:
+                                        ui.text(f"    > {op.describe()}")
+                                except Exception as e:
+                                    ui.warning(f"Error loading: {e}")
+                                progress.advance(description=f"Scanned {name}")
+                            elif fake:
+                                ui.blank()
+                                ui.info(f"Marking as applied: {name}")
                                 await record_migration(db, name)
-                                click.echo(f"  ✓ Applied successfully")
-                            except Exception as e:
-                                click.echo(f"  ✗ Error: {e}")
-                                return
-                    
-                    elif path.suffix == ".sql":
-                        # Legacy SQL migration
-                        sql = path.read_text()
-                        checksum = compute_checksum(sql)
-                        
-                        if dry_run:
-                            click.echo(f"\n[DRY RUN] Would apply SQL: {name}")
-                            lines = sql.strip().split('\n')[:5]
-                            for line in lines:
-                                click.echo(f"    {line}")
-                            if len(sql.strip().split('\n')) > 5:
-                                click.echo(f"    ... ({len(sql.strip().split(chr(10)))} lines)")
-                        elif fake:
-                            click.echo(f"\n→ Marking as applied: {name}")
-                            await record_migration(db, name, checksum)
-                            click.echo(f"  ✓ Marked (not executed)")
-                        else:
-                            click.echo(f"\n→ Applying SQL: {name}")
-                            try:
-                                await db.execute(sql)
+                                ui.success("Marked (not executed)")
+                                progress.advance(description=f"Marked {name}")
+                            else:
+                                ui.blank()
+                                ui.info(f"Applying {name}")
+                                try:
+                                    migration_class = load_migration_module(path)
+                                    migration = migration_class()
+                                    for op in migration.operations:
+                                        ui.text(f"    > {op.describe()}")
+                                        await op.apply(db)
+                                    await record_migration(db, name)
+                                    ui.success("Applied successfully")
+                                    progress.advance(description=f"Applied {name}")
+                                except Exception as e:
+                                    ui.error(f"Error: {e}")
+                                    return
+                        elif path.suffix == ".sql":
+                            sql = path.read_text()
+                            checksum = compute_checksum(sql)
+
+                            if dry_run:
+                                ui.blank()
+                                ui.info(f"[DRY RUN] Would apply SQL: {name}")
+                                lines = sql.strip().split('\n')[:5]
+                                for line in lines:
+                                    ui.text(f"    {line}")
+                                if len(sql.strip().split('\n')) > 5:
+                                    ui.text(
+                                        f"    ... ({len(sql.strip().split(chr(10)))} lines)"
+                                    )
+                                progress.advance(description=f"Scanned {name}")
+                            elif fake:
+                                ui.blank()
+                                ui.info(f"Marking as applied: {name}")
                                 await record_migration(db, name, checksum)
-                                click.echo(f"  ✓ Applied successfully")
-                            except Exception as e:
-                                click.echo(f"  ✗ Error: {e}")
-                                return
+                                ui.success("Marked (not executed)")
+                                progress.advance(description=f"Marked {name}")
+                            else:
+                                ui.blank()
+                                ui.info(f"Applying SQL: {name}")
+                                try:
+                                    await db.execute(sql)
+                                    await record_migration(db, name, checksum)
+                                    ui.success("Applied successfully")
+                                    progress.advance(description=f"Applied {name}")
+                                except Exception as e:
+                                    ui.error(f"Error: {e}")
+                                    return
             else:
                 # Model-based migrations (v0.1 behavior - fallback)
                 models = ModelRegistry.all()
                 applied = await get_applied_migs(db)
-                
-                for model_name, model in models.items():
-                    sql = model.get_create_table_sql()
-                    migration_name = f"model_{model_name.lower()}"
-                    
-                    if migration_name in applied:
-                        click.echo(f"\n→ Table '{model.__tablename__}' already migrated")
-                        continue
-                    
-                    if dry_run:
-                        click.echo(f"\n[DRY RUN] Would create table '{model.__tablename__}':")
-                        click.echo(sql)
-                    else:
-                        click.echo(f"\n→ Creating table '{model.__tablename__}'...")
-                        try:
-                            await db.execute(sql)
-                            await record_migration(db, migration_name, compute_checksum(sql))
-                            click.echo(f"  ✓ Table '{model.__tablename__}' created/verified")
-                        except Exception as e:
-                            click.echo(f"  ✗ Error: {e}")
+
+                with ui.progress(len(models), "Applying model migrations") as progress:
+                    for model_name, model in models.items():
+                        sql = model.get_create_table_sql()
+                        migration_name = f"model_{model_name.lower()}"
+
+                        if migration_name in applied:
+                            ui.blank()
+                            ui.info(f"Table '{model.__tablename__}' already migrated")
+                            progress.advance(description=f"Skipped {model.__tablename__}")
+                            continue
+
+                        if dry_run:
+                            ui.blank()
+                            ui.info(
+                                f"[DRY RUN] Would create table '{model.__tablename__}':"
+                            )
+                            ui.text(sql)
+                            progress.advance(description=f"Scanned {model.__tablename__}")
+                        else:
+                            ui.blank()
+                            ui.info(f"Creating table '{model.__tablename__}'")
+                            try:
+                                await db.execute(sql)
+                                await record_migration(
+                                    db,
+                                    migration_name,
+                                    compute_checksum(sql),
+                                )
+                                ui.success(
+                                    f"Table '{model.__tablename__}' created/verified"
+                                )
+                                progress.advance(
+                                    description=f"Applied {model.__tablename__}"
+                                )
+                            except Exception as e:
+                                ui.error(f"Error: {e}")
             
             if not dry_run:
-                click.echo("\n" + "=" * 40)
-                click.echo("✓ Migrations complete!")
+                ui.blank()
+                ui.separator(40)
+                ui.success("Migrations complete!")
         finally:
             await db.disconnect()
     
-    asyncio.run(run_migrations())
+    _run_async_command(run_migrations())
 
 
 @cli.command()
@@ -2317,27 +2406,31 @@ def _run_async(coro):
 
 def _print_execution_result(result: dict, fmt: str):
     """Print an AI execution result."""
+    ui = get_ui()
+
     if fmt == "json":
-        import json as _json
-        click.echo(_json.dumps(result, indent=2, default=str))
+        ui.print_json(result)
         return
 
     if not result.get("ok"):
-        click.echo(click.style(f"  ✗ Execution failed: {result.get('error', 'Unknown error')}", fg="red"))
+        ui.error(f"Execution failed: {result.get('error', 'Unknown error')}")
         return
 
     execution = result.get("execution", {})
     pack = result.get("prompt_pack", {})
 
-    click.echo(f"\n  ─── {pack.get('action_key', '?')} (executed) ───\n")
-    click.echo(f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}")
+    ui.blank()
+    ui.section(f"{pack.get('action_key', '?')} (executed)")
+    ui.text(
+        f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}"
+    )
     elapsed = execution.get("elapsed_ms", 0)
     tokens = execution.get("tokens", {})
-    click.echo(f"  Elapsed: {elapsed:.0f}ms  |  Tokens: {tokens.get('total', '?')}")
-    click.echo()
-    click.echo("  ── AI Response ──")
-    click.echo(f"  {execution.get('response', '(no response)')}")
-    click.echo()
+    ui.text(f"  Elapsed: {elapsed:.0f}ms  |  Tokens: {tokens.get('total', '?')}")
+    ui.blank()
+    ui.section("AI Response")
+    ui.text(f"  {execution.get('response', '(no response)')}")
+    ui.blank()
 
 
 @ai_run_group.command("model")
@@ -2349,14 +2442,29 @@ def _print_execution_result(result: dict, fmt: str):
 def ai_run_model(model_name, action_key, provider_override, model_override, fmt):
     """Execute an AI flow for a model."""
     from aksara.studio.ai_flows import execute_model_flow
+    ui = get_ui()
 
-    discover_models()
-    result = _run_async(execute_model_flow(
-        model_name=model_name,
-        action_key=action_key,
-        provider_override=provider_override,
-        model_override=model_override,
-    ))
+    if fmt == "json":
+        discover_models(silent=True)
+    else:
+        with ui.status("Discovering models"):
+            discover_models()
+
+    if fmt == "json":
+        result = _run_async(execute_model_flow(
+            model_name=model_name,
+            action_key=action_key,
+            provider_override=provider_override,
+            model_override=model_override,
+        ))
+    else:
+        with ui.status(f"Executing AI action '{action_key}'"):
+            result = _run_async(execute_model_flow(
+                model_name=model_name,
+                action_key=action_key,
+                provider_override=provider_override,
+                model_override=model_override,
+            ))
     _print_execution_result(result, fmt)
 
 
@@ -2369,15 +2477,24 @@ def ai_run_model(model_name, action_key, provider_override, model_override, fmt)
 def ai_run_route(route_spec, action_key, provider_override, model_override, fmt):
     """Execute an AI flow for a route. ROUTE_SPEC = METHOD:/path"""
     from aksara.studio.ai_flows import execute_route_flow
+    ui = get_ui()
 
     if ":" in route_spec:
         method, path = route_spec.split(":", 1)
     else:
         method, path = "GET", route_spec
-    result = _run_async(execute_route_flow(
-        path=path, method=method, action_key=action_key,
-        provider_override=provider_override, model_override=model_override,
-    ))
+
+    if fmt == "json":
+        result = _run_async(execute_route_flow(
+            path=path, method=method, action_key=action_key,
+            provider_override=provider_override, model_override=model_override,
+        ))
+    else:
+        with ui.status(f"Executing AI action '{action_key}'"):
+            result = _run_async(execute_route_flow(
+                path=path, method=method, action_key=action_key,
+                provider_override=provider_override, model_override=model_override,
+            ))
     _print_execution_result(result, fmt)
 
 
@@ -2390,11 +2507,19 @@ def ai_run_route(route_spec, action_key, provider_override, model_override, fmt)
 def ai_run_query(sql, action_key, provider_override, model_override, fmt):
     """Execute an AI flow for a SQL query."""
     from aksara.studio.ai_flows import execute_query_flow
+    ui = get_ui()
 
-    result = _run_async(execute_query_flow(
-        sql=sql, action_key=action_key,
-        provider_override=provider_override, model_override=model_override,
-    ))
+    if fmt == "json":
+        result = _run_async(execute_query_flow(
+            sql=sql, action_key=action_key,
+            provider_override=provider_override, model_override=model_override,
+        ))
+    else:
+        with ui.status(f"Executing AI action '{action_key}'"):
+            result = _run_async(execute_query_flow(
+                sql=sql, action_key=action_key,
+                provider_override=provider_override, model_override=model_override,
+            ))
     _print_execution_result(result, fmt)
 
 
@@ -2408,11 +2533,19 @@ def ai_run_query(sql, action_key, provider_override, model_override, fmt):
 def ai_run_migration(app, name, action_key, provider_override, model_override, fmt):
     """Execute an AI flow for a migration."""
     from aksara.studio.ai_flows import execute_migration_flow
+    ui = get_ui()
 
-    result = _run_async(execute_migration_flow(
-        action_key=action_key, app=app, name=name,
-        provider_override=provider_override, model_override=model_override,
-    ))
+    if fmt == "json":
+        result = _run_async(execute_migration_flow(
+            action_key=action_key, app=app, name=name,
+            provider_override=provider_override, model_override=model_override,
+        ))
+    else:
+        with ui.status(f"Executing AI action '{action_key}'"):
+            result = _run_async(execute_migration_flow(
+                action_key=action_key, app=app, name=name,
+                provider_override=provider_override, model_override=model_override,
+            ))
     _print_execution_result(result, fmt)
 
 
@@ -2425,11 +2558,19 @@ def ai_run_migration(app, name, action_key, provider_override, model_override, f
 def ai_run_diagnostic(issue_id, action_key, provider_override, model_override, fmt):
     """Execute an AI flow for a diagnostic issue."""
     from aksara.studio.ai_flows import execute_diagnostic_flow
+    ui = get_ui()
 
-    result = _run_async(execute_diagnostic_flow(
-        action_key=action_key, issue_id=issue_id,
-        provider_override=provider_override, model_override=model_override,
-    ))
+    if fmt == "json":
+        result = _run_async(execute_diagnostic_flow(
+            action_key=action_key, issue_id=issue_id,
+            provider_override=provider_override, model_override=model_override,
+        ))
+    else:
+        with ui.status(f"Executing AI action '{action_key}'"):
+            result = _run_async(execute_diagnostic_flow(
+                action_key=action_key, issue_id=issue_id,
+                provider_override=provider_override, model_override=model_override,
+            ))
     _print_execution_result(result, fmt)
 
 
@@ -2452,26 +2593,34 @@ def ai_chat(message, provider_override, model_override, fmt):
         aksara ai chat "review GET /api/users" --format json
     """
     from aksara.ai.console_engine import run_console_query
+    ui = get_ui()
 
-    result = _run_async(run_console_query(
-        message,
-        provider_override=provider_override,
-        model_override=model_override,
-    ))
+    if fmt == "json":
+        result = _run_async(run_console_query(
+            message,
+            provider_override=provider_override,
+            model_override=model_override,
+        ))
+    else:
+        with ui.status("Consulting AI console"):
+            result = _run_async(run_console_query(
+                message,
+                provider_override=provider_override,
+                model_override=model_override,
+            ))
     _print_console_result(result, fmt)
 
 
 def _print_console_result(result: dict, fmt: str):
     """Print an AI Console result to the terminal."""
+    ui = get_ui()
+
     if fmt == "json":
-        import json as _json
-        click.echo(_json.dumps(result, indent=2, default=str))
+        ui.print_json(result)
         return
 
     if not result.get("ok"):
-        click.echo(click.style(
-            f"  ✗ {result.get('error', 'Unknown error')}", fg="red"
-        ))
+        ui.error(result.get("error", "Unknown error"))
         return
 
     intent = result.get("intent", "?")
@@ -2480,24 +2629,28 @@ def _print_console_result(result: dict, fmt: str):
     elapsed = result.get("elapsed_ms", 0)
     execution = result.get("execution", {})
 
-    click.echo(f"\n  ─── AI Console ({flow_type}/{intent}) ───\n")
-    click.echo(f"  Confidence: {confidence * 100:.0f}%  |  Elapsed: {elapsed:.0f}ms")
+    ui.blank()
+    ui.section(f"AI Console ({flow_type}/{intent})")
+    ui.text(f"  Confidence: {confidence * 100:.0f}%  |  Elapsed: {elapsed:.0f}ms")
 
     if execution:
-        click.echo(f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}")
+        ui.text(
+            f"  Provider: {execution.get('provider', '?')}  |  Model: {execution.get('model', '?')}"
+        )
         tokens = execution.get("tokens", {})
         if tokens:
-            click.echo(f"  Tokens: {tokens.get('total', '?')}")
-        click.echo()
-        click.echo("  ── AI Response ──")
-        click.echo(f"  {execution.get('response', '(no response)')}")
+            ui.text(f"  Tokens: {tokens.get('total', '?')}")
+        ui.blank()
+        ui.section("AI Response")
+        ui.text(f"  {execution.get('response', '(no response)')}")
     else:
-        click.echo("  (no execution result)")
+        ui.text("  (no execution result)")
 
     suggestions = result.get("suggestions", [])
     if suggestions:
-        click.echo(f"\n  Suggested next: {', '.join(suggestions)}")
-    click.echo()
+        ui.blank()
+        ui.text(f"  Suggested next: {', '.join(suggestions)}")
+    ui.blank()
 
 
 # ─── v0.5.32: aksara ai graph ───────────────────────────────────────────────
@@ -2523,8 +2676,13 @@ def ai_graph(as_json, summary, events, rebuild):
     """
     import json as _json
     from aksara.ai.project_graph import build_project_graph
+    ui = get_ui()
 
-    graph = build_project_graph(rebuild=rebuild)
+    if as_json:
+        graph = build_project_graph(rebuild=rebuild)
+    else:
+        with ui.status("Building project graph"):
+            graph = build_project_graph(rebuild=rebuild)
 
     if as_json:
         if events:
@@ -2548,30 +2706,35 @@ def ai_graph(as_json, summary, events, rebuild):
 
 
 def _print_graph_summary(graph):
+    ui = get_ui()
     m = graph.metadata
-    click.echo("\n  Project Graph")
-    click.echo("  " + "─" * 30)
-    click.echo(f"  Models:      {m.model_count}")
-    click.echo(f"  Routes:      {m.route_count}")
-    click.echo(f"  Queries:     {m.query_count}")
-    click.echo(f"  Migrations:  {m.migration_count}")
-    click.echo(f"  Diagnostics: {m.diagnostic_count}")
-    click.echo(f"  Gaps:        {m.gap_count}")
-    click.echo(f"  Events:      {m.event_count}")
+    ui.blank()
+    ui.section("Project Graph")
+    ui.separator(30)
+    ui.text(f"  Models:      {m.model_count}")
+    ui.text(f"  Routes:      {m.route_count}")
+    ui.text(f"  Queries:     {m.query_count}")
+    ui.text(f"  Migrations:  {m.migration_count}")
+    ui.text(f"  Diagnostics: {m.diagnostic_count}")
+    ui.text(f"  Gaps:        {m.gap_count}")
+    ui.text(f"  Events:      {m.event_count}")
     hub = graph.ai_hub
     if hub:
-        click.echo(f"  AI Hub:      {hub.status}")
-    click.echo(f"\n  Version: {m.version}  |  Generated: {m.generated_at}")
-    click.echo()
+        ui.text(f"  AI Hub:      {hub.status}")
+    ui.blank()
+    ui.text(f"  Version: {m.version}  |  Generated: {m.generated_at}")
+    ui.blank()
 
 
 def _print_graph_events(graph):
+    ui = get_ui()
     evts = graph.events
     if not evts:
-        click.echo("  No recent events.")
+        ui.text("  No recent events.")
         return
-    click.echo(f"\n  Recent Events ({len(evts)})")
-    click.echo("  " + "─" * 50)
+    ui.blank()
+    ui.section(f"Recent Events ({len(evts)})")
+    ui.separator(50)
     for e in reversed(evts[-20:]):
         sev = e.get("severity", "info")
         kind = e.get("kind", "?")
@@ -2579,8 +2742,20 @@ def _print_graph_events(graph):
         ts = e.get("timestamp", "")
         color = "red" if sev == "error" else "yellow" if sev == "warning" else None
         prefix = f"  [{sev:7s}] {kind}"
-        click.echo(click.style(prefix, fg=color) + f"  {msg}  ({ts})")
-    click.echo()
+        if ui.is_rich and not ui.config.no_color and color is not None:
+            prefix = click.style(prefix, fg=color)
+        ui.text(prefix + f"  {msg}  ({ts})")
+    ui.blank()
+
+
+def _styled_grade_label(ui, grade: str) -> str:
+    """Return a styled grade label for AI reports."""
+
+    colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
+    label = f"({grade})"
+    if ui.is_rich and not ui.config.no_color:
+        return click.style(label, fg=colors.get(grade), bold=True)
+    return label
 
 
 # ─── v0.5.33: aksara ai debug ───────────────────────────────────────────────
@@ -2610,6 +2785,7 @@ def ai_debug(query, as_json, summary_only, model_filter, route_filter):
     """
     import json as _json
     from aksara.ai.debugger import run_debugger
+    ui = get_ui()
 
     # Build query from filters if not explicitly provided
     if not query:
@@ -2621,53 +2797,58 @@ def ai_debug(query, as_json, summary_only, model_filter, route_filter):
         if parts:
             query = "debug " + " ".join(parts)
 
-    report = run_debugger(query=query)
-
     if as_json:
+        report = run_debugger(query=query)
         if summary_only:
             click.echo(_json.dumps(report.to_summary_dict(), indent=2, default=str))
         else:
             click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
         return
 
+    with ui.status("Running AI debugger"):
+        report = run_debugger(query=query)
+
     if not report.ok:
-        click.echo(click.style(f"  ✗ Debugger failed: {report.summary}", fg="red"))
+        ui.error(f"Debugger failed: {report.summary}")
         return
 
-    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  AI Debugger — Root Cause Analysis")
-    click.echo("  " + "─" * 40)
-    click.echo(f"  Issues:      {report.issue_count}")
-    click.echo(f"  Clusters:    {report.cluster_count}")
-    click.echo(f"  Root Causes: {report.root_cause_count}")
-    click.echo(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
+    ui.aksara_banner(f"v{CLI_VERSION}", "AI Debugger — Root Cause Analysis")
+    ui.text(f"  Issues:      {report.issue_count}")
+    ui.text(f"  Clusters:    {report.cluster_count}")
+    ui.text(f"  Root Causes: {report.root_cause_count}")
+    ui.text(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
 
     if summary_only:
-        click.echo(f"\n  {report.summary}")
-        click.echo()
+        ui.blank()
+        ui.text(f"  {report.summary}")
+        ui.blank()
         return
 
     if report.root_causes:
-        click.echo("\n  Root Causes (ranked by confidence):")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section("Root Causes (ranked by confidence)")
+        ui.separator(40)
         for rc in report.root_causes:
             sev = rc.severity
             color = "red" if sev == "error" else "yellow" if sev == "warning" else None
             conf_pct = f"{rc.confidence * 100:.0f}%"
-            click.echo(click.style(f"  [{sev}]", fg=color) +
-                       f" {rc.title}  ({conf_pct} confidence)")
-            click.echo(f"    {rc.description}")
+            prefix = f"  [{sev}]"
+            if ui.is_rich and not ui.config.no_color and color is not None:
+                prefix = click.style(prefix, fg=color)
+            ui.text(prefix + f" {rc.title}  ({conf_pct} confidence)")
+            ui.text(f"    {rc.description}")
             if rc.fix_suggestions:
                 for fix in rc.fix_suggestions[:2]:
-                    click.echo(f"    → {fix}")
+                    ui.text(f"    > {fix}")
 
     if report.clusters:
-        click.echo(f"\n  Clusters ({report.cluster_count}):")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section(f"Clusters ({report.cluster_count})")
+        ui.separator(40)
         for cl in report.clusters[:10]:
-            click.echo(f"  {cl.label}  ({cl.size} issues, {cl.severity})")
+            ui.text(f"  {cl.label}  ({cl.size} issues, {cl.severity})")
 
-    click.echo()
+    ui.blank()
 
 
 # ─── v0.5.34: aksara ai review ──────────────────────────────────────────────
@@ -2695,67 +2876,71 @@ def ai_review(as_json, summary_only, show_metrics):
     """
     import json as _json
     from aksara.ai.architecture_review import run_architecture_review
-
-    report = run_architecture_review()
+    ui = get_ui()
 
     if as_json:
+        report = run_architecture_review()
         if summary_only:
             click.echo(_json.dumps(report.to_summary_dict(), indent=2, default=str))
         else:
             click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
         return
 
+    with ui.status("Running architecture review"):
+        report = run_architecture_review()
+
     if not report.ok:
-        click.echo(click.style("  ✗ Architecture review failed", fg="red"))
+        ui.error("Architecture review failed")
         return
 
-    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  AI Architecture Review")
-    click.echo("  " + "─" * 40)
-
-    grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
-    grade_color = grade_colors.get(report.grade, None)
-    click.echo(f"  Architecture Score: {report.score}  " +
-               click.style(f"({report.grade})", fg=grade_color, bold=True))
-    click.echo(f"  Findings:    {report.finding_count}")
-    click.echo(f"  Suggestions: {report.suggestion_count}")
-    click.echo(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
+    ui.aksara_banner(f"v{CLI_VERSION}", "AI Architecture Review")
+    ui.text(
+        f"  Architecture Score: {report.score}  {_styled_grade_label(ui, report.grade)}"
+    )
+    ui.text(f"  Findings:    {report.finding_count}")
+    ui.text(f"  Suggestions: {report.suggestion_count}")
+    ui.text(f"  Elapsed:     {report.elapsed_ms:.0f}ms")
 
     if show_metrics:
         m = report.metrics
-        click.echo("\n  Metrics:")
-        click.echo("  " + "─" * 40)
-        click.echo(f"  Models:          {m.model_count}")
-        click.echo(f"  Routes:          {m.route_count}")
-        click.echo(f"  Queries:         {m.query_count}")
-        click.echo(f"  Migrations:      {m.migration_count}")
-        click.echo(f"  Diagnostics:     {m.diagnostic_count}")
-        click.echo(f"  Avg models/route: {m.avg_models_per_route:.1f}")
-        click.echo(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
-        click.echo(f"  Coupling score:  {m.coupling_score:.2f}")
+        ui.blank()
+        ui.section("Metrics")
+        ui.separator(40)
+        ui.text(f"  Models:          {m.model_count}")
+        ui.text(f"  Routes:          {m.route_count}")
+        ui.text(f"  Queries:         {m.query_count}")
+        ui.text(f"  Migrations:      {m.migration_count}")
+        ui.text(f"  Diagnostics:     {m.diagnostic_count}")
+        ui.text(f"  Avg models/route: {m.avg_models_per_route:.1f}")
+        ui.text(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
+        ui.text(f"  Coupling score:  {m.coupling_score:.2f}")
 
     if summary_only:
-        click.echo()
+        ui.blank()
         return
 
     if report.findings:
-        click.echo("\n  Top Findings:")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section("Top Findings")
+        ui.separator(40)
         for i, f in enumerate(report.findings[:10], 1):
             sev = f.severity
             color = "red" if sev in ("error", "critical") else "yellow" if sev == "warning" else None
-            click.echo(click.style(f"  {i}. [{sev}]", fg=color) +
-                       f" {f.title}")
-            click.echo(f"     {f.description}")
+            prefix = f"  {i}. [{sev}]"
+            if ui.is_rich and not ui.config.no_color and color is not None:
+                prefix = click.style(prefix, fg=color)
+            ui.text(prefix + f" {f.title}")
+            ui.text(f"     {f.description}")
 
     if report.suggestions:
-        click.echo("\n  Suggestions:")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section("Suggestions")
+        ui.separator(40)
         for i, s in enumerate(report.suggestions[:5], 1):
-            click.echo(f"  {i}. {s.title}")
-            click.echo(f"     {s.description}")
+            ui.text(f"  {i}. {s.title}")
+            ui.text(f"     {s.description}")
 
-    click.echo()
+    ui.blank()
 
 
 @ai_flows_group.command("performance")
@@ -2782,58 +2967,65 @@ def ai_performance(as_json, summary_only, show_issues, show_metrics):
     import json as _json
 
     from aksara.ai.performance_analyzer import run_performance_analysis
-
-    report = run_performance_analysis()
+    ui = get_ui()
 
     if as_json:
+        report = run_performance_analysis()
         click.echo(_json.dumps(report.to_dict(), indent=2, default=str))
         return
 
-    grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
-    click.echo()
-    click.echo(click.style("  AI Performance Analyzer", bold=True))
-    click.echo("  " + "═" * 40)
-    click.echo(f"  Grade:           {click.style(report.grade, fg=grade_colors.get(report.grade, None))}")
-    click.echo(f"  Score:           {report.score}/100")
-    click.echo(f"  Issues:          {report.issue_count}")
-    click.echo(f"  Recommendations: {report.recommendation_count}")
-    click.echo(f"  Elapsed:         {report.elapsed_ms:.0f}ms")
+    with ui.status("Running performance analysis"):
+        report = run_performance_analysis()
+
+    ui.blank()
+    ui.section("AI Performance Analyzer")
+    ui.separator(40)
+    ui.text(f"  Grade:           {report.grade}")
+    ui.text(f"  Score:           {report.score}/100")
+    ui.text(f"  Issues:          {report.issue_count}")
+    ui.text(f"  Recommendations: {report.recommendation_count}")
+    ui.text(f"  Elapsed:         {report.elapsed_ms:.0f}ms")
 
     if show_metrics:
         m = report.metrics
-        click.echo("\n  Metrics:")
-        click.echo("  " + "─" * 40)
-        click.echo(f"  Total routes:      {m.total_routes}")
-        click.echo(f"  Total queries:     {m.total_queries}")
-        click.echo(f"  Slow queries:      {m.slow_queries}")
-        click.echo(f"  N+1 candidates:    {m.n_plus_one_candidates}")
-        click.echo(f"  Missing indexes:   {m.missing_indexes}")
-        click.echo(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
+        ui.blank()
+        ui.section("Metrics:")
+        ui.separator(40)
+        ui.text(f"  Total routes:      {m.total_routes}")
+        ui.text(f"  Total queries:     {m.total_queries}")
+        ui.text(f"  Slow queries:      {m.slow_queries}")
+        ui.text(f"  N+1 candidates:    {m.n_plus_one_candidates}")
+        ui.text(f"  Missing indexes:   {m.missing_indexes}")
+        ui.text(f"  Avg queries/route: {m.avg_queries_per_route:.1f}")
         if m.max_queries_route:
-            click.echo(f"  Max queries route: {m.max_queries_route}")
+            ui.text(f"  Max queries route: {m.max_queries_route}")
 
     if summary_only:
-        click.echo()
+        ui.blank()
         return
 
     if show_issues and report.issues:
-        click.echo("\n  Issues:")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section("Issues")
+        ui.separator(40)
         for i, issue in enumerate(report.issues[:15], 1):
             sev = issue.severity
             color = "red" if sev in ("critical", "high") else "yellow" if sev == "medium" else None
-            click.echo(click.style(f"  {i}. [{sev}]", fg=color) +
-                       f" {issue.title}")
-            click.echo(f"     {issue.description}")
+            prefix = f"  {i}. [{sev}]"
+            if ui.is_rich and not ui.config.no_color and color is not None:
+                prefix = click.style(prefix, fg=color)
+            ui.text(prefix + f" {issue.title}")
+            ui.text(f"     {issue.description}")
 
     if report.recommendations:
-        click.echo("\n  Recommendations:")
-        click.echo("  " + "─" * 40)
+        ui.blank()
+        ui.section("Recommendations")
+        ui.separator(40)
         for i, r in enumerate(report.recommendations[:5], 1):
-            click.echo(f"  {i}. {r.title}")
-            click.echo(f"     {r.description}")
+            ui.text(f"  {i}. {r.title}")
+            ui.text(f"     {r.description}")
 
-    click.echo()
+    ui.blank()
 
 
 # ─── v0.5.37: aksara ai investigate ─────────────────────────────────────────
@@ -2863,87 +3055,95 @@ def ai_investigate(as_json, summary_only):
     """
     import json as _json
     from aksara.ai.intent_engine import run_investigation
-
-    result = run_investigation()
+    ui = get_ui()
 
     if as_json:
+        result = run_investigation()
         if summary_only:
             click.echo(_json.dumps(result.to_summary_dict(), indent=2, default=str))
         else:
             click.echo(_json.dumps(result.to_dict(), indent=2, default=str))
         return
 
-    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  AI Investigation — System Intelligence Report")
-    click.echo("  " + "═" * 48)
+    with ui.status("Running full AI investigation"):
+        result = run_investigation()
+
+    ui.aksara_banner(f"v{CLI_VERSION}", "AI Investigation — System Intelligence Report")
 
     if not result.ok:
-        click.echo(click.style("  ✗ Investigation failed", fg="red"))
-        click.echo(f"  {result.summary}")
-        click.echo()
+        ui.error("Investigation failed")
+        ui.text(f"  {result.summary}")
+        ui.blank()
         return
 
     # Step results summary
     ok_count = sum(1 for s in result.step_results if s.ok)
     total = len(result.step_results)
-    click.echo(f"  Pipeline:    {ok_count}/{total} steps succeeded")
-    click.echo(f"  Elapsed:     {result.elapsed_ms:.0f}ms")
+    ui.text(f"  Pipeline:    {ok_count}/{total} steps succeeded")
+    ui.text(f"  Elapsed:     {result.elapsed_ms:.0f}ms")
 
     for sr in result.step_results:
-        status = click.style("✓", fg="green") if sr.ok else click.style("✗", fg="red")
-        click.echo(f"  {status} {sr.step}  ({sr.elapsed_ms:.0f}ms)")
+        status = "OK" if not ui.config.unicode else "✓"
+        if not sr.ok:
+            status = "X" if not ui.config.unicode else "✗"
+        if ui.is_rich and not ui.config.no_color:
+            status = click.style(status, fg="green" if sr.ok else "red")
+        ui.text(f"  {status} {sr.step}  ({sr.elapsed_ms:.0f}ms)")
 
     # Architecture section
     arch = result.report.get("architecture_report")
     if arch:
-        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
         grade = arch.get("grade", "?")
         score = arch.get("score", "?")
-        click.echo(f"\n  Architecture Score: {score}  " +
-                   click.style(f"({grade})", fg=grade_colors.get(grade), bold=True))
+        ui.blank()
+        ui.text(f"  Architecture Score: {score}  {_styled_grade_label(ui, grade)}")
         findings = arch.get("finding_count", 0)
-        click.echo(f"  Findings: {findings}")
+        ui.text(f"  Findings: {findings}")
 
     # Performance section
     perf = result.report.get("performance_report")
     if perf:
-        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
         grade = perf.get("grade", "?")
         score = perf.get("score", "?")
         issues = perf.get("issue_count", 0)
-        click.echo(f"\n  Performance Score: {score}  " +
-                   click.style(f"({grade})", fg=grade_colors.get(grade), bold=True))
-        click.echo(f"  Issues: {issues}")
+        ui.blank()
+        ui.text(f"  Performance Score: {score}  {_styled_grade_label(ui, grade)}")
+        ui.text(f"  Issues: {issues}")
         for ti in perf.get("top_issues", [])[:3]:
-            click.echo(f"    • {ti.get('title', '')}")
+            ui.text(f"    - {ti.get('title', '')}")
 
     # Debug section
     debug = result.report.get("debug_report")
     if debug:
         rc_count = debug.get("root_cause_count", 0)
-        click.echo(f"\n  Root Causes: {rc_count}")
+        ui.blank()
+        ui.text(f"  Root Causes: {rc_count}")
         for rc in debug.get("top_root_causes", [])[:3]:
             conf = f"{rc.get('confidence', 0) * 100:.0f}%"
-            click.echo(f"    • {rc.get('title', '')}  ({conf})")
+            ui.text(f"    - {rc.get('title', '')}  ({conf})")
 
     # Diagnostics section
     diag_count = result.report.get("diagnostic_count", 0)
     gap_count = result.report.get("gap_count", 0)
     if diag_count or gap_count:
-        click.echo(f"\n  Diagnostics: {diag_count}  |  Gaps: {gap_count}")
+        ui.blank()
+        ui.text(f"  Diagnostics: {diag_count}  |  Gaps: {gap_count}")
 
     if not summary_only:
         # Graph summary
         gs = result.report.get("graph_summary")
         if gs:
             counts = gs.get("counts", {})
-            click.echo(f"\n  Project Graph:")
-            click.echo(f"    Models: {counts.get('models', 0)}  "
-                       f"Routes: {counts.get('routes', 0)}  "
-                       f"Queries: {counts.get('queries', 0)}  "
-                       f"Migrations: {counts.get('migrations', 0)}")
+            ui.blank()
+            ui.section("Project Graph")
+            ui.text(
+                f"    Models: {counts.get('models', 0)}  "
+                f"Routes: {counts.get('routes', 0)}  "
+                f"Queries: {counts.get('queries', 0)}  "
+                f"Migrations: {counts.get('migrations', 0)}"
+            )
 
-    click.echo()
+    ui.blank()
 
 
 # ─── v0.5.40: aksara ai investigate --continue ──────────────────────────────
@@ -2966,49 +3166,54 @@ def ai_investigate_continue(as_json):
     import json as _json
     from aksara.ai.session_store import get_active_session
     from aksara.ai.investigation_runner import execute_next_step
+    ui = get_ui()
 
     session = get_active_session()
     if session is None:
-        click.echo("  ⚠️  No active investigation session to continue.")
-        click.echo("  Start one with: aksara ai investigate")
-        click.echo()
+        ui.warning("No active investigation session to continue.")
+        ui.text("  Start one with: aksara ai investigate")
+        ui.blank()
         return
-
-    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo(f"  Continuing investigation: {session.goal}")
-    click.echo("  " + "─" * 40)
-
-    session = execute_next_step(session)
 
     if as_json:
+        session = execute_next_step(session)
         click.echo(_json.dumps(session.to_dict(), indent=2, default=str))
         return
+
+    ui.aksara_banner(f"v{CLI_VERSION}", f"Continuing investigation: {session.goal}")
+
+    with ui.status("Executing next investigation step"):
+        session = execute_next_step(session)
 
     # Show step results
     if session.plan and session.plan.steps:
         for step in session.plan.steps:
             if step.status == "done":
-                click.echo(click.style(f"  ✓ {step.label}", fg="green"))
+                ui.success(step.label)
             elif step.status == "running":
-                click.echo(click.style(f"  ▶ {step.label}", fg="yellow"))
+                ui.warning(step.label)
             elif step.status == "failed":
-                click.echo(click.style(f"  ✗ {step.label}: {step.error}", fg="red"))
+                ui.error(f"{step.label}: {step.error}")
             elif step.status == "pending":
-                click.echo(f"  ○ {step.label}")
+                ui.text(f"  o {step.label}")
 
     pending = sum(1 for s in (session.plan.steps if session.plan else []) if s.status == "pending")
     if pending:
-        click.echo(f"\n  {pending} step(s) remaining. Run 'aksara ai continue' for the next step.")
+        ui.blank()
+        ui.text(
+            f"  {pending} step(s) remaining. Run 'aksara ai continue' for the next step."
+        )
     else:
-        click.echo(f"\n  \033[32m✓ Investigation complete.\033[0m")
+        ui.blank()
+        ui.success("Investigation complete.")
 
     if session.findings:
-        click.echo("  " + "─" * 40)
-        click.echo("  Findings:")
+        ui.separator(40)
+        ui.section("Findings")
         for f in session.findings:
-            click.echo(f"    • {f}")
+            ui.text(f"    - {f}")
 
-    click.echo()
+    ui.blank()
 
 
 # ─── v0.5.40: aksara ai briefing ────────────────────────────────────────────
@@ -3033,63 +3238,72 @@ def ai_briefing(as_json, summary_only):
     """
     import json as _json
     from aksara.ai.daily_briefing import generate_daily_briefing
-
-    briefing = generate_daily_briefing()
+    ui = get_ui()
 
     if as_json:
+        briefing = generate_daily_briefing()
         if summary_only:
             click.echo(_json.dumps(briefing.to_summary_dict(), indent=2, default=str))
         else:
             click.echo(_json.dumps(briefing.to_dict(), indent=2, default=str))
         return
 
-    click.echo(f"\n  ⚡ \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  Daily Briefing — System Health Summary")
-    click.echo("  " + "═" * 48)
+    with ui.status("Generating daily briefing"):
+        briefing = generate_daily_briefing()
 
-    click.echo(f"\n  {briefing.summary}")
+    ui.aksara_banner(f"v{CLI_VERSION}", "Daily Briefing — System Health Summary")
+
+    ui.blank()
+    ui.text(f"  {briefing.summary}")
 
     # Scores
     if briefing.performance_score >= 0:
-        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
         p_grade = "A" if briefing.performance_score >= 90 else "B" if briefing.performance_score >= 80 else "C" if briefing.performance_score >= 70 else "D" if briefing.performance_score >= 60 else "F"
-        click.echo(f"\n  Performance: {briefing.performance_score:.0f}/100  " +
-                   click.style(f"({p_grade})", fg=grade_colors.get(p_grade), bold=True))
+        ui.blank()
+        ui.text(
+            f"  Performance: {briefing.performance_score:.0f}/100  {_styled_grade_label(ui, p_grade)}"
+        )
 
     if briefing.architecture_score >= 0:
-        grade_colors = {"A": "green", "B": "blue", "C": "yellow", "D": "red", "F": "red"}
         a_grade = "A" if briefing.architecture_score >= 90 else "B" if briefing.architecture_score >= 80 else "C" if briefing.architecture_score >= 70 else "D" if briefing.architecture_score >= 60 else "F"
-        click.echo(f"  Architecture: {briefing.architecture_score:.0f}/100  " +
-                   click.style(f"({a_grade})", fg=grade_colors.get(a_grade), bold=True))
+        ui.text(
+            f"  Architecture: {briefing.architecture_score:.0f}/100  {_styled_grade_label(ui, a_grade)}"
+        )
 
     if not summary_only:
         # Issues
         if briefing.issues:
-            click.echo(f"\n  Top Issues ({len(briefing.issues)}):")
+            ui.blank()
+            ui.section(f"Top Issues ({len(briefing.issues)})")
             for issue in briefing.issues[:5]:
-                click.echo(f"    • {issue}")
+                ui.text(f"    - {issue}")
 
         # Debug signals
         if briefing.debug_signals:
-            click.echo(f"\n  Debug Signals ({len(briefing.debug_signals)}):")
+            ui.blank()
+            ui.section(f"Debug Signals ({len(briefing.debug_signals)})")
             for sig in briefing.debug_signals[:3]:
-                click.echo(f"    • {sig}")
+                ui.text(f"    - {sig}")
 
         # Recommendations
         if briefing.recommendations:
-            click.echo(f"\n  Recommendations:")
+            ui.blank()
+            ui.section("Recommendations")
             for i, rec in enumerate(briefing.recommendations, 1):
-                click.echo(f"    {i}. {rec}")
+                ui.text(f"    {i}. {rec}")
 
         # Recent investigations
         if briefing.recent_investigations:
-            click.echo(f"\n  Recent Investigations ({len(briefing.recent_investigations)}):")
+            ui.blank()
+            ui.section(
+                f"Recent Investigations ({len(briefing.recent_investigations)})"
+            )
             for inv in briefing.recent_investigations[:3]:
                 status = inv.get("status", "?")
                 goal = inv.get("goal", "?")
-                click.echo(f"    • [{status}] {goal}")
+                ui.text(f"    - [{status}] {goal}")
 
-    click.echo()
+    ui.blank()
 
 
 def _setup_app_for_cli(database_url: Optional[str] = None) -> "FastAPI":
@@ -4988,7 +5202,7 @@ def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool,
             click.echo(f"  Source: {examples_path}")
         else:
             click.echo("  \033[33mNote:\033[0m Examples package not found in current environment.")
-            click.echo("        View examples at: https://github.com/aksara-framework/aksara/tree/main/examples/ai_providers")
+            click.echo("        View examples at: https://github.com/nagarjuna-tella/Aksara/tree/main/examples/ai_providers")
         click.echo()
         return
     

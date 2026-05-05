@@ -582,7 +582,7 @@ class Aksara(FastAPI):
             </a>
         </div>
         <p class="footer">
-            Powered by <a href="https://github.com/nagarjuna-tella/aksara" target="_blank">Aksara</a>
+            Powered by <a href="https://github.com/nagarjuna-tella/Aksara" target="_blank">Aksara</a>
         </p>
     </div>
 </body>

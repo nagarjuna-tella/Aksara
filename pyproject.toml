@@ -35,6 +35,7 @@ dependencies = [
     "pillow>=10.0.0",
     "pydantic>=2.0.0",
     "click>=8.0.0",
+    "rich>=13.7.0",
     "python-dotenv>=1.0.0",
     "python-multipart>=0.0.6",  # Required for form parsing (admin login)
     "bcrypt>=4.0.0",  # Required for auth & admin
@@ -60,11 +61,11 @@ s3 = [
 aksara = "aksara.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aksara-framework/aksara"
-Documentation = "https://github.com/aksara-framework/aksara/blob/main/docs/docs/getting-started/ten-minutes.md"
-Changelog = "https://github.com/aksara-framework/aksara/blob/main/CHANGELOG.md"
-"Bug Tracker" = "https://github.com/aksara-framework/aksara/issues"
-Source = "https://github.com/aksara-framework/aksara"
+Homepage = "https://github.com/nagarjuna-tella/Aksara"
+Documentation = "https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/index.md"
+Changelog = "https://github.com/nagarjuna-tella/Aksara/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/nagarjuna-tella/Aksara/issues"
+Source = "https://github.com/nagarjuna-tella/Aksara"
 
 [tool.hatch.build.targets.wheel]
 packages = ["aksara"]

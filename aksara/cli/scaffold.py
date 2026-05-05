@@ -905,7 +905,7 @@ AKSARA = {{
 
 ## Built with ⚡ Aksara
 
-https://github.com/nagarjuna-tella/aksara
+https://github.com/nagarjuna-tella/Aksara
 '''
 
 

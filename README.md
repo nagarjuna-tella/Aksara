@@ -164,7 +164,7 @@ You write this metadata once, next to the field definition, and it propagates ev
 | **Multitenant**  | Tenant-aware SaaS apps            | `aksara startproject saas --template multitenant` |
 | **AI Providers** | BYO LLM wiring examples           | See `examples/ai_providers/`                      |
 
-Browse: [`examples/`](https://github.com/nagarjuna-tella/aksara/tree/main/examples/) | Docs: [Patterns](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/patterns/index.md)
+Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/) | Docs: [Patterns](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/patterns/index.md)
 
 ---
 
@@ -193,7 +193,7 @@ Latest validation: **6132 passed, 3 skipped**.
 
 **Evolving:** AI Debugger, Architecture Review, Performance Analyzer.
 
-See the [Roadmap](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/roadmap.md) for what's next.
+See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/roadmap.md) for what's next.
 
 ---
 
@@ -210,7 +210,7 @@ See the [Roadmap](https://github.com/nagarjuna-tella/aksara/blob/main/docs/docs/
 
 <p>
   <a href="https://pypi.org/project/aksara/"><img src="https://img.shields.io/badge/PyPI-aksara-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI"></a>
-  <a href="https://github.com/nagarjuna-tella/aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+  <a href="https://github.com/nagarjuna-tella/Aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
 </p>
 
 Aksara is designed and built by [Nagarjuna Tella](https://github.com/nagarjuna-tella), with a focus on developer experience for AI-native Python backends.
@@ -219,7 +219,7 @@ Aksara is designed and built by [Nagarjuna Tella](https://github.com/nagarjuna-t
 
 ## License
 
-[MIT License](https://github.com/nagarjuna-tella/aksara/blob/main/LICENSE)
+[MIT License](https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE)
 
 ---
 

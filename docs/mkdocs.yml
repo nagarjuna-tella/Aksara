@@ -1,8 +1,8 @@
 site_name: Aksara Framework
 site_description: AI-Native Async Backend Framework for Python
 site_url: https://aksara.dev
-repo_url: https://github.com/aksara-framework/aksara
-repo_name: aksara-framework/aksara
+repo_url: https://github.com/nagarjuna-tella/Aksara
+repo_name: nagarjuna-tella/Aksara
 
 theme:
   name: material
@@ -218,7 +218,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/nagarjuna-tella/aksara
+      link: https://github.com/nagarjuna-tella/Aksara
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/aksara/
   version:
