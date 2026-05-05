@@ -1,413 +1,377 @@
 # Dev Tools
 
-Development utilities and productivity features.
+Development-focused CLI commands for inspecting your project, running the local server, and driving code-quality tooling.
 
 ---
 
 ## Overview
 
-Aksara includes developer tools for:
+The current Aksara dev-tool surface covers four areas:
 
-- **Code generation** — Models, viewsets, tests
-- **Debugging** — Error pages, query profiling
-- **Analysis** — Route listing, model info
-- **Scaffolding** — Apps, migrations
+- **Project inspection** — `routes`, `models`, `info`, `status`
+- **Local server workflow** — `dev`, `run`, `collectstatic`
+- **Code generation** — `generate sdk`
+- **Code quality** — `format`, `lint`, `typecheck`, `test`
 
----
-
-## Code Generation
-
-### Generate Model
-
-```bash
-aksara generate model Post --fields "title:string:200 content:text author:fk:User"
-```
-
-Creates:
-```python
-class Post(Model):
-    title = fields.String(max_length=200)
-    content = fields.Text()
-    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
-```
-
-**Field syntax:**
-```
-name:type[:options]
-```
-
-**Field types:**
-| Type | Example |
-|------|---------|
-| `string` | `title:string:200` |
-| `text` | `content:text` |
-| `int` | `count:int` |
-| `decimal` | `price:decimal:10:2` |
-| `bool` | `is_active:bool` |
-| `datetime` | `published_at:datetime` |
-| `fk` | `author:fk:User` |
-| `m2m` | `tags:m2m:Tag` |
-| `uuid` | `external_id:uuid` |
-| `json` | `metadata:json` |
+Global output flags apply to every command and must be placed before the subcommand: `aksara --quiet dev`, `aksara --plain test`, `aksara --no-color info`.
 
 ---
 
-### Generate ViewSet
-
-```bash
-aksara generate viewset Post
-```
-
-Creates:
-```python
-from aksara.api import ModelViewSet
-from .models import Post
-from .serializers import PostSerializer
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    serializer_class = PostSerializer
-```
-
-**Options:**
-```bash
-aksara generate viewset Post --actions list,create,retrieve
-aksara generate viewset Post --pagination
-aksara generate viewset Post --search title,content
-```
-
----
-
-### Generate Serializer
-
-```bash
-aksara generate serializer Post
-```
-
-Creates:
-```python
-from aksara.api import ModelSerializer
-from .models import Post
-
-class PostSerializer(ModelSerializer):
-    class Meta:
-        model = Post
-        fields = ["id", "title", "content", "author", "created_at"]
-```
-
----
-
-### Generate Test
-
-```bash
-aksara generate test Post
-```
-
-Creates:
-```python
-import pytest
-from aksara.testing import AksaraTestCase
-from .models import Post
-
-class TestPost(AksaraTestCase):
-    async def test_create_post(self):
-        post = await Post.objects.create(
-            title="Test Post",
-            content="Test content",
-        )
-        assert post.id is not None
-
-    async def test_update_post(self):
-        ...
-
-    async def test_delete_post(self):
-        ...
-```
-
-**Options:**
-```bash
-aksara generate test Post --type api    # API tests
-aksara generate test Post --type model  # Model tests (default)
-aksara generate test Post --type full   # Both
-```
-
----
-
-### Generate CRUD
-
-Generate model, serializer, viewset, and tests together:
-
-```bash
-aksara generate crud Post --fields "title:string:200 content:text"
-```
-
-Creates:
-- `models.py` — Post model
-- `serializers.py` — PostSerializer
-- `viewsets.py` — PostViewSet
-- `tests/test_post.py` — Tests
-
----
-
-## Project Analysis
+## Project Inspection
 
 ### List Routes
 
 ```bash
 aksara routes
-```
-
-Output:
-```
-Method    Path                      Name              ViewSet
---------  ------------------------  ----------------  -----------
-GET       /api/posts/               posts-list        PostViewSet
-POST      /api/posts/               posts-create      PostViewSet
-GET       /api/posts/{id}/          posts-detail      PostViewSet
-PUT       /api/posts/{id}/          posts-update      PostViewSet
-DELETE    /api/posts/{id}/          posts-delete      PostViewSet
-POST      /api/posts/{id}/publish/  posts-publish     PostViewSet
-```
-
-**Filtering:**
-```bash
-aksara routes --filter posts
-aksara routes --method GET
 aksara routes --format json
+aksara routes --filter api/posts
+aksara routes --method GET
 ```
 
----
+Use this to inspect the registered HTTP surface without starting Studio.
+
+> **Note:** `--filter` and `--method` are planned and not yet available.
+
+**Example output:**
+
+```
+Method  Path                    Name                Handler
+------  ----------------------  ------------------  ----------------------
+GET     /api/users/             users-list          UserViewSet.list
+POST    /api/users/             users-create        UserViewSet.create
+GET     /api/users/{id}/        users-detail        UserViewSet.retrieve
+PUT     /api/users/{id}/        users-update        UserViewSet.update
+DELETE  /api/users/{id}/        users-delete        UserViewSet.destroy
+```
 
 ### List Models
 
 ```bash
 aksara models
+aksara models --app blog.models --ai
+aksara models --detail
 ```
 
-Output:
+`--ai` includes model and field AI metadata in the output. `--detail` shows full field definitions.
+
+> **Note:** `--detail` is planned and not yet available.
+
+**Example output:**
+
 ```
-App      Model      Fields    Relations
--------  ---------  --------  -----------
-blog     Post       8         2 FK, 1 M2M
-blog     Comment    5         2 FK
-blog     Tag        3         0
-users    User       10        0
-users    Profile    6         1 FK
+⚡ Aksara Models
+----------------------------------------
+Registered Models (3):
+
+📦 User
+   Table: users
+   Fields:
+     • id: UUID (PK)
+     • email: VARCHAR unique
+     • name: VARCHAR
+
+📦 Post
+   Table: posts
+   Fields:
+     • id: UUID (PK)
+     • title: VARCHAR
+     • body: TEXT
+     • author_id: UUID
 ```
 
-**Detailed view:**
-```bash
-aksara models --app blog --detail
-```
-
-Output:
-```
-blog.Post
-  Fields:
-    - id: UUID (primary_key)
-    - title: String (max_length=200)
-    - content: Text
-    - author: ForeignKey -> User
-    - tags: ManyToMany -> Tag
-    - created_at: DateTime (auto_now_add)
-    - updated_at: DateTime (auto_now)
-  
-  Indexes:
-    - title (unique)
-    - created_at
-```
-
----
-
-### Show Settings
+### Show Project Info
 
 ```bash
-aksara settings
+aksara info
+aksara info --database-url postgresql://postgres:password@localhost:5432/myapp
 ```
 
-Output:
-```
-Current Settings:
-  DEBUG: True
-  DATABASE_URL: postgresql://localhost/mydb
-  INSTALLED_APPS: ['blog', 'users']
-  AI_MODE: True
-```
-
-**Filter by prefix:**
-```bash
-aksara settings --prefix AI_
-```
-
----
-
-### Check Project
-
-```bash
-aksara check
-```
-
-Output:
-```
-✓ Settings loaded
-✓ Database connection OK
-✓ All migrations applied
-✓ Models valid
-⚠ Debug mode enabled (not for production)
-
-Checks passed: 4
-Warnings: 1
-Errors: 0
-```
-
-**Deployment checks:**
-```bash
-aksara check --deploy
-```
-
-Checks for:
-- Debug mode off
-- Secret key set
-- Allowed hosts configured
-- SSL configured
-- Etc.
-
----
-
-## Development Server
-
-### Enhanced Run
-
-```bash
-aksara run main:app
-```
-
-Features:
-- **Auto-reload** — Restarts on file changes (with `--reload`)
-- **Error overlay** — Rich error pages
-- **Query logging** — See SQL queries
-- **Request logging** — HTTP request details
-
-**Options:**
-```bash
-aksara run main:app --port 3000
-aksara run main:app --host 0.0.0.0
-aksara run main:app --reload
-aksara run main:app --workers 4
-```
-
----
-
-### Watch Mode
-
-Separate file watcher with custom commands:
-
-```bash
-aksara watch --command "pytest tests/"
-```
-
-Runs pytest whenever Python files change.
-
-**Multiple commands:**
-```bash
-aksara watch \
-  --command "aksara check" \
-  --command "pytest tests/ -x"
-```
-
----
-
-## Database Tools
+This prints the framework version, environment, installed apps, feature toggles, registered models, and migration counts.
 
 ### Show Migration Status
 
 ```bash
 aksara status
+aksara status --database-url postgresql://postgres:password@localhost:5432/myapp
 ```
 
-Output:
-```
-📁 Migrations directory: migrations
-📊 Applied migrations: 2
+Use `status` when you want an applied-versus-pending migration view without running `migrate`.
 
-  [X] 0001_auto_initial
-  [X] 0002_auto_add_post_slug
-  [ ] 0003_auto_add_post_views
-```
-
----
-
-### Preview Migration
+### Preview Migrations (dry-run)
 
 ```bash
 aksara migrate --dry-run
 ```
 
-Output:
+Shows every SQL statement that *would* be executed without actually applying any changes. Useful for reviewing auto-generated migrations before committing them to a shared database.
+
+**Example output:**
+
 ```
-[DRY RUN] Would apply: 0003_auto_add_post_views
-    → AddField post.views Integer
-CREATE INDEX blog_post_slug ON blog_post(slug);
-COMMIT;
-```
+⚡ Aksara — Migration Preview (dry-run)
 
----
+  Pending: 2 migration(s)
 
-### Dump Data
+  [blog] 0003_add_slug
+    → ALTER TABLE posts ADD COLUMN slug VARCHAR(255);
+    → CREATE UNIQUE INDEX posts_slug_uniq ON posts (slug);
 
-```bash
-aksara dumpdata blog.Post --output posts.json
-```
+  [users] 0002_add_bio
+    → ALTER TABLE users ADD COLUMN bio TEXT;
 
-**Options:**
-```bash
-aksara dumpdata --all --output backup.json
-aksara dumpdata blog --indent 2
-aksara dumpdata --format yaml
+  (dry-run) No changes applied.
 ```
 
 ---
 
-### Load Data
+## Development Server
+
+### Preferred Local Server
 
 ```bash
-aksara loaddata fixtures.json
+aksara dev
+aksara dev --port 3000
+aksara dev myproject.main:app --log-level debug
+aksara run dev
 ```
+
+`aksara dev` is the preferred local workflow. It defaults to `main:app`, enables auto-reload, and prints the richer startup banner with the App, Admin, Studio, and Docs URLs.
+
+### Direct ASGI Launch
+
+```bash
+aksara run main:app
+aksara run main:app --host 0.0.0.0 --port 8080
+aksara run myproject.main:app --workers 4
+```
+
+Use `run` when you want to point directly at an ASGI import path or exercise multi-worker behavior.
+
+### Static Asset Bootstrap
+
+```bash
+aksara collectstatic
+```
+
+This creates missing project static assets such as `static/welcome.html`. The same step also runs automatically before `aksara dev` and `aksara run`.
+
+---
+
+## Code Generation
+
+### Generate TypeScript SDK
+
+```bash
+aksara generate sdk --language typescript --output frontend/api.ts
+aksara generate sdk --language typescript --views-module myapp.viewsets --stdout
+```
+
+This inspects discovered `ModelViewSet` classes and emits a typed fetch client.
+
+### Generate Model
+
+> **Planned** — not yet available.
+
+```bash
+aksara generate model "User with email, name, role, created_at"
+aksara generate model "Post with title, body, author(FK:User), published_at"
+```
+
+Generates an Aksara `Model` class from a natural-language description.
+
+### Generate ViewSet
+
+> **Planned** — not yet available.
+
+```bash
+aksara generate viewset User
+aksara generate viewset Post --prefix /api/posts
+```
+
+Generates a `ModelViewSet` for an existing model.
+
+### Generate Serializer
+
+> **Planned** — not yet available.
+
+```bash
+aksara generate serializer User
+aksara generate serializer Post --fields title,body,author
+```
+
+Generates a `ModelSerializer` for an existing model.
+
+### Generate Test
+
+> **Planned** — not yet available.
+
+```bash
+aksara generate test User --output tests/test_users.py
+aksara generate test PostViewSet
+```
+
+Generates a pytest test file for a model or viewset.
+
+### Generate CRUD
+
+> **Planned** — not yet available.
+
+```bash
+aksara generate crud User
+aksara generate crud Post --prefix /api/v2/posts
+```
+
+Generates the full CRUD stack (model, viewset, serializer, migrations, tests) from a single command.
+
+---
+
+## Code Quality
+
+### Format
+
+```bash
+aksara format
+aksara format src/
+aksara format --check
+```
+
+Runs Black against the target path.
+
+### Lint
+
+```bash
+aksara lint
+aksara lint src/
+aksara lint --fix
+```
+
+Runs Ruff and optionally applies safe fixes.
+
+### Type Check
+
+```bash
+aksara typecheck
+aksara typecheck src/
+aksara typecheck --strict
+```
+
+Runs mypy against the target path.
+
+### Test
+
+```bash
+aksara test
+aksara test tests/
+aksara test -v --tb=short
+aksara test tests/test_models.py -k "test_create"
+aksara test --failfast
+aksara test --parallel
+aksara test --cov=myapp --cov-report=html
+```
+
+All extra arguments are passed straight through to pytest. Common flags:
+
+| Flag | Description |
+|------|-------------|
+| `-v` / `--verbose` | Verbose output |
+| `--failfast` | Stop on first failure |
+| `--parallel` | Parallel execution (requires `pytest-xdist`) |
+| `--cov` | Coverage measurement (requires `pytest-cov`) |
+| `-k EXPRESSION` | Filter tests by name |
+| `--tb=short` | Shorter tracebacks |
 
 ---
 
 ## Shell Enhancements
 
-### Enhanced Shell
+### Shell
 
 ```bash
 aksara shell
+aksara shell --no-ipython
 ```
 
-Pre-loaded:
-- All models
-- Common utilities
-- Async support
+Opens an interactive Python shell with the project context pre-loaded (database, models, `arun()` helper). Uses IPython if installed, falls back to standard Python REPL.
 
 ```python
->>> posts = await Post.objects.filter(is_published=True).all()
->>> for post in posts[:5]:
-...     print(post.title)
+>>> users = arun(User.objects.filter(active=True).all())
+>>> for u in users[:5]:
+...     print(u.email)
 ```
 
-### Shell Plus
+### Shell Plus (Planned)
+
+> **Planned** — not yet available.
+
+An enhanced shell with automatic model imports, richer output formatting, history persistence, and tab completion.
 
 ```bash
 aksara shell_plus
 ```
 
-Additional features:
-- Auto-import all models
-- Pretty printing
-- History persistence
-- Tab completion
+---
+
+## File Watch & Automation
+
+### Watch (Planned)
+
+> **Planned** — not yet available.
+
+Watch for file changes and re-run tests automatically.
+
+```bash
+aksara watch
+aksara watch tests/
+```
 
 ---
+
+## Data Commands
+
+### Dump Data (Planned)
+
+> **Planned** — not yet available.
+
+Export database content to a JSON or YAML fixture file.
+
+```bash
+aksara dumpdata
+aksara dumpdata blog --output blog_fixture.json --indent 2
+aksara dumpdata --all --format yaml
+```
+
+### Load Data (Planned)
+
+> **Planned** — not yet available.
+
+Load fixture data into the database.
+
+```bash
+aksara loaddata fixtures.json
+aksara loaddata blog_fixture.yaml
+```
+
+---
+
+## Power-User Output Controls
+
+```bash
+aksara --quiet dev
+aksara --plain dev
+aksara --no-color info
+aksara --force-color dev
+```
+
+`--quiet` suppresses non-error Aksara UI output such as banners and success summaries. It does not suppress subprocess output or Uvicorn logs. `--plain` disables Rich rendering and animation. `--no-color` keeps the same content without ANSI color, and `--force-color` is useful when terminal color detection is too conservative.
+
+---
+
+## Related Documentation
+
+- [CLI Overview](index.md)
+- [Commands Reference](commands.md)
+- [CLI Reference](../reference/cli-reference.md)
+- [AI Commands](ai-commands.md)
 
 ## Debugging Tools
 

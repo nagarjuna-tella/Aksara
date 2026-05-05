@@ -338,11 +338,32 @@ aksara dev
 You should see:
 
 ```
-⚡ Aksara 0.5.45
+         ████╗   █████╗  ██╗    ██╗ ███████╗  █████╗  ██████╗   █████╗ 
+        ████╔╝  ██╔══██╗ ██║   ██╔╝ ██╔════╝ ██╔══██╗ ██╔══██╗ ██╔══██╗
+       ████╔╝   ██║  ██║ ██║  ██╔╝  ██║      ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║ ██╔╝   ██║      ██║  ██║ ██║  ██║ ██║  ██║
+     ████████╗  ███████║ █████╔╝    ███████╗ ███████║ ██████╔╝ ███████║
+     ╚══████╔╝  ██╔══██║ ██╔═██╗    ╚════██║ ██╔══██║ ██╔══██╗ ██╔══██║
+       ████╔╝   ██║  ██║ ██║  ██╗        ██║ ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║   ██╗       ██║ ██║  ██║ ██║  ██║ ██║  ██║
+     ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
+     ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝              
+
+    AI-native async backend  ·  Dev Server  ·  v0.5.45
+
+    ● App       http://127.0.0.1:8000/
+    ● Admin     http://127.0.0.1:8000/admin/
+    ● Studio    http://127.0.0.1:8000/studio/ui
+    ● Docs      http://127.0.0.1:8000/docs
+
+    Env dev  ·  Reload enabled  ·  Log info
+
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process
 INFO:     Started server process
 ```
+
+Power-user note: output control flags are global. Use `aksara --quiet dev` to suppress non-error Aksara UI output, or `aksara --plain dev` for a plain-text version of the same startup information.
 
 ---
 

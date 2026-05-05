@@ -79,6 +79,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Documentation
 - Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
 - Updated API and CLI docs for stream endpoints, multi-tenant RLS behavior, and TypeScript SDK generation
+- Refreshed CLI startup examples to match the current `aksara dev` hero banner and `aksara dbsetup` output
+- Documented the global CLI output controls for power users: `--quiet`, `--plain`, `--no-color`, and `--force-color`
 - Added advanced docs for generic relations and durable workflow execution
 - Added docs for built-in background tasks, JSONB nested path filters, vector fields, and task worker settings
 - Refreshed the README and release notes to reflect the full v0.5.45 feature set

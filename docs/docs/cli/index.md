@@ -12,7 +12,7 @@ The Aksara CLI provides commands for:
 |----------|----------|
 | **Project** | `startproject`, `startapp` |
 | **Database** | `dbsetup`, `makemigrations`, `migrate`, `shell` |
-| **Development** | `run`, `routes`, `info` |
+| **Development** | `dev`, `run`, `routes`, `info` |
 | **Codegen** | `generate sdk` |
 | **AI** | `ai query`, `ai generate`, `ai doctor` |
 
@@ -39,6 +39,9 @@ aksara --version
 
 # Start development server
 aksara dev
+
+# Suppress non-error Aksara UI output
+aksara --quiet dev
 ```
 
 ---
@@ -173,17 +176,39 @@ aksara shell
 
 Options:
 ```bash
-aksara shell --ipython    # Use IPython if available
-aksara shell --bpython    # Use bpython if available
+aksara shell --database-url postgresql://postgres:password@localhost:5432/myapp
+aksara shell --no-ipython
 ```
 
 ---
 
 ## Development Commands
 
+### dev
+
+Preferred development server with the rich startup banner:
+
+```bash
+aksara dev
+```
+
+You can also reach the same path with the alias:
+
+```bash
+aksara run dev
+```
+
+Options:
+```bash
+aksara dev --port 3000
+aksara dev --host 0.0.0.0
+aksara dev --no-reload
+aksara dev myproject.main:app --log-level debug
+```
+
 ### run
 
-Start the development server:
+Start a specific ASGI app path directly with Uvicorn-style options:
 
 ```bash
 aksara run main:app
@@ -355,22 +380,18 @@ aksara info --format json
 aksara ai doctor --output report.json
 ```
 
-### Quiet Mode
+### Global Output Controls
 
-Suppress non-essential output:
-
-```bash
-aksara migrate --quiet
-```
-
-### Verbose Mode
-
-Show more details:
+These flags apply to the entire CLI, so place them before the command name:
 
 ```bash
-aksara migrate --verbose
-aksara makemigrations --verbose
+aksara --quiet migrate
+aksara --plain dev
+aksara --no-color info
+aksara --force-color dev
 ```
+
+`--quiet` suppresses non-error Aksara UI output such as banners, progress lines, and success summaries. It does not suppress subprocess or Uvicorn logs. `--plain` disables Rich rendering and animation. `--no-color` removes ANSI color, and `--force-color` forces colored output when supported.
 
 ---
 

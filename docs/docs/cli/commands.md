@@ -152,52 +152,62 @@ aksara migrate --migrations-dir custom_migrations
 
 ---
 
-### dbshell
+### status
 
-Open database shell.
+Show migration status.
 
 ```bash
-aksara dbshell [options]
+aksara status [options]
 ```
 
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--database` | Database alias | `default` |
+| `--database-url`, `-d` | PostgreSQL connection URL | `DATABASE_URL` env |
 
-Opens the appropriate shell for your database (psql, mysql, sqlite3).
-
----
-
-### inspectdb
-
-Generate models from existing database tables.
-
+**Examples:**
 ```bash
-aksara inspectdb [table ...] [options]
-```
-
-**Arguments:**
-- `table` — Specific tables (optional, default: all)
-
-**Options:**
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--database` | Database alias | `default` |
-| `--include-views` | Include views | `false` |
-
-**Example:**
-```bash
-aksara inspectdb users posts > models.py
+aksara status
+aksara status --database-url postgresql://postgres:password@localhost:5432/myapp
 ```
 
 ---
 
 ## Development Commands
 
+### dev
+
+Preferred development server for local work.
+
+```bash
+aksara dev [APP_PATH] [options]
+```
+
+**Arguments:**
+- `APP_PATH` — Import path to the app (optional, default: `main:app`)
+
+**Options:**
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--host`, `-h` | Host to bind | `127.0.0.1` |
+| `--port`, `-p` | Port to bind | `8000` |
+| `--reload`, `-r` | Enable auto-reload | `true` |
+| `--no-reload` | Disable auto-reload | `false` |
+| `--log-level`, `-l` | Uvicorn log level | `info` |
+
+**Examples:**
+```bash
+aksara dev
+aksara dev --port 3000
+aksara dev myproject.main:app --log-level debug
+aksara run dev  # alias
+```
+
+---
+
 ### run
 
-Start the development server.
+Start a specific ASGI app path directly.
 
 ```bash
 aksara run APP_PATH [options]
@@ -242,18 +252,52 @@ aksara shell [options]
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--ipython` | Use IPython | Auto-detect |
-| `--bpython` | Use bpython | Auto-detect |
-| `--plain` | Use plain Python | `false` |
-| `--command`, `-c` | Execute command | None |
+| `--database-url`, `-d` | PostgreSQL connection URL | `DATABASE_URL` env |
+| `--no-ipython` | Disable IPython even if available | `false` |
+| `--bpython` | Use BPython instead of IPython | `false` |
+| `--command`, `-c` | Execute a Python command and exit | None |
 
 **Examples:**
 ```bash
 # Interactive shell
 aksara shell
 
-# Execute command
+# Use an explicit database URL
+aksara shell --database-url postgresql://postgres:password@localhost:5432/myapp
+
+# Force the standard Python shell
+aksara shell --no-ipython
+
+# Execute a one-liner
 aksara shell -c "print(await User.objects.count())"
+```
+
+> **Note:** `--bpython` and `--command` / `-c` are planned and not yet available in the current release.
+
+---
+
+### dbshell
+
+> **Planned** — not yet available.
+
+Open a raw `psql` session connected to the project database.
+
+```bash
+aksara dbshell
+aksara dbshell --database-url postgresql://postgres:password@localhost:5432/mydb
+```
+
+---
+
+### inspectdb
+
+> **Planned** — not yet available.
+
+Generate Aksara model definitions by introspecting an existing PostgreSQL schema.
+
+```bash
+aksara inspectdb
+aksara inspectdb --schema public --output models_generated.py
 ```
 
 ---
@@ -270,10 +314,15 @@ aksara routes [options]
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--format`, `-f` | Output format (table, json) | `table` |
-| `--filter` | Filter by pattern | None |
+| `--filter` | Filter routes by path pattern | None |
+| `--method` | Filter routes by HTTP method | None |
+
+> **Note:** `--filter` and `--method` are planned and not yet available in the current release.
 
 **Example:**
 ```bash
+aksara routes
+aksara routes --format json
 aksara routes --filter api/posts
 ```
 
@@ -290,33 +339,37 @@ aksara info [options]
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--format`, `-f` | Output format (text, json) | `text` |
-| `--check` | Run health checks | `false` |
+| `--database-url`, `-d` | PostgreSQL connection URL | `DATABASE_URL` env |
 
 **Example:**
 ```bash
-aksara info --check
+aksara info
+aksara info --database-url postgresql://postgres:password@localhost:5432/myapp
 ```
 
 ---
 
-### check
+### models
 
-Validate project configuration.
+List registered models.
 
 ```bash
-aksara check [options]
+aksara models [options]
 ```
 
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--fail-level` | Min severity to fail | `error` |
-| `--deploy` | Check deployment settings | `false` |
+| `--app`, `-a` | Application models module to import | None |
+| `--ai` | Show AI metadata for models and fields | `false` |
+| `--detail` | Show detailed field information | `false` |
+
+> **Note:** `--detail` is planned and not yet available in the current release.
 
 **Example:**
 ```bash
-aksara check --deploy
+aksara models
+aksara models --app blog.models --ai
 ```
 
 ---
@@ -334,13 +387,18 @@ aksara test [path] [options]
 **Arguments:**
 - `path` — Test path (optional)
 
-**Options:**
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--verbose`, `-v` | Verbose output | `false` |
-| `--failfast`, `-x` | Stop on first failure | `false` |
-| `--parallel`, `-n` | Parallel test count | `1` |
-| `--coverage` | Enable coverage | `false` |
+Any extra arguments are passed through to pytest.
+
+**Common flags (passed to pytest):**
+
+| Flag | Description |
+|------|-------------|
+| `-v` / `--verbose` | Verbose output |
+| `--failfast` | Stop on first failure |
+| `--parallel` | Run tests in parallel (requires `pytest-xdist`) |
+| `--coverage` / `--cov` | Measure coverage (requires `pytest-cov`) |
+| `-k EXPRESSION` | Filter tests by name expression |
+| `--tb=short` | Shorter traceback format |
 
 **Examples:**
 ```bash
@@ -350,8 +408,11 @@ aksara test
 # Specific file
 aksara test tests/test_models.py
 
-# With coverage
-aksara test --coverage
+# Pytest passthrough arguments
+aksara test -v --tb=short
+aksara test tests/test_models.py -k "test_create"
+aksara test --failfast
+aksara test --parallel
 ```
 
 ---
@@ -366,12 +427,17 @@ Collect static files.
 aksara collectstatic [options]
 ```
 
+Creates missing project static assets such as `static/welcome.html`. This also runs automatically before `aksara dev` and `aksara run`.
+
 **Options:**
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--no-input` | Don't prompt | `false` |
-| `--clear` | Clear existing | `false` |
-| `--dry-run` | Preview only | `false` |
+
+| Option | Description |
+|--------|-------------|
+| `--no-input` | Skip confirmation prompts |
+| `--clear` | Delete existing static files before collecting |
+| `--dry-run` | Show what would be collected without writing files |
+
+> **Note:** `--no-input`, `--clear`, and `--dry-run` are planned and not yet available in the current release.
 
 ---
 
@@ -388,18 +454,118 @@ aksara createsuperuser [options]
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--email` | User email | Prompt |
-| `--password` | User password | Prompt |
-| `--no-input` | Use defaults | `false` |
+| `--database-url`, `-d` | PostgreSQL connection URL | `DATABASE_URL` env |
+| `--email`, `-e` | User email | Prompt |
+| `--password`, `-p` | User password | Prompt |
+| `--no-input` | Use provided values without interactive prompts | `false` |
+| `--username` | Username (if username-based auth is enabled) | None |
+
+> **Note:** `--no-input` and `--username` are planned and not yet available in the current release.
+
+**Examples:**
+```bash
+aksara createsuperuser
+aksara createsuperuser --email admin@example.com
+```
 
 ---
 
 ### changepassword
 
-Change user password.
+> **Planned** — not yet available.
+
+Change the password for an existing user.
 
 ```bash
 aksara changepassword <email>
+```
+
+---
+
+## Project Validation & Settings Commands
+
+### check
+
+> **Planned** — not yet available.
+
+Validate the project configuration and run system checks.
+
+```bash
+aksara check
+aksara check --deploy  # stricter production checks
+```
+
+**Example output:**
+
+```
+⚡ Aksara System Check
+
+  ✓ Database connection OK
+  ✓ Migrations up to date
+  ✓ Settings valid
+  ✓ Admin configured
+  ✓ Static files present
+
+  0 issues found.
+```
+
+With `--deploy`, additional production checks are run (e.g. `DEBUG=False`, `SECRET_KEY` strength, HTTPS settings).
+
+---
+
+### settings
+
+> **Planned** — not yet available.
+
+Display the current project settings.
+
+```bash
+aksara settings
+aksara settings --setting DATABASE_URL
+```
+
+---
+
+## Watch & Automation
+
+### watch
+
+> **Planned** — not yet available.
+
+Watch for file changes and re-run tests automatically.
+
+```bash
+aksara watch
+aksara watch tests/
+```
+
+---
+
+## Data Commands
+
+### dumpdata
+
+> **Planned** — not yet available.
+
+Export database content to a JSON or YAML fixture file.
+
+```bash
+aksara dumpdata
+aksara dumpdata blog --output blog_fixture.json
+aksara dumpdata --all --format yaml
+```
+
+---
+
+### loaddata
+
+> **Planned** — not yet available.
+
+Load fixture data into the database.
+
+```bash
+aksara loaddata fixtures.json
+aksara loaddata blog_fixture.yaml
 ```
 
 ---
@@ -420,20 +586,27 @@ See [AI Commands](ai-commands.md) for details.
 
 ## Global Options
 
-These options work with all commands:
+These options work with all commands and **must be placed before the subcommand**:
 
 | Option | Description |
 |--------|-------------|
 | `--help` | Show help |
 | `--version` | Show version |
-| `--settings` | Settings module |
-| `--verbose` | Verbose output |
-| `--quiet` | Suppress output |
-| `--no-color` | Disable colors |
+| `--quiet` | Suppress non-error Aksara UI output |
+| `--plain` | Disable Rich rendering and animations |
+| `--no-color` | Disable ANSI color |
+| `--force-color` | Force ANSI color when supported |
+| `--settings PATH` | Settings module path (planned) |
+| `--pythonpath PATH` | Add a path to `sys.path` (planned) |
+| `--verbose` | Increase verbosity (planned) |
+
+> **Note:** `--settings`, `--pythonpath`, and `--verbose` are planned and not yet available. Use the `AKSARA_SETTINGS` environment variable to point to a custom settings module.
 
 **Example:**
 ```bash
-aksara --settings myproject.settings migrate
+aksara --quiet migrate
+aksara --plain dev
+aksara --no-color info
 ```
 
 ---

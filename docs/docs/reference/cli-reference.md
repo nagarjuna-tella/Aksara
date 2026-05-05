@@ -16,8 +16,17 @@ aksara [OPTIONS] COMMAND [ARGS]...
 |--------|-------------|
 | `--help` | Show help message |
 | `--version` | Show version |
-| `--settings PATH` | Settings module path |
-| `--pythonpath PATH` | Add to Python path |
+| `--quiet` | Suppress non-error Aksara UI output |
+| `--plain` | Disable Rich rendering and animations |
+| `--no-color` | Disable colored terminal output |
+| `--force-color` | Force colored output when supported |
+| `--settings PATH` | Settings module path *(planned)* |
+| `--pythonpath PATH` | Add a path to `sys.path` *(planned)* |
+| `--verbose` | Increase output verbosity *(planned)* |
+
+Global output flags must be placed before the subcommand. Examples: `aksara --quiet migrate`, `aksara --plain dev`, `aksara --no-color info`.
+
+> **Note:** `--settings`, `--pythonpath`, and `--verbose` are planned. Use the `AKSARA_SETTINGS` environment variable in the meantime.
 
 ---
 
@@ -113,47 +122,57 @@ aksara migrate --fake
 aksara migrate --migrations-dir custom_migrations
 ```
 
-### dbshell
+### status
 
-Open database shell.
-
-```bash
-aksara dbshell [OPTIONS]
-```
-
-**Example:**
+Show migration status.
 
 ```bash
-aksara dbshell
-```
-
-### inspectdb
-
-Generate models from existing database.
-
-```bash
-aksara inspectdb [TABLE] [OPTIONS]
+aksara status [OPTIONS]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--output FILE` | Output file |
+| `--database-url`, `-d` | PostgreSQL connection URL |
 
 **Example:**
 
 ```bash
-aksara inspectdb
-aksara inspectdb users
-aksara inspectdb --output models.py
+aksara status
+aksara status --database-url postgresql://postgres:password@localhost:5432/myapp
 ```
 
 ---
 
 ## Server Commands
 
+### dev
+
+Start the preferred local development server with the Aksara hero banner.
+
+```bash
+aksara dev [APP_PATH] [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--host HOST` | `127.0.0.1` | Bind host |
+| `--port PORT` | `8000` | Bind port |
+| `--reload` | True | Enable auto-reload |
+| `--no-reload` | False | Disable auto-reload |
+| `--log-level LEVEL` | `info` | Uvicorn log level |
+
+**Example:**
+
+```bash
+aksara dev
+aksara dev myproject.main:app --log-level debug
+aksara dev --no-reload --port 3000
+aksara run dev
+```
+
 ### run
 
-Start development server.
+Start a specific ASGI app path directly.
 
 ```bash
 aksara run APP_PATH [OPTIONS]
@@ -189,16 +208,38 @@ aksara shell [OPTIONS]
 
 | Option | Description |
 |--------|-------------|
-| `--ipython` | Use IPython |
-| `--bpython` | Use bpython |
-| `--plain` | Use plain Python |
+| `--database-url`, `-d` | PostgreSQL connection URL |
+| `--no-ipython` | Disable IPython even if available |
+| `--bpython` | Use BPython instead of IPython *(planned)* |
+| `--command`, `-c` | Execute a Python command and exit *(planned)* |
 
 **Example:**
 
 ```bash
 aksara shell
-aksara shell --ipython
+aksara shell --database-url postgresql://postgres:password@localhost:5432/myapp
+aksara shell --no-ipython
 ```
+
+### dbshell
+
+> **Planned** — not yet available.
+
+```bash
+aksara dbshell [OPTIONS]
+```
+
+Open a raw `psql` session connected to the project database.
+
+### inspectdb
+
+> **Planned** — not yet available.
+
+```bash
+aksara inspectdb [OPTIONS]
+```
+
+Generate Aksara model definitions by introspecting an existing PostgreSQL schema.
 
 ---
 
@@ -215,6 +256,8 @@ aksara routes [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `--format FMT` | Output format (table, json) |
+| `--filter PATTERN` | Filter routes by path pattern *(planned)* |
+| `--method METHOD` | Filter routes by HTTP method *(planned)* |
 
 **Example:**
 
@@ -243,6 +286,10 @@ Show project information.
 aksara info [OPTIONS]
 ```
 
+| Option | Description |
+|--------|-------------|
+| `--database-url`, `-d` | PostgreSQL connection URL |
+
 **Output:**
 
 ```
@@ -262,24 +309,25 @@ Models:
   - posts.Comment
 ```
 
-### check
+### models
 
-Run system checks.
+List registered models.
 
 ```bash
-aksara check [OPTIONS]
+aksara models [OPTIONS]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--tag TAG` | Check specific tag |
-| `--deploy` | Deployment checks |
+| `--app APP` | Application models module to import |
+| `--ai` | Show AI metadata |
+| `--detail` | Show detailed field definitions *(planned)* |
 
 **Example:**
 
 ```bash
-aksara check
-aksara check --deploy
+aksara models
+aksara models --app blog.models --ai
 ```
 
 ### test
@@ -290,20 +338,26 @@ Run tests.
 aksara test [PATH] [OPTIONS]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-v, --verbose` | Verbose output |
-| `--cov APP` | Coverage for app |
-| `--cov-report TYPE` | Coverage report type |
-| `-k EXPR` | Test selection expression |
+Additional arguments are passed through to pytest.
+
+| Flag | Description |
+|------|-------------|
+| `-v` / `--verbose` | Verbose output |
+| `--failfast` | Stop on first failure |
+| `--parallel` | Run in parallel (requires `pytest-xdist`) |
+| `--cov` / `--coverage` | Measure coverage (requires `pytest-cov`) |
+| `-k EXPRESSION` | Filter by name expression |
+| `--tb=short` | Shorter tracebacks |
 
 **Example:**
 
 ```bash
 aksara test
 aksara test tests/test_users.py
-aksara test -v --cov=myapp
+aksara test -v --tb=short
 aksara test -k "test_create"
+aksara test --failfast
+aksara test --parallel
 ```
 
 ### collectstatic
@@ -314,10 +368,102 @@ Collect static files.
 aksara collectstatic [OPTIONS]
 ```
 
+Creates missing project static assets such as `static/welcome.html`. This also runs automatically before `aksara dev` and `aksara run`.
+
 | Option | Description |
 |--------|-------------|
-| `--no-input` | Skip confirmation |
-| `--clear` | Clear before collecting |
+| `--no-input` | Skip confirmation prompts *(planned)* |
+| `--clear` | Delete existing static files first *(planned)* |
+| `--dry-run` | Preview without writing files *(planned)* |
+
+---
+
+### check
+
+> **Planned** — not yet available.
+
+```bash
+aksara check [OPTIONS]
+```
+
+Validate the project configuration and run system checks.
+
+| Option | Description |
+|--------|-------------|
+| `--deploy` | Run stricter production-safety checks |
+
+**Example output:**
+
+```
+⚡ Aksara System Check
+
+  ✓ Database connection OK
+  ✓ Migrations up to date
+  ✓ Settings valid
+  ✓ Admin configured
+  ✓ Static files present
+
+  0 issues found.
+```
+
+### settings
+
+> **Planned** — not yet available.
+
+```bash
+aksara settings [OPTIONS]
+```
+
+Display the current project settings.
+
+| Option | Description |
+|--------|-------------|
+| `--setting NAME` | Show only the specified setting |
+
+---
+
+## Watch & Automation
+
+### watch
+
+> **Planned** — not yet available.
+
+```bash
+aksara watch [PATH]
+```
+
+Watch for file changes and re-run tests automatically.
+
+---
+
+## Data Commands
+
+### dumpdata
+
+> **Planned** — not yet available.
+
+```bash
+aksara dumpdata [APP] [OPTIONS]
+```
+
+Export database content to a fixture file.
+
+| Option | Description |
+|--------|-------------|
+| `--output FILE` | Output file path |
+| `--format FMT` | Output format (json, yaml) |
+| `--all` | Include all apps |
+| `--indent N` | JSON indentation |
+
+### loaddata
+
+> **Planned** — not yet available.
+
+```bash
+aksara loaddata FIXTURE [OPTIONS]
+```
+
+Load fixture data into the database.
 
 ---
 
@@ -333,9 +479,11 @@ aksara createsuperuser [OPTIONS]
 
 | Option | Description |
 |--------|-------------|
-| `--email EMAIL` | User email |
-| `--username USERNAME` | Username |
-| `--no-input` | Use defaults |
+| `--database-url`, `-d` | PostgreSQL connection URL |
+| `--email EMAIL`, `-e` | User email |
+| `--password PASSWORD`, `-p` | User password |
+| `--no-input` | Use provided values without prompts *(planned)* |
+| `--username USERNAME` | Username for username-based auth *(planned)* |
 
 **Example:**
 
@@ -346,17 +494,13 @@ aksara createsuperuser --email admin@example.com
 
 ### changepassword
 
-Change user password.
+> **Planned** — not yet available.
 
 ```bash
-aksara changepassword USERNAME [OPTIONS]
+aksara changepassword <email>
 ```
 
-**Example:**
-
-```bash
-aksara changepassword admin
-```
+Change the password for an existing user.
 
 ---
 

@@ -28,6 +28,8 @@ All notable changes to Aksara.
 - Added field, advanced, and settings docs for storage-backed media fields and async email configuration.
 - Added advanced and settings docs for locale/timezone middleware and request-aware datetime serialization.
 - Added an advanced guide for generic relations and durable workflows.
+- Refreshed the CLI startup examples to match the current `aksara dev` hero banner and `aksara dbsetup` success output.
+- Documented the global CLI output controls for power users: `--quiet`, `--plain`, `--no-color`, and `--force-color`.
 - Refreshed the release notes, API docs, and CLI docs for the full v0.5.45 feature set.
 
 ---

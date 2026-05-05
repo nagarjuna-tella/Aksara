@@ -14,7 +14,31 @@ The recommended way to run your app during development:
 aksara dev
 ```
 
-`aksara dev` defaults to `main:app`, enables auto-reload, and shows a rich banner with all relevant URLs (API docs, Studio, admin).
+`aksara dev` defaults to `main:app`, enables auto-reload, and shows a rich startup banner with the app, admin, Studio, and docs URLs. `aksara run dev` is an equivalent alias if you prefer to stay on the `run` command family.
+
+Representative output:
+
+```
+         ████╗   █████╗  ██╗    ██╗ ███████╗  █████╗  ██████╗   █████╗ 
+        ████╔╝  ██╔══██╗ ██║   ██╔╝ ██╔════╝ ██╔══██╗ ██╔══██╗ ██╔══██╗
+       ████╔╝   ██║  ██║ ██║  ██╔╝  ██║      ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║ ██╔╝   ██║      ██║  ██║ ██║  ██║ ██║  ██║
+     ████████╗  ███████║ █████╔╝    ███████╗ ███████║ ██████╔╝ ███████║
+     ╚══████╔╝  ██╔══██║ ██╔═██╗    ╚════██║ ██╔══██║ ██╔══██╗ ██╔══██║
+       ████╔╝   ██║  ██║ ██║  ██╗        ██║ ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║   ██╗       ██║ ██║  ██║ ██║  ██║ ██║  ██║
+     ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
+     ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
+
+    AI-native async backend  ·  Dev Server  ·  v0.5.45
+
+    ● App       http://127.0.0.1:8000/
+    ● Admin     http://127.0.0.1:8000/admin/
+    ● Studio    http://127.0.0.1:8000/studio/ui
+    ● Docs      http://127.0.0.1:8000/docs
+
+    Env dev  ·  Reload enabled  ·  Log info
+```
 
 Options:
 
@@ -31,6 +55,9 @@ Examples:
 # Development (auto-reload enabled by default)
 aksara dev
 
+# Alias for the same development workflow
+aksara run dev
+
 # Custom port
 aksara dev --port 3000
 
@@ -40,6 +67,19 @@ aksara dev --host 0.0.0.0 --port 8000
 # Custom app path (if not main:app)
 aksara dev myproject.main:app
 ```
+
+### Global Output Controls
+
+All output-control flags are global, so they go before the command name:
+
+```bash
+aksara --quiet dev
+aksara --plain dev
+aksara --no-color dev
+aksara --force-color dev
+```
+
+`--quiet` suppresses non-error Aksara UI output such as the banner, progress lines, and success summaries. It does not suppress Uvicorn's own logs. `--plain` disables Rich rendering and animation. `--no-color` keeps the same content without ANSI color, and `--force-color` is useful when a supported terminal is not detected automatically.
 
 !!! note "Multi-worker testing"
     `aksara dev` always runs with a single worker. For production-like multi-worker testing, use `aksara run main:app --workers 4`.

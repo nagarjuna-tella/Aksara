@@ -111,18 +111,21 @@ This will:
 4. Create the database if it doesn't exist
 5. Write `DATABASE_URL` to your `.env` file
 
+After the prompts, a successful run ends with output like this:
+
 ```
-  ⚡ Aksara v0.5.45 — Database Setup
+  ⚡ Aksara v0.5.45
+  Database Setup
 
-  → Checking for PostgreSQL...        ✓ found (localhost:5432)
-  → Database name [opsdesk]:
-  → Username [postgres]:
-  → Password:
-  → Testing connection...             ✓ connected
-  → Creating database "opsdesk"...    ✓ created
-  → Writing DATABASE_URL to .env...   ✓ done
+  ✓ found (localhost:5432)
+  > Database name [opsdesk]:
+  > Username [postgres]:
+  > Password:
+  ✓ connected
+  ✓ created
+  ✓ done
 
-  Ready. Run `aksara migrate` to continue.
+  ✓ Ready. Run aksara migrate to continue.
 ```
 
 !!! tip "Manual configuration"
@@ -268,19 +271,29 @@ aksara dev main:app
 **What you'll see:**
 
 ```
-  ⚡ Aksara 0.5.45 — Dev Server
+         ████╗   █████╗  ██╗    ██╗ ███████╗  █████╗  ██████╗   █████╗ 
+        ████╔╝  ██╔══██╗ ██║   ██╔╝ ██╔════╝ ██╔══██╗ ██╔══██╗ ██╔══██╗
+       ████╔╝   ██║  ██║ ██║  ██╔╝  ██║      ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║ ██╔╝   ██║      ██║  ██║ ██║  ██║ ██║  ██║
+     ████████╗  ███████║ █████╔╝    ███████╗ ███████║ ██████╔╝ ███████║
+     ╚══████╔╝  ██╔══██║ ██╔═██╗    ╚════██║ ██╔══██║ ██╔══██╗ ██╔══██║
+       ████╔╝   ██║  ██║ ██║  ██╗        ██║ ██║  ██║ ██║  ██║ ██║  ██║
+      ████╔╝    ██║  ██║ ██║   ██╗       ██║ ██║  ██║ ██║  ██║ ██║  ██║
+     ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
+     ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
 
-  Env:        dev
-  Debug:      True
+  AI-native async backend  ·  Dev Server  ·  v0.5.45
 
-  App:        http://127.0.0.1:8000/
-  Admin:      http://127.0.0.1:8000/admin/
-  Studio:     http://127.0.0.1:8000/studio/ui
-  API:        http://127.0.0.1:8000/api/playbooks/
-  Docs:       http://127.0.0.1:8000/docs
+  ● App       http://127.0.0.1:8000/
+  ● Admin     http://127.0.0.1:8000/admin/
+  ● Studio    http://127.0.0.1:8000/studio/ui
+  ● Docs      http://127.0.0.1:8000/docs
 
-  Reload: enabled | Log: info
+  Env dev  ·  Reload enabled  ·  Log info
 ```
+
+!!! tip "Power-user output controls"
+    Output controls are global flags, so place them before the command name: `aksara --quiet dev` suppresses non-error Aksara UI output, `aksara --plain dev` disables Rich rendering and animation, and `aksara --no-color dev` keeps the same layout without ANSI color. `--quiet` does not suppress Uvicorn's own logs.
 
 **Your API is now running!**
 
