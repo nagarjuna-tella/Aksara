@@ -27,10 +27,12 @@ Before you start, make sure you have:
 | PostgreSQL | `psql --version` | Storing your data |
 | pip | `pip --version` | Installing packages |
 
-**Don't have PostgreSQL?** You can use Docker:
-```bash
-docker run -d --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 postgres:15
-```
+**PostgreSQL is strictly required.** Unlike Django, Aksara uses advanced Postgres-native features (JSONB, pgvector, Listen/Notify) and does not fall back to SQLite. Ensure you have a running PostgreSQL instance (either native, via Docker, or cloud-hosted) before proceeding.
+
+**AI Configuration:** To use the AI features (Console, MCP, Debugger), you will need an API key from an AI provider.
+*   **Anthropic:** `ANTHROPIC_API_KEY="sk-ant-..."`
+*   **OpenAI:** `OPENAI_API_KEY="sk-proj-..."`
+*   *(Ollama is also supported for local models)*
 
 ---
 
@@ -239,7 +241,19 @@ aksara migrate
 
 ---
 
-## Step 7: Start Your Server
+## Step 7: Export AI Keys & Start Your Server
+
+If you want to use the AI Console and diagnostic features in Studio, export the API key for your preferred AI provider first:
+
+```bash
+# For Anthropic (Recommended)
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Or for OpenAI
+export OPENAI_API_KEY="sk-proj-..."
+```
+
+Start the development server:
 
 ```bash
 aksara dev
