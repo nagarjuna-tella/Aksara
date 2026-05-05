@@ -8,6 +8,7 @@ Core FastAPI functionality remains untouched.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 # Re-export everything from FastAPI as-is
@@ -615,15 +616,19 @@ class Aksara(FastAPI):
     
     def _print_startup(self) -> None:
         """Print Aksara startup banner."""
+        suppress_brand = os.environ.get("AKSARA_SUPPRESS_RUNTIME_BRAND") == "1"
         print()
-        print("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Async Postgres ORM")
+        if not suppress_brand:
+            print("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Async Postgres ORM")
         print(f"  \033[32m✓\033[0m Database connected")
         print()
     
     def _print_shutdown(self) -> None:
         """Print shutdown message."""
+        suppress_brand = os.environ.get("AKSARA_SUPPRESS_RUNTIME_BRAND") == "1"
         print()
-        print("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Shutting down")
+        if not suppress_brand:
+            print("  \033[33m⚡\033[0m \033[1mAksara\033[0m - Shutting down")
         print(f"  \033[32m✓\033[0m Database disconnected")
         print()
     

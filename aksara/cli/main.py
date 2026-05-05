@@ -1748,6 +1748,99 @@ def collectstatic():
     click.echo()
 
 
+def _is_valid_asgi_app_path(app_path: str) -> bool:
+    """Return True when an ASGI import string looks well-formed."""
+
+    return ":" in app_path and not app_path.startswith(":") and not app_path.endswith(":")
+
+
+def _print_invalid_app_path(command_name: str, app_path: str) -> None:
+    """Print a user-friendly error for invalid ASGI app paths."""
+
+    ui = get_ui()
+    ui.error(f"Invalid app path '{app_path}'. Expected '<module>:<attribute>'.")
+    ui.blank()
+    ui.section("Try one of these:")
+    ui.command("aksara dev")
+    if command_name == "run":
+        ui.command("aksara run main:app --reload")
+        ui.command("aksara run myproject.main:app --host 0.0.0.0 --port 8080")
+    else:
+        ui.command("aksara dev main:app")
+        ui.command("aksara dev myproject.main:app --log-level debug")
+
+
+def _run_dev_server(
+    app_path: str,
+    host: str,
+    port: int,
+    reload: bool,
+    no_reload: bool,
+    log_level: str,
+) -> None:
+    """Run the development server with Aksara's DX defaults."""
+    ui = get_ui()
+
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo("❌ uvicorn not installed in the current Python environment\n", err=True)
+        click.echo(f"   Python: {sys.executable}", err=True)
+
+        # Check if we're in a venv
+        in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+        if in_venv:
+            click.echo(f"   Virtual environment detected, but 'aksara' command may be from global install", err=True)
+            click.echo(f"   Try: python -m aksara dev  (uses venv's Python)", err=True)
+            click.echo(f"   Or:  pip install -e . && hash -r  (reinstall aksara in venv)", err=True)
+        else:
+            click.echo(f"   Try: python -m pip install uvicorn", err=True)
+            click.echo(f"   Or:  python -m aksara dev", err=True)
+        sys.exit(1)
+
+    # Auto-collect static files
+    _ensure_static_files()
+
+    # Ensure current directory is in Python path for module imports
+    cwd = str(Path.cwd())
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+
+    # Determine actual reload state
+    actual_reload = reload and not no_reload
+
+    # Build URLs
+    base_url = f"http://{host}:{port}"
+
+    # Print enhanced banner (v0.5.6)
+    _print_dev_banner(base_url, actual_reload, log_level)
+
+    previous_runtime_brand = os.environ.get("AKSARA_SUPPRESS_RUNTIME_BRAND")
+    os.environ["AKSARA_SUPPRESS_RUNTIME_BRAND"] = "1"
+
+    try:
+        # Configure and run uvicorn
+        uvicorn.run(
+            app_path,
+            host=host,
+            port=port,
+            reload=actual_reload,
+            workers=1,  # Always 1 in dev mode
+            log_level=log_level.lower(),
+            access_log=True,
+            app_dir=cwd,
+        )
+    except KeyboardInterrupt:
+        click.echo()
+        click.echo("  \033[33mShutting down Aksara dev server… Bye 👋\033[0m")
+        click.echo()
+    finally:
+        if previous_runtime_brand is None:
+            os.environ.pop("AKSARA_SUPPRESS_RUNTIME_BRAND", None)
+        else:
+            os.environ["AKSARA_SUPPRESS_RUNTIME_BRAND"] = previous_runtime_brand
+
+
 @cli.command()
 @click.argument("app_path")
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
@@ -1764,6 +1857,25 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
         aksara run main:app --reload
         aksara run myproject.main:app --host 0.0.0.0 --port 8080
     """
+    normalized_app_path = app_path.strip().lower()
+    if normalized_app_path in {"dev", "development"}:
+        if workers != 1:
+            ui = get_ui()
+            ui.warning("Ignoring --workers in dev mode; Aksara dev always uses a single worker.")
+        _run_dev_server(
+            app_path="main:app",
+            host=host,
+            port=port,
+            reload=True,
+            no_reload=False,
+            log_level="info",
+        )
+        return
+
+    if not _is_valid_asgi_app_path(app_path):
+        _print_invalid_app_path("run", app_path)
+        raise click.exceptions.Exit(2)
+
     try:
         import uvicorn
     except ImportError:
@@ -1790,18 +1902,27 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     click.echo()
     click.echo("  \033[90m" + "─" * 40 + "\033[0m")
     click.echo()
+
+    previous_runtime_brand = os.environ.get("AKSARA_SUPPRESS_RUNTIME_BRAND")
+    os.environ["AKSARA_SUPPRESS_RUNTIME_BRAND"] = "1"
     
-    # Configure uvicorn - use app_dir for proper module resolution
-    uvicorn.run(
-        app_path,
-        host=host,
-        port=port,
-        reload=reload,
-        workers=workers if not reload else 1,
-        log_level="info",
-        access_log=True,
-        app_dir=cwd,  # Ensure uvicorn can find the app module
-    )
+    try:
+        # Configure uvicorn - use app_dir for proper module resolution
+        uvicorn.run(
+            app_path,
+            host=host,
+            port=port,
+            reload=reload,
+            workers=workers if not reload else 1,
+            log_level="info",
+            access_log=True,
+            app_dir=cwd,  # Ensure uvicorn can find the app module
+        )
+    finally:
+        if previous_runtime_brand is None:
+            os.environ.pop("AKSARA_SUPPRESS_RUNTIME_BRAND", None)
+        else:
+            os.environ["AKSARA_SUPPRESS_RUNTIME_BRAND"] = previous_runtime_brand
 
 
 # =============================================================================
@@ -1859,33 +1980,18 @@ def _print_dev_banner(base_url: str, actual_reload: bool, log_level: str) -> Non
     studio_enabled = _check_studio_enabled()
     debug = _get_debug_mode()
     env = "dev" if debug else "prod"
-    
-    click.echo()
-    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara {__version__} — Dev Server\033[0m")
-    click.echo()
-    click.echo(f"  \033[36mEnv:\033[0m        {env}")
-    click.echo(f"  \033[36mDebug:\033[0m      {debug}")
-    click.echo()
-    
-    # URLs section
-    click.echo(f"  \033[36mApp:\033[0m        {base_url}/")
-    
-    if admin_enabled:
-        click.echo(f"  \033[36mAdmin:\033[0m      {base_url}/admin/")
-    
-    if studio_enabled:
-        click.echo(f"  \033[36mStudio:\033[0m     {base_url}/studio/ui")
-    
-    click.echo(f"  \033[36mAPI:\033[0m        {base_url}/api/posts/")
-    click.echo(f"  \033[36mDocs:\033[0m       {base_url}/docs")
-    click.echo()
-    
-    # Status line
-    reload_status = "enabled" if actual_reload else "disabled"
-    click.echo(f"  \033[90mReload: {reload_status} | Log: {log_level}\033[0m")
-    click.echo()
-    click.echo("  \033[90m" + "─" * 45 + "\033[0m")
-    click.echo()
+
+    ui = get_ui()
+    ui.dev_server_banner(
+        __version__,
+        env=env,
+        debug=debug,
+        base_url=base_url,
+        admin_enabled=admin_enabled,
+        studio_enabled=studio_enabled,
+        actual_reload=actual_reload,
+        log_level=log_level,
+    )
 
 
 @cli.command()
@@ -1912,56 +2018,18 @@ def dev(app_path: str, host: str, port: int, reload: bool, no_reload: bool, log_
         aksara dev myproject.main:app --log-level debug
         aksara dev main:app --no-reload --port 3000
     """
-    try:
-        import uvicorn
-    except ImportError:
-        click.echo("❌ uvicorn not installed in the current Python environment\n", err=True)
-        click.echo(f"   Python: {sys.executable}", err=True)
-        
-        # Check if we're in a venv
-        in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
-        if in_venv:
-            click.echo(f"   Virtual environment detected, but 'aksara' command may be from global install", err=True)
-            click.echo(f"   Try: python -m aksara dev  (uses venv's Python)", err=True)
-            click.echo(f"   Or:  pip install -e . && hash -r  (reinstall aksara in venv)", err=True)
-        else:
-            click.echo(f"   Try: python -m pip install uvicorn", err=True)
-            click.echo(f"   Or:  python -m aksara dev", err=True)
-        sys.exit(1)
-    
-    # Auto-collect static files
-    _ensure_static_files()
-    
-    # Ensure current directory is in Python path for module imports
-    cwd = str(Path.cwd())
-    if cwd not in sys.path:
-        sys.path.insert(0, cwd)
-    
-    # Determine actual reload state
-    actual_reload = reload and not no_reload
-    
-    # Build URLs
-    base_url = f"http://{host}:{port}"
-    
-    # Print enhanced banner (v0.5.6)
-    _print_dev_banner(base_url, actual_reload, log_level)
-    
-    try:
-        # Configure and run uvicorn
-        uvicorn.run(
-            app_path,
-            host=host,
-            port=port,
-            reload=actual_reload,
-            workers=1,  # Always 1 in dev mode
-            log_level=log_level.lower(),
-            access_log=True,
-            app_dir=cwd,
-        )
-    except KeyboardInterrupt:
-        click.echo()
-        click.echo("  \033[33mShutting down Aksara dev server… Bye 👋\033[0m")
-        click.echo()
+    if not _is_valid_asgi_app_path(app_path):
+        _print_invalid_app_path("dev", app_path)
+        raise click.exceptions.Exit(2)
+
+    _run_dev_server(
+        app_path=app_path,
+        host=host,
+        port=port,
+        reload=reload,
+        no_reload=no_reload,
+        log_level=log_level,
+    )
 
 
 # =============================================================================

@@ -112,3 +112,25 @@ class TestCliUiBehavior:
         assert echo.call_count == 1
         assert echo.call_args.kwargs["err"] is True
         assert "problem" in echo.call_args.args[0]
+
+    def test_dev_server_banner_renders_plain_hero(self):
+        ui = cli_ui.build_ui(cli_ui.CLIUIConfig(mode="plain", quiet=False, unicode=True))
+
+        with patch("click.echo") as echo:
+            ui.dev_server_banner(
+                "0.5.45",
+                env="prod",
+                debug=False,
+                base_url="http://127.0.0.1:8000",
+                admin_enabled=False,
+                studio_enabled=False,
+                actual_reload=True,
+                log_level="info",
+            )
+
+        output = "\n".join(call.args[0] for call in echo.call_args_list)
+        assert "╚═══╝" in output  # bottom of the full-height bolt is rendered
+        assert "####    ###" in output  # taller AKSARA text art is rendered
+        assert "Dev Server" in output
+        assert "http://127.0.0.1:8000/docs" in output
+

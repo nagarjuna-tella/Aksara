@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, replace
 import os
 import sys
+import time
 from typing import Any, Iterator, Literal
 
 import click
@@ -257,6 +258,38 @@ class _NullProgressShim:
         return None
 
 
+# AKSARA in ANSI Shadow font — all lines are exactly 48 characters wide.
+# Generated with pyfiglet.figlet_format("AKSARA", font="ansi_shadow").
+_AKSARA_ASCII_ART: tuple[str, ...] = (
+    " █████╗  ██╗    ██╗ ███████╗  █████╗  ██████╗   █████╗ ",
+    "██╔══██╗ ██║   ██╔╝ ██╔════╝ ██╔══██╗ ██╔══██╗ ██╔══██╗",
+    "██║  ██║ ██║  ██╔╝  ██║      ██║  ██║ ██║  ██║ ██║  ██║",
+    "██║  ██║ ██║ ██╔╝   ██║      ██║  ██║ ██║  ██║ ██║  ██║",
+    "███████║ █████╔╝    ███████╗ ███████║ ██████╔╝ ███████║",
+    "██╔══██║ ██╔═██╗    ╚════██║ ██╔══██║ ██╔══██╗ ██╔══██║",
+    "██║  ██║ ██║  ██╗        ██║ ██║  ██║ ██║  ██║ ██║  ██║",
+    "██║  ██║ ██║   ██╗       ██║ ██║  ██║ ██║  ██║ ██║  ██║",
+    "██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║",
+    "╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝",
+)
+
+# Aksara thunderbolt logo in ANSI Shadow block style — 12 characters wide.
+# Diagonal slash shape matching the SVG polygon (aksara-logo.svg).
+# Wide strokes to match the AKSARA ANSI Shadow font weight.
+_AKSARA_BOLT_ART: tuple[str, ...] = (
+    "       ████╗",
+    "      ████╔╝",
+    "     ████╔╝ ",
+    "    ████╔╝  ",
+    "   ████████╗",
+    "   ╚══████╔╝",
+    "     ████╔╝ ",
+    "    ████╔╝  ",
+    "   ████╔╝   ",
+    "   ╚═══╝    ",
+)
+
+
 class CliUI:
     """Semantic CLI UI facade used by command handlers."""
 
@@ -320,6 +353,72 @@ class CliUI:
         if subtitle:
             line = click.style(f"  {subtitle}", fg="bright_black") if self.is_rich and not self.config.no_color else f"  {subtitle}"
             self.renderer.line(line)
+        self.blank()
+
+    def dev_server_banner(
+        self,
+        version: str,
+        *,
+        env: str,
+        debug: bool,
+        base_url: str,
+        admin_enabled: bool,
+        studio_enabled: bool,
+        actual_reload: bool,
+        log_level: str,
+    ) -> None:
+        """Render the dev server hero banner with ANSI Shadow art and bolt logo."""
+
+        if self.config.quiet:
+            return
+
+        self.blank()
+        self._animate_bolt("starting dev server")
+
+        rich = self.is_rich and not self.config.no_color
+
+        # ── Side-by-side bolt + AKSARA art ──
+        for bolt_line, art_line in zip(_AKSARA_BOLT_ART, _AKSARA_ASCII_ART):
+            if rich:
+                bolt_styled = click.style(bolt_line, fg="yellow", bold=True)
+                art_styled = click.style(art_line, fg="blue", bold=True)
+                self.renderer.line(f"  {bolt_styled}  {art_styled}")
+            else:
+                self.renderer.line(f"  {bolt_line}  {art_line}")
+
+        self.blank()
+
+        # ── Subtitle ──
+        subtitle = f"AI-native async backend  ·  Dev Server  ·  v{version}"
+        if rich:
+            self.renderer.line("  " + click.style(subtitle, fg="white"))
+        else:
+            self.renderer.line(f"  {subtitle}")
+
+        self.blank()
+
+        # ── URL bullets ──
+        dot = "●" if self.config.unicode else "*"
+        urls: list[tuple[str, str]] = [("App", f"{base_url}/")]
+        urls.append(("Admin", f"{base_url}/admin/"))
+        urls.append(("Studio", f"{base_url}/studio/ui"))
+        urls.append(("Docs", f"{base_url}/docs"))
+
+        for label, url in urls:
+            if rich:
+                ln = (
+                    click.style(f"  {dot} ", fg="cyan")
+                    + click.style(f"{label:<8}", fg="bright_white")
+                    + f"  {url}"
+                )
+            else:
+                ln = f"  {dot} {label:<8}  {url}"
+            self.renderer.line(ln)
+
+        self.blank()
+        reload_status = "enabled" if actual_reload else "disabled"
+        self.dim(f"Env {env}  ·  Reload {reload_status}  ·  Log {log_level}")
+        self.separator(45)
         self.blank()
 
     def section(self, title: str) -> None:
@@ -439,6 +538,61 @@ class CliUI:
 
         spacer = " " if prefix else ""
         self.renderer.line(f"  {prefix}{spacer}{message}", err=err)
+
+    def _boxed_lines(self, lines: list[str], *, accent: str = "cyan") -> None:
+        """Render a small boxed hero block."""
+
+        width = max(len(line) for line in lines)
+        top = f"╭{'─' * (width + 2)}╮" if self.config.unicode else f"+{'-' * (width + 2)}+"
+        bottom = f"╰{'─' * (width + 2)}╯" if self.config.unicode else f"+{'-' * (width + 2)}+"
+        side = "│" if self.config.unicode else "|"
+
+        if self.is_rich and not self.config.no_color:
+            border_color = "bright_black"
+            self.renderer.line(click.style(f"  {top}", fg=border_color))
+            for raw in lines:
+                line = raw.ljust(width)
+                styled = click.style(line, fg=accent, bold=True)
+                self.renderer.line(
+                    click.style(f"  {side} ", fg=border_color)
+                    + styled
+                    + click.style(f" {side}", fg=border_color)
+                )
+            self.renderer.line(click.style(f"  {bottom}", fg=border_color))
+            return
+
+        self.renderer.line(f"  {top}")
+        for raw in lines:
+            self.renderer.line(f"  {side} {raw.ljust(width)} {side}")
+        self.renderer.line(f"  {bottom}")
+
+    def _animate_bolt(self, label: str) -> None:
+        """Render a short Rich-only bolt sweep ahead of the dev banner."""
+
+        if not self.is_rich or self.config.quiet or self.config.is_ci:
+            return
+
+        if not isinstance(self.renderer, RichRenderer):
+            return
+
+        from rich.live import Live
+        from rich.text import Text
+
+        glyph = "↯" if self.config.unicode else ">"
+        frames = [
+            f"{glyph}      {label}",
+            f" {glyph}     {label}",
+            f"  {glyph}    {label}",
+            f"   {glyph}   {label}",
+            f"  {glyph}    {label}",
+            f" {glyph}     {label}",
+        ]
+
+        with Live(console=self.renderer.console, transient=True, refresh_per_second=30) as live:
+            for index, frame in enumerate(frames):
+                style = "bold cyan" if index % 2 == 0 else "bold magenta"
+                live.update(Text(f"  {frame}", style=style))
+                time.sleep(0.025)
 
     def _color(self, kind: str) -> str:
         """Return the color name for a semantic output kind."""
