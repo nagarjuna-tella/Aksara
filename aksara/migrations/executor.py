@@ -710,6 +710,7 @@ def model_to_create_table(model_class) -> str:
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        Vector,
         FileField as RuntimeFileField,
         ImageField as RuntimeImageField,
     )
@@ -854,6 +855,17 @@ def model_to_create_table(model_class) -> str:
                 parts.append(f"default={field.default!r}")
             opts = ", ".join(parts)
             field_code = f"op.JSONField({opts})" if opts else "op.JSONField()"
+
+        elif isinstance(field, Vector):
+            parts = []
+            if field.dimensions is not None:
+                parts.append(f"dimensions={field.dimensions}")
+            if field.nullable:
+                parts.append("nullable=True")
+            if field.default is not None and not callable(field.default):
+                parts.append(f"default={field.default!r}")
+            opts = ", ".join(parts)
+            field_code = f"op.VectorField({opts})" if opts else "op.VectorField()"
         
         elif isinstance(field, Decimal):
             parts = [f"{field.max_digits}", f"{field.decimal_places}"]

@@ -61,6 +61,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added `ContentType` syncing and `fields.GenericForeignKey()` for model-agnostic relations
   - Added `DurableStep` with PostgreSQL-backed result reuse and retry-after-failure behavior
 
+- **Built-in background tasks and advanced PostgreSQL ORM support** (`aksara/tasks.py`, `aksara/fields.py`, `aksara/manager.py`, `aksara/db/expressions.py`)
+  - Added `@task`, `enqueue_task()`, `TaskWorker`, and `aksara_tasks` for PostgreSQL-backed background execution
+  - Added nested JSONB path filtering with lookups like `metadata__preferences__theme="dark"`
+  - Added `fields.Vector()` plus `CosineDistance()` and `EuclideanDistance()` for pgvector-backed embeddings
+
 ### Changed
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
@@ -75,6 +80,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
 - Updated API and CLI docs for stream endpoints, multi-tenant RLS behavior, and TypeScript SDK generation
 - Added advanced docs for generic relations and durable workflow execution
+- Added docs for built-in background tasks, JSONB nested path filters, vector fields, and task worker settings
 - Refreshed the README and release notes to reflect the full v0.5.45 feature set
 
 ### Tests

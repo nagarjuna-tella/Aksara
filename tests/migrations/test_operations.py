@@ -150,6 +150,26 @@ class TestJSONField:
         assert "NOT NULL" not in sql
 
 
+class TestVectorField:
+    """Tests for VectorField operation."""
+
+    def test_basic(self):
+        field = op.VectorField(dimensions=3)
+        sql = field.to_sql()
+        assert "VECTOR(3)" in sql
+        assert "NOT NULL" in sql
+
+    def test_nullable(self):
+        field = op.VectorField(dimensions=4, nullable=True)
+        sql = field.to_sql()
+        assert "NOT NULL" not in sql
+
+    def test_default(self):
+        field = op.VectorField(dimensions=2, default=[1, 2])
+        sql = field.to_sql()
+        assert "'[1,2]'::vector" in sql
+
+
 class TestForeignKeyField:
     """Tests for ForeignKeyField operation."""
     

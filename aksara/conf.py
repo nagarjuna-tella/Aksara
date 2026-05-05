@@ -123,6 +123,12 @@ class Settings:
     locale_paths: List[str] = field(default_factory=lambda: ["locale"])
     use_tz: bool = True
     time_zone: str = "UTC"
+
+    # v0.5.45: Built-in background tasks
+    tasks_enabled: bool = True
+    task_poll_interval_seconds: float = 1.0
+    task_retry_delay_seconds: float = 5.0
+    task_max_attempts: int = 3
     
     # v0.4.0: AI features
     ai_enabled: bool = False
@@ -320,6 +326,20 @@ class Settings:
         env_time_zone = os.environ.get("AKSARA_TIME_ZONE")
         if env_time_zone:
             self.time_zone = env_time_zone
+
+        self.tasks_enabled = _get_bool_env("AKSARA_TASKS_ENABLED", self.tasks_enabled)
+        self.task_poll_interval_seconds = _get_float_env(
+            "AKSARA_TASK_POLL_INTERVAL_SECONDS",
+            self.task_poll_interval_seconds,
+        )
+        self.task_retry_delay_seconds = _get_float_env(
+            "AKSARA_TASK_RETRY_DELAY_SECONDS",
+            self.task_retry_delay_seconds,
+        )
+        self.task_max_attempts = _get_int_env(
+            "AKSARA_TASK_MAX_ATTEMPTS",
+            self.task_max_attempts,
+        )
         
         # Future: AI features
         if not self.ai_enabled:
@@ -490,6 +510,26 @@ class Settings:
     def TIME_ZONE(self) -> str:
         """Alias for time_zone (uppercase convention)."""
         return self.time_zone
+
+    @property
+    def TASKS_ENABLED(self) -> bool:
+        """Alias for tasks_enabled (uppercase convention)."""
+        return self.tasks_enabled
+
+    @property
+    def TASK_POLL_INTERVAL_SECONDS(self) -> float:
+        """Alias for task_poll_interval_seconds (uppercase convention)."""
+        return self.task_poll_interval_seconds
+
+    @property
+    def TASK_RETRY_DELAY_SECONDS(self) -> float:
+        """Alias for task_retry_delay_seconds (uppercase convention)."""
+        return self.task_retry_delay_seconds
+
+    @property
+    def TASK_MAX_ATTEMPTS(self) -> int:
+        """Alias for task_max_attempts (uppercase convention)."""
+        return self.task_max_attempts
     
     @property
     def AI_ENABLED(self) -> bool:

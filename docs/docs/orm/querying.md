@@ -267,6 +267,27 @@ no_category = await Post.objects.filter(category__isnull=True)
 has_category = await Post.objects.filter(category__isnull=False)
 ```
 
+### Nested JSON Path Lookups
+
+JSON fields support nested key traversal by chaining double underscores after
+the JSON field name.
+
+```python
+dark_mode_users = await User.objects.filter(
+    preferences__ui__theme="dark",
+)
+
+high_scores = await Player.objects.filter(
+    profile__stats__score__gte=900,
+)
+
+named_users = await User.objects.filter(
+    profile__display_name__icontains="ada",
+)
+```
+
+These lookups compile to PostgreSQL JSONB path expressions using `->` and `->>`.
+
 ### Date Lookups
 
 ```python
@@ -433,6 +454,26 @@ stats = await Post.objects.aggregate(
 )
 # {"total": 150, "avg_views": 523.4, "max_views": 10000}
 ```
+
+### Vector Distance Annotations
+
+Use vector distance expressions with `annotate()` when ranking embeddings.
+
+```python
+from aksara.db import CosineDistance, EuclideanDistance
+
+documents = await Document.objects.annotate(
+    distance=CosineDistance("embedding", query_embedding),
+).order_by("distance").all()
+```
+
+Available expressions:
+
+- `CosineDistance("embedding", vector)`
+- `EuclideanDistance("embedding", vector)`
+
+The vector literal is parameterized and cast to PostgreSQL `vector`, so the
+same expression works cleanly in annotations and ordering.
 
 ---
 

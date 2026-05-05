@@ -12,7 +12,7 @@ import pytest
 
 from aksara import Model, fields
 from aksara.db.engine import Database
-from aksara.db.expressions import Count, F, Q, Sum
+from aksara.db.expressions import CosineDistance, Count, EuclideanDistance, F, Q, Sum
 from aksara.manager import QuerySet
 from aksara.model.base import finalize_relations
 from aksara.relations import RelationRegistry
@@ -35,6 +35,7 @@ class MetricRecord(Model):
     title = fields.String(max_length=200)
     views = fields.Integer(default=0)
     likes = fields.Integer(default=0)
+    metadata = fields.JSON(default=dict)
 
     class Meta:
         table_name = "metric_records"
@@ -66,6 +67,30 @@ class TestQObjects:
 
         assert where_clause == 'WHERE "views" > "likes"'
         assert values == []
+
+    def test_json_path_exact_compiles(self):
+        qs = QuerySet(MetricRecord).filter(metadata__preferences__theme="dark")
+
+        where_clause, values = qs._build_where_clause()
+
+        assert where_clause == 'WHERE "metadata" -> $1 ->> $2 = $3'
+        assert values == ["preferences", "theme", "dark"]
+
+    def test_json_path_icontains_compiles(self):
+        qs = QuerySet(MetricRecord).filter(metadata__profile__display_name__icontains="ada")
+
+        where_clause, values = qs._build_where_clause()
+
+        assert where_clause == 'WHERE "metadata" -> $1 ->> $2 ILIKE $3'
+        assert values == ["profile", "display_name", "%ada%"]
+
+    def test_json_path_numeric_lookup_compiles(self):
+        qs = QuerySet(MetricRecord).filter(metadata__stats__score__gte=9)
+
+        where_clause, values = qs._build_where_clause()
+
+        assert where_clause == 'WHERE ("metadata" -> $1 ->> $2)::double precision >= $3'
+        assert values == ["stats", "score", 9]
 
 
 class TestAnnotations:
@@ -154,6 +179,25 @@ class TestAnnotations:
         assert values == [1]
         assert group_by_clause.startswith('GROUP BY')
         assert '"views"' in group_by_clause
+
+    def test_vector_distance_annotations_compile(self):
+        class EmbeddingRecord(Model):
+            title = fields.String(max_length=200)
+            embedding = fields.Vector(dimensions=3)
+
+            class Meta:
+                table_name = "embedding_records"
+
+        qs = QuerySet(EmbeddingRecord).annotate(
+            cosine_distance=CosineDistance("embedding", [1, 2, 3]),
+            euclidean_distance=EuclideanDistance("embedding", [3, 1, 2]),
+        )
+
+        select_clause, values = qs._build_select_clause()
+
+        assert '"embedding" <=> CAST($1 AS vector)' in select_clause
+        assert '"embedding" <-> CAST($2 AS vector)' in select_clause
+        assert values == ["[1,2,3]", "[3,1,2]"]
 
     @pytest.mark.asyncio
     async def test_aggregate_returns_summary_dict(self, monkeypatch):

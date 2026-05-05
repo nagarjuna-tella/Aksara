@@ -100,6 +100,20 @@ class JSON(Field[Any]):
     ) -> None: ...
 
 
+class Vector(Field[list[float]]):
+    """pgvector-backed embedding field."""
+
+    dimensions: Optional[int]
+
+    def __init__(
+        self,
+        dimensions: Optional[int] = None,
+        *,
+        nullable: bool = False,
+        default: Optional[Any] = None,
+    ) -> None: ...
+
+
 class FileField(Field[str]):
     """File field storing a storage-relative path."""
 
@@ -153,4 +167,5 @@ BooleanField = Boolean
 DateTimeField = DateTime
 UUIDField = UUID
 JSONField = JSON
+VectorField = Vector
 GenericForeignKeyField = GenericForeignKey

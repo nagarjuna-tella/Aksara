@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import os
 import re
 import uuid as uuid_lib
@@ -587,6 +588,89 @@ class JSON(Field):
         return value
 
 
+class Vector(Field):
+    """
+    pgvector-backed embedding field.
+
+    Stores numeric embeddings using PostgreSQL's optional `vector` extension.
+    """
+
+    def __init__(
+        self,
+        dimensions: Optional[int] = None,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.dimensions = dimensions
+
+    @property
+    def sql_type(self) -> str:
+        if self.dimensions is None:
+            return "VECTOR"
+        return f"VECTOR({self.dimensions})"
+
+    def _format_default(self) -> str:
+        """Format vector defaults with an explicit pgvector cast."""
+        if self.default is None:
+            return "NULL"
+        return f"'{self.to_db(self.default)}'::vector"
+
+    def validate(self, value: Any) -> list[float]:
+        if isinstance(value, str):
+            value = self.to_python(value)
+
+        if not isinstance(value, (list, tuple)):
+            raise ValueError("Vector fields require a list or tuple of numbers")
+
+        vector = [float(item) for item in value]
+        if self.dimensions is not None and len(vector) != self.dimensions:
+            raise ValueError(
+                f"Vector field '{self.name}' requires {self.dimensions} dimensions, got {len(vector)}"
+            )
+
+        for item in vector:
+            if not math.isfinite(item):
+                raise ValueError("Vector fields only support finite numbers")
+
+        return vector
+
+    def to_python(self, value: Any) -> Optional[list[float]]:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [float(item) for item in value]
+        if isinstance(value, tuple):
+            return [float(item) for item in value]
+        if isinstance(value, str):
+            stripped = value.strip().strip("[]")
+            if not stripped:
+                return []
+            return [float(part.strip()) for part in stripped.split(",") if part.strip()]
+        return self.validate(value)
+
+    def to_db(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        vector = self.validate(value)
+        return "[" + ",".join(format(item, "g") for item in vector) + "]"
+
+    def get_ai_metadata(self) -> dict:
+        base = super().get_ai_metadata()
+        base["dimensions"] = self.dimensions
+        return base
+
+
 class Array(Field):
     """
     Array field mapping to PostgreSQL ARRAY type.
@@ -719,6 +803,7 @@ BooleanField = Boolean
 DateTimeField = DateTime
 UUIDField = UUID
 JSONField = JSON
+VectorField = Vector
 ArrayField = Array
 
 

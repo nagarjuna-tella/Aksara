@@ -10,7 +10,7 @@ from datetime import datetime
 
 from aksara.fields import (
     String, Integer, Boolean, DateTime, UUID, JSON,
-    Field
+    Vector, Field
 )
 
 
@@ -208,6 +208,33 @@ class TestJSONField:
         result = field.to_db(data)
         assert isinstance(result, str)
         assert '"key": "value"' in result
+
+
+class TestVectorField:
+    """Tests for Vector field."""
+
+    def test_sql_type_with_dimensions(self):
+        field = Vector(dimensions=3)
+        assert field.sql_type == "VECTOR(3)"
+
+    def test_column_definition(self):
+        field = Vector(dimensions=2)
+        field.name = "embedding"
+        assert field.get_column_definition() == "embedding VECTOR(2) NOT NULL"
+
+    def test_to_python_from_string(self):
+        field = Vector(dimensions=3)
+        assert field.to_python("[1,2,3]") == [1.0, 2.0, 3.0]
+
+    def test_to_db(self):
+        field = Vector(dimensions=3)
+        assert field.to_db([1, 2, 3]) == "[1,2,3]"
+
+    def test_validate_rejects_wrong_dimensions(self):
+        field = Vector(dimensions=2)
+        field.name = "embedding"
+        with pytest.raises(ValueError, match="requires 2 dimensions"):
+            field.validate([1, 2, 3])
 
 
 class TestFieldOrdering:

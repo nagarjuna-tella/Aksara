@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
 from uuid import UUID
 
 from aksara.db import quote_identifier
-from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField, GenericForeignKey
+from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField, GenericForeignKey, Vector
 from aksara.i18n import serialize_value
 from aksara.registry import ModelRegistry
 
@@ -829,7 +829,10 @@ class Model(metaclass=ModelMeta):
                 
                 fields_to_insert.append(quote_identifier(col_name))
                 values.append(field.to_db(value))
-                placeholders.append(f"${len(values)}")
+                if isinstance(field, Vector):
+                    placeholders.append(f"CAST(${len(values)} AS vector)")
+                else:
+                    placeholders.append(f"${len(values)}")
         
         columns = ", ".join(fields_to_insert)
         params = ", ".join(placeholders)
@@ -879,7 +882,10 @@ class Model(metaclass=ModelMeta):
                 )
             else:
                 values.append(field.to_db(value))
-                set_clauses.append(f"{quote_identifier(col_name)} = ${len(values)}")
+                if isinstance(field, Vector):
+                    set_clauses.append(f"{quote_identifier(col_name)} = CAST(${len(values)} AS vector)")
+                else:
+                    set_clauses.append(f"{quote_identifier(col_name)} = ${len(values)}")
         
         # Add the id for the WHERE clause
         values.append(self._data['id'])

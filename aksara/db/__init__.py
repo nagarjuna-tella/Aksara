@@ -50,8 +50,10 @@ def quote_identifier(name: str) -> str:
 from aksara.db.expressions import (
     Aggregate,
     Avg,
+    CosineDistance,
     CombinedExpression,
     Count,
+    EuclideanDistance,
     F,
     Max,
     Min,
@@ -77,8 +79,10 @@ __all__ = [
     # v0.5.45: ORM expressions
     "Aggregate",
     "Avg",
+    "CosineDistance",
     "CombinedExpression",
     "Count",
+    "EuclideanDistance",
     "F",
     "Max",
     "Min",

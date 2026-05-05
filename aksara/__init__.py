@@ -9,8 +9,10 @@ from aksara import fields
 from aksara.db import (
     Aggregate,
     Avg,
+    CosineDistance,
     Count,
     Database,
+    EuclideanDistance,
     F,
     Max,
     Min,
@@ -53,6 +55,7 @@ from aksara.contenttypes import (
     sync_content_types,
 )
 from aksara.workflows import DurableStep, DurableStepState
+from aksara.tasks import TASKS_TABLE, TaskRecord, TaskWorker, enqueue_task, ensure_tasks_table, get_task_record, task
 from aksara.storage import FieldFile, Storage, FileSystemStorage, S3Storage, get_default_storage
 from aksara.exceptions import (
     AksaraError,
@@ -211,6 +214,8 @@ __all__ = [
     "Avg",
     "Min",
     "Max",
+    "CosineDistance",
+    "EuclideanDistance",
     "TransactionManager",
     "atomic",
     "transaction",
@@ -261,6 +266,13 @@ __all__ = [
     "sync_content_types",
     "DurableStep",
     "DurableStepState",
+    "TASKS_TABLE",
+    "TaskRecord",
+    "TaskWorker",
+    "enqueue_task",
+    "ensure_tasks_table",
+    "get_task_record",
+    "task",
     # Exceptions
     "AksaraError",
     "DatabaseError",

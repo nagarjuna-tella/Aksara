@@ -33,6 +33,24 @@ LOOKUP_OPERATORS = {
 }
 
 
+def _json_lookup_value(value: Any) -> str:
+    """Normalize Python values for text-based JSON path comparisons."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "null"
+    return str(value)
+
+
+def _json_numeric_cast(value: Any) -> Optional[str]:
+    """Determine the SQL numeric cast for JSON path comparisons."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return "double precision"
+    return None
+
+
 def parse_lookup(key: str) -> Tuple[str, str]:
     """
     Parse a filter key into field name and lookup type.
@@ -51,6 +69,26 @@ def parse_lookup(key: str) -> Tuple[str, str]:
         # If lookup not recognized, treat entire key as field name (exact match)
         return key, "exact"
     return key, "exact"
+
+
+def split_json_lookup(model: Type[T], key: str) -> tuple[str, list[str], str]:
+    """Split a filter key into base field, JSON path, and lookup type."""
+    from aksara.fields import JSON
+
+    field_name, lookup = parse_lookup(key)
+    if field_name in model._fields:
+        return field_name, [], lookup
+
+    parts = field_name.split("__")
+    if not parts:
+        return field_name, [], lookup
+
+    base_field = parts[0]
+    field = model._fields.get(base_field)
+    if field is None or not isinstance(field, JSON):
+        return field_name, [], lookup
+
+    return base_field, parts[1:], lookup
 
 
 class QuerySet(Generic[T]):
@@ -554,7 +592,9 @@ class QuerySet(Generic[T]):
         qualify_base: bool = False,
     ) -> str:
         """Compile a single filter condition to SQL."""
-        field_name, lookup = parse_lookup(key)
+        from aksara.fields import Vector
+
+        field_name, json_path, lookup = split_json_lookup(self._model, key)
 
         if field_name not in self._model._fields:
             raise ValueError(f"Unknown field: {field_name}")
@@ -562,35 +602,82 @@ class QuerySet(Generic[T]):
         field = self._model._fields[field_name]
         col_name = self._base_column_reference(field_name, qualify=qualify_base)
 
+        if json_path:
+            json_expr = col_name
+            for segment in json_path[:-1]:
+                values.append(segment)
+                json_expr = f"{json_expr} -> ${len(values)}"
+
+            values.append(json_path[-1])
+            raw_expr = f"{json_expr} -> ${len(values)}"
+            text_expr = f"{json_expr} ->> ${len(values)}"
+
+            if lookup == "isnull":
+                return f"{raw_expr} IS NULL" if value else f"{raw_expr} IS NOT NULL"
+
+            if lookup in {"icontains", "contains"}:
+                values.append(f"%{value}%")
+                operator = "ILIKE" if lookup == "icontains" else "LIKE"
+                return f"{text_expr} {operator} ${len(values)}"
+
+            if lookup == "in":
+                if not isinstance(value, (list, tuple, set)):
+                    raise ValueError(f"__in lookup requires a list, got {type(value)}")
+                if not value:
+                    return "FALSE"
+                placeholders = []
+                for item in value:
+                    values.append(_json_lookup_value(item))
+                    placeholders.append(f"${len(values)}")
+                return f"{text_expr} IN ({', '.join(placeholders)})"
+
+            if lookup in {"gt", "gte", "lt", "lte"}:
+                cast_type = _json_numeric_cast(value)
+                if cast_type is None:
+                    raise ValueError(
+                        f"JSON path lookup '{lookup}' requires an int or float value"
+                    )
+                values.append(value)
+                operator = LOOKUP_OPERATORS[lookup]
+                return f"({text_expr})::{cast_type} {operator} ${len(values)}"
+
+            values.append(_json_lookup_value(value))
+            return f"{text_expr} = ${len(values)}"
+
+        def _parameter(index: int) -> str:
+            if isinstance(field, Vector):
+                return f"CAST(${index} AS vector)"
+            return f"${index}"
+
         if lookup == "exact":
             if is_expression(value):
                 return f"{col_name} = {compile_expression(self._model, value, values)}"
             values.append(field.to_db(value))
-            return f"{col_name} = ${len(values)}"
+            return f"{col_name} = {_parameter(len(values))}"
 
         if lookup == "gt":
             if is_expression(value):
                 return f"{col_name} > {compile_expression(self._model, value, values)}"
             values.append(field.to_db(value))
-            return f"{col_name} > ${len(values)}"
+            return f"{col_name} > {_parameter(len(values))}"
 
         if lookup == "gte":
             if is_expression(value):
                 return f"{col_name} >= {compile_expression(self._model, value, values)}"
             values.append(field.to_db(value))
-            return f"{col_name} >= ${len(values)}"
+            return f"{col_name} >= {_parameter(len(values))}"
 
         if lookup == "lt":
             if is_expression(value):
                 return f"{col_name} < {compile_expression(self._model, value, values)}"
             values.append(field.to_db(value))
-            return f"{col_name} < ${len(values)}"
+            return f"{col_name} < {_parameter(len(values))}"
 
         if lookup == "lte":
             if is_expression(value):
                 return f"{col_name} <= {compile_expression(self._model, value, values)}"
             values.append(field.to_db(value))
-            return f"{col_name} <= ${len(values)}"
+            return f"{col_name} <= {_parameter(len(values))}"
 
         if lookup == "in":
             if not isinstance(value, (list, tuple, set)):
@@ -601,7 +688,7 @@ class QuerySet(Generic[T]):
             placeholders = []
             for item in value:
                 values.append(field.to_db(item))
-                placeholders.append(f"${len(values)}")
+                placeholders.append(_parameter(len(values)))
             return f"{col_name} IN ({', '.join(placeholders)})"
 
         if lookup == "isnull":
@@ -1048,7 +1135,10 @@ class QuerySet(Generic[T]):
                 set_clauses.append(f"{col_name} = {compile_expression(self._model, value, values)}")
             else:
                 values.append(field.to_db(value))
-                set_clauses.append(f"{col_name} = ${len(values)}")
+                if field.__class__.__name__ == "Vector":
+                    set_clauses.append(f"{col_name} = CAST(${len(values)} AS vector)")
+                else:
+                    set_clauses.append(f"{col_name} = ${len(values)}")
 
         where_clause, values = self._build_where_clause(values)
         table = quote_identifier(self._model.__tablename__)

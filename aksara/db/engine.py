@@ -17,6 +17,39 @@ from aksara.db.debug import log_query
 from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
 
 
+def _decode_vector(value: str) -> list[float]:
+    """Decode pgvector text format into a Python list."""
+    stripped = value.strip()
+    if stripped == "[]":
+        return []
+    stripped = stripped.strip("[]")
+    if not stripped:
+        return []
+    return [float(part.strip()) for part in stripped.split(",") if part.strip()]
+
+
+def _encode_vector(value: Any) -> str:
+    """Encode Python vectors into pgvector text format."""
+    if isinstance(value, str):
+        return value
+    return "[" + ",".join(format(float(item), "g") for item in value) + "]"
+
+
+async def _initialize_connection(connection: asyncpg.Connection) -> None:
+    """Register codecs for optional extension types when available."""
+    try:
+        await connection.set_type_codec(
+            "vector",
+            schema="public",
+            encoder=_encode_vector,
+            decoder=_decode_vector,
+            format="text",
+        )
+    except Exception:
+        # pgvector is optional and must not block normal startup.
+        pass
+
+
 class Database:
     """
     Async PostgreSQL database engine with connection pooling.
@@ -110,6 +143,7 @@ class Database:
                 self.database_url,
                 min_size=self.min_size,
                 max_size=self.max_size,
+                init=_initialize_connection,
             )
             logger.debug(f"Database pool created (min={self.min_size}, max={self.max_size})")
         except Exception as e:

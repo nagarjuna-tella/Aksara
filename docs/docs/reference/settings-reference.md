@@ -25,6 +25,7 @@ export DATABASE_URL=postgresql://user:pass@localhost:5432/myapp
 export AKSARA_DEBUG=true
 export AKSARA_MEDIA_ROOT=media
 export AKSARA_EMAIL_BACKEND=console
+export AKSARA_TASKS_ENABLED=true
 ```
 
 ---
@@ -306,6 +307,57 @@ export AKSARA_TIME_ZONE=UTC
 
 See [Internationalization and Timezones](../advanced/internationalization-and-timezones.md)
 for request middleware examples.
+
+---
+
+## Background Task Settings
+
+### TASKS_ENABLED
+
+Type: `bool`
+Default: `True`
+
+Start the built-in `TaskWorker` automatically when `Aksara(database_url=...)`
+manages the application lifespan.
+
+### TASK_POLL_INTERVAL_SECONDS
+
+Type: `float`
+Default: `1.0`
+
+How often the built-in worker wakes up to poll for pending rows in
+`aksara_tasks` when no work is immediately available.
+
+### TASK_RETRY_DELAY_SECONDS
+
+Type: `float`
+Default: `5.0`
+
+Delay before a failed task is re-queued for another attempt.
+
+### TASK_MAX_ATTEMPTS
+
+Type: `int`
+Default: `3`
+
+Default retry budget for tasks that do not override `max_attempts` when they
+are enqueued.
+
+```python
+configure(Settings(
+    tasks_enabled=True,
+    task_poll_interval_seconds=0.5,
+    task_retry_delay_seconds=2.0,
+    task_max_attempts=4,
+))
+```
+
+```bash
+export AKSARA_TASKS_ENABLED=true
+export AKSARA_TASK_POLL_INTERVAL_SECONDS=0.5
+export AKSARA_TASK_RETRY_DELAY_SECONDS=2.0
+export AKSARA_TASK_MAX_ATTEMPTS=4
+```
 
 ---
 

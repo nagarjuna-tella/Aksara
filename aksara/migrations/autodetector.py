@@ -47,6 +47,8 @@ class FieldState:
     decimal_places: Optional[int] = None
     # Enum specific
     enum_name: Optional[str] = None
+    # Vector specific
+    dimensions: Optional[int] = None
 
     def to_key(self) -> tuple:
         """Return a hashable representation for comparison."""
@@ -65,6 +67,7 @@ class FieldState:
             self.max_digits,
             self.decimal_places,
             self.enum_name,
+            self.dimensions,
         )
 
 
@@ -122,6 +125,10 @@ def _field_op_to_state(field_name: str, field_op) -> FieldState:
     # Enum specific
     if isinstance(field_op, op.EnumField):
         state.enum_name = getattr(field_op, 'enum_name', None) or getattr(field_op, 'enum_class', None)
+
+    # Vector specific
+    if isinstance(field_op, op.VectorField):
+        state.dimensions = getattr(field_op, 'dimensions', None)
 
     return state
 
@@ -247,6 +254,7 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        Vector,
         FileField as RuntimeFileField,
         ImageField as RuntimeImageField,
     )
@@ -261,6 +269,7 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         DateTime: "DateTimeField",
         Date: "DateField",
         JSON: "JSONField",
+        Vector: "VectorField",
         Float: "FloatField",
         Decimal: "DecimalField",
         Email: "EmailField",
@@ -326,6 +335,9 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
     if isinstance(field, Enum):
         enum_cls = getattr(field, 'enum_class', None)
         state.enum_name = enum_cls.__name__ if enum_cls else None
+
+    if isinstance(field, Vector):
+        state.dimensions = getattr(field, 'dimensions', None)
 
     return state
 
@@ -486,6 +498,7 @@ def _model_field_to_op(field_name: str, field):
         String, Integer, Boolean, DateTime, UUID, JSON,
         ForeignKey, OneToOne,
         Text, Email, URL, Decimal, Enum, Float, Date, Array,
+        Vector,
         FileField as RuntimeFileField,
         ImageField as RuntimeImageField,
     )
@@ -620,6 +633,17 @@ def _model_field_to_op(field_name: str, field):
         if default is not None:
             kwargs['default'] = default
         return op.JSONField(**kwargs)
+
+    elif isinstance(field, Vector):
+        kwargs = {}
+        if getattr(field, 'dimensions', None) is not None:
+            kwargs['dimensions'] = field.dimensions
+        if field.nullable:
+            kwargs['nullable'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.VectorField(**kwargs)
 
     elif isinstance(field, Float):
         kwargs = {}

@@ -2,11 +2,13 @@
 ORM expressions and query composition primitives.
 
 v0.5.45: Adds Q(), F(), annotate(), and aggregate() support.
+v0.5.45: Adds vector distance expressions for pgvector-backed fields.
 """
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, TYPE_CHECKING
+import math
+from typing import Any, ClassVar, TYPE_CHECKING, Sequence
 
 from aksara.db import quote_identifier
 
@@ -84,6 +86,55 @@ class CombinedExpression(BaseExpression):
         lhs_sql = self.lhs.resolve(model, values)
         rhs_sql = self.rhs.resolve(model, values)
         return f"({lhs_sql} {self.operator} {rhs_sql})"
+
+
+def _format_vector_literal(value: Sequence[float]) -> str:
+    """Serialize a Python vector into pgvector text format."""
+    parts = []
+    for item in value:
+        number = float(item)
+        if not math.isfinite(number):
+            raise ValueError("Vector values must be finite numbers")
+        parts.append(format(number, "g"))
+    return f"[{','.join(parts)}]"
+
+
+class VectorLiteral(BaseExpression):
+    """Parameterize a pgvector literal with an explicit cast."""
+
+    def __init__(self, value: Sequence[float]):
+        self.value = _format_vector_literal(value)
+
+    def resolve(self, model: type["Model"], values: list[Any]) -> str:
+        values.append(self.value)
+        return f"CAST(${len(values)} AS vector)"
+
+
+class VectorDistanceExpression(BaseExpression):
+    """Base expression for pgvector distance operators."""
+
+    operator: ClassVar[str] = "<->"
+
+    def __init__(self, field_name: str, vector: Sequence[float]):
+        self.field_name = field_name
+        self.vector = VectorLiteral(vector)
+
+    def resolve(self, model: type["Model"], values: list[Any]) -> str:
+        lhs_sql = _resolve_model_column(model, self.field_name)
+        rhs_sql = self.vector.resolve(model, values)
+        return f"({lhs_sql} {self.operator} {rhs_sql})"
+
+
+class EuclideanDistance(VectorDistanceExpression):
+    """Euclidean (L2) distance via pgvector `<->`."""
+
+    operator = "<->"
+
+
+class CosineDistance(VectorDistanceExpression):
+    """Cosine distance via pgvector `<=>`."""
+
+    operator = "<=>"
 
 
 class Aggregate(BaseExpression):
@@ -218,13 +269,17 @@ __all__ = [
     "Aggregate",
     "Avg",
     "BaseExpression",
+    "CosineDistance",
     "CombinedExpression",
     "Count",
+    "EuclideanDistance",
     "F",
     "Max",
     "Min",
     "Q",
     "Sum",
+    "VectorDistanceExpression",
+    "VectorLiteral",
     "compile_expression",
     "ensure_expression",
     "is_expression",

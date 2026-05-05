@@ -316,6 +316,42 @@ user = await User.objects.create(
 )
 ```
 
+Nested JSON keys can be queried with double-underscore paths:
+
+```python
+dark_mode_users = await User.objects.filter(
+    preferences__theme="dark",
+)
+```
+
+### Vector
+
+pgvector-backed embeddings for similarity search and ranking.
+
+```python
+class Document(Model):
+    title = fields.String(max_length=200)
+    embedding = fields.Vector(dimensions=384)
+```
+
+PostgreSQL type: `VECTOR(n)` when dimensions are specified, otherwise `VECTOR`
+
+`Vector` values are stored as Python lists and serialized to pgvector literals
+for inserts, updates, and filters.
+
+```python
+document = await Document.objects.create(
+    title="Intro",
+    embedding=[0.12, 0.33, 0.98],
+)
+
+assert document.embedding == [0.12, 0.33, 0.98]
+```
+
+!!! note
+    `Vector` requires PostgreSQL's `vector` extension. Enable it with
+    `CREATE EXTENSION IF NOT EXISTS vector` before creating tables that use the field.
+
 ### Enum
 
 Enumerated values.

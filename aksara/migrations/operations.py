@@ -356,6 +356,39 @@ class JSONField(FieldOp):
         return "JSONField()"
 
 
+class VectorField(FieldOp):
+    """pgvector field type for migrations."""
+
+    def __init__(
+        self,
+        dimensions: Optional[int] = None,
+        *,
+        nullable: bool = False,
+        default: Optional[Any] = None,
+    ):
+        self.dimensions = dimensions
+        self.nullable = nullable
+        self.default = default
+
+    def to_sql(self) -> str:
+        sql_type = "VECTOR" if self.dimensions is None else f"VECTOR({self.dimensions})"
+        parts = [sql_type]
+
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.default is not None:
+            if isinstance(self.default, (list, tuple)):
+                default_literal = "[" + ",".join(format(float(item), "g") for item in self.default) + "]"
+            else:
+                default_literal = str(self.default)
+            parts.append(f"DEFAULT '{default_literal}'::vector")
+
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return f"VectorField(dimensions={self.dimensions!r})"
+
+
 class FloatField(FieldOp):
     """Float/Double precision field type for migrations."""
     
@@ -1633,6 +1666,7 @@ __all__ = [
     "DateTimeField",
     "DateField",
     "JSONField",
+    "VectorField",
     "FloatField",
     "DecimalField",
     "ForeignKeyField",

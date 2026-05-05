@@ -147,6 +147,7 @@ class Aksara(FastAPI):
         
         # v0.4.0: AI registry (initialized later)
         self.ai_registry = None
+        self._task_worker = None
         
         # Store docs URLs for custom handlers
         self._docs_url = docs_url
@@ -222,6 +223,54 @@ class Aksara(FastAPI):
     def db(self) -> Optional[Database]:
         """Get the database instance."""
         return self._db
+
+    @property
+    def task_worker(self):
+        """Get the background task worker, if enabled."""
+        return self._task_worker
+
+    async def _startup_runtime(self) -> None:
+        """Start database-backed runtime services."""
+        if not self._database_url:
+            return
+
+        self._db = Database(
+            self._database_url,
+            min_size=self._min_pool_size,
+            max_size=self._max_pool_size,
+        )
+        await self._db.connect()
+
+        from aksara.conf import settings
+        if "aksara.contrib.auth" in settings.installed_apps:
+            from aksara.contrib.auth.session import _ensure_sessions_table
+            await _ensure_sessions_table(self._db)
+
+        from aksara.model.base import finalize_relations
+        finalize_relations()
+
+        from aksara.contenttypes import clear_content_type_cache, sync_content_types
+        clear_content_type_cache()
+        await sync_content_types(self._db, prune_stale=True)
+
+        if settings.tasks_enabled:
+            from aksara.tasks import TaskWorker
+
+            self._task_worker = TaskWorker(self._db)
+            await self._task_worker.start()
+
+        self._print_startup()
+
+    async def _shutdown_runtime(self) -> None:
+        """Stop database-backed runtime services."""
+        if self._task_worker is not None:
+            await self._task_worker.stop()
+            self._task_worker = None
+
+        if self._db is not None:
+            await self._db.disconnect()
+            self._db = None
+            self._print_shutdown()
     
     def _maybe_mount_admin(self) -> None:
         """
@@ -545,68 +594,24 @@ class Aksara(FastAPI):
         """Wrap user's lifespan with DB lifecycle."""
         @asynccontextmanager
         async def wrapped_lifespan(app: FastAPI):
-            # Start DB
-            if self._database_url:
-                self._db = Database(
-                    self._database_url,
-                    min_size=self._min_pool_size,
-                    max_size=self._max_pool_size,
-                )
-                await self._db.connect()
-
-                from aksara.conf import settings
-                if "aksara.contrib.auth" in settings.installed_apps:
-                    from aksara.contrib.auth.session import _ensure_sessions_table
-                    await _ensure_sessions_table(self._db)
-                
-                # Finalize relations for reverse access
-                from aksara.model.base import finalize_relations
-                finalize_relations()
-                
-                self._print_startup()
+            await self._startup_runtime()
             
             # Run user's lifespan
             async with user_lifespan(app):
                 yield
             
-            # Shutdown DB
-            if self._db:
-                await self._db.disconnect()
-                self._print_shutdown()
+            await self._shutdown_runtime()
         
         return wrapped_lifespan
     
     @asynccontextmanager
     async def _default_lifespan(self, app: FastAPI):
         """Default lifespan with DB management."""
-        if self._database_url:
-            self._db = Database(
-                self._database_url,
-                min_size=self._min_pool_size,
-                max_size=self._max_pool_size,
-            )
-            await self._db.connect()
-
-            from aksara.conf import settings
-            if "aksara.contrib.auth" in settings.installed_apps:
-                from aksara.contrib.auth.session import _ensure_sessions_table
-                await _ensure_sessions_table(self._db)
-            
-            # Finalize relations for reverse access
-            from aksara.model.base import finalize_relations
-            finalize_relations()
-
-            from aksara.contenttypes import clear_content_type_cache, sync_content_types
-            clear_content_type_cache()
-            await sync_content_types(self._db, prune_stale=True)
-            
-            self._print_startup()
+        await self._startup_runtime()
         
         yield
         
-        if self._db:
-            await self._db.disconnect()
-            self._print_shutdown()
+        await self._shutdown_runtime()
     
     def _print_startup(self) -> None:
         """Print Aksara startup banner."""

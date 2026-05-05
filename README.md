@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-6000%2B%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-6132%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/version-0.5.45-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
@@ -128,6 +128,8 @@ I built everything you'd otherwise assemble yourself.
 | 🌐  | **i18n & Timezones**     | `LocaleMiddleware`, `TimezoneMiddleware`, lazy `_()` strings, and UTC-normalized datetime storage |
 | 🔗  | **Generic Relations**    | `fields.GenericForeignKey()` with auto-managed `ContentType` resolution across registered models  |
 | ♻️  | **Durable Workflows**    | `DurableStep` persists successful step results in PostgreSQL and reuses them on resume            |
+| 🧵  | **Background Tasks**     | `@task`, `enqueue_task()`, and `TaskWorker` provide PostgreSQL-backed jobs with retries           |
+| 🧠  | **JSONB + Vectors**      | Nested JSON path filters plus `fields.Vector()` and cosine/euclidean distance expressions         |
 | 📦  | **TypeScript SDK**       | `aksara generate sdk --language typescript` builds a typed fetch client from your ViewSets       |
 | 📡  | **Real-Time Streams**    | `GET /<prefix>/stream` emits model lifecycle events through tenant-safe SSE                       |
 | 🖥️  | **Studio**               | Built-in web UI at `/studio/ui` — inspect models, routes, queries, migrations                    |
@@ -173,6 +175,7 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/aksara/tree/main/exampl
 | [Quickstart](docs/docs/quickstart.md)     | Build and deploy in 5 minutes                  |
 | [ORM Guide](docs/docs/orm/index.md)       | Models, fields, relations, queries             |
 | [API Guide](docs/docs/api/index.md)       | ViewSets, actions, serializers                 |
+| [Advanced Guide](docs/docs/advanced/index.md) | Background tasks, media/email, i18n, generic relations |
 | [AI Mode](docs/docs/ai-mode/index.md)     | MCP, AI Console, Debugger, Architecture Review |
 | [Studio Guide](docs/docs/studio/index.md) | Visual inspector & debugging                   |
 | [Admin Guide](docs/docs/admin/index.md)   | Admin site customization                       |
@@ -184,7 +187,9 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/aksara/tree/main/exampl
 
 Aksara is **pre-1.0** and actively evolving. Current version: **0.5.45**.
 
-**Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor.
+Latest validation: **6132 passed, 3 skipped**.
+
+**Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB/vector ORM support.
 
 **Evolving:** AI Debugger, Architecture Review, Performance Analyzer.
 
