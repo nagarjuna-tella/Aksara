@@ -484,3 +484,40 @@ class TestStartprojectDevFiles:
             
             assert result.exit_code == 0
             assert Path("myproject/pyproject.toml").exists()
+
+    def test_startproject_app_templates_are_neutral(self, tmp_path):
+        """Test that startproject does not force a live Post app scaffold."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(cli, ["startproject", "myproject"])
+
+            assert result.exit_code == 0
+
+            models_content = Path("myproject/app/models.py").read_text()
+            admin_content = Path("myproject/app/admin.py").read_text()
+            serializers_content = Path("myproject/app/serializers.py").read_text()
+            views_content = Path("myproject/app/views.py").read_text()
+            urls_content = Path("myproject/app/urls.py").read_text()
+
+            assert "\nclass Post(Model):" not in models_content
+            assert "# class Post(Model):" in models_content
+            assert "class User(Model):" not in models_content
+            assert "class Comment(Model):" not in models_content
+            assert "aksara.contrib.auth.User" in models_content
+
+            assert "\nfrom .models import Post\n" not in admin_content
+            assert "\nsite.register(Post, PostAdmin)\n" not in admin_content
+            assert "# class PostAdmin(ModelAdmin):" in admin_content
+
+            assert "\nfrom .models import Post\n" not in serializers_content
+            assert "\nclass PostSerializer(ModelSerializer):" not in serializers_content
+            assert "# class PostSerializer(ModelSerializer):" in serializers_content
+
+            assert "\nfrom .models import Post\n" not in views_content
+            assert "\nclass PostViewSet(ModelViewSet):" not in views_content
+            assert "# class PostViewSet(ModelViewSet):" in views_content
+
+            assert "\nfrom .views import PostViewSet\n" not in urls_content
+            assert "# from .views import PostViewSet" in urls_content
+            assert "# PostViewSet," in urls_content

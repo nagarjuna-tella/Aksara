@@ -1677,7 +1677,7 @@ def models(app: Optional[str], ai: bool):
         click.echo("   Fields:")
         for field_name, field in model._fields.items():
             pk = " (PK)" if field.primary_key else ""
-            nullable = " nullable" if field.null else ""
+            nullable = " nullable" if getattr(field, "nullable", False) else ""
             unique = " unique" if field.unique else ""
             
             field_info = f"     • {field_name}: {field.sql_type}{pk}{unique}{nullable}"

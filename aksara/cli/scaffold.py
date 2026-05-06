@@ -479,35 +479,19 @@ Register your models with the admin interface here.
 Admin is available at /admin when debug=True or enable_admin=True.
 """
 
-from aksara.contrib.admin import site, ModelAdmin
-from .models import Post
-
-
-# =============================================================================
-# Post Admin
-# =============================================================================
-
-class PostAdmin(ModelAdmin):
-    """Admin configuration for Post model."""
-    list_display = ["title", "is_published", "created_at"]
-    list_filter = ["is_published"]
-    search_fields = ["title", "content"]
-
-
-# Register models with admin
-site.register(Post, PostAdmin)
-
-
-# =============================================================================
-# Add more model registrations here:
+# Add admin registrations here.
 #
-# from .models import User
+# Example:
 #
-# class UserAdmin(ModelAdmin):
-#     list_display = ["email", "name", "is_active"]
+# from aksara.contrib.admin import site, ModelAdmin
+# from .models import Post
 #
-# site.register(User, UserAdmin)
-# =============================================================================
+# class PostAdmin(ModelAdmin):
+#     list_display = ["title", "is_published", "created_at"]
+#     list_filter = ["is_published"]
+#     search_fields = ["title", "content"]
+#
+# site.register(Post, PostAdmin)
 '''
 
 
@@ -520,81 +504,25 @@ Define your Aksara ORM models here.
 Models are auto-discovered from INSTALLED_APPS.
 """
 
-from aksara import Model, fields
-
-
-# =============================================================================
-# Post Model - Example model showcasing Aksara features
-# =============================================================================
-
-class Post(Model):
-    """
-    Blog post model.
-    
-    Demonstrates different field types and AI metadata.
-    This model is registered in admin.py and exposed via API in views.py.
-    
-    AI tools can discover this model at /ai/tools.
-    """
-    
-    title = fields.String(
-        max_length=200,
-        ai_description="Post title",
-    )
-    content = fields.Text(
-        nullable=True,
-        ai_description="Post body content (Markdown supported)",
-    )
-    is_published = fields.Boolean(
-        default=False,
-        ai_description="Whether the post is publicly visible",
-    )
-    view_count = fields.Integer(
-        default=0,
-        ai_description="Number of times the post has been viewed",
-        ai_agent_writable=False,  # AI shouldn't modify view counts
-    )
-    tags = fields.JSON(
-        nullable=True,
-        ai_description="List of tags for categorization",
-    )
-    created_at = fields.DateTime(
-        auto_now_add=True,
-        ai_description="When the post was created",
-    )
-    updated_at = fields.DateTime(
-        auto_now=True,
-        ai_description="When the post was last updated",
-    )
-    
-    class Meta:
-        table_name = "posts"
-        ai_name = "Post"
-        ai_description = "Blog posts for the {project_name} application"
-        ai_agent_exposed = True
-        ai_permissions = ["read", "write"]
-
-
-# =============================================================================
-# Add more models here:
+# Define your domain models here.
 #
-# class User(Model):
-#     email = fields.Email(unique=True)
-#     name = fields.String(max_length=100)
-#     is_active = fields.Boolean(default=True)
+# Built-in authentication already provides a concrete user model via
+# `aksara.contrib.auth.User` (table: `aksara_users`), so you do not need to
+# create a local `User` model just to get started.
+#
+# Example:
+#
+# from aksara import Model, fields
+#
+# class Post(Model):
+#     title = fields.String(max_length=200)
+#     content = fields.Text(nullable=True)
+#     is_published = fields.Boolean(default=False)
+#     created_at = fields.DateTime(auto_now_add=True)
+#     updated_at = fields.DateTime(auto_now=True)
 #
 #     class Meta:
-#         table_name = "users"
-#
-#
-# class Comment(Model):
-#     post = fields.ForeignKey(Post, on_delete="CASCADE")
-#     author = fields.String(max_length=100)
-#     body = fields.Text()
-#
-#     class Meta:
-#         table_name = "comments"
-# =============================================================================
+#         table_name = "posts"
 '''
 
 
@@ -606,47 +534,18 @@ def get_serializers_template(project_name: str) -> str:
 Define your ModelSerializer classes for validation and response shaping.
 """
 
-from aksara import ModelSerializer
-from .models import Post
-
-
-# =============================================================================
-# Post Serializer
-# =============================================================================
-
-class PostSerializer(ModelSerializer):
-    """
-    Serializer for Post model.
-    
-    Handles validation and JSON conversion for the Post API.
-    """
-    
-    class Meta:
-        model = Post
-        fields = [
-            "id",
-            "title",
-            "content",
-            "is_published",
-            "view_count",
-            "tags",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "view_count", "created_at", "updated_at"]
-
-
-# =============================================================================
-# Add more serializers here:
+# Define your serializers here.
 #
-# from .models import User
+# Example:
 #
-# class UserSerializer(ModelSerializer):
+# from aksara import ModelSerializer
+# from .models import Post
+#
+# class PostSerializer(ModelSerializer):
 #     class Meta:
-#         model = User
-#         fields = ["id", "email", "name", "is_active", "created_at"]
-#         read_only_fields = ["id", "created_at"]
-# =============================================================================
+#         model = Post
+#         fields = ["id", "title", "content", "is_published", "created_at", "updated_at"]
+#         read_only_fields = ["id", "created_at", "updated_at"]
 '''
 
 
@@ -659,77 +558,22 @@ Define your ViewSets and custom actions here.
 ViewSets are auto-discovered and exposed as AI tools at /ai/tools.
 """
 
-from aksara import ModelViewSet, action, Request
-from aksara.permissions import IsAuthenticated, IsAdminUser
-from .models import Post
-from .serializers import PostSerializer
-
-
-# =============================================================================
-# Post ViewSet
-# =============================================================================
-
-class PostViewSet(ModelViewSet):
-    """
-    API ViewSet for Post model.
-    
-    Auto-generates these endpoints:
-        GET    /api/posts/          - List all posts
-        POST   /api/posts/          - Create a post
-        GET    /api/posts/{{id}}/     - Get a post
-        PUT    /api/posts/{{id}}/     - Update a post
-        DELETE /api/posts/{{id}}/     - Delete a post
-        POST   /api/posts/{{id}}/publish/  - Custom action
-    
-    This ViewSet is also exposed as an AI tool at /ai/tools.
-    """
-    
-    model = Post
-    prefix = "/api/posts"
-    tags = ["Posts"]
-    
-    # Serializer for all CRUD actions
-    list_serializer_class = PostSerializer
-    retrieve_serializer_class = PostSerializer
-    create_serializer_class = PostSerializer
-    update_serializer_class = PostSerializer
-    
-    # AI exposure (default: True for ModelViewSet)
-    ai_exposed = True
-    
-    @action(detail=True, methods=["POST"], ai_exposed=True)
-    async def publish(self, pk: str, request: Request):
-        """
-        Publish a post (custom action example).
-        This description becomes the MCP tool description for AI agents.
-        """
-        post = await self.model.objects.get(id=pk)
-        post.is_published = True
-        await post.save()
-        return {{"status": "published", "id": str(post.id)}}
-    
-    @action(detail=True, methods=["POST"], ai_exposed=False)
-    async def increment_views(self, pk: str, request: Request):
-        """Increment view count. (Hidden from AI/MCP via ai_exposed=False)."""
-        post = await self.model.objects.get(id=pk)
-        post.view_count += 1
-        await post.save()
-        return {{"view_count": post.view_count}}
-
-
-# =============================================================================
-# Add more ViewSets here:
+# Define your ViewSets here.
 #
-# class UserViewSet(ModelViewSet):
-#     model = User
-#     list_serializer_class = UserSerializer
-#     retrieve_serializer_class = UserSerializer
-#     create_serializer_class = UserSerializer
-#     update_serializer_class = UserSerializer
-#     prefix = "/api/users"
-#     tags = ["Users"]
-#     permission_classes = [IsAuthenticated]
-# =============================================================================
+# Example:
+#
+# from aksara import ModelViewSet
+# from .models import Post
+# from .serializers import PostSerializer
+#
+# class PostViewSet(ModelViewSet):
+#     model = Post
+#     prefix = "/api/posts"
+#     tags = ["Posts"]
+#     list_serializer_class = PostSerializer
+#     retrieve_serializer_class = PostSerializer
+#     create_serializer_class = PostSerializer
+#     update_serializer_class = PostSerializer
 '''
 
 
@@ -742,12 +586,17 @@ Register your ViewSets here.
 """
 
 from aksara import include_viewset
-from .views import PostViewSet
 
 
-# URL Patterns - list your ViewSets here
+# Import your ViewSets here, then add them to urlpatterns.
+#
+# Example:
+#
+# from .views import PostViewSet
+
+
 urlpatterns = [
-    PostViewSet,
+    # PostViewSet,
 ]
 
 
