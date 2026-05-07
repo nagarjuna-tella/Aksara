@@ -110,6 +110,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added nested JSONB path filtering with lookups like `metadata__preferences__theme="dark"`
   - Added `fields.Vector()` plus `CosineDistance()` and `EuclideanDistance()` for pgvector-backed embeddings
 
+### Added — Field Parameters
+
+- **`choices`** on `String`, `Integer`, `SmallInteger` — flat lists or tuple-pairs `[("val", "Label")]` for Django developer compatibility. Validates on write, passes valid values through to MCP tool exports.
+- **`min_length`** on `String`, `Text` — minimum character length validation
+- **`min_value` / `max_value`** on `Integer`, `Float`, `Decimal` — range validation at the Python level before database writes
+- **`auto_from`** on `Slug` — generates slug from a named field on creation only; skipped if slug is already set (safe for existing URLs)
+- **`regex`** on `String` — custom pattern validation
+- **`strip_whitespace`** on `String`, `Text` — trims leading/trailing whitespace on write path only (`to_db`)
+
+### Tests
+
+- 95 new tests in `tests/test_field_params.py`
+- 300 field tests passing, zero regressions
+- Total test suite: **6375 passed** (up from 6280)
+
 ### Changed
 
 - **Database connection reuse** (`aksara/db/engine.py`)

@@ -25,6 +25,16 @@ All notable changes to Aksara.
 - **11 new ORM field types** for Django parity: `SlugField`, `SmallIntegerField`, `BigIntegerField`, `PositiveIntegerField`, `PositiveSmallIntegerField`, `PositiveBigIntegerField`, `TimeField`, `DurationField`, `IPAddressField` / `GenericIPAddressField`, `BinaryField`, and `FilePathField`.
 - **7 new migration FieldOp subclasses** in `aksara/migrations/operations.py` with correct PostgreSQL DDL generation (`SMALLINT`, `TIME`, `INTERVAL`, `INET`, `BYTEA`, `VARCHAR`).
 - **Autodetector integration** for all 11 new field types — `makemigrations` now produces correct column types instead of falling back to `StringField`.
+- **Field parameters** — `choices`, `min_length`, `min_value` / `max_value`, `auto_from`, `regex`, and `strip_whitespace` on the relevant core field types.
+
+### Added — Field Parameters
+
+- **`choices`** on `String`, `Integer`, `SmallInteger` — flat lists or tuple-pairs `[("val", "Label")]` for Django developer compatibility. Validates on write, passes valid values through to MCP tool exports.
+- **`min_length`** on `String`, `Text` — minimum character length validation.
+- **`min_value` / `max_value`** on `Integer`, `Float`, `Decimal` — range validation at the Python level before database writes.
+- **`auto_from`** on `Slug` — generates slug from a named field on creation only; skipped if slug is already set (safe for existing URLs).
+- **`regex`** on `String` — custom pattern validation.
+- **`strip_whitespace`** on `String`, `Text` — trims leading/trailing whitespace on write path only (`to_db`).
 
 ### Fixed
 - **`BigInteger.to_db()`**: Added BIGINT range validation to prevent PostgreSQL overflow.

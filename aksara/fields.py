@@ -231,12 +231,59 @@ class Field(ABC):
         return f"{self.__class__.__name__}(name={self.name!r})"
 
 
+def _normalize_choices(choices):
+    """
+    Normalize a choices list into (value, label) pairs.
+
+    Accepts flat lists (``["a", "b"]``) and Django-style tuple-pair lists
+    (``[("a", "Label A"), ("b", "Label B")]``).  Returns the set of valid
+    values for fast membership testing.
+    """
+    if not choices:
+        return None
+    valid = set()
+    for item in choices:
+        if isinstance(item, (list, tuple)) and len(item) == 2:
+            valid.add(item[0])
+        else:
+            valid.add(item)
+    return valid
+
+
+def _slugify(value: str, *, allow_unicode: bool = False) -> str:
+    """
+    Convert a string into a URL-friendly slug.
+
+    * Lowercases the value
+    * Replaces non-alphanumeric characters with hyphens
+    * Collapses consecutive hyphens
+    * Strips leading/trailing hyphens
+
+    When *allow_unicode* is ``False`` (the default) the value is
+    transliterated to ASCII first via ``unicodedata.normalize('NFKD')``.
+    """
+    import unicodedata
+    value = str(value).strip()
+    if not allow_unicode:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = value.lower()
+    value = re.sub(r'[^\w\s-]', '', value)
+    value = re.sub(r'[-\s]+', '-', value)
+    return value.strip('-_')
+
+
 class String(Field):
     """
     String field mapping to VARCHAR.
     
     Args:
         max_length: Maximum string length (default: 255)
+        min_length: Minimum string length (default: None, no minimum)
+        choices: Restrict values to this set. Accepts a flat list
+            (["a", "b"]) or Django-style tuple pairs
+            ([("a", "Label A"), ("b", "Label B")])
+        regex: Regular expression pattern the value must match
+        strip_whitespace: Strip leading/trailing whitespace on save
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -250,6 +297,10 @@ class String(Field):
         self,
         max_length: int = 255,
         *,
+        min_length: Optional[int] = None,
+        choices: Optional[list] = None,
+        regex: Optional[str] = None,
+        strip_whitespace: bool = False,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -267,7 +318,13 @@ class String(Field):
             ai_agent_writable=ai_agent_writable,
         )
         self.max_length = max_length
+        self.min_length = min_length
+        self.choices = choices
+        self._choices_valid = _normalize_choices(choices)
+        self.strip_whitespace = strip_whitespace
         self.db_index = db_index
+        self._regex_pattern = regex
+        self._regex = re.compile(regex) if regex else None
     
     @property
     def sql_type(self) -> str:
@@ -281,7 +338,34 @@ class String(Field):
     def to_db(self, value: Any) -> Optional[str]:
         if value is None:
             return None
-        return str(value)
+        v = str(value)
+        if self.strip_whitespace:
+            v = v.strip()
+        if self.min_length is not None and len(v) < self.min_length:
+            raise ValueError(
+                f"String value is too short (minimum {self.min_length} characters, got {len(v)})"
+            )
+        if self._choices_valid is not None and v not in self._choices_valid:
+            raise ValueError(
+                f"Value {v!r} is not a valid choice. "
+                f"Valid choices are: {sorted(self._choices_valid)}"
+            )
+        if self._regex is not None and not self._regex.fullmatch(v):
+            raise ValueError(
+                f"Value {v!r} does not match required pattern {self._regex_pattern!r}"
+            )
+        return v
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with string-specific options."""
+        base = super().get_ai_metadata()
+        if self.min_length is not None:
+            base["min_length"] = self.min_length
+        if self.choices is not None:
+            base["choices"] = self.choices
+        if self._regex_pattern is not None:
+            base["regex"] = self._regex_pattern
+        return base
 
 
 class Integer(Field):
@@ -289,6 +373,9 @@ class Integer(Field):
     Integer field mapping to INTEGER.
     
     Args:
+        min_value: Minimum allowed value (default: None, no minimum)
+        max_value: Maximum allowed value (default: None, no maximum)
+        choices: Restrict values to this set
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -301,6 +388,9 @@ class Integer(Field):
     def __init__(
         self,
         *,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        choices: Optional[list] = None,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -317,6 +407,10 @@ class Integer(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.min_value = min_value
+        self.max_value = max_value
+        self.choices = choices
+        self._choices_valid = _normalize_choices(choices)
         self.db_index = db_index
     
     @property
@@ -331,7 +425,32 @@ class Integer(Field):
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        v = int(value)
+        if self.min_value is not None and v < self.min_value:
+            raise ValueError(
+                f"Value {v} is below the minimum of {self.min_value}"
+            )
+        if self.max_value is not None and v > self.max_value:
+            raise ValueError(
+                f"Value {v} exceeds the maximum of {self.max_value}"
+            )
+        if self._choices_valid is not None and v not in self._choices_valid:
+            raise ValueError(
+                f"Value {v!r} is not a valid choice. "
+                f"Valid choices are: {sorted(self._choices_valid)}"
+            )
+        return v
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with integer-specific options."""
+        base = super().get_ai_metadata()
+        if self.min_value is not None:
+            base["min_value"] = self.min_value
+        if self.max_value is not None:
+            base["max_value"] = self.max_value
+        if self.choices is not None:
+            base["choices"] = self.choices
+        return base
 
 
 class Boolean(Field):
@@ -823,6 +942,8 @@ class Text(Field):
     
     Args:
         max_length: Optional max length for validation (DB stays TEXT)
+        min_length: Minimum string length (default: None, no minimum)
+        strip_whitespace: Strip leading/trailing whitespace on save
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -836,6 +957,8 @@ class Text(Field):
         self,
         max_length: Optional[int] = None,
         *,
+        min_length: Optional[int] = None,
+        strip_whitespace: bool = False,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -853,6 +976,8 @@ class Text(Field):
             ai_agent_writable=ai_agent_writable,
         )
         self.max_length = max_length
+        self.min_length = min_length
+        self.strip_whitespace = strip_whitespace
         self.db_index = db_index
     
     @property
@@ -868,11 +993,24 @@ class Text(Field):
         if value is None:
             return None
         s = str(value)
+        if self.strip_whitespace:
+            s = s.strip()
+        if self.min_length is not None and len(s) < self.min_length:
+            raise ValueError(
+                f"Text value is too short (minimum {self.min_length} characters, got {len(s)})"
+            )
         if self.max_length is not None and len(s) > self.max_length:
             raise ValueError(
                 f"Text value exceeds maximum length of {self.max_length}"
             )
         return s
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with text-specific options."""
+        base = super().get_ai_metadata()
+        if self.min_length is not None:
+            base["min_length"] = self.min_length
+        return base
 
 
 class FileField(Field):
@@ -1290,6 +1428,8 @@ class Decimal(Field):
     Args:
         max_digits: Total number of digits (precision)
         decimal_places: Number of decimal places (scale)
+        min_value: Minimum allowed value (default: None)
+        max_value: Maximum allowed value (default: None)
         nullable: Whether the field can be NULL
         unique: Whether the field should be unique
         default: Default value
@@ -1307,6 +1447,8 @@ class Decimal(Field):
         max_digits: int = 10,
         decimal_places: int = 2,
         *,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
         nullable: bool = False,
         unique: bool = False,
         default: Any = None,
@@ -1324,6 +1466,8 @@ class Decimal(Field):
         )
         self.max_digits = max_digits
         self.decimal_places = decimal_places
+        self.min_value = PyDecimal(str(min_value)) if min_value is not None else None
+        self.max_value = PyDecimal(str(max_value)) if max_value is not None else None
     
     @property
     def sql_type(self) -> str:
@@ -1360,6 +1504,16 @@ class Decimal(Field):
                 f"({self.max_digits - self.decimal_places})"
             )
         
+        # Range validation
+        if self.min_value is not None and dec < self.min_value:
+            raise ValueError(
+                f"Value {value} is below the minimum of {self.min_value}"
+            )
+        if self.max_value is not None and dec > self.max_value:
+            raise ValueError(
+                f"Value {value} exceeds the maximum of {self.max_value}"
+            )
+        
         return dec
     
     def to_python(self, value: Any) -> Optional[PyDecimal]:
@@ -1385,6 +1539,10 @@ class Decimal(Field):
         base = super().get_ai_metadata()
         base["max_digits"] = self.max_digits
         base["decimal_places"] = self.decimal_places
+        if self.min_value is not None:
+            base["min_value"] = float(self.min_value)
+        if self.max_value is not None:
+            base["max_value"] = float(self.max_value)
         return base
 
 
@@ -1550,6 +1708,8 @@ class Float(Field):
     (e.g., monetary values), use Decimal instead.
     
     Args:
+        min_value: Minimum allowed value (default: None)
+        max_value: Maximum allowed value (default: None)
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -1567,6 +1727,8 @@ class Float(Field):
     def __init__(
         self,
         *,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -1583,6 +1745,8 @@ class Float(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.min_value = min_value
+        self.max_value = max_value
         self.db_index = db_index
     
     @property
@@ -1597,7 +1761,25 @@ class Float(Field):
     def to_db(self, value: Any) -> Optional[float]:
         if value is None:
             return None
-        return float(value)
+        v = float(value)
+        if self.min_value is not None and v < self.min_value:
+            raise ValueError(
+                f"Value {v} is below the minimum of {self.min_value}"
+            )
+        if self.max_value is not None and v > self.max_value:
+            raise ValueError(
+                f"Value {v} exceeds the maximum of {self.max_value}"
+            )
+        return v
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with float-specific options."""
+        base = super().get_ai_metadata()
+        if self.min_value is not None:
+            base["min_value"] = self.min_value
+        if self.max_value is not None:
+            base["max_value"] = self.max_value
+        return base
 
 
 class Date(Field):
@@ -1687,6 +1869,10 @@ class Slug(Field):
     Args:
         max_length: Maximum character length (default 50)
         allow_unicode: Allow Unicode letters/numbers in addition to ASCII
+        auto_from: Auto-generate slug from this field when the slug is
+            empty or None.  Only runs on creation (when the slug has no
+            existing value), so changing the source field later will not
+            overwrite a previously set slug.
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -1697,7 +1883,8 @@ class Slug(Field):
 
     Usage:
         class Article(Model):
-            slug = fields.SlugField(unique=True)
+            title = fields.String(max_length=200)
+            slug = fields.Slug(max_length=200, auto_from="title", unique=True)
     """
 
     def __init__(
@@ -1705,6 +1892,7 @@ class Slug(Field):
         *,
         max_length: int = 50,
         allow_unicode: bool = False,
+        auto_from: Optional[str] = None,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -1723,6 +1911,7 @@ class Slug(Field):
         )
         self.max_length = max_length
         self.allow_unicode = allow_unicode
+        self.auto_from = auto_from
         self.db_index = db_index
         self._slug_re = re.compile(r"^[-\w]+$", re.UNICODE if allow_unicode else re.ASCII)
 
@@ -1747,6 +1936,21 @@ class Slug(Field):
             raise ValueError(f"Slug exceeds max_length={self.max_length}: {v!r}")
         return v
 
+    async def async_prepare(self, value: Any, *, instance: Optional["Model"] = None) -> Any:
+        """
+        Auto-generate a slug from *auto_from* when the current value is
+        empty or None and the source field has a value.
+        """
+        if self.auto_from and not value and instance is not None:
+            source = getattr(instance, self.auto_from, None)
+            if source:
+                slug = _slugify(str(source), allow_unicode=self.allow_unicode)
+                # Truncate to max_length
+                if len(slug) > self.max_length:
+                    slug = slug[:self.max_length].rstrip('-')
+                return slug
+        return value
+
 
 SlugField = Slug
 
@@ -1759,6 +1963,7 @@ class SmallInteger(Field):
     and you want to save storage space.
 
     Args:
+        choices: Restrict values to this set
         nullable: Whether the field can be NULL
         default: Default value
         unique: Whether the field should be unique
@@ -1778,6 +1983,7 @@ class SmallInteger(Field):
     def __init__(
         self,
         *,
+        choices: Optional[list] = None,
         nullable: bool = False,
         default: Any = None,
         unique: bool = False,
@@ -1794,6 +2000,8 @@ class SmallInteger(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        self.choices = choices
+        self._choices_valid = _normalize_choices(choices)
         self.db_index = db_index
 
     @property
@@ -1814,7 +2022,19 @@ class SmallInteger(Field):
                 f"Value {v} is out of SMALLINT range "
                 f"({self._SMALLINT_MIN}..{self._SMALLINT_MAX})."
             )
+        if self._choices_valid is not None and v not in self._choices_valid:
+            raise ValueError(
+                f"Value {v!r} is not a valid choice. "
+                f"Valid choices are: {sorted(self._choices_valid)}"
+            )
         return v
+
+    def get_ai_metadata(self) -> dict:
+        """Get AI metadata with choices info."""
+        base = super().get_ai_metadata()
+        if self.choices is not None:
+            base["choices"] = self.choices
+        return base
 
 
 SmallIntegerField = SmallInteger

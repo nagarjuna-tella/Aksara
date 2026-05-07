@@ -54,13 +54,32 @@ Variable-length text with a maximum length.
 name = fields.String(max_length=100)
 code = fields.String(max_length=10, unique=True)
 nickname = fields.String(max_length=50, nullable=True)
+
+# With validation parameters
+severity = fields.String(
+    max_length=20,
+    choices=["low", "medium", "high", "critical"],
+    default="medium",
+    ai_description="Impact level for triage priority",
+)
+password = fields.String(max_length=128, min_length=8)
+phone = fields.String(max_length=20, regex=r"^\+?[\d\s\-]{7,15}$")
+clean_name = fields.String(max_length=100, strip_whitespace=True)
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `max_length` | `int` | `255` | Maximum character length |
+| `min_length` | `int` | `None` | Minimum character length (validated on save) |
+| `choices` | `list` | `None` | Restrict to these values — flat list or `[(value, label)]` pairs |
+| `regex` | `str` | `None` | Regex pattern the value must fully match |
+| `strip_whitespace` | `bool` | `False` | Strip leading/trailing whitespace on save |
 
 PostgreSQL type: `VARCHAR(max_length)`
+
+!!! info "Validation Order"
+    When multiple validation parameters are set, they run in this order:
+    `strip_whitespace` → `min_length` → `choices` → `regex`
 
 ### Text
 
@@ -70,7 +89,14 @@ Unlimited length text for large content.
 content = fields.Text()
 description = fields.Text(nullable=True)
 notes = fields.Text(default="")
+bio = fields.Text(min_length=20, strip_whitespace=True)
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `max_length` | `int` | `None` | Optional max length (validated, DB stays TEXT) |
+| `min_length` | `int` | `None` | Minimum character length (validated on save) |
+| `strip_whitespace` | `bool` | `False` | Strip leading/trailing whitespace on save |
 
 PostgreSQL type: `TEXT`
 
@@ -173,7 +199,17 @@ Standard 32-bit integer.
 age = fields.Integer()
 quantity = fields.Integer(default=0)
 position = fields.Integer(nullable=True)
+
+# With validation parameters
+rating = fields.Integer(min_value=1, max_value=5)
+priority = fields.Integer(choices=[1, 2, 3, 4, 5], default=3)
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `min_value` | `int` | `None` | Minimum allowed value |
+| `max_value` | `int` | `None` | Maximum allowed value |
+| `choices` | `list` | `None` | Restrict to these values |
 
 PostgreSQL type: `INTEGER`
 
@@ -200,8 +236,12 @@ Validation: Values outside the 64-bit signed integer range are rejected at the P
 
 ```python
 priority = fields.SmallInteger(default=0)
-day_of_week = fields.SmallInteger()
+day_of_week = fields.SmallInteger(choices=[0, 1, 2, 3, 4, 5, 6])
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `choices` | `list` | `None` | Restrict to these values |
 
 PostgreSQL type: `SMALLINT`
 
@@ -235,6 +275,11 @@ longitude = fields.Float()
 
 PostgreSQL type: `DOUBLE PRECISION`
 
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `min_value` | `float` | `None` | Minimum allowed value |
+| `max_value` | `float` | `None` | Maximum allowed value |
+
 !!! warning "Precision"
     Float is not suitable for monetary values due to precision issues. Use `Decimal` instead.
 
@@ -245,12 +290,15 @@ Exact decimal for financial data.
 ```python
 price = fields.Decimal(precision=10, scale=2)
 tax_rate = fields.Decimal(precision=5, scale=4)
+percentage = fields.Decimal(precision=5, scale=2, min_value=0, max_value=100)
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `precision` | `int` | `10` | Total digits |
 | `scale` | `int` | `2` | Digits after decimal |
+| `min_value` | `float` | `None` | Minimum allowed value |
+| `max_value` | `float` | `None` | Maximum allowed value |
 
 PostgreSQL type: `NUMERIC(precision, scale)`
 
@@ -500,16 +548,20 @@ await article.save()
 
 ### Slug
 
-URL-safe slugs with pattern validation.
+URL-safe slugs with pattern validation and optional auto-generation.
 
 ```python
 slug = fields.Slug(max_length=100, unique=True)
+
+# Auto-generate from another field
+slug = fields.Slug(max_length=200, auto_from="title", unique=True)
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `max_length` | `int` | `50` | Maximum character length |
 | `allow_unicode` | `bool` | `False` | Allow non-ASCII characters (e.g., `héllo-wörld`) |
+| `auto_from` | `str` | `None` | Auto-generate slug from this field when slug is empty |
 | `db_index` | `bool` | `False` | Create database index |
 
 PostgreSQL type: `VARCHAR(max_length)`
@@ -519,10 +571,11 @@ Validation: Only letters, numbers, hyphens, and underscores are accepted. When `
 ```python
 class Article(Model):
     title = fields.String(max_length=200)
-    slug = fields.Slug(max_length=200, unique=True)
+    slug = fields.Slug(max_length=200, auto_from="title", unique=True)
 
-# Valid: "my-article-2025", "hello_world"
-# Invalid: "Hello World!", "my article"
+# When slug is empty/None on save, it's auto-generated from title:
+# "Hello World Article" → "hello-world-article"
+# Existing slug values are preserved (no overwrite on update)
 ```
 
 ### IPAddress / GenericIPAddress
