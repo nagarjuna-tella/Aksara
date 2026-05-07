@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-6132%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-6156%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
   <img src="https://img.shields.io/badge/version-0.5.45-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
@@ -89,7 +89,7 @@ aksara migrate
 aksara dev
 ```
 
-Power users can control CLI output globally by placing the flag before the subcommand: `aksara --quiet dev` suppresses non-error Aksara UI output, `aksara --plain dev` disables Rich rendering and animation, `aksara --no-color dev` removes ANSI color, and `aksara --force-color dev` forces color in supported terminals.
+Need to control CLI output? Place the flag before the subcommand and it applies to every Aksara command: `aksara --quiet dev` silences non-error output, `aksara --plain dev` disables Rich rendering and animation, `aksara --no-color dev` strips ANSI color, and `aksara --force-color dev` forces color in supported terminals. CI-friendly by default — `CI=true` and `NO_COLOR` are auto-detected.
 
 Now open three things:
 
@@ -103,11 +103,7 @@ That's what makes Aksara different from `pip install fastapi && pip install sqla
 
 ---
 
-Aksara is built on FastAPI.
-
-You get FastAPI's performance and full ecosystem.
-
-I built everything you'd otherwise assemble yourself.
+Aksara is built on FastAPI, so you get its performance and full ecosystem out of the box. The rest — ORM, migrations, admin, Studio, MCP export, AI Console, doctor — is what you'd otherwise spend a sprint assembling yourself. I did that part for you.
 
 ---
 
@@ -189,7 +185,7 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 
 Aksara is **pre-1.0** and actively evolving. Current version: **0.5.45**.
 
-Latest validation: **6132 passed, 3 skipped**.
+Latest validation: **6156 passed, 3 skipped**.
 
 **Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB/vector ORM support.
 
@@ -215,13 +211,35 @@ See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/
   <a href="https://github.com/nagarjuna-tella/Aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
 </p>
 
-Aksara is designed and built by [Nagarjuna Tella](https://github.com/nagarjuna-tella), with a focus on developer experience for AI-native Python backends.
-
 ---
 
 ## License
 
 [MIT License](https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE)
+
+---
+
+## A note from the author
+
+You didn't start this project because you wanted to spend a week wiring up an ORM, migrations, admin, AI adapters, and debugging surfaces. You started because you have something you want to build — and every hour spent on infrastructure is an hour further from that.
+
+Aksara is my attempt to get you past that part faster. Not by hiding the complexity, but by making the right defaults obvious so you can spend your attention on what actually matters to you.
+
+That said — a framework is a long chain of judgment calls. What should be automatic? What should stay explicit? When does "helpful" become too much magic? I've made those calls with care, but I can only see what I've seen. The gaps I don't know about yet are the ones that will cost you an hour when you hit them.
+
+That's why your experience matters here. The rough edge you found. The docs that didn't explain the thing you needed. The feature that clicked immediately. The place where Aksara got out of your way and let you move. That signal is what makes this better.
+
+So if you decide to build with it, I want to hear what you ran into:
+
+- **Open an issue** on [GitHub](https://github.com/nagarjuna-tella/Aksara/issues), even a rough one. "This didn't work and I'm not sure why" is more useful than a polished bug report.
+- **Show me what you're building.** A link, a screenshot, a one-line description — I read every one.
+- **Tell me what tipped the scale**, if you started here and moved to something else. That kind of honesty is how good frameworks get made.
+
+Aksara is pre-1.0 on purpose. I don't want 1.0 to be a monument to my assumptions — I want it to reflect the shape of what you actually tried to ship with it. If you're one of the people who tries, you're not just a user. You're a co-author of where this lands.
+
+Thanks for taking the time to look.
+
+— Nagarjuna
 
 ---
 
