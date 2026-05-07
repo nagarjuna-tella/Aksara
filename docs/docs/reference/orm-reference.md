@@ -40,7 +40,11 @@ class Article(Model):
 | Field | Description | Common Options |
 |-------|-------------|----------------|
 | `fields.Integer` | Whole numbers | `default`, `null` |
+| `fields.SmallInteger` | Small whole numbers (-32768..32767) | `default`, `null` |
 | `fields.BigInteger` | Large whole numbers | `default`, `null` |
+| `fields.PositiveInteger` | Non-negative integers | `default`, `null` |
+| `fields.PositiveSmallInteger` | Non-negative small integers (0..32767) | `default`, `null` |
+| `fields.PositiveBigInteger` | Non-negative large integers | `default`, `null` |
 | `fields.Float` | Decimal numbers | `default`, `null` |
 | `fields.Decimal` | Precise decimals (money) | `max_digits`, `decimal_places` |
 | `fields.Boolean` | True/False | `default`, `null` |
@@ -126,7 +130,9 @@ class Article(Model):
 | `fields.Array` | List of values | `base_field` |
 | `fields.File` | File uploads | `upload_to` |
 | `fields.Image` | Image uploads | `upload_to` |
-| `fields.IP` | IP addresses | `default`, `null` |
+| `fields.IP` | IP addresses | `protocol`, `null` |
+| `fields.Binary` | Raw binary data (BYTEA) | `null` |
+| `fields.FilePath` | Filesystem paths | `path`, `match`, `recursive` |
 
 ```python
 class Configuration(Model):

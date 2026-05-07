@@ -192,6 +192,37 @@ PostgreSQL type: `BIGINT`
 
 Range: -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 
+Validation: Values outside the 64-bit signed integer range are rejected at the Python level before reaching the database.
+
+### SmallInteger
+
+16-bit integer for compact storage.
+
+```python
+priority = fields.SmallInteger(default=0)
+day_of_week = fields.SmallInteger()
+```
+
+PostgreSQL type: `SMALLINT`
+
+Range: -32,768 to 32,767
+
+### Positive Integer Variants
+
+Integer fields that reject negative values at the Python level.
+
+```python
+view_count = fields.PositiveInteger(default=0)      # INTEGER, >= 0
+retry_count = fields.PositiveSmallInteger(default=0) # SMALLINT, 0..32767
+big_counter = fields.PositiveBigInteger(default=0)   # BIGINT, >= 0
+```
+
+| Field | PostgreSQL Type | Range |
+|-------|----------------|-------|
+| `PositiveInteger` | `INTEGER` | 0 to 2,147,483,647 |
+| `PositiveSmallInteger` | `SMALLINT` | 0 to 32,767 |
+| `PositiveBigInteger` | `BIGINT` | 0 to 9,223,372,036,854,775,807 |
+
 ### Float
 
 Floating-point number.
@@ -274,6 +305,52 @@ expiry_date = fields.Date(nullable=True)
 ```
 
 PostgreSQL type: `DATE`
+
+### Time
+
+Time of day without a date component.
+
+```python
+start_time = fields.Time()
+reminder_at = fields.Time(nullable=True)
+```
+
+PostgreSQL type: `TIME`
+
+Accepts `datetime.time` objects, `datetime.datetime` (extracts the time part), and ISO 8601 time strings including fractional seconds:
+
+```python
+from datetime import time
+
+class Schedule(Model):
+    alarm = fields.Time()
+
+schedule = await Schedule.objects.create(alarm=time(7, 30, 0))
+# Also accepts: alarm="07:30:00" or alarm="07:30:00.123456"
+```
+
+### Duration
+
+Time spans stored as PostgreSQL intervals.
+
+```python
+cooking_time = fields.Duration()
+timeout = fields.Duration(nullable=True)
+```
+
+PostgreSQL type: `INTERVAL`
+
+Accepts `datetime.timedelta` objects, or numeric values interpreted as seconds:
+
+```python
+from datetime import timedelta
+
+class Recipe(Model):
+    prep_time = fields.Duration()
+
+recipe = await Recipe.objects.create(prep_time=timedelta(minutes=30))
+# Also accepts: prep_time=1800 (seconds)
+```
 
 ---
 
@@ -420,6 +497,94 @@ await article.save()
     - Use `Array` for homogeneous lists (all same type) that need indexing
     - Use `JSON` for heterogeneous data or nested structures
     - PostgreSQL array operators work with `Array` fields
+
+### Slug
+
+URL-safe slugs with pattern validation.
+
+```python
+slug = fields.Slug(max_length=100, unique=True)
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `max_length` | `int` | `50` | Maximum character length |
+| `allow_unicode` | `bool` | `False` | Allow non-ASCII characters (e.g., `héllo-wörld`) |
+| `db_index` | `bool` | `False` | Create database index |
+
+PostgreSQL type: `VARCHAR(max_length)`
+
+Validation: Only letters, numbers, hyphens, and underscores are accepted. When `allow_unicode=False` (the default), only ASCII characters are valid.
+
+```python
+class Article(Model):
+    title = fields.String(max_length=200)
+    slug = fields.Slug(max_length=200, unique=True)
+
+# Valid: "my-article-2025", "hello_world"
+# Invalid: "Hello World!", "my article"
+```
+
+### IPAddress / GenericIPAddress
+
+IP addresses with protocol validation.
+
+```python
+server_ip = fields.IPAddress()
+client_ip = fields.IPAddress(protocol="ipv4")
+gateway = fields.IPAddress(protocol="ipv6")
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `protocol` | `str` | `"both"` | Restrict to `"ipv4"`, `"ipv6"`, or `"both"` |
+| `unpack_ipv4` | `bool` | `False` | Convert IPv4-mapped IPv6 (e.g., `::ffff:192.0.2.1`) to plain IPv4 |
+
+PostgreSQL type: `INET`
+
+`GenericIPAddressField` is an alias for `IPAddressField`.
+
+### Binary
+
+Raw binary data.
+
+```python
+file_hash = fields.Binary()
+encryption_key = fields.Binary(nullable=True)
+```
+
+PostgreSQL type: `BYTEA`
+
+Accepts `bytes`, `bytearray`, `memoryview`, and strings (encoded as UTF-8).
+
+!!! note "AI Metadata Defaults"
+    `BinaryField` defaults to `ai_sensitive=True` and `ai_agent_writable=False` to prevent AI agents from reading or modifying raw binary data.
+
+### FilePath
+
+File system paths with dynamic choice generation.
+
+```python
+template = fields.FilePath(
+    path="/app/templates",
+    match=r".*\.html$",
+    recursive=True,
+    max_length=200,
+)
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `str` | `""` | Root directory to scan |
+| `match` | `str` | `None` | Regex pattern to filter file names |
+| `recursive` | `bool` | `False` | Scan subdirectories |
+| `allow_files` | `bool` | `True` | Include files in choices |
+| `allow_folders` | `bool` | `False` | Include directories in choices |
+| `max_length` | `int` | `100` | Maximum path length |
+
+PostgreSQL type: `VARCHAR(max_length)`
+
+The `choices()` method returns a list of `(path, display_name)` tuples based on the configured directory scan.
 
 ---
 
@@ -625,7 +790,7 @@ class Product(Model):
         max_length=200,
         ai_description="Product display name",
     )
-    slug = fields.String(
+    slug = fields.Slug(
         max_length=200,
         unique=True,
         ai_description="URL-friendly identifier",

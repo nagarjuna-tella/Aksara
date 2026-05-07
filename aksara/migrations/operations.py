@@ -731,6 +731,199 @@ class ForeignKeyField(FieldOp):
         return f"ForeignKeyField(to_table='{self.to_table}')"
 
 
+
+# =============================================================================
+# Extended Field Operations — Django parity
+# =============================================================================
+
+
+class SmallIntegerField(FieldOp):
+    """Small integer field type for migrations."""
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[int] = None,
+    ):
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = ["SMALLINT"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            parts.append(f"DEFAULT {self.default}")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return "SmallIntegerField()"
+
+
+class SlugField(FieldOp):
+    """Slug field type for migrations (VARCHAR)."""
+
+    def __init__(
+        self,
+        max_length: int = 50,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.max_length = max_length
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = [f"VARCHAR({self.max_length})"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return f"SlugField(max_length={self.max_length})"
+
+
+class TimeField(FieldOp):
+    """Time field type for migrations."""
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+    ):
+        self.nullable = nullable
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = ["TIME"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.default is not None:
+            parts.append(f"DEFAULT '{self.default}'")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return "TimeField()"
+
+
+class DurationField(FieldOp):
+    """Duration/Interval field type for migrations."""
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+    ):
+        self.nullable = nullable
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = ["INTERVAL"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.default is not None:
+            parts.append(f"DEFAULT '{self.default}'")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return "DurationField()"
+
+
+class IPAddressField(FieldOp):
+    """IP address field type for migrations (INET)."""
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = ["INET"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return "IPAddressField()"
+
+
+class BinaryField(FieldOp):
+    """Binary/BYTEA field type for migrations."""
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+    ):
+        self.nullable = nullable
+
+    def to_sql(self) -> str:
+        parts = ["BYTEA"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return "BinaryField()"
+
+
+class FilePathField(FieldOp):
+    """File path field type for migrations (VARCHAR)."""
+
+    def __init__(
+        self,
+        max_length: int = 100,
+        *,
+        nullable: bool = False,
+        unique: bool = False,
+        default: Optional[str] = None,
+    ):
+        self.max_length = max_length
+        self.nullable = nullable
+        self.unique = unique
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = [f"VARCHAR({self.max_length})"]
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique:
+            parts.append("UNIQUE")
+        if self.default is not None:
+            escaped = str(self.default).replace("'", "''")
+            parts.append(f"DEFAULT '{escaped}'")
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return f"FilePathField(max_length={self.max_length})"
+
+
 # =============================================================================
 # Index Operation
 # =============================================================================
@@ -1662,6 +1855,7 @@ __all__ = [
     "TextField",
     "IntegerField",
     "BigIntegerField",
+    "SmallIntegerField",
     "BooleanField",
     "DateTimeField",
     "DateField",
@@ -1678,6 +1872,13 @@ __all__ = [
     "EnumField",
     "OneToOneField",
     "ManyToManyField",
+    # Extended field types (Django parity)
+    "SlugField",
+    "TimeField",
+    "DurationField",
+    "IPAddressField",
+    "BinaryField",
+    "FilePathField",
     # Index
     "IndexOp",
     # Base operation

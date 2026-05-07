@@ -8,6 +8,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.5.45] — ORM Expressions, Native Multi-Tenancy, SDK Generation, and Real-Time Streams
 
 ### Added
+
+- **11 new ORM field types** (`aksara/fields.py`) for Django parity:
+  - `SlugField` — URL-safe slugs with ASCII/Unicode validation and `max_length` enforcement
+  - `SmallIntegerField` — SMALLINT with range validation (`-32768..32767`)
+  - `BigIntegerField` — BIGINT with range validation (`-2^63..2^63-1`)
+  - `PositiveIntegerField` — INTEGER restricted to non-negative values
+  - `PositiveSmallIntegerField` — SMALLINT restricted to `0..32767`
+  - `PositiveBigIntegerField` — BIGINT restricted to non-negative values
+  - `TimeField` — TIME (time of day without date)
+  - `DurationField` — INTERVAL (stores `timedelta` via PostgreSQL INTERVAL)
+  - `IPAddressField` / `GenericIPAddressField` — INET with IPv4/IPv6 protocol enforcement and `unpack_ipv4`
+  - `BinaryField` — BYTEA for raw binary data (defaults to `ai_sensitive=True`)
+  - `FilePathField` — VARCHAR with filesystem-backed `choices()` scanning
+
+- **7 new migration `FieldOp` subclasses** (`aksara/migrations/operations.py`):
+  - `SmallIntegerField`, `SlugField`, `TimeField`, `DurationField`, `IPAddressField`, `BinaryField`, `FilePathField`
+  - All produce correct PostgreSQL DDL (`SMALLINT`, `TIME`, `INTERVAL`, `INET`, `BYTEA`, `VARCHAR(N)`)
+  - Exported via `__all__`
+
+- **Autodetector integration** (`aksara/migrations/autodetector.py`):
+  - `_model_field_to_state()` and `_model_field_to_op()` now map all 11 new runtime field types to their correct migration operations
+  - `PositiveInteger` → `IntegerField`, `PositiveSmallInteger` → `SmallIntegerField`, `PositiveBigInteger` → `BigIntegerField` at migration level
+
+### Fixed
+
+- **`BigInteger.to_db()`**: Added BIGINT range validation — previously accepted arbitrary Python ints that would overflow PostgreSQL
+- **`Time.to_python()` / `to_db()`**: Replaced brittle `strptime("%H:%M:%S")` with `py_time.fromisoformat()` — now handles microseconds (`14:30:00.123456`) and `datetime` → `time` conversion
+- **`FilePath.choices()` recursive mode**: Fixed bug where `os.walk` only yielded files, ignoring directories even when `allow_folders=True`
+- **`Slug` regex**: Changed from `re.compile(r"^[-\w]+$", 0)` to `re.compile(..., re.ASCII)` when `allow_unicode=False` — Python 3's `\w` matches unicode by default, so non-ASCII characters were incorrectly accepted
+
+### Improved
+
+- **`IPAddress.to_python()`**: Now normalizes through `ipaddress.ip_address()` for consistent round-tripping instead of bare `str()`
+- **Inspector type map** (`aksara/inspectors/models.py`): Already had entries for `SlugField`, `SmallIntegerField`, `BigIntegerField`, and `TimeField` — no changes needed
+
+### Tests
+
+- Added `tests/test_fields_extended.py` with **117 new tests** covering:
+  - All 11 field types: `sql_type`, `to_python`, `to_db`, validation, edge cases, `None` handling
+  - `FilePath.choices()` with temp directories: recursive/non-recursive, match filters, `allow_folders`
+  - Migration FieldOp SQL generation for all 7 new operation types
+  - Autodetector mapping verification: all 11 runtime fields → correct FieldOp types
+- Total test suite: **6280 passed** (up from 6156)
+
+### Added
+
 - **ORM expression primitives** (`aksara/db/expressions.py`)
   - `Q()` objects for nested boolean logic with `&`, `|`, and `~`
   - `F()` expressions for database-side field references and arithmetic
@@ -67,6 +113,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added `fields.Vector()` plus `CosineDistance()` and `EuclideanDistance()` for pgvector-backed embeddings
 
 ### Changed
+
 - **Database connection reuse** (`aksara/db/engine.py`)
   - `Database.acquire()` now reuses the active session connection when one exists
 
@@ -77,6 +124,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Expressions are rejected in insert-like operations (`Model._insert()`, `bulk_create()`, `bulk_update()`, `upsert()`) to prevent invalid SQL generation in create paths
 
 ### Documentation
+
 - Added ORM documentation for query expressions, relation-aware aggregates, and `transaction.atomic`
 - Updated API and CLI docs for stream endpoints, multi-tenant RLS behavior, and TypeScript SDK generation
 - Refreshed CLI startup examples to match the current `aksara dev` hero banner and `aksara dbsetup` output
@@ -86,6 +134,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Refreshed the README and release notes to reflect the full v0.5.45 feature set
 
 ### Tests
+
 - Added focused coverage for:
   - recursive `Q()` compilation
   - `F()` filters and updates
@@ -107,6 +156,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Category 1: API & ViewSet DX
 
 #### Added
+
 - **DjangoFilterBackend** (`aksara/api/filters.py`): Automatic query parameter filtering with Django ORM lookup syntax support
   - Supports 9 lookup types: `exact`, `gt`, `gte`, `lt`, `lte`, `in`, `isnull`, `icontains`, `contains`
   - Example: `?price__gte=50&category__in=tech,news&in_stock=true`
@@ -126,6 +176,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Category 2: Database & ORM DX
 
 #### Added
+
 - **Bulk Operations** (`aksara/manager.py`): High-performance batch insert/update
   - `bulk_create(objs, batch_size=1000, ignore_conflicts=False)`: Efficiently insert thousands of records
     - Automatically handles batching for very large datasets
@@ -163,6 +214,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     - Optional model name filtering
 
 #### Enhanced
+
 - **Manager.filter()** now supports soft delete models automatically
   - Transparently excludes `deleted_at IS NOT NULL` for SoftDeleteModel subclasses
   - Can be overridden with `with_deleted()` helper
@@ -170,6 +222,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Category 3: Integration & Documentation
 
 #### Added
+
 - Comprehensive test suite with 50+ test cases covering:
   - Filter backend parameter parsing and coercion
   - Search and ordering functionality
@@ -179,7 +232,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Soft delete lifecycle and queries
   - Fixture export/import with various formats
   - Database dumping and restoration
-  
 - Full documentation in `docs/dx-features-guide.md`
   - Step-by-step usage examples for all features
   - Enterprise blog application example
@@ -187,14 +239,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Performance tips and best practices
 
 ### Breaking Changes
+
 - None. All features are backward compatible and additive.
 
 ### Migration Path
+
 - Existing code continues to work unchanged
 - DX features are opt-in (use `filter_backends`, `SoftDeleteModel`, etc. when needed)
 - Signals were already firing; no changes required for existing signal listeners
 
 ---
+
 ## [0.5.42] — Studio UX Redesign & Accessibility
 
 ### Studio

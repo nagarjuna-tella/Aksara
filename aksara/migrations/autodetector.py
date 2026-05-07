@@ -257,6 +257,9 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         Vector,
         FileField as RuntimeFileField,
         ImageField as RuntimeImageField,
+        Slug, SmallInteger, BigInteger,
+        PositiveInteger, PositiveSmallInteger, PositiveBigInteger,
+        Time, Duration, IPAddress, Binary, FilePath,
     )
 
     # Map runtime field classes to migration operation names
@@ -280,6 +283,18 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         OneToOne: "OneToOneField",
         ForeignKey: "ForeignKeyField",
         Array: "TextField",  # arrays are stored as text in migrations
+        # Extended fields (Django parity)
+        Slug: "SlugField",
+        SmallInteger: "SmallIntegerField",
+        BigInteger: "BigIntegerField",
+        PositiveInteger: "IntegerField",
+        PositiveSmallInteger: "SmallIntegerField",
+        PositiveBigInteger: "BigIntegerField",
+        Time: "TimeField",
+        Duration: "DurationField",
+        IPAddress: "IPAddressField",
+        Binary: "BinaryField",
+        FilePath: "FilePathField",
     }
 
     # OneToOne must be checked before ForeignKey (it inherits from FK)
@@ -501,6 +516,9 @@ def _model_field_to_op(field_name: str, field):
         Vector,
         FileField as RuntimeFileField,
         ImageField as RuntimeImageField,
+        Slug, SmallInteger, BigInteger,
+        PositiveInteger, PositiveSmallInteger, PositiveBigInteger,
+        Time, Duration, IPAddress, Binary, FilePath,
     )
     from aksara.migrations import operations as op
 
@@ -572,6 +590,98 @@ def _model_field_to_op(field_name: str, field):
             kwargs['unique'] = True
         return op.URLField(**kwargs)
 
+    elif isinstance(field, Slug):
+        kwargs = {'max_length': field.max_length}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.SlugField(**kwargs)
+
+    elif isinstance(field, SmallInteger):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.SmallIntegerField(**kwargs)
+
+    elif isinstance(field, PositiveSmallInteger):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.SmallIntegerField(**kwargs)
+
+    elif isinstance(field, PositiveInteger):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.IntegerField(**kwargs)
+
+    elif isinstance(field, PositiveBigInteger):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.BigIntegerField(**kwargs)
+
+    elif isinstance(field, Time):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        return op.TimeField(**kwargs)
+
+    elif isinstance(field, Duration):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        return op.DurationField(**kwargs)
+
+    elif isinstance(field, IPAddress):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        return op.IPAddressField(**kwargs)
+
+    elif isinstance(field, Binary):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        return op.BinaryField(**kwargs)
+
+    elif isinstance(field, FilePath):
+        kwargs = {'max_length': field.max_length}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.FilePathField(**kwargs)
+
     elif isinstance(field, String):
         kwargs = {'max_length': field.max_length}
         if field.nullable:
@@ -588,6 +698,17 @@ def _model_field_to_op(field_name: str, field):
         if field.nullable:
             kwargs['nullable'] = True
         return op.TextField(**kwargs)
+
+    elif isinstance(field, BigInteger):
+        kwargs = {}
+        if field.nullable:
+            kwargs['nullable'] = True
+        if field.unique:
+            kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.BigIntegerField(**kwargs)
 
     elif isinstance(field, Integer):
         kwargs = {}

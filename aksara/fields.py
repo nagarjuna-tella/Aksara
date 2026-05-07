@@ -15,10 +15,11 @@ import io
 import json
 import math
 import os
+import ipaddress
 import re
 import uuid as uuid_lib
 from abc import ABC, abstractmethod
-from datetime import date, datetime
+from datetime import date, datetime, time as py_time, timedelta
 from decimal import Decimal as PyDecimal, InvalidOperation
 from enum import Enum as PyEnum
 from typing import Any, Optional, Type, Union, Callable, TYPE_CHECKING, List
@@ -1669,6 +1670,839 @@ class Date(Field):
 
 FloatField = Float
 DateField = Date
+
+
+# =============================================================================
+# Extended Fields — Django parity
+# =============================================================================
+
+
+class Slug(Field):
+    """
+    Slug field mapping to VARCHAR for URL-friendly short labels.
+
+    Validates that the value contains only letters, numbers, hyphens,
+    and underscores (the same character set Django's SlugField enforces).
+
+    Args:
+        max_length: Maximum character length (default 50)
+        allow_unicode: Allow Unicode letters/numbers in addition to ASCII
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Article(Model):
+            slug = fields.SlugField(unique=True)
+    """
+
+    def __init__(
+        self,
+        *,
+        max_length: int = 50,
+        allow_unicode: bool = False,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.max_length = max_length
+        self.allow_unicode = allow_unicode
+        self.db_index = db_index
+        self._slug_re = re.compile(r"^[-\w]+$", re.UNICODE if allow_unicode else re.ASCII)
+
+    @property
+    def sql_type(self) -> str:
+        return f"VARCHAR({self.max_length})"
+
+    def to_python(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        return str(value)
+
+    def to_db(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        v = str(value)
+        if not self._slug_re.match(v):
+            raise ValueError(
+                f"Invalid slug {v!r}: only letters, numbers, hyphens, and underscores allowed."
+            )
+        if len(v) > self.max_length:
+            raise ValueError(f"Slug exceeds max_length={self.max_length}: {v!r}")
+        return v
+
+
+SlugField = Slug
+
+
+class SmallInteger(Field):
+    """
+    Small integer field mapping to SMALLINT (-32 768 to 32 767).
+
+    Use when the integer range of a regular INTEGER is more than needed
+    and you want to save storage space.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Product(Model):
+            rating = fields.SmallIntegerField()
+    """
+
+    _SMALLINT_MIN = -32_768
+    _SMALLINT_MAX = 32_767
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "SMALLINT"
+
+    def to_python(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        return int(value)
+
+    def to_db(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        v = int(value)
+        if not (self._SMALLINT_MIN <= v <= self._SMALLINT_MAX):
+            raise ValueError(
+                f"Value {v} is out of SMALLINT range "
+                f"({self._SMALLINT_MIN}..{self._SMALLINT_MAX})."
+            )
+        return v
+
+
+SmallIntegerField = SmallInteger
+
+
+class BigInteger(Field):
+    """
+    Big integer field mapping to BIGINT (-2^63 to 2^63 - 1).
+
+    Use for very large integers such as row counts or external IDs.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Counter(Model):
+            total_views = fields.BigIntegerField(default=0)
+    """
+
+    _BIGINT_MIN = -(2**63)
+    _BIGINT_MAX = 2**63 - 1
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "BIGINT"
+
+    def to_python(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        return int(value)
+
+    def to_db(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        v = int(value)
+        if not (self._BIGINT_MIN <= v <= self._BIGINT_MAX):
+            raise ValueError(
+                f"Value {v} is out of BIGINT range "
+                f"({self._BIGINT_MIN}..{self._BIGINT_MAX})."
+            )
+        return v
+
+
+BigIntegerField = BigInteger
+
+
+class PositiveInteger(Field):
+    """
+    Positive integer field mapping to INTEGER with a >= 0 constraint.
+
+    Python-level validation raises ValueError for negative values.
+    For the CHECK constraint in the database, use a migration that
+    adds ``CHECK (column >= 0)`` alongside this field.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Product(Model):
+            stock = fields.PositiveIntegerField(default=0)
+    """
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "INTEGER"
+
+    def to_python(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        return int(value)
+
+    def to_db(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        v = int(value)
+        if v < 0:
+            raise ValueError(
+                f"PositiveIntegerField requires a non-negative value, got {v}."
+            )
+        return v
+
+
+PositiveIntegerField = PositiveInteger
+
+
+class PositiveSmallInteger(Field):
+    """
+    Positive small integer field mapping to SMALLINT with a >= 0 constraint
+    (range 0 to 32 767).
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Task(Model):
+            priority = fields.PositiveSmallIntegerField(default=0)
+    """
+
+    _MAX = 32_767
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "SMALLINT"
+
+    def to_python(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        return int(value)
+
+    def to_db(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        v = int(value)
+        if not (0 <= v <= self._MAX):
+            raise ValueError(
+                f"Value {v} is out of POSITIVE SMALLINT range (0..{self._MAX})."
+            )
+        return v
+
+
+PositiveSmallIntegerField = PositiveSmallInteger
+
+
+class PositiveBigInteger(Field):
+    """
+    Positive big integer field mapping to BIGINT with a >= 0 constraint.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Analytics(Model):
+            event_count = fields.PositiveBigIntegerField(default=0)
+    """
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "BIGINT"
+
+    def to_python(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        return int(value)
+
+    def to_db(self, value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        v = int(value)
+        if v < 0:
+            raise ValueError(
+                f"PositiveBigIntegerField requires a non-negative value, got {v}."
+            )
+        return v
+
+
+PositiveBigIntegerField = PositiveBigInteger
+
+
+class Time(Field):
+    """
+    Time field mapping to TIME (time of day without date or timezone).
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        from datetime import time
+
+        class Schedule(Model):
+            open_at = fields.TimeField()
+            close_at = fields.TimeField(nullable=True)
+    """
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "TIME"
+
+    def to_python(self, value: Any) -> Optional[py_time]:
+        if value is None:
+            return None
+        if isinstance(value, py_time):
+            return value
+        if isinstance(value, datetime):
+            return value.time()
+        if isinstance(value, str):
+            return py_time.fromisoformat(value)
+        return value
+
+    def to_db(self, value: Any) -> Optional[py_time]:
+        if value is None:
+            return None
+        if isinstance(value, py_time):
+            return value
+        if isinstance(value, datetime):
+            return value.time()
+        if isinstance(value, str):
+            return py_time.fromisoformat(value)
+        return value
+
+
+TimeField = Time
+
+
+class Duration(Field):
+    """
+    Duration field mapping to INTERVAL for storing time spans.
+
+    Stores Python ``datetime.timedelta`` values. asyncpg maps PostgreSQL
+    ``INTERVAL`` to ``timedelta`` natively — no manual conversion needed
+    at the database driver level.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        from datetime import timedelta
+
+        class Subscription(Model):
+            duration = fields.DurationField(default=timedelta(days=30))
+    """
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "INTERVAL"
+
+    def to_python(self, value: Any) -> Optional[timedelta]:
+        if value is None:
+            return None
+        if isinstance(value, timedelta):
+            return value
+        if isinstance(value, (int, float)):
+            return timedelta(seconds=value)
+        return value
+
+    def to_db(self, value: Any) -> Optional[timedelta]:
+        if value is None:
+            return None
+        if isinstance(value, timedelta):
+            return value
+        if isinstance(value, (int, float)):
+            return timedelta(seconds=value)
+        return value
+
+
+DurationField = Duration
+
+
+class IPAddress(Field):
+    """
+    IP address field mapping to PostgreSQL INET (supports IPv4 and IPv6).
+
+    PostgreSQL's INET type is more powerful than a plain VARCHAR —
+    it can be indexed efficiently and supports subnet operations.
+
+    Args:
+        protocol: Accepted protocol — ``"both"`` (default), ``"ipv4"``, or ``"ipv6"``
+        unpack_ipv4: When True and protocol is "both", an IPv4-mapped IPv6 address
+            such as ``::ffff:192.0.2.1`` is unpacked to ``192.0.2.1``
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class AccessLog(Model):
+            ip = fields.GenericIPAddressField()
+            ipv4_only = fields.IPAddressField(protocol="ipv4")
+    """
+
+    def __init__(
+        self,
+        *,
+        protocol: str = "both",
+        unpack_ipv4: bool = False,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        if protocol not in ("both", "ipv4", "ipv6"):
+            raise ValueError("protocol must be 'both', 'ipv4', or 'ipv6'.")
+        self.protocol = protocol
+        self.unpack_ipv4 = unpack_ipv4
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "INET"
+
+    def _validate(self, value: str) -> str:
+        try:
+            addr = ipaddress.ip_address(value)
+        except ValueError:
+            raise ValueError(f"Invalid IP address: {value!r}")
+        if self.protocol == "ipv4" and not isinstance(addr, ipaddress.IPv4Address):
+            raise ValueError(f"Expected an IPv4 address, got: {value!r}")
+        if self.protocol == "ipv6" and not isinstance(addr, ipaddress.IPv6Address):
+            raise ValueError(f"Expected an IPv6 address, got: {value!r}")
+        if (
+            self.unpack_ipv4
+            and isinstance(addr, ipaddress.IPv6Address)
+            and addr.ipv4_mapped is not None
+        ):
+            return str(addr.ipv4_mapped)
+        return str(addr)
+
+    def to_python(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        try:
+            return str(ipaddress.ip_address(str(value)))
+        except ValueError:
+            return str(value)
+
+    def to_db(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        return self._validate(str(value))
+
+
+IPAddressField = IPAddress
+GenericIPAddressField = IPAddress
+
+
+class Binary(Field):
+    """
+    Binary field mapping to BYTEA for raw byte storage.
+
+    Accepts ``bytes``, ``bytearray``, ``memoryview``, or ``str`` (UTF-8 encoded).
+    Returns ``bytes`` from ``to_python``.
+
+    Args:
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_sensitive: Whether field contains sensitive data (default True —
+            binary blobs are often sensitive)
+        ai_agent_writable: Whether AI agents can modify this
+        ai_description: Description for AI agents
+
+    Usage:
+        class Document(Model):
+            content = fields.BinaryField()
+    """
+
+    def __init__(
+        self,
+        *,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = True,
+        ai_agent_writable: bool = False,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return "BYTEA"
+
+    def to_python(self, value: Any) -> Optional[bytes]:
+        if value is None:
+            return None
+        if isinstance(value, memoryview):
+            return bytes(value)
+        if isinstance(value, bytearray):
+            return bytes(value)
+        if isinstance(value, bytes):
+            return value
+        if isinstance(value, str):
+            return value.encode("utf-8")
+        return bytes(value)
+
+    def to_db(self, value: Any) -> Optional[bytes]:
+        if value is None:
+            return None
+        if isinstance(value, memoryview):
+            return bytes(value)
+        if isinstance(value, bytearray):
+            return bytes(value)
+        if isinstance(value, bytes):
+            return value
+        if isinstance(value, str):
+            return value.encode("utf-8")
+        return bytes(value)
+
+
+BinaryField = Binary
+
+
+class FilePath(Field):
+    """
+    File path field mapping to VARCHAR, listing files from a directory.
+
+    Stores a file-system path as a string.  The ``choices()`` helper
+    method returns ``(value, display)`` pairs by scanning ``path`` so
+    the field can drive a select widget in admin or forms.
+
+    Args:
+        path: Directory to scan for file choices (may be empty string)
+        match: Optional regex pattern to filter file names
+        recursive: If True, walk subdirectories when building choices
+        allow_files: Include regular files in choices (default True)
+        allow_folders: Include directories in choices (default False)
+        max_length: VARCHAR length for the stored path (default 100)
+        nullable: Whether the field can be NULL
+        default: Default value
+        unique: Whether the field should be unique
+        db_index: Whether to create a database index
+        ai_description: Description for AI agents
+        ai_sensitive: Whether field contains sensitive data
+        ai_agent_writable: Whether AI agents can modify this
+
+    Usage:
+        class Config(Model):
+            template_file = fields.FilePathField(path="/templates", match=r".*\\.html")
+    """
+
+    def __init__(
+        self,
+        *,
+        path: str = "",
+        match: Optional[str] = None,
+        recursive: bool = False,
+        allow_files: bool = True,
+        allow_folders: bool = False,
+        max_length: int = 100,
+        nullable: bool = False,
+        default: Any = None,
+        unique: bool = False,
+        db_index: bool = False,
+        ai_description: Optional[str] = None,
+        ai_sensitive: bool = False,
+        ai_agent_writable: bool = True,
+    ):
+        super().__init__(
+            nullable=nullable,
+            default=default,
+            unique=unique,
+            ai_description=ai_description,
+            ai_sensitive=ai_sensitive,
+            ai_agent_writable=ai_agent_writable,
+        )
+        self.path = path
+        self.match = match
+        self.recursive = recursive
+        self.allow_files = allow_files
+        self.allow_folders = allow_folders
+        self.max_length = max_length
+        self.db_index = db_index
+
+    @property
+    def sql_type(self) -> str:
+        return f"VARCHAR({self.max_length})"
+
+    def choices(self) -> list[tuple[str, str]]:
+        """Scan ``self.path`` and return ``(path, path)`` pairs for each matching entry.
+
+        Returns:
+            Sorted list of ``(value, display)`` tuples suitable for select widgets.
+        """
+        result: list[tuple[str, str]] = []
+        if not self.path:
+            return result
+        try:
+            if self.recursive:
+                for root, dirs, files in os.walk(self.path):
+                    if self.allow_folders:
+                        for d in dirs:
+                            full = os.path.join(root, d)
+                            result.append((full, full))
+                    if self.allow_files:
+                        for name in files:
+                            if self.match and not re.match(self.match, name):
+                                continue
+                            full = os.path.join(root, name)
+                            result.append((full, full))
+            else:
+                for name in os.listdir(self.path):
+                    full = os.path.join(self.path, name)
+                    if os.path.isfile(full) and self.allow_files:
+                        if not self.match or re.match(self.match, name):
+                            result.append((full, full))
+                    elif os.path.isdir(full) and self.allow_folders:
+                        result.append((full, full))
+        except OSError:
+            pass
+        return sorted(result)
+
+    def to_python(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        return str(value)
+
+    def to_db(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        return str(value)
+
+
+FilePathField = FilePath
 
 
 class ForeignKey(Field):

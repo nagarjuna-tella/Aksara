@@ -22,12 +22,24 @@ All notable changes to Aksara.
 - **Request-scoped locale and timezone context** with `LocaleMiddleware`, `TimezoneMiddleware`, lazy `_()` strings, and UTC-normalized `DateTime` serialization.
 - **`fields.GenericForeignKey()` and `ContentType` syncing** for model-agnostic relations across registered models.
 - **`DurableStep`** for PostgreSQL-backed workflow step reuse and retry-safe execution.
+- **11 new ORM field types** for Django parity: `SlugField`, `SmallIntegerField`, `BigIntegerField`, `PositiveIntegerField`, `PositiveSmallIntegerField`, `PositiveBigIntegerField`, `TimeField`, `DurationField`, `IPAddressField` / `GenericIPAddressField`, `BinaryField`, and `FilePathField`.
+- **7 new migration FieldOp subclasses** in `aksara/migrations/operations.py` with correct PostgreSQL DDL generation (`SMALLINT`, `TIME`, `INTERVAL`, `INET`, `BYTEA`, `VARCHAR`).
+- **Autodetector integration** for all 11 new field types — `makemigrations` now produces correct column types instead of falling back to `StringField`.
+
+### Fixed
+- **`BigInteger.to_db()`**: Added BIGINT range validation to prevent PostgreSQL overflow.
+- **`Time.to_python()`**: Replaced brittle `strptime` with `fromisoformat()` for microsecond and datetime support.
+- **`FilePath.choices()`**: Fixed recursive mode to include directories when `allow_folders=True`.
+- **`Slug` regex**: Changed to `re.ASCII` flag so non-ASCII characters are properly rejected when `allow_unicode=False`.
+- **`IPAddress.to_python()`**: Now normalizes through `ipaddress.ip_address()` for consistent round-tripping.
 
 ### Documentation
 - Added a dedicated ORM page covering expressions, aggregates, relation paths, and transactions.
 - Added field, advanced, and settings docs for storage-backed media fields and async email configuration.
 - Added advanced and settings docs for locale/timezone middleware and request-aware datetime serialization.
 - Added an advanced guide for generic relations and durable workflows.
+- **Updated ORM fields documentation** with full sections for all 11 new field types including options tables, PostgreSQL type mappings, validation rules, and usage examples.
+- **Updated ORM Reference** field tables with `SmallInteger`, `PositiveInteger` variants, `Binary`, and `FilePath`.
 - Refreshed the CLI startup examples to match the current `aksara dev` hero banner and `aksara dbsetup` success output.
 - Documented the global CLI output controls for power users: `--quiet`, `--plain`, `--no-color`, and `--force-color`.
 - Refreshed the release notes, API docs, and CLI docs for the full v0.5.45 feature set.
