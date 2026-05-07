@@ -63,13 +63,21 @@ def list_templates() -> str:
 
 
 def get_examples_path() -> Path:
-    """Get the path to the examples directory in the Aksara package."""
-    # Navigate from aksara/cli/templates/ up to aksara/ and then to examples/
-    cli_path = Path(__file__).parent.parent  # aksara/cli
-    aksara_path = cli_path.parent  # aksara/
-    package_root = aksara_path.parent  # root directory
-    examples_path = package_root / "examples"
-    return examples_path
+    """Locate the examples directory.
+
+    Two layouts are supported:
+      - Wheel install: examples are bundled inside the package at aksara/_examples
+      - Repo dev mode: examples live at <repo_root>/examples
+    """
+    aksara_path = Path(__file__).parent.parent.parent  # aksara/
+
+    # 1. Bundled location (wheel install) — see pyproject.toml force-include
+    bundled = aksara_path / "_examples"
+    if bundled.exists():
+        return bundled
+
+    # 2. Repo dev mode — top-level examples/ next to the aksara/ package
+    return aksara_path.parent / "examples"
 
 
 def copy_template_project(

@@ -423,11 +423,12 @@ settings = Settings()
 '''
 
 
-def get_env_template(project_name: str) -> str:
-    """Generate .env content."""
+def get_env_template(project_name: str, studio_token: str | None = None) -> str:
+    """Generate .env content. Pass studio_token to reuse a pre-generated token."""
     import secrets
-    studio_token = secrets.token_urlsafe(32)
-    
+    if studio_token is None:
+        studio_token = secrets.token_urlsafe(32)
+
     return f'''# {project_name} - Environment Configuration
 
 # Database (PostgreSQL)
@@ -445,9 +446,45 @@ AKSARA_APP_TITLE={project_name}
 # Migrations directory
 AKSARA_MIGRATIONS_DIR=migrations
 
-# Studio (set AKSARA_ENABLE_STUDIO=true to mount /studio/* endpoints)
-AKSARA_ENABLE_STUDIO=true
+# Studio (disabled by default — set to true and configure a secret token to enable)
+AKSARA_ENABLE_STUDIO=false
 AKSARA_STUDIO_SECRET_TOKEN={studio_token}
+# Disable studio auth requirement in development (set to true in production)
+AKSARA_STUDIO_REQUIRE_AUTH=false
+
+# Security Settings (v0.5.38+)
+# Uncomment to override defaults:
+# AKSARA_COOKIE_SECURE=true
+# AKSARA_ADMIN_CSRF_ENABLED=true
+# AKSARA_ADMIN_RATE_LIMIT_ENABLED=true
+# AKSARA_ADMIN_RATE_LIMIT_REQUESTS=20
+# AKSARA_ADMIN_RATE_LIMIT_WINDOW_SECONDS=60
+# AKSARA_AI_AGENT_TOKEN=your-token-here
+'''
+
+
+def get_env_example_template(project_name: str) -> str:
+    """Generate .env.example content with placeholder token (safe to commit)."""
+    return f'''# {project_name} - Environment Configuration (example — copy to .env and fill in values)
+
+# Database (PostgreSQL)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/{project_name}
+
+# Debug mode - enables admin interface and detailed errors
+AKSARA_DEBUG=true
+
+# Logging level (DEBUG, INFO, WARNING, ERROR)
+AKSARA_LOG_LEVEL=INFO
+
+# App metadata
+AKSARA_APP_TITLE={project_name}
+
+# Migrations directory
+AKSARA_MIGRATIONS_DIR=migrations
+
+# Studio (disabled by default — set to true and configure a secret token to enable)
+AKSARA_ENABLE_STUDIO=false
+AKSARA_STUDIO_SECRET_TOKEN=your-secret-token-here
 # Disable studio auth requirement in development (set to true in production)
 AKSARA_STUDIO_REQUIRE_AUTH=false
 
@@ -510,19 +547,23 @@ Models are auto-discovered from INSTALLED_APPS.
 # `aksara.contrib.auth.User` (table: `aksara_users`), so you do not need to
 # create a local `User` model just to get started.
 #
-# Example:
+# Example model (uncomment and adapt to create your first model):
 #
 # from aksara import Model, fields
 #
 # class Post(Model):
-#     title = fields.String(max_length=200)
+#     title = fields.String(max_length=200, ai_description="Post title")
 #     content = fields.Text(nullable=True)
 #     is_published = fields.Boolean(default=False)
+#     view_count = fields.Integer(default=0)
+#     tags = fields.JSON(default=list)
 #     created_at = fields.DateTime(auto_now_add=True)
 #     updated_at = fields.DateTime(auto_now=True)
+#     ai_agent_exposed = True
 #
 #     class Meta:
 #         table_name = "posts"
+#         ai_name = "Post"
 '''
 
 
@@ -560,9 +601,9 @@ ViewSets are auto-discovered and exposed as AI tools at /ai/tools.
 
 # Define your ViewSets here.
 #
-# Example:
+# Example (uncomment and adapt to create your first ViewSet):
 #
-# from aksara import ModelViewSet
+# from aksara import ModelViewSet, action, Request
 # from .models import Post
 # from .serializers import PostSerializer
 #
@@ -570,10 +611,25 @@ ViewSets are auto-discovered and exposed as AI tools at /ai/tools.
 #     model = Post
 #     prefix = "/api/posts"
 #     tags = ["Posts"]
+#     ai_exposed = True
 #     list_serializer_class = PostSerializer
 #     retrieve_serializer_class = PostSerializer
 #     create_serializer_class = PostSerializer
 #     update_serializer_class = PostSerializer
+#
+#     @action(detail=True, methods=["POST"], ai_exposed=True)
+#     async def publish(self, request: Request, id: str):
+#         post = await self.model.objects.get(id=id)
+#         post.is_published = True
+#         await post.save()
+#         return {{"status": "published"}}
+#
+#     @action(detail=True, methods=["POST"])
+#     async def increment_views(self, request: Request, id: str):
+#         post = await self.model.objects.get(id=id)
+#         post.view_count = (post.view_count or 0) + 1
+#         await post.save()
+#         return {{"view_count": post.view_count}}
 '''
 
 
@@ -640,7 +696,7 @@ cp .env.example .env
 # 4. Create database
 createdb {project_name}
 
-# 5. Run migrations (Post model is already defined)
+# 5. Define your models in app/models.py, then run migrations
 aksara makemigrations --app app.models
 aksara migrate
 
@@ -669,11 +725,11 @@ aksara dev
 
 This project comes pre-configured with:
 
-- **Post model** - Example model with various field types
-- **PostViewSet** - Full CRUD API for posts
-- **Admin** - Post registered in admin interface
-- **Studio** - Dashboard at /studio/ui
-- **AI Mode** - Post ViewSet exposed as AI tools
+- **Post model stub** - Commented example in `app/models.py` (uncomment to activate)
+- **PostViewSet stub** - Commented example in `app/views.py` with `@action` examples
+- **Admin stub** - Commented example in `app/admin.py`
+- **Studio** - Dashboard at /studio/ui (disabled by default — see below)
+- **AI Mode** - ViewSets exposed as AI tools at /ai/tools
 - **Middleware** - Request ID & logging
 - **Pre-commit** - Code formatting hooks
 
@@ -682,11 +738,11 @@ This project comes pre-configured with:
 ```
 {project_name}/
 ├── app/
-│   ├── models.py        # Post model (and your models)
-│   ├── views.py         # PostViewSet (and your ViewSets)
-│   ├── serializers.py   # PostSerializer (and your serializers)
+│   ├── models.py        # Define your models here (Post example in comments)
+│   ├── views.py         # Define your ViewSets here (PostViewSet example in comments)
+│   ├── serializers.py   # Define your serializers here (PostSerializer example in comments)
 │   ├── urls.py          # Route registration
-│   └── admin.py         # Post admin (and your admin classes)
+│   └── admin.py         # Admin registrations (Post example in comments)
 ├── migrations/          # Database migrations
 ├── settings.py          # Configuration (AKSARA dict)
 ├── main.py              # App entry point
@@ -937,22 +993,24 @@ indent_style = tab
 def create_project_scaffold(project_name: str, base_path: Path) -> Dict[str, str]:
     """
     Create the project scaffold directory structure and files.
-    
+
     Args:
         project_name: Name of the project
         base_path: Base path where the project will be created
-        
+
     Returns:
         Dict mapping file paths to their content
     """
+    import secrets as _secrets
     project_path = base_path / project_name
-    
+    studio_token = _secrets.token_urlsafe(32)
+
     # Define all files to create
     files = {
         project_path / "main.py": get_main_py_template(project_name),
         project_path / "settings.py": get_settings_py_template(project_name),
-        project_path / ".env": get_env_template(project_name),
-        project_path / ".env.example": get_env_template(project_name),
+        project_path / ".env": get_env_template(project_name, studio_token=studio_token),
+        project_path / ".env.example": get_env_example_template(project_name),
         project_path / "app" / "__init__.py": get_app_init_template(),
         project_path / "app" / "models.py": get_models_template(project_name),
         project_path / "app" / "serializers.py": get_serializers_template(project_name),

@@ -137,8 +137,13 @@ async def get_applied_migrations(db) -> List[str]:
     return [row['name'] for row in rows]
 
 
+# NOTE: This is a legacy module-level helper kept for any external caller that
+# may import `aksara.cli.main.record_migration`. The canonical implementation
+# now lives in `aksara.migrations.executor.record_migration` (Optional checksum)
+# and is what the migrate command uses via a function-local import that shadows
+# this name. Do not call this helper from new code.
 async def record_migration(db, name: str, checksum: str) -> None:
-    """Record a migration as applied."""
+    """Record a migration as applied (legacy — see note above)."""
     await db.execute(
         "INSERT INTO aksara_migrations (name, checksum) VALUES ($1, $2)",
         name, checksum
@@ -296,6 +301,41 @@ def cli(
         )
     )
 
+    # Propagate color flags via env vars so commands that still emit raw ANSI
+    # via click.echo get the same treatment as ui-based commands. Click's
+    # echo automatically strips ANSI when NO_COLOR is set.
+    _prev_no_color = os.environ.get("NO_COLOR")
+    _prev_force_color = os.environ.get("FORCE_COLOR")
+
+    if no_color or plain:
+        os.environ["NO_COLOR"] = "1"
+    if force_color:
+        os.environ["FORCE_COLOR"] = "1"
+
+    def _restore_color_env() -> None:
+        if _prev_no_color is None:
+            os.environ.pop("NO_COLOR", None)
+        else:
+            os.environ["NO_COLOR"] = _prev_no_color
+        if _prev_force_color is None:
+            os.environ.pop("FORCE_COLOR", None)
+        else:
+            os.environ["FORCE_COLOR"] = _prev_force_color
+
+    ctx.call_on_close(_restore_color_env)
+
+    # --quiet: silence non-error click.echo output across every command.
+    # Errors (err=True) and warnings still pass through.
+    if quiet:
+        _original_echo = click.echo
+
+        def _quiet_echo(message=None, file=None, nl=True, err=False, color=None):
+            if err:
+                _original_echo(message, file=file, nl=nl, err=err, color=color)
+
+        click.echo = _quiet_echo  # type: ignore[assignment]
+        ctx.call_on_close(lambda: setattr(click, "echo", _original_echo))
+
 
 @cli.command()
 @click.argument("project_name")
@@ -316,7 +356,7 @@ def startproject(project_name: str, directory: str, template: str):
     - README.md (documentation)
     
     Templates:
-        basic       - Default minimal project (Post model)
+        basic       - Minimal neutral scaffold (commented Post example stubs)
         blog        - Full blog with Post, Comment, moderation
         crm         - Customer & Deal pipeline with forecasting
         multitenant - Tenant-scoped SaaS backend
@@ -388,17 +428,17 @@ def startproject(project_name: str, directory: str, template: str):
         ui.text("  ├── .env")
         ui.text("  ├── README.md")
         ui.text("  ├── app/")
-        ui.text("  │   ├── models.py        # Post model (ready)")
-        ui.text("  │   ├── views.py         # PostViewSet (ready)")
-        ui.text("  │   ├── serializers.py   # PostSerializer (ready)")
+        ui.text("  │   ├── models.py        # Define your models here (Post example in comments)")
+        ui.text("  │   ├── views.py         # Define your ViewSets here (PostViewSet example in comments)")
+        ui.text("  │   ├── serializers.py   # Define your serializers here (PostSerializer example in comments)")
         ui.text("  │   ├── urls.py")
-        ui.text("  │   └── admin.py         # Post admin (ready)")
+        ui.text("  │   └── admin.py         # Admin registrations (example in comments)")
         ui.text("  └── migrations/")
         ui.blank()
         ui.separator(40)
         ui.blank()
         ui.section("What's included")
-        ui.bullet("Post model + API + Admin (working example)")
+        ui.bullet("Commented example stubs for models, views, serializers, admin")
         ui.bullet("Admin at /admin")
         ui.bullet("Studio at /studio/ui")
         ui.bullet("AI tools at /ai/tools")
@@ -582,6 +622,14 @@ def dbsetup(host: str, port: int):
         "  > Database name",
         default=default_dbname,
     )
+    import re as _re
+    if not _re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', db_name):
+        ui.error("Invalid database name")
+        ui.text(
+            "  Database name must start with a letter or underscore "
+            "and contain only letters, numbers, and underscores."
+        )
+        sys.exit(1)
     db_user = click.prompt(
         "  > Username",
         default="postgres",

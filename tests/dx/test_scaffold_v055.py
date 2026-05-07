@@ -42,30 +42,30 @@ class TestScaffoldV055Structure:
     # =========================================================================
     
     def test_models_has_working_post_model(self):
-        """Models should have a working (uncommented) Post model."""
+        """Models should have a Post model example (in commented scaffold stub)."""
         models_path = self.project_path / "app" / "models.py"
         content = models_path.read_text()
-        
-        # Post should be defined (not in comments)
+
+        # Post is in the commented example stub
         assert "class Post(Model):" in content
-        
-        # Should have actual field definitions
+
+        # Should have field definitions (in comments)
         assert 'title = fields.String(' in content
         assert 'content = fields.Text(' in content
         assert 'is_published = fields.Boolean(' in content
         assert 'view_count = fields.Integer(' in content
         assert 'tags = fields.JSON(' in content
         assert 'created_at = fields.DateTime(' in content
-        
-        # Should have AI metadata
+
+        # Should have AI metadata (in comments)
         assert 'ai_description=' in content
         assert 'ai_agent_exposed = True' in content
     
     def test_models_has_meta_class(self):
-        """Post model should have Meta class with table_name."""
+        """Post model commented stub should have Meta class with table_name."""
         models_path = self.project_path / "app" / "models.py"
         content = models_path.read_text()
-        
+
         assert 'table_name = "posts"' in content
         assert 'ai_name = "Post"' in content
     
@@ -74,39 +74,37 @@ class TestScaffoldV055Structure:
     # =========================================================================
     
     def test_views_has_working_postviewset(self):
-        """Views should have a working (uncommented) PostViewSet."""
+        """Views should have PostViewSet referenced in the commented example stub."""
         views_path = self.project_path / "app" / "views.py"
         content = views_path.read_text()
-        
-        # PostViewSet should be defined (not in comments)
+
+        # PostViewSet is in the commented example stub
         assert "class PostViewSet(ModelViewSet):" in content
-        
-        # Should import the model and serializer
+
+        # Imports referenced in the comment
         assert "from .models import Post" in content
         assert "from .serializers import PostSerializer" in content
-        
-        # Should have configuration
+
+        # Configuration in comment stub
         assert 'model = Post' in content
         assert 'serializer_class = PostSerializer' in content
         assert 'prefix = "/api/posts"' in content
     
     def test_views_has_custom_actions(self):
-        """PostViewSet should have custom action examples."""
+        """PostViewSet commented stub should include @action examples."""
         views_path = self.project_path / "app" / "views.py"
         content = views_path.read_text()
-        
-        # Should have publish action
+
+        # @action examples are in the commented stub
         assert '@action(detail=True, methods=["POST"], ai_exposed=True)' in content
         assert 'async def publish(' in content
-        
-        # Should have increment_views action
         assert 'async def increment_views(' in content
     
     def test_views_has_ai_exposed(self):
-        """PostViewSet should be AI-exposed."""
+        """PostViewSet commented stub should reference ai_exposed."""
         views_path = self.project_path / "app" / "views.py"
         content = views_path.read_text()
-        
+
         assert 'ai_exposed = True' in content
     
     # =========================================================================
@@ -155,16 +153,17 @@ class TestScaffoldV055Structure:
     # =========================================================================
     
     def test_urls_has_postviewset_registered(self):
-        """URLs should have PostViewSet in urlpatterns."""
+        """URLs should reference PostViewSet in the commented example."""
         urls_path = self.project_path / "app" / "urls.py"
         content = urls_path.read_text()
-        
-        # Should import PostViewSet
+
+        # PostViewSet is referenced in commented example
         assert "from .views import PostViewSet" in content
-        
-        # Should be in urlpatterns (not commented)
+
+        # PostViewSet appears in the urlpatterns comment example
         assert "PostViewSet," in content
-        assert "# PostViewSet" not in content  # Not commented out
+        # Neutral scaffold — PostViewSet is in comments, not active
+        assert "# PostViewSet" in content
     
     # =========================================================================
     # Settings Tests
@@ -305,16 +304,16 @@ class TestScaffoldV055Importability:
                 del sys.modules[mod]
     
     def test_models_module_imports_without_error(self):
-        """app.models should import successfully."""
+        """app.models should import cleanly (neutral scaffold — Post is a commented stub)."""
         import importlib.util
-        
+
         models_path = self.project_path / "app" / "models.py"
         spec = importlib.util.spec_from_file_location("app.models", models_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        
-        # Post class should be defined
-        assert hasattr(module, 'Post')
+
+        # Neutral scaffold has no active Post class — Post is a commented example
+        assert not hasattr(module, 'Post')
     
     def test_settings_syntax_valid(self):
         """settings.py should have valid Python syntax."""

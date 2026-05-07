@@ -6,9 +6,14 @@ Tests the semantic CLI renderer selection and quiet-mode behavior.
 
 from __future__ import annotations
 
+import os
 from unittest.mock import patch
 
+import click
+from click.testing import CliRunner
+
 from aksara.cli import ui as cli_ui
+from aksara.cli.main import cli
 
 
 class _FakeStream:
@@ -130,7 +135,79 @@ class TestCliUiBehavior:
 
         output = "\n".join(call.args[0] for call in echo.call_args_list)
         assert "╚═══╝" in output  # bottom of the full-height bolt is rendered
-        assert "####    ###" in output  # taller AKSARA text art is rendered
+        assert "█████╗" in output  # AKSARA block-char art is rendered
         assert "Dev Server" in output
         assert "http://127.0.0.1:8000/docs" in output
 
+
+class TestRootFlagPropagation:
+    """Test that --quiet/--plain/--no-color/--force-color propagate to every
+    command, including ones that still emit raw ANSI escape sequences via
+    click.echo (rather than going through the ui semantic layer).
+    """
+
+    def setup_method(self):
+        # Capture pre-existing env so we can restore (test should not leak).
+        self._prev_no_color = os.environ.get("NO_COLOR")
+        self._prev_force_color = os.environ.get("FORCE_COLOR")
+        os.environ.pop("NO_COLOR", None)
+        os.environ.pop("FORCE_COLOR", None)
+        self._prev_echo = click.echo
+
+    def teardown_method(self):
+        if self._prev_no_color is None:
+            os.environ.pop("NO_COLOR", None)
+        else:
+            os.environ["NO_COLOR"] = self._prev_no_color
+        if self._prev_force_color is None:
+            os.environ.pop("FORCE_COLOR", None)
+        else:
+            os.environ["FORCE_COLOR"] = self._prev_force_color
+        click.echo = self._prev_echo
+
+    def test_no_color_strips_ansi_from_raw_ansi_command(self):
+        """--no-color should strip raw \\033[...m codes from the `templates list`
+        command output (the command emits raw ANSI via click.echo)."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--no-color", "templates", "list"])
+        assert result.exit_code == 0
+        assert "\x1b[" not in result.output  # no ANSI escapes in output
+        assert "basic" in result.output  # but content is still there
+
+    def test_plain_strips_ansi_from_raw_ansi_command(self):
+        """--plain should also imply no-color and strip ANSI from raw-ANSI commands."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--plain", "templates", "list"])
+        assert result.exit_code == 0
+        assert "\x1b[" not in result.output
+
+    def test_quiet_silences_non_error_output(self):
+        """--quiet should silence non-error click.echo output across every command."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--quiet", "templates", "list"])
+        assert result.exit_code == 0
+        # `templates list` only emits non-error output, so --quiet drops everything.
+        assert result.output.strip() == ""
+
+    def test_quiet_preserves_error_output(self):
+        """Errors (err=True) should still pass through --quiet — startproject
+        on an existing directory emits an error message via ui.error()."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("conflict")
+            result = runner.invoke(cli, ["--quiet", "startproject", "conflict"])
+            # Whatever the exit code, the error text must reach the user.
+            assert "already exists" in result.output.lower()
+
+    def test_color_env_restored_after_invocation(self):
+        """Setting --no-color must not leave NO_COLOR set in the parent process env."""
+        runner = CliRunner()
+        runner.invoke(cli, ["--no-color", "templates", "list"])
+        # NO_COLOR was unset before invocation; should still be unset after.
+        assert "NO_COLOR" not in os.environ
+
+    def test_quiet_restores_click_echo_after_invocation(self):
+        """--quiet must restore click.echo after the cli invocation completes."""
+        runner = CliRunner()
+        runner.invoke(cli, ["--quiet", "templates", "list"])
+        assert click.echo is self._prev_echo

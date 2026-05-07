@@ -126,25 +126,23 @@ class TestScaffoldAPICompatibility:
             assert hasattr(ModelViewSet, attr), f"ModelViewSet missing '{attr}'"
 
     def test_scaffold_viewset_uses_individual_serializers(self):
-        """Scaffold views.py should use individual serializer class attrs, not serializer_class."""
+        """Scaffold views.py should reference individual serializer class attrs (in commented example)."""
         template = get_views_template("test")
-        # Should NOT have bare 'serializer_class = ' (without list/retrieve/create/update prefix)
+        # Active (uncommented) code should NOT use bare 'serializer_class'
         lines = template.split("\n")
         uncommented = [l for l in lines if not l.strip().startswith("#")]
         for line in uncommented:
             stripped = line.strip()
             if "serializer_class" in stripped and "=" in stripped:
-                # Allow list_serializer_class, retrieve_serializer_class, etc.
                 if not any(stripped.startswith(f"{prefix}_serializer_class")
                            for prefix in ["list", "retrieve", "create", "update"]):
                     pytest.fail(
-                        f"Scaffold uses bare 'serializer_class' — ModelViewSet uses "
+                        f"Active scaffold code uses bare 'serializer_class' — ModelViewSet uses "
                         f"list/retrieve/create/update_serializer_class. Line: {stripped}"
                     )
-        # Should have the individual ones
-        code = "\n".join(uncommented)
-        assert "list_serializer_class" in code
-        assert "create_serializer_class" in code
+        # Commented example should reference individual serializer attrs
+        assert "list_serializer_class" in template
+        assert "create_serializer_class" in template
 
     def test_model_viewset_has_model_attr(self):
         """ModelViewSet should accept 'model' attribute."""
@@ -372,55 +370,74 @@ class TestScaffoldEndToEnd:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_models_importable(self):
-        """app.models should import and Post should be a valid Model subclass."""
+        """app.models should import cleanly (neutral scaffold — Post is a commented stub)."""
         sys.path.insert(0, str(self.project_path))
-        from app.models import Post
-        from aksara import Model
-        assert issubclass(Post, Model)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "app.models", self.project_path / "app" / "models.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Neutral scaffold: Post is commented — module imports without error
+        assert not hasattr(module, "Post")
 
     def test_post_model_has_tablename(self):
-        """Post model should have __tablename__ set from Meta.table_name."""
-        sys.path.insert(0, str(self.project_path))
-        from app.models import Post
-        assert hasattr(Post, "__tablename__")
-        assert Post.__tablename__ == "posts"
+        """Neutral scaffold models.py should reference 'posts' table in commented example."""
+        models_path = self.project_path / "app" / "models.py"
+        content = models_path.read_text()
+        assert 'table_name = "posts"' in content  # present in commented example
 
     def test_serializers_importable(self):
-        """app.serializers should import and PostSerializer should work."""
+        """app.serializers should import cleanly (neutral scaffold — PostSerializer is a commented stub)."""
         sys.path.insert(0, str(self.project_path))
-        from app.serializers import PostSerializer
-        from aksara import ModelSerializer
-        assert issubclass(PostSerializer, ModelSerializer)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "app.serializers", self.project_path / "app" / "serializers.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Neutral scaffold: PostSerializer is commented — module imports without error
+        assert not hasattr(module, "PostSerializer")
 
     def test_views_importable(self):
-        """app.views should import and PostViewSet should work."""
+        """app.views should import cleanly (neutral scaffold — PostViewSet is a commented stub)."""
         sys.path.insert(0, str(self.project_path))
-        from app.views import PostViewSet
-        from aksara import ModelViewSet
-        assert issubclass(PostViewSet, ModelViewSet)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "app.views", self.project_path / "app" / "views.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Neutral scaffold: PostViewSet is commented — module imports without error
+        assert not hasattr(module, "PostViewSet")
 
     def test_viewset_has_correct_serializer_attrs(self):
-        """PostViewSet should use individual serializer class attributes."""
-        sys.path.insert(0, str(self.project_path))
-        from app.views import PostViewSet
-        from app.serializers import PostSerializer
-        assert PostViewSet.list_serializer_class is PostSerializer
-        assert PostViewSet.retrieve_serializer_class is PostSerializer
-        assert PostViewSet.create_serializer_class is PostSerializer
-        assert PostViewSet.update_serializer_class is PostSerializer
+        """Neutral scaffold views.py should reference individual serializer attrs in commented example."""
+        views_path = self.project_path / "app" / "views.py"
+        content = views_path.read_text()
+        assert "list_serializer_class" in content
+        assert "create_serializer_class" in content
+        assert "retrieve_serializer_class" in content
+        assert "update_serializer_class" in content
 
     def test_admin_importable(self):
         """app.admin should import without error."""
         sys.path.insert(0, str(self.project_path))
-        # Admin registers Post with site — should not crash
-        import app.admin  # noqa: F401
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "app.admin", self.project_path / "app" / "admin.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        assert module is not None
 
     def test_urls_importable(self):
-        """app.urls should import without error."""
+        """app.urls should import without error — urlpatterns is empty in neutral scaffold."""
         sys.path.insert(0, str(self.project_path))
         from app.urls import register_routes, urlpatterns
         assert callable(register_routes)
-        assert len(urlpatterns) > 0
+        assert isinstance(urlpatterns, list)
+        assert len(urlpatterns) == 0  # neutral scaffold has no active viewsets registered
 
     def test_main_py_parses(self):
         """main.py should parse as valid Python."""

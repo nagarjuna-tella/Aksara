@@ -84,10 +84,10 @@ class TestScaffoldTemplates:
     def test_models_template_has_commented_example(self):
         """Models.py should have commented example code."""
         content = get_models_template("testproject")
-        
+
         assert "from aksara import Model, fields" in content
-        # Example should be in comments
-        assert "# class User(Model):" in content or "# Example model" in content
+        # Post is the commented example model
+        assert "# class Post(Model):" in content
     
     def test_views_template_has_commented_example(self):
         """Views.py should have commented example code."""
@@ -313,9 +313,9 @@ class TestScaffoldViewSetIntegration:
     """Test that generated ViewSets templates are properly structured."""
     
     def test_views_has_example_with_action(self):
-        """Generated views should have example with @action."""
+        """Generated views should have @action example in commented stub."""
         content = get_views_template("testproject")
-        
+
         assert "@action" in content
         assert "ModelViewSet" in content
     

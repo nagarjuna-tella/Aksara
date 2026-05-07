@@ -163,30 +163,30 @@ class TestTemplatesHaveExamples:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_models_template_has_working_model(self):
-        """Models template should have working Post model (v0.5.5+)."""
+        """Models template should have Post model example (in commented stub, v0.5.6+ neutral scaffold)."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
-        
+
         models_path = self.base_path / "testapp" / "app" / "models.py"
         content = models_path.read_text()
-        
-        # Should have working Post model
+
+        # Post model is in the commented example stub
         assert "class Post(Model):" in content
-        assert "fields." in content  # Shows field usage
-        # Should also have commented example for extending
-        assert "# class User(Model):" in content  # Example for additional models
+        assert "fields." in content
+        # Neutral scaffold — Post is commented, not active
+        assert "# class Post(Model):" in content
     
     def test_views_template_has_working_viewset(self):
-        """Views template should have working PostViewSet with actions (v0.5.5+)."""
+        """Views template should have PostViewSet with @action in commented stub (v0.5.6+ neutral scaffold)."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
-        
+
         views_path = self.base_path / "testapp" / "app" / "views.py"
         content = views_path.read_text()
-        
-        # Should have working PostViewSet
+
+        # PostViewSet is in the commented example stub
         assert "class PostViewSet(ModelViewSet):" in content
-        # Should show action decorator usage
+        # @action example is in the comment
         assert "@action" in content
         assert "detail=" in content
     

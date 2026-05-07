@@ -31,7 +31,7 @@ class TestDevServerBanner:
         # Capture output
         captured = StringIO()
         with patch('sys.stdout', captured):
-            with patch('click.echo', side_effect=lambda x='': print(x)):
+            with patch('click.echo', side_effect=lambda *a, **kw: print(a[0] if a else '')):
                 _print_dev_banner("http://127.0.0.1:8000", True, "info")
         
         output = captured.getvalue()
@@ -45,9 +45,9 @@ class TestDevServerBanner:
         with patch('aksara.cli.main._get_debug_mode', return_value=True):
             captured = StringIO()
             with patch('sys.stdout', captured):
-                with patch('click.echo', side_effect=lambda x='': print(x)):
+                with patch('click.echo', side_effect=lambda *a, **kw: print(a[0] if a else '')):
                     _print_dev_banner("http://127.0.0.1:8000", True, "info")
-            
+
             output = captured.getvalue()
             assert "Env:" in output or "dev" in output
     
@@ -61,13 +61,13 @@ class TestDevServerBanner:
                 with patch('aksara.cli.main._get_debug_mode', return_value=True):
                     captured = StringIO()
                     with patch('sys.stdout', captured):
-                        with patch('click.echo', side_effect=lambda x='': print(x)):
+                        with patch('click.echo', side_effect=lambda *a, **kw: print(a[0] if a else '')):
                             _print_dev_banner("http://127.0.0.1:8000", True, "info")
                     
                     output = captured.getvalue()
-                    # Should show all URLs
-                    assert "App:" in output
-                    assert "Docs:" in output
+                    # Should show all URLs (banner uses bullet "● App", not "App:")
+                    assert "App" in output
+                    assert "Docs" in output
     
     def test_check_admin_enabled_returns_bool(self):
         """_check_admin_enabled should return a boolean."""

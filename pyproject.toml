@@ -74,10 +74,16 @@ packages = ["aksara"]
 # Include static assets in the wheel
 "aksara" = "aksara"
 
+[tool.hatch.build.targets.wheel.force-include]
+# Bundle example projects so `aksara startproject --template <name>` works
+# when Aksara is installed via pip (not just in repo dev mode).
+"examples" = "aksara/_examples"
+
 [tool.hatch.build.targets.sdist]
 include = [
     "/aksara",
     "/aksara/studio/static/**/*",
+    "/examples",
 ]
 
 [tool.pytest.ini_options]
