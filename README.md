@@ -47,7 +47,7 @@ class Incident(Model):
 
 class IncidentViewSet(ModelViewSet):
     model = Incident
-    
+
     @action(detail=True, methods=["POST"], ai_exposed=True)
     async def escalate(self, pk: str, request):
         """
@@ -107,30 +107,30 @@ Aksara is built on FastAPI, so you get its performance and full ecosystem out of
 
 ## Features
 
-|     | Feature                  | What it does                                                                                     |
-| --- | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| 🔌  | **MCP tool export**      | Auto-generated tool catalog at `/ai/tools/mcp` from your model definitions                       |
-| 💬  | **AI Console**           | Natural-language queries against your live backend in Studio                                     |
-| 🩺  | **Doctor & Fix Plans**   | `aksara doctor fix-plan` diagnoses DB, migrations, AI config, security — prints the fix sequence |
-| 🐛  | **AI Debugger**          | Root-cause analysis: issue clustering, heuristic patterns, confidence-ranked causes              |
-| 🏗️  | **Architecture Review**  | Automated health scoring (A–F), coupling/schema/API findings                                     |
-| 📊  | **Performance Analyzer** | Detects slow queries, N+1, missing indexes, heavy joins                                          |
-| ⚡  | **AI Flows**             | In-context AI actions for models, routes, queries, migrations with risk badges                   |
-| 🗄️  | **Async ORM**            | Postgres-first: models, typed fields, relations, migrations, asyncpg                             |
-| 🔁  | **Auto-REST**            | `ModelViewSet` → full CRUD endpoints, serializers, pagination                                    |
-| 🏢  | **Native Multi-Tenancy** | `TenantModel` + PostgreSQL RLS + tenant-aware connection context                                 |
-| 🗂️  | **Media Storage**        | `FileField` / `ImageField` + `FieldFile` helpers + filesystem or S3-backed storage               |
-| ✉️  | **Async Email**          | Console, locmem, and SMTP backends with `send_mail()` and `send_mass_mail()`                     |
+|     | Feature                  | What it does                                                                                      |
+| --- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| 🔌  | **MCP tool export**      | Auto-generated tool catalog at `/ai/tools/mcp` from your model definitions                        |
+| 💬  | **AI Console**           | Natural-language queries against your live backend in Studio                                      |
+| 🩺  | **Doctor & Fix Plans**   | `aksara doctor fix-plan` diagnoses DB, migrations, AI config, security — prints the fix sequence  |
+| 🐛  | **AI Debugger**          | Root-cause analysis: issue clustering, heuristic patterns, confidence-ranked causes               |
+| 🏗️  | **Architecture Review**  | Automated health scoring (A–F), coupling/schema/API findings                                      |
+| 📊  | **Performance Analyzer** | Detects slow queries, N+1, missing indexes, heavy joins                                           |
+| ⚡  | **AI Flows**             | In-context AI actions for models, routes, queries, migrations with risk badges                    |
+| 🗄️  | **Async ORM**            | Postgres-first: models, typed fields, relations, migrations, asyncpg                              |
+| 🔁  | **Auto-REST**            | `ModelViewSet` → full CRUD endpoints, serializers, pagination                                     |
+| 🏢  | **Native Multi-Tenancy** | `TenantModel` + PostgreSQL RLS + tenant-aware connection context                                  |
+| 🗂️  | **Media Storage**        | `FileField` / `ImageField` + `FieldFile` helpers + filesystem or S3-backed storage                |
+| ✉️  | **Async Email**          | Console, locmem, and SMTP backends with `send_mail()` and `send_mass_mail()`                      |
 | 🌐  | **i18n & Timezones**     | `LocaleMiddleware`, `TimezoneMiddleware`, lazy `_()` strings, and UTC-normalized datetime storage |
 | 🔗  | **Generic Relations**    | `fields.GenericForeignKey()` with auto-managed `ContentType` resolution across registered models  |
 | ♻️  | **Durable Workflows**    | `DurableStep` persists successful step results in PostgreSQL and reuses them on resume            |
 | 🧵  | **Background Tasks**     | `@task`, `enqueue_task()`, and `TaskWorker` provide PostgreSQL-backed jobs with retries           |
 | 🧠  | **JSONB + Vectors**      | Nested JSON path filters plus `fields.Vector()` and cosine/euclidean distance expressions         |
-| 📦  | **TypeScript SDK**       | `aksara generate sdk --language typescript` builds a typed fetch client from your ViewSets       |
+| 📦  | **TypeScript SDK**       | `aksara generate sdk --language typescript` builds a typed fetch client from your ViewSets        |
 | 📡  | **Real-Time Streams**    | `GET /<prefix>/stream` emits model lifecycle events through tenant-safe SSE                       |
-| 🖥️  | **Studio**               | Built-in web UI at `/studio/ui` — inspect models, routes, queries, migrations                    |
-| 🛡️  | **Admin**                | Browse and edit data without extra setup                                                         |
-| 🔎  | **Semantic Search**      | ⌘K spotlight across models, routes, settings, playbooks                                          |
+| 🖥️  | **Studio**               | Built-in web UI at `/studio/ui` — inspect models, routes, queries, migrations                     |
+| 🛡️  | **Admin**                | Browse and edit data without extra setup                                                          |
+| 🔎  | **Semantic Search**      | ⌘K spotlight across models, routes, settings, playbooks                                           |
 
 ---
 
@@ -166,16 +166,16 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 
 ## Documentation
 
-| Section                                   | Description                                    |
-| ----------------------------------------- | ---------------------------------------------- |
-| [Quickstart](docs/docs/quickstart.md)     | Build and deploy in 5 minutes                  |
-| [ORM Guide](docs/docs/orm/index.md)       | Models, fields, relations, queries             |
-| [API Guide](docs/docs/api/index.md)       | ViewSets, actions, serializers                 |
+| Section                                       | Description                                            |
+| --------------------------------------------- | ------------------------------------------------------ |
+| [Quickstart](docs/docs/quickstart.md)         | Build and deploy in 5 minutes                          |
+| [ORM Guide](docs/docs/orm/index.md)           | Models, fields, relations, queries                     |
+| [API Guide](docs/docs/api/index.md)           | ViewSets, actions, serializers                         |
 | [Advanced Guide](docs/docs/advanced/index.md) | Background tasks, media/email, i18n, generic relations |
-| [AI Mode](docs/docs/ai-mode/index.md)     | MCP, AI Console, Debugger, Architecture Review |
-| [Studio Guide](docs/docs/studio/index.md) | Visual inspector & debugging                   |
-| [Admin Guide](docs/docs/admin/index.md)   | Admin site customization                       |
-| [CLI Reference](docs/docs/cli/index.md)   | All CLI commands, including SDK generation     |
+| [AI Mode](docs/docs/ai-mode/index.md)         | MCP, AI Console, Debugger, Architecture Review         |
+| [Studio Guide](docs/docs/studio/index.md)     | Visual inspector & debugging                           |
+| [Admin Guide](docs/docs/admin/index.md)       | Admin site customization                               |
+| [CLI Reference](docs/docs/cli/index.md)       | All CLI commands, including SDK generation             |
 
 ---
 
@@ -183,7 +183,7 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 
 Aksara is **pre-1.0** and actively evolving. Current version: **0.5.45**.
 
-Latest validation: **6280 passed, 3 skipped**.
+Latest validation: **6375 passed, 3 skipped**.
 
 **Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB/vector ORM support.
 
