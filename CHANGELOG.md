@@ -7,6 +7,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.5.45] — ORM Expressions, Native Multi-Tenancy, SDK Generation, and Real-Time Streams
 
+### Fixed
+
+- **`BigInteger.to_db()`**: Added BIGINT range validation — previously accepted arbitrary Python ints that would overflow PostgreSQL
+- **`Time.to_python()` / `to_db()`**: Replaced brittle `strptime("%H:%M:%S")` with `py_time.fromisoformat()` — now handles microseconds (`14:30:00.123456`) and `datetime` → `time` conversion
+- **`FilePath.choices()` recursive mode**: Fixed bug where `os.walk` only yielded files, ignoring directories even when `allow_folders=True`
+- **`Slug` regex**: Changed from `re.compile(r"^[-\w]+$", 0)` to `re.compile(..., re.ASCII)` when `allow_unicode=False` — Python 3's `\w` matches unicode by default, so non-ASCII characters were incorrectly accepted
+
+### Improved
+
+- **`IPAddress.to_python()`**: Now normalizes through `ipaddress.ip_address()` for consistent round-tripping instead of bare `str()`
+- **Inspector type map** (`aksara/inspectors/models.py`): Already had entries for `SlugField`, `SmallIntegerField`, `BigIntegerField`, and `TimeField` — no changes needed
+
+### Tests
+
+- Added `tests/test_fields_extended.py` with **117 new tests** covering:
+  - All 11 field types: `sql_type`, `to_python`, `to_db`, validation, edge cases, `None` handling
+  - `FilePath.choices()` with temp directories: recursive/non-recursive, match filters, `allow_folders`
+  - Migration FieldOp SQL generation for all 7 new operation types
+  - Autodetector mapping verification: all 11 runtime fields → correct FieldOp types
+- Total test suite: **6280 passed** (up from 6156)
+
 ### Added
 
 - **11 new ORM field types** (`aksara/fields.py`) for Django parity:
@@ -30,29 +51,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Autodetector integration** (`aksara/migrations/autodetector.py`):
   - `_model_field_to_state()` and `_model_field_to_op()` now map all 11 new runtime field types to their correct migration operations
   - `PositiveInteger` → `IntegerField`, `PositiveSmallInteger` → `SmallIntegerField`, `PositiveBigInteger` → `BigIntegerField` at migration level
-
-### Fixed
-
-- **`BigInteger.to_db()`**: Added BIGINT range validation — previously accepted arbitrary Python ints that would overflow PostgreSQL
-- **`Time.to_python()` / `to_db()`**: Replaced brittle `strptime("%H:%M:%S")` with `py_time.fromisoformat()` — now handles microseconds (`14:30:00.123456`) and `datetime` → `time` conversion
-- **`FilePath.choices()` recursive mode**: Fixed bug where `os.walk` only yielded files, ignoring directories even when `allow_folders=True`
-- **`Slug` regex**: Changed from `re.compile(r"^[-\w]+$", 0)` to `re.compile(..., re.ASCII)` when `allow_unicode=False` — Python 3's `\w` matches unicode by default, so non-ASCII characters were incorrectly accepted
-
-### Improved
-
-- **`IPAddress.to_python()`**: Now normalizes through `ipaddress.ip_address()` for consistent round-tripping instead of bare `str()`
-- **Inspector type map** (`aksara/inspectors/models.py`): Already had entries for `SlugField`, `SmallIntegerField`, `BigIntegerField`, and `TimeField` — no changes needed
-
-### Tests
-
-- Added `tests/test_fields_extended.py` with **117 new tests** covering:
-  - All 11 field types: `sql_type`, `to_python`, `to_db`, validation, edge cases, `None` handling
-  - `FilePath.choices()` with temp directories: recursive/non-recursive, match filters, `allow_folders`
-  - Migration FieldOp SQL generation for all 7 new operation types
-  - Autodetector mapping verification: all 11 runtime fields → correct FieldOp types
-- Total test suite: **6280 passed** (up from 6156)
-
-### Added
 
 - **ORM expression primitives** (`aksara/db/expressions.py`)
   - `Q()` objects for nested boolean logic with `&`, `|`, and `~`
