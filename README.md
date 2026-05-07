@@ -89,8 +89,6 @@ aksara migrate
 aksara dev
 ```
 
-Need to control CLI output? Place the flag before the subcommand and it applies to every Aksara command: `aksara --quiet dev` silences non-error output, `aksara --plain dev` disables Rich rendering and animation, `aksara --no-color dev` strips ANSI color, and `aksara --force-color dev` forces color in supported terminals. CI-friendly by default — `CI=true` and `NO_COLOR` are auto-detected.
-
 Now open three things:
 
 | What to try             | URL / Command                                                                                         |
