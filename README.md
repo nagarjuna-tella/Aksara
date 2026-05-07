@@ -221,7 +221,7 @@ See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/
 
 ## A note from the author
 
-You didn't start this project because you wanted to spend a week wiring up an ORM, migrations, admin, AI adapters, and debugging surfaces. You started because you have something you want to build — and every hour spent on infrastructure is an hour further from that.
+You didn't start any project because you wanted to spend a week wiring up an ORM, migrations, admin, AI adapters, and debugging surfaces. You started because you have something you want to build — and every hour spent on infrastructure is an hour further from that.
 
 Aksara is my attempt to get you past that part faster. Not by hiding the complexity, but by making the right defaults obvious so you can spend your attention on what actually matters to you.
 
