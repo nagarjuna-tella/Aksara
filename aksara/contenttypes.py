@@ -109,6 +109,45 @@ async def ensure_content_types_table(db: Optional[Database] = None) -> None:
     """Create the internal content types table when missing."""
     database = _get_db(db)
     await database.execute(CONTENT_TYPES_TABLE_SQL)
+    # Idempotent schema migrations for tables created by older versions.
+    await database.execute(
+        f'''
+        DO $$
+        BEGIN
+            -- Add unique constraint if missing (required for ON CONFLICT upsert).
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'uq_{CONTENT_TYPES_TABLE}'
+                  AND conrelid = '"{CONTENT_TYPES_TABLE}"'::regclass
+            ) THEN
+                ALTER TABLE "{CONTENT_TYPES_TABLE}"
+                    ADD CONSTRAINT uq_{CONTENT_TYPES_TABLE} UNIQUE (app_label, model);
+            END IF;
+
+            -- Ensure created_at and updated_at have defaults so INSERT without
+            -- those columns does not fail with a NOT NULL violation.
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = '{CONTENT_TYPES_TABLE}'
+                  AND column_name = 'created_at'
+                  AND column_default IS NULL
+            ) THEN
+                ALTER TABLE "{CONTENT_TYPES_TABLE}"
+                    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP;
+            END IF;
+
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = '{CONTENT_TYPES_TABLE}'
+                  AND column_name = 'updated_at'
+                  AND column_default IS NULL
+            ) THEN
+                ALTER TABLE "{CONTENT_TYPES_TABLE}"
+                    ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+            END IF;
+        END$$;
+        '''
+    )
 
 
 async def sync_content_types(

@@ -84,7 +84,7 @@ from app.urls import register_routes
 app = Aksara(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
-    description="A modern Aksara-powered async API",
+    description="AI-native backend — REST API, MCP tools, Studio",
     version="0.1.0",
     debug=settings.debug,
     enable_admin=settings.enable_admin,
@@ -829,7 +829,7 @@ def get_pyproject_template(project_name: str) -> str:
     return f'''[project]
 name = "{project_name}"
 version = "0.1.0"
-description = "A modern Aksara-powered async API with Admin, Studio, and AI Mode"
+description = "AI-native backend — REST API, MCP tools, Studio"
 requires-python = ">=3.11"
 dependencies = [
     "aksara>=0.5.45",

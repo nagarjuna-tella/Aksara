@@ -570,7 +570,7 @@ class Aksara(FastAPI):
             </svg>
         </div>
         <h1>{title}</h1>
-        <p class="tagline">Async Postgres ORM for FastAPI</p>
+        <p class="tagline">AI-native backend — REST API, MCP tools, Studio</p>
         <p class="version">v{version}</p>
         <div class="links">
             <a href="/docs" class="link">

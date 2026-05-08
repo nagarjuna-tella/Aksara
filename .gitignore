@@ -12,3 +12,5 @@ __pycache__/
 .github/
 
 v0.5.45-DX-PLAN.md
+
+*.tape

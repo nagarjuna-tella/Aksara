@@ -1941,7 +1941,7 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     # Print Aksara banner
     click.echo()
     click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  \033[90mAsync Postgres ORM for FastAPI\033[0m")
+    click.echo("  \033[90mAI-native backend — REST API, MCP tools, Studio\033[0m")
     click.echo()
     click.echo(f"  \033[36m→\033[0m Running: {app_path}")
     click.echo(f"  \033[36m→\033[0m Server:  http://{host}:{port}")
