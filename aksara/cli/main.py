@@ -486,6 +486,16 @@ def _read_env_database_url(env_path: Path) -> Optional[str]:
     return None
 
 
+def _parse_database_url_host_port(url: str):
+    """Extract (host, port) from a postgresql:// URL. Returns (None, None) on failure."""
+    try:
+        from urllib.parse import urlparse as _urlparse
+        parsed = _urlparse(url)
+        return parsed.hostname or None, parsed.port or None
+    except Exception:
+        return None, None
+
+
 def _write_env_database_url(env_path: Path, url: str) -> None:
     """Write or update DATABASE_URL in a .env file.
     
@@ -561,12 +571,26 @@ def dbsetup(host: str, port: int):
             return
         ui.blank()
 
+    # --- Collect host/port (use existing URL values as defaults when overwriting) ---
+    default_host = host
+    default_port = port
+    if existing_url:
+        parsed_host, parsed_port = _parse_database_url_host_port(existing_url)
+        if parsed_host:
+            default_host = parsed_host
+        if parsed_port:
+            default_port = parsed_port
+
+    db_host = click.prompt("  > Host", default=default_host)
+    db_port = click.prompt("  > Port", default=default_port, type=int)
+    ui.blank()
+
     # --- Step 1: Check PostgreSQL reachability ---
     async def _check_pg():
         import asyncpg as _asyncpg
         try:
             conn = await _asyncpg.connect(
-                host=host, port=port,
+                host=db_host, port=db_port,
                 user="postgres", password="postgres",
                 database="postgres",
                 timeout=5,
@@ -589,7 +613,7 @@ def dbsetup(host: str, port: int):
         pg_reachable = False
 
     if not pg_reachable:
-        ui.error(f"not found on {host}:{port}")
+        ui.error(f"not found on {db_host}:{db_port}")
         ui.blank()
         ui.text("  PostgreSQL is not running or not reachable.")
         ui.blank()
@@ -610,7 +634,7 @@ def dbsetup(host: str, port: int):
         ui.blank()
         sys.exit(1)
 
-    ui.success(f"found ({host}:{port})")
+    ui.success(f"found ({db_host}:{db_port})")
 
     # --- Step 2: Collect credentials ---
     # Default database name: current directory name
@@ -642,7 +666,7 @@ def dbsetup(host: str, port: int):
     async def _test_connection():
         import asyncpg as _asyncpg
         conn = await _asyncpg.connect(
-            host=host, port=port,
+            host=db_host, port=db_port,
             user=db_user, password=db_password,
             database="postgres",  # Connect to default db first
             timeout=5,
@@ -675,7 +699,7 @@ def dbsetup(host: str, port: int):
     async def _create_database():
         import asyncpg as _asyncpg
         conn = await _asyncpg.connect(
-            host=host, port=port,
+            host=db_host, port=db_port,
             user=db_user, password=db_password,
             database="postgres",
             timeout=5,
@@ -713,7 +737,7 @@ def dbsetup(host: str, port: int):
     # URL-encode password in case it contains special characters
     from urllib.parse import quote as _url_quote
     encoded_password = _url_quote(db_password, safe="")
-    database_url = f"postgresql://{db_user}:{encoded_password}@{host}:{port}/{db_name}"
+    database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
 
     try:
         with ui.status("Writing DATABASE_URL to .env"):
