@@ -232,25 +232,25 @@ See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/
 
 Hello my fellow builder!
 
-You didn't start any project because you wanted to spend a week wiring up an ORM, migrations, admin, AI adapters, and debugging surfaces. You started because you have something you want to build — and every hour spent on infrastructure is an hour further from that.
+You didn't start any project because you wanted to spend a week wiring up an ORM, migrations, admin, AI adapters, and debugging surfaces. You started because you have something you want to build, and every hour spent on infrastructure is an hour further from that.
 
 Aksara is my attempt to get you past that part faster. Not by hiding the complexity, but by making the right defaults obvious so you can spend your attention on what actually matters to you.
 
-That said — a framework is a long chain of judgment calls. What should be automatic? What should stay explicit? When does "helpful" become too much magic? I've made those calls with care, but I can only see what I've seen. The gaps I don't know about yet are the ones that will cost you an hour when you hit them.
+That said, a framework is a long chain of judgment calls. What should be automatic? What should stay explicit? When does "helpful" become too much magic? I've made those calls with care, but I can only see what I've seen. The gaps I don't know about yet are the ones that will cost you an hour when you hit them.
 
 That's why your experience matters here. The rough edge you found. The docs that didn't explain the thing you needed. The feature that clicked immediately. The place where Aksara got out of your way and let you move. That signal is what makes this better.
 
 So if you decide to build with it, I want to hear what you ran into:
 
 - **Open an issue** on [GitHub](https://github.com/nagarjuna-tella/Aksara/issues), even a rough one. "This didn't work and I'm not sure why" is more useful than a polished bug report.
-- **Show me what you're building.** A link, a screenshot, a one-line description — I read every one.
+- **Show me what you're building.** A link, a screenshot, a one line description, I read every one.
 - **Tell me what tipped the scale**, if you started here and moved to something else. That kind of honesty is how good frameworks get made.
 
-Aksara is pre-1.0 on purpose. I don't want 1.0 to be a monument to my assumptions — I want it to reflect the shape of what you actually tried to ship with it. If you're one of the people who tries, you're not just a user. You're a co-author of where this lands.
+Aksara is pre-1.0 on purpose. I don't want 1.0 to be a monument to my assumptions, I want it to reflect the shape of what you actually tried to ship with it. If you're one of the people who tries, you're not just a user. You're a co-author of where this lands.
 
 Thanks for taking the time to look.
 
-— Nagarjuna
+- Nagarjuna
 
 ---
 
