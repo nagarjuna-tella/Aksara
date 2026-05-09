@@ -48,6 +48,9 @@ Navigate to **http://localhost:8000/studio/ui**
 
 That's it. Studio reads your app's live state — models, routes, queries, and migrations — all from the same process.
 
+![Aksara Studio — System Overview](../assets/studio-system-overview.png)
+*Studio System Overview — framework version, Python runtime, database connection pool, migration health, and live project statistics in one view.*
+
 ### 4. Studio API Endpoints
 
 Studio also exposes a JSON API used by the UI. These are available while your app runs:

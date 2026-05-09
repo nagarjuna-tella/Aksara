@@ -19,6 +19,12 @@
 
 ---
 
+<p align="center">
+  <img src="docs/docs/assets/aksara-demo.gif" alt="Aksara CLI demo — scaffold to running app in seconds" width="860" />
+</p>
+
+---
+
 ## What Aksara Does
 
 You define a model once. Aksara generates everything else from it:
@@ -83,11 +89,16 @@ The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote
 
 ```bash
 pip install aksara
-aksara startproject myapp && cd myapp
+aksara startproject opsdesk && cd opsdesk
 aksara dbsetup
 aksara migrate
 aksara dev
 ```
+
+<p align="center">
+  <img src="docs/docs/assets/app-welcome.png" alt="Generated app home page" width="800" />
+</p>
+<p align="center"><em>The auto-generated welcome page every new project starts with — API docs, ReDoc, and Studio links built in.</em></p>
 
 Now open three things:
 

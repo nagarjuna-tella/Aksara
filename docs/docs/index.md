@@ -9,6 +9,10 @@
 [Get Started →](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/nagarjuna-tella/Aksara){ .md-button }
 
+<p align="center" style="margin-top: 1.5rem;">
+  <img src="assets/aksara-demo.gif" alt="Aksara CLI demo — from scaffold to running app in seconds" width="860" />
+</p>
+
 </div>
 
 ---
