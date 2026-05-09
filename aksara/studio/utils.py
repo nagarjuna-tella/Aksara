@@ -380,7 +380,9 @@ async def build_context_summary(app: "FastAPI") -> StudioContextSummary:
     
     # v0.5.1: Discover all migrations (not just .sql)
     migrations_dir = Path(settings.migrations_dir)
-    all_migrations = discover_all_migrations(migrations_dir, include_internal=True)
+    all_migrations = discover_all_migrations(
+        user_migrations_path=migrations_dir, include_internal=True,
+    )
     migration_count = len(all_migrations)
     
     # v0.5.1: Get app count from settings
@@ -389,13 +391,30 @@ async def build_context_summary(app: "FastAPI") -> StudioContextSummary:
     # v0.5.1: Get database status
     database_status = _get_database_status(app)
     
-    # v0.5.1: Build migration status (lightweight version)
+    # v0.5.45: Query DB for real applied/pending counts
+    from aksara.migrations import get_applied_migrations
+    applied_count = 0
+    pending_count = migration_count
+    last_applied_name: Optional[str] = None
+    db = getattr(app, '_db', None) or getattr(app.state, 'db', None)
+    if db:
+        try:
+            async with db.acquire() as conn:
+                applied_names = await get_applied_migrations(conn)
+                applied_count = len(applied_names)
+                pending_count = max(0, migration_count - applied_count)
+                if applied_names:
+                    last_applied_name = applied_names[-1]
+        except Exception:
+            pass  # DB unavailable — fall back to 0 applied
+    
+    # v0.5.1: Build migration status
     migration_status = StudioMigrationStatus(
         total=migration_count,
-        applied=0,  # Would require DB check - filled in async endpoint
-        pending=0,  # Would require DB check - filled in async endpoint
-        has_conflicts=False,  # Would require graph check
-        last_applied=None,
+        applied=applied_count,
+        pending=pending_count,
+        has_conflicts=False,  # Full conflict check is on /studio/migrations/summary
+        last_applied=last_applied_name,
     )
     
     # Build checksums
@@ -413,7 +432,7 @@ async def build_context_summary(app: "FastAPI") -> StudioContextSummary:
         route_count=route_count,
         ai_tool_count=ai_tool_count,
         migration_count=migration_count,
-        pending_migrations=0,  # Would require DB check
+        pending_migrations=pending_count,
         database_status=database_status,
         migration_status=migration_status,
         models=model_summaries,
@@ -590,13 +609,22 @@ async def build_runtime_info(app: "FastAPI") -> StudioRuntimeInfo:
     else:
         database_status_str = "disconnected"
     
-    # Count pending migrations (simplified - full count requires DB)
+    # v0.5.45: Count pending migrations using real DB query
     pending_migrations = 0
     try:
-        from aksara.migrations import discover_all_migrations
+        from aksara.migrations import discover_all_migrations, get_applied_migrations
         migrations_dir = Path(settings.migrations_dir)
-        all_migrations = discover_all_migrations(migrations_dir, include_internal=True)
-        pending_migrations = len(all_migrations)  # Approximation without DB check
+        all_migrations = discover_all_migrations(
+            user_migrations_path=migrations_dir, include_internal=True,
+        )
+        total = len(all_migrations)
+        db = getattr(app, '_db', None) or getattr(app.state, 'db', None)
+        if db:
+            async with db.acquire() as conn:
+                applied = await get_applied_migrations(conn)
+                pending_migrations = max(0, total - len(applied))
+        else:
+            pending_migrations = total  # No DB pool = assume all pending
     except Exception:
         pass
     
@@ -783,16 +811,28 @@ async def build_ai_context_export(app: "FastAPI") -> StudioAiContextExport:
     # Get installed apps
     apps = list(settings.installed_apps) if settings.installed_apps else list(settings.apps)
     
-    # Get migration status
+    # v0.5.45: Get migration status with real DB query
     migration_status = StudioMigrationStatus()
     try:
         migrations_dir = getattr(settings, 'migrations_dir', 'migrations')
-        from aksara.migrations import discover_all_migrations
-        all_migrations = discover_all_migrations(Path(migrations_dir), include_internal=True)
+        from aksara.migrations import discover_all_migrations, get_applied_migrations
+        all_migrations = discover_all_migrations(
+            user_migrations_path=Path(migrations_dir), include_internal=True,
+        )
+        total = len(all_migrations)
+        applied_count = 0
+        db = getattr(app, '_db', None) or getattr(app.state, 'db', None)
+        if db:
+            try:
+                async with db.acquire() as conn:
+                    applied_names = await get_applied_migrations(conn)
+                    applied_count = len(applied_names)
+            except Exception:
+                pass
         migration_status = StudioMigrationStatus(
-            total=len(all_migrations),
-            pending=len(all_migrations),  # Approximation
-            applied=0,
+            total=total,
+            applied=applied_count,
+            pending=max(0, total - applied_count),
         )
     except Exception:
         pass

@@ -4709,7 +4709,7 @@ function _inlineMd(text) {
     return text;
 }
 
-function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+const _esc = escapeHtml;  // v0.5.45: Alias — use escapeHtml() for new code
 
 // =============================================================================
 // v0.5.32: AI Graph Explorer
