@@ -250,7 +250,7 @@ Aksara is pre-1.0 on purpose. I don't want 1.0 to be a monument to my assumption
 
 Thanks for taking the time to look.
 
-- Nagarjuna
+Nagarjuna
 
 ---
 
