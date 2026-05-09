@@ -328,13 +328,6 @@ Default: `1.0`
 How often the built-in worker wakes up to poll for pending rows in
 `aksara_tasks` when no work is immediately available.
 
-### TASK_RETRY_DELAY_SECONDS
-
-Type: `float`
-Default: `5.0`
-
-Delay before a failed task is re-queued for another attempt.
-
 ### TASK_MAX_ATTEMPTS
 
 Type: `int`
@@ -343,21 +336,127 @@ Default: `3`
 Default retry budget for tasks that do not override `max_attempts` when they
 are enqueued.
 
+### TASK_RETRY_DELAY_SECONDS
+
+Type: `float`
+Default: `5.0`
+
+Base delay (in seconds) before a failed task is re-queued. Acts as the
+multiplier for exponential backoff.
+
+### TASK_RETRY_BACKOFF_BASE
+
+Type: `float`
+Default: `2.0`
+
+Exponential backoff multiplier applied to the retry delay on each successive
+failure:
+
+```
+delay = TASK_RETRY_DELAY_SECONDS × TASK_RETRY_BACKOFF_BASE ^ (attempt − 1)
+```
+
+Set to `1.0` for a flat constant delay (no growth).
+
+### TASK_RETRY_MAX_DELAY_SECONDS
+
+Type: `float`
+Default: `3600.0`
+
+Upper bound (in seconds) for the computed retry delay. Prevents the backoff
+from growing unbounded on tasks with a high `max_attempts`.
+
+### TASK_CONCURRENCY
+
+Type: `int`
+Default: `1`
+
+Number of tasks a single `TaskWorker` processes simultaneously. Each slot runs
+as an independent asyncio task. Set higher on workers where tasks spend most
+of their time waiting on I/O.
+
+### TASK_STALE_LOCK_TIMEOUT_SECONDS
+
+Type: `float`
+Default: `300.0`
+
+Age threshold (in seconds) after which a `status='running'` task whose
+`locked_at` has not been updated is considered crashed. The stale-lock recovery
+sweep resets such tasks to `pending` so another worker can retry them.
+
+### TASK_LOCK_RECOVERY_INTERVAL_SECONDS
+
+Type: `float`
+Default: `60.0`
+
+How often (in seconds) the worker runs the stale-lock recovery sweep.
+
+### TASK_RESULT_TTL_SECONDS
+
+Type: `float | None`
+Default: `None` (disabled)
+
+When set, the worker automatically deletes `completed` task rows whose
+`updated_at` is older than this value. Set to `None` (or leave unset) to keep
+completed rows indefinitely.
+
+```bash
+export AKSARA_TASK_RESULT_TTL_SECONDS=604800   # 7 days
+```
+
+### TASK_CLEANUP_INTERVAL_SECONDS
+
+Type: `float`
+Default: `3600.0`
+
+How often (in seconds) the worker runs the TTL cleanup sweep. Only active when
+`TASK_RESULT_TTL_SECONDS` is set.
+
+### TASK_CRON_CHECK_INTERVAL_SECONDS
+
+Type: `float`
+Default: `30.0`
+
+How often (in seconds) the worker checks for recurring tasks (registered with
+`every=`) that are due to be enqueued.
+
+---
+
+### Example Configuration
+
 ```python
 configure(Settings(
     tasks_enabled=True,
     task_poll_interval_seconds=0.5,
-    task_retry_delay_seconds=2.0,
     task_max_attempts=4,
+    task_retry_delay_seconds=5.0,
+    task_retry_backoff_base=2.0,
+    task_retry_max_delay_seconds=3600.0,
+    task_concurrency=4,
+    task_stale_lock_timeout_seconds=300.0,
+    task_lock_recovery_interval_seconds=60.0,
+    task_result_ttl_seconds=7 * 86400,   # 7 days
+    task_cleanup_interval_seconds=3600.0,
+    task_cron_check_interval_seconds=30.0,
 ))
 ```
 
 ```bash
 export AKSARA_TASKS_ENABLED=true
 export AKSARA_TASK_POLL_INTERVAL_SECONDS=0.5
-export AKSARA_TASK_RETRY_DELAY_SECONDS=2.0
 export AKSARA_TASK_MAX_ATTEMPTS=4
+export AKSARA_TASK_RETRY_DELAY_SECONDS=5.0
+export AKSARA_TASK_RETRY_BACKOFF_BASE=2.0
+export AKSARA_TASK_RETRY_MAX_DELAY_SECONDS=3600
+export AKSARA_TASK_CONCURRENCY=4
+export AKSARA_TASK_STALE_LOCK_TIMEOUT_SECONDS=300
+export AKSARA_TASK_LOCK_RECOVERY_INTERVAL_SECONDS=60
+export AKSARA_TASK_RESULT_TTL_SECONDS=604800
+export AKSARA_TASK_CLEANUP_INTERVAL_SECONDS=3600
+export AKSARA_TASK_CRON_CHECK_INTERVAL_SECONDS=30
 ```
+
+See [Background Tasks](../advanced/background-tasks.md) for usage examples.
 
 ---
 

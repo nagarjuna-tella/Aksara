@@ -7483,5 +7483,310 @@ def gaps_fix_plan(output_format: str, only_blocking: bool):
     sys.exit(1 if report.has_errors else 0)
 
 
+# =============================================================================
+# Tasks Commands
+# =============================================================================
+
+def _tasks_db():
+    """Open a database connection from the project .env or DATABASE_URL env."""
+    import os
+    from aksara.db import Database
+
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        env_path = Path.cwd() / ".env"
+        url = _read_env_database_url(env_path)
+    if not url:
+        click.echo("  Error: DATABASE_URL is not set. Run aksara dbsetup first.", err=True)
+        sys.exit(1)
+    return Database(url)
+
+
+@cli.group()
+def tasks():
+    """Inspect and manage the background task queue."""
+    pass
+
+
+@tasks.command("stats")
+def tasks_stats():
+    """Show task queue counts grouped by status and queue."""
+
+    async def _run():
+        db = _tasks_db()
+        await db.connect()
+        try:
+            from aksara.tasks import ensure_tasks_table, TASKS_TABLE
+            await ensure_tasks_table(db)
+            rows = await db.fetch(
+                f'''
+                SELECT queue, status, COUNT(*) AS count
+                FROM "{TASKS_TABLE}"
+                GROUP BY queue, status
+                ORDER BY queue, status
+                '''
+            )
+            return rows
+        finally:
+            await db.disconnect()
+
+    ui = get_ui()
+    ui.aksara_banner(f"v{CLI_VERSION}", "Task Queue Stats")
+
+    rows = _run_async_command(_run())
+
+    if not rows:
+        ui.info("No tasks in the queue.")
+        ui.blank()
+        return
+
+    # Group by queue for display
+    from collections import defaultdict
+    by_queue: dict = defaultdict(dict)
+    totals: dict = defaultdict(int)
+    for row in rows:
+        by_queue[row["queue"]][row["status"]] = row["count"]
+        totals[row["status"]] += row["count"]
+
+    STATUS_COLORS = {
+        "pending":   "\033[33m",
+        "running":   "\033[36m",
+        "completed": "\033[32m",
+        "failed":    "\033[31m",
+    }
+    RESET = "\033[0m"
+
+    for queue_name, statuses in sorted(by_queue.items()):
+        ui.section(f"Queue: {queue_name}")
+        for status in ("pending", "running", "completed", "failed"):
+            count = statuses.get(status, 0)
+            color = STATUS_COLORS.get(status, "")
+            click.echo(f"    {color}{status:<12}{RESET} {count:>6}")
+        ui.blank()
+
+    ui.section("Total")
+    for status in ("pending", "running", "completed", "failed"):
+        count = totals.get(status, 0)
+        color = STATUS_COLORS.get(status, "")
+        click.echo(f"    {color}{status:<12}{RESET} {count:>6}")
+    ui.blank()
+
+
+@tasks.command("list")
+@click.option("--status", "-s", default="failed",
+              type=click.Choice(["pending", "running", "completed", "failed"]),
+              help="Filter by task status (default: failed)")
+@click.option("--queue", "-q", default=None, help="Filter by queue name")
+@click.option("--task-name", "-t", default=None, help="Filter by task name (substring match)")
+@click.option("--limit", "-n", default=20, type=int, help="Max results (default: 20)")
+def tasks_list(status, queue, task_name, limit):
+    """List tasks — defaults to showing failed tasks."""
+
+    async def _run():
+        db = _tasks_db()
+        await db.connect()
+        try:
+            from aksara.tasks import ensure_tasks_table, TASKS_TABLE
+            await ensure_tasks_table(db)
+
+            conditions = ["status = $1"]
+            params: list = [status]
+
+            if queue:
+                params.append(queue)
+                conditions.append(f"queue = ${len(params)}")
+            if task_name:
+                params.append(f"%{task_name}%")
+                conditions.append(f"task_name ILIKE ${len(params)}")
+
+            params.append(limit)
+            where = " AND ".join(conditions)
+            rows = await db.fetch(
+                f'''
+                SELECT id, task_name, queue, status, attempts, max_attempts,
+                       last_error, available_at, created_at, updated_at
+                FROM "{TASKS_TABLE}"
+                WHERE {where}
+                ORDER BY updated_at DESC
+                LIMIT ${len(params)}
+                ''',
+                *params,
+            )
+            return rows
+        finally:
+            await db.disconnect()
+
+    ui = get_ui()
+    rows = _run_async_command(_run())
+
+    if not rows:
+        ui.info(f"No {status} tasks found.")
+        ui.blank()
+        return
+
+    click.echo()
+    click.echo(f"  {len(rows)} {status} task(s):\n")
+    for row in rows:
+        err = (row["last_error"] or "")[:80]
+        err_suffix = "…" if len(row["last_error"] or "") > 80 else ""
+        click.echo(f"  \033[1m{row['id']}\033[0m")
+        click.echo(f"    task  : {row['task_name']}")
+        click.echo(f"    queue : {row['queue']}")
+        click.echo(f"    status: {row['status']}  attempts: {row['attempts']}/{row['max_attempts']}")
+        if err:
+            click.echo(f"    error : {err}{err_suffix}")
+        click.echo(f"    updated: {row['updated_at']}")
+        click.echo()
+
+
+@tasks.command("reenqueue")
+@click.argument("task_id", required=False)
+@click.option("--all", "all_failed", is_flag=True, help="Re-enqueue ALL failed tasks")
+@click.option("--queue", "-q", default=None, help="Filter by queue when using --all")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+def tasks_reenqueue(task_id, all_failed, queue, yes):
+    """Re-enqueue a failed task by ID, or all failed tasks with --all.
+
+    Examples:
+
+        aksara tasks reenqueue <uuid>
+        aksara tasks reenqueue --all
+        aksara tasks reenqueue --all --queue emails
+    """
+    if not task_id and not all_failed:
+        click.echo("  Provide a TASK_ID or use --all.", err=True)
+        sys.exit(1)
+
+    async def _run():
+        db = _tasks_db()
+        await db.connect()
+        try:
+            from aksara.tasks import ensure_tasks_table, TASKS_TABLE
+            await ensure_tasks_table(db)
+
+            if task_id:
+                import uuid as _uuid
+                try:
+                    tid = _uuid.UUID(task_id)
+                except ValueError:
+                    click.echo(f"  Invalid task ID: {task_id}", err=True)
+                    sys.exit(1)
+
+                row = await db.fetchrow(
+                    f"SELECT id, status FROM \"{TASKS_TABLE}\" WHERE id = $1", tid
+                )
+                if row is None:
+                    click.echo(f"  Task {task_id} not found.", err=True)
+                    sys.exit(1)
+                if row["status"] not in ("failed", "completed"):
+                    click.echo(
+                        f"  Task is '{row['status']}', not failed/completed — skipping.", err=True
+                    )
+                    sys.exit(1)
+
+                await db.execute(
+                    f'''
+                    UPDATE "{TASKS_TABLE}"
+                    SET status = 'pending',
+                        attempts = 0,
+                        locked_at = NULL,
+                        last_error = NULL,
+                        available_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = $1
+                    ''',
+                    tid,
+                )
+                return 1
+
+            # --all path
+            conditions = ["status = 'failed'"]
+            params: list = []
+            if queue:
+                params.append(queue)
+                conditions.append(f"queue = ${len(params)}")
+
+            where = " AND ".join(conditions)
+            result = await db.fetchrow(
+                f'''
+                WITH requeued AS (
+                    UPDATE "{TASKS_TABLE}"
+                    SET status = 'pending',
+                        attempts = 0,
+                        locked_at = NULL,
+                        last_error = NULL,
+                        available_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE {where}
+                    RETURNING id
+                )
+                SELECT COUNT(*) AS count FROM requeued
+                ''',
+                *params,
+            )
+            return int(result["count"]) if result else 0
+        finally:
+            await db.disconnect()
+
+    ui = get_ui()
+
+    if all_failed and not yes:
+        queue_msg = f" in queue '{queue}'" if queue else ""
+        if not click.confirm(f"  Re-enqueue all failed tasks{queue_msg}?", default=False):
+            ui.info("Aborted.")
+            return
+
+    count = _run_async_command(_run())
+    ui.success(f"Re-enqueued {count} task(s).")
+    ui.blank()
+
+
+@tasks.command("purge")
+@click.option("--status", "-s", "statuses", multiple=True,
+              default=["completed"],
+              type=click.Choice(["completed", "failed"]),
+              help="Status(es) to purge (default: completed)")
+@click.option("--older-than-days", "-d", default=7.0, type=float,
+              help="Delete records last updated more than N days ago (default: 7)")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+def tasks_purge(statuses, older_than_days, yes):
+    """Delete old task records from the database.
+
+    Examples:
+
+        aksara tasks purge
+        aksara tasks purge --status failed --older-than-days 30
+        aksara tasks purge --status completed --status failed -d 1
+    """
+
+    async def _run():
+        db = _tasks_db()
+        await db.connect()
+        try:
+            from aksara.tasks import TaskWorker
+            worker = TaskWorker(db)
+            return await worker.purge_old_tasks(
+                statuses=tuple(statuses),
+                older_than_seconds=older_than_days * 86400,
+            )
+        finally:
+            await db.disconnect()
+
+    ui = get_ui()
+
+    if not yes:
+        status_str = ", ".join(statuses)
+        if not click.confirm(
+            f"  Delete {status_str} tasks older than {older_than_days:.0f} days?",
+            default=False,
+        ):
+            ui.info("Aborted.")
+            return
+
+    count = _run_async_command(_run())
+    ui.success(f"Purged {count} task record(s).")
+    ui.blank()
+
+
 if __name__ == "__main__":
     main()

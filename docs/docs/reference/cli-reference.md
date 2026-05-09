@@ -664,6 +664,111 @@ aksara ai config --provider openai --model gpt-4
 
 ---
 
+## Task Queue Commands
+
+### tasks stats
+
+Show task queue counts grouped by status and queue.
+
+```bash
+aksara tasks stats
+```
+
+**Example output:**
+
+```
+  Queue: default
+    pending          3
+    running          1
+    completed      412
+    failed           2
+
+  Queue: emails
+    pending          0
+    running          0
+    completed       87
+    failed           1
+
+  Total
+    pending          3
+    running          1
+    completed      499
+    failed           3
+```
+
+### tasks list
+
+List task records. Defaults to showing `failed` tasks.
+
+```bash
+aksara tasks list [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--status`, `-s` | `failed` | Filter by status (`pending`, `running`, `completed`, `failed`) |
+| `--queue`, `-q` | — | Filter by queue name |
+| `--task-name`, `-t` | — | Substring match on `task_name` |
+| `--limit`, `-n` | `20` | Maximum rows returned |
+
+**Examples:**
+
+```bash
+aksara tasks list
+aksara tasks list --status pending
+aksara tasks list --status failed --queue emails --limit 50
+aksara tasks list --task-name send_welcome
+```
+
+### tasks reenqueue
+
+Re-enqueue a failed task by ID, or all failed tasks at once.
+Re-enqueuing resets `attempts`, `locked_at`, `last_error`, and `available_at`
+so the task is treated as brand-new.
+
+```bash
+aksara tasks reenqueue [TASK_ID] [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--all` | Re-enqueue all failed tasks |
+| `--queue`, `-q` | Filter by queue when using `--all` |
+| `--yes`, `-y` | Skip confirmation prompt |
+
+**Examples:**
+
+```bash
+aksara tasks reenqueue 3f2a1c4e-...          # one task by UUID
+aksara tasks reenqueue --all                  # all failed tasks
+aksara tasks reenqueue --all --queue emails
+aksara tasks reenqueue --all --yes            # skip confirmation
+```
+
+### tasks purge
+
+Delete old task records from the database.
+
+```bash
+aksara tasks purge [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--status`, `-s` | `completed` | Status(es) to purge (repeatable) |
+| `--older-than-days`, `-d` | `7` | Delete rows last updated more than N days ago |
+| `--yes`, `-y` | — | Skip confirmation prompt |
+
+**Examples:**
+
+```bash
+aksara tasks purge                                           # completed, >7 days
+aksara tasks purge --status failed --older-than-days 30
+aksara tasks purge --status completed --status failed -d 1 --yes
+```
+
+---
+
 ## Custom Commands
 
 ### Creating Commands

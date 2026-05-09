@@ -3,6 +3,26 @@ Durable workflow state helpers.
 
 Provides a small persistence primitive for long-running workflow steps that
 should only execute once after succeeding.
+
+Concurrency model
+-----------------
+DurableStep is designed for *sequential* orchestration: a single orchestrator
+calls steps one after the other.  Concurrent execution of the same step is
+detected and rejected via an atomic PostgreSQL INSERT … ON CONFLICT claim:
+
+* Only one caller can transition a step into 'running' at a time.
+* A second concurrent caller sees no RETURNING row and raises
+  ConcurrentStepError rather than silently double-executing.
+* If the concurrent holder completes before the loser re-reads, the loser
+  transparently returns the cached result instead of raising.
+
+Step re-entry rules (force=False, the default):
+  - No row exists     → claim and execute
+  - status='failed'   → re-claim and retry
+  - status='running'  → raise ConcurrentStepError
+  - status='completed'→ return cached result without any DB write
+
+force=True bypasses all status checks and always re-executes.
 """
 
 from __future__ import annotations
@@ -18,6 +38,14 @@ from aksara.db import Database
 
 
 DURABLE_STATE_TABLE = "aksara_durable_state"
+
+
+class ConcurrentStepError(RuntimeError):
+    """Raised when a workflow step is already being executed by another concurrent caller.
+
+    DurableStep is designed for sequential orchestration. Calling the same step
+    from multiple concurrent tasks is a usage error.
+    """
 _DURABLE_STATE_SCHEMA_SQL = f'''CREATE TABLE IF NOT EXISTS "{DURABLE_STATE_TABLE}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id TEXT NOT NULL,
@@ -137,28 +165,69 @@ class DurableStep:
         force: bool = False,
         **kwargs: Any,
     ) -> Any:
-        """Run a step once and reuse its persisted result on later calls."""
-        state = await self.get_state(step_name)
-        if state is not None and state.status == "completed" and not force:
-            return state.result
+        """Run a step once and reuse its persisted result on later calls.
 
+        The step claim is atomic: only one concurrent caller can own execution
+        at a time. A second concurrent caller targeting the same running step
+        raises ConcurrentStepError rather than double-executing.
+        """
+        await self.ensure_table()
         db = self._get_db()
-        await db.fetchrow(
-            f'''
-            INSERT INTO "{DURABLE_STATE_TABLE}" (workflow_id, step_name, status, error, completed_at)
-            VALUES ($1, $2, $3, NULL, NULL)
-            ON CONFLICT (workflow_id, step_name)
-            DO UPDATE SET
-                status = EXCLUDED.status,
-                error = NULL,
-                completed_at = NULL,
-                updated_at = CURRENT_TIMESTAMP
-            RETURNING workflow_id
-            ''',
-            self.workflow_id,
-            step_name,
-            "running",
-        )
+
+        # Fast path: return cached result without acquiring any lock.
+        if not force:
+            state = await self.get_state(step_name)
+            if state is not None and state.status == "completed":
+                return state.result
+
+        # Atomically claim the step for execution.
+        # force=True  → always overwrite, even if already 'completed' or 'running'.
+        # force=False → only claim when no row exists yet, or the previous run failed.
+        #               A row in 'running' or 'completed' state blocks the claim.
+        if force:
+            claimed = await db.fetchrow(
+                f'''
+                INSERT INTO "{DURABLE_STATE_TABLE}" (workflow_id, step_name, status, error, completed_at)
+                VALUES ($1, $2, 'running', NULL, NULL)
+                ON CONFLICT (workflow_id, step_name) DO UPDATE
+                  SET
+                    status = 'running',
+                    error = NULL,
+                    completed_at = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING workflow_id
+                ''',
+                self.workflow_id,
+                step_name,
+            )
+        else:
+            claimed = await db.fetchrow(
+                f'''
+                INSERT INTO "{DURABLE_STATE_TABLE}" (workflow_id, step_name, status, error, completed_at)
+                VALUES ($1, $2, 'running', NULL, NULL)
+                ON CONFLICT (workflow_id, step_name) DO UPDATE
+                  SET
+                    status = 'running',
+                    error = NULL,
+                    completed_at = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                  WHERE "{DURABLE_STATE_TABLE}".status = 'failed'
+                RETURNING workflow_id
+                ''',
+                self.workflow_id,
+                step_name,
+            )
+
+        if not claimed:
+            # Another concurrent caller holds this step. Re-read to find out why.
+            state = await self.get_state(step_name)
+            if state is not None and state.status == "completed":
+                return state.result
+            raise ConcurrentStepError(
+                f"Step '{step_name}' of workflow '{self.workflow_id}' is already running "
+                "concurrently. DurableStep is designed for sequential workflows — "
+                "do not call the same step from multiple concurrent tasks."
+            )
 
         try:
             result = func(*args, **kwargs)
@@ -169,9 +238,9 @@ class DurableStep:
             record = await db.fetchrow(
                 f'''
                 INSERT INTO "{DURABLE_STATE_TABLE}" (workflow_id, step_name, status, result, error, completed_at)
-                VALUES ($1, $2, $3, $4, NULL, CURRENT_TIMESTAMP)
-                ON CONFLICT (workflow_id, step_name)
-                DO UPDATE SET
+                VALUES ($1, $2, 'completed', $3, NULL, CURRENT_TIMESTAMP)
+                ON CONFLICT (workflow_id, step_name) DO UPDATE
+                  SET
                     status = EXCLUDED.status,
                     result = EXCLUDED.result,
                     error = NULL,
@@ -181,7 +250,6 @@ class DurableStep:
                 ''',
                 self.workflow_id,
                 step_name,
-                "completed",
                 json.dumps(encoded_result),
             )
             return self._decode_result(record["result"] if record is not None else encoded_result)
@@ -189,9 +257,9 @@ class DurableStep:
             await db.fetchrow(
                 f'''
                 INSERT INTO "{DURABLE_STATE_TABLE}" (workflow_id, step_name, status, error, completed_at)
-                VALUES ($1, $2, $3, $4, NULL)
-                ON CONFLICT (workflow_id, step_name)
-                DO UPDATE SET
+                VALUES ($1, $2, 'failed', $3, NULL)
+                ON CONFLICT (workflow_id, step_name) DO UPDATE
+                  SET
                     status = EXCLUDED.status,
                     error = EXCLUDED.error,
                     completed_at = NULL,
@@ -200,7 +268,6 @@ class DurableStep:
                 ''',
                 self.workflow_id,
                 step_name,
-                "failed",
                 str(exc),
             )
             raise
@@ -225,6 +292,7 @@ class DurableStep:
 
 __all__ = [
     "DURABLE_STATE_TABLE",
+    "ConcurrentStepError",
     "DurableStep",
     "DurableStepState",
 ]

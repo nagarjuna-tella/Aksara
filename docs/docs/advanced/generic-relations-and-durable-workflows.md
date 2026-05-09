@@ -109,6 +109,42 @@ If you need to recompute a successful step anyway, use `force=True`:
 fresh = await step.run("generate_code", generate_code, force=True)
 ```
 
+### Step Re-entry Rules
+
+The table below summarises what `step.run(name, fn)` does depending on the
+current persisted state of the step:
+
+| Existing status | `force=False` (default) | `force=True` |
+|-----------------|-------------------------|--------------|
+| No row          | Execute, cache result   | Execute, cache result |
+| `failed`        | Re-execute, overwrite   | Re-execute, overwrite |
+| `running`       | Raise `ConcurrentStepError` | Execute, overwrite |
+| `completed`     | Return cached result    | Re-execute, overwrite |
+
+### Concurrent Execution Protection
+
+`DurableStep` is designed for **sequential** orchestration: one orchestrator
+calls steps one after the other.
+
+Calling the same step from two concurrent tasks at the same time is detected
+atomically (via `INSERT … ON CONFLICT DO UPDATE … WHERE status = 'failed'`) and
+raises `ConcurrentStepError` on the losing caller rather than silently
+double-executing:
+
+```python
+from aksara.workflows import ConcurrentStepError
+
+try:
+    result = await step.run("send_invoice", generate_invoice)
+except ConcurrentStepError:
+    # Another caller already holds this step.
+    # Wait and re-read, or surface the error upstream.
+    ...
+```
+
+If the winning caller completes before the loser re-reads, the loser
+transparently returns the cached result instead of raising.
+
 ### Result Format
 
 By default, durable results must be JSON-serializable. Common values like:
@@ -121,7 +157,24 @@ By default, durable results must be JSON-serializable. Common values like:
 are normalized automatically before being persisted.
 
 If you need a different encoding strategy, pass custom `serializer` and
-`deserializer` callables when constructing `DurableStep`.
+`deserializer` callables when constructing `DurableStep`:
+
+```python
+import pickle, base64
+
+step = DurableStep(
+    "wf-ml-pipeline",
+    serializer=lambda v: base64.b64encode(pickle.dumps(v)).decode(),
+    deserializer=lambda v: pickle.loads(base64.b64decode(v)),
+)
+```
+
+### Clearing Step State
+
+```python
+await step.clear("generate_code")   # clear one step
+await step.clear()                  # clear all steps for this workflow_id
+```
 
 ---
 
@@ -129,4 +182,6 @@ If you need a different encoding strategy, pass custom `serializer` and
 
 - `ContentType` rows are synced on app startup and cached in memory for fast resolution.
 - `DurableStep` creates `aksara_durable_state` lazily on first use.
+- The step claim is atomic — `INSERT … ON CONFLICT DO UPDATE … WHERE` — so
+  concurrent callers never both execute the same step.
 - Both features rely on PostgreSQL-managed internal tables, so no extra service is required.

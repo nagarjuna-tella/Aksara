@@ -129,6 +129,14 @@ class Settings:
     task_poll_interval_seconds: float = 1.0
     task_retry_delay_seconds: float = 5.0
     task_max_attempts: int = 3
+    task_stale_lock_timeout_seconds: float = 300.0
+    task_lock_recovery_interval_seconds: float = 60.0
+    task_concurrency: int = 1
+    task_retry_backoff_base: float = 2.0
+    task_retry_max_delay_seconds: float = 3600.0
+    task_result_ttl_seconds: Optional[float] = None
+    task_cleanup_interval_seconds: float = 3600.0
+    task_cron_check_interval_seconds: float = 30.0
     
     # v0.4.0: AI features
     ai_enabled: bool = False
@@ -340,7 +348,38 @@ class Settings:
             "AKSARA_TASK_MAX_ATTEMPTS",
             self.task_max_attempts,
         )
-        
+        self.task_stale_lock_timeout_seconds = _get_float_env(
+            "AKSARA_TASK_STALE_LOCK_TIMEOUT_SECONDS",
+            self.task_stale_lock_timeout_seconds,
+        )
+        self.task_lock_recovery_interval_seconds = _get_float_env(
+            "AKSARA_TASK_LOCK_RECOVERY_INTERVAL_SECONDS",
+            self.task_lock_recovery_interval_seconds,
+        )
+        self.task_concurrency = _get_int_env(
+            "AKSARA_TASK_CONCURRENCY",
+            self.task_concurrency,
+        )
+        self.task_retry_backoff_base = _get_float_env(
+            "AKSARA_TASK_RETRY_BACKOFF_BASE",
+            self.task_retry_backoff_base,
+        )
+        self.task_retry_max_delay_seconds = _get_float_env(
+            "AKSARA_TASK_RETRY_MAX_DELAY_SECONDS",
+            self.task_retry_max_delay_seconds,
+        )
+        _env_ttl = os.getenv("AKSARA_TASK_RESULT_TTL_SECONDS")
+        if _env_ttl is not None:
+            self.task_result_ttl_seconds = float(_env_ttl)
+        self.task_cleanup_interval_seconds = _get_float_env(
+            "AKSARA_TASK_CLEANUP_INTERVAL_SECONDS",
+            self.task_cleanup_interval_seconds,
+        )
+        self.task_cron_check_interval_seconds = _get_float_env(
+            "AKSARA_TASK_CRON_CHECK_INTERVAL_SECONDS",
+            self.task_cron_check_interval_seconds,
+        )
+
         # Future: AI features
         if not self.ai_enabled:
             self.ai_enabled = _get_bool_env("AKSARA_AI_ENABLED", False)

@@ -3,6 +3,28 @@ Built-in background task queue.
 
 Provides a lightweight database-backed task registry, enqueue helpers,
 and an application-owned worker loop.
+
+Reliability features
+--------------------
+* FOR UPDATE SKIP LOCKED — prevents double-processing when multiple app
+  instances share the same database.
+* Stale lock recovery — the worker periodically resets tasks whose
+  locked_at timestamp is older than task_stale_lock_timeout_seconds
+  (default 300 s / 5 min), rescuing work that was claimed by a worker
+  that crashed before it could finish.  The check runs every
+  task_lock_recovery_interval_seconds (default 60 s).
+* Exponential backoff — retry delays grow as
+  retry_delay_seconds * retry_backoff_base^(attempt-1), capped at
+  retry_max_delay_seconds.  Set retry_backoff_base=1.0 for flat delays.
+* Configurable concurrency — each TaskWorker can process up to
+  task_concurrency tasks simultaneously (default 1).
+* Completed-task TTL — old records are purged automatically when
+  task_result_ttl_seconds is set; cleaned up every
+  task_cleanup_interval_seconds.
+* Recurring tasks — register with every=timedelta(minutes=5) and the
+  worker schedules them automatically via an atomic cron-state table.
+* Named queues — tasks are tagged with a queue name; workers bind to one
+  or more queues, isolating workloads across instances.
 """
 
 from __future__ import annotations
@@ -10,8 +32,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import time
 from dataclasses import asdict, dataclass, is_dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import update_wrapper
 from typing import Any, Callable, Literal, Optional
 from uuid import UUID
@@ -26,6 +49,7 @@ TASKS_TABLE = "aksara_tasks"
 TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_name VARCHAR(255) NOT NULL,
+    queue VARCHAR(100) NOT NULL DEFAULT 'default',
     payload JSONB NOT NULL DEFAULT '{{}}'::jsonb,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     attempts INTEGER NOT NULL DEFAULT 0,
@@ -40,8 +64,19 @@ TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
 );'''
 TASKS_INDEX_SQL = (
     f'CREATE INDEX IF NOT EXISTS "idx_{TASKS_TABLE}_pending" '
-    f'ON "{TASKS_TABLE}" (status, available_at, created_at)'
+    f'ON "{TASKS_TABLE}" (queue, status, available_at, created_at)'
 )
+# Idempotent migration: adds queue column to tables created before this feature.
+_TASKS_MIGRATE_QUEUE_SQL = (
+    f'ALTER TABLE "{TASKS_TABLE}" ADD COLUMN IF NOT EXISTS '
+    f"queue VARCHAR(100) NOT NULL DEFAULT 'default'"
+)
+
+CRON_STATE_TABLE = "aksara_cron_state"
+CRON_STATE_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{CRON_STATE_TABLE}" (
+    task_name VARCHAR(255) PRIMARY KEY,
+    last_enqueued_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);'''
 
 _TASK_REGISTRY: dict[str, "RegisteredTask"] = {}
 
@@ -56,6 +91,7 @@ class TaskRecord:
     status: TaskStatus
     attempts: int
     max_attempts: int
+    queue: str = "default"
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -70,6 +106,7 @@ class TaskRecord:
         return cls(
             id=record["id"],
             task_name=record["task_name"],
+            queue=record.get("queue", "default") or "default",
             payload=_decode_json_value(record["payload"]) or {},
             status=record["status"],
             attempts=record["attempts"],
@@ -140,11 +177,15 @@ class RegisteredTask:
         *,
         name: Optional[str] = None,
         max_attempts: Optional[int] = None,
+        queue: str = "default",
+        every: Optional[timedelta] = None,
     ):
         update_wrapper(self, func)
         self.func = func
         self.name = name or f"{func.__module__}.{func.__qualname__}"
         self.max_attempts = max_attempts
+        self.queue = queue
+        self.every = every
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.func(*args, **kwargs)
@@ -155,6 +196,7 @@ class RegisteredTask:
         db: Optional[Database] = None,
         delay_seconds: float = 0.0,
         max_attempts: Optional[int] = None,
+        queue: Optional[str] = None,
         **kwargs: Any,
     ) -> TaskRecord:
         """Enqueue the task for background execution."""
@@ -164,6 +206,7 @@ class RegisteredTask:
             db=db,
             delay_seconds=delay_seconds,
             max_attempts=max_attempts,
+            queue=queue,
             **kwargs,
         )
 
@@ -188,11 +231,31 @@ def task(
     *,
     name: Optional[str] = None,
     max_attempts: Optional[int] = None,
-) -> RegisteredTask | Callable[[Callable[..., Any]], RegisteredTask]:
-    """Register a function as a durable background task."""
+    queue: str = "default",
+    every: Optional[timedelta | int | float] = None,
+) -> "RegisteredTask | Callable[[Callable[..., Any]], RegisteredTask]":
+    """Register a function as a durable background task.
+
+    Args:
+        name: Override the auto-derived task name (module.qualname).
+        max_attempts: Max retry attempts (overrides global setting).
+        queue: Named queue this task belongs to (default: "default").
+        every: Recurring schedule — a timedelta or seconds as int/float.
+               When set, the worker automatically enqueues the task each
+               time the interval elapses.
+    """
 
     def decorator(target: Callable[..., Any]) -> RegisteredTask:
-        registered = RegisteredTask(target, name=name, max_attempts=max_attempts)
+        every_td: Optional[timedelta] = None
+        if every is not None:
+            every_td = every if isinstance(every, timedelta) else timedelta(seconds=float(every))
+        registered = RegisteredTask(
+            target,
+            name=name,
+            max_attempts=max_attempts,
+            queue=queue,
+            every=every_td,
+        )
         _TASK_REGISTRY[registered.name] = registered
         return registered
 
@@ -202,13 +265,20 @@ def task(
 
 
 async def ensure_tasks_table(db: Optional[Database] = None) -> None:
-    """Create the internal task table when needed."""
+    """Create (or migrate) the internal task table."""
     database = _get_db(db)
     await database.execute(TASKS_TABLE_SQL)
+    await database.execute(_TASKS_MIGRATE_QUEUE_SQL)
     await database.execute(TASKS_INDEX_SQL)
 
 
-def _resolve_task_definition(task_ref: str | RegisteredTask) -> RegisteredTask:
+async def ensure_cron_state_table(db: Optional[Database] = None) -> None:
+    """Create the recurring-task cron-state table when needed."""
+    database = _get_db(db)
+    await database.execute(CRON_STATE_TABLE_SQL)
+
+
+def _resolve_task_definition(task_ref: "str | RegisteredTask") -> RegisteredTask:
     """Resolve a task name or wrapper into a registered task definition."""
     if isinstance(task_ref, RegisteredTask):
         return task_ref
@@ -216,11 +286,12 @@ def _resolve_task_definition(task_ref: str | RegisteredTask) -> RegisteredTask:
 
 
 async def enqueue_task(
-    task_ref: str | RegisteredTask,
+    task_ref: "str | RegisteredTask",
     *args: Any,
     db: Optional[Database] = None,
     delay_seconds: float = 0.0,
     max_attempts: Optional[int] = None,
+    queue: Optional[str] = None,
     **kwargs: Any,
 ) -> TaskRecord:
     """Persist a task invocation for background execution."""
@@ -231,20 +302,20 @@ async def enqueue_task(
 
     task_definition = _resolve_task_definition(task_ref)
     effective_max_attempts = max_attempts or task_definition.max_attempts or settings.task_max_attempts
+    effective_queue = queue if queue is not None else task_definition.queue
     payload = _encode_json_value({"args": list(args), "kwargs": kwargs})
 
     record = await database.fetchrow(
         f'''
-        INSERT INTO "{TASKS_TABLE}" (task_name, payload, max_attempts, available_at)
+        INSERT INTO "{TASKS_TABLE}" (task_name, queue, payload, max_attempts, available_at)
         VALUES (
-            $1,
-            $2,
-            $3,
-            CURRENT_TIMESTAMP + ($4::double precision * INTERVAL '1 second')
+            $1, $2, $3, $4,
+            CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second')
         )
         RETURNING *
         ''',
         task_definition.name,
+        effective_queue,
         json.dumps(payload),
         effective_max_attempts,
         delay_seconds,
@@ -271,7 +342,19 @@ async def get_task_record(
 
 
 class TaskWorker:
-    """Simple polling worker that executes tasks from the database queue."""
+    """Polling worker that executes tasks from the database queue.
+
+    One instance is created per Aksara app and runs its own asyncio loop.
+    Multiple app instances can share the same queue safely — PostgreSQL row
+    locks (FOR UPDATE SKIP LOCKED) prevent double-processing.
+
+    The worker also runs periodic stale lock recovery: tasks whose locked_at
+    is older than stale_lock_timeout_seconds are reset to 'pending' so they
+    can be re-claimed by a healthy worker.
+
+    Set concurrency > 1 to process multiple tasks simultaneously within a
+    single worker instance.
+    """
 
     def __init__(
         self,
@@ -279,6 +362,15 @@ class TaskWorker:
         *,
         poll_interval: Optional[float] = None,
         retry_delay_seconds: Optional[float] = None,
+        stale_lock_timeout_seconds: Optional[float] = None,
+        lock_recovery_interval_seconds: Optional[float] = None,
+        concurrency: Optional[int] = None,
+        retry_backoff_base: Optional[float] = None,
+        retry_max_delay_seconds: Optional[float] = None,
+        result_ttl_seconds: Optional[float] = None,
+        cleanup_interval_seconds: Optional[float] = None,
+        cron_check_interval_seconds: Optional[float] = None,
+        queues: Optional[list[str]] = None,
     ):
         from aksara.conf import settings
 
@@ -291,6 +383,50 @@ class TaskWorker:
             if retry_delay_seconds is not None
             else settings.task_retry_delay_seconds
         )
+        self.stale_lock_timeout_seconds = (
+            stale_lock_timeout_seconds
+            if stale_lock_timeout_seconds is not None
+            else settings.task_stale_lock_timeout_seconds
+        )
+        self.lock_recovery_interval_seconds = (
+            lock_recovery_interval_seconds
+            if lock_recovery_interval_seconds is not None
+            else settings.task_lock_recovery_interval_seconds
+        )
+        self.concurrency = (
+            concurrency if concurrency is not None else settings.task_concurrency
+        )
+        self.retry_backoff_base = (
+            retry_backoff_base
+            if retry_backoff_base is not None
+            else settings.task_retry_backoff_base
+        )
+        self.retry_max_delay_seconds = (
+            retry_max_delay_seconds
+            if retry_max_delay_seconds is not None
+            else settings.task_retry_max_delay_seconds
+        )
+        self.result_ttl_seconds = (
+            result_ttl_seconds
+            if result_ttl_seconds is not None
+            else settings.task_result_ttl_seconds
+        )
+        self.cleanup_interval_seconds = (
+            cleanup_interval_seconds
+            if cleanup_interval_seconds is not None
+            else settings.task_cleanup_interval_seconds
+        )
+        self.cron_check_interval_seconds = (
+            cron_check_interval_seconds
+            if cron_check_interval_seconds is not None
+            else settings.task_cron_check_interval_seconds
+        )
+        # None → all queues; list → only those queues
+        self.queues: Optional[list[str]] = queues
+
+        self._last_recovery: float = 0.0
+        self._last_cleanup: float = 0.0
+        self._last_cron_check: float = 0.0
         self._runner_task: Optional[asyncio.Task[None]] = None
         self._stop_event = asyncio.Event()
 
@@ -309,7 +445,7 @@ class TaskWorker:
         self._runner_task = asyncio.create_task(self._run_loop())
 
     async def stop(self) -> None:
-        """Stop the background polling loop."""
+        """Stop the background polling loop and drain in-flight tasks."""
         if self._runner_task is None:
             return
 
@@ -323,50 +459,253 @@ class TaskWorker:
         database = _get_db(self._db)
         await ensure_tasks_table(database)
 
-        record = await database.fetchrow(
-            f'''
-            WITH next_task AS (
-                SELECT id
-                FROM "{TASKS_TABLE}"
-                WHERE status = 'pending' AND available_at <= CURRENT_TIMESTAMP
-                ORDER BY available_at ASC, created_at ASC
-                FOR UPDATE SKIP LOCKED
-                LIMIT 1
-            )
-            UPDATE "{TASKS_TABLE}"
-            SET
-                status = 'running',
-                attempts = attempts + 1,
-                locked_at = CURRENT_TIMESTAMP,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id IN (SELECT id FROM next_task)
-            RETURNING *
-            '''
-        )
-        if record is None:
+        task_record = await self._claim_task()
+        if task_record is None:
             return None
 
-        task_record = TaskRecord.from_record(record)
         await self._process_task(task_record)
         refreshed = await get_task_record(task_record.id, db=database)
         return refreshed or task_record
 
+    async def recover_stale_locks(self) -> int:
+        """Reset tasks stuck in 'running' state back to 'pending'.
+
+        A task is considered stale when its locked_at timestamp is older than
+        stale_lock_timeout_seconds, which typically means the worker that claimed
+        it crashed before completing execution.
+
+        Returns the number of tasks recovered.
+        """
+        database = _get_db(self._db)
+        await ensure_tasks_table(database)
+        result = await database.fetchrow(
+            f'''
+            WITH recovered AS (
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'pending',
+                    locked_at = NULL,
+                    available_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE
+                    status = 'running'
+                    AND locked_at < CURRENT_TIMESTAMP - ($1::double precision * INTERVAL '1 second')
+                RETURNING id
+            )
+            SELECT COUNT(*) AS count FROM recovered
+            ''',
+            self.stale_lock_timeout_seconds,
+        )
+        count = int(result["count"]) if result else 0
+        if count > 0:
+            logger.warning("Recovered %d stale task(s) stuck in 'running' state", count)
+        return count
+
+    async def purge_old_tasks(
+        self,
+        *,
+        statuses: tuple[str, ...] = ("completed",),
+        older_than_seconds: Optional[float] = None,
+    ) -> int:
+        """Delete task records older than a TTL threshold.
+
+        Args:
+            statuses: Which status values to purge (default: completed only).
+            older_than_seconds: Age threshold in seconds; falls back to
+                result_ttl_seconds if not given.  Returns 0 if both are None.
+
+        Returns the number of rows deleted.
+        """
+        timeout = older_than_seconds if older_than_seconds is not None else self.result_ttl_seconds
+        if timeout is None:
+            return 0
+
+        database = _get_db(self._db)
+        await ensure_tasks_table(database)
+        result = await database.fetchrow(
+            f'''
+            WITH deleted AS (
+                DELETE FROM "{TASKS_TABLE}"
+                WHERE status = ANY($1::text[])
+                  AND updated_at < CURRENT_TIMESTAMP - ($2::double precision * INTERVAL '1 second')
+                RETURNING id
+            )
+            SELECT COUNT(*) AS count FROM deleted
+            ''',
+            list(statuses),
+            timeout,
+        )
+        count = int(result["count"]) if result else 0
+        if count > 0:
+            logger.info("Purged %d old task record(s) (TTL %.0fs)", count, timeout)
+        return count
+
+    async def _claim_task(self) -> Optional[TaskRecord]:
+        """Atomically claim the next available task. Returns None if queue is empty."""
+        database = _get_db(self._db)
+        await ensure_tasks_table(database)
+
+        if self.queues is not None:
+            record = await database.fetchrow(
+                f'''
+                WITH next_task AS (
+                    SELECT id
+                    FROM "{TASKS_TABLE}"
+                    WHERE status = 'pending'
+                      AND available_at <= CURRENT_TIMESTAMP
+                      AND queue = ANY($1::text[])
+                    ORDER BY available_at ASC, created_at ASC
+                    FOR UPDATE SKIP LOCKED
+                    LIMIT 1
+                )
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'running',
+                    attempts = attempts + 1,
+                    locked_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (SELECT id FROM next_task)
+                RETURNING *
+                ''',
+                self.queues,
+            )
+        else:
+            record = await database.fetchrow(
+                f'''
+                WITH next_task AS (
+                    SELECT id
+                    FROM "{TASKS_TABLE}"
+                    WHERE status = 'pending' AND available_at <= CURRENT_TIMESTAMP
+                    ORDER BY available_at ASC, created_at ASC
+                    FOR UPDATE SKIP LOCKED
+                    LIMIT 1
+                )
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'running',
+                    attempts = attempts + 1,
+                    locked_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (SELECT id FROM next_task)
+                RETURNING *
+                '''
+            )
+
+        if record is None:
+            return None
+        return TaskRecord.from_record(record)
+
+    async def _schedule_recurring_tasks(self) -> int:
+        """Enqueue any recurring tasks whose interval has elapsed.
+
+        Uses an atomic INSERT … ON CONFLICT DO UPDATE … WHERE so that only
+        one worker across all instances enqueues each due task.
+
+        Returns the count of tasks enqueued this cycle.
+        """
+        database = _get_db(self._db)
+        await ensure_cron_state_table(database)
+        await ensure_tasks_table(database)
+
+        count = 0
+        for name, task_def in list(_TASK_REGISTRY.items()):
+            if task_def.every is None:
+                continue
+            if self.queues is not None and task_def.queue not in self.queues:
+                continue
+
+            interval_seconds = task_def.every.total_seconds()
+
+            # Claim the scheduling slot atomically.
+            # INSERT path: first-ever registration — run immediately, record now.
+            # ON CONFLICT path: re-run only when the interval has elapsed since
+            #   last_enqueued_at; update the timestamp to prevent double-firing.
+            record = await database.fetchrow(
+                f'''
+                INSERT INTO "{CRON_STATE_TABLE}" (task_name, last_enqueued_at)
+                VALUES ($1, CURRENT_TIMESTAMP)
+                ON CONFLICT (task_name) DO UPDATE
+                  SET last_enqueued_at = CURRENT_TIMESTAMP
+                  WHERE "{CRON_STATE_TABLE}".last_enqueued_at
+                        < CURRENT_TIMESTAMP - ($2::double precision * INTERVAL '1 second')
+                RETURNING task_name
+                ''',
+                name,
+                interval_seconds,
+            )
+
+            if record is not None:
+                try:
+                    await enqueue_task(task_def, db=database)
+                    count += 1
+                    logger.debug("Scheduled recurring task '%s'", name)
+                except Exception:
+                    logger.exception("Failed to enqueue recurring task '%s'", name)
+
+        return count
+
     async def _run_loop(self) -> None:
         """Continuously poll for work until asked to stop."""
+        active_tasks: set[asyncio.Task] = set()
+
         while not self._stop_event.is_set():
-            try:
-                processed = await self.poll_once()
-            except Exception:
-                logger.exception("Task worker poll failed")
-                processed = None
+            now = time.monotonic()
 
-            if processed is not None:
-                continue
+            # Stale lock recovery
+            if now - self._last_recovery >= self.lock_recovery_interval_seconds:
+                try:
+                    await self.recover_stale_locks()
+                except Exception:
+                    logger.exception("Stale lock recovery failed")
+                self._last_recovery = now
 
-            try:
-                await asyncio.wait_for(self._stop_event.wait(), timeout=self.poll_interval)
-            except asyncio.TimeoutError:
-                continue
+            # Completed task cleanup
+            if (
+                self.result_ttl_seconds is not None
+                and now - self._last_cleanup >= self.cleanup_interval_seconds
+            ):
+                try:
+                    await self.purge_old_tasks()
+                except Exception:
+                    logger.exception("Task cleanup failed")
+                self._last_cleanup = now
+
+            # Recurring task scheduling
+            if now - self._last_cron_check >= self.cron_check_interval_seconds:
+                try:
+                    await self._schedule_recurring_tasks()
+                except Exception:
+                    logger.exception("Recurring task scheduling failed")
+                self._last_cron_check = now
+
+            # Fill up to concurrency limit
+            while len(active_tasks) < self.concurrency:
+                try:
+                    record = await self._claim_task()
+                except Exception:
+                    logger.exception("Task worker poll failed")
+                    break
+                if record is None:
+                    break
+                t = asyncio.create_task(self._process_task(record))
+                active_tasks.add(t)
+                t.add_done_callback(active_tasks.discard)
+
+            if not active_tasks:
+                try:
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=self.poll_interval)
+                except asyncio.TimeoutError:
+                    pass
+            else:
+                _, _ = await asyncio.wait(
+                    active_tasks,
+                    return_when=asyncio.FIRST_COMPLETED,
+                    timeout=self.poll_interval,
+                )
+
+        # Drain in-flight tasks gracefully before shutdown
+        if active_tasks:
+            await asyncio.gather(*active_tasks, return_exceptions=True)
 
     async def _process_task(self, task_record: TaskRecord) -> None:
         """Execute a claimed task and persist the outcome."""
@@ -422,11 +761,16 @@ class TaskWorker:
         *,
         db: Optional[Database] = None,
     ) -> None:
-        """Persist a failed attempt and optionally reschedule it."""
+        """Persist a failed attempt and optionally reschedule it with backoff."""
         database = _get_db(db)
         should_retry = task_record.attempts < task_record.max_attempts
 
         if should_retry:
+            # Exponential backoff: base_delay * backoff_base^(attempt-1), capped.
+            delay = min(
+                self.retry_delay_seconds * (self.retry_backoff_base ** (task_record.attempts - 1)),
+                self.retry_max_delay_seconds,
+            )
             await database.execute(
                 f'''
                 UPDATE "{TASKS_TABLE}"
@@ -439,7 +783,7 @@ class TaskWorker:
                 WHERE id = $3
                 ''',
                 error,
-                self.retry_delay_seconds,
+                delay,
                 task_record.id,
             )
             return
@@ -460,13 +804,16 @@ class TaskWorker:
 
 
 __all__ = [
+    "CRON_STATE_TABLE",
     "TASKS_TABLE",
     "TaskRecord",
     "TaskWorker",
     "clear_task_registry",
     "enqueue_task",
+    "ensure_cron_state_table",
     "ensure_tasks_table",
     "get_registered_task",
     "get_task_record",
+    "recover_stale_locks",
     "task",
 ]
