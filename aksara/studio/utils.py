@@ -657,20 +657,23 @@ async def build_runtime_info(app: "FastAPI") -> StudioRuntimeInfo:
     )
 
 
-def build_routes_info(app: "FastAPI") -> List[StudioRouteInfo]:
+def build_routes_info(app: Optional["FastAPI"] = None) -> List[StudioRouteInfo]:
     """
     Build route metadata for all registered routes.
-    
+
     v0.5.2: Read-only route info for Studio.
-    
+
     Args:
-        app: FastAPI application
-        
+        app: FastAPI application. Returns an empty list when None.
+
     Returns:
         List of StudioRouteInfo for all routes
     """
+    if app is None:
+        return []
+
     routes_info = []
-    
+
     for route in app.routes:
         # Get route path
         path = getattr(route, 'path', str(route))
@@ -805,8 +808,9 @@ async def build_ai_context_export(app: "FastAPI") -> StudioAiContextExport:
     
     routes.sort(key=lambda r: r.path)
     
-    # Build available AI tools
-    tools = _get_ai_tools_summary()
+    # Build available AI tools from the actually-mounted /ai/* surface so
+    # the export reflects live capabilities, not a hand-maintained list.
+    tools = _get_ai_tools_summary(app)
     
     # Get installed apps
     apps = list(settings.installed_apps) if settings.installed_apps else list(settings.apps)
@@ -851,50 +855,75 @@ async def build_ai_context_export(app: "FastAPI") -> StudioAiContextExport:
     )
 
 
-def _get_ai_tools_summary() -> List[StudioAiToolInfo]:
+def _get_ai_tools_summary(app: Optional["FastAPI"] = None) -> List[StudioAiToolInfo]:
     """
-    Get summary of available AI tools/endpoints.
-    
-    v0.5.4: Returns info about AI operations available.
+    Build a summary of available AI tools by inspecting the actual mounted
+    routes under ``/ai/*`` and ``/studio/ai/*``.
+
+    Why dynamic: a hand-maintained list drifts as endpoints are added,
+    renamed, or split (e.g. ``/ai/patch`` → ``/ai/patch/preview`` +
+    ``/ai/patch/apply``).  Reading from ``app.routes`` keeps the export
+    aligned with what's actually callable on this instance.
+
+    Falls back to an empty list when no app is provided.
     """
-    tools = [
-        StudioAiToolInfo(
-            name="ai_query",
-            description="Execute natural language queries against the database",
-            endpoint="/ai/query",
-            safe=True,  # Read-only
-        ),
-        StudioAiToolInfo(
-            name="ai_plan",
-            description="Generate structured plans for schema changes",
-            endpoint="/ai/plan",
-            safe=True,  # Planning is safe
-        ),
-        StudioAiToolInfo(
-            name="ai_patch_validate",
-            description="Validate patch operations before applying",
-            endpoint="/ai/patch/validate",
-            safe=True,  # Validation is safe
-        ),
-        StudioAiToolInfo(
-            name="ai_patch_apply",
-            description="Apply validated patches to the codebase",
-            endpoint="/ai/patch/apply",
-            safe=False,  # Modifies files
-        ),
-        StudioAiToolInfo(
-            name="ai_codegen",
-            description="Generate code from model specifications",
-            endpoint="/ai/codegen",
-            safe=True,  # Returns code, doesn't write
-        ),
-        StudioAiToolInfo(
-            name="studio_context",
-            description="Get full application context for AI",
-            endpoint="/studio/ai/context",
-            safe=True,
-        ),
-    ]
+    if app is None:
+        return []
+
+    # Heuristic: a tool is "safe" when it cannot mutate code/data.
+    # Path-segment based, conservative — anything we don't recognise as
+    # read-only is marked unsafe.
+    UNSAFE_SEGMENTS = ("/apply", "/execute")
+    # Explicit exceptions: paths whose final segment matches an unsafe keyword
+    # but are actually read-only by contract (e.g. AiQueryPlan is defined as
+    # a read-only plan that the caller may or may not act on).
+    SAFE_PATH_EXCEPTIONS = {"/ai/query/execute"}
+
+    def _is_safe(method: str, path: str) -> bool:
+        m = (method or "GET").upper()
+        if m in ("GET", "HEAD", "OPTIONS"):
+            return True
+        if path in SAFE_PATH_EXCEPTIONS:
+            return True
+        if any(seg in path for seg in UNSAFE_SEGMENTS):
+            return False
+        # Preview / schema / discovery paths are read-only by convention.
+        if any(seg in path for seg in ("/preview", "/schema", "/context", "/tools", "/health", "/issues", "/diff")):
+            return True
+        return False
+
+    def _tool_name(path: str) -> str:
+        # /ai/query/execute → ai_query_execute, /studio/ai/context → studio_ai_context
+        return path.strip("/").replace("/", "_").replace("-", "_") or "root"
+
+    seen: set = set()
+    tools: List[StudioAiToolInfo] = []
+    for route in app.routes:
+        path = getattr(route, "path", "") or ""
+        if not (path.startswith("/ai/") or path.startswith("/studio/ai/")):
+            continue
+        # Skip parameterised lookup helpers like /ai/tools/{tool_name}
+        if "{" in path:
+            continue
+        methods = sorted(getattr(route, "methods", None) or ["GET"])
+        for method in methods:
+            if method in ("HEAD", "OPTIONS"):
+                continue
+            key = (method, path)
+            if key in seen:
+                continue
+            seen.add(key)
+            description = (getattr(route, "name", None) or "").replace("_", " ").strip()
+            if not description:
+                description = f"{method} {path}"
+            tools.append(StudioAiToolInfo(
+                name=_tool_name(path) + (f"_{method.lower()}" if len(methods) > 1 else ""),
+                description=description,
+                endpoint=path,
+                safe=_is_safe(method, path),
+            ))
+
+    tools.sort(key=lambda t: (t.endpoint, t.name))
     return tools
 
 
@@ -1540,8 +1569,13 @@ def build_ai_profile_health(app: "FastAPI") -> "StudioAiProfileHealth":
             default_provider=None,
         )
     
-    # Build and validate profile set
-    profile_set = build_default_ai_profile_set(settings)
+    # Prefer the live app registry — same priority as build_ai_profile_set_summary.
+    from aksara.ai.providers import get_ai_provider_registry
+    registry = get_ai_provider_registry(app)
+    if len(registry) > 0:
+        profile_set = registry.get_profile_set()
+    else:
+        profile_set = build_default_ai_profile_set(settings)
     health = validate_profile_set(profile_set)
     
     # Convert issues to Studio format
@@ -1881,6 +1915,124 @@ async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
         total_size_kb=total_size,
         sections=sections,
     )
+
+
+def build_agent_context_summary(app: Optional[Any] = None) -> List[Dict[str, Any]]:
+    """Return lightweight section metadata for the Context tab.
+
+    Computes only trivially-cheap sections (project_info, models, routes,
+    schema_checksum, ai_profiles, ai_hints) so the tab load stays fast.
+    Sections that require expensive subsystems — async (migrations, diagnostics)
+    or CPU/IO-intensive (db_queries, query_stats, schema_analysis,
+    semantic_index) — are listed as placeholders (size_kb=None) with accurate
+    descriptions of what they contain during full agent runs.
+    """
+    import json as _json
+
+    sections: List[Dict[str, Any]] = []
+
+    def _add(name: str, title: str, description: str, data: Any) -> None:
+        size_kb = round(len(_json.dumps(data)) / 1024, 2)
+        sections.append({"name": name, "title": title, "description": description, "size_kb": size_kb})
+
+    def _placeholder(name: str, title: str, description: str) -> None:
+        sections.append({"name": name, "title": title, "description": description, "size_kb": None})
+
+    # 1. project_info — same payload as full context (project_info section)
+    try:
+        from aksara.conf import settings
+        import aksara as _aksara
+        _add("project_info", "Project Info", "Application name, version, environment, and runtime details", {
+            "app_title": getattr(settings, "app_title", None) or "Aksara App",
+            "app_version": getattr(settings, "app_version", None) or "0.0.0",
+            "debug": getattr(settings, "debug", False),
+            "environment": _get_environment(),
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            "aksara_version": _aksara.__version__,
+        })
+    except Exception:
+        _placeholder("project_info", "Project Info", "Application name, version, environment, and runtime details")
+
+    # 2. models — same payload as full context (per-model fields list)
+    try:
+        from aksara.registry import ModelRegistry
+        models_data = []
+        for name, model_cls in ModelRegistry.all().items():
+            fields_info = []
+            for fname, fobj in getattr(model_cls, '_fields', {}).items():
+                fields_info.append({
+                    "name": fname,
+                    "type": getattr(fobj, 'field_type', type(fobj).__name__),
+                })
+            models_data.append({
+                "name": name,
+                "table_name": getattr(model_cls, '_table_name', name.lower()),
+                "field_count": len(fields_info),
+                "fields": fields_info,
+                "has_relations": any(
+                    getattr(f, 'is_relation', False) for f in getattr(model_cls, '_fields', {}).values()
+                ),
+            })
+        _add("models", "Models", "Registered database models with fields and relations", models_data)
+    except Exception:
+        _placeholder("models", "Models", "Registered database models with fields and relations")
+
+    # 3. routes — same payload as full context (r.model_dump() per route)
+    try:
+        routes = build_routes_info(app)
+        _add("routes", "Routes", "All registered API endpoints with methods and labels",
+             [r.model_dump() for r in routes])
+    except Exception:
+        _placeholder("routes", "Routes", "All registered API endpoints with methods and labels")
+
+    # 4. migrations — async; built on agent run
+    _placeholder("migrations", "Migrations", "Database migration status per application (built on agent run)")
+
+    # 5. diagnostics — async; built on agent run
+    _placeholder("diagnostics", "Diagnostics", "Latest self-diagnostics report (built on agent run)")
+
+    # 6. ai_profiles
+    try:
+        profiles = build_ai_profile_set_summary(app)
+        _add("ai_profiles", "AI Profiles", "Configured AI providers and readiness status",
+             profiles.model_dump())
+    except Exception:
+        _placeholder("ai_profiles", "AI Profiles", "Configured AI providers and readiness status")
+
+    # 7. ai_hints
+    try:
+        hints = build_ai_hints(app)
+        _add("ai_hints", "AI Hints", "Per-route AI hints with risk levels",
+             hints.model_dump())
+    except Exception:
+        _placeholder("ai_hints", "AI Hints", "Per-route AI hints with risk levels")
+
+    # 8. db_queries — excluded: QueryInspector traversal can be non-trivial
+    _placeholder("db_queries", "DB Queries",
+                 "Recent database query stats and slow-query detection")
+
+    # 9. schema_checksum — cheap: SHA-256 over model field names only
+    try:
+        from aksara.registry import ModelRegistry as _MR
+        _checksum = compute_schema_checksum(list(_MR.all().values()))
+        _add("schema_checksum", "Schema Checksum",
+             "SHA-256 fingerprint of the current model schema",
+             {"checksum": _checksum})
+    except Exception:
+        _add("schema_checksum", "Schema Checksum",
+             "SHA-256 fingerprint of the current model schema", {})
+
+    # 10. query_stats — excluded: may involve DB round-trips
+    _placeholder("query_stats", "Query Stats",
+                 "Aggregate query statistics: slow count, avg duration, top slow queries")
+
+    # 11–12. excluded: schema inspection and full index rebuild are expensive
+    _placeholder("schema_analysis", "Schema Analysis",
+                 "Deep model inspection: fields, relationships, constraints, and auto-comments")
+    _placeholder("semantic_index", "Semantic Index",
+                 "Cross-referenced search index: models, routes, settings, playbooks, migrations, queries")
+
+    return sections
 
 
 # =============================================================================
@@ -2476,42 +2628,117 @@ def build_ai_hub_agent_run(
     v0.5.25: Uses the unified provider to generate a response.
     """
     from aksara.studio.models import StudioAiAgentRunResponse
-    from aksara.ai.providers_unified import get_active_provider, UnifiedAiProvider
+    from aksara.ai.providers_unified import UnifiedAiProvider
 
-    # Resolve provider
+    # Resolve provider and model from AI Hub settings so this endpoint is
+    # consistent with the routing table, overview, and provider tests that all
+    # read from the same AiHubSettings source of truth.
+    hub = _get_hub_settings()
+    configured_kinds = {p.kind for p in hub.configured_providers()}
+
     prov: Optional[UnifiedAiProvider] = None
+    effective_model: Optional[str] = model_override
+
     if provider_key:
-        from aksara.ai.providers_unified import detect_all_providers
-        found = [p for p in detect_all_providers() if p.provider == provider_key]
-        prov = found[0] if found else None
+        # Explicit provider override from the UI dropdown.
+        pc = hub.get_provider(provider_key)
+        if pc and pc.is_configured:
+            prov = pc.to_unified_provider()
+            if not effective_model:
+                # Use chat default model when the selected provider matches
+                # the pinned chat provider; otherwise fall back to provider's own default.
+                if hub.defaults.chat_provider == provider_key:
+                    effective_model = hub.defaults.chat_model or pc.model
+                else:
+                    effective_model = pc.model
     else:
-        prov = get_active_provider()
+        # Blank selection: use Hub chat defaults (the same source as the routing table).
+        chat_kind = hub.defaults.chat_provider
+        if chat_kind and chat_kind in configured_kinds:
+            pc = hub.get_provider(chat_kind)
+            if pc and pc.is_configured:
+                prov = pc.to_unified_provider()
+                effective_model = model_override or hub.defaults.chat_model or pc.model
+        else:
+            # No pinned provider — fall back to first configured provider using
+            # _resolve_effective_chat_provider for consistency with the routing table.
+            # Do NOT use hub.defaults.chat_model here: it may have been saved for a
+            # different provider, producing an incoherent pairing (e.g. claude-3-opus
+            # sent to openai). Let the resolved provider use its own default model.
+            configured = hub.configured_providers()
+            if configured:
+                pc = configured[0]
+                prov = pc.to_unified_provider()
+                effective_model = model_override or pc.model
 
     if prov is None or not prov.is_configured():
         return StudioAiAgentRunResponse(
             provider=provider_key or "none",
             model=model_override or "",
-            error="No AI provider configured. Set environment variables or use the save endpoint.",
+            error="No AI provider configured. Set up a provider in AI Hub.",
         )
 
-    # Override model if requested
-    if model_override:
+    # Apply effective model (hub default or explicit override).
+    if effective_model:
         prov = UnifiedAiProvider(
             provider=prov.provider,
             base_url=prov.base_url,
             api_key=prov.api_key,
-            model=model_override,
+            model=effective_model,
             extra=prov.extra,
         )
 
-    # Build system prompt with context if requested
+    # Build system prompt with real project context when requested.
+    # context_sections controls which sections to include; None means all.
     system_parts: list = []
     if include_context:
-        system_parts.append(
-            "You are an AI assistant for an Aksara web application. "
-            "Answer questions about the project, suggest improvements, "
-            "and help with code generation."
-        )
+        wanted = set(context_sections) if context_sections else {"app_info", "models", "routes"}
+        ctx_lines = [
+            "You are an AI assistant for an Aksara web application.",
+            "Answer questions about the project, suggest improvements, and help with code generation.",
+            "",
+        ]
+        if "app_info" in wanted:
+            try:
+                from aksara.conf import settings as _s
+                env = getattr(_s, "env", None) or "unknown"
+                apps = list(getattr(_s, "installed_apps", None) or getattr(_s, "apps", []))
+                ctx_lines += [
+                    "## Application",
+                    f"Environment: {env}",
+                    f"Installed apps: {', '.join(apps) if apps else 'unknown'}",
+                    "",
+                ]
+            except Exception:
+                pass
+        if "models" in wanted:
+            try:
+                from aksara.registry import ModelRegistry
+                model_names = list(ModelRegistry.all().keys())
+                if model_names:
+                    ctx_lines += [
+                        "## Models",
+                        ", ".join(model_names[:30]) + ("..." if len(model_names) > 30 else ""),
+                        "",
+                    ]
+            except Exception:
+                pass
+        if "routes" in wanted and app is not None:
+            try:
+                api_routes = [
+                    r for r in build_routes_info(app)
+                    if r.path.startswith("/api/") and not r.is_studio and not r.is_ai
+                ]
+                if api_routes:
+                    ctx_lines.append("## API Routes")
+                    for r in api_routes[:20]:
+                        ctx_lines.append(f"- {', '.join(r.methods)} {r.path}")
+                    if len(api_routes) > 20:
+                        ctx_lines.append(f"  ... and {len(api_routes) - 20} more")
+                    ctx_lines.append("")
+            except Exception:
+                pass
+        system_parts.append("\n".join(ctx_lines))
 
     full_prompt = prompt
     if system_parts:
@@ -2660,40 +2887,80 @@ def _get_hub_settings():
     return load_aihub_settings()
 
 
+def _resolve_effective_chat_provider(hub: Any) -> Optional[str]:
+    """Return the concrete provider kind that will handle chat/agent requests.
+
+    When ``hub.defaults.chat_provider`` is pinned, returns it directly.
+    When auto-routing (chat_provider=None), returns the first configured
+    provider's kind — the same deterministic order used by
+    ``build_ai_hub_agent_run`` — so that the routing table always shows the
+    actual execution provider rather than ``None``.
+    """
+    if hub.defaults.chat_provider:
+        return hub.defaults.chat_provider
+    configured = hub.configured_providers()
+    return configured[0].kind if configured else None
+
+
 def build_aihub_status() -> "AiHubStatus":
     """Build the AI Hub status response."""
     from aksara.studio.models import AiHubStatus, AiHubOnboardingStatus
 
     hub = _get_hub_settings()
     configured = hub.configured_providers()
+    configured_kinds = {p.kind for p in configured}
     warnings: List[str] = []
 
+    # "ready" requires BOTH chat_model AND chat_provider explicitly set and configured.
+    # Auto-routing (chat_provider=None) with a chat_model is "partial" — the stored
+    # model may have been saved for a different provider than the one that auto-resolves,
+    # creating an incoherent provider/model pairing (e.g. sending claude-3-opus to openai).
+    chat_provider_ok = (
+        hub.defaults.chat_provider is not None
+        and hub.defaults.chat_provider in configured_kinds
+    )
     if not configured:
         overall = "disabled"
-    elif hub.defaults.chat_model:
+    elif hub.defaults.chat_model and chat_provider_ok:
         overall = "ready"
     else:
         overall = "partial"
 
-    # Check for common issues
+    # Warnings for common issues
     if configured and not hub.defaults.embeddings_model:
         warnings.append("No embedding model configured — semantic search will use local TF-IDF fallback")
     if configured and not hub.defaults.chat_model:
         warnings.append("No chat model default set — agents will not work")
+    if (hub.defaults.chat_provider and
+            hub.defaults.chat_provider not in configured_kinds):
+        warnings.append(
+            f"Chat provider '{hub.defaults.chat_provider}' is set as default but not configured"
+            " — agents will not work"
+        )
+    if hub.defaults.chat_model and not hub.defaults.chat_provider:
+        warnings.append(
+            "Chat model is set but no provider is pinned — auto-routing may select"
+            " an incompatible provider; pin a chat provider to ensure coherence"
+        )
 
-    # Onboarding status
+    # Onboarding status.
+    # keys_entered: a provider in configured_providers() has already passed its
+    # is_configured check (api_key for cloud providers, base_url for Ollama),
+    # so presence in the list IS the "credentials set" signal — no api_key
+    # field check needed.
+    # defaults_set uses the same criterion as overall='ready': both chat_model AND
+    # chat_provider must be explicitly set and configured.  A chat_model without
+    # a pinned provider is "partial", so defaults_set must be False to prevent
+    # onboarding.completed from diverging from overall.
     onboarding = AiHubOnboardingStatus(
         providers_selected=len(configured) > 0,
-        keys_entered=any(p.api_key for p in configured),
-        providers_tested=False,  # We don't track test history
-        defaults_set=hub.defaults.chat_model is not None,
-        sample_query_run=False,
+        keys_entered=len(configured) > 0,
+        providers_tested=False,  # not tracked; requires explicit ping history
+        defaults_set=hub.defaults.chat_model is not None and chat_provider_ok,
+        sample_query_run=False,  # not tracked; requires run-history storage
     )
-    onboarding.completed = all([
-        onboarding.providers_selected,
-        onboarding.keys_entered,
-        onboarding.defaults_set,
-    ])
+    # completed is derived directly from overall so the two signals cannot diverge.
+    onboarding.completed = (overall == "ready")
 
     return AiHubStatus(
         overall=overall,
@@ -2707,19 +2974,43 @@ def build_aihub_status() -> "AiHubStatus":
 
 
 def build_aihub_providers() -> "AiHubProvidersResponse":
-    """Build the AI Hub providers list response."""
+    """Build the AI Hub providers list response.
+
+    v0.5.45: Now pings each configured provider so the ``reachable`` and
+    ``error`` fields are populated.  Previously both fields were left as
+    ``None``, which caused the Studio UI to display every configured
+    provider as ⚠ "Configured" (status-warn) even when the provider was
+    fully reachable.  Uses the same ``pc.to_unified_provider().ping()``
+    pattern as :func:`build_aihub_test`.
+    """
     from aksara.studio.models import AiHubProvider, AiHubProvidersResponse
 
     hub = _get_hub_settings()
     items: List["AiHubProvider"] = []
     for p in hub.providers:
+        # v0.5.45: Ping configured providers so reachable/error are accurate.
+        reachable: Optional[bool] = None
+        error: Optional[str] = None
+        if p.is_configured:
+            try:
+                unified = p.to_unified_provider()
+                ping_result = unified.ping()
+                reachable = ping_result.get("ok", False)
+                if not reachable:
+                    error = ping_result.get("message")
+            except Exception as exc:
+                reachable = False
+                error = str(exc)
+
         items.append(AiHubProvider(
             kind=p.kind,
             enabled=p.enabled,
             configured=p.is_configured,
+            reachable=reachable,
             model=p.model or "",
             base_url=p.base_url or "",
             modes=p.get_supported_modes(),
+            error=error,
         ))
 
     return AiHubProvidersResponse(
@@ -2747,13 +3038,17 @@ def build_aihub_models() -> "AiHubModelsResponse":
         if not p.is_configured:
             continue
 
-        # v0.5.43: Live discovery for Ollama
+        # v0.5.43: Live discovery for Ollama — use the saved base_url from AI Hub
+        # config rather than environment state so a non-default host works correctly.
         if p.kind == "ollama":
             try:
                 from aksara.ai.providers_unified import UnifiedAiProvider
                 from aksara.ai.llm_clients.ollama_adapter import OllamaAdapter
 
-                provider = UnifiedAiProvider.from_env(provider="ollama")
+                provider = UnifiedAiProvider(
+                    provider="ollama",
+                    base_url=p.base_url or "http://localhost:11434",
+                )
                 adapter = OllamaAdapter(provider)
                 if adapter.is_available():
                     live_models = adapter.list_models()
@@ -2800,6 +3095,8 @@ def build_aihub_configure(
             AnthropicConfig,
             OllamaConfig,
             CustomHttpConfig,
+            load_aihub_settings,
+            save_aihub_settings,
         )
 
         config_map = {
@@ -2812,16 +3109,49 @@ def build_aihub_configure(
         if provider not in config_map:
             return AiHubConfigureResponse(ok=False, message=f"Unknown provider: {provider}", provider=provider)
 
-        kwargs: Dict[str, Any] = {}
-        if base_url is not None:
-            kwargs["base_url"] = base_url
-        if model is not None:
-            kwargs["model"] = model
+        # Load from file only — env overlay is skipped so we never bake
+        # env-sourced API keys (masked as "****") into the persisted config.
+        hub = load_aihub_settings(include_env=False)
+        existing = hub.get_provider(provider)  # type: ignore[arg-type]
 
-        cfg_cls = config_map[provider]
-        cfg = cfg_cls(**kwargs)
-        pc = ProviderConfig(kind=provider, enabled=enabled, **{provider: cfg})  # type: ignore[arg-type]
+        # Resolve a clear ("") vs. leave-unchanged (None) for each field.
+        # base_url: "" resets to the provider's Pydantic default (which is the
+        # canonical API URL for that provider, e.g. "https://api.openai.com/v1").
+        # model: "" → None is safe because model is Optional[str] on all providers.
+        def _resolve_base_url(raw: Optional[str]) -> Optional[str]:
+            """None → unchanged sentinel; "" → provider's default base URL."""
+            if raw is None:
+                return None  # caller passes unchanged sentinel through
+            if raw:
+                return raw
+            field = config_map[provider].model_fields.get("base_url")
+            return field.default if (field is not None and field.default is not None) else None
 
+        resolved_base_url = _resolve_base_url(base_url)
+        resolved_model = (model or None) if model is not None else None  # "" → None
+
+        if existing is not None:
+            inner_cfg = getattr(existing, provider, None)
+            if inner_cfg is None:
+                inner_cfg = config_map[provider]()
+                setattr(existing, provider, inner_cfg)
+            if base_url is not None:
+                inner_cfg.base_url = resolved_base_url
+            if model is not None:
+                inner_cfg.model = resolved_model
+            existing.enabled = enabled
+        else:
+            kwargs: Dict[str, Any] = {}
+            if base_url is not None:
+                kwargs["base_url"] = resolved_base_url
+            if model is not None:
+                kwargs["model"] = resolved_model
+            cfg = config_map[provider](**kwargs)
+            hub.providers.append(
+                ProviderConfig(kind=provider, enabled=enabled, **{provider: cfg})  # type: ignore[arg-type]
+            )
+
+        save_aihub_settings(hub)
         return AiHubConfigureResponse(
             ok=True,
             message=f"Provider '{provider}' configured (non-secret fields)",
@@ -2835,10 +3165,24 @@ def build_aihub_configure_secret(
     provider: str,
     api_key: str,
 ) -> "AiHubConfigureResponse":
-    """Configure a provider's API key (secret handling, no logging)."""
+    """Configure a provider's API key (secret handling, no logging).
+
+    When ``api_key`` is an empty string the stored key is *removed* from the
+    .env file and from os.environ.  This is the only Studio path for clearing
+    a previously-saved credential.
+    """
     from aksara.studio.models import AiHubConfigureResponse
 
     try:
+        if not api_key:
+            from aksara.ai.hub_settings import clear_provider_api_key
+            clear_provider_api_key(provider)
+            return AiHubConfigureResponse(
+                ok=True,
+                message=f"API key for '{provider}' cleared",
+                provider=provider,
+            )
+
         from aksara.ai.providers_unified import UnifiedAiProvider
 
         p = UnifiedAiProvider(provider=provider, api_key=api_key)  # type: ignore[arg-type]
@@ -2864,20 +3208,28 @@ def build_aihub_defaults(
     from aksara.studio.models import AiHubConfigureResponse
 
     try:
-        hub = _get_hub_settings()
-        if chat_model is not None:
-            hub.defaults.chat_model = chat_model
-        if chat_provider is not None:
-            hub.defaults.chat_provider = chat_provider  # type: ignore[assignment]
-        if code_model is not None:
-            hub.defaults.code_model = code_model
-        if code_provider is not None:
-            hub.defaults.code_provider = code_provider  # type: ignore[assignment]
-        if embeddings_model is not None:
-            hub.defaults.embeddings_model = embeddings_model
-        if embeddings_provider is not None:
-            hub.defaults.embeddings_provider = embeddings_provider  # type: ignore[assignment]
+        from aksara.ai.hub_settings import load_aihub_settings, save_aihub_settings
 
+        # Load from file only — same reason as build_aihub_configure: avoid
+        # baking env-sourced secrets (masked) into the persisted defaults.
+        hub = load_aihub_settings(include_env=False)
+        # For models: "" clears (→ None); None means "don't change".
+        # For providers: same — "" clears the stored override back to unset;
+        # None (element absent from request) means "don't change".
+        if chat_model is not None:
+            hub.defaults.chat_model = chat_model or None
+        if chat_provider is not None:
+            hub.defaults.chat_provider = chat_provider or None  # type: ignore[assignment]
+        if code_model is not None:
+            hub.defaults.code_model = code_model or None
+        if code_provider is not None:
+            hub.defaults.code_provider = code_provider or None  # type: ignore[assignment]
+        if embeddings_model is not None:
+            hub.defaults.embeddings_model = embeddings_model or None
+        if embeddings_provider is not None:
+            hub.defaults.embeddings_provider = embeddings_provider or None  # type: ignore[assignment]
+
+        save_aihub_settings(hub)
         return AiHubConfigureResponse(
             ok=True,
             message="Default models updated",
@@ -2923,20 +3275,64 @@ def build_aihub_test(provider: str) -> "AiHubTestResponse":
         )
 
 
-def build_aihub_routes() -> "AiHubRoutes":
-    """Build the AI Hub routing table."""
+def build_aihub_routes(reachable_kinds: Optional[set] = None) -> "AiHubRoutes":
+    """Build the AI Hub routing table.
+
+    Args:
+        reachable_kinds: Set of provider kinds that passed a live ping.  When
+            supplied, routes whose pinned provider is configured but unreachable
+            are marked ``unreachable`` rather than ``ok``.  Pass ``None`` to skip
+            the reachability check (configuration-only validation).
+    """
     from aksara.studio.models import AiHubRouteMapping, AiHubRoutes
 
     hub = _get_hub_settings()
     routes: List["AiHubRouteMapping"] = []
     warnings: List[str] = []
 
-    # Agents
+    configured_kinds = {p.kind for p in hub.configured_providers()}
+
+    def _route_status(provider: Optional[str], feature: str) -> tuple:
+        """Return (status, warning_or_None) for a route whose model field is set."""
+        if provider and provider not in configured_kinds:
+            return "missing", f"Provider '{provider}' is not configured — {feature} will not work"
+        if not provider and not configured_kinds:
+            return "missing", f"No AI provider configured — {feature} will not work"
+        # Reachability check: only when the caller supplied live ping results.
+        if reachable_kinds is not None and provider and provider not in reachable_kinds:
+            return "unreachable", f"Provider '{provider}' is configured but currently unreachable — {feature} may fail"
+        if reachable_kinds is not None and not provider:
+            # Auto-routing: at least one configured provider must be reachable.
+            if not (configured_kinds & reachable_kinds):
+                return "unreachable", f"No configured provider is currently reachable — {feature} may fail"
+        return "ok", None
+
+    # Agents — always resolve a concrete provider so the routing table matches
+    # what build_ai_hub_agent_run will actually execute against.
     if hub.defaults.chat_model:
+        effective_chat_provider = _resolve_effective_chat_provider(hub)
+        _status, _warn = _route_status(effective_chat_provider, "agents")
+        # For auto-routing the stored chat_model may belong to a different
+        # provider; show the resolved provider's own configured model instead so
+        # the routing table reflects what will actually run.
+        if hub.defaults.chat_provider is None:
+            resolved_pc = hub.get_provider(effective_chat_provider) if effective_chat_provider else None
+            effective_chat_model = (resolved_pc.model if (resolved_pc and resolved_pc.model)
+                                    else hub.defaults.chat_model)
+            if _status == "ok":
+                _status = "fallback"
+                _warn = (
+                    f"No provider pinned for chat — auto-routing to "
+                    f"'{effective_chat_provider}' (first configured provider)"
+                )
+        else:
+            effective_chat_model = hub.defaults.chat_model
         routes.append(AiHubRouteMapping(
             feature="agents",
-            provider=hub.defaults.chat_provider,
-            model=hub.defaults.chat_model,
+            provider=effective_chat_provider,
+            model=effective_chat_model,
+            status=_status,
+            warning=_warn,
         ))
     else:
         routes.append(AiHubRouteMapping(
@@ -2948,10 +3344,13 @@ def build_aihub_routes() -> "AiHubRoutes":
 
     # Playbooks
     if hub.defaults.code_model:
+        _status, _warn = _route_status(hub.defaults.code_provider, "playbooks")
         routes.append(AiHubRouteMapping(
             feature="playbooks",
             provider=hub.defaults.code_provider,
             model=hub.defaults.code_model,
+            status=_status,
+            warning=_warn,
         ))
     else:
         routes.append(AiHubRouteMapping(
@@ -2962,10 +3361,13 @@ def build_aihub_routes() -> "AiHubRoutes":
 
     # Search embeddings
     if hub.defaults.embeddings_model:
+        _status, _warn = _route_status(hub.defaults.embeddings_provider, "search")
         routes.append(AiHubRouteMapping(
             feature="search_embeddings",
             provider=hub.defaults.embeddings_provider,
             model=hub.defaults.embeddings_model,
+            status=_status,
+            warning=_warn,
         ))
     else:
         routes.append(AiHubRouteMapping(
@@ -2975,12 +3377,28 @@ def build_aihub_routes() -> "AiHubRoutes":
         ))
         warnings.append("Search: local TF-IDF fallback")
 
-    # Diagnostics suggestions
+    # Diagnostics suggestions — same effective-provider resolution as agents
     if hub.defaults.chat_model:
+        effective_diag_provider = _resolve_effective_chat_provider(hub)
+        _status, _warn = _route_status(effective_diag_provider, "diagnostics")
+        if hub.defaults.chat_provider is None:
+            resolved_pc = hub.get_provider(effective_diag_provider) if effective_diag_provider else None
+            effective_diag_model = (resolved_pc.model if (resolved_pc and resolved_pc.model)
+                                    else hub.defaults.chat_model)
+            if _status == "ok":
+                _status = "fallback"
+                _warn = (
+                    f"No provider pinned for chat — auto-routing to "
+                    f"'{effective_diag_provider}' (first configured provider)"
+                )
+        else:
+            effective_diag_model = hub.defaults.chat_model
         routes.append(AiHubRouteMapping(
             feature="diagnostics",
-            provider=hub.defaults.chat_provider,
-            model=hub.defaults.chat_model,
+            provider=effective_diag_provider,
+            model=effective_diag_model,
+            status=_status,
+            warning=_warn,
         ))
     else:
         routes.append(AiHubRouteMapping(

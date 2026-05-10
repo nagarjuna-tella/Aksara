@@ -1196,3 +1196,107 @@ class TestStudioRuntimeModels:
         )
         
         assert route.is_ai == True
+
+
+class TestAgentContextSummaryEndpoint:
+    """Tests for GET /studio/agent/context/summary."""
+
+    def test_summary_returns_list(self):
+        app = create_test_app()
+        client = TestClient(app)
+        response = client.get("/studio/agent/context/summary")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_summary_sections_have_required_fields(self):
+        app = create_test_app()
+        client = TestClient(app)
+        response = client.get("/studio/agent/context/summary")
+        assert response.status_code == 200
+        for section in response.json():
+            assert "name" in section
+            assert "title" in section
+            assert "description" in section
+            assert "size_kb" in section
+
+    def test_summary_heavy_and_async_sections_are_placeholders(self):
+        """Async sections (migrations, diagnostics) and expensive-to-compute sections
+        (db_queries, query_stats, schema_analysis, semantic_index) must have
+        size_kb=None so the Context tab load stays cheap."""
+        app = create_test_app()
+        client = TestClient(app)
+        response = client.get("/studio/agent/context/summary")
+        sections = {s["name"]: s for s in response.json()}
+        placeholder_names = (
+            "migrations", "diagnostics",
+            "db_queries", "query_stats", "schema_analysis", "semantic_index",
+        )
+        for name in placeholder_names:
+            assert name in sections, f"{name} missing from summary"
+            assert sections[name]["size_kb"] is None, (
+                f"{name} should be size_kb=None (placeholder) but has size_kb={sections[name]['size_kb']}"
+            )
+
+    def test_summary_schema_checksum_has_real_size(self):
+        """schema_checksum is cheap (SHA-256 of field names only) so it must
+        report a numeric size_kb rather than appearing as a placeholder."""
+        from aksara.studio.utils import build_agent_context_summary
+        sections = {s["name"]: s for s in build_agent_context_summary()}
+        assert "schema_checksum" in sections
+        assert sections["schema_checksum"]["size_kb"] is not None
+
+    def test_summary_includes_project_info(self):
+        app = create_test_app()
+        client = TestClient(app)
+        response = client.get("/studio/agent/context/summary")
+        names = [s["name"] for s in response.json()]
+        assert "project_info" in names
+
+    def test_summary_all_12_sections_present(self):
+        """Summary must account for every section the full agent context exposes."""
+        expected = {
+            "project_info", "models", "routes", "migrations", "diagnostics",
+            "ai_profiles", "ai_hints", "db_queries", "schema_checksum",
+            "query_stats", "schema_analysis", "semantic_index",
+        }
+        app = create_test_app()
+        client = TestClient(app)
+        response = client.get("/studio/agent/context/summary")
+        names = {s["name"] for s in response.json()}
+        assert expected == names
+
+    def test_summary_cheap_section_descriptions_match_full_context(self):
+        """Section descriptions must match the full context builder — regression guard
+        for payload reduction (reduced payloads were paired with shorter descriptions)."""
+        from aksara.studio.utils import build_agent_context_summary
+        sections = {s["name"]: s for s in build_agent_context_summary()}
+        assert sections["project_info"]["description"] == "Application name, version, environment, and runtime details"
+        assert sections["models"]["description"] == "Registered database models with fields and relations"
+        assert sections["routes"]["description"] == "All registered API endpoints with methods and labels"
+
+    def test_summary_project_info_size_reflects_full_payload(self):
+        """project_info size_kb must account for environment and python_version fields."""
+        import json
+        from aksara.studio.utils import build_agent_context_summary
+        sections = {s["name"]: s for s in build_agent_context_summary()}
+        pi = sections["project_info"]
+        assert pi["size_kb"] is not None
+        # Full payload has 6 keys; minimum JSON encoding for 6 string/bool keys is > 0.08 KB
+        min_size = len(json.dumps({"app_title": "", "app_version": "", "debug": False,
+                                   "environment": "", "python_version": "", "aksara_version": ""})) / 1024
+        assert pi["size_kb"] >= min_size
+
+    def test_summary_routes_size_is_list_not_count_dict(self):
+        """Routes section must serialise the full route list, not just a count dict."""
+        import json
+        from aksara.studio.utils import build_agent_context_summary
+        from unittest.mock import patch, MagicMock
+        fake_route = MagicMock()
+        fake_route.model_dump.return_value = {"path": "/test", "method": "GET", "label": "Test"}
+        with patch("aksara.studio.utils.build_routes_info", return_value=[fake_route, fake_route]):
+            sections = {s["name"]: s for s in build_agent_context_summary()}
+        routes = sections["routes"]
+        assert routes["size_kb"] is not None
+        # Two routes serialised as a list is larger than {"count": 2}
+        count_only_size = len(json.dumps({"count": 2})) / 1024
+        assert routes["size_kb"] > count_only_size

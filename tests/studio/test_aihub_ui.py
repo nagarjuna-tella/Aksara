@@ -377,7 +377,8 @@ class TestAiHubJs:
 
     def test_hub_overview_is_default_loaded_tab(self):
         js = (STATIC_DIR / "app.js").read_text()
-        assert "'hub-overview': true" in js
+        # hub-overview is now marked as loaded via the module-level _hubLoadedTabs dict
+        assert "_hubLoadedTabs['hub-overview'] = true" in js
 
     def test_lazy_load_models_tab(self):
         js = (STATIC_DIR / "app.js").read_text()

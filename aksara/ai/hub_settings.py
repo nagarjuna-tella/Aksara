@@ -425,6 +425,24 @@ def _detect_active_from_env() -> Optional[ProviderKind]:
     return None
 
 
+def clear_provider_api_key(kind: str, env_path: Optional[str] = None) -> None:
+    """Remove a provider's api_key from the .env file and os.environ.
+
+    Silently does nothing when the provider has no api_key mapping (e.g. Ollama)
+    or when no .env file exists.
+    """
+    mapping = _ENV_KEY_MAP.get(kind, {})
+    env_var = mapping.get("api_key")
+    if not env_var:
+        return
+    os.environ.pop(env_var, None)
+    path_obj = Path(env_path) if env_path else Path.cwd() / ".env"
+    if path_obj.exists():
+        lines = path_obj.read_text().splitlines()
+        updated = [l for l in lines if l.split("=", 1)[0].strip() != env_var]
+        path_obj.write_text("\n".join(updated) + ("\n" if updated else ""))
+
+
 def _load_from_file(path: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Try to load ``aksara.ai.json`` (or explicit path)."""
     if path is not None:

@@ -84,6 +84,7 @@ v0.5.40 Additions:
 
 from __future__ import annotations
 
+import asyncio
 import mimetypes
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -182,6 +183,7 @@ from aksara.studio.utils import (
     build_ai_hints,
     # v0.5.19: Agent Mode utils
     build_agent_context,
+    build_agent_context_summary,
     build_agent_prompt,
     # v0.5.20: Agent Playbooks utils
     build_agent_prompt_from_playbook,
@@ -1099,6 +1101,12 @@ async def studio_agent_context(request: Request) -> StudioAgentContext:
     return await build_agent_context(request.app)
 
 
+@router.get("/studio/agent/context/summary")
+async def studio_agent_context_summary(request: Request) -> list:
+    """Lightweight section metadata for the Context tab UI (no expensive subsystems)."""
+    return await asyncio.to_thread(build_agent_context_summary, request.app)
+
+
 @router.post("/studio/agent/prompt", response_model=StudioAgentPromptResponse)
 async def studio_agent_prompt(
     request: Request,
@@ -1451,9 +1459,10 @@ async def studio_ai_hub_agent_run(
     Returns:
         StudioAiAgentRunResponse with generated output or error.
     """
-    return build_ai_hub_agent_run(
-        prompt=body.prompt,
-        app=request.app,
+    return await asyncio.to_thread(
+        build_ai_hub_agent_run,
+        body.prompt,
+        request.app,
         provider_key=body.provider,
         model_override=body.model,
         include_context=body.include_context,
@@ -1660,9 +1669,45 @@ async def studio_aihub_routes(request: Request):
 
     v0.5.28: Returns per-feature route mapping (agents, playbooks,
     search_embeddings, diagnostics) with status and warnings.
+    v0.5.45: Incorporates live reachability so unreachable providers are not
+    reported as Active.
     """
-    from aksara.studio.utils import build_aihub_routes
-    return build_aihub_routes()
+    from aksara.studio.utils import build_aihub_routes, build_aihub_providers
+    prov_data = await asyncio.to_thread(build_aihub_providers)
+    reachable = {p.kind for p in prov_data.providers if p.reachable}
+    return build_aihub_routes(reachable_kinds=reachable)
+
+
+# New-family aliases for agent run + Ollama discovery — these previously
+# only existed under /studio/ai/hub/* (legacy) which forced the UI to
+# straddle two endpoint families.  Both delegate to the same builders.
+
+@router.post("/studio/ai-hub/agent/run", response_model=StudioAiAgentRunResponse)
+async def studio_aihub_agent_run(
+    request: Request,
+    body: StudioAiAgentRunRequest,
+) -> StudioAiAgentRunResponse:
+    """Run the AI agent with a prompt (new-family alias for /ai/hub/agent/run)."""
+    return await asyncio.to_thread(
+        build_ai_hub_agent_run,
+        body.prompt,
+        request.app,
+        provider_key=body.provider,
+        model_override=body.model,
+        include_context=body.include_context,
+        context_sections=body.context_sections,
+        temperature=body.temperature,
+        max_tokens=body.max_tokens,
+    )
+
+
+@router.get("/studio/ai-hub/ollama/models", response_model=StudioOllamaModelsResponse)
+async def studio_aihub_ollama_models(
+    request: Request,
+    base_url: Optional[str] = None,
+) -> StudioOllamaModelsResponse:
+    """Discover Ollama models (new-family alias for /ai/hub/providers/ollama/models)."""
+    return build_ai_hub_ollama_models(base_url=base_url)
 
 
 # =============================================================================
@@ -1723,6 +1768,7 @@ async def studio_ai_flow_route(request: Request):
         method=method,
         action_key=body.get("action_key", ""),
         hub_overrides=body.get("hub_overrides"),
+        app=request.app,
     )
 
 
@@ -1811,6 +1857,7 @@ async def studio_ai_flow_run(request: Request):
         context=context,
         provider_override=provider_override,
         model_override=model_override,
+        app=request.app,
     )
     return result
 
@@ -1899,7 +1946,7 @@ async def studio_ai_project_graph(request: Request):
     rebuild = request.query_params.get("rebuild", "").lower() == "true"
     summary = request.query_params.get("summary", "").lower() == "true"
 
-    graph = build_project_graph(rebuild=rebuild, app=request.app)
+    graph = await asyncio.to_thread(build_project_graph, rebuild=rebuild, app=request.app)
     if summary:
         return graph.to_summary_dict()
     return graph.to_dict()
@@ -1931,7 +1978,7 @@ async def studio_ai_project_graph_summary(request: Request):
     """
     from aksara.ai.project_graph import build_project_graph
 
-    graph = build_project_graph(app=request.app)
+    graph = await asyncio.to_thread(build_project_graph, app=request.app)
     return graph.to_summary_dict()
 
 
@@ -1959,7 +2006,7 @@ async def studio_ai_debug(request: Request):
         body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
         query = body.get("query") if isinstance(body, dict) else None
 
-        report = run_debugger(query=query, app=request.app)
+        report = await asyncio.to_thread(run_debugger, query=query, app=request.app)
         return report.to_dict()
     except Exception as exc:
         import traceback
@@ -1990,7 +2037,7 @@ async def studio_ai_architecture_review(request: Request):
     try:
         from aksara.ai.architecture_review import run_architecture_review
 
-        report = run_architecture_review(app=request.app)
+        report = await asyncio.to_thread(run_architecture_review, app=request.app)
         return report.to_dict()
     except Exception as exc:
         import traceback
@@ -2021,7 +2068,7 @@ async def studio_ai_performance_analysis(request: Request):
     try:
         from aksara.ai.performance_analyzer import run_performance_analysis
 
-        report = run_performance_analysis(app=request.app)
+        report = await asyncio.to_thread(run_performance_analysis, app=request.app)
         return report.to_dict()
     except Exception as exc:
         import traceback
@@ -2087,7 +2134,9 @@ async def studio_ai_home(request: Request):
             data["provider"] = active.kind
             data["model"] = getattr(hub.defaults, "chat_model", None)
             data["embeddings_model"] = getattr(hub.defaults, "embeddings_model", None)
-            data["status"] = "ready" if len(configured) >= 1 else "partial"
+            # "ready" requires both a configured provider AND a chat default,
+            # matching the canonical logic in build_aihub_status().
+            data["status"] = "ready" if hub.defaults.chat_model else "partial"
         else:
             data["status"] = "not_configured"
     except Exception:
@@ -2097,7 +2146,7 @@ async def studio_ai_home(request: Request):
     try:
         from aksara.ai.project_graph import build_project_graph
 
-        graph = build_project_graph(app=request.app)
+        graph = await asyncio.to_thread(build_project_graph, app=request.app)
         m = graph.metadata
         data["snapshot"] = {
             "models": m.model_count,
@@ -2119,7 +2168,7 @@ async def studio_ai_home(request: Request):
     try:
         from aksara.ai.architecture_review import run_architecture_review
 
-        arch = run_architecture_review(app=request.app)
+        arch = await asyncio.to_thread(run_architecture_review, app=request.app)
         data["scores"]["architecture"] = {
             "score": arch.score,
             "grade": arch.grade,
@@ -2130,7 +2179,7 @@ async def studio_ai_home(request: Request):
     try:
         from aksara.ai.performance_analyzer import run_performance_analysis
 
-        perf = run_performance_analysis(app=request.app)
+        perf = await asyncio.to_thread(run_performance_analysis, app=request.app)
         data["scores"]["performance"] = {
             "score": perf.score,
             "grade": perf.grade,
@@ -2159,7 +2208,7 @@ async def studio_ai_inspector(request: Request):
     try:
         from aksara.ai.project_graph import build_project_graph
 
-        graph = build_project_graph(app=request.app)
+        graph = await asyncio.to_thread(build_project_graph, app=request.app)
         data["diagnostics_count"] = graph.metadata.diagnostic_count
         data["top_issues"] = [
             {"severity": d.severity, "code": d.code, "message": d.message}
@@ -2171,7 +2220,7 @@ async def studio_ai_inspector(request: Request):
     try:
         from aksara.ai.architecture_review import run_architecture_review
 
-        arch = run_architecture_review(app=request.app)
+        arch = await asyncio.to_thread(run_architecture_review, app=request.app)
         data["architecture"] = {"score": arch.score, "grade": arch.grade}
     except Exception:
         pass
@@ -2179,7 +2228,7 @@ async def studio_ai_inspector(request: Request):
     try:
         from aksara.ai.performance_analyzer import run_performance_analysis
 
-        perf = run_performance_analysis(app=request.app)
+        perf = await asyncio.to_thread(run_performance_analysis, app=request.app)
         data["performance"] = {"score": perf.score, "grade": perf.grade}
     except Exception:
         pass
@@ -2330,7 +2379,7 @@ async def studio_ai_daily_briefing(request: Request):
     try:
         from aksara.ai.daily_briefing import generate_daily_briefing
 
-        briefing = generate_daily_briefing()
+        briefing = await asyncio.to_thread(generate_daily_briefing)
         return briefing.to_dict()
     except Exception as exc:
         return JSONResponse(

@@ -544,6 +544,47 @@ class TestContextHelpers:
         # Without a running app, returns an error or "not found" string
         assert "not found" in ctx.lower() or "error" in ctx.lower() or "/never/exists" in ctx
 
+    def test_build_route_context_matches_post_route(self):
+        """Real route catalog: a POST-only route must match on POST, not GET.
+
+        Regression for the singular-method bug where _build_route_context
+        compared against a non-existent ``r.method`` attribute and silently
+        defaulted to GET, making POST/PUT/DELETE routes unmatchable.
+        """
+        from fastapi import FastAPI
+        from aksara.studio.ai_flows import _build_route_context
+
+        app = FastAPI()
+
+        @app.post("/widgets")
+        def create_widget():
+            return {}
+
+        ctx_post = _build_route_context("/widgets", "POST", app=app)
+        assert "POST" in ctx_post
+        assert "/widgets" in ctx_post
+        assert "not found" not in ctx_post.lower()
+
+        # Same path but wrong method must NOT match.
+        ctx_get = _build_route_context("/widgets", "GET", app=app)
+        assert "not found" in ctx_get.lower()
+
+    def test_build_route_context_multi_method_route(self):
+        """A route that serves multiple methods must match each one separately."""
+        from fastapi import FastAPI
+        from aksara.studio.ai_flows import _build_route_context
+
+        app = FastAPI()
+
+        @app.api_route("/items/{id}", methods=["GET", "PUT", "DELETE"])
+        def items_handler(id: int):
+            return {}
+
+        for method in ("GET", "PUT", "DELETE"):
+            ctx = _build_route_context("/items/{id}", method, app=app)
+            assert "not found" not in ctx.lower(), f"failed for {method}: {ctx}"
+            assert method in ctx
+
     def test_build_query_context_contains_sql(self):
         from aksara.studio.ai_flows import _build_query_context
         ctx = _build_query_context("SELECT * FROM foo")
@@ -574,3 +615,98 @@ class TestContextHelpers:
         from aksara.studio.ai_flows import _build_diagnostic_context
         ctx = _build_diagnostic_context()
         assert "No issue data" in ctx
+
+
+# ─── 8. Auto-routing coherence in _resolve_provider_model ───────────────────
+
+class _AutoHub:
+    """Hub where chat_provider is None — auto-routing must kick in."""
+
+    class _Defaults:
+        chat_model = "gpt-4.1-mini"   # orphaned: stored model belongs to openai
+        chat_provider = None           # no pin
+
+    defaults = _Defaults()
+
+    class _AnthropicPC:
+        kind = "anthropic"
+        is_configured = True
+        model = "claude-3-5-sonnet-20241022"
+        def to_unified_provider(self): return MagicMock()
+
+    _anthropic_pc = _AnthropicPC()
+
+    def configured_providers(self):
+        return [self._anthropic_pc]
+
+    def get_provider(self, kind):
+        return self._anthropic_pc if kind == "anthropic" else None
+
+
+class _PinnedHub:
+    """Hub with an explicit chat_provider pin."""
+
+    class _Defaults:
+        chat_model = "gpt-4.1-mini"
+        chat_provider = "openai"
+
+    defaults = _Defaults()
+
+    class _OpenAIPC:
+        kind = "openai"
+        is_configured = True
+        model = "gpt-4.1-mini"
+        def to_unified_provider(self): return MagicMock()
+
+    _pc = _OpenAIPC()
+
+    def configured_providers(self):
+        return [self._pc]
+
+    def get_provider(self, kind):
+        return self._pc if kind == "openai" else None
+
+
+class TestResolveProviderModelAutoRouting:
+    """_resolve_provider_model must match the provider/model chosen by agent run and the routing table."""
+
+    def test_auto_routing_picks_first_configured_provider(self):
+        """With chat_provider=None, provider must be the first configured provider, not hub.active_provider."""
+        from aksara.studio.ai_flows import _resolve_provider_model
+        provider, _ = _resolve_provider_model(_AutoHub())
+        assert provider == "anthropic"
+
+    def test_auto_routing_uses_resolved_providers_own_model(self):
+        """With chat_provider=None, model must be the resolved provider's model, not the orphaned chat_model."""
+        from aksara.studio.ai_flows import _resolve_provider_model
+        _, model = _resolve_provider_model(_AutoHub())
+        assert model == "claude-3-5-sonnet-20241022"
+        assert model != "gpt-4.1-mini", "orphaned chat_model must not bleed into auto-routing"
+
+    def test_pinned_provider_uses_hub_chat_model(self):
+        """With chat_provider pinned, model must be hub.defaults.chat_model, not the provider's own model."""
+        from aksara.studio.ai_flows import _resolve_provider_model
+        provider, model = _resolve_provider_model(_PinnedHub())
+        assert provider == "openai"
+        assert model == "gpt-4.1-mini"
+
+    def test_override_wins_over_auto_routing(self):
+        """An explicit hub_override must take precedence over both auto-routing and defaults."""
+        from aksara.studio.ai_flows import _resolve_provider_model
+        provider, model = _resolve_provider_model(
+            _AutoHub(), hub_overrides={"provider": "anthropic", "model": "claude-3-opus-20240229"}
+        )
+        assert provider == "anthropic"
+        assert model == "claude-3-opus-20240229"
+
+    def test_auto_routing_coherence_with_build_model_flow(self):
+        """build_model_flow must embed the resolved provider/model (not the orphaned chat defaults)."""
+        from aksara.studio.ai_flows import build_model_flow
+        with patch("aksara.studio.ai_flows._get_hub_settings", return_value=_AutoHub()):
+            resp = build_model_flow(model_name="User", action_key="explain_model")
+        assert resp.provider == "anthropic", (
+            f"flow builder must use auto-routed provider; got '{resp.provider}'"
+        )
+        assert resp.model == "claude-3-5-sonnet-20241022", (
+            f"flow builder must use resolved provider's model; got '{resp.model}'"
+        )

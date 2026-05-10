@@ -505,10 +505,14 @@ class TestOnboardingTab:
         assert 'id="onboarding-run-sample"' in html_source
 
     def test_js_onboarding_field_names_match_python(self, js_source):
-        """JS must use providers_selected, keys_entered, etc. — not has_provider."""
+        """JS must use providers_selected, keys_entered, etc. — not has_provider.
+
+        Step 3 (providers_tested) is no longer read from the backend flag because
+        the backend always returns False for it; reachability is now computed live
+        from provData.providers directly.
+        """
         assert "ob.providers_selected" in js_source
         assert "ob.keys_entered" in js_source
-        assert "ob.providers_tested" in js_source
         assert "ob.defaults_set" in js_source
         assert "ob.sample_query_run" in js_source
         # Old broken names must NOT appear
@@ -557,6 +561,32 @@ class TestOnboardingTab:
 
     def test_js_onboarding_save_defaults_posts_to_defaults(self, js_source):
         assert "/studio/ai-hub/defaults" in js_source
+
+    def test_js_onboarding_session_always_read(self, js_source):
+        """_readOnboardingSession() must be called unconditionally so the session.tested
+        fallback is available when the providers fetch fails.  The old guarded form
+        `providersKnown ? _readOnboardingSession() : {}` zeroed out the session on
+        fetch failure, breaking Step 3 and Step 5 persistence."""
+        # The guarded form must not appear
+        assert "providersKnown ? _readOnboardingSession() : {}" not in js_source
+        # The unconditional call must appear
+        assert "_readOnboardingSession()" in js_source
+
+    def test_js_agent_provider_dropdown_label_is_hub_chat_default(self, js_source):
+        """The blank provider option must say 'Hub Chat Default', not 'Active Provider'.
+        The backend blank-selection path now uses hub.defaults.chat_provider (or auto-
+        routing), not the legacy active_provider — so the old label was misleading."""
+        assert "Hub Chat Default" in js_source
+        assert '"Active Provider"' not in js_source
+
+    def test_js_flow_button_gate_uses_ready_not_non_disabled(self, js_source):
+        """initAiFlowButtons must enable only on effective === 'ready' — that is
+        the only value that guarantees chat defaults + provider configured + reachable.
+        'partial' (configured but not ready) must NOT enable flow buttons."""
+        assert "_aiHubConfigured = effective === 'ready'" in js_source
+        # The old predicates that over-enabled buttons must not appear
+        assert "_aiHubConfigured = effective !== 'disabled'" not in js_source
+        assert "_aiHubConfigured = configured.some(p => p.reachable === true)" not in js_source
 
 
 # ═════════════════════════════════════════════════════════════════════════════

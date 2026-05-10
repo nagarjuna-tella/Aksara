@@ -180,14 +180,32 @@ def _get_hub_settings():
 
 
 def _resolve_provider_model(hub, hub_overrides: Optional[Dict[str, str]] = None):
-    """Pick provider + model from hub defaults (with optional overrides)."""
+    """Pick provider + model from hub defaults (with optional overrides).
+
+    Uses _resolve_effective_chat_provider so that auto-routing (chat_provider=None)
+    resolves to the same concrete provider as build_ai_hub_agent_run and the routing
+    table — not hub.active_provider which is a different (legacy) concept.
+    When auto-routing, also uses the resolved provider's own configured model rather
+    than hub.defaults.chat_model, which may belong to a different provider.
+    """
+    from aksara.studio.utils import _resolve_effective_chat_provider
+
     provider = hub_overrides.get("provider") if hub_overrides else None
     model = hub_overrides.get("model") if hub_overrides else None
 
     if not provider:
-        provider = hub.defaults.chat_provider or hub.active_provider or ""
+        provider = _resolve_effective_chat_provider(hub) or ""
+
     if not model:
-        model = hub.defaults.chat_model or ""
+        if not hub.defaults.chat_provider and provider:
+            # Auto-routing: use the resolved provider's own model to avoid sending
+            # a model name that belongs to a different provider.
+            resolved_pc = hub.get_provider(provider) if hasattr(hub, "get_provider") else None
+            model = ((resolved_pc.model if (resolved_pc and resolved_pc.model) else None)
+                     or hub.defaults.chat_model or "")
+        else:
+            model = hub.defaults.chat_model or ""
+
     return str(provider or ""), str(model or "")
 
 
@@ -296,36 +314,60 @@ def _build_all_models_context() -> str:
         return f"Error building models overview: {exc}"
 
 
-def _build_route_context(path: str, method: str) -> str:
-    """Build route-definition context for an endpoint."""
+def _build_route_context(path: str, method: str, app: Optional[Any] = None) -> str:
+    """Build route-definition context for an endpoint.
+
+    Matches against the route's *methods list* (StudioRouteInfo.methods),
+    not a singular ``method`` attribute, so POST/PUT/DELETE and routes that
+    serve multiple methods are matched correctly.
+    """
     try:
         from aksara.studio.utils import build_routes_info
-        routes = build_routes_info()
+        routes = build_routes_info(app)
+        wanted_method = (method or "GET").upper()
         for r in routes:
             r_path = getattr(r, "path", "")
-            r_method = getattr(r, "method", "GET")
-            if r_path == path and r_method.upper() == method.upper():
-                lines = [
-                    f"## Endpoint: {r_method} {r_path}",
-                    f"Name: {getattr(r, 'name', 'N/A')}",
-                    f"Tags: {getattr(r, 'tags', [])}",
-                    f"Auth required: {getattr(r, 'auth_required', 'unknown')}",
-                    f"Permissions: {getattr(r, 'permissions', [])}",
-                ]
-                # Include schema hints if available
-                ai_hint = getattr(r, "ai_hint", None)
-                if ai_hint:
-                    lines.append(f"\nAI Hint: {ai_hint}")
-                params = getattr(r, "parameters", [])
-                if params:
-                    lines.append("\n### Parameters")
-                    for p in params:
-                        lines.append(f"- {p}")
-                resp_model = getattr(r, "response_model", None)
-                if resp_model:
-                    lines.append(f"\nResponse model: {resp_model}")
-                return "\n".join(lines)
-        return f"Route {method} {path} not found in registered routes."
+            if r_path != path:
+                continue
+            r_methods = getattr(r, "methods", None) or ["GET"]
+            r_methods_upper = [m.upper() for m in r_methods]
+            if wanted_method not in r_methods_upper:
+                continue
+
+            lines = [
+                f"## Endpoint: {wanted_method} {r_path}",
+                f"Methods supported: {', '.join(r_methods_upper)}",
+                f"Name: {getattr(r, 'name', None) or 'N/A'}",
+            ]
+            app_label = getattr(r, "app_label", None)
+            if app_label:
+                lines.append(f"App: {app_label}")
+            flags = []
+            if getattr(r, "is_studio", False): flags.append("studio")
+            if getattr(r, "is_admin", False): flags.append("admin")
+            if getattr(r, "is_ai", False): flags.append("ai")
+            if flags:
+                lines.append(f"Classification: {', '.join(flags)}")
+
+            # Best-effort optional fields — only emitted if the route catalog
+            # exposes them. Avoids polluting the prompt with empty defaults.
+            for attr, label in (
+                ("ai_hint", "AI Hint"),
+                ("auth_required", "Auth required"),
+                ("permissions", "Permissions"),
+                ("tags", "Tags"),
+                ("response_model", "Response model"),
+            ):
+                val = getattr(r, attr, None)
+                if val:
+                    lines.append(f"{label}: {val}")
+            params = getattr(r, "parameters", None)
+            if params:
+                lines.append("\n### Parameters")
+                for p in params:
+                    lines.append(f"- {p}")
+            return "\n".join(lines)
+        return f"Route {wanted_method} {path} not found in registered routes."
     except Exception as exc:
         return f"Error building route context: {exc}"
 
@@ -541,6 +583,7 @@ def build_route_flow(
     method: str,
     action_key: str,
     hub_overrides: Optional[Dict[str, str]] = None,
+    app: Optional[Any] = None,
 ) -> StudioAiFlowResponse:
     """Build an AI flow prompt pack for a route action."""
     action = get_flow_action(action_key)
@@ -558,7 +601,7 @@ def build_route_flow(
         return _hub_not_configured_response(action_key)
 
     provider, model = _resolve_provider_model(hub, hub_overrides)
-    context = _build_route_context(path, method)
+    context = _build_route_context(path, method, app)
     system_prompt = _SYSTEM_PROMPTS.get(action_key, "You are a helpful assistant.")
     user_prompt = f"Review the following endpoint and {action['description'].lower()}\n\n{context}"
 
@@ -714,6 +757,7 @@ async def execute_flow(
     context: Dict[str, Any],
     provider_override: Optional[str] = None,
     model_override: Optional[str] = None,
+    app: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Generic flow execution dispatcher.
 
@@ -721,7 +765,7 @@ async def execute_flow(
     2. Execute via ``aksara.ai.runtime.run_prompt_pack()``
     3. Return merged result preserving the original prompt pack.
     """
-    pack = _dispatch_builder(flow_type, action_key, context)
+    pack = _dispatch_builder(flow_type, action_key, context, app=app)
 
     if not pack.ok:
         return {
@@ -775,10 +819,12 @@ async def execute_model_flow(
 async def execute_route_flow(
     path: str, method: str, action_key: str,
     provider_override: Optional[str] = None, model_override: Optional[str] = None,
+    app: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Build and execute a route flow."""
     return await execute_flow("route", action_key, {"path": path, "method": method},
-                              provider_override=provider_override, model_override=model_override)
+                              provider_override=provider_override, model_override=model_override,
+                              app=app)
 
 
 async def execute_query_flow(
@@ -808,12 +854,12 @@ async def execute_diagnostic_flow(
                               provider_override=provider_override, model_override=model_override)
 
 
-def _dispatch_builder(flow_type: str, action_key: str, context: Dict[str, Any]) -> StudioAiFlowResponse:
+def _dispatch_builder(flow_type: str, action_key: str, context: Dict[str, Any], app: Optional[Any] = None) -> StudioAiFlowResponse:
     """Route to the correct ``build_*_flow()``."""
     if flow_type == "model":
         return build_model_flow(model_name=context.get("model_name", ""), action_key=action_key)
     elif flow_type == "route":
-        return build_route_flow(path=context.get("path", ""), method=context.get("method", "GET"), action_key=action_key)
+        return build_route_flow(path=context.get("path", ""), method=context.get("method", "GET"), action_key=action_key, app=app)
     elif flow_type == "query":
         return build_query_flow(sql=context.get("sql", ""), action_key=action_key)
     elif flow_type == "migration":

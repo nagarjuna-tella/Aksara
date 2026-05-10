@@ -612,12 +612,16 @@ function renderRoutes() {
 function renderRoutesTable(routes) {
     const tbody = document.getElementById('routes-tbody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = routes.map(route => {
-        const methods = (route.methods || []).map(m => 
-            `<span class="method-badge ${m.toLowerCase()}">${m}</span>`
+        const methodList = route.methods || ['GET'];
+        // Each badge carries data-method so the AI flow context can target
+        // a specific (path, method) pair on multi-method routes (a single
+        // path can serve GET + POST + DELETE, etc.).
+        const methods = methodList.map(m =>
+            `<span class="method-badge ${m.toLowerCase()}" data-method="${escapeHtml(m)}" title="Use ${escapeHtml(m)} for AI actions" style="cursor:pointer">${m}</span>`
         ).join(' ');
-        
+
         let typeBadges = '';
         if (route.is_studio) typeBadges += '<span class="type-badge studio">Studio</span>';
         if (route.is_admin) typeBadges += '<span class="type-badge admin">Admin</span>';
@@ -625,9 +629,10 @@ function renderRoutesTable(routes) {
         if (!route.is_studio && !route.is_admin && !route.is_ai) {
             typeBadges += '<span class="type-badge api">API</span>';
         }
-        
+
+        const primaryMethod = escapeHtml(methodList[0]);
         return `
-            <tr data-studio="${route.is_studio}" data-admin="${route.is_admin}" data-ai="${route.is_ai}">
+            <tr data-studio="${route.is_studio}" data-admin="${route.is_admin}" data-ai="${route.is_ai}" data-path="${escapeHtml(route.path)}" data-method="${primaryMethod}" style="cursor:pointer">
                 <td>${methods}</td>
                 <td><code>${escapeHtml(route.path)}</code></td>
                 <td>${escapeHtml(route.name || '-')}</td>
@@ -3193,9 +3198,21 @@ async function _renderInspectorTab(panel, tab, loaded) {
 // v0.5.25: AI Hub Section
 // =============================================================================
 
+// Module-level so mutation handlers can invalidate specific tabs without
+// needing access to renderAiHub's closure. Delete an entry to force a reload
+// on the user's next visit to that tab.
+const _hubLoadedTabs = {};
+
+function _invalidateHubTabs(...tabs) {
+    tabs.forEach(t => delete _hubLoadedTabs[t]);
+}
+
 async function renderAiHub() {
-    // Track which tabs have been loaded (v0.5.28: hub-overview is default)
-    const loadedTabs = { 'hub-overview': true };
+    // Wipe the cache on every render. The section renderer clones a fresh DOM
+    // template each time, so any entries from a previous renderAiHub call refer
+    // to nodes that no longer exist and must not block reloads.
+    Object.keys(_hubLoadedTabs).forEach(k => delete _hubLoadedTabs[k]);
+    _hubLoadedTabs['hub-overview'] = true;
 
     // Wire tab switching
     document.querySelectorAll('.ai-hub-tab').forEach(tab => {
@@ -3206,9 +3223,9 @@ async function renderAiHub() {
             document.querySelectorAll('.ai-hub-panel').forEach(p => {
                 p.style.display = p.dataset.tabPanel === target ? '' : 'none';
             });
-            // Lazy-load consolidated sections on first visit
-            if (!loadedTabs[target]) {
-                loadedTabs[target] = true;
+            // Lazy-load consolidated sections on first visit (or after invalidation).
+            if (!_hubLoadedTabs[target]) {
+                _hubLoadedTabs[target] = true;
                 if (target === 'providers') loadAiHubProviders();
                 if (target === 'helpers') renderAiHelpers();
                 if (target === 'profiles') renderAiProfiles();
@@ -3251,19 +3268,46 @@ async function renderAiHub() {
     const pingBtn = document.getElementById('ai-hub-cfg-ping');
     if (pingBtn) pingBtn.addEventListener('click', aiHubPingProvider);
 
-    // v0.5.43: Switch model input to dropdown when Ollama is selected
+    // v0.5.45: Switch model input to dropdown when Ollama is selected;
+    // pre-fill model/base_url from saved config so the user can see current
+    // values and intentionally clear them (empty string → backend clears field).
     const providerSelectEl = document.getElementById('ai-hub-cfg-provider');
     if (providerSelectEl) {
         providerSelectEl.addEventListener('change', () => {
             const resultEl = document.getElementById('ai-hub-cfg-result');
             if (resultEl) resultEl.innerHTML = '';
-            if (providerSelectEl.value === 'ollama') {
+            const kind = providerSelectEl.value;
+            // Read saved config before any DOM mutations so we can pre-fill.
+            const saved = (state.aiHub.providers?.providers || []).find(p => p.kind === kind);
+            // Show "Clear key" only when the provider has a stored key.
+            // Ollama is keyless; all other providers may have one.
+            const clearKeyBtn = document.getElementById('ai-hub-cfg-clear-key');
+            if (clearKeyBtn) {
+                clearKeyBtn.style.display = (saved?.configured && kind !== 'ollama') ? '' : 'none';
+            }
+            if (kind === 'ollama') {
+                // Pre-fill base_url and model BEFORE loadOllamaModels() — that
+                // function reads base_url from the form to query the right host,
+                // and uses the current model value for initial select pre-selection.
+                const modelEl = document.getElementById('ai-hub-cfg-model');
+                const baseUrlEl = document.getElementById('ai-hub-cfg-baseurl');
+                if (modelEl && modelEl.tagName === 'INPUT') modelEl.value = saved?.model || '';
+                if (baseUrlEl) baseUrlEl.value = saved?.base_url || '';
                 loadOllamaModels();
             } else {
                 restoreModelTextInput();
+                // Pre-fill fields from saved provider config so users see what
+                // is already stored and can explicitly clear individual fields.
+                const modelEl = document.getElementById('ai-hub-cfg-model');
+                const baseUrlEl = document.getElementById('ai-hub-cfg-baseurl');
+                if (modelEl && modelEl.tagName === 'INPUT') modelEl.value = saved?.model || '';
+                if (baseUrlEl) baseUrlEl.value = saved?.base_url || '';
             }
         });
     }
+
+    const clearKeyBtn = document.getElementById('ai-hub-cfg-clear-key');
+    if (clearKeyBtn) clearKeyBtn.addEventListener('click', clearProviderKey);
 
     const runBtn = document.getElementById('ai-hub-agent-run');
     if (runBtn) runBtn.addEventListener('click', aiHubRunAgent);
@@ -3289,6 +3333,25 @@ async function renderAiHub() {
     // v0.5.28: Wire onboarding buttons
     const testAllBtn = document.getElementById('onboarding-test-all');
     if (testAllBtn) testAllBtn.addEventListener('click', onboardingTestAll);
+
+    // Step 1: wire provider checkboxes to rebuild the Step 2 key form and update
+    // the step 1 indicator immediately — no round-trip needed.
+    document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            _buildOnboardingKeyForm();
+            const checkedKinds = Array.from(
+                document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]:checked')
+            ).map(c => c.value);
+            // Persist so selections survive tab cache wipes / section switches.
+            _saveOnboardingSelections(checkedKinds);
+            const anyChecked = checkedKinds.length > 0;
+            const el = document.getElementById('onboarding-step-1-status');
+            if (el) {
+                el.textContent = anyChecked ? '✓' : '○';
+                el.className = 'onboarding-step-status ' + (anyChecked ? 'text-success' : 'text-muted');
+            }
+        });
+    });
 
     const saveKeysBtn = document.getElementById('onboarding-save-keys');
     if (saveKeysBtn) saveKeysBtn.addEventListener('click', onboardingSaveKeys);
@@ -3331,29 +3394,56 @@ async function renderAiHub() {
 }
 
 // v0.5.28: Global AI status indicator (sidebar)
-async function loadAiStatusIndicator() {
+// Combine backend readiness (credentials + chat default) with live reachability.
+// ready → backend ready AND ≥1 configured provider is reachable
+// partial → configured but either no defaults set or none reachable
+// disabled → no configured providers
+// providers === null means the /providers fetch failed; fall back to backend status
+// alone to avoid falsely reporting disabled when the hub is actually configured.
+function _effectiveOverall(backendStatus, providers) {
+    if (providers === null) return backendStatus?.overall || 'disabled';
+    const configured = providers.filter(p => p.configured);
+    if (configured.length === 0) return 'disabled';
+    const anyReachable = configured.some(p => p.reachable === true);
+    if (!anyReachable) return 'partial';
+    return backendStatus?.overall === 'ready' ? 'ready' : 'partial';
+}
+
+function _updateAiStatusIndicator(overall) {
     const indicator = document.getElementById('ai-status-indicator');
     const dot = document.getElementById('ai-status-dot');
     const label = document.getElementById('ai-status-label');
     if (!indicator) return;
+    indicator.style.display = '';
+    const ov = overall || 'disabled';
+    dot.className = 'ai-status-dot ai-status-' + ov;
+    if (ov === 'ready') {
+        label.textContent = 'AI Ready';
+        indicator.title = 'AI Hub: defaults set and at least one provider reachable';
+    } else if (ov === 'partial') {
+        label.textContent = 'AI Partial';
+        indicator.title = 'AI Hub: configured but not fully ready (missing defaults or unreachable)';
+    } else {
+        label.textContent = 'AI Off';
+        indicator.title = 'AI Hub: no providers configured';
+    }
+}
 
+async function loadAiStatusIndicator() {
+    const indicator = document.getElementById('ai-status-indicator');
+    if (!indicator) return;
     try {
-        const data = await jsonGet('/studio/ai-hub/status');
-        indicator.style.display = '';
-        const overall = data.overall || 'disabled';
-        dot.className = 'ai-status-dot ai-status-' + overall;
-        if (overall === 'ready') {
-            label.textContent = 'AI Ready';
-            indicator.title = 'AI Hub: All providers configured';
-        } else if (overall === 'partial') {
-            label.textContent = 'AI Partial';
-            indicator.title = 'AI Hub: Some providers configured';
-        } else {
-            label.textContent = 'AI Off';
-            indicator.title = 'AI Hub: No providers configured';
-        }
+        // Need backend status (for defaults check) AND providers (for reachability).
+        // providers: null on fetch failure → _effectiveOverall falls back to backend status
+        // so a transient /providers error does not falsely report AI Off.
+        const [data, provData] = await Promise.all([
+            jsonGet('/studio/ai-hub/status').catch(() => null),
+            jsonGet('/studio/ai-hub/providers').catch(() => null),
+        ]);
+        // Both failed → transport error, not a product state; hide rather than misreport.
+        if (data === null && provData === null) { indicator.style.display = 'none'; return; }
+        _updateAiStatusIndicator(_effectiveOverall(data, provData?.providers ?? null));
     } catch {
-        // Silently hide if endpoint not available
         indicator.style.display = 'none';
     }
 }
@@ -3369,12 +3459,21 @@ async function loadAiHubOverview() {
     const providersEl = document.getElementById('ai-hub-overview-providers');
 
     try {
-        const data = await jsonGet('/studio/ai-hub/status');
+        // Fetch status (credentials/defaults) and provider reachability in parallel.
+        // providers: null on fetch failure → _effectiveOverall falls back to backend status.
+        const [data, provData] = await Promise.all([
+            jsonGet('/studio/ai-hub/status'),
+            jsonGet('/studio/ai-hub/providers').catch(() => null),
+        ]);
         state.aiHub.status = data;
 
+        // Combine backend readiness (defaults check) with live reachability.
+        const providers = provData?.providers ?? null;
+        const effectiveOverall = _effectiveOverall(data, providers);
+
         if (statusEl) {
-            const cls = data.overall === 'ready' ? 'text-success' : (data.overall === 'partial' ? 'text-warning' : 'text-danger');
-            statusEl.innerHTML = `<span class="${cls}">${data.overall || 'unknown'}</span>`;
+            const cls = effectiveOverall === 'ready' ? 'text-success' : (effectiveOverall === 'partial' ? 'text-warning' : 'text-danger');
+            statusEl.innerHTML = `<span class="${cls}">${effectiveOverall}</span>`;
         }
         if (activeEl) activeEl.textContent = data.active_provider || 'none';
         if (countEl) countEl.textContent = String(data.configured_count || 0);
@@ -3383,13 +3482,23 @@ async function loadAiHubOverview() {
             if (ob && ob.completed) {
                 onboardEl.innerHTML = '<span class="text-success">✓ Complete</span>';
             } else {
-                const done = ob ? [ob.providers_selected, ob.keys_entered, ob.providers_tested, ob.defaults_set, ob.sample_query_run].filter(Boolean).length : 0;
-                onboardEl.innerHTML = `<span class="text-warning">${done}/5 steps</span>`;
+                // Count only the 3 steps the backend actually tracks.
+                // providers_tested and sample_query_run are not yet tracked
+                // (always false), so including them would permanently cap
+                // progress at 3/5 and make "Complete" unreachable.
+                const done = ob ? [ob.providers_selected, ob.keys_entered, ob.defaults_set].filter(Boolean).length : 0;
+                onboardEl.innerHTML = `<span class="text-warning">${done}/3 steps</span>`;
             }
         }
-        // Warnings
+        // Warnings — combine backend warnings with any reachability-driven explanation.
+        // The backend warns on missing defaults but has no visibility into live reachability,
+        // so we must add the unreachable-provider warning on the frontend.
         if (warningsEl) {
-            const warnings = data.warnings || [];
+            const warnings = [...(data.warnings || [])];
+            const configuredList = providers ? providers.filter(p => p.configured) : null;
+            if (configuredList && configuredList.length > 0 && !configuredList.some(p => p.reachable === true)) {
+                warnings.push('No configured provider is currently reachable — check network connectivity and credentials');
+            }
             warningsEl.innerHTML = warnings.map(w =>
                 `<div class="info-banner warning"><span class="info-icon">⚠️</span><p>${escapeHtml(w)}</p></div>`
             ).join('');
@@ -3402,13 +3511,16 @@ async function loadAiHubOverview() {
                 <div class="defaults-row"><span class="defaults-label">Code:</span><span class="defaults-value">${escapeHtml(d.code_model || 'not set')} <span class="text-muted">(${escapeHtml(d.code_provider || '-')})</span></span></div>
                 <div class="defaults-row"><span class="defaults-label">Embeddings:</span><span class="defaults-value">${escapeHtml(d.embeddings_model || 'not set')} <span class="text-muted">(${escapeHtml(d.embeddings_provider || '-')})</span></span></div>`;
         }
-        // Providers summary cards
+        // Providers summary cards (reuse already-fetched provData — no second ping).
+        // providers === null means the fetch failed; render an error rather than
+        // the empty-state message, which would contradict the configured_count shown above.
         if (providersEl) {
-            const provData = await jsonGet('/studio/ai-hub/providers');
-            if (!provData.providers || provData.providers.length === 0) {
+            if (providers === null) {
+                providersEl.innerHTML = '<div class="empty-state text-muted"><p>Provider status unavailable.</p></div>';
+            } else if (providers.length === 0) {
                 providersEl.innerHTML = '<div class="empty-state"><p>No providers configured.</p></div>';
             } else {
-                providersEl.innerHTML = provData.providers.map(p => {
+                providersEl.innerHTML = providers.map(p => {
                     const icon = p.configured ? (p.reachable ? '✓' : '⚠') : '○';
                     const cls = p.configured ? (p.reachable ? 'status-ok' : 'status-warn') : 'status-off';
                     return `<div class="provider-summary-row">
@@ -3419,8 +3531,8 @@ async function loadAiHubOverview() {
                 }).join('');
             }
         }
-        // Also update the global indicator
-        loadAiStatusIndicator();
+        // Update sidebar indicator using the same reachability-derived value (no extra ping).
+        _updateAiStatusIndicator(effectiveOverall);
     } catch (err) {
         if (statusEl) statusEl.innerHTML = `<span class="text-danger">Error</span>`;
     }
@@ -3437,11 +3549,21 @@ async function loadAiHubModels() {
         const data = await jsonGet('/studio/ai-hub/models');
         state.aiHub.models = data;
 
-        // Fill defaults fields
+        // Collect unique provider names from the models list for the selects.
+        // Always include the currently-saved provider even when it has no model in
+        // the returned list — otherwise the select collapses to auto and a save clears the override.
+        const savedProviders = [data.defaults?.chat_provider, data.defaults?.code_provider, data.defaults?.embeddings_provider].filter(Boolean);
+        const providerNames = [...new Set([...(data.models || []).map(m => m.provider).filter(Boolean), ...savedProviders])].sort();
+        _populateProviderSelect(document.getElementById('ai-hub-default-chat-provider'), providerNames, data.defaults?.chat_provider);
+        _populateProviderSelect(document.getElementById('ai-hub-default-code-provider'), providerNames, data.defaults?.code_provider);
+        _populateProviderSelect(document.getElementById('ai-hub-default-embeddings-provider'), providerNames, data.defaults?.embeddings_provider);
+
+        // Fill defaults fields AND hydrate provider metadata onto each input
+        // so a subsequent save round-trips the provider, not just the model id.
         if (data.defaults) {
-            if (chatInput) chatInput.value = data.defaults.chat_model || '';
-            if (codeInput) codeInput.value = data.defaults.code_model || '';
-            if (embeddingsInput) embeddingsInput.value = data.defaults.embeddings_model || '';
+            _hydrateModelInput(chatInput, data.defaults.chat_model, data.defaults.chat_provider);
+            _hydrateModelInput(codeInput, data.defaults.code_model, data.defaults.code_provider);
+            _hydrateModelInput(embeddingsInput, data.defaults.embeddings_model, data.defaults.embeddings_provider);
         }
 
         // Fill models table — v0.5.43: 4 columns with "Use as default" button
@@ -3450,7 +3572,7 @@ async function loadAiHubModels() {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No models available</td></tr>';
             } else {
                 tbody.innerHTML = data.models.map(m => {
-                    const btn = `<button class="btn btn-xs btn-ghost" onclick="aiHubUseModel('${escapeHtml(m.model_id)}','${escapeHtml(m.mode)}')" title="Set as ${escapeHtml(m.mode)} default">Use</button>`;
+                    const btn = `<button class="btn btn-xs btn-ghost" onclick="aiHubUseModel('${escapeHtml(m.model_id)}','${escapeHtml(m.mode)}','${escapeHtml(m.provider)}')" title="Set as ${escapeHtml(m.mode)} default">Use</button>`;
                     return `<tr>
                         <td><code>${escapeHtml(m.model_id)}</code></td>
                         <td>${escapeHtml(m.provider)}</td>
@@ -3465,34 +3587,98 @@ async function loadAiHubModels() {
     }
 }
 
+// Populate a provider <select> with an "auto" option plus one option per
+// provider name. Preserves/restores the currently-selected value if present.
+function _populateProviderSelect(selectEl, providerNames, currentProvider) {
+    if (!selectEl) return;
+    const prev = selectEl.value || currentProvider || '';
+    selectEl.innerHTML = '<option value="">auto</option>' +
+        providerNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    if (prev && Array.from(selectEl.options).some(o => o.value === prev)) {
+        selectEl.value = prev;
+    }
+}
+
+// Hydrate a model input with both value AND its associated provider, and
+// install a one-time listener that clears dataset.provider on manual edit.
+// The backend treats a missing provider as "leave unchanged", so clearing on
+// manual edit is the safe default — the user is editing the model id alone.
+// Also syncs the associated provider <select> (id = inputEl.id + '-provider').
+function _hydrateModelInput(input, modelId, provider) {
+    if (!input) return;
+    input.value = modelId || '';
+    input.dataset.provider = provider || '';
+    // Sync the sibling provider select if it exists
+    const provSel = document.getElementById(input.id + '-provider');
+    if (provSel && provider) provSel.value = provider;
+    if (!input.dataset.editListenerInstalled) {
+        input.addEventListener('input', () => {
+            // Manual edit: drop the stale provider association. Backend then
+            // sees provider=null and keeps the previously persisted provider
+            // intact (instead of pinning to a now-mismatched one).
+            input.dataset.provider = '';
+        });
+        input.dataset.editListenerInstalled = '1';
+    }
+}
+
+// Read the effective provider for a model input from the associated select.
+// Returns the select's literal value:
+//   "" when "auto" is selected → backend treats "" as "clear the stored override"
+//   "openai" / etc. → backend sets the provider to that value
+//   null (selectEl absent) → backend treats null as "don't change"
+// Never falls back to dataset.provider: if the persisted provider is not in
+// the option list the select correctly shows "auto", and sending "" to the
+// backend re-clears to unset rather than silently re-posting a stale value.
+function _readModelProvider(inputEl, selectEl) {
+    if (!selectEl) return null;
+    return selectEl.value;  // "" for auto, provider name otherwise
+}
+
 // v0.5.43: Populate a default model field from the Available Models table
-function aiHubUseModel(modelId, mode) {
+function aiHubUseModel(modelId, mode, provider) {
     const modeToId = { chat: 'ai-hub-default-chat', code: 'ai-hub-default-code', embeddings: 'ai-hub-default-embeddings' };
     const inputId = modeToId[mode];
     if (!inputId) return;
     const input = document.getElementById(inputId);
     if (!input) return;
-    input.value = modelId;
+    // Use the shared hydrator so the input edit listener is installed even
+    // when this is the user's first interaction with the field.
+    _hydrateModelInput(input, modelId, provider);
     input.classList.add('flash-highlight');
     setTimeout(() => input.classList.remove('flash-highlight'), 900);
 }
 
 async function aiHubSaveDefaults() {
     const resultEl = document.getElementById('ai-hub-defaults-result');
-    const chatModel = document.getElementById('ai-hub-default-chat')?.value;
-    const codeModel = document.getElementById('ai-hub-default-code')?.value;
-    const embeddingsModel = document.getElementById('ai-hub-default-embeddings')?.value;
+    const chatEl = document.getElementById('ai-hub-default-chat');
+    const codeEl = document.getElementById('ai-hub-default-code');
+    const embeddingsEl = document.getElementById('ai-hub-default-embeddings');
+    const chatProvSel = document.getElementById('ai-hub-default-chat-provider');
+    const codeProvSel = document.getElementById('ai-hub-default-code-provider');
+    const embProvSel = document.getElementById('ai-hub-default-embeddings-provider');
 
     try {
         const resp = await jsonPost('/studio/ai-hub/defaults', {
-            chat_model: chatModel || null,
-            code_model: codeModel || null,
-            embeddings_model: embeddingsModel || null,
+            // Use ?? so an explicitly-cleared field sends "" (→ backend clear)
+            // rather than null (→ backend "don't change").
+            chat_model: chatEl?.value ?? null,
+            chat_provider: _readModelProvider(chatEl, chatProvSel),
+            code_model: codeEl?.value ?? null,
+            code_provider: _readModelProvider(codeEl, codeProvSel),
+            embeddings_model: embeddingsEl?.value ?? null,
+            embeddings_provider: _readModelProvider(embeddingsEl, embProvSel),
         });
         if (resultEl) {
             resultEl.innerHTML = resp.ok
                 ? `<span class="text-success">✓ ${escapeHtml(resp.message || 'Defaults saved')}</span>`
                 : `<span class="text-danger">✗ ${escapeHtml(resp.message || 'Failed')}</span>`;
+        }
+        if (resp.ok) {
+            // Defaults affect hub readiness (partial → ready) and onboarding step 4.
+            loadAiHubOverview();
+            loadAiStatusIndicator();
+            _invalidateHubTabs('onboarding', 'routing');
         }
     } catch (err) {
         if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
@@ -3514,8 +3700,10 @@ async function loadAiHubRouting() {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No routing data available.</td></tr>';
             } else {
                 tbody.innerHTML = routes.map(r => {
-                    const statusCls = r.status === 'ok' ? 'text-success' : (r.status === 'fallback' ? 'text-warning' : 'text-muted');
-                    const statusIcon = r.status === 'ok' ? '✓ Active' : (r.status === 'fallback' ? '⚠ Fallback' : '○ Missing');
+                    const statusCls = r.status === 'ok' ? 'text-success'
+                        : (['fallback', 'unreachable'].includes(r.status) ? 'text-warning' : 'text-muted');
+                    const statusIcon = {'ok': '✓ Active', 'fallback': '⚠ Fallback',
+                        'unreachable': '⚠ Unreachable', 'missing': '○ Missing'}[r.status] || '○ Missing';
                     return `<tr>
                         <td><strong>${escapeHtml(r.feature)}</strong></td>
                         <td>${escapeHtml(r.provider || '-')}</td>
@@ -3538,17 +3726,221 @@ async function loadAiHubRouting() {
     }
 }
 
+// Local persistence for the two onboarding steps the backend doesn't track
+// (test connections, sample query). Without this the onboarding tab would
+// keep showing them as ○ even seconds after the user successfully ran them,
+// while the overview screen reports "Complete" — that contradiction is what
+// this fills in. Stored in localStorage so it survives page reloads.
+//
+// The key incorporates a hub fingerprint so flags auto-invalidate when the
+// hub configuration changes (provider added/removed, active provider switch,
+// or default models change). A different fingerprint = a different key =
+// fresh flags, preventing stale "Complete" state across different configs.
+const _ONBOARDING_LS_KEY = 'aksara.aihub.onboarding.session';
+// Stable key for Step 1 selections — not fingerprint-scoped so that a save that
+// changes the fingerprint (e.g. OpenAI configured, Anthropic still pending) does
+// not drop the still-pending selection.
+const _ONBOARDING_SELECTIONS_KEY = 'aksara.aihub.onboarding.selections';
+// Cache of the last known configured provider kinds — refreshed on every successful
+// /providers fetch so that a transient failure can still show configured providers
+// in Step 1 / Step 2 even after a fresh DOM render (all checkboxes start unchecked).
+const _CONFIGURED_KINDS_CACHE_KEY = 'aksara.aihub.configured.kinds';
+let _hubFingerprint = '';
+
+function _computeHubFingerprint(data, configuredProviders = []) {
+    // Encodes the actual configured provider roster including each provider's
+    // base URL so that: kind swaps, base URL changes, and new/removed providers
+    // all produce a different key and invalidate stored tested/sampled flags.
+    // API key changes cannot be covered without exposing secrets — that gap is
+    // accepted; rotating a valid key on a working provider is an edge case.
+    const d = data.defaults || {};
+    const rosterStr = [...configuredProviders]
+        .sort((a, b) => a.kind.localeCompare(b.kind))
+        .map(p => `${p.kind}@${p.base_url || ''}`)
+        .join(',');
+    return [
+        data.active_provider || '',
+        rosterStr,
+        d.chat_model || '',
+        d.chat_provider || '',
+        d.code_model || '',
+        d.code_provider || '',
+        d.embeddings_model || '',
+        d.embeddings_provider || '',
+    ].join(':');
+}
+
+// Rebuild the Step 2 key-entry form from currently-checked provider checkboxes.
+// Called on checkbox change and after loadAiHubOnboarding pre-checks boxes.
+function _buildOnboardingKeyForm() {
+    const form = document.getElementById('onboarding-keys-form');
+    if (!form) return;
+    // Snapshot unsaved values before rebuilding so checkbox toggles don't erase typed input.
+    const saved = {};
+    form.querySelectorAll('input[data-provider]').forEach(el => {
+        if (el.value) saved[`${el.dataset.provider}:${el.dataset.field || 'api_key'}`] = el.value;
+    });
+    // [label, input-type, data-field, placeholder]
+    const FIELDS = {
+        openai:    ['OpenAI API Key',       'password', 'api_key',  'sk-...'],
+        anthropic: ['Anthropic API Key',    'password', 'api_key',  'sk-ant-...'],
+        azure:     ['Azure OpenAI API Key', 'password', 'api_key',  ''],
+        ollama:    ['Ollama Base URL',      'text',     'base_url', 'http://localhost:11434'],
+        custom:    ['Custom HTTP API Key',  'password', 'api_key',  ''],
+    };
+    const checked = Array.from(
+        document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]:checked')
+    ).map(cb => cb.value);
+    if (checked.length === 0) {
+        form.innerHTML = '<p class="text-muted" style="grid-column:1/-1">Select at least one provider above.</p>';
+        return;
+    }
+    form.innerHTML = checked.map(kind => {
+        const [label, type, field, ph] = FIELDS[kind] || [`${kind} Key`, 'password', 'api_key', ''];
+        return `<div class="form-group">
+            <label>${escapeHtml(label)}</label>
+            <input type="${type}" class="form-input" data-provider="${kind}" data-field="${field}" placeholder="${escapeHtml(ph)}" autocomplete="off">
+        </div>`;
+    }).join('');
+    // Restore any values that survived the rebuild.
+    form.querySelectorAll('input[data-provider]').forEach(el => {
+        const v = saved[`${el.dataset.provider}:${el.dataset.field || 'api_key'}`];
+        if (v) el.value = v;
+    });
+}
+
+function _readOnboardingSession() {
+    try {
+        const key = `${_ONBOARDING_LS_KEY}:${_hubFingerprint}`;
+        return JSON.parse(localStorage.getItem(key) || '{}') || {};
+    } catch { return {}; }
+}
+function _markOnboardingStep(step) {
+    try {
+        const key = `${_ONBOARDING_LS_KEY}:${_hubFingerprint}`;
+        const s = _readOnboardingSession();
+        s[step] = true;
+        localStorage.setItem(key, JSON.stringify(s));
+    } catch { /* localStorage may be disabled */ }
+}
+
+// After any single-provider test (Providers tab card or Configure panel ping),
+// fetch the full provider list and mark onboarding Step 3 as done when ALL
+// configured providers are reachable — mirrors the all-at-once check in
+// onboardingTestAll so the two paths converge on the same completion signal.
+async function _checkAndMarkAllTested() {
+    try {
+        const provData = await jsonGet('/studio/ai-hub/providers');
+        const configured = (provData.providers || []).filter(p => p.configured);
+        if (configured.length > 0 && configured.every(p => p.reachable === true)) {
+            _markOnboardingStep('tested');
+            loadAiHubOnboarding();
+        }
+    } catch { /* ignore — onboarding stays at current state */ }
+}
+// Persist Step 1 provider selections so checked-but-unconfigured providers
+// survive tab reloads and section switches (the DOM is rebuilt from template).
+// Uses a stable key independent of the fingerprint so that a save which changes
+// the fingerprint (e.g. OpenAI configured, Anthropic still pending) does not
+// evict the still-pending selection.
+function _saveOnboardingSelections(kinds) {
+    try {
+        localStorage.setItem(_ONBOARDING_SELECTIONS_KEY, JSON.stringify(kinds));
+    } catch { /* localStorage may be disabled */ }
+}
+function _loadOnboardingSelections() {
+    try {
+        return JSON.parse(localStorage.getItem(_ONBOARDING_SELECTIONS_KEY) || '[]') || [];
+    } catch { return []; }
+}
+function _saveConfiguredKindsCache(kinds) {
+    try { localStorage.setItem(_CONFIGURED_KINDS_CACHE_KEY, JSON.stringify(kinds)); } catch {}
+}
+function _loadConfiguredKindsCache() {
+    try { return JSON.parse(localStorage.getItem(_CONFIGURED_KINDS_CACHE_KEY) || '[]') || []; } catch { return []; }
+}
+
 // v0.5.28: Onboarding tab
 async function loadAiHubOnboarding() {
     try {
-        const data = await jsonGet('/studio/ai-hub/status');
+        // Fetch status and providers in parallel so we can build a fingerprint
+        // that includes the actual configured provider roster — not just counts.
+        // A provider swap (same count, different kinds) then correctly
+        // invalidates stored session flags.
+        const [data, provData] = await Promise.all([
+            jsonGet('/studio/ai-hub/status'),
+            jsonGet('/studio/ai-hub/providers').catch(() => null),  // null = transient failure
+        ]);
+
+        const persistedSelections = new Set(_loadOnboardingSelections());
+        let configuredProviders = [];
+        let configuredKindSet = new Set();
+        let providersKnown = false;  // true only when we got a valid /providers response
+
+        if (provData !== null) {
+            providersKnown = true;
+            configuredProviders = (provData.providers || [])
+                .filter(p => p.configured)
+                .map(p => ({ kind: p.kind, base_url: p.base_url || '' }));
+            configuredKindSet = new Set(configuredProviders.map(p => p.kind));
+            // Refresh the configured-kinds cache so future failure paths can fall back to it.
+            _saveConfiguredKindsCache(configuredProviders.map(p => p.kind));
+            // Update the fingerprint only on a known-good response.
+            _hubFingerprint = _computeHubFingerprint(data, configuredProviders);
+
+            // Restore checkboxes from server truth + stable manual selections.
+            document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]').forEach(cb => {
+                cb.checked = configuredKindSet.has(cb.value) || persistedSelections.has(cb.value);
+            });
+        } else {
+            // Providers fetch failed — restore from stable selections AND the last-known
+            // configured-kinds cache so that fresh DOM renders (all checkboxes start unchecked)
+            // still show providers that were configured but never manually checked.
+            const cachedKinds = new Set(_loadConfiguredKindsCache());
+            document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]').forEach(cb => {
+                if (cachedKinds.has(cb.value) || persistedSelections.has(cb.value)) cb.checked = true;
+            });
+        }
+        _buildOnboardingKeyForm();
+
         const ob = data.onboarding || {};
+        // Always read the fingerprint-scoped session — when providers fetch fails,
+        // _hubFingerprint still holds the last successful fingerprint, so the bucket
+        // is the same one that was written on the last good load.  Zeroing out
+        // session on failure would break the Step 3 / Step 5 fallback paths.
+        const session = _readOnboardingSession();
+        // Steps 3 (providers_tested) and 5 (sample_query_run) aren't persisted
+        // server-side; OR the session flag in so the tab doesn't contradict
+        // the overview's "Complete" state after the user runs those actions.
+        // Step 1 is done when any provider is configured OR any checkbox is checked.
+        const checkedKinds = Array.from(
+            document.querySelectorAll('#onboarding-provider-select input[type="checkbox"]:checked')
+        ).map(cb => cb.value);
+        const anyChecked = checkedKinds.length > 0;
+        // Step 2 is done when every checked provider has been configured.
+        // Falls back to the backend flag when providers are unknown (fetch failed).
+        const allCheckedConfigured = providersKnown && checkedKinds.length > 0
+            ? checkedKinds.every(k => configuredKindSet.has(k))
+            : !!ob.keys_entered;
+
+        // Step 3: computed from live reachability when providers are known so that
+        // the step clears automatically when a provider later becomes unreachable
+        // (e.g. Ollama goes down). Falls back to session.tested only on providers
+        // fetch failure so the step does not vanish during a transient outage.
+        let step3done;
+        if (providersKnown) {
+            const liveConfigured = (provData.providers || []).filter(p => p.configured);
+            step3done = liveConfigured.length > 0 && liveConfigured.every(p => p.reachable === true);
+        } else {
+            step3done = !!session.tested;
+        }
+
         const steps = [
-            { id: 1, done: ob.providers_selected },
-            { id: 2, done: ob.keys_entered },
-            { id: 3, done: ob.providers_tested },
-            { id: 4, done: ob.defaults_set },
-            { id: 5, done: ob.sample_query_run },
+            { id: 1, done: !!(ob.providers_selected || anyChecked) },
+            { id: 2, done: allCheckedConfigured },
+            { id: 3, done: step3done },
+            { id: 4, done: !!ob.defaults_set },
+            { id: 5, done: !!(ob.sample_query_run || session.sampled) },
         ];
         steps.forEach(s => {
             const el = document.getElementById(`onboarding-step-${s.id}-status`);
@@ -3557,6 +3949,23 @@ async function loadAiHubOnboarding() {
                 el.className = 'onboarding-step-status ' + (s.done ? 'text-success' : 'text-muted');
             }
         });
+
+        // Pre-fill onboarding default-model inputs from current settings AND
+        // hydrate provider metadata, so a save round-trips provider correctly.
+        const d = data.defaults || {};
+        _hydrateModelInput(document.getElementById('onboarding-default-chat'), d.chat_model, d.chat_provider);
+        _hydrateModelInput(document.getElementById('onboarding-default-code'), d.code_model, d.code_provider);
+        _hydrateModelInput(document.getElementById('onboarding-default-embeddings'), d.embeddings_model, d.embeddings_provider);
+
+        // Populate provider selects from live data when available; fall back to the
+        // configured-kinds cache on outage so pinned provider overrides are not
+        // silently cleared by a save that reads the still-auto-only select.
+        const providerNames = providersKnown
+            ? configuredProviders.map(p => p.kind).sort()
+            : _loadConfiguredKindsCache().sort();
+        _populateProviderSelect(document.getElementById('onboarding-default-chat-provider'), providerNames, d.chat_provider);
+        _populateProviderSelect(document.getElementById('onboarding-default-code-provider'), providerNames, d.code_provider);
+        _populateProviderSelect(document.getElementById('onboarding-default-embeddings-provider'), providerNames, d.embeddings_provider);
     } catch {
         // ignore
     }
@@ -3589,6 +3998,12 @@ async function onboardingTestAll() {
             const latency = r.latency_ms ? ` (${r.latency_ms}ms)` : '';
             return `<div class="onboarding-test-row"><span class="${cls}">${icon} ${escapeHtml(r.provider)}${latency}</span>${r.error ? ` <span class="text-danger">${escapeHtml(r.error)}</span>` : ''}</div>`;
         }).join('');
+        // Mark step 3 as done only when every tested provider is reachable —
+        // "Verify that each provider is reachable" means the full set, not just one.
+        if (results.length > 0 && results.every(r => r.reachable)) {
+            _markOnboardingStep('tested');
+            loadAiHubOnboarding();
+        }
     } catch (err) {
         container.innerHTML = `<p class="text-danger">Error: ${escapeHtml(err.message)}</p>`;
     }
@@ -3596,33 +4011,69 @@ async function onboardingTestAll() {
 
 async function onboardingSaveKeys() {
     const form = document.getElementById('onboarding-keys-form');
+    const resultEl = document.getElementById('onboarding-keys-result');
+    if (resultEl) resultEl.innerHTML = '';
     if (!form) return;
     const inputs = form.querySelectorAll('input[data-provider]');
+    const errors = [];
+    let savedCount = 0;
     for (const input of inputs) {
         const provider = input.dataset.provider;
-        const apiKey = input.value?.trim();
-        if (apiKey) {
-            try {
-                await jsonPost('/studio/ai-hub/configure/secret', { provider, api_key: apiKey });
-            } catch { /* ignore individual errors */ }
+        const field = input.dataset.field || 'api_key';
+        const value = input.value?.trim();
+        if (!value) continue;
+        try {
+            if (field === 'base_url') {
+                // Ollama and similar keyless providers use configure (non-secret).
+                await jsonPost('/studio/ai-hub/configure', { provider, base_url: value });
+            } else {
+                await jsonPost('/studio/ai-hub/configure/secret', { provider, api_key: value });
+            }
+            savedCount++;
+        } catch (err) {
+            errors.push({ provider, message: err?.message || 'Save failed' });
         }
     }
-    // Refresh onboarding status
+    if (resultEl) {
+        const parts = [];
+        if (savedCount > 0) {
+            parts.push(`<span class="text-success">✓ Saved ${savedCount} provider${savedCount === 1 ? '' : 's'}</span>`);
+        }
+        errors.forEach(e => {
+            parts.push(`<span class="text-danger">✗ ${escapeHtml(e.provider)}: ${escapeHtml(e.message)}</span>`);
+        });
+        resultEl.innerHTML = parts.join('<br>');
+    }
+    // Saving keys moves providers from unconfigured → configured.
     loadAiHubOnboarding();
+    loadAiHubOverview();
+    loadAiStatusIndicator();
+    // New provider config affects providers cards, available models, and routing.
+    _invalidateHubTabs('hub-models', 'routing', 'providers');
 }
 
 async function onboardingSaveDefaults() {
-    const chatModel = document.getElementById('onboarding-default-chat')?.value;
-    const codeModel = document.getElementById('onboarding-default-code')?.value;
-    const embeddingsModel = document.getElementById('onboarding-default-embeddings')?.value;
+    const chatEl = document.getElementById('onboarding-default-chat');
+    const codeEl = document.getElementById('onboarding-default-code');
+    const embeddingsEl = document.getElementById('onboarding-default-embeddings');
+    const chatProvSel = document.getElementById('onboarding-default-chat-provider');
+    const codeProvSel = document.getElementById('onboarding-default-code-provider');
+    const embProvSel = document.getElementById('onboarding-default-embeddings-provider');
 
     try {
         await jsonPost('/studio/ai-hub/defaults', {
-            chat_model: chatModel || null,
-            code_model: codeModel || null,
-            embeddings_model: embeddingsModel || null,
+            chat_model: chatEl?.value ?? null,
+            chat_provider: _readModelProvider(chatEl, chatProvSel),
+            code_model: codeEl?.value ?? null,
+            code_provider: _readModelProvider(codeEl, codeProvSel),
+            embeddings_model: embeddingsEl?.value ?? null,
+            embeddings_provider: _readModelProvider(embeddingsEl, embProvSel),
         });
+        // Setting defaults can advance hub readiness from partial → ready.
         loadAiHubOnboarding();
+        loadAiHubOverview();
+        loadAiStatusIndicator();
+        _invalidateHubTabs('routing', 'onboarding');
     } catch { /* ignore */ }
 }
 
@@ -3633,7 +4084,7 @@ async function onboardingRunSample() {
     if (resultEl) resultEl.innerHTML = '<span class="text-muted">Running...</span>';
 
     try {
-        const resp = await jsonPost('/studio/ai/hub/agent/run', {
+        const resp = await jsonPost('/studio/ai-hub/agent/run', {
             prompt, include_context: true,
         });
         if (resultEl) {
@@ -3641,6 +4092,7 @@ async function onboardingRunSample() {
                 resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(resp.error)}</span>`;
             } else {
                 resultEl.innerHTML = `<span class="text-success">✓ Response received (${resp.provider}/${resp.model})</span><pre class="ai-hub-output-body">${escapeHtml(resp.output?.substring(0, 500) || '')}</pre>`;
+                _markOnboardingStep('sampled');
             }
         }
         loadAiHubOnboarding();
@@ -3657,6 +4109,11 @@ async function loadAiHubProviders() {
     try {
         const data = await jsonGet('/studio/ai-hub/providers');
         state.aiHub.providers = data;
+        // Keep the configured-kinds cache current so the onboarding failure fallback
+        // reflects edits made via the Providers tab, not just via the Onboarding tab.
+        _saveConfiguredKindsCache(
+            (data.providers || []).filter(p => p.configured).map(p => p.kind)
+        );
 
         if (!data.providers || data.providers.length === 0) {
             container.innerHTML = `
@@ -3698,12 +4155,21 @@ async function loadAiHubProviders() {
         // Populate agent provider selector
         const agentSelect = document.getElementById('ai-hub-agent-provider');
         if (agentSelect) {
-            agentSelect.innerHTML = '<option value="">Active Provider</option>' +
+            agentSelect.innerHTML = '<option value="">Hub Chat Default</option>' +
                 data.providers.filter(p => p.configured).map(p =>
                     `<option value="${p.kind}">${p.kind}${p.kind === activeKey ? ' (active)' : ''}</option>`
                 ).join('');
         }
+
+        // Hydrate the configure form for the currently selected provider.
+        // state.aiHub.providers is now fresh so the change handler can read
+        // up-to-date model, base_url, and configured flag for pre-fill/Clear-key.
+        const cfgSelect = document.getElementById('ai-hub-cfg-provider');
+        if (cfgSelect) cfgSelect.dispatchEvent(new Event('change'));
     } catch (err) {
+        // Null out cached state so _refreshFlowButtonGate falls back to backend
+        // status rather than recomputing from a stale pre-mutation provider list.
+        state.aiHub.providers = null;
         container.innerHTML = `<div class="empty-state"><p class="text-danger">Error: ${escapeHtml(err.message)}</p></div>`;
     }
 }
@@ -3716,6 +4182,14 @@ async function aiHubTestProvider(providerKind) {
             ? `✓ ${providerKind} reachable (${resp.latency_ms || 0}ms)`
             : `✗ ${providerKind}: ${resp.error || 'Unreachable'}`;
         showToast(msg, resp.reachable ? 'success' : 'error');
+        // Propagate new reachability to provider list, overview, routing, and sidebar.
+        await loadAiHubProviders();
+        _refreshFlowButtonGate();
+        loadAiHubOverview();
+        loadAiStatusIndicator();
+        _invalidateHubTabs('routing');
+        // Mark onboarding Step 3 if all configured providers are now reachable.
+        _checkAndMarkAllTested();
     } catch (err) {
         showToast(`Error testing ${providerKind}: ${err.message}`, 'error');
     }
@@ -3724,7 +4198,12 @@ async function aiHubTestProvider(providerKind) {
 // v0.5.28: Select a provider in the configure form
 function aiHubSelectProvider(providerKind) {
     const select = document.getElementById('ai-hub-cfg-provider');
-    if (select) select.value = providerKind;
+    if (select) {
+        select.value = providerKind;
+        // Dispatch change so the handler fires: pre-fills saved model/base_url
+        // and switches the model input to a dropdown for Ollama.
+        select.dispatchEvent(new Event('change'));
+    }
     const panel = document.getElementById('ai-hub-provider-config-panel');
     if (panel) panel.scrollIntoView({ behavior: 'smooth' });
 }
@@ -3737,7 +4216,7 @@ async function loadOllamaModels() {
     if (existingInput) existingInput.placeholder = 'Loading models…';
     try {
         const params = baseUrl ? `?base_url=${encodeURIComponent(baseUrl)}` : '';
-        const data = await jsonGet(`/studio/ai/hub/providers/ollama/models${params}`);
+        const data = await jsonGet(`/studio/ai-hub/ollama/models${params}`);
         if (!data.running) {
             if (resultEl) resultEl.innerHTML = '<span class="text-warning">⚠ Ollama not running — enter model name manually or start Ollama</span>';
             if (existingInput) existingInput.placeholder = 'llama3';
@@ -3778,6 +4257,32 @@ function restoreModelTextInput() {
     }
 }
 
+async function clearProviderKey() {
+    const resultEl = document.getElementById('ai-hub-cfg-result');
+    const provider = document.getElementById('ai-hub-cfg-provider')?.value;
+    if (!provider) return;
+    try {
+        const resp = await jsonPost('/studio/ai-hub/configure/secret', { provider, api_key: '' });
+        if (resultEl) {
+            resultEl.innerHTML = resp.ok
+                ? `<span class="text-success">✓ ${escapeHtml(resp.message || 'Key cleared')}</span>`
+                : `<span class="text-danger">✗ ${escapeHtml(resp.message || 'Failed')}</span>`;
+        }
+        if (resp.ok) {
+            // Hide the button — key no longer exists
+            const btn = document.getElementById('ai-hub-cfg-clear-key');
+            if (btn) btn.style.display = 'none';
+            await loadAiHubProviders();
+            _refreshFlowButtonGate();
+            loadAiHubOverview();
+            loadAiStatusIndicator();
+            _invalidateHubTabs('hub-models', 'routing', 'onboarding');
+        }
+    } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
 async function aiHubSaveProvider() {
     const resultEl = document.getElementById('ai-hub-cfg-result');
     const provider = document.getElementById('ai-hub-cfg-provider')?.value;
@@ -3787,17 +4292,44 @@ async function aiHubSaveProvider() {
 
     if (!provider) return;
 
+    // New AI Hub contract splits provider config into two endpoints:
+    //   /studio/ai-hub/configure         — non-secret fields (base_url, model)
+    //   /studio/ai-hub/configure/secret  — api_key only (written to .env)
+    // The old /studio/ai/hub/providers/save bundled both, which made it
+    // harder to reason about which call leaks secrets.
     try {
-        const resp = await jsonPost('/studio/ai/hub/providers/save', {
-            provider, api_key: apiKey || null, model: model || null,
-            base_url: baseUrl || null, save_to: 'env',
+        const cfg = await jsonPost('/studio/ai-hub/configure', {
+            provider,
+            // Use ?? (not ||) so an explicitly-cleared field sends "" rather
+            // than null. The backend converts "" → None (clear the field),
+            // while null means "don't change" — two distinct operations.
+            base_url: baseUrl ?? null,
+            model: model ?? null,
+            enabled: true,
         });
-        if (resultEl) {
-            resultEl.innerHTML = resp.saved
-                ? `<span class="text-success">✓ ${escapeHtml(resp.message)}</span>`
-                : `<span class="text-danger">✗ ${escapeHtml(resp.message)}</span>`;
+        let secretResp = { ok: true, message: '' };
+        if (apiKey) {
+            secretResp = await jsonPost('/studio/ai-hub/configure/secret', {
+                provider, api_key: apiKey,
+            });
         }
-        if (resp.saved) await loadAiHubProviders();
+        const ok = cfg.ok && secretResp.ok;
+        const message = [cfg.message, secretResp.message].filter(Boolean).join('; ');
+        if (resultEl) {
+            resultEl.innerHTML = ok
+                ? `<span class="text-success">✓ ${escapeHtml(message || 'Saved')}</span>`
+                : `<span class="text-danger">✗ ${escapeHtml(message || 'Failed')}</span>`;
+        }
+        if (ok) {
+            await loadAiHubProviders();
+            _refreshFlowButtonGate();
+            // Also refresh the overview: counts, overall status, and sidebar indicator.
+            loadAiHubOverview();
+            loadAiStatusIndicator();
+            // Invalidate dependent tabs so they reload on next visit: models
+            // list may have new providers; routing and onboarding step status change.
+            _invalidateHubTabs('hub-models', 'routing', 'onboarding');
+        }
     } catch (err) {
         if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
     }
@@ -3807,13 +4339,24 @@ async function aiHubPingProvider() {
     const resultEl = document.getElementById('ai-hub-cfg-result');
     const provider = document.getElementById('ai-hub-cfg-provider')?.value;
 
+    // /studio/ai-hub/test is the new-family equivalent of /providers/ping.
+    // Response shape is compatible (provider/reachable/latency_ms/error).
     try {
-        const resp = await jsonPost('/studio/ai/hub/providers/ping', { provider: provider || null });
+        const resp = await jsonPost('/studio/ai-hub/test', { provider: provider || '' });
         if (resultEl) {
             resultEl.innerHTML = resp.reachable
                 ? `<span class="text-success">✓ ${resp.provider} reachable (${resp.latency_ms}ms)</span>`
                 : `<span class="text-danger">✗ ${resp.provider}: ${escapeHtml(resp.error || 'Unreachable')}</span>`;
         }
+        // Refresh provider list and overview so reachability state propagates.
+        // Invalidate routing so the next routing tab load reflects updated reachability.
+        await loadAiHubProviders();
+        _refreshFlowButtonGate();
+        loadAiHubOverview();
+        loadAiStatusIndicator();
+        _invalidateHubTabs('routing');
+        // Mark onboarding Step 3 if all configured providers are now reachable.
+        _checkAndMarkAllTested();
     } catch (err) {
         if (resultEl) resultEl.innerHTML = `<span class="text-danger">Error: ${escapeHtml(err.message)}</span>`;
     }
@@ -3825,27 +4368,27 @@ async function loadAiHubContext() {
     container.innerHTML = '<div class="empty-state"><p>Loading context...</p></div>';
 
     try {
-        const data = await jsonGet('/studio/agent/context');
-        state.aiHub.contextData = data;
+        // Use the summary endpoint: computes only cheap sections (project_info,
+        // models, routes, schema_checksum, ai_profiles, ai_hints) and reports
+        // size_kb=null for expensive/async sections so the tab stays fast.
+        const sections = await jsonGet('/studio/agent/context/summary');
 
-        const sections = Object.keys(data).filter(k => data[k] != null);
-        if (sections.length === 0) {
+        if (!sections || sections.length === 0) {
             container.innerHTML = '<div class="empty-state"><p>No context available.</p></div>';
             return;
         }
 
-        container.innerHTML = sections.map(key => {
-            const val = data[key];
-            const size = JSON.stringify(val).length;
-            const sizeLabel = size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`;
-            const preview = typeof val === 'object' ? `${Object.keys(val).length} keys` : String(val).substring(0, 80);
+        container.innerHTML = sections.map(s => {
+            const sizeLabel = s.size_kb === null
+                ? 'built on demand'
+                : s.size_kb > 1 ? `${s.size_kb.toFixed(1)} KB` : `${Math.round(s.size_kb * 1024)} B`;
             return `
                 <div class="context-section">
                     <div class="context-section-header">
-                        <span class="context-key">${escapeHtml(key)}</span>
+                        <span class="context-key">${escapeHtml(s.name)}</span>
                         <span class="badge badge-secondary">${sizeLabel}</span>
                     </div>
-                    <div class="context-preview text-muted">${escapeHtml(preview)}</div>
+                    <div class="context-preview text-muted">${escapeHtml(s.description || '')}</div>
                 </div>`;
         }).join('');
     } catch (err) {
@@ -3870,7 +4413,7 @@ async function aiHubRunAgent() {
     if (resultEl) resultEl.textContent = 'Generating...';
 
     try {
-        const resp = await jsonPost('/studio/ai/hub/agent/run', {
+        const resp = await jsonPost('/studio/ai-hub/agent/run', {
             prompt,
             provider: providerSelect?.value || null,
             include_context: includeCtx?.checked ?? true,
@@ -3903,11 +4446,20 @@ let _aiHubConfigured = false;
 /** Selected context for AI flows (set when user clicks a model/route/query row). */
 const _aiFlowContext = { model: null, route: null, query: null, migration: null, diagnostic: null };
 
-/** Check AI Hub status and toggle flow buttons accordingly. */
+/** Check AI Hub status and toggle flow buttons accordingly.
+ *
+ * Enables only when _effectiveOverall === 'ready', which after backend Fix 2
+ * requires: chat_model set + chat_provider configured + at least one provider
+ * reachable.  This keeps the gate consistent with the sidebar/overview 'ready'
+ * indicator and the routing table's agents-route status. */
 async function initAiFlowButtons() {
     try {
-        const status = await jsonGet('/studio/ai-hub/status');
-        _aiHubConfigured = status.overall !== 'disabled';
+        const [status, provData] = await Promise.all([
+            jsonGet('/studio/ai-hub/status').catch(() => null),
+            jsonGet('/studio/ai-hub/providers').catch(() => null),
+        ]);
+        const effective = _effectiveOverall(status, provData?.providers ?? null);
+        _aiHubConfigured = effective === 'ready';
     } catch { _aiHubConfigured = false; }
     _syncFlowButtonStates();
 }
@@ -3919,6 +4471,17 @@ function _syncFlowButtonStates() {
             btn.title = 'Configure AI in AI Hub';
         }
     });
+}
+
+// Recompute the flow-button gate from already-cached state (no extra fetch).
+// Applies the same _effectiveOverall === 'ready' predicate as initAiFlowButtons
+// so that mutations (save, clear, test) immediately reflect the new provider
+// set without waiting for a full re-init.
+function _refreshFlowButtonGate() {
+    const providers = state.aiHub?.providers?.providers ?? null;
+    const effective = _effectiveOverall(state.aiHub?.status ?? null, providers);
+    _aiHubConfigured = effective === 'ready';
+    _syncFlowButtonStates();
 }
 
 /** Attach dropdown toggles and item handlers to AI flow buttons in the current DOM. */
@@ -4238,10 +4801,32 @@ function _hookAiFlowRowSelection() {
             if (btn) btn.title = _aiHubConfigured ? 'AI actions for ' + name.trim() : 'Configure AI in AI Hub';
         });
     });
-    // Routes: track selected route
+    // Routes: track selected route. Two click targets:
+    //  (a) the row → defaults to the row's primary (first) method
+    //  (b) a method badge → targets that exact (path, method)
+    // For multi-method routes, badges let users review POST/DELETE/etc.
+    // independently from GET.
+    const _markBadgeSelected = (badge) => {
+        document.querySelectorAll('.routes-table .method-badge.selected').forEach(b => b.classList.remove('selected'));
+        if (badge) badge.classList.add('selected');
+    };
     document.querySelectorAll('.routes-table tbody tr[data-path]').forEach(row => {
         row.addEventListener('click', () => {
             _aiFlowContext.route = { path: row.getAttribute('data-path') || '', method: row.getAttribute('data-method') || 'GET' };
+            const firstBadge = row.querySelector('.method-badge[data-method]');
+            _markBadgeSelected(firstBadge);
+        });
+    });
+    document.querySelectorAll('.routes-table tbody tr[data-path] .method-badge[data-method]').forEach(badge => {
+        badge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const row = badge.closest('tr');
+            if (!row) return;
+            _aiFlowContext.route = {
+                path: row.getAttribute('data-path') || '',
+                method: badge.getAttribute('data-method') || 'GET',
+            };
+            _markBadgeSelected(badge);
         });
     });
 }

@@ -47,6 +47,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
+from aksara._version import __version__
 from aksara.ai.registry import get_ai_tools_for_request
 from aksara.ai.exporters import export_tools_as_generic, export_tools_as_mcp
 
@@ -68,7 +69,7 @@ async def list_ai_tools(request: Request) -> Dict[str, Any]:
         {
             "tools": [...],
             "count": N,
-            "version": "0.4.0"
+            "version": __version__
         }
     """
     tools = await get_ai_tools_for_request(request, request.app)
@@ -76,7 +77,7 @@ async def list_ai_tools(request: Request) -> Dict[str, Any]:
     return {
         "tools": [t.model_dump() for t in tools],
         "count": len(tools),
-        "version": "0.4.0",
+        "version": __version__,
     }
 
 
@@ -96,7 +97,7 @@ async def list_ai_tools_mcp(request: Request) -> Dict[str, Any]:
         {
             "tools": [...],
             "count": N,
-            "version": "0.4.0"
+            "version": __version__
         }
     """
     tools = await get_ai_tools_for_request(request, request.app)
@@ -104,7 +105,7 @@ async def list_ai_tools_mcp(request: Request) -> Dict[str, Any]:
     return {
         "tools": export_tools_as_mcp(tools),
         "count": len(tools),
-        "version": "0.4.0",
+        "version": __version__,
     }
 
 
@@ -119,7 +120,7 @@ async def list_ai_tools_openai(request: Request) -> Dict[str, Any]:
         {
             "functions": [...],
             "count": N,
-            "version": "0.4.0"
+            "version": __version__
         }
     """
     from aksara.ai.exporters import export_tools_as_openai_functions
@@ -129,7 +130,7 @@ async def list_ai_tools_openai(request: Request) -> Dict[str, Any]:
     return {
         "functions": export_tools_as_openai_functions(tools),
         "count": len(tools),
-        "version": "0.4.0",
+        "version": __version__,
     }
 
 
@@ -153,7 +154,7 @@ async def get_ai_tool(tool_name: str, request: Request) -> Dict[str, Any]:
         if tool.name == tool_name:
             return {
                 "tool": tool.model_dump(),
-                "version": "0.4.0",
+                "version": __version__,
             }
     
     raise HTTPException(

@@ -844,7 +844,10 @@
                         </div>
                         <div class="form-group">
                             <label for="ai-hub-cfg-apikey">API Key</label>
-                            <input type="password" id="ai-hub-cfg-apikey" class="form-input" placeholder="sk-...">
+                            <div class="model-input-row">
+                                <input type="password" id="ai-hub-cfg-apikey" class="form-input" placeholder="sk-...">
+                                <button id="ai-hub-cfg-clear-key" class="btn btn-xs btn-ghost text-danger" style="display:none" title="Remove the stored API key from .env">Clear key</button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ai-hub-cfg-model">Model</label>
@@ -875,15 +878,30 @@
                     <div class="defaults-edit-grid" id="ai-hub-defaults-edit">
                         <div class="form-group">
                             <label for="ai-hub-default-chat">Chat Model</label>
-                            <input type="text" id="ai-hub-default-chat" class="form-input" placeholder="gpt-4o">
+                            <div class="model-input-row">
+                                <input type="text" id="ai-hub-default-chat" class="form-input" placeholder="gpt-4o">
+                                <select id="ai-hub-default-chat-provider" class="provider-select-inline" title="Provider">
+                                    <option value="">auto</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ai-hub-default-code">Code Model</label>
-                            <input type="text" id="ai-hub-default-code" class="form-input" placeholder="gpt-4o">
+                            <div class="model-input-row">
+                                <input type="text" id="ai-hub-default-code" class="form-input" placeholder="gpt-4o">
+                                <select id="ai-hub-default-code-provider" class="provider-select-inline" title="Provider">
+                                    <option value="">auto</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ai-hub-default-embeddings">Embeddings Model</label>
-                            <input type="text" id="ai-hub-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                            <div class="model-input-row">
+                                <input type="text" id="ai-hub-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                                <select id="ai-hub-default-embeddings-provider" class="provider-select-inline" title="Provider">
+                                    <option value="">auto</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -893,7 +911,7 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><h3>Available Models</h3></div>
+                <div class="card-header"><h3>Model Defaults</h3></div>
                 <div class="card-body">
                     <table class="data-table" id="ai-hub-models-table">
                         <thead>
@@ -977,6 +995,7 @@
                                 <div class="form-actions">
                                     <button class="btn btn-sm btn-primary" id="onboarding-save-keys">Save Keys</button>
                                 </div>
+                                <div id="onboarding-keys-result" class="form-result"></div>
                             </div>
                         </div>
                         <div class="onboarding-step" data-step="3">
@@ -1004,15 +1023,30 @@
                                 <div class="form-grid" id="onboarding-defaults-form">
                                     <div class="form-group">
                                         <label for="onboarding-default-chat">Chat Model</label>
-                                        <input type="text" id="onboarding-default-chat" class="form-input" placeholder="gpt-4o">
+                                        <div class="model-input-row">
+                                            <input type="text" id="onboarding-default-chat" class="form-input" placeholder="gpt-4o">
+                                            <select id="onboarding-default-chat-provider" class="provider-select-inline" title="Provider">
+                                                <option value="">auto</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="form-group">
                                         <label for="onboarding-default-code">Code Model</label>
-                                        <input type="text" id="onboarding-default-code" class="form-input" placeholder="gpt-4o">
+                                        <div class="model-input-row">
+                                            <input type="text" id="onboarding-default-code" class="form-input" placeholder="gpt-4o">
+                                            <select id="onboarding-default-code-provider" class="provider-select-inline" title="Provider">
+                                                <option value="">auto</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="form-group">
                                         <label for="onboarding-default-embeddings">Embeddings Model</label>
-                                        <input type="text" id="onboarding-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                                        <div class="model-input-row">
+                                            <input type="text" id="onboarding-default-embeddings" class="form-input" placeholder="text-embedding-3-small">
+                                            <select id="onboarding-default-embeddings-provider" class="provider-select-inline" title="Provider">
+                                                <option value="">auto</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-actions">

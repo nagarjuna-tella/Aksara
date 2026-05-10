@@ -140,25 +140,52 @@ class TestStudioAiContext:
         """AI context includes available tools."""
         app = create_test_app()
         client = TestClient(app)
-        
+
         with patch("aksara.conf.settings", create_mock_settings()):
             with patch("aksara.registry.ModelRegistry") as mock_registry:
                 mock_registry.all.return_value = {}
-                
+
                 response = client.get("/studio/ai/context")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         assert "tools" in data
         assert isinstance(data["tools"], list)
-        
+
         # Check tool structure
         if data["tools"]:
             tool = data["tools"][0]
             assert "name" in tool
             assert "description" in tool
             assert "safe" in tool
+
+    def test_ai_context_tools_match_live_routes(self):
+        """Exported tool endpoints must match the actually mounted /ai/* routes.
+
+        Regression for the static-inventory drift bug: previously the export
+        advertised phantom paths like /ai/query, /ai/plan, /ai/patch/validate
+        that no real route served. Each exported tool endpoint must now
+        correspond to a live route on this app's routing table.
+        """
+        app = create_test_app()
+        client = TestClient(app)
+
+        with patch("aksara.conf.settings", create_mock_settings()):
+            with patch("aksara.registry.ModelRegistry") as mock_registry:
+                mock_registry.all.return_value = {}
+                response = client.get("/studio/ai/context")
+
+        assert response.status_code == 200
+        tools = response.json().get("tools", [])
+        assert tools, "expected at least one tool to be exported"
+
+        live_paths = {getattr(r, "path", "") for r in app.routes}
+        for tool in tools:
+            assert tool["endpoint"] in live_paths, (
+                f"tool {tool['name']!r} advertises {tool['endpoint']!r} "
+                f"which is not mounted on the app"
+            )
     
     def test_ai_context_includes_schema_checksum(self):
         """AI context includes schema checksum for change detection."""
