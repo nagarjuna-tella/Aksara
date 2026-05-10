@@ -2568,17 +2568,26 @@ def build_ai_hub_provider_ping(
     """
     import time
     from aksara.studio.models import StudioAiProviderPingResponse
-    from aksara.ai.providers_unified import get_active_provider, UnifiedAiProvider
+    from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
+    from aksara.ai.providers_unified import UnifiedAiProvider
+
+    hub = load_aihub_settings()
+    prov: Optional[UnifiedAiProvider] = None
 
     if provider_key:
-        prov = UnifiedAiProvider.from_env()
-        if prov.provider != provider_key:
-            # Try to detect from env for the specific provider
-            from aksara.ai.providers_unified import detect_all_providers
-            found = [p for p in detect_all_providers() if p.provider == provider_key]
-            prov = found[0] if found else None
+        configured_kinds = {p.kind for p in hub.configured_providers()}
+        if provider_key in configured_kinds:
+            pc = hub.get_provider(provider_key)
+            if pc:
+                prov = pc.to_unified_provider()
     else:
-        prov = get_active_provider()
+        active_key = _resolve_effective_chat_provider(hub)
+        if active_key:
+            configured_kinds = {p.kind for p in hub.configured_providers()}
+            if active_key in configured_kinds:
+                pc = hub.get_provider(active_key)
+                if pc:
+                    prov = pc.to_unified_provider()
 
     if prov is None:
         return StudioAiProviderPingResponse(
@@ -2597,7 +2606,7 @@ def build_ai_hub_provider_ping(
             provider=prov.provider,
             reachable=reachable,
             latency_ms=round(latency, 2),
-            model=prov.model,
+            model=prov.model or "",
             error=None if reachable else (ping_msg or "Ping returned False"),
         )
     except Exception as exc:
@@ -2606,7 +2615,7 @@ def build_ai_hub_provider_ping(
             provider=prov.provider,
             reachable=False,
             latency_ms=round(latency, 2),
-            model=prov.model,
+            model=prov.model or "",
             error=str(exc),
         )
 
@@ -2641,16 +2650,17 @@ def build_ai_hub_agent_run(
 
     if provider_key:
         # Explicit provider override from the UI dropdown.
-        pc = hub.get_provider(provider_key)
-        if pc and pc.is_configured:
-            prov = pc.to_unified_provider()
-            if not effective_model:
-                # Use chat default model when the selected provider matches
-                # the pinned chat provider; otherwise fall back to provider's own default.
-                if hub.defaults.chat_provider == provider_key:
-                    effective_model = hub.defaults.chat_model or pc.model
-                else:
-                    effective_model = pc.model
+        if provider_key in configured_kinds:
+            pc = hub.get_provider(provider_key)
+            if pc:
+                prov = pc.to_unified_provider()
+                if not effective_model:
+                    # Use chat default model when the selected provider matches
+                    # the pinned chat provider; otherwise fall back to provider's own default.
+                    if hub.defaults.chat_provider == provider_key:
+                        effective_model = hub.defaults.chat_model or pc.model
+                    else:
+                        effective_model = pc.model
     else:
         # Blank selection: use Hub chat defaults (the same source as the routing table).
         chat_kind = hub.defaults.chat_provider
@@ -2911,13 +2921,13 @@ def build_aihub_status() -> "AiHubStatus":
     configured_kinds = {p.kind for p in configured}
     warnings: List[str] = []
 
-    # "ready" requires BOTH chat_model AND chat_provider explicitly set and configured.
-    # Auto-routing (chat_provider=None) with a chat_model is "partial" — the stored
-    # model may have been saved for a different provider than the one that auto-resolves,
-    # creating an incoherent provider/model pairing (e.g. sending claude-3-opus to openai).
+    # "ready" requires a chat_model and a valid chat provider.
+    # Auto-routing (chat_provider=None) is now fully coherent because flow resolution
+    # automatically falls back to the resolved provider's own default model.
+    effective_chat_provider = _resolve_effective_chat_provider(hub)
     chat_provider_ok = (
-        hub.defaults.chat_provider is not None
-        and hub.defaults.chat_provider in configured_kinds
+        effective_chat_provider is not None
+        and effective_chat_provider in configured_kinds
     )
     if not configured:
         overall = "disabled"
@@ -2937,21 +2947,12 @@ def build_aihub_status() -> "AiHubStatus":
             f"Chat provider '{hub.defaults.chat_provider}' is set as default but not configured"
             " — agents will not work"
         )
-    if hub.defaults.chat_model and not hub.defaults.chat_provider:
-        warnings.append(
-            "Chat model is set but no provider is pinned — auto-routing may select"
-            " an incompatible provider; pin a chat provider to ensure coherence"
-        )
 
     # Onboarding status.
     # keys_entered: a provider in configured_providers() has already passed its
     # is_configured check (api_key for cloud providers, base_url for Ollama),
     # so presence in the list IS the "credentials set" signal — no api_key
     # field check needed.
-    # defaults_set uses the same criterion as overall='ready': both chat_model AND
-    # chat_provider must be explicitly set and configured.  A chat_model without
-    # a pinned provider is "partial", so defaults_set must be False to prevent
-    # onboarding.completed from diverging from overall.
     onboarding = AiHubOnboardingStatus(
         providers_selected=len(configured) > 0,
         keys_entered=len(configured) > 0,
@@ -2964,7 +2965,7 @@ def build_aihub_status() -> "AiHubStatus":
 
     return AiHubStatus(
         overall=overall,
-        active_provider=hub.active_provider,
+        active_provider=_resolve_effective_chat_provider(hub),
         configured_count=len(configured),
         total_count=len(hub.providers),
         defaults=hub.defaults.model_dump(),
@@ -2991,7 +2992,8 @@ def build_aihub_providers() -> "AiHubProvidersResponse":
         # v0.5.45: Ping configured providers so reachable/error are accurate.
         reachable: Optional[bool] = None
         error: Optional[str] = None
-        if p.is_configured:
+        is_actually_configured = p.enabled and p.is_configured
+        if is_actually_configured:
             try:
                 unified = p.to_unified_provider()
                 ping_result = unified.ping()
@@ -3005,7 +3007,7 @@ def build_aihub_providers() -> "AiHubProvidersResponse":
         items.append(AiHubProvider(
             kind=p.kind,
             enabled=p.enabled,
-            configured=p.is_configured,
+            configured=is_actually_configured,
             reachable=reachable,
             model=p.model or "",
             base_url=p.base_url or "",
@@ -3015,7 +3017,7 @@ def build_aihub_providers() -> "AiHubProvidersResponse":
 
     return AiHubProvidersResponse(
         providers=items,
-        active_provider=hub.active_provider,
+        active_provider=_resolve_effective_chat_provider(hub),
         configured_count=sum(1 for i in items if i.configured),
         total_count=len(items),
     )
@@ -3035,7 +3037,7 @@ def build_aihub_models() -> "AiHubModelsResponse":
     models: List["AiHubModel"] = []
 
     for p in hub.providers:
-        if not p.is_configured:
+        if not (p.enabled and p.is_configured):
             continue
 
         # v0.5.43: Live discovery for Ollama — use the saved base_url from AI Hub
@@ -3246,11 +3248,12 @@ def build_aihub_test(provider: str) -> "AiHubTestResponse":
     hub = _get_hub_settings()
     pc = hub.get_provider(provider)  # type: ignore[arg-type]
 
-    if pc is None or not pc.is_configured:
+    configured_kinds = {p.kind for p in hub.configured_providers()}
+    if pc is None or provider not in configured_kinds:
         return AiHubTestResponse(
             provider=provider,
             reachable=False,
-            error=f"Provider '{provider}' is not configured",
+            error=f"Provider '{provider}' is not configured or is disabled",
         )
 
     try:
@@ -3319,12 +3322,6 @@ def build_aihub_routes(reachable_kinds: Optional[set] = None) -> "AiHubRoutes":
             resolved_pc = hub.get_provider(effective_chat_provider) if effective_chat_provider else None
             effective_chat_model = (resolved_pc.model if (resolved_pc and resolved_pc.model)
                                     else hub.defaults.chat_model)
-            if _status == "ok":
-                _status = "fallback"
-                _warn = (
-                    f"No provider pinned for chat — auto-routing to "
-                    f"'{effective_chat_provider}' (first configured provider)"
-                )
         else:
             effective_chat_model = hub.defaults.chat_model
         routes.append(AiHubRouteMapping(
@@ -3385,12 +3382,6 @@ def build_aihub_routes(reachable_kinds: Optional[set] = None) -> "AiHubRoutes":
             resolved_pc = hub.get_provider(effective_diag_provider) if effective_diag_provider else None
             effective_diag_model = (resolved_pc.model if (resolved_pc and resolved_pc.model)
                                     else hub.defaults.chat_model)
-            if _status == "ok":
-                _status = "fallback"
-                _warn = (
-                    f"No provider pinned for chat — auto-routing to "
-                    f"'{effective_diag_provider}' (first configured provider)"
-                )
         else:
             effective_diag_model = hub.defaults.chat_model
         routes.append(AiHubRouteMapping(

@@ -210,7 +210,14 @@ class TestConversationalIntegration:
 # =============================================================================
 
 
+from unittest.mock import patch, PropertyMock
+
 class TestFreeformFallback:
+    @pytest.fixture(autouse=True)
+    def _mock_unconfigured(self):
+        with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=False):
+            yield
+
     def test_no_provider_returns_error(self):
         """Without an AI provider configured, freeform returns NO_PROVIDER."""
         from aksara.ai.console_engine import _llm_freeform_fallback
@@ -239,6 +246,38 @@ class TestFreeformFallback:
             for hint in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OLLAMA_BASE_URL")
         )
 
+    def test_freeform_fallback_respects_auto_routing(self):
+        """Freeform fallback should use effective chat provider and not execute against disabled providers."""
+        from aksara.ai.console_engine import _llm_freeform_fallback
+        from aksara.ai.hub_settings import load_aihub_settings
+
+        hub = load_aihub_settings()
+        
+        for p in hub.providers:
+            p.enabled = False
+            
+        anthropic_pc = hub.get_provider("anthropic")
+        anthropic_pc.enabled = True
+        
+        hub.defaults.chat_provider = None  # auto-routing
+        hub.active_provider = "openai"     # Legacy active_provider that should be ignored
+        
+        with patch("aksara.ai.hub_settings.load_aihub_settings", return_value=hub):
+            with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=True):
+                with patch("aksara.ai.providers_unified.UnifiedAiProvider.is_configured", return_value=True):
+                    
+                    def mock_get_llm_client(unified_self):
+                        assert unified_self.provider == "anthropic"
+                        from unittest.mock import MagicMock
+                        m = MagicMock()
+                        m.generate.return_value = "Mock Response"
+                        return m
+                        
+                    with patch("aksara.ai.providers_unified.UnifiedAiProvider.get_llm_client", autospec=True, side_effect=mock_get_llm_client):
+                        result = _llm_freeform_fallback("test message", None, None, 0.0)
+                        
+                        assert result["ok"] is True
+
     def test_freeform_result_shape(self):
         """NO_PROVIDER response must include all standard pipeline keys."""
         from aksara.ai.console_engine import _llm_freeform_fallback
@@ -257,6 +296,11 @@ class TestFreeformFallback:
 
 
 class TestFreeformFallbackIntegration:
+    @pytest.fixture(autouse=True)
+    def _mock_unconfigured(self):
+        with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=False):
+            yield
+
     @pytest.mark.asyncio
     async def test_unknown_input_no_provider(self):
         """Gibberish that matches no intent returns NO_PROVIDER (not UNKNOWN_INTENT)."""

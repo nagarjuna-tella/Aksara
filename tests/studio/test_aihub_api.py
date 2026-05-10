@@ -223,6 +223,25 @@ class TestBuildAiHubProviders:
             result = build_aihub_providers()
             assert result.active_provider == "openai"
 
+    def test_parity_between_status_and_providers_endpoints(self):
+        from aksara.studio.utils import build_aihub_providers, build_aihub_status
+        from aksara.ai.hub_settings import load_aihub_settings
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant", "OPENAI_API_KEY": "sk-x"}, clear=True):
+            with mock.patch("aksara.studio.utils._get_hub_settings") as mock_get_hub:
+                hub = load_aihub_settings()
+                # Set active_provider differently from what auto-routing would do
+                # to simulate legacy state causing a mismatch
+                hub.active_provider = "anthropic"
+                hub.defaults.chat_provider = None  # auto-routing
+                mock_get_hub.return_value = hub
+
+                status_result = build_aihub_status()
+                providers_result = build_aihub_providers()
+                
+                # Both endpoints should agree on the effective provider, which is openai (the first configured provider)
+                assert status_result.active_provider == providers_result.active_provider
+                assert status_result.active_provider == "openai"
+
     def test_provider_has_modes(self):
         from aksara.studio.utils import build_aihub_providers
         with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "sk-x"}, clear=True):
@@ -257,6 +276,23 @@ class TestBuildAiHubModels:
         with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "sk-x"}, clear=True):
             result = build_aihub_models()
             assert "chat_model" in result.defaults
+
+    def test_models_hide_disabled_providers(self):
+        from aksara.studio.utils import build_aihub_models
+        from aksara.ai.hub_settings import load_aihub_settings
+        
+        hub = load_aihub_settings()
+        # Enable Anthropic, disable OpenAI
+        hub.get_provider("anthropic").enabled = True
+        hub.get_provider("openai").enabled = False
+        
+        with mock.patch("aksara.studio.utils._get_hub_settings", return_value=hub):
+            with mock.patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=mock.PropertyMock, return_value=True):
+                result = build_aihub_models()
+                # Verify that no models from the disabled 'openai' provider are present
+                assert not any(m.provider == "openai" for m in result.models)
+                # Verify that models from the enabled 'anthropic' provider are present
+                assert any(m.provider == "anthropic" for m in result.models)
 
 
 class TestBuildAiHubConfigure:
@@ -707,25 +743,21 @@ class TestStatusRoutingCoherence:
         assert result.overall == "ready"
 
     def test_status_partial_with_auto_routing_and_model(self):
-        """chat_provider=None + chat_model set → 'partial', not 'ready'.
+        """chat_provider=None + chat_model set → 'ready'.
 
-        The stored model may belong to a different provider than whichever
-        auto-routing selects, producing an incoherent execution pairing.
-        'ready' requires an explicit, configured chat_provider."""
+        Execution is now coherent because flow resolution falls back to the
+        resolved provider's own model if the stored model does not match."""
         from aksara.studio.utils import build_aihub_status
         from unittest.mock import patch
         mock_hub = self._make_hub(
             configured_kinds=["openai"],
             chat_model="gpt-4o",
-            chat_provider=None,   # auto-routing — NOT ready
+            chat_provider=None,   # auto-routing — NOW ready
             embeddings_model="text-embedding-ada-002",
         )
         with patch("aksara.studio.utils._get_hub_settings", return_value=mock_hub):
             result = build_aihub_status()
-        assert result.overall == "partial"
-        # Must warn about the orphaned model
-        assert any("no provider is pinned" in w.lower() or "auto-routing" in w.lower()
-                   for w in result.warnings)
+        assert result.overall == "ready"
 
     def _make_route_hub(self, configured_kinds, chat_model, chat_provider, pc_models=None):
         """Minimal hub mock for routing tests with proper string model attributes."""
@@ -764,7 +796,7 @@ class TestStatusRoutingCoherence:
             result = build_aihub_routes()
         agents = next(r for r in result.routes if r.feature == "agents")
         assert agents.provider == "openai"   # concrete, not None
-        assert agents.status == "fallback"   # not ok — provider not pinned
+        assert agents.status == "ok"   # ok because auto-routing is fully coherent
 
     def test_routes_auto_routing_model_matches_execution_model(self):
         """The agents row model must match what build_ai_hub_agent_run will execute.
@@ -806,24 +838,22 @@ class TestStatusRoutingCoherence:
         assert diag.model == "gpt-4o"   # openai's own model, not orphaned claude
 
     def test_onboarding_completed_cannot_diverge_from_overall(self):
-        """onboarding.completed must be True only when overall='ready'.
-        With chat_provider=None (partial), completed must be False even if
-        chat_model is set."""
+        """onboarding.completed must match overall='ready'."""
         from aksara.studio.utils import build_aihub_status
         from unittest.mock import patch
         mock_hub = self._make_hub(
             configured_kinds=["openai"],
             chat_model="gpt-4o",
-            chat_provider=None,   # auto-routing → partial
+            chat_provider=None,   # auto-routing → ready
         )
         with patch("aksara.studio.utils._get_hub_settings", return_value=mock_hub):
             result = build_aihub_status()
-        assert result.overall == "partial"
-        assert result.onboarding.completed is False   # must not diverge
+        assert result.overall == "ready"
+        assert result.onboarding.completed is True   # must not diverge
 
     def test_onboarding_defaults_set_requires_pinned_provider(self):
-        """defaults_set must be False when chat_provider=None, so the onboarding
-        checklist item is accurate even when chat_model alone is present."""
+        """defaults_set must be True when chat_provider=None (auto-routing) 
+        and chat_model is present."""
         from aksara.studio.utils import build_aihub_status
         from unittest.mock import patch
         mock_hub = self._make_hub(
@@ -833,11 +863,11 @@ class TestStatusRoutingCoherence:
         )
         with patch("aksara.studio.utils._get_hub_settings", return_value=mock_hub):
             result = build_aihub_status()
-        assert result.onboarding.defaults_set is False
+        assert result.onboarding.defaults_set is True
 
-    def test_routes_auto_routing_status_is_fallback_not_ok(self):
-        """Auto-routed agents must be 'fallback', not 'ok', so the UI shows
-        the route is under-specified and may change with provider roster changes."""
+    def test_routes_auto_routing_status_is_ok(self):
+        """Auto-routed agents are 'ok', since flow resolution automatically
+        falls back to the resolved provider's own default model."""
         from aksara.studio.utils import build_aihub_routes
         from unittest.mock import patch
         mock_hub = self._make_route_hub(
@@ -848,8 +878,7 @@ class TestStatusRoutingCoherence:
         with patch("aksara.studio.utils._get_hub_settings", return_value=mock_hub):
             result = build_aihub_routes()
         agents = next(r for r in result.routes if r.feature == "agents")
-        assert agents.status == "fallback"
-        assert agents.status != "ok"
+        assert agents.status == "ok"
 
     def test_routes_missing_when_chat_provider_not_configured(self):
         """Agents route must be 'missing' when the pinned chat provider is absent."""
@@ -947,6 +976,29 @@ class TestAgentRunProviderResolution:
             )
         assert result.provider == "openai"
         assert result.error is None
+
+    def test_agent_run_rejects_disabled_explicit_override(self):
+        """If the UI requests a disabled provider as an explicit override, it must be rejected."""
+        from aksara.studio.utils import build_ai_hub_agent_run
+        from unittest.mock import patch, MagicMock
+
+        mock_hub = MagicMock()
+        openai_pc = MagicMock()
+        openai_pc.kind = "openai"
+        openai_pc.is_configured = True
+        openai_pc.enabled = False  # Disabled provider
+        
+        mock_hub.get_provider.return_value = openai_pc
+        # configured_providers only returns enabled providers
+        mock_hub.configured_providers.return_value = []
+        
+        with patch("aksara.studio.utils._get_hub_settings", return_value=mock_hub):
+            result = build_ai_hub_agent_run(
+                "test", provider_key="openai", include_context=False
+            )
+        
+        assert result.error is not None
+        assert "No AI provider configured" in result.error
 
     def test_agent_run_auto_routing_uses_providers_own_model_not_orphaned_chat_model(self):
         """With chat_provider=None and chat_model='claude-3-opus' (saved for anthropic)

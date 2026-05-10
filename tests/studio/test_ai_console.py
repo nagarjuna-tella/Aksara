@@ -119,9 +119,10 @@ class TestConsoleEndpoint:
     async def test_console_endpoint_unknown(self):
         from aksara.ai.console_engine import run_console_query
 
-        result = await run_console_query("xyzzy foo bar baz")
-        assert result["ok"] is False
-        assert result["error_code"] == "NO_PROVIDER"
+        with _mock_hub_empty():
+            result = await run_console_query("xyzzy foo bar baz")
+            assert result["ok"] is False
+            assert result["error_code"] == "NO_PROVIDER"
 
     @pytest.mark.asyncio
     async def test_console_route_flow(self):

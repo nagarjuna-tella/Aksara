@@ -544,17 +544,54 @@ class TestStudioAiHubUtils:
         env_clean = {k: v for k, v in os.environ.items()
                      if not any(x in k.upper() for x in ["OPENAI", "ANTHROPIC", "AZURE", "OLLAMA", "AKSARA_AI", "AKSARA_CUSTOM"])}
         with patch.dict(os.environ, env_clean, clear=True):
-            result = build_ai_hub_provider_ping()
-            assert result.reachable is False
+            with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=False):
+                result = build_ai_hub_provider_ping()
+                assert result.reachable is False
+
+    def test_build_ai_hub_provider_ping_disabled(self):
+        from aksara.studio.utils import build_ai_hub_provider_ping
+        from aksara.ai.hub_settings import load_aihub_settings
+        
+        hub = load_aihub_settings()
+        pc = hub.get_provider("openai")
+        pc.enabled = False
+        
+        with patch("aksara.ai.hub_settings.load_aihub_settings", return_value=hub):
+            with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=True):
+                result = build_ai_hub_provider_ping("openai")
+                assert result.reachable is False
+                assert result.error == "No provider configured"
+
+    def test_build_ai_hub_provider_ping_auto_routing(self):
+        from aksara.studio.utils import build_ai_hub_provider_ping
+        from aksara.ai.hub_settings import load_aihub_settings
+        
+        hub = load_aihub_settings()
+        hub.defaults.chat_provider = None
+        hub.active_provider = "openai" # Should be ignored in favor of auto-routing
+        
+        for p in hub.providers:
+            p.enabled = False
+        
+        anthropic_pc = hub.get_provider("anthropic")
+        anthropic_pc.enabled = True
+        
+        with patch("aksara.ai.hub_settings.load_aihub_settings", return_value=hub):
+            with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=True):
+                with patch("aksara.ai.providers_unified.UnifiedAiProvider.ping", return_value={"ok": True}):
+                    result = build_ai_hub_provider_ping()
+                    assert result.reachable is True
+                    assert result.provider == "anthropic"
 
     def test_build_ai_hub_agent_run_no_provider(self):
         from aksara.studio.utils import build_ai_hub_agent_run
         env_clean = {k: v for k, v in os.environ.items()
                      if not any(x in k.upper() for x in ["OPENAI", "ANTHROPIC", "AZURE", "OLLAMA", "AKSARA_AI", "AKSARA_CUSTOM"])}
         with patch.dict(os.environ, env_clean, clear=True):
-            result = build_ai_hub_agent_run(prompt="Hello")
-            assert result.error is not None
-            assert "No AI provider" in result.error
+            with patch("aksara.ai.hub_settings.ProviderConfig.is_configured", new_callable=PropertyMock, return_value=False):
+                result = build_ai_hub_agent_run(prompt="Hello")
+                assert result.error is not None
+                assert "No AI provider" in result.error
 
     def test_build_ai_hub_agent_run_with_mock_provider(self):
         from aksara.studio.utils import build_ai_hub_agent_run

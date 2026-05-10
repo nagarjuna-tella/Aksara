@@ -665,10 +665,25 @@ def _llm_freeform_fallback(
     Falls back to a helpful NO_PROVIDER error when no provider is configured.
     """
     try:
+        from aksara.ai.hub_settings import load_aihub_settings
         from aksara.ai.providers_unified import UnifiedAiProvider
 
-        provider = UnifiedAiProvider.from_env(provider=provider_override)
-        if not provider.is_configured():
+        hub = load_aihub_settings()
+        
+        provider_name = provider_override
+        if not provider_name:
+            from aksara.studio.utils import _resolve_effective_chat_provider
+            provider_name = _resolve_effective_chat_provider(hub)
+
+        provider = None
+        if provider_name:
+            configured_kinds = {p.kind for p in hub.configured_providers()}
+            if provider_name in configured_kinds:
+                pc = hub.get_provider(provider_name)
+                if pc:
+                    provider = pc.to_unified_provider()
+
+        if not provider or not provider.is_configured():
             return _console_error(
                 f"I couldn't understand: '{message}'.\n\n"
                 "Try built-in commands like `explain the User model`, "

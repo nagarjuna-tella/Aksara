@@ -3551,8 +3551,16 @@ async function loadAiHubModels() {
 
         // Collect unique provider names from the models list for the selects.
         // Always include the currently-saved provider even when it has no model in
-        // the returned list — otherwise the select collapses to auto and a save clears the override.
-        const savedProviders = [data.defaults?.chat_provider, data.defaults?.code_provider, data.defaults?.embeddings_provider].filter(Boolean);
+        // the returned list (e.g. custom providers) — otherwise the select collapses
+        // to auto and a save clears the override. However, we must ensure we do not
+        // resurrect a disabled/unconfigured provider.
+        const savedProviders = [data.defaults?.chat_provider, data.defaults?.code_provider, data.defaults?.embeddings_provider]
+            .filter(Boolean)
+            .filter(p => {
+                const prov = (state.aiHub?.providers || []).find(x => x.kind === p);
+                return prov && prov.configured;
+            });
+            
         const providerNames = [...new Set([...(data.models || []).map(m => m.provider).filter(Boolean), ...savedProviders])].sort();
         _populateProviderSelect(document.getElementById('ai-hub-default-chat-provider'), providerNames, data.defaults?.chat_provider);
         _populateProviderSelect(document.getElementById('ai-hub-default-code-provider'), providerNames, data.defaults?.code_provider);
