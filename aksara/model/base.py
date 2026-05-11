@@ -358,6 +358,14 @@ class ModelMeta(type):
         namespace['_fk_fields'] = fk_fields
         namespace['_m2m_fields'] = m2m_fields
         namespace['_generic_fk_fields'] = generic_fk_fields
+        # Reverse lookup: db column name -> field name (only for FKs whose
+        # column name differs from the field name). Built once in the
+        # metaclass so __getattr__/__setattr__ avoid an O(N) scan on every
+        # attribute access.
+        namespace['_fk_column_to_field'] = {
+            fk.db_column_name: name
+            for name, fk in fk_fields.items()
+        }
         
         # Extract AI metadata from nested Meta class
         meta_class = namespace.get('Meta')
@@ -494,25 +502,30 @@ class Model(metaclass=ModelMeta):
     __tablename__: ClassVar[str]
     _fields: ClassVar[Dict[str, Field]]
     _fk_fields: ClassVar[Dict[str, ForeignKey]]
+    _fk_column_to_field: ClassVar[Dict[str, str]]
     _m2m_fields: ClassVar[Dict[str, ManyToMany]]
     _generic_fk_fields: ClassVar[Dict[str, GenericForeignKey]]
     _ai_meta: ClassVar[ModelAIMeta]
     meta: ClassVar["ModelMetaInfo"]  # v0.3.14: Model introspection
     objects: ClassVar["Manager"]  # type: ignore
     
+    def _init_instance_state(self, *, is_new: bool) -> None:
+        """Initialize the private instance state shared by __init__ and _from_record."""
+        self._data = {}
+        self._m2m_managers = {}
+        self._generic_fk_cache = {}
+        self._generic_fk_pending = {}
+        self._prefetched_relations = {}
+        self._is_new = is_new
+
     def __init__(self, **kwargs):
         """
         Initialize a model instance with field values.
-        
+
         Args:
             **kwargs: Field values (supports both 'field' and 'field_id' for ForeignKeys)
         """
-        self._data: Dict[str, Any] = {}
-        self._m2m_managers: Dict[str, ManyToManyManager] = {}
-        self._generic_fk_cache: Dict[str, Any] = {}
-        self._generic_fk_pending: Dict[str, Any] = {}
-        self._prefetched_relations: Dict[str, Any] = {}  # Cache for select_related
-        self._is_new = True
+        self._init_instance_state(is_new=True)
         
         # Set field values from kwargs or defaults
         for field_name, field in self._fields.items():
@@ -540,7 +553,7 @@ class Model(metaclass=ModelMeta):
         """Get field value or ManyToMany manager."""
         if name.startswith('_'):
             raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
-        
+
         # Check regular fields
         if name in self._fields:
             field = self._fields[name]
@@ -548,7 +561,7 @@ class Model(metaclass=ModelMeta):
             if isinstance(field, FileField):
                 return field.to_field_file(value, instance=self)
             return value
-        
+
         # Check ManyToMany fields - return manager
         if name in self._m2m_fields:
             if name not in self._m2m_managers:
@@ -557,20 +570,20 @@ class Model(metaclass=ModelMeta):
                     self
                 )
             return self._m2m_managers[name]
-        
-        # Handle ForeignKey column access (e.g., author_id)
-        for field_name, field in self._fk_fields.items():
-            if name == field.db_column_name:
-                return self._data.get(field_name)
-        
+
+        # Handle ForeignKey column access (e.g., author_id) via O(1) lookup
+        fk_field_name = self._fk_column_to_field.get(name)
+        if fk_field_name is not None:
+            return self._data.get(fk_field_name)
+
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
-    
+
     def __setattr__(self, name: str, value: Any) -> None:
         """Set field value."""
         if name.startswith('_'):
             super().__setattr__(name, value)
             return
-        
+
         if name in self._fields:
             field = self._fields[name]
             if isinstance(field, FileField) and hasattr(value, "name") and hasattr(value, "field"):
@@ -578,13 +591,13 @@ class Model(metaclass=ModelMeta):
                 return
             self._data[name] = value
             return
-        
-        # Handle ForeignKey column access (e.g., author_id)
-        for field_name, field in self._fk_fields.items():
-            if name == field.db_column_name:
-                self._data[field_name] = value
-                return
-        
+
+        # Handle ForeignKey column access (e.g., author_id) via O(1) lookup
+        fk_field_name = self._fk_column_to_field.get(name)
+        if fk_field_name is not None:
+            self._data[fk_field_name] = value
+            return
+
         super().__setattr__(name, value)
     
     def __repr__(self) -> str:
@@ -596,40 +609,45 @@ class Model(metaclass=ModelMeta):
     def _from_record(cls: Type[T], record: Any) -> T:
         """
         Create a model instance from a database record.
-        
+
         Args:
             record: Database record (asyncpg.Record)
-            
+
         Returns:
             Model instance
         """
         instance = cls.__new__(cls)
-        instance._data = {}
-        instance._m2m_managers = {}
-        instance._generic_fk_cache = {}
-        instance._generic_fk_pending = {}
-        instance._prefetched_relations = {}  # Cache for select_related
-        instance._is_new = False
-        
-        record_keys = set(record.keys())
-        consumed_keys = set()
-        
+        instance._init_instance_state(is_new=False)
+
+        record_keys = record.keys()
+        consumed = 0
+
         for field_name, field in cls._fields.items():
             # Handle ForeignKey - look for the _id column
             if isinstance(field, ForeignKey):
                 col_name = field.db_column_name
                 if col_name in record_keys:
-                    value = field.to_python(record[col_name])
-                    instance._data[field_name] = value
-                    consumed_keys.add(col_name)
+                    instance._data[field_name] = field.to_python(record[col_name])
+                    consumed += 1
             elif field_name in record_keys:
-                value = field.to_python(record[field_name])
-                instance._data[field_name] = value
-                consumed_keys.add(field_name)
+                instance._data[field_name] = field.to_python(record[field_name])
+                consumed += 1
 
-        for extra_key in record_keys - consumed_keys:
-            setattr(instance, extra_key, record[extra_key])
-        
+        # Only walk record_keys looking for extras when the record carries
+        # more columns than the schema accounts for (e.g. annotations).
+        # The hot path - a vanilla SELECT * - skips this entirely.
+        if consumed != len(record_keys):
+            consumed_keys = set()
+            for field_name, field in cls._fields.items():
+                if isinstance(field, ForeignKey):
+                    if field.db_column_name in record_keys:
+                        consumed_keys.add(field.db_column_name)
+                elif field_name in record_keys:
+                    consumed_keys.add(field_name)
+            for extra_key in record_keys:
+                if extra_key not in consumed_keys:
+                    setattr(instance, extra_key, record[extra_key])
+
         return instance
     
     def get_related(self, field_name: str) -> Any:
@@ -738,7 +756,7 @@ class Model(metaclass=ModelMeta):
             
             # Check non-nullable constraint
             if value is None:
-                has_default = field.default is not None or callable(field.default)
+                has_default = field.default is not None
                 if not field.nullable and not has_default:
                     errors[field_name] = f"Field '{field_name}' cannot be null"
                     continue

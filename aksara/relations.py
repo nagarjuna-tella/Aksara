@@ -114,44 +114,44 @@ class RelationMeta:
 class RelationRegistry:
     """
     Registry to track all model relations for reverse lookups.
-    
+
     Relations are registered when models are created, and used
     to attach reverse descriptors to target models.
     """
-    
+
     _relations: List[RelationMeta] = []
+    _by_target: Dict[Type["Model"], List[RelationMeta]] = {}
+    _by_source: Dict[Type["Model"], List[RelationMeta]] = {}
     _reverse_attrs_attached: bool = False
-    
+
     @classmethod
     def register(cls, relation: RelationMeta) -> None:
         """Register a relation."""
         cls._relations.append(relation)
-    
+        cls._by_target.setdefault(relation.target_model, []).append(relation)
+        cls._by_source.setdefault(relation.source_model, []).append(relation)
+
     @classmethod
     def get_relations_to(cls, target_model: Type["Model"]) -> List[RelationMeta]:
-        """Get all relations pointing to a target model."""
-        return [
-            r for r in cls._relations 
-            if r.target_model == target_model
-        ]
-    
+        """Get all relations pointing to a target model (O(1) index lookup)."""
+        return cls._by_target.get(target_model, [])
+
     @classmethod
     def get_relations_from(cls, source_model: Type["Model"]) -> List[RelationMeta]:
-        """Get all relations from a source model."""
-        return [
-            r for r in cls._relations 
-            if r.source_model == source_model
-        ]
-    
+        """Get all relations from a source model (O(1) index lookup)."""
+        return cls._by_source.get(source_model, [])
+
     @classmethod
     def all(cls) -> List[RelationMeta]:
         """Get all registered relations."""
         return cls._relations.copy()
-    
+
     @classmethod
     def clear(cls) -> None:
         """Clear all registered relations (for testing)."""
         cls._relations.clear()
+        cls._by_target.clear()
+        cls._by_source.clear()
         cls._reverse_attrs_attached = False
     
     @classmethod
@@ -265,21 +265,19 @@ class ReverseFKManager:
         return await db.fetchval(query, self._instance.id)
     
     async def filter(self, **kwargs) -> List["Model"]:
-        """Filter related objects."""
-        # Basic filter implementation
-        all_objects = await self.all()
-        result = []
-        
-        for obj in all_objects:
-            match = True
-            for key, value in kwargs.items():
-                if getattr(obj, key, None) != value:
-                    match = False
-                    break
-            if match:
-                result.append(obj)
-        
-        return result
+        """Filter related objects with the WHERE clause pushed to SQL."""
+        from aksara.fields import ForeignKey
+
+        field = self._source_model._fields.get(self._field_name)
+        if isinstance(field, ForeignKey):
+            fk_column = field.db_column_name
+        else:
+            fk_column = f"{self._field_name}_id"
+
+        queryset = self._source_model.objects.filter(
+            **{fk_column: self._instance.id, **kwargs}
+        )
+        return await queryset.all()
 
 
 class ReverseM2MManager:
@@ -305,18 +303,14 @@ class ReverseM2MManager:
     
     def _get_column_names(self) -> tuple:
         """Get the join table column names."""
+        from aksara.fields import _singularize
+
         source_table = self._relation.source_table
         target_table = self._relation.target_table
-        
-        # Convert table names to column names (posts -> post_id)
-        def singularize(name: str) -> str:
-            if name.endswith('ies'):
-                return name[:-3] + 'y'
-            return name.rstrip('s')
-        
-        source_col = f"{singularize(source_table)}_id"
-        target_col = f"{singularize(target_table)}_id"
-        
+
+        source_col = f"{_singularize(source_table)}_id"
+        target_col = f"{_singularize(target_table)}_id"
+
         return source_col, target_col
     
     async def all(self) -> List["Model"]:

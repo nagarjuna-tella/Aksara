@@ -157,7 +157,9 @@ class QuerySet(Generic[T]):
         self._q_objects: List[Q] = list(q_objects or [])
         self._annotations: Dict[str, Any] = dict(annotations or {})
         self._search: Optional[Tuple[str, List[str]]] = None  # (term, fields)
-    
+        self._limit_value: Optional[int] = None
+        self._offset_value: Optional[int] = None
+
     def _clone(
         self,
         *,
@@ -168,6 +170,8 @@ class QuerySet(Generic[T]):
         q_objects: Any = _UNSET,
         annotations: Any = _UNSET,
         search: Any = _UNSET,
+        limit_value: Any = _UNSET,
+        offset_value: Any = _UNSET,
     ) -> "QuerySet[T]":
         """Clone the queryset while overriding selected state."""
         qs = QuerySet(
@@ -180,7 +184,26 @@ class QuerySet(Generic[T]):
             self._annotations.copy() if annotations is _UNSET else annotations,
         )
         qs._search = self._search if search is _UNSET else search
+        qs._limit_value = self._limit_value if limit_value is _UNSET else limit_value
+        qs._offset_value = self._offset_value if offset_value is _UNSET else offset_value
         return qs
+
+    def limit(self, n: int) -> "QuerySet[T]":
+        """Limit the number of rows returned."""
+        if n is not None and n < 0:
+            raise ValueError("limit must be non-negative")
+        return self._clone(limit_value=n)
+
+    def offset(self, n: int) -> "QuerySet[T]":
+        """Skip the first n rows of the result."""
+        if n is not None and n < 0:
+            raise ValueError("offset must be non-negative")
+        return self._clone(offset_value=n)
+
+    @staticmethod
+    def _assemble_query(*parts: str) -> str:
+        """Join non-empty clause parts with a single space."""
+        return " ".join(part for part in parts if part)
 
     def filter(self, *args: Q, **kwargs) -> "QuerySet[T]":
         """
@@ -871,31 +894,56 @@ class QuerySet(Generic[T]):
         
         return f"ORDER BY {', '.join(order_parts)}"
     
+    def _build_limit_offset_clause(self, values: List[Any]) -> str:
+        """Append limit/offset parameters and produce the SQL clause."""
+        parts: List[str] = []
+        if self._limit_value is not None:
+            values.append(self._limit_value)
+            parts.append(f"LIMIT ${len(values)}")
+        if self._offset_value is not None:
+            values.append(self._offset_value)
+            parts.append(f"OFFSET ${len(values)}")
+        return " ".join(parts)
+
+    def _build_select_query(self, *, override_select: Optional[str] = None) -> Tuple[str, List[Any]]:
+        """Build the full SELECT query and parameter list."""
+        join_state = self._new_join_state()
+        if override_select is None:
+            select_clause, values = self._build_select_clause(join_state=join_state)
+        else:
+            select_clause = override_select
+            values = []
+        join_clause = self._build_join_clause(join_state)
+        qualify_base = bool(join_state["joins"])
+        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
+        group_by_clause = (
+            self._build_group_by_clause(join_state) if override_select is None else ""
+        )
+        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
+        limit_clause = self._build_limit_offset_clause(values)
+        table = quote_identifier(self._model.__tablename__)
+        query = self._assemble_query(
+            f"SELECT {select_clause}",
+            f"FROM {table}",
+            join_clause,
+            where_clause,
+            group_by_clause,
+            order_by_clause,
+            limit_clause,
+        )
+        return query, values
+
     async def all(self) -> List[T]:
         """
         Execute the query and return all matching records.
-        
+
         Returns:
             List of model instances
         """
         from aksara.db import Database
-        
-        db = Database.get_instance()
 
-        join_state = self._new_join_state()
-        select_clause, values = self._build_select_clause(join_state=join_state)
-        join_clause = self._build_join_clause(join_state)
-        qualify_base = bool(join_state["joins"])
-        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
-        group_by_clause = self._build_group_by_clause(join_state)
-        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
-        table = quote_identifier(self._model.__tablename__)
-        query = (
-            f"SELECT {select_clause} FROM {table} {join_clause} {where_clause} "
-            f"{group_by_clause} {order_by_clause}"
-        ).strip()
-        query = " ".join(query.split())
-        
+        db = Database.get_instance()
+        query, values = self._build_select_query()
         records = await db.fetch(query, *values)
         
         instances = [self._model._from_record(record) for record in records]
@@ -990,17 +1038,13 @@ class QuerySet(Generic[T]):
             join_table = m2m_field.join_table_name
             
             # Get column names for join table
+            from aksara.fields import _singularize
+
             source_table = self._model.__tablename__
             target_table = related_model.__tablename__
-            
-            # Singularize table names for column names
-            def singularize(name: str) -> str:
-                if name.endswith('ies'):
-                    return name[:-3] + 'y'
-                return name.rstrip('s')
-            
-            source_col = f"{singularize(source_table)}_id"
-            target_col = f"{singularize(target_table)}_id"
+
+            source_col = f"{_singularize(source_table)}_id"
+            target_col = f"{_singularize(target_table)}_id"
             
             # Collect all source IDs
             source_ids = [instance.id for instance in instances]
@@ -1034,81 +1078,86 @@ class QuerySet(Generic[T]):
     async def first(self) -> Optional[T]:
         """
         Execute the query and return the first matching record.
-        
+
         Returns:
             First matching model instance or None
         """
         from aksara.db import Database
-        
-        db = Database.get_instance()
 
-        join_state = self._new_join_state()
-        select_clause, values = self._build_select_clause(join_state=join_state)
-        join_clause = self._build_join_clause(join_state)
-        qualify_base = bool(join_state["joins"])
-        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
-        group_by_clause = self._build_group_by_clause(join_state)
-        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
-        table = quote_identifier(self._model.__tablename__)
-        query = (
-            f"SELECT {select_clause} FROM {table} {join_clause} {where_clause} "
-            f"{group_by_clause} {order_by_clause} LIMIT 1"
-        ).strip()
-        # Clean up any double spaces
-        query = " ".join(query.split())
-        
+        db = Database.get_instance()
+        # Force LIMIT 1 for first()
+        query, values = self._clone(limit_value=1)._build_select_query()
         record = await db.fetchrow(query, *values)
-        
+
         if record is None:
             return None
-        
+
         return self._model._from_record(record)
-    
+
     async def count(self) -> int:
         """
         Execute the query and return the count of matching records.
-        
+
         Returns:
             Number of matching records
         """
         from aksara.db import Database
-        
+
         db = Database.get_instance()
-        
+
         where_clause, values = self._build_where_clause()
         table = quote_identifier(self._model.__tablename__)
-        query = f"SELECT COUNT(*) FROM {table} {where_clause}"
-        
+        query = self._assemble_query(
+            f"SELECT COUNT(*) FROM {table}",
+            where_clause,
+        )
+
         count = await db.fetchval(query, *values)
-        
+
         return count or 0
-    
+
     async def exists(self) -> bool:
         """
         Check if any matching records exist.
-        
+
+        Uses ``SELECT 1 ... LIMIT 1`` so PostgreSQL can stop at the first
+        matching row instead of scanning to compute COUNT(*).
+
         Returns:
             True if at least one record matches, False otherwise
         """
-        return await self.count() > 0
+        from aksara.db import Database
+
+        db = Database.get_instance()
+
+        where_clause, values = self._build_where_clause()
+        table = quote_identifier(self._model.__tablename__)
+        query = self._assemble_query(
+            f"SELECT 1 FROM {table}",
+            where_clause,
+            "LIMIT 1",
+        )
+
+        value = await db.fetchval(query, *values)
+        return value is not None
     
     async def delete(self) -> int:
         """
         Delete all matching records.
-        
+
         Returns:
             Number of deleted records
         """
         from aksara.db import Database
-        
+
         db = Database.get_instance()
-        
+
         where_clause, values = self._build_where_clause()
         table = quote_identifier(self._model.__tablename__)
-        query = f"DELETE FROM {table} {where_clause}"
-        
+        query = self._assemble_query(f"DELETE FROM {table}", where_clause)
+
         result = await db.execute(query, *values)
-        
+
         # Parse "DELETE X" to get count
         try:
             return int(result.split()[-1])
@@ -1142,8 +1191,10 @@ class QuerySet(Generic[T]):
 
         where_clause, values = self._build_where_clause(values)
         table = quote_identifier(self._model.__tablename__)
-        query = f"UPDATE {table} SET {', '.join(set_clauses)} {where_clause}".strip()
-        query = " ".join(query.split())
+        query = self._assemble_query(
+            f"UPDATE {table} SET {', '.join(set_clauses)}",
+            where_clause,
+        )
 
         db = Database.get_instance()
         result = await db.execute(query, *values)
@@ -1174,8 +1225,12 @@ class QuerySet(Generic[T]):
         join_clause = self._build_join_clause(join_state)
         where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
         table = quote_identifier(self._model.__tablename__)
-        query = f"SELECT {', '.join(select_parts)} FROM {table} {join_clause} {where_clause}".strip()
-        query = " ".join(query.split())
+        query = self._assemble_query(
+            f"SELECT {', '.join(select_parts)}",
+            f"FROM {table}",
+            join_clause,
+            where_clause,
+        )
 
         db = Database.get_instance()
         row = await db.fetchrow(query, *values)
@@ -1210,27 +1265,50 @@ class Manager(Generic[T]):
         """
         self._model = model
     
+    def _soft_delete_active(self) -> bool:
+        """Return True when the model opts into soft-delete handling."""
+        return (
+            getattr(self._model, '_soft_delete_enabled', False)
+            and 'deleted_at' in self._model._fields
+        )
+
+    def _apply_soft_delete(self, qs: QuerySet[T]) -> QuerySet[T]:
+        """Apply the soft-delete filter to a queryset based on its mode flags."""
+        if not self._soft_delete_active():
+            return qs
+        if getattr(qs, '_deleted_only', False):
+            return qs.filter(deleted_at__isnull=False)
+        if not getattr(qs, '_include_deleted', False):
+            return qs.filter(deleted_at__isnull=True)
+        return qs
+
     def filter(self, *args: Q, **kwargs) -> QuerySet[T]:
         """
         Create a QuerySet with the given filters.
-        
+
         For SoftDeleteModel subclasses, automatically excludes soft-deleted records
         unless specifically requested via with_deleted().
-        
+
         Args:
             **kwargs: Field=value conditions
-            
+
         Returns:
             QuerySet for chaining
         """
         qs = QuerySet(self._model).filter(*args, **kwargs)
-        
-        # v0.5.39: Automatically exclude soft-deleted records for SoftDeleteModel
-        if hasattr(self._model, '_soft_delete_enabled') and self._model._soft_delete_enabled:
-            if 'deleted_at' in self._model._fields and not getattr(qs, '_include_deleted', False):
-                qs = qs.filter(deleted_at__isnull=True)
-        
+        return self._apply_soft_delete(qs)
+
+    def with_deleted(self) -> QuerySet[T]:
+        """Start a queryset that includes soft-deleted records."""
+        qs = QuerySet(self._model)
+        qs._include_deleted = True
         return qs
+
+    def only_deleted(self) -> QuerySet[T]:
+        """Start a queryset that only contains soft-deleted records."""
+        qs = QuerySet(self._model)
+        qs._deleted_only = True
+        return self._apply_soft_delete(qs)
     
     def search(self, term: str, fields: List[str]) -> QuerySet[T]:
         """
@@ -1297,11 +1375,14 @@ class Manager(Generic[T]):
     async def all(self) -> List[T]:
         """
         Get all records.
-        
+
+        Routes through ``self.filter()`` so SoftDeleteModel automatically
+        excludes soft-deleted rows.
+
         Returns:
             List of all model instances
         """
-        return await QuerySet(self._model).all()
+        return await self.filter().all()
     
     async def create(self, **kwargs) -> T:
         """
@@ -1320,28 +1401,30 @@ class Manager(Generic[T]):
     async def get(self, *args: Q, **kwargs) -> T:
         """
         Get a single record matching the given conditions.
-        
+
         Args:
             **kwargs: Field=value conditions
-            
+
         Returns:
             The matching model instance
-            
+
         Raises:
             DoesNotExist: If no matching record is found
             MultipleObjectsReturned: If multiple records match
         """
-        queryset = QuerySet(self._model).filter(*args, **kwargs)
+        # Use LIMIT 2 so we can detect "more than one" without scanning every
+        # matching row.
+        queryset = self.filter(*args, **kwargs).limit(2)
         results = await queryset.all()
-        
-        if len(results) == 0:
+
+        if not results:
             raise DoesNotExist(f"{self._model.__name__} matching query does not exist")
-        
+
         if len(results) > 1:
             raise MultipleObjectsReturned(
-                f"get() returned {len(results)} {self._model.__name__} instances, expected 1"
+                f"get() returned more than one {self._model.__name__} instance, expected 1"
             )
-        
+
         return results[0]
     
     async def get_or_none(self, *args: Q, **kwargs) -> Optional[T]:
@@ -1567,19 +1650,23 @@ class Manager(Generic[T]):
                 for col_name, case_stmt in case_statements.items()
             )
             
-            id_placeholders = ", ".join(f"${i+1}" for i in range(0, len(ids), 2))
+            # Append the WHERE id parameters after the CASE parameters so the
+            # IN list references exactly the distinct primary keys for this
+            # batch (no duplicate / dead parameters).
+            where_ids = [obj.id for obj in batch]
+            where_start = len(ids) + 1
+            id_placeholders = ", ".join(
+                f"${where_start + i}" for i in range(len(where_ids))
+            )
             table = quote_identifier(self._model.__tablename__)
-            
+
             query = f"""
                 UPDATE {table}
                 SET {set_clause}
                 WHERE id IN ({id_placeholders})
             """
-            
-            # Extract just the IDs for the WHERE clause
-            where_ids = [ids[i] for i in range(0, len(ids), 2)]
-            
-            result = await db.execute(query, *ids)
+
+            result = await db.execute(query, *ids, *where_ids)
             
             # Parse result to get count
             try:
@@ -1691,11 +1778,14 @@ class Manager(Generic[T]):
     async def count(self) -> int:
         """
         Count all records.
-        
+
+        Routes through ``self.filter()`` so SoftDeleteModel automatically
+        excludes soft-deleted rows.
+
         Returns:
             Total number of records
         """
-        return await QuerySet(self._model).count()
+        return await self.filter().count()
 
 
 class DoesNotExist(Exception):

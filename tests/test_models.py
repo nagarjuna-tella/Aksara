@@ -212,14 +212,18 @@ class TestModelRegistry:
         
         assert ModelRegistry.get("RegisteredModel") == RegisteredModel
     
-    def test_registry_all_returns_copy(self):
+    def test_registry_all_returns_read_only_view(self):
         class Model1(Model):
             name = fields.String()
-        
+
         all_models = ModelRegistry.all()
-        all_models["fake"] = None
-        
-        # Original registry should be unchanged
+        # all() returns a read-only mapping view of the live registry.
+        with pytest.raises(TypeError):
+            all_models["fake"] = None
+
+        # snapshot() returns a mutable copy for callers that need stability.
+        snapshot = ModelRegistry.snapshot()
+        snapshot["fake"] = None
         assert "fake" not in ModelRegistry.all()
     
     def test_registry_clear(self):

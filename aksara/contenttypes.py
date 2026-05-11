@@ -7,7 +7,7 @@ GenericForeignKey descriptors.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 from uuid import UUID
 
 from aksara import fields
@@ -164,40 +164,55 @@ async def sync_content_types(
     synced: list[ContentType] = []
     registered_keys: set[tuple[str, str]] = set()
 
+    # Build a single multi-row upsert instead of one round-trip per model.
+    rows: list[tuple[str, str, str]] = []
     for model in ModelRegistry.all().values():
         app_label, model_name, module = _get_model_identity(model)
         registered_keys.add((app_label, model_name))
-        record = await database.fetchrow(
+        rows.append((app_label, model_name, module))
+
+    if rows:
+        params: list[Any] = []
+        value_placeholders: list[str] = []
+        for index, (app_label, model_name, module) in enumerate(rows):
+            base = index * 3
+            value_placeholders.append(f"(${base + 1}, ${base + 2}, ${base + 3})")
+            params.extend((app_label, model_name, module))
+
+        records = await database.fetch(
             f'''
             INSERT INTO "{CONTENT_TYPES_TABLE}" (app_label, model, module)
-            VALUES ($1, $2, $3)
+            VALUES {", ".join(value_placeholders)}
             ON CONFLICT (app_label, model)
             DO UPDATE SET
                 module = EXCLUDED.module,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *
             ''',
-            app_label,
-            model_name,
-            module,
+            *params,
         )
-        if record is not None:
+        for record in records:
             synced.append(_cache_content_type(ContentType._from_record(record)))
 
     if prune_stale:
         stale_rows = await database.fetch(
             f'SELECT id, app_label, model FROM "{CONTENT_TYPES_TABLE}"'
         )
+        stale_ids = []
         for row in stale_rows:
             key = (row["app_label"], row["model"])
             if key in registered_keys:
                 continue
-            await database.execute(
-                f'DELETE FROM "{CONTENT_TYPES_TABLE}" WHERE id = $1',
-                row["id"],
-            )
+            stale_ids.append(row["id"])
             _content_type_cache_by_key.pop(key, None)
             _content_type_cache_by_id.pop(row["id"], None)
+
+        if stale_ids:
+            placeholders = ", ".join(f"${i + 1}" for i in range(len(stale_ids)))
+            await database.execute(
+                f'DELETE FROM "{CONTENT_TYPES_TABLE}" WHERE id IN ({placeholders})',
+                *stale_ids,
+            )
 
     _content_type_sync_token = _registry_signature()
     return synced

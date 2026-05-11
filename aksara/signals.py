@@ -62,15 +62,11 @@ class Signal:
         
         for r_sender, receiver in self.receivers:
             if r_sender is None or r_sender == sender:
-                try:
-                    response = await receiver(sender=sender, **named)
-                    responses.append((receiver, response))
-                except Exception as e:
-                    # Reraise exception if not robust
-                    raise e
-                    
+                response = await receiver(sender=sender, **named)
+                responses.append((receiver, response))
+
         return responses
-        
+
     async def send_robust(self, sender: Any, **named) -> List[Tuple[Callable, Any]]:
         """
         Send signal from sender to all connected receivers, catching errors.

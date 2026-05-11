@@ -148,6 +148,11 @@ class ModelViewSet:
         self._create_schema = self.create_schema_class or generate_create_schema(self.model)
         self._update_schema = self.update_schema_class or generate_update_schema(self.model)
         self._read_schema = self.read_schema_class or generate_read_schema(self.model)
+
+        # v0.5.45: Cache permission instances so they are not rebuilt on every
+        # call within a request (check_permissions, check_ai_access, and
+        # check_object_permissions each hit get_permissions()).
+        self._permission_instances: Optional[List["BasePermission"]] = None
     
     # =========================================================================
     # v0.3.6: OpenAPI Tag Support
@@ -194,19 +199,23 @@ class ModelViewSet:
     def get_permissions(self) -> List["BasePermission"]:
         """
         Get instantiated permission instances.
-        
-        Override this for dynamic permission selection.
-        
+
+        Override this for dynamic permission selection. Instances are cached
+        on the viewset so repeated lifecycle checks within one request reuse
+        the same permission objects.
+
         Returns:
             List of permission instances.
         """
-        permissions = []
-        for perm_cls in self.permission_classes:
-            if isinstance(perm_cls, type):
-                permissions.append(perm_cls())
-            else:
-                permissions.append(perm_cls)
-        return permissions
+        if self._permission_instances is None:
+            permissions: List["BasePermission"] = []
+            for perm_cls in self.permission_classes:
+                if isinstance(perm_cls, type):
+                    permissions.append(perm_cls())
+                else:
+                    permissions.append(perm_cls)
+            self._permission_instances = permissions
+        return self._permission_instances
     
     def check_permissions(self, request: Request) -> None:
         """
@@ -575,11 +584,9 @@ class ModelViewSet:
         """
         # Remove None values from filters
         valid_filters = {k: v for k, v in filters.items() if v is not None}
-        
-        queryset = self.model.objects.filter()
-        if valid_filters:
-            queryset = queryset.filter(**valid_filters)
-            
+
+        queryset = self.model.objects.filter(**valid_filters)
+
         # Apply filter backends
         if request and self.filter_backends:
             for backend_class in self.filter_backends:
@@ -652,26 +659,11 @@ class ModelViewSet:
     ) -> List[Model]:
         """
         Fetch results with pagination applied.
-        
-        This is a workaround since QuerySet doesn't have limit/offset yet.
+
+        Pagination is layered on the queryset itself, so ordering, joins,
+        annotations, and select_related/prefetch_related continue to apply.
         """
-        from aksara.db import Database
-        
-        db = Database.get_instance()
-        
-        where_clause, values = queryset._build_where_clause()
-        
-        # Add LIMIT and OFFSET
-        param_idx = len(values) + 1
-        query = f"""
-            SELECT * FROM {self.model.__tablename__}
-            {where_clause}
-            LIMIT ${param_idx} OFFSET ${param_idx + 1}
-        """
-        values.extend([limit, offset])
-        
-        records = await db.fetch(query, *values)
-        return [self.model._from_record(record) for record in records]
+        return await queryset.limit(limit).offset(offset).all()
     
     def _serialize(
         self,

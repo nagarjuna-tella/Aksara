@@ -146,60 +146,57 @@ class SoftDeleteModel:
                     self._data[field_name] = field.to_python(record[field_name])
 
 
-def with_deleted(queryset: "QuerySet") -> "QuerySet":
+def with_deleted(target):
     """
     Include soft-deleted records in the query.
-    
-    By default, queries on SoftDeleteModel exclude deleted_at IS NOT NULL.
-    Use this to include soft-deleted records.
-    
-    Args:
-        queryset: A QuerySet for a SoftDeleteModel
-        
-    Returns:
-        The queryset without the automatic soft-delete filter
-        
-    Usage:
-        from aksara.contrib.soft_delete import with_deleted
-        
-        # Only active
-        active_users = await User.objects.all()
-        
+
+    By default, queries on SoftDeleteModel exclude soft-deleted rows. Pass
+    either a Manager or an existing QuerySet to opt back in.
+
+    Usage::
+
         # Active + deleted
-        all_users = await with_deleted(User.objects.all())
+        all_users = await with_deleted(User.objects).all()
+
+    Args:
+        target: A Manager (e.g. ``User.objects``) or a QuerySet.
+
+    Returns:
+        A QuerySet that does not exclude soft-deleted rows.
     """
-    # Remove the automatic soft-delete filter
-    # The filter is added in Manager.filter() for SoftDeleteModel subclasses
-    qs = queryset
-    
-    # Mark the queryset as including deleted records
-    qs._include_deleted = True
-    
-    return qs
+    from aksara.manager import Manager, QuerySet
+
+    if isinstance(target, Manager):
+        return target.with_deleted()
+    if isinstance(target, QuerySet):
+        return target._model.objects.with_deleted()
+    raise TypeError(
+        "with_deleted() expects a Manager or QuerySet, got "
+        f"{type(target).__name__}"
+    )
 
 
-def only_deleted(queryset: "QuerySet") -> "QuerySet":
+def only_deleted(target):
     """
     Query only soft-deleted records.
-    
+
+    Usage::
+
+        deleted_users = await only_deleted(User.objects).all()
+
     Args:
-        queryset: A QuerySet for a SoftDeleteModel
-        
+        target: A Manager (e.g. ``User.objects``) or a QuerySet.
+
     Returns:
-        The queryset filtered to only deleted_at IS NOT NULL
-        
-    Usage:
-        from aksara.contrib.soft_delete import only_deleted
-        
-        deleted_users = await only_deleted(User.objects.all())
+        A QuerySet containing only soft-deleted rows.
     """
-    qs = queryset
-    
-    # Filter to only deleted records
-    if hasattr(qs, '_deleted_only'):
-        qs._deleted_only = True
-    else:
-        # If it's already a QuerySet, mark it
-        qs._deleted_only = True
-    
-    return qs
+    from aksara.manager import Manager, QuerySet
+
+    if isinstance(target, Manager):
+        return target.only_deleted()
+    if isinstance(target, QuerySet):
+        return target._model.objects.only_deleted()
+    raise TypeError(
+        "only_deleted() expects a Manager or QuerySet, got "
+        f"{type(target).__name__}"
+    )

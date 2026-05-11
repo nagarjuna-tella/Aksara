@@ -7,7 +7,8 @@ Provides AI metadata helper functions for model/field introspection.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Type
 
 if TYPE_CHECKING:
     from aksara.model.base import Model
@@ -23,43 +24,49 @@ class ModelRegistry:
     """
     
     _models: Dict[str, Type["Model"]] = {}
-    
+    _view: "Mapping[str, Type[Model]]" = MappingProxyType(_models)
+
     @classmethod
     def register(cls, model: Type["Model"]) -> None:
         """
         Register a model class.
-        
+
         Args:
             model: The model class to register
         """
         cls._models[model.__name__] = model
-    
+
     @classmethod
     def get(cls, name: str) -> Type["Model"]:
         """
         Get a model class by name.
-        
+
         Args:
             name: The model class name
-            
+
         Returns:
             The model class
-            
+
         Raises:
             KeyError: If model not found
         """
         return cls._models[name]
-    
+
     @classmethod
-    def all(cls) -> Dict[str, Type["Model"]]:
+    def all(cls) -> "Mapping[str, Type[Model]]":
         """
-        Get all registered models.
-        
+        Get all registered models as a read-only view of the live registry.
+
         Returns:
-            Dictionary of model name -> model class
+            Read-only mapping of model name -> model class.
         """
+        return cls._view
+
+    @classmethod
+    def snapshot(cls) -> Dict[str, Type["Model"]]:
+        """Return a shallow copy of the registry for callers that need stability."""
         return cls._models.copy()
-    
+
     @classmethod
     def clear(cls) -> None:
         """Clear all registered models (useful for testing)."""

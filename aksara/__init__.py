@@ -181,24 +181,43 @@ from aksara.permissions import (
     check_permissions,
 )
 
-# v0.4.0: AI Mode
-from aksara.ai import (
-    AiTool,
-    AiToolParam,
-    AiToolRegistry,
-    discover_tools_from_viewset,
-    get_ai_tools_for_request,
-    export_tools_as_generic,
-    export_tools_as_mcp,
-)
+# v0.4.0+: AI Mode symbols are exposed lazily so that `import aksara` does
+# not eagerly pull in the entire AI subsystem (25+ submodules, Pydantic
+# schemas, etc.). They are resolved on first attribute access via the
+# module-level __getattr__ defined below.
+_LAZY_AI_ATTRS = {
+    # aksara.ai (v0.4.0)
+    "AiTool": ("aksara.ai", "AiTool"),
+    "AiToolParam": ("aksara.ai", "AiToolParam"),
+    "AiToolRegistry": ("aksara.ai", "AiToolRegistry"),
+    "discover_tools_from_viewset": ("aksara.ai", "discover_tools_from_viewset"),
+    "get_ai_tools_for_request": ("aksara.ai", "get_ai_tools_for_request"),
+    "export_tools_as_generic": ("aksara.ai", "export_tools_as_generic"),
+    "export_tools_as_mcp": ("aksara.ai", "export_tools_as_mcp"),
+    # aksara.ai.debug (v0.4.1)
+    "AiDebugContext": ("aksara.ai.debug", "AiDebugContext"),
+    "AiDebugSuggestion": ("aksara.ai.debug", "AiDebugSuggestion"),
+    "build_ai_debug_context": ("aksara.ai.debug", "build_ai_debug_context"),
+    "RuleBasedAiDebugAdvisor": ("aksara.ai.debug", "RuleBasedAiDebugAdvisor"),
+}
 
-# v0.4.1: AI Debug exports
-from aksara.ai.debug import (
-    AiDebugContext,
-    AiDebugSuggestion,
-    build_ai_debug_context,
-    RuleBasedAiDebugAdvisor,
-)
+
+def __getattr__(name: str):
+    """Lazily resolve AI symbols on first access (PEP 562)."""
+    target = _LAZY_AI_ATTRS.get(name)
+    if target is not None:
+        import importlib
+        module_path, attr = target
+        module = importlib.import_module(module_path)
+        value = getattr(module, attr)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module 'aksara' has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_AI_ATTRS))
+
 
 from aksara._version import __version__
 __all__ = [
