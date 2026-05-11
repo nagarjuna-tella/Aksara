@@ -961,59 +961,49 @@ class QuerySet(Generic[T]):
     async def _load_select_related(self, instances: List[T], db) -> None:
         """
         Batch load FK/O2O related objects for all instances.
-        
-        For each select_related field:
-        1. Collect all FK IDs from instances
-        2. Run a single query to fetch all related objects
-        3. Build a mapping {id: related_instance}
-        4. Attach to each instance._prefetched_relations
+
+        Fires all FK queries concurrently via asyncio.gather() — one query per
+        related field rather than one query per field per instance.
         """
-        from aksara.fields import ForeignKey, OneToOne
-        
-        for field_name in self._select_related:
-            # Validate field exists and is FK/O2O
+        import asyncio
+
+        async def _load_one(field_name: str) -> None:
             if field_name not in self._model._fk_fields:
                 raise ValueError(
                     f"select_related: '{field_name}' is not a ForeignKey/OneToOne field "
                     f"on {self._model.__name__}"
                 )
-            
+
             field = self._model._fk_fields[field_name]
             related_model = field.to_model
-            
-            # Collect all FK IDs (filter out None)
-            fk_ids = set()
-            for instance in instances:
-                fk_id = instance._data.get(field_name)
-                if fk_id is not None:
-                    fk_ids.add(fk_id)
-            
+
+            fk_ids = {
+                fk_id
+                for instance in instances
+                if (fk_id := instance._data.get(field_name)) is not None
+            }
+
             if not fk_ids:
-                # No FKs to load, set all to None
                 for instance in instances:
                     instance._prefetched_relations[field_name] = None
-                continue
-            
-            # Batch query for all related objects
+                return
+
             placeholders = ", ".join(f"${i+1}" for i in range(len(fk_ids)))
             related_table = quote_identifier(related_model.__tablename__)
-            related_query = f"""
-                SELECT * FROM {related_table}
-                WHERE id IN ({placeholders})
-            """
-            
+            related_query = f"SELECT * FROM {related_table} WHERE id IN ({placeholders})"
+
             related_records = await db.fetch(related_query, *list(fk_ids))
-            
-            # Build mapping {id: related_instance}
+
             related_map = {}
-            for record in related_records:
-                related_instance = related_model._from_record(record)
+            for rec in related_records:
+                related_instance = related_model._from_record(rec)
                 related_map[related_instance.id] = related_instance
-            
-            # Attach to each instance
+
             for instance in instances:
                 fk_id = instance._data.get(field_name)
                 instance._prefetched_relations[field_name] = related_map.get(fk_id)
+
+        await asyncio.gather(*(_load_one(fn) for fn in self._select_related))
     
     async def _load_prefetch_related(self, instances: List[T], db) -> None:
         """
@@ -1313,64 +1303,48 @@ class Manager(Generic[T]):
     def search(self, term: str, fields: List[str]) -> QuerySet[T]:
         """
         Create a QuerySet with a search condition.
-        
-        Args:
-            term: The search term
-            fields: List of field names to search across
-            
-        Returns:
-            QuerySet for chaining
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
         """
-        return QuerySet(self._model).search(term, fields)
+        return self.filter().search(term, fields)
 
     def annotate(self, **kwargs: Any) -> QuerySet[T]:
-        """Create a QuerySet with annotations."""
-        return QuerySet(self._model).annotate(**kwargs)
+        """Create a QuerySet with annotations.
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
+        """
+        return self.filter().annotate(**kwargs)
 
     async def aggregate(self, **kwargs: Any) -> Dict[str, Any]:
-        """Execute aggregate expressions for the model."""
-        return await QuerySet(self._model).aggregate(**kwargs)
-    
+        """Execute aggregate expressions for the model.
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
+        """
+        return await self.filter().aggregate(**kwargs)
+
     def order_by(self, *fields: str) -> QuerySet[T]:
         """
         Create a QuerySet with ordering.
-        
-        Args:
-            *fields: Field names to order by (prefix with - for descending)
-            
-        Returns:
-            QuerySet for chaining
-            
-        Usage:
-            User.objects.order_by("email")           # Ascending
-            User.objects.order_by("-created_at")     # Descending
-            User.objects.order_by("is_active", "-email")  # Multiple
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
         """
-        return QuerySet(self._model).order_by(*fields)
-    
+        return self.filter().order_by(*fields)
+
     def select_related(self, *fields: str) -> QuerySet[T]:
         """
         Create a QuerySet with select_related fields.
-        
-        Args:
-            *fields: FK/O2O field names to preload
-            
-        Returns:
-            QuerySet for chaining
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
         """
-        return QuerySet(self._model).select_related(*fields)
-    
+        return self.filter().select_related(*fields)
+
     def prefetch_related(self, *fields: str) -> QuerySet[T]:
         """
         Create a QuerySet with prefetch_related fields.
-        
-        Args:
-            *fields: M2M field names to preload
-            
-        Returns:
-            QuerySet for chaining
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
         """
-        return QuerySet(self._model).prefetch_related(*fields)
+        return self.filter().prefetch_related(*fields)
     
     async def all(self) -> List[T]:
         """
@@ -1430,21 +1404,21 @@ class Manager(Generic[T]):
     async def get_or_none(self, *args: Q, **kwargs) -> Optional[T]:
         """
         Get a single record or None if not found.
-        
+
         Args:
             **kwargs: Field=value conditions
-            
+
         Returns:
             The matching model instance or None
         """
-        try:
-            return await self.get(*args, **kwargs)
-        except DoesNotExist:
-            return None
+        return await self.filter(*args, **kwargs).first()
 
     async def update(self, **kwargs: Any) -> int:
-        """Update all rows for this model."""
-        return await QuerySet(self._model).update(**kwargs)
+        """Update all rows for this model.
+
+        Routes through filter() so SoftDeleteModel excludes soft-deleted rows.
+        """
+        return await self.filter().update(**kwargs)
     
     async def get_or_create(self, defaults: Optional[Dict[str, Any]] = None, **kwargs) -> tuple[T, bool]:
         """
@@ -1764,15 +1738,13 @@ class Manager(Generic[T]):
             VALUES ({values})
             ON CONFLICT ({conflict_fields})
             DO UPDATE SET {update_sql}
-            RETURNING *
+            RETURNING *, (xmax = 0) AS _is_created
         """
-        
+
         record = await db.fetchrow(query, *insert_values)
-        
-        # Check if this was an insert or update by checking if id was generated
         instance = self._model._from_record(record)
-        created = all(record[k] is not None for k in unique_constraint_fields)
-        
+        created = bool(record["_is_created"])
+
         return instance, created
     
     async def count(self) -> int:

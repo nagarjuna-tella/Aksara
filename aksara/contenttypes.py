@@ -32,7 +32,9 @@ CONTENT_TYPES_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{CONTENT_TYPES_TABLE}"
 
 _content_type_cache_by_key: Dict[Tuple[str, str], "ContentType"] = {}
 _content_type_cache_by_id: Dict[UUID, "ContentType"] = {}
-_content_type_sync_token: Optional[Tuple[str, ...]] = None
+_content_type_sync_token: Optional[int] = None
+_model_identity_index: Dict[Tuple[str, str], Any] = {}
+_model_identity_index_version: int = -1
 
 
 class ContentType(Model):
@@ -79,13 +81,18 @@ def _get_model_identity(model: Type["ModelType"]) -> tuple[str, str, str]:
     return app_label, model.__name__, module or app_label
 
 
-def _registry_signature() -> tuple[str, ...]:
-    """Build a token for the currently registered model set."""
-    entries = []
+def _get_model_identity_index() -> Dict[Tuple[str, str], Any]:
+    """Return an up-to-date (app_label, model_name) → model class index."""
+    global _model_identity_index_version
+    current_version = ModelRegistry._version
+    if _model_identity_index_version == current_version:
+        return _model_identity_index
+    _model_identity_index.clear()
     for model in ModelRegistry.all().values():
         app_label, model_name, _ = _get_model_identity(model)
-        entries.append(f"{app_label}:{model_name}")
-    return tuple(sorted(entries))
+        _model_identity_index[(app_label, model_name)] = model
+    _model_identity_index_version = current_version
+    return _model_identity_index
 
 
 def _cache_content_type(content_type: "ContentType") -> "ContentType":
@@ -98,11 +105,13 @@ def _cache_content_type(content_type: "ContentType") -> "ContentType":
 
 def clear_content_type_cache() -> None:
     """Reset all content type caches."""
-    global _content_type_sync_token
+    global _content_type_sync_token, _model_identity_index_version
 
     _content_type_cache_by_key.clear()
     _content_type_cache_by_id.clear()
     _content_type_sync_token = None
+    _model_identity_index.clear()
+    _model_identity_index_version = -1
 
 
 async def ensure_content_types_table(db: Optional[Database] = None) -> None:
@@ -214,7 +223,7 @@ async def sync_content_types(
                 *stale_ids,
             )
 
-    _content_type_sync_token = _registry_signature()
+    _content_type_sync_token = ModelRegistry._version
     return synced
 
 
@@ -224,19 +233,19 @@ async def ensure_content_types_synced(
     prune_stale: bool = False,
 ) -> None:
     """Synchronize content types when the model registry changed."""
-    if _content_type_sync_token == _registry_signature():
+    if _content_type_sync_token == ModelRegistry._version:
         return
     clear_content_type_cache()
     await sync_content_types(db, prune_stale=prune_stale)
 
 
 def _find_registered_model(app_label: str, model_name: str) -> Type["ModelType"]:
-    """Resolve a model class from the current registry."""
-    for model in ModelRegistry.all().values():
-        candidate_app_label, candidate_model_name, _ = _get_model_identity(model)
-        if candidate_app_label == app_label and candidate_model_name == model_name:
-            return model
-    raise KeyError(f"Model '{app_label}.{model_name}' is not registered")
+    """Resolve a model class from the current registry (O(1) via identity index)."""
+    idx = _get_model_identity_index()
+    model = idx.get((app_label, model_name))
+    if model is None:
+        raise KeyError(f"Model '{app_label}.{model_name}' is not registered")
+    return model
 
 
 async def get_content_type_for_model(

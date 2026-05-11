@@ -18,13 +18,14 @@ if TYPE_CHECKING:
 class ModelRegistry:
     """
     Registry to store all discovered model classes.
-    
+
     Models are automatically registered when their class is created
     via the ModelMeta metaclass.
     """
-    
+
     _models: Dict[str, Type["Model"]] = {}
     _view: "Mapping[str, Type[Model]]" = MappingProxyType(_models)
+    _version: int = 0
 
     @classmethod
     def register(cls, model: Type["Model"]) -> None:
@@ -35,6 +36,7 @@ class ModelRegistry:
             model: The model class to register
         """
         cls._models[model.__name__] = model
+        cls._version += 1
 
     @classmethod
     def get(cls, name: str) -> Type["Model"]:
@@ -71,6 +73,7 @@ class ModelRegistry:
     def clear(cls) -> None:
         """Clear all registered models (useful for testing)."""
         cls._models.clear()
+        cls._version = 0
 
 
 # =============================================================================

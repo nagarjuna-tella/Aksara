@@ -7,6 +7,7 @@ Unit tests for model definition, registry, and SQL generation.
 import pytest
 from aksara import Model, fields
 from aksara.registry import ModelRegistry
+from aksara.relations import RelationRegistry
 
 
 # Clear registry before tests
@@ -14,8 +15,10 @@ from aksara.registry import ModelRegistry
 def clear_registry():
     """Clear the model registry before each test."""
     ModelRegistry.clear()
+    RelationRegistry.clear()
     yield
     ModelRegistry.clear()
+    RelationRegistry.clear()
 
 
 class TestModelDefinition:

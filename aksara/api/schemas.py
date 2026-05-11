@@ -37,47 +37,56 @@ from aksara import fields as aksara_fields
 # Schema cache for performance
 _schema_cache: Dict[str, Dict[str, Type[BaseModel]]] = {}
 
+# O(1) dispatch table for simple field → Python type mappings.
+# Keyed by the exact field class so subclasses fall through to the
+# isinstance slow-path below, preserving correct inheritance semantics.
+_FIELD_SIMPLE_TYPES: Dict[type, Any] = {}
+
+
+def _build_field_type_map() -> None:
+    """Populate _FIELD_SIMPLE_TYPES once all field classes are available."""
+    _FIELD_SIMPLE_TYPES.update({
+        aksara_fields.UUID: UUID,
+        aksara_fields.String: str,
+        aksara_fields.Text: str,
+        aksara_fields.Email: str,
+        aksara_fields.URL: str,
+        aksara_fields.Slug: str,
+        aksara_fields.FilePath: str,
+        aksara_fields.IPAddress: str,
+        aksara_fields.FileField: str,
+        aksara_fields.ImageField: str,
+        aksara_fields.Integer: int,
+        aksara_fields.SmallInteger: int,
+        aksara_fields.BigInteger: int,
+        aksara_fields.PositiveInteger: int,
+        aksara_fields.PositiveSmallInteger: int,
+        aksara_fields.PositiveBigInteger: int,
+        aksara_fields.Boolean: bool,
+        aksara_fields.DateTime: datetime,
+        aksara_fields.Decimal: Decimal,
+        aksara_fields.Float: float,
+        aksara_fields.Enum: str,
+    })
+
+
+_build_field_type_map()
+
 
 def _get_python_type(field: aksara_fields.Field) -> type:
-    """
-    Map Aksara field type to Python/Pydantic type.
-    
-    Args:
-        field: Aksara field instance
-        
-    Returns:
-        Python type for Pydantic schema
-    """
-    if isinstance(field, aksara_fields.UUID):
-        return UUID
-    elif isinstance(field, aksara_fields.FileField):
-        return str
-    elif isinstance(field, aksara_fields.String):
-        return str
-    elif isinstance(field, aksara_fields.Text):
-        return str
-    elif isinstance(field, aksara_fields.Email):
-        return str
-    elif isinstance(field, aksara_fields.URL):
-        return str
-    elif isinstance(field, aksara_fields.Integer):
-        return int
-    elif isinstance(field, aksara_fields.Boolean):
-        return bool
-    elif isinstance(field, aksara_fields.DateTime):
-        return datetime
-    elif isinstance(field, aksara_fields.JSON):
+    """Map an Aksara field instance to its Python/Pydantic type."""
+    # Fast path: O(1) exact-class lookup for simple types.
+    pt = _FIELD_SIMPLE_TYPES.get(type(field))
+    if pt is not None:
+        return pt
+    # Slow path: parameterized / inheritance-sensitive types.
+    if isinstance(field, aksara_fields.JSON):
         return Union[dict, list, None]
-    elif isinstance(field, aksara_fields.Decimal):
-        return Decimal
-    elif isinstance(field, aksara_fields.Enum):
-        return str
-    elif isinstance(field, aksara_fields.ForeignKey):
+    if isinstance(field, aksara_fields.ForeignKey):  # also covers OneToOne
         return UUID
-    elif isinstance(field, aksara_fields.ManyToMany):
+    if isinstance(field, aksara_fields.ManyToMany):
         return List[UUID]
-    else:
-        return Any
+    return Any
 
 
 def _should_include_in_create(field_name: str, field: aksara_fields.Field) -> bool:

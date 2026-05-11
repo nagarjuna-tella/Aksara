@@ -292,7 +292,9 @@ class String(Field):
         ai_sensitive: Whether field contains sensitive data
         ai_agent_writable: Whether AI agents can modify this
     """
-    
+
+    _python_type = str
+
     def __init__(
         self,
         max_length: int = 255,
