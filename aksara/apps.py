@@ -18,7 +18,7 @@ Usage:
 from __future__ import annotations
 
 from importlib import import_module
-from typing import TYPE_CHECKING, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 if TYPE_CHECKING:
     from aksara.model.base import Model
@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 
 # Track which apps have been loaded (for idempotency)
 _loaded_apps: Set[str] = set()
+
+# Per-app model cache; invalidated when the global registry version changes.
+# Maps app_label -> (registry_version_at_build, list_of_models).
+_app_models_cache: Dict[str, Tuple[int, List[Type["Model"]]]] = {}
 
 
 def load_app_models(apps: Optional[List[str]] = None) -> None:
@@ -100,17 +104,23 @@ def get_app_models(app_label: str) -> List[Type["Model"]]:
             print(f"{model.__name__}: {model.__tablename__}")
     """
     from aksara.registry import ModelRegistry
-    
+
+    version = ModelRegistry._version
+    cached = _app_models_cache.get(app_label)
+    if cached is not None and cached[0] == version:
+        # Return a shallow copy so callers can't mutate the cached list.
+        return list(cached[1])
+
     models: List[Type["Model"]] = []
-    
     for model in ModelRegistry.all().values():
         meta_class = getattr(model, "Meta", None)
         if meta_class:
             model_app_label = getattr(meta_class, "app_label", None)
             if model_app_label == app_label:
                 models.append(model)
-    
-    return models
+
+    _app_models_cache[app_label] = (version, models)
+    return list(models)
 
 
 def get_all_app_labels() -> List[str]:
@@ -127,11 +137,12 @@ def get_all_app_labels() -> List[str]:
 def reset_loaded_apps() -> None:
     """
     Reset the loaded apps tracker.
-    
+
     Useful for testing to force re-loading of models.
     """
-    global _loaded_apps
+    global _loaded_apps, _app_models_cache
     _loaded_apps = set()
+    _app_models_cache = {}
 
 
 __all__ = [

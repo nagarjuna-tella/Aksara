@@ -1065,6 +1065,59 @@ class QuerySet(Generic[T]):
             for instance in instances:
                 instance._prefetched_relations[field_name] = related_map.get(instance.id, [])
     
+    async def fetch_with_count(self) -> Tuple[List[T], int]:
+        """
+        Fetch matching rows along with the total count in a single query.
+
+        Uses PostgreSQL's ``COUNT(*) OVER()`` window function so pagination
+        endpoints can avoid issuing a separate ``SELECT COUNT(*)`` query.
+
+        Returns:
+            Tuple ``(instances, total_count)`` where ``total_count`` reflects
+            the unpaginated row count for the current filters.
+        """
+        from aksara.db import Database
+
+        db = Database.get_instance()
+
+        # Build the query with COUNT(*) OVER() appended to the SELECT list.
+        join_state = self._new_join_state()
+        select_clause, values = self._build_select_clause(join_state=join_state)
+        select_clause = f"{select_clause}, COUNT(*) OVER() AS _total_count"
+        join_clause = self._build_join_clause(join_state)
+        qualify_base = bool(join_state["joins"])
+        where_clause, values = self._build_where_clause(values, qualify_base=qualify_base)
+        group_by_clause = self._build_group_by_clause(join_state)
+        order_by_clause = self._build_order_by_clause(qualify_base=qualify_base)
+        limit_clause = self._build_limit_offset_clause(values)
+        table = quote_identifier(self._model.__tablename__)
+        query = self._assemble_query(
+            f"SELECT {select_clause}",
+            f"FROM {table}",
+            join_clause,
+            where_clause,
+            group_by_clause,
+            order_by_clause,
+            limit_clause,
+        )
+
+        records = await db.fetch(query, *values)
+
+        if not records:
+            # No rows in this page — fall back to a plain COUNT for the total.
+            total = await self.count()
+            return [], total
+
+        total = int(records[0]["_total_count"])
+        instances = [self._model._from_record(record) for record in records]
+
+        if self._select_related and instances:
+            await self._load_select_related(instances, db)
+        if self._prefetch_related and instances:
+            await self._load_prefetch_related(instances, db)
+
+        return instances, total
+
     async def first(self) -> Optional[T]:
         """
         Execute the query and return the first matching record.

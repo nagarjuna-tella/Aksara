@@ -160,7 +160,7 @@ class ModelSerializer(metaclass=SerializerMetaclass):
     ):
         """
         Initialize the serializer.
-        
+
         Args:
             instance: Model instance(s) for serialization
             data: Raw data for deserialization/validation
@@ -173,13 +173,57 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         self.context = context or {}
         self._validated_data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None
         self._errors: Optional[Dict[str, Any]] = None
-        
+
         # Get model from Meta
         self._model = self.Meta.model
-        
+
+        # Per-class structures resolved once. The serializer is configured by
+        # its inner Meta which doesn't change, so caching on the class is safe
+        # and removes repeated getattr/dict construction from hot paths.
+        cls = type(self)
+        cache_attr = "_resolved_meta_cache"
+        cache = cls.__dict__.get(cache_attr)
+        if cache is None:
+            cache = self._build_class_meta_cache()
+            setattr(cls, cache_attr, cache)
+        self._m2m_field_names: set = cache["m2m_field_names"]
+        self._validators: Dict[str, Any] = cache["validators"]
+        self._expand_config: Dict[str, Optional[Type["ModelSerializer"]]] = cache["expand_config"]
+
         # Generate/cache Pydantic models
         self._input_model = self._get_or_create_input_model()
         self._output_model = self._get_or_create_output_model()
+
+    @classmethod
+    def _build_class_meta_cache(cls) -> Dict[str, Any]:
+        """Build per-class caches (validators, M2M names, expand config)."""
+        model = cls.Meta.model
+        # Cache M2M field names so create/update don't recompute.
+        m2m_field_names: set = set(getattr(model, '_m2m_fields', {}).keys())
+
+        # Bind validate_<field> methods once. We store unbound references
+        # (descriptors resolved at call time via __get__) keyed by field name.
+        validators: Dict[str, Any] = {}
+        for attr_name in dir(cls):
+            if not attr_name.startswith("validate_") or attr_name == "validate":
+                continue
+            method = getattr(cls, attr_name, None)
+            if callable(method):
+                field_name = attr_name[len("validate_"):]
+                validators[field_name] = method
+
+        # Normalise Meta.expand once. Supports list[str] or dict[str, Serializer].
+        expand = getattr(cls.Meta, 'expand', []) or []
+        if isinstance(expand, dict):
+            expand_config: Dict[str, Optional[Type["ModelSerializer"]]] = dict(expand)
+        else:
+            expand_config = {name: None for name in expand}
+
+        return {
+            "m2m_field_names": m2m_field_names,
+            "validators": validators,
+            "expand_config": expand_config,
+        }
     
     # =========================================================================
     # Pydantic Model Generation
@@ -422,16 +466,19 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         # Step 1: Pydantic validation
         pydantic_instance = self._input_model(**data)
         validated = pydantic_instance.model_dump()
-        
-        # Step 2: Field-level validation hooks
-        for field_name, value in validated.items():
-            validator_method = getattr(self, f"validate_{field_name}", None)
-            if validator_method is not None:
-                validated[field_name] = validator_method(value)
-        
+
+        # Step 2: Field-level validation hooks (resolved once at __init__).
+        validators = self._validators
+        if validators:
+            for field_name, value in validated.items():
+                validator = validators.get(field_name)
+                if validator is not None:
+                    # Methods stored unbound; bind via descriptor protocol.
+                    validated[field_name] = validator.__get__(self, type(self))(value)
+
         # Step 3: Cross-field validation
         validated = self.validate(validated)
-        
+
         return validated
     
     def _validate_many(self, data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -561,15 +608,15 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         # Extract M2M data before creating instance
         m2m_data = {}
         create_data = {}
-        
-        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
-        
+
+        m2m_field_names = self._m2m_field_names
+
         for key, value in validated_data.items():
             if key in m2m_field_names:
                 m2m_data[key] = value
             else:
                 create_data[key] = value
-        
+
         # Create the instance
         instance = await self._model.objects.create(**create_data)
         
@@ -577,20 +624,13 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         for field_name, ids in m2m_data.items():
             if ids:
                 m2m_manager = getattr(instance, field_name)
-                # Get target model and fetch instances
                 target_model = self._model._m2m_fields[field_name].to_model
-                instances = []
-                for id_val in ids:
-                    try:
-                        obj = await target_model.objects.get(id=id_val)
-                        instances.append(obj)
-                    except Exception:
-                        pass  # Skip invalid IDs
+                # Batch fetch all related objects in one query (avoids N+1)
+                instances = await target_model.objects.filter(id__in=list(ids)).all()
                 if instances:
                     await m2m_manager.add(*instances)
-                # Store IDs for serialization
                 setattr(instance, f'_{field_name}_ids', [inst.id for inst in instances])
-        
+
         return instance
     
     async def update(self, instance: Model, validated_data: Dict[str, Any]) -> Model:
@@ -610,9 +650,9 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         # Extract M2M data before updating instance
         m2m_data = {}
         update_data = {}
-        
-        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
-        
+
+        m2m_field_names = self._m2m_field_names
+
         for key, value in validated_data.items():
             if key in m2m_field_names:
                 m2m_data[key] = value
@@ -630,19 +670,15 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         for field_name, ids in m2m_data.items():
             if ids is not None:  # Allow empty list to clear
                 m2m_manager = getattr(instance, field_name)
-                # Get target model and fetch instances
                 target_model = self._model._m2m_fields[field_name].to_model
-                instances = []
-                for id_val in ids:
-                    try:
-                        obj = await target_model.objects.get(id=id_val)
-                        instances.append(obj)
-                    except Exception:
-                        pass  # Skip invalid IDs
+                # Batch fetch all related objects in one query (avoids N+1)
+                if ids:
+                    instances = await target_model.objects.filter(id__in=list(ids)).all()
+                else:
+                    instances = []
                 await m2m_manager.set(instances)
-                # Store IDs for serialization
                 setattr(instance, f'_{field_name}_ids', [inst.id for inst in instances])
-        
+
         return instance
     
     # =========================================================================
@@ -724,26 +760,19 @@ class ModelSerializer(metaclass=SerializerMetaclass):
     def _expand_relations(self, instance: Model, result: Dict[str, Any]) -> None:
         """
         Expand FK and M2M relations if configured in Meta.expand.
-        
+
         Uses prefetched relations when available to avoid N+1 queries.
         For null FK values, returns null (not an error).
         For empty M2M relations, returns empty list.
-        
+
         Args:
             instance: Model instance
             result: Dictionary being built (modified in place)
         """
-        expand = getattr(self.Meta, 'expand', [])
-        
-        if not expand:
+        expand_config = self._expand_config
+        if not expand_config:
             return
-        
-        # Normalize expand to dict format
-        if isinstance(expand, list):
-            expand_config = {name: None for name in expand}
-        else:
-            expand_config = expand
-        
+
         for relation_name, serializer_cls in expand_config.items():
             # Check if it's a FK/O2O field
             if relation_name in instance._fk_fields:

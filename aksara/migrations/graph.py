@@ -140,21 +140,23 @@ class MigrationGraph:
     def build_children(self) -> None:
         """
         Populate children lists for all nodes based on dependencies.
-        
+
         This must be called after all nodes are added and before
         querying for heads or detecting conflicts.
         """
-        # Clear existing children
-        for node in self.nodes.values():
-            node.children = []
-        
-        # Build children from dependencies
+        # Reset and rebuild via per-node sets to deduplicate in O(1) per insert.
+        children_sets: Dict[Tuple[str, str], Set[Tuple[str, str]]] = {
+            key: set() for key in self.nodes
+        }
+
         for node in self.nodes.values():
             for dep_key in node.dependencies:
-                dep_node = self.nodes.get(dep_key)
-                if dep_node is not None:
-                    if node.key not in dep_node.children:
-                        dep_node.children.append(node.key)
+                if dep_key in children_sets:
+                    children_sets[dep_key].add(node.key)
+
+        # Persist as lists to preserve the public API.
+        for key, node in self.nodes.items():
+            node.children = list(children_sets[key])
     
     def get_app_labels(self) -> Set[str]:
         """

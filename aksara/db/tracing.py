@@ -24,16 +24,22 @@ Usage:
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import re
 import time
 import traceback
-from collections import defaultdict
+from collections import defaultdict, deque
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Deque, Dict, List, Optional, Tuple, Union
+
+
+# Default slow-query threshold used when a trace lacks an explicit one
+# (e.g., a DbQueryTrace constructed outside of an active session).
+_DEFAULT_SLOW_THRESHOLD_MS = 100.0
 
 
 # =============================================================================
@@ -67,28 +73,33 @@ class DbQueryTrace:
     stack_summary: Optional[str] = None
     request_id: Optional[str] = None
     tags: List[str] = field(default_factory=list)
-    
+    # Threshold snapshotted at session start so is_slow doesn't reimport
+    # settings on every access. None means consult settings on demand.
+    slow_threshold_ms: Optional[float] = None
+
     def __post_init__(self):
         """Extract operation and table from SQL if not provided."""
         if self.operation == "OTHER":
             self.operation = _extract_operation(self.sql)
         if self.table is None:
             self.table = _extract_table(self.sql)
-    
+
     @property
     def is_slow(self) -> bool:
         """Check if this query is considered slow based on settings."""
-        from aksara.conf import settings
-        threshold = getattr(settings, 'db_trace_slow_threshold_ms', 100.0)
+        threshold = self.slow_threshold_ms
+        if threshold is None:
+            from aksara.conf import settings
+            threshold = getattr(settings, 'db_trace_slow_threshold_ms', _DEFAULT_SLOW_THRESHOLD_MS)
         return self.duration_ms >= threshold
-    
-    @property
+
+    @functools.cached_property
     def normalized_sql(self) -> str:
         """
         Return SQL with literals replaced by placeholders for grouping.
-        
+
         Useful for detecting N+1 patterns where the same query shape
-        is executed many times with different IDs.
+        is executed many times with different IDs. Cached after first access.
         """
         return _normalize_sql(self.sql)
     
@@ -209,44 +220,79 @@ _trace_metadata_var: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
 class TraceStorage:
     """
     Thread-safe in-memory storage for recent query batches.
-    
-    Uses a dict with size limit, evicting oldest entries when full.
+
+    Uses a dict + deque with size limit, evicting oldest entries when full.
+    Aggregate statistics are maintained incrementally on store/clear so
+    get_stats() is O(1) rather than O(total queries).
     """
-    
+
     def __init__(self, max_size: int = 100):
         self._storage: Dict[str, DbQueryBatch] = {}
-        self._order: List[str] = []  # Track insertion order
+        # deque popleft() is O(1); list.pop(0) was O(n).
+        self._order: Deque[str] = deque()
         self._lock = Lock()
         self.max_size = max_size
-    
+
+        # Running totals updated in store()/clear() so get_stats() is O(1).
+        self._total_queries = 0
+        self._total_slow_queries = 0
+        self._requests_with_slow = 0
+        self._requests_with_n1 = 0
+
+    def _eject(self, request_id: str) -> None:
+        """Remove a batch and decrement running totals. Caller holds the lock."""
+        batch = self._storage.pop(request_id, None)
+        if batch is None:
+            return
+        self._total_queries -= batch.total_queries
+        self._total_slow_queries -= batch.slow_queries
+        if batch.slow_queries > 0:
+            self._requests_with_slow -= 1
+        if batch.n_plus_one_suspicions:
+            self._requests_with_n1 -= 1
+
     def store(self, batch: DbQueryBatch) -> None:
         """Store a query batch."""
         if not batch.request_id:
             return
-        
+
         with self._lock:
-            # Remove oldest if at capacity
+            # If this request_id already exists, eject the old version first so
+            # totals stay consistent. The order entry gets refreshed below.
+            if batch.request_id in self._storage:
+                self._eject(batch.request_id)
+                try:
+                    self._order.remove(batch.request_id)
+                except ValueError:
+                    pass
+
+            # Evict oldest while at capacity.
             while len(self._storage) >= self.max_size and self._order:
-                oldest = self._order.pop(0)
-                self._storage.pop(oldest, None)
-            
-            # Store new batch
+                oldest = self._order.popleft()
+                self._eject(oldest)
+
             self._storage[batch.request_id] = batch
-            if batch.request_id in self._order:
-                self._order.remove(batch.request_id)
             self._order.append(batch.request_id)
-    
+
+            # Update running totals.
+            self._total_queries += batch.total_queries
+            self._total_slow_queries += batch.slow_queries
+            if batch.slow_queries > 0:
+                self._requests_with_slow += 1
+            if batch.n_plus_one_suspicions:
+                self._requests_with_n1 += 1
+
     def get(self, request_id: str) -> Optional[DbQueryBatch]:
         """Get a batch by request ID."""
         with self._lock:
             return self._storage.get(request_id)
-    
+
     def get_recent(self, limit: int = 20) -> List[DbQueryBatch]:
         """Get recent batches (most recent first)."""
         with self._lock:
-            ids = self._order[-limit:][::-1]
+            ids = list(self._order)[-limit:][::-1]
             return [self._storage[rid] for rid in ids if rid in self._storage]
-    
+
     def get_all_queries(self) -> List[DbQueryTrace]:
         """Get all queries from all stored batches."""
         with self._lock:
@@ -254,15 +300,12 @@ class TraceStorage:
             for batch in self._storage.values():
                 all_queries.extend(batch.queries)
             return all_queries
-    
+
     def get_stats(self) -> Dict[str, Any]:
-        """Get aggregate statistics across all stored batches."""
+        """Get aggregate statistics across all stored batches (O(1))."""
         with self._lock:
-            all_queries = []
-            for batch in self._storage.values():
-                all_queries.extend(batch.queries)
-            
-            if not all_queries:
+            total_batches = len(self._storage)
+            if total_batches == 0:
                 return {
                     "total_batches": 0,
                     "total_queries": 0,
@@ -271,31 +314,27 @@ class TraceStorage:
                     "requests_with_slow_queries": 0,
                     "requests_with_n_plus_one": 0,
                 }
-            
-            slow_count = sum(1 for q in all_queries if q.is_slow)
-            requests_with_slow = sum(
-                1 for b in self._storage.values() if b.slow_queries > 0
-            )
-            requests_with_n1 = sum(
-                1 for b in self._storage.values() if b.n_plus_one_suspicions
-            )
-            
+
             return {
-                "total_batches": len(self._storage),
-                "total_queries": len(all_queries),
+                "total_batches": total_batches,
+                "total_queries": self._total_queries,
                 "avg_queries_per_request": round(
-                    len(all_queries) / len(self._storage), 2
-                ) if self._storage else 0.0,
-                "total_slow_queries": slow_count,
-                "requests_with_slow_queries": requests_with_slow,
-                "requests_with_n_plus_one": requests_with_n1,
+                    self._total_queries / total_batches, 2
+                ),
+                "total_slow_queries": self._total_slow_queries,
+                "requests_with_slow_queries": self._requests_with_slow,
+                "requests_with_n_plus_one": self._requests_with_n1,
             }
-    
+
     def clear(self) -> None:
         """Clear all stored traces."""
         with self._lock:
             self._storage.clear()
             self._order.clear()
+            self._total_queries = 0
+            self._total_slow_queries = 0
+            self._requests_with_slow = 0
+            self._requests_with_n1 = 0
 
 
 # Global storage instance
@@ -319,7 +358,10 @@ def start_trace_session(
 ) -> None:
     """
     Start a new trace session for the current context.
-    
+
+    Snapshots the slow-query threshold and stack-capture flag once so that
+    per-query hot paths avoid repeated settings imports.
+
     Args:
         request_id: The request identifier
         path: HTTP request path
@@ -327,13 +369,25 @@ def start_trace_session(
     """
     if not is_tracing_enabled():
         return
-    
+
+    from aksara.conf import settings
+    slow_threshold = float(
+        getattr(settings, 'db_trace_slow_threshold_ms', _DEFAULT_SLOW_THRESHOLD_MS)
+    )
+    # Stack capture is opt-in because traceback.extract_stack walks the
+    # entire Python frame stack on every query — expensive at scale.
+    capture_stack = bool(getattr(settings, 'db_trace_capture_stack', False))
+    max_queries = int(getattr(settings, 'db_trace_max_queries', 500))
+
     _trace_session_var.set([])
     _trace_metadata_var.set({
         "request_id": request_id,
         "path": path,
         "method": method,
         "started_at": datetime.now(timezone.utc),
+        "slow_threshold_ms": slow_threshold,
+        "capture_stack": capture_stack,
+        "max_queries": max_queries,
     })
 
 
@@ -399,20 +453,27 @@ def record_query(
     session = _trace_session_var.get()
     if session is None:
         return
-    
-    # Check max queries limit
-    from aksara.conf import settings
-    max_queries = getattr(settings, 'db_trace_max_queries', 500)
+
+    metadata = _trace_metadata_var.get()
+
+    # Pull cached session settings (snapshotted at start_trace_session).
+    if metadata is not None:
+        max_queries = metadata.get("max_queries", 500)
+        slow_threshold = metadata.get("slow_threshold_ms", _DEFAULT_SLOW_THRESHOLD_MS)
+        capture_stack = metadata.get("capture_stack", False)
+        request_id = metadata.get("request_id")
+    else:
+        max_queries = 500
+        slow_threshold = _DEFAULT_SLOW_THRESHOLD_MS
+        capture_stack = False
+        request_id = None
+
     if len(session) >= max_queries:
         return
-    
-    # Get request ID from metadata
-    metadata = _trace_metadata_var.get()
-    request_id = metadata.get("request_id") if metadata else None
-    
-    # Capture call site (skip our own frames)
-    stack_summary = _get_stack_summary(skip_frames=3)
-    
+
+    # Stack capture is opt-in because traceback.extract_stack is expensive.
+    stack_summary = _get_stack_summary(skip_frames=3) if capture_stack else None
+
     trace = DbQueryTrace(
         sql=sql,
         params=params,
@@ -421,8 +482,9 @@ def record_query(
         stack_summary=stack_summary,
         request_id=request_id,
         tags=tags or [],
+        slow_threshold_ms=slow_threshold,
     )
-    
+
     session.append(trace)
 
 

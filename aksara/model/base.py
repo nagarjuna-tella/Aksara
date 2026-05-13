@@ -84,23 +84,39 @@ class ModelMetaInfo:
     
     def __init__(self, model: Type["Model"]):
         self._model = model
-    
+        # Cache the primary key once. Model classes don't gain/lose fields
+        # after definition, so this is safe and saves O(N) on every .pk access.
+        pk_field: Optional[Field] = None
+        for field in model._fields.values():
+            if getattr(field, "primary_key", False):
+                pk_field = field
+                break
+        if pk_field is None:
+            pk_field = model._fields.get("id")
+        self._pk = pk_field
+        # Cache the merged relations dict — both _fk_fields and _m2m_fields
+        # are immutable once the model is built.
+        relations: Dict[str, Field] = {}
+        relations.update(model._fk_fields)
+        relations.update(model._m2m_fields)
+        self._relations = relations
+
     @property
     def name(self) -> str:
         """Get the model class name."""
         return self._model.__name__
-    
+
     @property
     def app_label(self) -> Optional[str]:
         """
         Get the app_label for this model.
-        
+
         Returns the app_label from Meta class if defined, otherwise
         derives it from the model's module path.
-        
+
         For example:
         - myapp.models.Post -> "myapp"
-        - blog.models.Article -> "blog"  
+        - blog.models.Article -> "blog"
         - app.models.User -> "app"
         """
         meta_class = getattr(self._model, "Meta", None)
@@ -108,7 +124,7 @@ class ModelMetaInfo:
             explicit_label = getattr(meta_class, "app_label", None)
             if explicit_label:
                 return explicit_label
-        
+
         # Auto-detect from module path
         module = getattr(self._model, "__module__", None)
         if module:
@@ -120,66 +136,48 @@ class ModelMetaInfo:
             # Otherwise use the first part
             if parts:
                 return parts[0]
-        
+
         return None
-    
+
     @property
     def table_name(self) -> str:
         """Get the database table name."""
         return self._model.__tablename__
-    
+
     @property
     def fields(self) -> List[Field]:
         """Get all field objects defined on this model."""
         return list(self._model._fields.values())
-    
+
     @property
     def field_names(self) -> List[str]:
         """Get all field names defined on this model."""
         return list(self._model._fields.keys())
-    
+
     @property
     def pk(self) -> Optional[Field]:
-        """Get the primary key field."""
-        for field in self.fields:
-            if getattr(field, "primary_key", False):
-                return field
-        # Fallback: look for 'id' field
-        return self._model._fields.get("id")
-    
+        """Get the primary key field (cached)."""
+        return self._pk
+
     @property
     def pk_name(self) -> Optional[str]:
         """Get the primary key field name."""
-        pk = self.pk
-        return pk.name if pk else None
-    
+        return self._pk.name if self._pk else None
+
     @property
     def relations(self) -> Dict[str, Field]:
         """
         Get all relation fields (ForeignKey, OneToOne, ManyToMany).
-        
-        Returns:
-            Dict mapping field name to field object
+
+        Returns a cached merged view; callers must not mutate it.
         """
-        from aksara.fields import ForeignKey, ManyToMany, OneToOne
-        
-        result: Dict[str, Field] = {}
-        
-        # FK and OneToOne fields
-        for name, field in self._model._fk_fields.items():
-            result[name] = field
-        
-        # ManyToMany fields
-        for name, field in self._model._m2m_fields.items():
-            result[name] = field
-        
-        return result
-    
+        return self._relations
+
     @property
     def foreign_keys(self) -> Dict[str, ForeignKey]:
         """Get all ForeignKey fields."""
         return dict(self._model._fk_fields)
-    
+
     @property
     def many_to_many(self) -> Dict[str, ManyToMany]:
         """Get all ManyToMany fields."""
@@ -366,6 +364,23 @@ class ModelMeta(type):
             fk.db_column_name: name
             for name, fk in fk_fields.items()
         }
+
+        # Precomputed at class-build time so the save() hot path skips
+        # work for fields where the call is a no-op.
+        validatable_fields: Dict[str, Field] = {}
+        async_prepare_fields: Dict[str, Field] = {}
+        for fname, fobj in fields.items():
+            is_auto_pk = bool(fobj.primary_key)
+            is_auto_timestamp = (
+                isinstance(fobj, DateTime)
+                and (fobj.auto_now or fobj.auto_now_add)
+            )
+            if not (is_auto_pk or is_auto_timestamp):
+                if hasattr(fobj, 'validate'):
+                    validatable_fields[fname] = fobj
+                async_prepare_fields[fname] = fobj
+        namespace['_validatable_fields'] = validatable_fields
+        namespace['_async_prepare_fields'] = async_prepare_fields
         
         # Extract AI metadata from nested Meta class
         meta_class = namespace.get('Meta')
@@ -505,6 +520,8 @@ class Model(metaclass=ModelMeta):
     _fk_column_to_field: ClassVar[Dict[str, str]]
     _m2m_fields: ClassVar[Dict[str, ManyToMany]]
     _generic_fk_fields: ClassVar[Dict[str, GenericForeignKey]]
+    _validatable_fields: ClassVar[Dict[str, Field]]
+    _async_prepare_fields: ClassVar[Dict[str, Field]]
     _ai_meta: ClassVar[ModelAIMeta]
     meta: ClassVar["ModelMetaInfo"]  # v0.3.14: Model introspection
     objects: ClassVar["Manager"]  # type: ignore
@@ -620,6 +637,8 @@ class Model(metaclass=ModelMeta):
         instance._init_instance_state(is_new=False)
 
         record_keys = record.keys()
+        consumed_keys: Optional[set] = None
+        record_len = len(record_keys)
         consumed = 0
 
         for field_name, field in cls._fields.items():
@@ -629,21 +648,26 @@ class Model(metaclass=ModelMeta):
                 if col_name in record_keys:
                     instance._data[field_name] = field.to_python(record[col_name])
                     consumed += 1
+                    # Only build the consumed_keys set if we may need it for
+                    # the extras pass (record has more columns than fields).
+                    if record_len > len(cls._fields):
+                        if consumed_keys is None:
+                            consumed_keys = set()
+                        consumed_keys.add(col_name)
             elif field_name in record_keys:
                 instance._data[field_name] = field.to_python(record[field_name])
                 consumed += 1
+                if record_len > len(cls._fields):
+                    if consumed_keys is None:
+                        consumed_keys = set()
+                    consumed_keys.add(field_name)
 
         # Only walk record_keys looking for extras when the record carries
         # more columns than the schema accounts for (e.g. annotations).
-        # The hot path - a vanilla SELECT * - skips this entirely.
-        if consumed != len(record_keys):
-            consumed_keys = set()
-            for field_name, field in cls._fields.items():
-                if isinstance(field, ForeignKey):
-                    if field.db_column_name in record_keys:
-                        consumed_keys.add(field.db_column_name)
-                elif field_name in record_keys:
-                    consumed_keys.add(field_name)
+        # The hot path — a vanilla SELECT * — skips this entirely.
+        if consumed != record_len:
+            if consumed_keys is None:
+                consumed_keys = set()
             for extra_key in record_keys:
                 if extra_key not in consumed_keys:
                     setattr(instance, extra_key, record[extra_key])
@@ -732,42 +756,33 @@ class Model(metaclass=ModelMeta):
     async def _validate_fields(self) -> None:
         """
         Validate all fields before saving.
-        
-        Checks:
-        - Non-nullable fields have values (unless auto-generated or have defaults)
-        - Field-specific validation (Email, URL, Decimal, etc.)
-        
+
+        Iterates the precomputed ``_validatable_fields`` map built once in the
+        metaclass, avoiding per-save hasattr() probes and auto-field branches.
+
         Raises:
             ValidationError: If validation fails
         """
         from aksara.exceptions import ValidationError
-        
+
         errors = {}
-        
-        for field_name, field in self._fields.items():
+
+        for field_name, field in self._validatable_fields.items():
             value = self._data.get(field_name)
-            
-            # Skip auto-generated fields
-            if field.primary_key and value is None:
-                continue
-            if isinstance(field, DateTime):
-                if field.auto_now or field.auto_now_add:
-                    continue
-            
+
             # Check non-nullable constraint
             if value is None:
                 has_default = field.default is not None
                 if not field.nullable and not has_default:
                     errors[field_name] = f"Field '{field_name}' cannot be null"
-                    continue
-            
-            # Run field-specific validation if value is not None
-            if value is not None and hasattr(field, 'validate'):
-                try:
-                    field.validate(value)
-                except ValueError as e:
-                    errors[field_name] = str(e)
-        
+                continue
+
+            # Run field-specific validation
+            try:
+                field.validate(value)
+            except ValueError as e:
+                errors[field_name] = str(e)
+
         if errors:
             # Raise with the first error for backwards compatibility
             first_error = next(iter(errors.values()))
@@ -792,7 +807,9 @@ class Model(metaclass=ModelMeta):
         # Fire pre_save signal
         await pre_save.send(sender=self.__class__, instance=self, is_new=self._is_new)
 
-        for field_name, field in self._fields.items():
+        # Only fields whose async_prepare may change the value (i.e. not the
+        # auto primary key or auto_now/auto_now_add timestamps) need this hook.
+        for field_name, field in self._async_prepare_fields.items():
             self._data[field_name] = await field.async_prepare(
                 self._data.get(field_name),
                 instance=self,

@@ -216,66 +216,52 @@ class ReverseFKManager:
         relation: RelationMeta,
         instance: "Model",
     ):
+        from aksara.fields import ForeignKey
+
         self._relation = relation
         self._instance = instance
         self._source_model = relation.source_model
         self._field_name = relation.field_name
-    
+        # Resolve the FK column once — it doesn't change per call.
+        field = self._source_model._fields.get(self._field_name)
+        if isinstance(field, ForeignKey):
+            self._fk_column = field.db_column_name
+        else:
+            self._fk_column = f"{self._field_name}_id"
+
     async def all(self) -> List["Model"]:
         """Get all related objects."""
         from aksara.db import Database
-        from aksara.fields import ForeignKey
-        
+
         db = Database.get_instance()
-        
-        # Get the FK column name
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-        
+
         query = f"""
             SELECT * FROM {self._source_model.__tablename__}
-            WHERE {fk_column} = $1
+            WHERE {self._fk_column} = $1
             ORDER BY created_at DESC
         """
-        
+
         records = await db.fetch(query, self._instance.id)
         return [self._source_model._from_record(r) for r in records]
-    
+
     async def count(self) -> int:
         """Count related objects."""
         from aksara.db import Database
-        from aksara.fields import ForeignKey
-        
+
         db = Database.get_instance()
-        
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-        
+
+        # ORDER BY would be discarded by COUNT — skip it.
         query = f"""
             SELECT COUNT(*) FROM {self._source_model.__tablename__}
-            WHERE {fk_column} = $1
+            WHERE {self._fk_column} = $1
         """
-        
+
         return await db.fetchval(query, self._instance.id)
-    
+
     async def filter(self, **kwargs) -> List["Model"]:
         """Filter related objects with the WHERE clause pushed to SQL."""
-        from aksara.fields import ForeignKey
-
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-
         queryset = self._source_model.objects.filter(
-            **{fk_column: self._instance.id, **kwargs}
+            **{self._fk_column: self._instance.id, **kwargs}
         )
         return await queryset.all()
 
@@ -296,55 +282,49 @@ class ReverseM2MManager:
         relation: RelationMeta,
         instance: "Model",
     ):
+        from aksara.fields import _singularize
+
         self._relation = relation
         self._instance = instance
         self._source_model = relation.source_model
         self._through_table = relation.through_table
-    
+        # Resolve column names once — relation tables don't change.
+        self._source_col = f"{_singularize(relation.source_table)}_id"
+        self._target_col = f"{_singularize(relation.target_table)}_id"
+
     def _get_column_names(self) -> tuple:
-        """Get the join table column names."""
-        from aksara.fields import _singularize
+        """Get the join table column names (cached)."""
+        return self._source_col, self._target_col
 
-        source_table = self._relation.source_table
-        target_table = self._relation.target_table
-
-        source_col = f"{_singularize(source_table)}_id"
-        target_col = f"{_singularize(target_table)}_id"
-
-        return source_col, target_col
-    
     async def all(self) -> List["Model"]:
         """Get all related objects."""
         from aksara.db import Database
-        
+
         db = Database.get_instance()
-        
-        source_col, target_col = self._get_column_names()
+
         source_table = self._relation.source_table
-        
+
         query = f"""
             SELECT s.* FROM {source_table} s
-            INNER JOIN {self._through_table} j ON s.id = j.{source_col}
-            WHERE j.{target_col} = $1
+            INNER JOIN {self._through_table} j ON s.id = j.{self._source_col}
+            WHERE j.{self._target_col} = $1
             ORDER BY s.created_at DESC
         """
-        
+
         records = await db.fetch(query, self._instance.id)
         return [self._source_model._from_record(r) for r in records]
-    
+
     async def count(self) -> int:
         """Count related objects."""
         from aksara.db import Database
-        
+
         db = Database.get_instance()
-        
-        _, target_col = self._get_column_names()
-        
+
         query = f"""
             SELECT COUNT(*) FROM {self._through_table}
-            WHERE {target_col} = $1
+            WHERE {self._target_col} = $1
         """
-        
+
         return await db.fetchval(query, self._instance.id)
 
 

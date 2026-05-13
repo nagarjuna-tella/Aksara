@@ -100,13 +100,16 @@ class SoftDeleteModel:
             self._data['deleted_at'],
             self._data['id'],
         )
-        
-        # Update instance with returned values
+
+        # Update instance with returned values. Walk the record (typically
+        # narrower than the schema) rather than every model field.
         if record:
-            for field_name, field in self._fields.items():
-                if field_name in record:
-                    self._data[field_name] = field.to_python(record[field_name])
-        
+            fields_map = self._fields
+            for col_name, col_value in record.items():
+                field = fields_map.get(col_name)
+                if field is not None:
+                    self._data[col_name] = field.to_python(col_value)
+
         # Fire post_delete signal
         await post_delete.send(sender=self.__class__, instance=self)
     
@@ -138,12 +141,15 @@ class SoftDeleteModel:
         """
         
         record = await db.fetchrow(query, self._data['id'])
-        
-        # Update instance with returned values
+
+        # Update instance with returned values. Walk the record (typically
+        # narrower than the schema) rather than every model field.
         if record:
-            for field_name, field in self._fields.items():
-                if field_name in record:
-                    self._data[field_name] = field.to_python(record[field_name])
+            fields_map = self._fields
+            for col_name, col_value in record.items():
+                field = fields_map.get(col_name)
+                if field is not None:
+                    self._data[col_name] = field.to_python(col_value)
 
 
 def with_deleted(target):

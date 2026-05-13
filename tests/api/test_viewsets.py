@@ -208,23 +208,23 @@ class TestListAction:
     async def test_list_returns_paginated(self, mock_request):
         """List should return paginated response."""
         viewset = ProductViewSet()
-        
-        # Mock the internal methods
+
+        # Mock the internal methods. The viewset now fetches the page and the
+        # total in a single round-trip via queryset.limit().offset().fetch_with_count().
         with patch.object(viewset, 'get_queryset') as mock_get_qs:
             mock_qs = MagicMock()
-            mock_qs.count = AsyncMock(return_value=10)
+            paginated_qs = MagicMock()
+            paginated_qs.fetch_with_count = AsyncMock(return_value=([], 10))
+            mock_qs.limit.return_value.offset.return_value = paginated_qs
             mock_get_qs.return_value = mock_qs
-            
-            with patch.object(viewset, '_fetch_with_pagination', new_callable=AsyncMock) as mock_fetch:
-                mock_fetch.return_value = []
-                
-                result = await viewset.list(mock_request, limit=20, offset=0)
-    
-                assert "count" in result
-                assert "results" in result
-                assert "limit" in result
-                assert "offset" in result
-                assert result["count"] == 10
+
+            result = await viewset.list(mock_request, limit=20, offset=0)
+
+            assert "count" in result
+            assert "results" in result
+            assert "limit" in result
+            assert "offset" in result
+            assert result["count"] == 10
     
     @pytest.mark.asyncio
     async def test_list_respects_max_limit(self, mock_request):

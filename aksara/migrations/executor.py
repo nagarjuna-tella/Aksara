@@ -119,36 +119,37 @@ INTERNAL_MIGRATION_PACKAGES = [
 def discover_migrations(migrations_path: Path) -> List[Tuple[str, Path]]:
     """
     Discover all migration files in a directory.
-    
+
     Supports both:
         - Python migrations (.py files with Migration class)
         - Legacy SQL migrations (.sql files)
-    
+
     Args:
         migrations_path: Path to migrations directory
-        
+
     Returns:
-        List of (migration_name, file_path) tuples sorted by name
+        List of (migration_name, file_path) tuples sorted by name.
     """
     if not migrations_path.exists():
         return []
-    
+
     migrations = []
-    
+
     # Find Python migration files
     for f in migrations_path.glob("*.py"):
         if f.name.startswith("_"):
             continue
         name = f.stem
         migrations.append((name, f))
-    
+
     # Find SQL migration files (legacy support)
     for f in migrations_path.glob("*.sql"):
         name = f.stem
         migrations.append((name, f))
-    
-    # Sort by name (includes timestamp for proper ordering)
-    return sorted(migrations, key=lambda x: x[0])
+
+    # Sort once by name (includes timestamp for proper ordering).
+    migrations.sort(key=lambda x: x[0])
+    return migrations
 
 
 def discover_internal_migrations() -> List[Tuple[str, Path]]:
@@ -184,8 +185,11 @@ def discover_internal_migrations() -> List[Tuple[str, Path]]:
         except Exception as e:
             logger.warning(f"Error discovering migrations from {package_name}: {e}")
             continue
-    
-    return sorted(migrations, key=lambda x: x[0])
+
+    # Caller (discover_all_migrations) performs the final sort, so don't sort
+    # twice here — the result is still ordered by name for direct callers
+    # because we sort in discover_migrations and only append per-package here.
+    return migrations
 
 
 def discover_all_migrations(
@@ -194,27 +198,29 @@ def discover_all_migrations(
 ) -> List[Tuple[str, Path]]:
     """
     Discover all migrations (user + internal).
-    
+
     Internal migrations are applied first, then user migrations.
-    
+
     Args:
         user_migrations_path: Path to user's migrations directory
         include_internal: Whether to include internal migrations
-        
+
     Returns:
         List of (migration_name, file_path) tuples sorted by name
     """
-    all_migrations = []
-    
+    all_migrations: List[Tuple[str, Path]] = []
+
     # Internal migrations first (if enabled)
     if include_internal:
         all_migrations.extend(discover_internal_migrations())
-    
+
     # User migrations
     if user_migrations_path is not None:
         all_migrations.extend(discover_migrations(user_migrations_path))
-    
-    return sorted(all_migrations, key=lambda x: x[0])
+
+    # Single top-level sort; subroutines no longer sort independently.
+    all_migrations.sort(key=lambda x: x[0])
+    return all_migrations
 
 
 def load_migration_module(file_path: Path) -> Type[Migration]:

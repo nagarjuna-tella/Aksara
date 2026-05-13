@@ -633,14 +633,12 @@ class ModelViewSet:
         # Fallback to default limit/offset pagination if no class defined
         # Enforce max limit
         limit = min(limit, self.max_limit)
-        
-        # Get total count
-        total = await queryset.count()
-        
-        # Get paginated results
-        # Build the query with LIMIT and OFFSET
-        results = await self._fetch_with_pagination(queryset, limit, offset)
-        
+
+        # Single round-trip: COUNT(*) OVER() returns the total alongside the
+        # paginated rows so we don't issue a separate SELECT COUNT(*).
+        paginated = queryset.limit(limit).offset(offset)
+        results, total = await paginated.fetch_with_count()
+
         return {
             "count": total,
             "limit": limit,
