@@ -103,9 +103,10 @@ class SoftDeleteModel:
         
         # Update instance with returned values
         if record:
-            for field_name, field in self._fields.items():
-                if field_name in record:
-                    self._data[field_name] = field.to_python(record[field_name])
+            for field_name, value in record.items():
+                field = self._fields.get(field_name)
+                if field:
+                    self._data[field_name] = field.to_python(value)
         
         # Fire post_delete signal
         await post_delete.send(sender=self.__class__, instance=self)
@@ -141,9 +142,10 @@ class SoftDeleteModel:
         
         # Update instance with returned values
         if record:
-            for field_name, field in self._fields.items():
-                if field_name in record:
-                    self._data[field_name] = field.to_python(record[field_name])
+            for field_name, value in record.items():
+                field = self._fields.get(field_name)
+                if field:
+                    self._data[field_name] = field.to_python(value)
 
 
 def with_deleted(target):

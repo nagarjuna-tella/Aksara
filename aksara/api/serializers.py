@@ -180,6 +180,16 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         # Generate/cache Pydantic models
         self._input_model = self._get_or_create_input_model()
         self._output_model = self._get_or_create_output_model()
+
+        # Cache validators and M2M field names
+        self._validators = {}
+        for attr_name in dir(self):
+            if attr_name.startswith("validate_") and callable(getattr(self, attr_name)):
+                field_name = attr_name[9:]  # strip 'validate_'
+                if field_name:  # avoid empty field name from 'validate_'
+                    self._validators[field_name] = getattr(self, attr_name)
+
+        self._m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
     
     # =========================================================================
     # Pydantic Model Generation
@@ -425,7 +435,7 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         
         # Step 2: Field-level validation hooks
         for field_name, value in validated.items():
-            validator_method = getattr(self, f"validate_{field_name}", None)
+            validator_method = self._validators.get(field_name)
             if validator_method is not None:
                 validated[field_name] = validator_method(value)
         
@@ -562,10 +572,8 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         m2m_data = {}
         create_data = {}
         
-        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
-        
         for key, value in validated_data.items():
-            if key in m2m_field_names:
+            if key in self._m2m_field_names:
                 m2m_data[key] = value
             else:
                 create_data[key] = value
@@ -579,13 +587,7 @@ class ModelSerializer(metaclass=SerializerMetaclass):
                 m2m_manager = getattr(instance, field_name)
                 # Get target model and fetch instances
                 target_model = self._model._m2m_fields[field_name].to_model
-                instances = []
-                for id_val in ids:
-                    try:
-                        obj = await target_model.objects.get(id=id_val)
-                        instances.append(obj)
-                    except Exception:
-                        pass  # Skip invalid IDs
+                instances = await target_model.objects.filter(id__in=ids).all()
                 if instances:
                     await m2m_manager.add(*instances)
                 # Store IDs for serialization
@@ -611,10 +613,8 @@ class ModelSerializer(metaclass=SerializerMetaclass):
         m2m_data = {}
         update_data = {}
         
-        m2m_field_names = set(getattr(self._model, '_m2m_fields', {}).keys())
-        
         for key, value in validated_data.items():
-            if key in m2m_field_names:
+            if key in self._m2m_field_names:
                 m2m_data[key] = value
             else:
                 update_data[key] = value
@@ -632,13 +632,7 @@ class ModelSerializer(metaclass=SerializerMetaclass):
                 m2m_manager = getattr(instance, field_name)
                 # Get target model and fetch instances
                 target_model = self._model._m2m_fields[field_name].to_model
-                instances = []
-                for id_val in ids:
-                    try:
-                        obj = await target_model.objects.get(id=id_val)
-                        instances.append(obj)
-                    except Exception:
-                        pass  # Skip invalid IDs
+                instances = await target_model.objects.filter(id__in=ids).all()
                 await m2m_manager.set(instances)
                 # Store IDs for serialization
                 setattr(instance, f'_{field_name}_ids', [inst.id for inst in instances])

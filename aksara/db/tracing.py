@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import re
 import time
+import functools
 import traceback
 from collections import defaultdict
 from contextvars import ContextVar
@@ -39,6 +40,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 # =============================================================================
 # Query Trace Models
 # =============================================================================
+
+_SLOW_QUERY_THRESHOLD_MS: Optional[float] = None
+
+def _get_slow_query_threshold() -> float:
+    global _SLOW_QUERY_THRESHOLD_MS
+    if _SLOW_QUERY_THRESHOLD_MS is None:
+        from aksara.conf import settings
+        _SLOW_QUERY_THRESHOLD_MS = getattr(settings, 'db_trace_slow_threshold_ms', 100.0)
+    return _SLOW_QUERY_THRESHOLD_MS
+
 
 @dataclass
 class DbQueryTrace:
@@ -78,11 +89,9 @@ class DbQueryTrace:
     @property
     def is_slow(self) -> bool:
         """Check if this query is considered slow based on settings."""
-        from aksara.conf import settings
-        threshold = getattr(settings, 'db_trace_slow_threshold_ms', 100.0)
-        return self.duration_ms >= threshold
+        return self.duration_ms >= _get_slow_query_threshold()
     
-    @property
+    @functools.cached_property
     def normalized_sql(self) -> str:
         """
         Return SQL with literals replaced by placeholders for grouping.
@@ -215,7 +224,6 @@ class TraceStorage:
     
     def __init__(self, max_size: int = 100):
         self._storage: Dict[str, DbQueryBatch] = {}
-        self._order: List[str] = []  # Track insertion order
         self._lock = Lock()
         self.max_size = max_size
     
@@ -225,16 +233,16 @@ class TraceStorage:
             return
         
         with self._lock:
-            # Remove oldest if at capacity
-            while len(self._storage) >= self.max_size and self._order:
-                oldest = self._order.pop(0)
-                self._storage.pop(oldest, None)
+            # Pop if exists to re-insert at end
+            self._storage.pop(batch.request_id, None)
             
             # Store new batch
             self._storage[batch.request_id] = batch
-            if batch.request_id in self._order:
-                self._order.remove(batch.request_id)
-            self._order.append(batch.request_id)
+
+            # Remove oldest if at capacity
+            while len(self._storage) > self.max_size:
+                oldest_key = next(iter(self._storage))
+                self._storage.pop(oldest_key, None)
     
     def get(self, request_id: str) -> Optional[DbQueryBatch]:
         """Get a batch by request ID."""
@@ -244,7 +252,7 @@ class TraceStorage:
     def get_recent(self, limit: int = 20) -> List[DbQueryBatch]:
         """Get recent batches (most recent first)."""
         with self._lock:
-            ids = self._order[-limit:][::-1]
+            ids = list(self._storage.keys())[-limit:][::-1]
             return [self._storage[rid] for rid in ids if rid in self._storage]
     
     def get_all_queries(self) -> List[DbQueryTrace]:
@@ -295,7 +303,6 @@ class TraceStorage:
         """Clear all stored traces."""
         with self._lock:
             self._storage.clear()
-            self._order.clear()
 
 
 # Global storage instance
@@ -316,6 +323,7 @@ def start_trace_session(
     request_id: Optional[str] = None,
     path: Optional[str] = None,
     method: Optional[str] = None,
+    capture_stack: bool = False,
 ) -> None:
     """
     Start a new trace session for the current context.
@@ -324,6 +332,7 @@ def start_trace_session(
         request_id: The request identifier
         path: HTTP request path
         method: HTTP method
+        capture_stack: Whether to capture stack traces for each query
     """
     if not is_tracing_enabled():
         return
@@ -333,6 +342,7 @@ def start_trace_session(
         "request_id": request_id,
         "path": path,
         "method": method,
+        "capture_stack": capture_stack,
         "started_at": datetime.now(timezone.utc),
     })
 
@@ -409,9 +419,10 @@ def record_query(
     # Get request ID from metadata
     metadata = _trace_metadata_var.get()
     request_id = metadata.get("request_id") if metadata else None
+    capture_stack = metadata.get("capture_stack", False) if metadata else False
     
     # Capture call site (skip our own frames)
-    stack_summary = _get_stack_summary(skip_frames=3)
+    stack_summary = _get_stack_summary(skip_frames=3) if capture_stack else None
     
     trace = DbQueryTrace(
         sql=sql,

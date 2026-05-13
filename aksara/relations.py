@@ -216,29 +216,35 @@ class ReverseFKManager:
         relation: RelationMeta,
         instance: "Model",
     ):
+        from aksara.fields import ForeignKey
         self._relation = relation
         self._instance = instance
         self._source_model = relation.source_model
         self._field_name = relation.field_name
+
+        field = self._source_model._fields.get(self._field_name)
+        if isinstance(field, ForeignKey):
+            self._fk_column = field.db_column_name
+        else:
+            self._fk_column = f"{self._field_name}_id"
     
-    async def all(self) -> List["Model"]:
+    async def all(self, order_by: str = "-created_at") -> List["Model"]:
         """Get all related objects."""
         from aksara.db import Database
-        from aksara.fields import ForeignKey
         
         db = Database.get_instance()
         
-        # Get the FK column name
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-        
+        order_clause = ""
+        if order_by:
+            if order_by.startswith("-"):
+                order_clause = f"ORDER BY {order_by[1:]} DESC"
+            else:
+                order_clause = f"ORDER BY {order_by} ASC"
+
         query = f"""
             SELECT * FROM {self._source_model.__tablename__}
-            WHERE {fk_column} = $1
-            ORDER BY created_at DESC
+            WHERE {self._fk_column} = $1
+            {order_clause}
         """
         
         records = await db.fetch(query, self._instance.id)
@@ -247,35 +253,20 @@ class ReverseFKManager:
     async def count(self) -> int:
         """Count related objects."""
         from aksara.db import Database
-        from aksara.fields import ForeignKey
         
         db = Database.get_instance()
         
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-        
         query = f"""
             SELECT COUNT(*) FROM {self._source_model.__tablename__}
-            WHERE {fk_column} = $1
+            WHERE {self._fk_column} = $1
         """
         
         return await db.fetchval(query, self._instance.id)
     
     async def filter(self, **kwargs) -> List["Model"]:
         """Filter related objects with the WHERE clause pushed to SQL."""
-        from aksara.fields import ForeignKey
-
-        field = self._source_model._fields.get(self._field_name)
-        if isinstance(field, ForeignKey):
-            fk_column = field.db_column_name
-        else:
-            fk_column = f"{self._field_name}_id"
-
         queryset = self._source_model.objects.filter(
-            **{fk_column: self._instance.id, **kwargs}
+            **{self._fk_column: self._instance.id, **kwargs}
         )
         return await queryset.all()
 
@@ -296,37 +287,36 @@ class ReverseM2MManager:
         relation: RelationMeta,
         instance: "Model",
     ):
+        from aksara.fields import _singularize
         self._relation = relation
         self._instance = instance
         self._source_model = relation.source_model
         self._through_table = relation.through_table
-    
-    def _get_column_names(self) -> tuple:
-        """Get the join table column names."""
-        from aksara.fields import _singularize
 
         source_table = self._relation.source_table
         target_table = self._relation.target_table
-
-        source_col = f"{_singularize(source_table)}_id"
-        target_col = f"{_singularize(target_table)}_id"
-
-        return source_col, target_col
+        self._source_col = f"{_singularize(source_table)}_id"
+        self._target_col = f"{_singularize(target_table)}_id"
     
-    async def all(self) -> List["Model"]:
+    async def all(self, order_by: str = "-created_at") -> List["Model"]:
         """Get all related objects."""
         from aksara.db import Database
         
         db = Database.get_instance()
-        
-        source_col, target_col = self._get_column_names()
         source_table = self._relation.source_table
         
+        order_clause = ""
+        if order_by:
+            if order_by.startswith("-"):
+                order_clause = f"ORDER BY s.{order_by[1:]} DESC"
+            else:
+                order_clause = f"ORDER BY s.{order_by} ASC"
+
         query = f"""
             SELECT s.* FROM {source_table} s
-            INNER JOIN {self._through_table} j ON s.id = j.{source_col}
-            WHERE j.{target_col} = $1
-            ORDER BY s.created_at DESC
+            INNER JOIN {self._through_table} j ON s.id = j.{self._source_col}
+            WHERE j.{self._target_col} = $1
+            {order_clause}
         """
         
         records = await db.fetch(query, self._instance.id)
@@ -338,11 +328,9 @@ class ReverseM2MManager:
         
         db = Database.get_instance()
         
-        _, target_col = self._get_column_names()
-        
         query = f"""
             SELECT COUNT(*) FROM {self._through_table}
-            WHERE {target_col} = $1
+            WHERE {self._target_col} = $1
         """
         
         return await db.fetchval(query, self._instance.id)

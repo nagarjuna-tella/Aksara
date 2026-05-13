@@ -84,7 +84,15 @@ class ModelMetaInfo:
     
     def __init__(self, model: Type["Model"]):
         self._model = model
-    
+
+        self._pk = None
+        for field in self._model._fields.values():
+            if getattr(field, "primary_key", False):
+                self._pk = field
+                break
+        if not self._pk:
+            self._pk = self._model._fields.get("id")
+
     @property
     def name(self) -> str:
         """Get the model class name."""
@@ -129,9 +137,9 @@ class ModelMetaInfo:
         return self._model.__tablename__
     
     @property
-    def fields(self) -> List[Field]:
-        """Get all field objects defined on this model."""
-        return list(self._model._fields.values())
+    def fields(self):
+        """Get an iterator of all field objects defined on this model."""
+        return self._model._fields.values()
     
     @property
     def field_names(self) -> List[str]:
@@ -141,11 +149,7 @@ class ModelMetaInfo:
     @property
     def pk(self) -> Optional[Field]:
         """Get the primary key field."""
-        for field in self.fields:
-            if getattr(field, "primary_key", False):
-                return field
-        # Fallback: look for 'id' field
-        return self._model._fields.get("id")
+        return self._pk
     
     @property
     def pk_name(self) -> Optional[str]:
@@ -161,19 +165,7 @@ class ModelMetaInfo:
         Returns:
             Dict mapping field name to field object
         """
-        from aksara.fields import ForeignKey, ManyToMany, OneToOne
-        
-        result: Dict[str, Field] = {}
-        
-        # FK and OneToOne fields
-        for name, field in self._model._fk_fields.items():
-            result[name] = field
-        
-        # ManyToMany fields
-        for name, field in self._model._m2m_fields.items():
-            result[name] = field
-        
-        return result
+        return {**self._model._fk_fields, **self._model._m2m_fields}
     
     @property
     def foreign_keys(self) -> Dict[str, ForeignKey]:
@@ -355,6 +347,9 @@ class ModelMeta(type):
                 fields['updated_at'] = updated_field
         
         namespace['_fields'] = fields
+        namespace['_validatable_fields'] = {
+            name: field for name, field in fields.items() if hasattr(field, 'validate')
+        }
         namespace['_fk_fields'] = fk_fields
         namespace['_m2m_fields'] = m2m_fields
         namespace['_generic_fk_fields'] = generic_fk_fields
@@ -621,6 +616,7 @@ class Model(metaclass=ModelMeta):
 
         record_keys = record.keys()
         consumed = 0
+        consumed_keys = set()
 
         for field_name, field in cls._fields.items():
             # Handle ForeignKey - look for the _id column
@@ -629,21 +625,16 @@ class Model(metaclass=ModelMeta):
                 if col_name in record_keys:
                     instance._data[field_name] = field.to_python(record[col_name])
                     consumed += 1
+                    consumed_keys.add(col_name)
             elif field_name in record_keys:
                 instance._data[field_name] = field.to_python(record[field_name])
                 consumed += 1
+                consumed_keys.add(field_name)
 
         # Only walk record_keys looking for extras when the record carries
         # more columns than the schema accounts for (e.g. annotations).
         # The hot path - a vanilla SELECT * - skips this entirely.
         if consumed != len(record_keys):
-            consumed_keys = set()
-            for field_name, field in cls._fields.items():
-                if isinstance(field, ForeignKey):
-                    if field.db_column_name in record_keys:
-                        consumed_keys.add(field.db_column_name)
-                elif field_name in record_keys:
-                    consumed_keys.add(field_name)
             for extra_key in record_keys:
                 if extra_key not in consumed_keys:
                     setattr(instance, extra_key, record[extra_key])
@@ -760,9 +751,11 @@ class Model(metaclass=ModelMeta):
                 if not field.nullable and not has_default:
                     errors[field_name] = f"Field '{field_name}' cannot be null"
                     continue
-            
+
+        for field_name, field in self._validatable_fields.items():
+            value = self._data.get(field_name)
             # Run field-specific validation if value is not None
-            if value is not None and hasattr(field, 'validate'):
+            if value is not None:
                 try:
                     field.validate(value)
                 except ValueError as e:
@@ -793,6 +786,8 @@ class Model(metaclass=ModelMeta):
         await pre_save.send(sender=self.__class__, instance=self, is_new=self._is_new)
 
         for field_name, field in self._fields.items():
+            if field.primary_key or (isinstance(field, DateTime) and (field.auto_now or getattr(field, 'auto_now_add', False))):
+                continue
             self._data[field_name] = await field.async_prepare(
                 self._data.get(field_name),
                 instance=self,
