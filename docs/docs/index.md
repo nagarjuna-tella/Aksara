@@ -260,7 +260,7 @@ app = Aksara(
 ## Installation
 
 ```bash
-pip install aksara
+pip install aksara-framework
 ```
 
 **Requirements:**

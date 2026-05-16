@@ -37,7 +37,7 @@ docker exec postgres psql -U postgres -c "CREATE DATABASE myapp;"
 Install Aksara:
 
 ```bash
-pip install aksara
+pip install aksara-framework
 ```
 
 Create a new project:

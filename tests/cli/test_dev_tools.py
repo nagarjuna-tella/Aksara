@@ -66,7 +66,7 @@ class TestRunToolHelper:
         assert exit_code == 1
         captured = capsys.readouterr()
         assert "Black is not installed" in captured.out
-        assert "pip install aksara[dev]" in captured.out
+        assert "pip install aksara-framework[dev]" in captured.out
         assert "pip install black" in captured.out
 
 

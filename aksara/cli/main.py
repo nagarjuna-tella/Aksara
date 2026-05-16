@@ -2131,7 +2131,7 @@ def _run_tool(tool_name: str, module: str, args: List[str], install_hint: str) -
     except FileNotFoundError:
         click.echo(f"\n❌ {tool_name} is not installed.")
         click.echo(f"   Install dev tools via:")
-        click.echo(f"     pip install aksara[dev]")
+        click.echo(f"     pip install aksara-framework[dev]")
         click.echo(f"   or:")
         click.echo(f"     pip install {install_hint}")
         click.echo()

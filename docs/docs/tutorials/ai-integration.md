@@ -51,7 +51,7 @@ Aksara converts natural language to database queries automatically.
 ## Step 1: Install AI Dependencies
 
 ```bash
-pip install aksara[ai]
+pip install aksara-framework[ai]
 ```
 
 This installs the AI module and required dependencies.

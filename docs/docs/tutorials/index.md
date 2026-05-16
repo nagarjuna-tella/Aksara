@@ -105,7 +105,7 @@ Want to dive right in? Here's how to start the Blog API tutorial:
 
 ```bash
 # Install Aksara
-pip install aksara
+pip install aksara-framework
 
 # Create a new project
 aksara startproject blog_api

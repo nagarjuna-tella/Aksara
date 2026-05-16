@@ -378,7 +378,7 @@ async def create_auth_test_user(
     except ImportError:
         raise ImportError(
             "aksara.contrib.auth is not available. "
-            "Install with: pip install aksara[auth]"
+            "Install with: pip install aksara-framework[auth]"
         )
     
     manager = UserManager(User, db)

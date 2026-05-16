@@ -51,7 +51,7 @@ This section walks you through building your first Aksara application:
 
 Install Aksara and set up your development environment.
 
-**What you'll do:** Run `pip install aksara` and verify it works.
+**What you'll do:** Run `pip install aksara-framework` and verify it works.
 
 ### 2. [Project Layout](project-layout.md)
 
@@ -176,7 +176,7 @@ Already familiar with web frameworks? Here's the quick version:
 
 ```bash
 # Install
-pip install aksara
+pip install aksara-framework
 
 # Create project
 aksara startproject myproject

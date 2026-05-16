@@ -25,7 +25,7 @@ The Aksara CLI provides commands for:
 The CLI is included with Aksara:
 
 ```bash
-pip install aksara
+pip install aksara-framework
 ```
 
 ### Basic Usage

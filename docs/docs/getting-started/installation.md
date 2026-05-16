@@ -21,7 +21,7 @@ This guide covers installing Aksara and its dependencies.
 ### Using pip
 
 ```bash
-pip install aksara
+pip install aksara-framework
 ```
 
 ### Using uv (Recommended)
@@ -29,13 +29,13 @@ pip install aksara
 [uv](https://github.com/astral-sh/uv) is a fast Python package installer:
 
 ```bash
-uv pip install aksara
+uv pip install aksara-framework
 ```
 
 ### Using Poetry
 
 ```bash
-poetry add aksara
+poetry add aksara-framework
 ```
 
 ### From Source
@@ -78,7 +78,7 @@ You can also check the Python package:
 For development, testing, and code quality tools:
 
 ```bash
-pip install aksara[dev]
+pip install aksara-framework[dev]
 ```
 
 This includes:
@@ -244,7 +244,7 @@ pip show aksara
 
 # Reinstall if needed
 pip uninstall aksara
-pip install aksara
+pip install aksara-framework
 ```
 
 ---

@@ -798,11 +798,11 @@ async def check_studio() -> List[GapIssue]:
                         f"This usually means the Aksara package was not correctly installed "
                         f"or the static files were accidentally deleted."
                     ),
-                    hint="Reinstall Aksara: pip install --force-reinstall aksara",
+                    hint="Reinstall Aksara: pip install --force-reinstall aksara-framework",
                     fix_commands=[
                         GapFixCommand(
                             description="Reinstall Aksara to restore static assets",
-                            command="pip install --force-reinstall aksara",
+                            command="pip install --force-reinstall aksara-framework",
                         )
                     ],
                     meta={"static_dir": str(static_dir)},
@@ -991,11 +991,11 @@ async def check_ai_pipeline() -> List[GapIssue]:
                         f"Importing '{module_name}' raised ImportError.  "
                         f"AI features depend on this module and will not work."
                     ),
-                    hint="Reinstall Aksara with AI extras: pip install aksara[ai]",
+                    hint="Reinstall Aksara with AI extras: pip install aksara-framework[ai]",
                     fix_commands=[
                         GapFixCommand(
                             description="Install Aksara AI extras",
-                            command="pip install aksara[ai]",
+                            command="pip install aksara-framework[ai]",
                         )
                     ],
                     meta={"module": module_name},

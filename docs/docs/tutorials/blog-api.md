@@ -54,7 +54,7 @@ aksara startproject blog_api
 cd blog_api
 
 # Install Aksara with all features
-pip install aksara[all]
+pip install aksara-framework[all]
 ```
 
 **What this does:** Creates a folder called `blog_api` with all the files you need.

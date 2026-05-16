@@ -68,7 +68,7 @@ aksara startproject saas_app
 cd saas_app
 
 # Install dependencies
-pip install aksara[all]
+pip install aksara-framework[all]
 
 # Create apps
 aksara startapp tenants

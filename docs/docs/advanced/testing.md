@@ -20,7 +20,7 @@ Aksara provides testing utilities built on pytest:
 ### Install Test Dependencies
 
 ```bash
-pip install aksara[test]
+pip install aksara-framework[test]
 # or
 pip install pytest pytest-asyncio httpx
 ```

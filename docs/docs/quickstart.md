@@ -41,7 +41,7 @@ Before you start, make sure you have:
 Open your terminal and run:
 
 ```bash
-pip install aksara
+pip install aksara-framework
 ```
 
 **What this does:** Downloads Aksara and its dependencies (FastAPI, Pydantic, asyncpg, etc.).
@@ -471,10 +471,10 @@ aksara dbsetup
 
 **Solution:**
 ```bash
-pip install aksara
+pip install aksara-framework
 # or if using a virtual environment, activate it first
 source venv/bin/activate
-pip install aksara
+pip install aksara-framework
 ```
 
 ---

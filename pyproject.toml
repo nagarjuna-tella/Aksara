@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aksara"
+name = "aksara-framework"
 version = "0.5.45"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"

@@ -88,7 +88,12 @@ The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote
 ## Quickstart
 
 ```bash
-pip install aksara
+pip install aksara-framework
+```
+```python
+from aksara import Model, fields  # same as always — the import path is unchanged
+```
+```bash
 aksara startproject opsdesk && cd opsdesk
 aksara dbsetup
 aksara migrate
@@ -216,7 +221,7 @@ See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/
 ## Community
 
 <p>
-  <a href="https://pypi.org/project/aksara/"><img src="https://img.shields.io/badge/PyPI-aksara-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI"></a>
+  <a href="https://pypi.org/project/aksara-framework/"><img src="https://img.shields.io/badge/PyPI-aksara--framework-3775A9?style=flat-square&logo=pypi&logoColor=white" alt="PyPI"></a>
   <a href="https://github.com/nagarjuna-tella/Aksara"><img src="https://img.shields.io/badge/GitHub-aksara-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
 </p>
 

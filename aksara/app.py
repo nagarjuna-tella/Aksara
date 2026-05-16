@@ -305,11 +305,11 @@ class Aksara(FastAPI):
                 if auth_error and "bcrypt" in auth_error.lower():
                     raise RuntimeError(
                         "Aksara Admin requires bcrypt for password hashing. "
-                        "Install with: pip install aksara[auth]"
+                        "Install with: pip install aksara-framework[auth]"
                     )
                 raise RuntimeError(
                     "Aksara Admin requires 'aksara.contrib.auth'. "
-                    "Install with: pip install aksara[auth]"
+                    "Install with: pip install aksara-framework[auth]"
                 )
             from aksara.contrib.admin import include_admin
             include_admin(self)

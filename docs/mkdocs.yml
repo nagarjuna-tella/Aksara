@@ -220,7 +220,7 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/nagarjuna-tella/Aksara
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/aksara/
+      link: https://pypi.org/project/aksara-framework/
   version:
     provider: mike
 
