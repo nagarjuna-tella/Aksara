@@ -11,8 +11,6 @@ __pycache__/
 .mypy_cache/
 .github/
 
-v0.5.45-DX-PLAN.md
-
 *.tape
 
 dist/
