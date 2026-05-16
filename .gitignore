@@ -16,5 +16,6 @@ v0.5.45-DX-PLAN.md
 *.tape
 
 dist/
+docs/site/
 
 opsdesk/
