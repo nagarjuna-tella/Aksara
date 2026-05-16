@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.46] — Packaging and Docs Release Polish
+
+### Changed
+
+- Bumped package metadata, CLI version output, scaffold templates, example app metadata, and user-facing version references to **0.5.46**
+
+### Fixed
+
+- PyPI project description assets now use absolute URLs so images render correctly on package pages
+- Documentation deployment installs the required MkDocs plugins and deploys using the repository's `docs/mkdocs.yml`
+- Documentation favicon now uses the Aksara logo in browser tabs
+
 ## [0.5.45] — ORM Expressions, Native Multi-Tenancy, SDK Generation, and Real-Time Streams
 
 ### Fixed

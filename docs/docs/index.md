@@ -314,15 +314,14 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.45
+## What's New in v0.5.46
 
 The latest release includes:
 
-- **`Q()` Objects** — Nested boolean filtering with explicit `AND`, `OR`, and `NOT`
-- **`F()` Expressions** — Database-side arithmetic and field comparisons
-- **Relation-Aware Aggregates** — One-hop aggregate joins for reverse FK/O2O and M2M paths
-- **`transaction.atomic`** — Async context manager and decorator for safe multi-step writes
-- **Expanded ORM Coverage** — New tests for expressions, aggregate joins, and transaction reuse
+- **PyPI README Asset Fixes** — Project images now render correctly on package pages
+- **Docs Deploy Hardening** — GitHub Actions installs the required MkDocs plugins and deploys from the repository docs config
+- **Favicon Alignment** — Browser tabs now use the Aksara logo instead of the default theme icon
+- **Version Consistency Refresh** — CLI output, scaffold templates, docs examples, and package metadata now align on `0.5.46`
 
 [View Full Changelog](changelog.md){ .md-button }
 
