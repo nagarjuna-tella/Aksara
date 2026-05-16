@@ -7,6 +7,7 @@ repo_name: nagarjuna-tella/Aksara
 theme:
   name: material
   logo: assets/aksara-logo.svg
+  favicon: assets/aksara-logo.svg
   palette:
     - scheme: slate
       primary: indigo
