@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
+  <img src="https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/aksara/studio/static/icons/aksara-logo.svg" width="64" alt="Aksara logo"/>
 </p>
 
 <h1 align="center">Aksara</h1>
@@ -20,7 +20,7 @@
 ---
 
 <p align="center">
-  <img src="docs/docs/assets/aksara-demo.gif" alt="Aksara CLI demo — scaffold to running app in seconds" width="860" />
+  <img src="https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/docs/docs/assets/aksara-demo.gif" alt="Aksara CLI demo — scaffold to running app in seconds" width="860" />
 </p>
 
 ---
@@ -101,7 +101,7 @@ aksara dev
 ```
 
 <p align="center">
-  <img src="docs/docs/assets/app-welcome.png" alt="Generated app home page" width="800" />
+  <img src="https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/docs/docs/assets/app-welcome.png" alt="Generated app home page" width="800" />
 </p>
 <p align="center"><em>The auto-generated welcome page every new project starts with — API docs, ReDoc, and Studio links built in.</em></p>
 
@@ -176,7 +176,7 @@ You write this metadata once, next to the field definition, and it propagates ev
 | **Multitenant**  | Tenant-aware SaaS apps            | `aksara startproject saas --template multitenant` |
 | **AI Providers** | BYO LLM wiring examples           | See `examples/ai_providers/`                      |
 
-Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/) | Docs: [Patterns](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/patterns/index.md)
+Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/) | Docs: [Patterns](https://nagarjuna-tella.github.io/Aksara/patterns/)
 
 ---
 
@@ -184,14 +184,14 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 
 | Section                                       | Description                                            |
 | --------------------------------------------- | ------------------------------------------------------ |
-| [Quickstart](docs/docs/quickstart.md)         | Build and deploy in 5 minutes                          |
-| [ORM Guide](docs/docs/orm/index.md)           | Models, fields, relations, queries                     |
-| [API Guide](docs/docs/api/index.md)           | ViewSets, actions, serializers                         |
-| [Advanced Guide](docs/docs/advanced/index.md) | Background tasks, media/email, i18n, generic relations |
-| [AI Mode](docs/docs/ai-mode/index.md)         | MCP, AI Console, Debugger, Architecture Review         |
-| [Studio Guide](docs/docs/studio/index.md)     | Visual inspector & debugging                           |
-| [Admin Guide](docs/docs/admin/index.md)       | Admin site customization                               |
-| [CLI Reference](docs/docs/cli/index.md)       | All CLI commands, including SDK generation             |
+| [Quickstart](https://nagarjuna-tella.github.io/Aksara/quickstart/) | Build and deploy in 5 minutes                          |
+| [ORM Guide](https://nagarjuna-tella.github.io/Aksara/orm/) | Models, fields, relations, queries                     |
+| [API Guide](https://nagarjuna-tella.github.io/Aksara/api/) | ViewSets, actions, serializers                         |
+| [Advanced Guide](https://nagarjuna-tella.github.io/Aksara/advanced/) | Background tasks, media/email, i18n, generic relations |
+| [AI Mode](https://nagarjuna-tella.github.io/Aksara/ai-mode/) | MCP, AI Console, Debugger, Architecture Review         |
+| [Studio Guide](https://nagarjuna-tella.github.io/Aksara/studio/) | Visual inspector & debugging                           |
+| [Admin Guide](https://nagarjuna-tella.github.io/Aksara/admin/) | Admin site customization                               |
+| [CLI Reference](https://nagarjuna-tella.github.io/Aksara/cli/) | All CLI commands, including SDK generation             |
 
 ---
 
@@ -205,7 +205,7 @@ Latest validation: **6378 passed, 3 skipped**.
 
 **Evolving:** AI Debugger, Architecture Review, Performance Analyzer.
 
-See the [Roadmap](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/roadmap.md) for what's next.
+See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for what's next.
 
 ---
 

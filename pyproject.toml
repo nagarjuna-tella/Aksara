@@ -62,7 +62,7 @@ aksara = "aksara.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/nagarjuna-tella/Aksara"
-Documentation = "https://github.com/nagarjuna-tella/Aksara/blob/main/docs/docs/index.md"
+Documentation = "https://nagarjuna-tella.github.io/Aksara/"
 Changelog = "https://github.com/nagarjuna-tella/Aksara/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/nagarjuna-tella/Aksara/issues"
 Source = "https://github.com/nagarjuna-tella/Aksara"
