@@ -1,12 +1,12 @@
 site_name: Aksara Framework
 site_description: AI-Native Async Backend Framework for Python
 site_url: https://nagarjuna-tella.github.io/Aksara/
-logo: aksara/studio/static/icons/aksara-logo.svg
 repo_url: https://github.com/nagarjuna-tella/Aksara
 repo_name: nagarjuna-tella/Aksara
 
 theme:
   name: material
+  logo: aksara/studio/static/icons/aksara-logo.svg
   palette:
     - scheme: slate
       primary: indigo
