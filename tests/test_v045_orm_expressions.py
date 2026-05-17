@@ -274,8 +274,18 @@ class TestUpdateExpressions:
         assert 'WHERE "likes" >= $3' in query
         assert params == (1, "popular", 10)
 
-    def test_from_record_assigns_annotation_attributes(self):
-        record = {
+    def test_from_record_handles_iterator_keys_and_assigns_annotation_attributes(self):
+        class FakeAsyncpgRecord:
+            def __init__(self, values):
+                self._values = values
+
+            def keys(self):
+                return iter(self._values.keys())
+
+            def __getitem__(self, key):
+                return self._values[key]
+
+        record = FakeAsyncpgRecord({
             "id": uuid4(),
             "title": "Post",
             "views": 10,
@@ -283,7 +293,7 @@ class TestUpdateExpressions:
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
             "score_delta": 6,
-        }
+        })
 
         instance = MetricRecord._from_record(record)
 

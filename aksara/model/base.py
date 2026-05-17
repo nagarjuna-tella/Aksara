@@ -636,7 +636,8 @@ class Model(metaclass=ModelMeta):
         instance = cls.__new__(cls)
         instance._init_instance_state(is_new=False)
 
-        record_keys = record.keys()
+        record_keys = tuple(record.keys())
+        record_key_set = set(record_keys)
         consumed_keys: Optional[set] = None
         record_len = len(record_keys)
         consumed = 0
@@ -645,7 +646,7 @@ class Model(metaclass=ModelMeta):
             # Handle ForeignKey - look for the _id column
             if isinstance(field, ForeignKey):
                 col_name = field.db_column_name
-                if col_name in record_keys:
+                if col_name in record_key_set:
                     instance._data[field_name] = field.to_python(record[col_name])
                     consumed += 1
                     # Only build the consumed_keys set if we may need it for
@@ -654,7 +655,7 @@ class Model(metaclass=ModelMeta):
                         if consumed_keys is None:
                             consumed_keys = set()
                         consumed_keys.add(col_name)
-            elif field_name in record_keys:
+            elif field_name in record_key_set:
                 instance._data[field_name] = field.to_python(record[field_name])
                 consumed += 1
                 if record_len > len(cls._fields):

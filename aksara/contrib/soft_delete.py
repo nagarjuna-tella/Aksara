@@ -13,7 +13,7 @@ Usage:
     from aksara import Model, fields
     from aksara.contrib.soft_delete import SoftDeleteModel
     
-    class User(SoftDeleteModel):
+    class User(SoftDeleteModel, Model):
         email = fields.String(unique=True)
         name = fields.String()
     
@@ -29,7 +29,7 @@ Usage:
     all_users = await with_deleted(User.objects.all())
     
     # Restore a soft-deleted record
-    user = await User.objects_with_deleted.get(id=user_id)
+    user = await with_deleted(User.objects).get(id=user_id)
     await user.undelete()
 """
 
@@ -42,6 +42,20 @@ if TYPE_CHECKING:
     from aksara.model.base import Model
 
 
+def _hydrate_from_record(instance: "Model", record) -> None:
+    """Update a model instance from a returned database record."""
+    from aksara.fields import ForeignKey
+
+    record_keys = set(record.keys())
+    for field_name, field in instance._fields.items():
+        if isinstance(field, ForeignKey):
+            col_name = field.db_column_name
+            if col_name in record_keys:
+                instance._data[field_name] = field.to_python(record[col_name])
+        elif field_name in record_keys:
+            instance._data[field_name] = field.to_python(record[field_name])
+
+
 class SoftDeleteModel:
     """
     Mixin to add soft delete (logical deletion) support to models.
@@ -50,17 +64,31 @@ class SoftDeleteModel:
     instead of removing the record. All queries automatically exclude
     soft-deleted records.
     
-    To use, inherit from both Model and SoftDeleteModel:
-        class User(Model, SoftDeleteModel):
-            email = fields.String()
-    
-    Or simply inherit from SoftDeleteModel (which inherits from Model):
-        class User(SoftDeleteModel):
+    To use, inherit from both SoftDeleteModel and Model, with the mixin
+    first so it overrides Model.delete():
+        class User(SoftDeleteModel, Model):
             email = fields.String()
     """
     
     # This will be filled in by the model's __init_subclass__
     _soft_delete_field_added = False
+
+    def __init_subclass__(cls, **kwargs):
+        """Register soft-delete state on concrete model subclasses."""
+        super().__init_subclass__(**kwargs)
+
+        if not hasattr(cls, "_fields"):
+            return
+
+        if "deleted_at" not in cls._fields:
+            from aksara.fields import DateTime
+
+            deleted_at_field = DateTime(nullable=True)
+            deleted_at_field.name = "deleted_at"
+            cls._fields["deleted_at"] = deleted_at_field
+
+        cls._soft_delete_enabled = True
+        cls._soft_delete_field_added = True
     
     async def delete(self) -> None:
         """
@@ -104,11 +132,7 @@ class SoftDeleteModel:
         # Update instance with returned values. Walk the record (typically
         # narrower than the schema) rather than every model field.
         if record:
-            fields_map = self._fields
-            for col_name, col_value in record.items():
-                field = fields_map.get(col_name)
-                if field is not None:
-                    self._data[col_name] = field.to_python(col_value)
+            _hydrate_from_record(self, record)
 
         # Fire post_delete signal
         await post_delete.send(sender=self.__class__, instance=self)
@@ -145,11 +169,7 @@ class SoftDeleteModel:
         # Update instance with returned values. Walk the record (typically
         # narrower than the schema) rather than every model field.
         if record:
-            fields_map = self._fields
-            for col_name, col_value in record.items():
-                field = fields_map.get(col_name)
-                if field is not None:
-                    self._data[col_name] = field.to_python(col_value)
+            _hydrate_from_record(self, record)
 
 
 def with_deleted(target):
