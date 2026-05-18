@@ -23,4 +23,4 @@ jobs:
           pip install mkdocs-material mkdocs-autorefs mike
 
       - name: Deploy
-        run: mkdocs gh-deploy -f docs/mkdocs.yml
+        run: mkdocs gh-deploy --force -f docs/mkdocs.yml
