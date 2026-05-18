@@ -90,9 +90,6 @@ The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote
 ```bash
 pip install aksara-framework
 ```
-```python
-from aksara import Model, fields  # same as always — the import path is unchanged
-```
 ```bash
 aksara startproject opsdesk && cd opsdesk
 aksara dbsetup
