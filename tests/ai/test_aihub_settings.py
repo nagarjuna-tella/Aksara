@@ -433,6 +433,11 @@ class TestLoadAiHubSettings:
             assert isinstance(hub, AiHubSettings)
             assert len(hub.providers) == 5  # all known types added
 
+    def test_empty_env_keeps_ollama_unconfigured(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            hub = load_aihub_settings()
+            assert len(hub.configured_providers()) == 0
+
     def test_loads_openai_from_env(self):
         with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test123"}, clear=True):
             hub = load_aihub_settings()

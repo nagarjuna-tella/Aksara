@@ -98,3 +98,13 @@ class TestAIAgentMiddleware:
         await middleware.dispatch(request, call_next)
 
         assert observed["is_ai_agent"] is False
+
+    def test_aksara_auto_registers_middleware_when_token_configured(self):
+        """Aksara should auto-register AI agent middleware when token auth is enabled."""
+        from aksara.app import Aksara
+
+        configure(ai_agent_token="shared-secret")
+
+        app = Aksara(database_url=None, auto_discover_views=False, enable_admin=False)
+
+        assert any(getattr(mw, "cls", None) is AIAgentMiddleware for mw in app.user_middleware)

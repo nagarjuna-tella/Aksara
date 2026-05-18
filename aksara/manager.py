@@ -1572,8 +1572,13 @@ class Manager(Generic[T]):
                 placeholders.append(f"({', '.join(row_placeholders)})")
                 row_num += 1
             
-            # Build the INSERT statement
-            columns = ", ".join(quote_identifier(f) for f in field_names)
+            # Build the INSERT statement using each field's DB column name
+            # (e.g. ForeignKey "owner" → column "owner_id"), not the Python
+            # field name.
+            columns = ", ".join(
+                quote_identifier(self._model._fields[f].column_name)
+                for f in field_names
+            )
             values_clause = ", ".join(placeholders)
             table = quote_identifier(self._model.__tablename__)
             
@@ -1660,14 +1665,19 @@ class Manager(Generic[T]):
                 when_clauses = []
                 
                 for obj in batch:
-                    when_clauses.append(f"WHEN ${param_idx} THEN ${param_idx + 1}")
+                    # Searched CASE requires a boolean WHEN expression — must
+                    # compare the primary key column to the parameter, not just
+                    # bind the PK value as the condition.
+                    when_clauses.append(
+                        f"WHEN id = ${param_idx} THEN ${param_idx + 1}"
+                    )
                     ids.append(obj.id)
                     value = obj._data.get(field_name)
                     if is_expression(value):
                         raise ValueError("Expressions are not supported in bulk_update()")
                     ids.append(field.to_db(value))
                     param_idx += 2
-                
+
                 col_name = field.column_name
                 case_statements[col_name] = " ".join(when_clauses)
             
@@ -1743,49 +1753,71 @@ class Manager(Generic[T]):
         
         defaults = defaults or {}
         db = Database.get_instance()
-        
+
         # Determine which fields to update
         if update_fields is None:
             update_fields = list(defaults.keys())
-        
+
         # Build INSERT statement with DO UPDATE
         insert_fields = list(kwargs.keys()) + list(defaults.keys())
         insert_values = []
+        # Resolve each insert field to its actual DB column name (FKs map
+        # "owner" → "owner_id") and run values through field.to_db() so
+        # serializers like JSON.to_db() apply before asyncpg receives them.
+        insert_columns = []
         for field_name in insert_fields:
             value = kwargs[field_name] if field_name in kwargs else defaults.get(field_name)
             if is_expression(value):
                 raise ValueError("Expressions are not supported in upsert() insert values")
-            insert_values.append(value)
-        
+            if field_name not in self._model._fields:
+                raise ValueError(f"Unknown field: {field_name}")
+            field = self._model._fields[field_name]
+            insert_columns.append(field.column_name)
+            insert_values.append(field.to_db(value))
+
         placeholders = [f"${i+1}" for i in range(len(insert_values))]
-        columns = ", ".join(quote_identifier(f) for f in insert_fields)
+        columns = ", ".join(quote_identifier(c) for c in insert_columns)
         values = ", ".join(placeholders)
-        
+
         # Find a unique constraint to use for conflict detection
         unique_constraint_fields = list(kwargs.keys())
-        
-        # Build the ON CONFLICT clause
-        conflict_fields = ", ".join(quote_identifier(f) for f in unique_constraint_fields)
-        
+
+        # Build the ON CONFLICT clause using DB column names so ForeignKey
+        # conflict targets reference the real column (e.g. "owner_id").
+        conflict_columns = [
+            self._model._fields[f].column_name for f in unique_constraint_fields
+        ]
+        conflict_fields = ", ".join(quote_identifier(c) for c in conflict_columns)
+
         # Build the UPDATE clause
         update_clauses = []
         for field_name in update_fields:
             if field_name not in self._model._fields:
                 raise ValueError(f"Unknown field: {field_name}")
-            
+
             field = self._model._fields[field_name]
-            col_name = field.column_name
-            
+            col_name = quote_identifier(field.column_name)
+
             # Use the value from defaults if provided
             if field_name in defaults:
                 idx = insert_fields.index(field_name) + 1
                 update_clauses.append(f"{col_name} = ${idx}")
             else:
                 update_clauses.append(f"{col_name} = EXCLUDED.{col_name}")
-        
-        update_sql = ", ".join(update_clauses)
-        
+
         table = quote_identifier(self._model.__tablename__)
+
+        # ``DO UPDATE SET`` with no assignments is invalid SQL. When the
+        # caller passes only conflict keys (no defaults / update_fields),
+        # fall back to the canonical no-op assignment ``conflict_col =
+        # EXCLUDED.conflict_col`` so the statement stays valid and
+        # ``RETURNING *`` still surfaces the existing row.
+        if not update_clauses:
+            noop_col = quote_identifier(conflict_columns[0])
+            update_clauses.append(f"{noop_col} = EXCLUDED.{noop_col}")
+
+        update_sql = ", ".join(update_clauses)
+
         query = f"""
             INSERT INTO {table} ({columns})
             VALUES ({values})

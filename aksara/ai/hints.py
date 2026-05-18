@@ -259,6 +259,8 @@ def extract_hints_from_app(app: "FastAPI") -> List[AiRouteHint]:
 
 def _extract_hints_from_viewset(viewset_cls: type) -> List[AiRouteHint]:
     """Extract hints from a single viewset class."""
+    from aksara.api.actions import get_action_metadata
+
     hints: List[AiRouteHint] = []
     
     # Get viewset metadata
@@ -330,11 +332,15 @@ def _extract_hints_from_viewset(viewset_cls: type) -> List[AiRouteHint]:
         hint_data = get_hint_from_callable(attr)
         if hint_data is None:
             continue
+
+        action_meta = get_action_metadata(attr)
+        if action_meta is None:
+            continue
         
-        # Check for @action decorator attributes
-        action_detail = getattr(attr, 'detail', False)
-        action_methods = getattr(attr, 'methods', ['GET'])
-        action_url_path = getattr(attr, 'url_path', attr_name)
+        # Use the stored action metadata so detail/path/methods stay accurate.
+        action_detail = action_meta["detail"]
+        action_methods = action_meta["methods"]
+        action_url_path = action_meta["path"]
         
         if action_detail:
             path = f'/api/{prefix}/{{id}}/{action_url_path}/'

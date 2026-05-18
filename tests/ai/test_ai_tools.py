@@ -383,6 +383,28 @@ class TestDiscoverToolsFromViewSet:
         tools = discover_tools_from_viewset(HiddenViewSet)
         
         assert len(tools) == 0
+
+    def test_no_tools_from_model_hidden_from_ai(self):
+        """No tools are discovered when the model is hidden from AI."""
+        from aksara.api.viewsets import ModelViewSet
+        from aksara.model.base import Model
+        from aksara import fields
+
+        class HiddenModel(Model):
+            __tablename__ = "hidden_models"
+            id = fields.UUID(primary_key=True)
+
+            class Meta:
+                ai_agent_exposed = False
+
+        class HiddenModelViewSet(ModelViewSet):
+            model = HiddenModel
+            prefix = "/api/hidden-models"
+            ai_exposed = True
+
+        tools = discover_tools_from_viewset(HiddenModelViewSet)
+
+        assert tools == []
     
     def test_discover_actions_from_viewset(self):
         """Custom @action methods are discovered."""

@@ -136,19 +136,30 @@ class TestRouterIntegration:
     
     def test_list_endpoint(self, app, sample_item):
         """Test list endpoint integration."""
-        # Patch at module level before include_viewset runs
+        # Patch at module level before include_viewset runs.
+        # Results must satisfy the published Read schema now that the
+        # list endpoint declares response_model=Paginated{Model}Read.
         with patch('aksara.api.viewsets.ModelViewSet.list', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = {
                 "count": 1,
                 "limit": 20,
                 "offset": 0,
-                "results": [{"name": "Test"}],
+                "results": [
+                    {
+                        "id": str(uuid4()),
+                        "name": "Test",
+                        "quantity": 10,
+                        "is_active": True,
+                        "created_at": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc),
+                    }
+                ],
             }
-            
+
             include_viewset(app, ItemViewSet)
             client = TestClient(app)
             response = client.get("/items/")
-            
+
             assert response.status_code == 200
             data = response.json()
             assert "count" in data

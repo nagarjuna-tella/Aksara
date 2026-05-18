@@ -50,6 +50,7 @@ TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_name VARCHAR(255) NOT NULL,
     queue VARCHAR(100) NOT NULL DEFAULT 'default',
+    tenant_id VARCHAR(255),
     payload JSONB NOT NULL DEFAULT '{{}}'::jsonb,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     attempts INTEGER NOT NULL DEFAULT 0,
@@ -70,6 +71,14 @@ TASKS_INDEX_SQL = (
 _TASKS_MIGRATE_QUEUE_SQL = (
     f'ALTER TABLE "{TASKS_TABLE}" ADD COLUMN IF NOT EXISTS '
     f"queue VARCHAR(100) NOT NULL DEFAULT 'default'"
+)
+# Idempotent migration: adds tenant_id so the durable task subsystem
+# can persist tenant provenance for tasks enqueued under a tenant
+# context. Nullable because tasks enqueued outside any tenant scope
+# (e.g. internal jobs) are legitimate.
+_TASKS_MIGRATE_TENANT_ID_SQL = (
+    f'ALTER TABLE "{TASKS_TABLE}" ADD COLUMN IF NOT EXISTS '
+    f'tenant_id VARCHAR(255)'
 )
 
 CRON_STATE_TABLE = "aksara_cron_state"
@@ -92,6 +101,11 @@ class TaskRecord:
     attempts: int
     max_attempts: int
     queue: str = "default"
+    # tenant_id is captured at enqueue time from tenant_id_var so the
+    # worker can restore the same tenant context before executing the
+    # callable. Nullable because tasks may be enqueued outside any
+    # tenant scope (e.g. internal jobs).
+    tenant_id: Optional[str] = None
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -107,6 +121,7 @@ class TaskRecord:
             id=record["id"],
             task_name=record["task_name"],
             queue=record.get("queue", "default") or "default",
+            tenant_id=record.get("tenant_id"),
             payload=_decode_json_value(record["payload"]) or {},
             status=record["status"],
             attempts=record["attempts"],
@@ -269,6 +284,7 @@ async def ensure_tasks_table(db: Optional[Database] = None) -> None:
     database = _get_db(db)
     await database.execute(TASKS_TABLE_SQL)
     await database.execute(_TASKS_MIGRATE_QUEUE_SQL)
+    await database.execute(_TASKS_MIGRATE_TENANT_ID_SQL)
     await database.execute(TASKS_INDEX_SQL)
 
 
@@ -296,6 +312,11 @@ async def enqueue_task(
 ) -> TaskRecord:
     """Persist a task invocation for background execution."""
     from aksara.conf import settings
+    # Capture the enqueuing tenant context so the worker can restore the
+    # same tenant scope at execution time. Without this the durable
+    # payload drops all tenant provenance and tenant-aware ORM operations
+    # inside the task would run with tenant_id_var=None.
+    from aksara.context_state import tenant_id_var
 
     database = _get_db(db)
     await ensure_tasks_table(database)
@@ -303,19 +324,24 @@ async def enqueue_task(
     task_definition = _resolve_task_definition(task_ref)
     effective_max_attempts = max_attempts or task_definition.max_attempts or settings.task_max_attempts
     effective_queue = queue if queue is not None else task_definition.queue
+    current_tenant = tenant_id_var.get()
+    tenant_value: Optional[str] = (
+        str(current_tenant) if current_tenant is not None else None
+    )
     payload = _encode_json_value({"args": list(args), "kwargs": kwargs})
 
     record = await database.fetchrow(
         f'''
-        INSERT INTO "{TASKS_TABLE}" (task_name, queue, payload, max_attempts, available_at)
+        INSERT INTO "{TASKS_TABLE}" (task_name, queue, tenant_id, payload, max_attempts, available_at)
         VALUES (
-            $1, $2, $3, $4,
-            CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second')
+            $1, $2, $3, $4, $5,
+            CURRENT_TIMESTAMP + ($6::double precision * INTERVAL '1 second')
         )
         RETURNING *
         ''',
         task_definition.name,
         effective_queue,
+        tenant_value,
         json.dumps(payload),
         effective_max_attempts,
         delay_seconds,
@@ -709,15 +735,25 @@ class TaskWorker:
 
     async def _process_task(self, task_record: TaskRecord) -> None:
         """Execute a claimed task and persist the outcome."""
+        from aksara.context_state import tenant_id_var
+
         database = _get_db(self._db)
 
+        # Restore the tenant context captured at enqueue time so the
+        # callable observes the same tenant scope it was scheduled
+        # under. Without this, tenant-aware ORM operations inside the
+        # task run with tenant_id_var=None and escape tenant isolation.
+        tenant_token = tenant_id_var.set(task_record.tenant_id)
         try:
-            task_definition = get_registered_task(task_record.task_name)
-            result = await self._execute_callable(task_definition, task_record.payload)
-        except Exception as exc:
-            logger.exception("Task '%s' failed", task_record.task_name)
-            await self._mark_failure(task_record, str(exc), db=database)
-            return
+            try:
+                task_definition = get_registered_task(task_record.task_name)
+                result = await self._execute_callable(task_definition, task_record.payload)
+            except Exception as exc:
+                logger.exception("Task '%s' failed", task_record.task_name)
+                await self._mark_failure(task_record, str(exc), db=database)
+                return
+        finally:
+            tenant_id_var.reset(tenant_token)
 
         encoded_result = _encode_json_value(result)
         await database.execute(

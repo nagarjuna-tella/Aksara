@@ -8,10 +8,13 @@ import pytest
 import os
 import tempfile
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 from aksara.migrations import operations as op
+from aksara.migrations import executor as migration_executor
 from aksara.migrations.base import Migration
 from aksara.migrations.executor import (
+    discover_all_migrations,
     discover_migrations,
     load_migration_module,
     get_pending_migrations,
@@ -85,6 +88,24 @@ class TestDiscoverMigrations:
         assert migrations[0][0] == "20250101_first"
         assert migrations[1][0] == "20250102_second"
         assert migrations[2][0] == "20250103_third"
+
+    def test_discover_all_migrations_keeps_internal_before_user(self, tmp_path, monkeypatch):
+        internal_dir = tmp_path / "internal"
+        internal_dir.mkdir()
+        internal_path = internal_dir / "zz_internal.py"
+        internal_path.write_text("# internal migration")
+        user_path = tmp_path / "0001_user.py"
+        user_path.write_text("# user migration")
+
+        monkeypatch.setattr(
+            migration_executor,
+            "discover_internal_migrations",
+            lambda: [("zz_internal", internal_path)],
+        )
+
+        migrations = discover_all_migrations(tmp_path, include_internal=True)
+
+        assert [name for name, _ in migrations] == ["zz_internal", "0001_user"]
 
 
 class TestLoadMigrationModule:
@@ -602,6 +623,59 @@ class Migration(Migration):
     
     # Cleanup
     await db.execute("DROP TABLE test_ordered")
+
+
+@pytest.mark.asyncio
+async def test_apply_migrations_honors_dependency_order(tmp_path, monkeypatch):
+    """Pending migrations should be applied by graph dependencies, not filename order."""
+    dependent_name = "0002_add_column"
+    dependency_name = "0003_create_table"
+    app_label = tmp_path.name
+
+    (tmp_path / f"{dependent_name}.py").write_text(
+        f'''
+from aksara.migrations import Migration
+from aksara.migrations import operations as op
+
+class Migration(Migration):
+    dependencies = [("{app_label}", "{dependency_name}")]
+    operations = [
+        op.AddField(
+            table="dependency_order",
+            name="name",
+            field=op.StringField(50, nullable=True),
+        ),
+    ]
+'''
+    )
+    (tmp_path / f"{dependency_name}.py").write_text(
+        '''
+from aksara.migrations import Migration
+from aksara.migrations import operations as op
+
+class Migration(Migration):
+    operations = [
+        op.CreateTable(
+            name="dependency_order",
+            fields=[("id", op.UUIDField(primary_key=True))],
+        ),
+    ]
+'''
+    )
+
+    applied_order = []
+
+    async def _record_apply(_connection, name, path, *, fake=False, verbose=True):
+        applied_order.append(name)
+
+    monkeypatch.setattr(migration_executor, "ensure_migrations_table", AsyncMock())
+    monkeypatch.setattr(migration_executor, "get_applied_migrations", AsyncMock(return_value=[]))
+    monkeypatch.setattr(migration_executor, "apply_migration", _record_apply)
+
+    result = await apply_migrations(object(), tmp_path, verbose=False, include_internal=False)
+
+    assert result["errors"] == []
+    assert applied_order == [dependency_name, dependent_name]
 
 
 @pytest.mark.asyncio

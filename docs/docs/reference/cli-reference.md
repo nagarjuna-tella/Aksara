@@ -295,7 +295,7 @@ aksara info [OPTIONS]
 ```
 Aksara Project Information
 ==========================
-Version: 0.5.46
+Version: 0.5.47
 Python: 3.11.0
 Settings: myproject.settings
 

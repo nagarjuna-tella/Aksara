@@ -16,6 +16,7 @@ Keep them in sync when adding new field types or options.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -59,6 +60,67 @@ def _validate_fk_action(action: str) -> str:
             f"Allowed: {', '.join(sorted(_VALID_FK_ACTIONS))}"
         )
     return normalised
+
+
+def _escape_sql_string(value: str) -> str:
+    """Escape a SQL string literal for inline DDL defaults."""
+    return value.replace("'", "''")
+
+
+def _format_jsonb_default(value: Any) -> str:
+    """Format a Python value as a JSONB default literal."""
+    payload = json.dumps(value)
+    return f"'{_escape_sql_string(payload)}'::jsonb"
+
+
+def _format_array_default(value: Any, sql_type: str) -> str:
+    """Format a Python sequence as a PostgreSQL array default literal."""
+    if not isinstance(value, (list, tuple)):
+        return f"'{_escape_sql_string(str(value))}'"
+
+    if not value:
+        return f"'{{}}'::{sql_type}"
+
+    base_type = sql_type[:-2].upper() if sql_type.endswith("[]") else sql_type.upper()
+    formatted_items = []
+    for item in value:
+        if item is None:
+            formatted_items.append("NULL")
+        elif base_type in {"TEXT", "UUID"}:
+            formatted_items.append(f"'{_escape_sql_string(str(item))}'")
+        elif base_type == "BOOLEAN":
+            formatted_items.append("TRUE" if item else "FALSE")
+        else:
+            formatted_items.append(str(item))
+
+    return f"ARRAY[{','.join(formatted_items)}]::{sql_type}"
+
+
+def _format_default_sql(value: Any, *, field_op: Any = None) -> str:
+    """Format a Python default as a SQL literal consistent with the field type."""
+    if value is None:
+        return "NULL"
+
+    field_kind = type(field_op).__name__ if field_op is not None else None
+
+    if field_kind == "ArrayField":
+        return _format_array_default(value, field_op.sql_type)
+
+    # Structured defaults need explicit JSONB literals; plain str(value)
+    # produces invalid SQL for JSON columns.
+    if field_kind == "JSONField" or isinstance(value, (dict, list)):
+        return _format_jsonb_default(value)
+
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+
+    if isinstance(value, str):
+        return f"'{_escape_sql_string(value)}'"
+
+    if isinstance(value, (int, float)):
+        return str(value)
+
+    return str(value)
 
 
 # =============================================================================
@@ -338,22 +400,45 @@ class JSONField(FieldOp):
         self.default = default
     
     def to_sql(self) -> str:
-        import json as json_lib
-        
         parts = ["JSONB"]
         
         if not self.nullable:
             parts.append("NOT NULL")
         if self.default is not None:
-            if isinstance(self.default, (dict, list)):
-                parts.append(f"DEFAULT '{json_lib.dumps(self.default)}'::jsonb")
-            else:
-                parts.append(f"DEFAULT '{self.default}'::jsonb")
+            parts.append(f"DEFAULT {_format_default_sql(self.default, field_op=self)}")
         
         return " ".join(parts)
     
     def __repr__(self) -> str:
         return "JSONField()"
+
+
+class ArrayField(FieldOp):
+    """PostgreSQL array field type for migrations."""
+
+    def __init__(
+        self,
+        sql_type: str = "TEXT[]",
+        *,
+        nullable: bool = True,
+        default: Any = None,
+    ):
+        self.sql_type = sql_type
+        self.nullable = nullable
+        self.default = default
+
+    def to_sql(self) -> str:
+        parts = [self.sql_type]
+
+        if not self.nullable:
+            parts.append("NOT NULL")
+        if self.default is not None:
+            parts.append(f"DEFAULT {_format_default_sql(self.default, field_op=self)}")
+
+        return " ".join(parts)
+
+    def __repr__(self) -> str:
+        return f"ArrayField(sql_type={self.sql_type!r})"
 
 
 class VectorField(FieldOp):
@@ -1486,11 +1571,13 @@ class AlterFieldDefault(Operation):
         name: str,
         *,
         new_default: Any = None,
+        field: Optional[FieldOp] = None,
         drop_default: bool = False,
     ):
         self.table = table
         self.name = name
         self.new_default = new_default
+        self.field = field
         self.drop_default = drop_default
     
     async def apply(self, connection) -> None:
@@ -1498,18 +1585,8 @@ class AlterFieldDefault(Operation):
         if self.drop_default:
             sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} DROP DEFAULT'
         else:
-            # Format the default value
-            if self.new_default is None:
-                default_sql = "NULL"
-            elif isinstance(self.new_default, bool):
-                default_sql = "TRUE" if self.new_default else "FALSE"
-            elif isinstance(self.new_default, str):
-                escaped = self.new_default.replace("'", "''")
-                default_sql = f"'{escaped}'"
-            elif isinstance(self.new_default, (int, float)):
-                default_sql = str(self.new_default)
-            else:
-                default_sql = str(self.new_default)
+            # Use field-aware formatting so structured defaults remain valid DDL.
+            default_sql = _format_default_sql(self.new_default, field_op=self.field)
             
             sql = f'ALTER TABLE {_quote_ident(self.table)} ALTER COLUMN {_quote_ident(self.name)} SET DEFAULT {default_sql}'
         

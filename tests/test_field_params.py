@@ -516,65 +516,49 @@ class TestSlugAutoFrom:
     def test_auto_generates_slug(self):
         f = Slug(max_length=200, auto_from="title")
         instance = SimpleNamespace(title="Hello World Article")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=instance)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=instance))
         assert result == "hello-world-article"
 
     def test_preserves_existing_slug(self):
         f = Slug(max_length=200, auto_from="title")
         instance = SimpleNamespace(title="Hello World")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare("custom-slug", instance=instance)
-        )
+        result = asyncio.run(f.async_prepare("custom-slug", instance=instance))
         assert result == "custom-slug"
 
     def test_truncates_to_max_length(self):
         f = Slug(max_length=10, auto_from="title")
         instance = SimpleNamespace(title="This Is A Very Long Title")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=instance)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=instance))
         assert len(result) <= 10
         assert not result.endswith("-")
 
     def test_no_auto_from_passthrough(self):
         f = Slug(max_length=200)
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=SimpleNamespace())
-        )
+        result = asyncio.run(f.async_prepare(None, instance=SimpleNamespace()))
         assert result is None
 
     def test_empty_source_field(self):
         f = Slug(max_length=200, auto_from="title")
         instance = SimpleNamespace(title="")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=instance)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=instance))
         # Empty source means no slug generated; returns the original None
         assert result is None
 
     def test_no_instance_passthrough(self):
         f = Slug(max_length=200, auto_from="title")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=None)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=None))
         assert result is None
 
     def test_special_characters_in_title(self):
         f = Slug(max_length=200, auto_from="title")
         instance = SimpleNamespace(title="Hello, World! (2025)")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=instance)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=instance))
         assert result == "hello-world-2025"
 
     def test_auto_from_with_unicode(self):
         f = Slug(max_length=200, auto_from="title", allow_unicode=True)
         instance = SimpleNamespace(title="Héllo Wörld")
-        result = asyncio.get_event_loop().run_until_complete(
-            f.async_prepare(None, instance=instance)
-        )
+        result = asyncio.run(f.async_prepare(None, instance=instance))
         assert "héllo" in result
         assert "wörld" in result
 

@@ -62,15 +62,17 @@ _serializer_model_cache: Dict[str, Dict[str, Type[BaseModel]]] = {}
 def _get_python_type(field: aksara_fields.Field) -> type:
     """
     Map Aksara field type to Python/Pydantic type.
-    
+
     Args:
         field: Aksara field instance
-        
+
     Returns:
         Python type for Pydantic schema
     """
     if isinstance(field, aksara_fields.UUID):
         return UUID
+    # FileField subclasses must be checked before String — ImageField is a
+    # FileField; both render as str in the schema.
     elif isinstance(field, aksara_fields.FileField):
         return str
     elif isinstance(field, aksara_fields.String):
@@ -80,6 +82,14 @@ def _get_python_type(field: aksara_fields.Field) -> type:
     elif isinstance(field, aksara_fields.Email):
         return str
     elif isinstance(field, aksara_fields.URL):
+        return str
+    # Slug / FilePath / IPAddress used to fall through to Any, hiding their
+    # str-typing from the OpenAPI schema and stripping Pydantic validation.
+    elif isinstance(field, aksara_fields.Slug):
+        return str
+    elif isinstance(field, aksara_fields.FilePath):
+        return str
+    elif isinstance(field, aksara_fields.IPAddress):
         return str
     elif isinstance(field, aksara_fields.Integer):
         return int
@@ -91,6 +101,9 @@ def _get_python_type(field: aksara_fields.Field) -> type:
         return Union[dict, list, None]
     elif isinstance(field, aksara_fields.Decimal):
         return Decimal
+    # Float used to fall through to Any; map to float so validation runs.
+    elif isinstance(field, aksara_fields.Float):
+        return float
     elif isinstance(field, aksara_fields.Enum):
         return str
     elif isinstance(field, aksara_fields.ForeignKey):

@@ -268,6 +268,47 @@ class TestStudioAccessControl:
             assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
+    async def test_debug_mode_does_not_bypass_required_auth(self):
+        """Explicit studio auth should still be enforced in debug mode."""
+        from fastapi import HTTPException
+
+        configure(studio_require_auth=True, studio_auth_token=None, debug=True)
+
+        from aksara.studio.fastapi import verify_studio_auth
+
+        mock_app = MagicMock()
+        mock_app.db = None
+        request = _build_request(app=mock_app)
+
+        with patch.object(type(request), 'app', new_callable=lambda: property(lambda self: mock_app)):
+            with pytest.raises(HTTPException) as exc_info:
+                await verify_studio_auth(request)
+            assert exc_info.value.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_staff_session_cookie_uses_db_backed_lookup(self):
+        """Studio should accept valid staff session cookies via the shared session store."""
+        configure(studio_require_auth=True, studio_auth_token=None, debug=False)
+
+        from aksara.studio.fastapi import verify_studio_auth
+
+        mock_db = AsyncMock()
+        mock_app = MagicMock()
+        mock_app.db = mock_db
+        request = _build_request(cookies={"session_token": "staff-session"}, app=mock_app)
+
+        mock_user = MagicMock()
+        mock_user.is_staff = True
+
+        with patch(
+            "aksara.contrib.auth.get_user_from_session_token",
+            new=AsyncMock(return_value=mock_user),
+        ) as get_user_from_session_token:
+            await verify_studio_auth(request)
+
+        get_user_from_session_token.assert_awaited_once_with(mock_db, "staff-session")
+
+    @pytest.mark.asyncio
     async def test_disallowed_origin_rejected(self):
         """Requests from disallowed origins should be rejected."""
         from fastapi import HTTPException

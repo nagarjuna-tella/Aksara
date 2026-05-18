@@ -186,9 +186,7 @@ def discover_internal_migrations() -> List[Tuple[str, Path]]:
             logger.warning(f"Error discovering migrations from {package_name}: {e}")
             continue
 
-    # Caller (discover_all_migrations) performs the final sort, so don't sort
-    # twice here — the result is still ordered by name for direct callers
-    # because we sort in discover_migrations and only append per-package here.
+    migrations.sort(key=lambda x: x[0])
     return migrations
 
 
@@ -206,7 +204,7 @@ def discover_all_migrations(
         include_internal: Whether to include internal migrations
 
     Returns:
-        List of (migration_name, file_path) tuples sorted by name
+        List of (migration_name, file_path) tuples with internal migrations first
     """
     all_migrations: List[Tuple[str, Path]] = []
 
@@ -218,8 +216,6 @@ def discover_all_migrations(
     if user_migrations_path is not None:
         all_migrations.extend(discover_migrations(user_migrations_path))
 
-    # Single top-level sort; subroutines no longer sort independently.
-    all_migrations.sort(key=lambda x: x[0])
     return all_migrations
 
 
@@ -551,11 +547,23 @@ async def apply_migrations(
         if verbose:
             logger.info("No pending migrations.")
         return results
+
+    # Apply only pending migrations, but do so in dependency order.
+    pending_by_name = {name: path for name, path in pending}
+    ordered_pending = [
+        (node.name, pending_by_name[node.name])
+        for node in build_migration_graph(
+            migrations_path=migrations_path,
+            include_internal=include_internal,
+            migrations_list=all_migrations,
+        ).execution_order()
+        if node.name in pending_by_name
+    ]
     
     if verbose:
         logger.info(f"Found {len(pending)} pending migration(s).")
     
-    for name, path in pending:
+    for name, path in ordered_pending:
         try:
             if verbose:
                 action = "Marking" if fake else "Applying"

@@ -157,9 +157,8 @@ class TestBuildAiHubStatus:
         from aksara.studio.utils import build_aihub_status
         with mock.patch.dict(os.environ, {}, clear=True):
             status = build_aihub_status()
-            # Ollama is always "configured" due to default base_url
-            assert status.overall in ("ready", "partial")
-            assert status.configured_count >= 1
+            assert status.overall == "disabled"
+            assert status.configured_count == 0
 
     def test_ready_when_configured(self):
         from aksara.studio.utils import build_aihub_status
@@ -675,15 +674,15 @@ class TestCheckAndMarkAllTestedLogic:
             assert openai_p.reachable is False
 
     def test_providers_ollama_configured_without_key(self):
-        """Ollama does not require an API key, so it is configured=True by default.
-        Cloud providers (openai, anthropic) must have configured=False when their
+        """Without explicit OLLAMA_* env vars, empty environments expose no configured providers.
+        Cloud providers (openai, anthropic) must also remain unconfigured when their
         key env vars are absent."""
         from aksara.studio.utils import build_aihub_providers
         with mock.patch.dict(os.environ, {}, clear=True):
             result = build_aihub_providers()
             ollama_p = next((p for p in result.providers if p.kind == "ollama"), None)
             if ollama_p is not None:
-                assert ollama_p.configured is True
+                assert ollama_p.configured is False
             openai_p = next((p for p in result.providers if p.kind == "openai"), None)
             if openai_p is not None:
                 assert openai_p.configured is False

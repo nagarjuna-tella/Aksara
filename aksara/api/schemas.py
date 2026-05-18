@@ -385,22 +385,42 @@ def model_to_dict(instance: Model) -> Dict[str, Any]:
         Dictionary representation
     """
     result = {}
-    
+
     for field_name, field in instance._fields.items():
         value = instance._data.get(field_name)
-        
+
         # Handle ForeignKey - use the _id column name
         if isinstance(field, aksara_fields.ForeignKey):
             key = field.db_column_name
         else:
             key = field_name
-        
+
         # Serialize values
         if isinstance(value, UUID):
             result[key] = value
         else:
             result[key] = serialize_value(value)
-    
+
+    # Include ManyToMany fields so the serialized payload matches the
+    # read schema, which declares them. Use cached IDs (from
+    # create/update/prefetch_related) when available, else default to
+    # None to keep the shape consistent with the schema's Optional
+    # declaration.
+    m2m_fields = getattr(instance.__class__, '_m2m_fields', None) or {}
+    for field_name in m2m_fields:
+        m2m_ids = getattr(instance, f'_{field_name}_ids', None)
+        prefetched = None
+        if hasattr(instance, '_prefetched_relations'):
+            prefetched = instance._prefetched_relations.get(field_name)
+        if m2m_ids is not None:
+            result[field_name] = list(m2m_ids)
+        elif prefetched is not None:
+            result[field_name] = [
+                getattr(obj, 'id', obj) for obj in prefetched
+            ]
+        else:
+            result[field_name] = None
+
     return result
 
 

@@ -231,6 +231,54 @@ def _build_input_schema_for_crud(
     Returns:
         JSON Schema dict
     """
+
+    def _get_ai_writable_input_names() -> set[str]:
+        """Return AI-safe writable property names for CRUD input schemas."""
+        from aksara.registry import get_model_fields
+
+        allowed_names: set[str] = set()
+
+        for field_meta in get_model_fields(
+            viewset.model,
+            include_sensitive=False,
+            writable_only=True,
+        ):
+            allowed_names.add(field_meta["name"])
+            allowed_names.add(field_meta["db_column"])
+
+        for field_name, field in getattr(viewset.model, "_m2m_fields", {}).items():
+            if getattr(field, "ai_sensitive", False):
+                continue
+            if not getattr(field, "ai_agent_writable", True):
+                continue
+            allowed_names.add(field_name)
+
+        return allowed_names
+
+    def _sanitize_mutation_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Strip sensitive and non-writable fields from AI mutation schemas."""
+        allowed_names = _get_ai_writable_input_names()
+        sanitized_schema = dict(schema)
+        properties = dict(schema.get("properties", {}))
+
+        sanitized_schema["properties"] = {
+            name: definition
+            for name, definition in properties.items()
+            if name in allowed_names
+        }
+
+        required = [
+            name
+            for name in schema.get("required", [])
+            if name in sanitized_schema["properties"]
+        ]
+        if required:
+            sanitized_schema["required"] = required
+        else:
+            sanitized_schema.pop("required", None)
+
+        return sanitized_schema
+
     if http_method == "GET":
         # List/retrieve - query parameters
         if action_name == "list":
@@ -267,7 +315,7 @@ def _build_input_schema_for_crud(
         try:
             schema_cls = viewset.create_schema
             if hasattr(schema_cls, "model_json_schema"):
-                return schema_cls.model_json_schema()
+                return _sanitize_mutation_schema(schema_cls.model_json_schema())
         except Exception:
             pass
         
@@ -278,7 +326,7 @@ def _build_input_schema_for_crud(
         try:
             schema_cls = viewset.update_schema
             if hasattr(schema_cls, "model_json_schema"):
-                schema = schema_cls.model_json_schema()
+                schema = _sanitize_mutation_schema(schema_cls.model_json_schema())
                 # Add pk to required
                 schema.setdefault("properties", {})["pk"] = {
                     "type": "string",
@@ -348,6 +396,11 @@ def discover_tools_from_viewset(
     model = viewset.model
     if model is None:
         logger.warning(f"ViewSet {viewset_cls.__name__} has no model")
+        return tools
+
+    # Match model-level AI exposure rules: hidden models expose no tools.
+    if not getattr(getattr(model, "_ai_meta", None), "ai_agent_exposed", True):
+        logger.debug(f"Skipping ViewSet {viewset_cls.__name__}: model ai_agent_exposed=False")
         return tools
     
     model_name = model.__name__

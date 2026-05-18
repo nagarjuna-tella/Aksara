@@ -237,6 +237,27 @@ class TestViewSetHintExtraction:
         # route_name is derived from the viewset prefix
         assert "product" in hints[0].route_name.lower()
 
+    def test_extract_hints_from_custom_action_uses_action_metadata(self):
+        """Custom action hints should use the stored action detail/path/methods."""
+        from aksara.api import action
+
+        class ItemViewSet:
+            prefix = "items"
+
+            @action(detail=True, methods=["post"], path="publish")
+            @ai_route_hint(title="Publish Item", usage_kind="write", risk_level="medium")
+            def publish(self):
+                pass
+
+        hints = extract_hints_from_viewset(ItemViewSet)
+
+        publish_hint = next((hint for hint in hints if hint.route_name == "items-publish"), None)
+        assert publish_hint is not None
+        assert publish_hint.path == "/api/items/{id}/publish/"
+        assert publish_hint.methods == ["POST"]
+        assert publish_hint.usage_kind == "write"
+        assert publish_hint.risk_level == "medium"
+
 
 class TestSetViewDefaultHint:
     """Tests for set_view_default_hint helper."""

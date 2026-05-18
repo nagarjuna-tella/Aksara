@@ -32,7 +32,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request, Query, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, Field as PydanticField, ValidationError, create_model
 
 from aksara.api.viewsets import ModelViewSet
 from aksara.api.schemas import generate_read_schema
@@ -47,6 +47,46 @@ from aksara.exceptions import (
     ForeignKeyConstraintError,
     DatabaseError,
 )
+
+
+# Cache of paginated response wrappers, keyed by the Read schema class so
+# we don't recreate the wrapper Pydantic model on every viewset registration.
+_paginated_schema_cache: Dict[Type[BaseModel], Type[BaseModel]] = {}
+# Cache for the delete-response wrapper, keyed by model name.
+_delete_schema_cache: Dict[str, Type[BaseModel]] = {}
+
+
+def _build_paginated_schema(read_schema: Type[BaseModel]) -> Type[BaseModel]:
+    """
+    Construct (and cache) a Pydantic wrapper that documents the paginated
+    list response shape `{count, limit, offset, results: [ReadSchema]}` so
+    FastAPI emits a concrete OpenAPI schema instead of a generic object.
+    """
+    cached = _paginated_schema_cache.get(read_schema)
+    if cached is not None:
+        return cached
+    wrapper = create_model(
+        f"Paginated{read_schema.__name__}",
+        count=(int, PydanticField(default=0)),
+        limit=(Optional[int], PydanticField(default=None)),
+        offset=(Optional[int], PydanticField(default=None)),
+        results=(List[read_schema], PydanticField(default_factory=list)),
+    )
+    _paginated_schema_cache[read_schema] = wrapper
+    return wrapper
+
+
+def _build_delete_schema(model_name: str) -> Type[BaseModel]:
+    cached = _delete_schema_cache.get(model_name)
+    if cached is not None:
+        return cached
+    wrapper = create_model(
+        f"{model_name}DeleteResponse",
+        deleted=(bool, PydanticField(default=True)),
+        id=(str, PydanticField(...)),
+    )
+    _delete_schema_cache[model_name] = wrapper
+    return wrapper
 
 
 def _create_create_endpoint(viewset: ModelViewSet, CreateSchema: Type) -> Callable:
@@ -138,18 +178,23 @@ def include_viewset(
     CreateSchema = viewset.create_schema
     UpdateSchema = viewset.update_schema
     ReadSchema = viewset.read_schema
-    
+    PaginatedReadSchema = _build_paginated_schema(ReadSchema)
+    DeleteResponseSchema = _build_delete_schema(viewset.model.__name__)
+
     # Get filterable fields for query params
     filter_fields = viewset.get_filter_fields()
-    
+
     # =========================================================================
     # LIST endpoint (no {pk})
     # =========================================================================
+    # Publish the paginated Read schema as the documented response so the
+    # OpenAPI spec describes a concrete model instead of a generic dict.
     @router.get(
         f"{prefix}/",
         tags=tags,
         summary=f"List {viewset.model.__name__}",
         description=f"Get a paginated list of {viewset.model.__name__} records.",
+        response_model=PaginatedReadSchema,
     )
     async def list_items(
         request: Request,
@@ -194,6 +239,7 @@ def include_viewset(
         status_code=201,
         summary=f"Create {viewset.model.__name__}",
         description=f"Create a new {viewset.model.__name__}.",
+        response_model=ReadSchema,
     )
 
     # =========================================================================
@@ -228,6 +274,7 @@ def include_viewset(
         tags=tags,
         summary=f"Get {viewset.model.__name__}",
         description=f"Retrieve a single {viewset.model.__name__} by ID.",
+        response_model=ReadSchema,
     )
     async def retrieve_item(
         pk: str,
@@ -254,6 +301,7 @@ def include_viewset(
         tags=tags,
         summary=f"Update {viewset.model.__name__}",
         description=f"Partially update a {viewset.model.__name__}.",
+        response_model=ReadSchema,
     )
     
     # =========================================================================
@@ -264,6 +312,7 @@ def include_viewset(
         tags=tags,
         summary=f"Delete {viewset.model.__name__}",
         description=f"Delete a {viewset.model.__name__}.",
+        response_model=DeleteResponseSchema,
     )
     async def delete_item(
         pk: str,

@@ -32,13 +32,13 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.46"
+CLI_VERSION = "0.5.47"
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
     """
     Discover and import model modules to populate the registry.
-    
+
     Args:
         app_path: Optional path to the application directory
     """
@@ -46,24 +46,46 @@ def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> 
     cwd = Path.cwd()
     if str(cwd) not in sys.path:
         sys.path.insert(0, str(cwd))
-    
+
     # Try to import common model locations
     model_paths = [
         "models",
         "app.models",
         "src.models",
     ]
-    
+
     if app_path:
         model_paths.insert(0, app_path)
 
+    # Walk settings.installed_apps too so model-oriented commands cover
+    # the apps the operator actually configured (built-in aksara.contrib.*
+    # included). Imports here are kept silent — they are framework
+    # internals, not user-driven discoveries, and surfacing them in
+    # `--format json` outputs would corrupt machine-readable streams.
+    installed_app_paths: list[str] = []
+    try:
+        from aksara.conf import settings
+        for app_label in getattr(settings, 'installed_apps', None) or []:
+            candidate = f"{app_label}.models"
+            if candidate not in model_paths:
+                installed_app_paths.append(candidate)
+    except Exception:
+        # Settings may be unavailable in some bootstrap contexts.
+        pass
+
     ui = get_ui()
-    
+
     for path in model_paths:
         try:
             __import__(path)
             if not silent:
                 ui.success(f"Discovered models from '{path}'")
+        except ImportError:
+            pass
+
+    for path in installed_app_paths:
+        try:
+            __import__(path)
         except ImportError:
             pass
 
@@ -571,19 +593,20 @@ def dbsetup(host: str, port: int):
             return
         ui.blank()
 
-    # --- Collect host/port (use existing URL values as defaults when overwriting) ---
-    default_host = host
-    default_port = port
+    # --- Resolve host/port silently (use --host/--port flags as defaults,
+    # falling back to values parsed from an existing URL when overwriting).
+    # The interactive Host/Port prompts used to live here; they now run
+    # AFTER credential collection so the documented input flow of
+    # "database name → username → password" isn't shifted into integer
+    # parsing failures when operators feed two values into stdin.
+    db_host = host
+    db_port = port
     if existing_url:
         parsed_host, parsed_port = _parse_database_url_host_port(existing_url)
         if parsed_host:
-            default_host = parsed_host
+            db_host = parsed_host
         if parsed_port:
-            default_port = parsed_port
-
-    db_host = click.prompt("  > Host", default=default_host)
-    db_port = click.prompt("  > Port", default=default_port, type=int)
-    ui.blank()
+            db_port = parsed_port
 
     # --- Step 1: Check PostgreSQL reachability ---
     async def _check_pg():
@@ -1623,13 +1646,23 @@ def info(database_url: Optional[str]):
         click.echo(f"    Backend:      \033[90mNot configured\033[0m")
     
     # Apps section
+    # Show installed_apps (the Django-style list that includes the
+    # built-in aksara.contrib apps) instead of `settings.apps`, which is
+    # only the multi-app shortlist and silently hides built-ins.
     click.echo(f"\n  \033[1mInstalled Apps\033[0m")
-    for app in settings.apps:
+    apps_to_show = getattr(settings, 'installed_apps', None) or settings.apps
+    for app in apps_to_show:
         click.echo(f"    • {app}")
-    
+
     # Features section (v0.5.6)
     admin_enabled = getattr(settings, 'enable_admin', False) or settings.debug
-    studio_enabled = getattr(settings, 'enable_studio', True)
+    # Mirror Aksara._should_enable_studio(): Studio is gated in
+    # production unless studio_expose_in_production is True, so
+    # reporting `enable_studio=True` alone misleads operators.
+    studio_enabled = bool(getattr(settings, 'enable_studio', True))
+    if studio_enabled and not settings.debug:
+        if not getattr(settings, 'studio_expose_in_production', False):
+            studio_enabled = False
     ai_mode_enabled = getattr(settings, 'AI_MODE_ENABLED', True)
     
     click.echo(f"\n  \033[1mFeatures\033[0m")

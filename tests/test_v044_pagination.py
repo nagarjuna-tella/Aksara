@@ -226,12 +226,15 @@ class TestCursorPagination:
         import base64
         cursor_value = base64.b64encode(b'{"id": "123"}').decode('utf-8')
         request.query_params = {'cursor': cursor_value}
-        
-        mock_qs = AsyncMock()
+
+        # CursorPagination now applies the cursor as a filter (id__gt=...)
+        # before counting, so the mock has to support .filter().count().
+        mock_qs = Mock()
         mock_qs.count = AsyncMock(return_value=1000)
-        
+        mock_qs.filter = Mock(return_value=mock_qs)
+
         await paginator.paginate_queryset(mock_qs, request)
-        
+
         assert paginator.cursor is not None
     
     @pytest.mark.asyncio

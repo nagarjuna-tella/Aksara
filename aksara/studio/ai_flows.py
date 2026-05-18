@@ -228,6 +228,20 @@ def _hub_not_configured_response(action_key: str) -> StudioAiFlowResponse:
 
 # ─── Context helpers ─────────────────────────────────────────────────────────
 
+def _get_ai_visible_model_field_names(model_cls: Any) -> set[str]:
+    """Return AI-safe field names for console prompt packs."""
+    from aksara.registry import get_model_fields
+
+    visible_names: set[str] = set()
+    for field_meta in get_model_fields(
+        model_cls,
+        include_sensitive=False,
+        writable_only=True,
+    ):
+        visible_names.add(field_meta["name"])
+        visible_names.add(field_meta["db_column"])
+    return visible_names
+
 def _build_model_context(model_name: str) -> str:
     """Build schema-analysis context for a model."""
     try:
@@ -237,11 +251,19 @@ def _build_model_context(model_name: str) -> str:
         model_cls = ModelRegistry.get(model_name)
         if model_cls is None:
             return f"Model '{model_name}' not found in the registry."
+        if not getattr(getattr(model_cls, "_ai_meta", None), "ai_agent_exposed", True):
+            return f"Model '{model_name}' is not exposed to AI."
         summary = inspect_model(model_cls)
+        visible_field_names = _get_ai_visible_model_field_names(model_cls)
+        visible_fields = [
+            field
+            for field in summary.fields
+            if field.name in visible_field_names or field.column_name in visible_field_names
+        ]
         lines = [
             f"## Model: {summary.name}",
             f"Table: {summary.table_name}",
-            f"Fields: {summary.num_fields}  |  Relations: {summary.num_relationships}",
+            f"Fields: {len(visible_fields)}  |  Relations: {summary.num_relationships}",
             f"PK: {summary.pk_field} ({summary.pk_type})",
             f"Timestamps: {'yes' if summary.has_timestamps else 'no'}",
             "",
@@ -250,7 +272,7 @@ def _build_model_context(model_name: str) -> str:
             lines.append(f"Description: {summary.ai_description}")
         # Fields
         lines.append("\n### Fields")
-        for f in summary.fields:
+        for f in visible_fields:
             nullable = "NULL" if f.nullable else "NOT NULL"
             extra = []
             if f.unique:
@@ -286,21 +308,27 @@ def _build_model_context(model_name: str) -> str:
 def _build_all_models_context() -> str:
     """Build schema-analysis context for all registered models (v0.5.43)."""
     try:
-        from aksara.registry import ModelRegistry
+        from aksara.registry import get_models
         from aksara.inspectors.models import inspect_model
 
-        models = ModelRegistry.all()
+        models = get_models(ai_exposed_only=True)
         if not models:
             return "No models are registered in this application."
         parts = [f"# Application Models ({len(models)} total)\n"]
-        for model_name, model_cls in models.items():
+        for model_cls in models:
             try:
                 summary = inspect_model(model_cls)
+                visible_field_names = _get_ai_visible_model_field_names(model_cls)
+                visible_fields = [
+                    field
+                    for field in summary.fields
+                    if field.name in visible_field_names or field.column_name in visible_field_names
+                ]
                 lines = [
                     f"## {summary.name}",
-                    f"Table: `{summary.table_name}` | Fields: {summary.num_fields} | Relations: {summary.num_relationships}",
+                    f"Table: `{summary.table_name}` | Fields: {len(visible_fields)} | Relations: {summary.num_relationships}",
                 ]
-                for f in summary.fields:
+                for f in visible_fields:
                     nullable = "NULL" if f.nullable else "NOT NULL"
                     lines.append(f"- `{f.name}`: {f.field_type} {nullable}")
                 if summary.relationships:
@@ -308,7 +336,7 @@ def _build_all_models_context() -> str:
                         lines.append(f"- `{r.field_name}` → {r.target_model} ({r.kind})")
                 parts.append("\n".join(lines))
             except Exception as exc:
-                parts.append(f"## {model_name}\nError: {exc}")
+                parts.append(f"## {model_cls.__name__}\nError: {exc}")
         return "\n\n".join(parts)
     except Exception as exc:
         return f"Error building models overview: {exc}"

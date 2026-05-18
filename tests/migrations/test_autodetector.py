@@ -77,6 +77,29 @@ def _make_post_with_body():
     return PostBody
 
 
+def _make_post_with_array_field():
+    """Post model with a PostgreSQL array field."""
+    class PostArray(Model):
+        title = fields.String(max_length=100)
+        tags = fields.Array(item_type=str)
+
+        class Meta:
+            table_name = "posts"
+
+    return PostArray
+
+
+def _make_invoice_with_decimal_default():
+    """Model with a decimal field default that must survive migrations."""
+    class Invoice(Model):
+        amount = fields.Decimal(max_digits=6, decimal_places=2, default=12.34)
+
+        class Meta:
+            table_name = "invoices"
+
+    return Invoice
+
+
 def _make_comment():
     """Separate Comment model."""
     class Comment(Model):
@@ -200,6 +223,42 @@ class TestAutodetector:
                 f"altered={diff2.altered_fields}"
             )
             assert ops2 == []
+
+    def test_array_fields_preserve_postgresql_array_type(self):
+        """Array runtime fields should stay ARRAY columns in generated migrations."""
+        PostArray = _make_post_with_array_field()
+
+        diff, ops = detect_changes([], _models(PostArray))
+
+        assert diff.has_changes
+        create_table = next(operation for operation in ops if isinstance(operation, op.CreateTable))
+        generated_fields = dict(create_table.fields)
+        tags_field = generated_fields["tags"]
+
+        assert isinstance(tags_field, op.ArrayField)
+        assert tags_field.to_sql() == "TEXT[]"
+
+        code = operations_to_code(ops)
+        assert "op.ArrayField(sql_type='TEXT[]')" in code
+        assert "TextField" not in code.split('("tags",', 1)[1].split(")", 1)[0]
+
+    def test_decimal_defaults_are_preserved_in_generated_migrations(self):
+        """Decimal runtime defaults should survive CreateTable generation."""
+        Invoice = _make_invoice_with_decimal_default()
+
+        diff, ops = detect_changes([], _models(Invoice))
+
+        assert diff.has_changes
+        create_table = next(operation for operation in ops if isinstance(operation, op.CreateTable))
+        generated_fields = dict(create_table.fields)
+        amount_field = generated_fields["amount"]
+
+        assert isinstance(amount_field, op.DecimalField)
+        assert amount_field.default == 12.34
+        assert "DEFAULT 12.34" in amount_field.to_sql()
+
+        code = operations_to_code(ops)
+        assert "op.DecimalField(6, 2, default=12.34)" in code
 
     def test_stacked_migrations_replay(self):
         """Two sequential migrations replay correctly."""

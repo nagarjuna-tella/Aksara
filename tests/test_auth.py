@@ -314,6 +314,23 @@ class TestFastAPIIntegration:
         user = await get_current_user(request)
         
         assert user is None
+
+    @pytest.mark.asyncio
+    async def test_get_current_user_ignores_client_user_id_header(self):
+        """get_current_user should ignore forged X-User-Id headers."""
+        from aksara.contrib.auth.fastapi import get_current_user
+        from aksara.contrib.auth.models import User
+
+        request = MagicMock()
+        request.state = MagicMock()
+        request.state.user = None
+        request.headers = {"X-User-Id": "7"}
+
+        with patch.object(User.objects, "get", new=AsyncMock()) as get_user:
+            user = await get_current_user(request)
+
+        assert user is None
+        get_user.assert_not_awaited()
     
     @pytest.mark.asyncio
     async def test_get_current_active_user_inactive(self):

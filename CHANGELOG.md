@@ -5,6 +5,86 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.47] — AI Metadata Enforcement & ORM Write-Path Fixes
+
+### Fixed — AI Metadata Propagation
+
+- `ai_sensitive=True` fields are now excluded from **all** AI surfaces:
+  tool schemas, MCP export, and console prompt-packs. Previously these
+  fields leaked through visible-model create/update schemas, MCP input
+  schemas, and console-generated prompt packs.
+- `ai_agent_writable=False` fields are now excluded from create and update
+  tool schemas and MCP input schemas. Read schemas are unaffected.
+- Regression coverage added in `tests/ai/test_ai_metadata_propagation.py`
+  covering all three surfaces.
+
+### Fixed — ORM Core (Phase 1)
+
+- `String.to_db()` now enforces `max_length` before persistence, raising
+  `ValidationError` instead of relying on PostgreSQL to reject the value
+- `bulk_update()` now emits valid `CASE WHEN id = $n THEN $v END` SQL —
+  previously the `WHEN` condition was a bare value, not a boolean expression
+- `bulk_create()` now uses DB column names for FK fields (`owner_id` not
+  `owner`) in the INSERT column list
+- `upsert()` now calls `field.to_db()` for all values — previously raw
+  Python values were sent to asyncpg, breaking JSON, Enum, DateTime, and
+  other serialized field types
+- `upsert()` now emits `DO NOTHING` when no update fields are provided,
+  instead of invalid `DO UPDATE SET` with no assignments
+- `upsert()` now uses DB column names for FK fields in both the INSERT
+  column list and the `ON CONFLICT` target
+
+### Fixed — Migrations (Phase 2)
+
+- Array fields now preserve PostgreSQL array types in generated migrations
+- JSON defaults with apostrophes are now correctly escaped in migration SQL
+- `AlterFieldDefault` now emits valid JSONB literal SQL for JSON defaults
+- Decimal defaults are now preserved correctly in generated migrations
+- Internal migrations are now ordered before user migrations during discovery
+- `apply_migrations()` now respects declared dependency order
+
+### Fixed — API Layer (Phase 3)
+
+- Auto-generated ViewSet routes now publish concrete response models in
+  OpenAPI schema instead of `Any`
+- `model_to_dict()` now includes ManyToMany fields declared in read schemas
+- Cursor pagination now correctly applies page size and cursor filtering
+- Serializer type mapping now uses concrete Python types instead of `Any`
+
+### Fixed — Security (Phase 4)
+
+- `get_current_user()` no longer trusts the client-controlled `X-User-Id`
+  header for user resolution — previously this allowed arbitrary
+  user impersonation
+- Studio auth is no longer bypassed by `debug=True` when auth is required
+- Studio session-cookie auth path now uses DB-backed user lookup
+- `AIAgentMiddleware` now auto-registers so `DenyAI` can function correctly
+
+### Fixed — CLI (Phase 5)
+
+- `aksara dbsetup` prompt order no longer misroutes username input into
+  the port prompt
+- `aksara info` now includes configured `installed_apps`
+- `aksara info` now reports Studio availability using runtime gating
+  semantics, not a hardcoded flag
+- CLI model discovery now honors `installed_apps` instead of a hardcoded
+  shortlist
+
+### Fixed — Multi-tenancy & Background Tasks (Phase 7)
+
+- `enqueue_task()` now persists tenant provenance at enqueue time
+- `TaskWorker` now restores tenant context before task execution
+- Empty or whitespace-only tenant headers now fail closed with HTTP 400
+  instead of silently disabling tenant scoping
+- Task record schema now includes `tenant_id` field
+
+### Tests
+
+- 33 targeted regression tests added across Phases 1–7
+- AI metadata propagation regression suite added in
+  `tests/ai/test_ai_metadata_propagation.py`
+- Total suite: **6507 passed, 3 skipped**
+
 ## [0.5.46] — Packaging and Docs Release Polish
 
 ### Changed

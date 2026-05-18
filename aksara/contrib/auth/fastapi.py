@@ -41,9 +41,7 @@ async def get_current_user(request: "Request") -> Optional[Any]:
     """
     FastAPI dependency to get the current authenticated user.
     
-    Checks for user ID in:
-    1. request.state.user (if set by middleware)
-    2. X-User-Id header
+    Checks for a user attached server-side on request.state.
     
     Returns:
         User instance or None if not authenticated.
@@ -55,34 +53,13 @@ async def get_current_user(request: "Request") -> Optional[Any]:
                 raise HTTPException(status_code=401)
             return {"email": user.email}
     """
-    # Check if user already attached by middleware
+    # Only trust identities attached server-side by auth middleware.
     if hasattr(request.state, "user") and request.state.user is not None:
         # v0.3.13: Set user_id_var for logging/context propagation
         user_id_var.set(str(request.state.user.id))
         return request.state.user
-    
-    # Check for user ID header
-    user_id = request.headers.get("X-User-Id")
-    if user_id is None:
-        return None
-    
-    try:
-        user_id = int(user_id)
-    except (ValueError, TypeError):
-        return None
-    
-    # Import here to avoid circular imports
-    from aksara.contrib.auth.models import User
-    
-    try:
-        user = await User.objects.get(id=user_id)
-        # Cache on request state
-        request.state.user = user
-        # v0.3.13: Set user_id_var for logging/context propagation
-        user_id_var.set(str(user.id))
-        return user
-    except Exception:
-        return None
+
+    return None
 
 
 async def get_current_active_user(request: "Request") -> Optional[Any]:

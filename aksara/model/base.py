@@ -376,8 +376,9 @@ class ModelMeta(type):
                 and (fobj.auto_now or fobj.auto_now_add)
             )
             if not (is_auto_pk or is_auto_timestamp):
-                if hasattr(fobj, 'validate'):
-                    validatable_fields[fname] = fobj
+                # Generic null/default validation applies to every persisted field,
+                # even when the concrete field only enforces constraints in to_db().
+                validatable_fields[fname] = fobj
                 async_prepare_fields[fname] = fobj
         namespace['_validatable_fields'] = validatable_fields
         namespace['_async_prepare_fields'] = async_prepare_fields
@@ -779,8 +780,11 @@ class Model(metaclass=ModelMeta):
                 continue
 
             # Run field-specific validation
+            validator = getattr(field, 'validate', None)
+            if not callable(validator):
+                continue
             try:
-                field.validate(value)
+                validator(value)
             except ValueError as e:
                 errors[field_name] = str(e)
 

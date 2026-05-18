@@ -347,6 +347,12 @@ class String(Field):
             raise ValueError(
                 f"String value is too short (minimum {self.min_length} characters, got {len(v)})"
             )
+        # Enforce max_length before persistence so we raise a clear field
+        # validation error instead of relying on Postgres VARCHAR(n) failures.
+        if self.max_length is not None and len(v) > self.max_length:
+            raise ValueError(
+                f"String value is too long (maximum {self.max_length} characters, got {len(v)})"
+            )
         if self._choices_valid is not None and v not in self._choices_valid:
             raise ValueError(
                 f"Value {v!r} is not a valid choice. "

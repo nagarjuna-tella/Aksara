@@ -49,6 +49,8 @@ class FieldState:
     enum_name: Optional[str] = None
     # Vector specific
     dimensions: Optional[int] = None
+    # Array specific
+    array_sql_type: Optional[str] = None
 
     def to_key(self) -> tuple:
         """Return a hashable representation for comparison."""
@@ -68,6 +70,7 @@ class FieldState:
             self.decimal_places,
             self.enum_name,
             self.dimensions,
+            self.array_sql_type,
         )
 
 
@@ -129,6 +132,9 @@ def _field_op_to_state(field_name: str, field_op) -> FieldState:
     # Vector specific
     if isinstance(field_op, op.VectorField):
         state.dimensions = getattr(field_op, 'dimensions', None)
+
+    if isinstance(field_op, op.ArrayField):
+        state.array_sql_type = getattr(field_op, 'sql_type', None)
 
     return state
 
@@ -282,7 +288,7 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         Enum: "EnumField",
         OneToOne: "OneToOneField",
         ForeignKey: "ForeignKeyField",
-        Array: "TextField",  # arrays are stored as text in migrations
+        Array: "ArrayField",
         # Extended fields (Django parity)
         Slug: "SlugField",
         SmallInteger: "SmallIntegerField",
@@ -353,6 +359,9 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
 
     if isinstance(field, Vector):
         state.dimensions = getattr(field, 'dimensions', None)
+
+    if isinstance(field, Array):
+        state.array_sql_type = getattr(field, 'sql_type', None)
 
     return state
 
@@ -784,6 +793,9 @@ def _model_field_to_op(field_name: str, field):
             kwargs['nullable'] = True
         if field.unique:
             kwargs['unique'] = True
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
         return op.DecimalField(**kwargs)
 
     elif isinstance(field, Enum):
@@ -821,11 +833,14 @@ def _model_field_to_op(field_name: str, field):
         return op.ForeignKeyField(target_table, **kwargs)
 
     elif isinstance(field, Array):
-        # Arrays are stored as TEXT in migrations
+        # Preserve PostgreSQL array semantics instead of downgrading to TEXT.
         kwargs = {}
         if field.nullable:
             kwargs['nullable'] = True
-        return op.TextField(**kwargs)
+        default = _normalize_default(field.default)
+        if default is not None:
+            kwargs['default'] = default
+        return op.ArrayField(getattr(field, 'sql_type', 'TEXT[]'), **kwargs)
 
     else:
         # Fallback
@@ -951,18 +966,19 @@ def generate_operations_from_diff(
             if not mig_field or not mod_field:
                 continue
 
+            runtime_field = None
+            for fname, f in model_class._fields.items():
+                if isinstance(f, (ForeignKey, OneToOne)):
+                    if f.db_column_name == col_name:
+                        runtime_field = f
+                        break
+                elif fname == col_name:
+                    runtime_field = f
+                    break
+
             # Determine what changed and generate appropriate operations
             if mig_field.field_type != mod_field.field_type:
                 # Field type changed — generate AlterFieldType
-                runtime_field = None
-                for fname, f in model_class._fields.items():
-                    if isinstance(f, (ForeignKey, OneToOne)):
-                        if f.db_column_name == col_name:
-                            runtime_field = f
-                            break
-                    elif fname == col_name:
-                        runtime_field = f
-                        break
                 if runtime_field:
                     new_field_op = _model_field_to_op(col_name, runtime_field)
                     operations.append(op.AlterFieldType(
@@ -985,6 +1001,7 @@ def generate_operations_from_diff(
                     table=table_name,
                     name=col_name,
                     new_default=mod_field.default,
+                    field=_model_field_to_op(col_name, runtime_field) if runtime_field else None,
                 ))
 
     # 5. Drop removed tables
@@ -1122,14 +1139,16 @@ def operations_to_code(operations: list) -> str:
             )
 
         elif isinstance(operation, op.AlterFieldDefault):
-            default_val = getattr(operation, 'new_default', None)
-            code_parts.append(
-                f'        op.AlterFieldDefault(\n'
-                f'            table="{operation.table}",\n'
-                f'            name="{operation.name}",\n'
-                f'            new_default={default_val!r},\n'
-                f'        )'
-            )
+            lines = [
+                '        op.AlterFieldDefault(',
+                f'            table="{operation.table}",',
+                f'            name="{operation.name}",',
+                f'            new_default={getattr(operation, "new_default", None)!r},',
+            ]
+            if getattr(operation, 'field', None) is not None:
+                lines.append(f'            field={_field_op_to_code(operation.field)},')
+            lines.append('        )')
+            code_parts.append("\n".join(lines))
 
         elif isinstance(operation, op.RunSQL):
             kwargs = [f'sql={operation.sql!r}']
@@ -1247,6 +1266,14 @@ def _field_op_to_code(field_op) -> str:
             parts.append(f"default={field_op.default!r}")
         return f"op.JSONField({', '.join(parts)})" if parts else "op.JSONField()"
 
+    elif isinstance(field_op, op.ArrayField):
+        parts = [f"sql_type={field_op.sql_type!r}"]
+        if not field_op.nullable:
+            parts.append("nullable=False")
+        if field_op.default is not None:
+            parts.append(f"default={field_op.default!r}")
+        return f"op.ArrayField({', '.join(parts)})"
+
     elif isinstance(field_op, op.FloatField):
         parts = []
         if field_op.nullable:
@@ -1261,6 +1288,8 @@ def _field_op_to_code(field_op) -> str:
             parts.append("nullable=True")
         if field_op.unique:
             parts.append("unique=True")
+        if field_op.default is not None:
+            parts.append(f"default={field_op.default!r}")
         return f"op.DecimalField({', '.join(parts)})"
 
     elif isinstance(field_op, op.EmailField):

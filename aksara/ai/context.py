@@ -447,6 +447,10 @@ def _extract_model_info(model: Type["Model"]) -> AiModelInfo:
     pk_field = "id"
     
     for name, field in model._fields.items():
+        # Match registry AI export rules: sensitive fields are omitted entirely.
+        if getattr(field, 'ai_sensitive', False):
+            continue
+
         # Check if primary key
         if getattr(field, 'primary_key', False):
             pk_field = name
@@ -887,11 +891,12 @@ async def build_full_ai_context(
         AiFullContext with complete application state
     """
     import aksara
-    from aksara.registry import ModelRegistry
+    from aksara.registry import get_models
     
     # Extract models
     models: List[AiModelInfo] = []
-    for model_cls in ModelRegistry.all().values():
+    # Match registry AI exposure rules: hidden models stay out of exported context.
+    for model_cls in get_models(ai_exposed_only=True):
         models.append(_extract_model_info(model_cls))
     
     # Sort deterministically
@@ -1018,16 +1023,34 @@ def build_full_ai_context_sync(
     Useful for non-async contexts like CLI tools.
     """
     import asyncio
-    
-    return asyncio.get_event_loop().run_until_complete(
-        build_full_ai_context(
-            app,
-            include_routes=include_routes,
-            include_migrations=include_migrations,
-            include_admin=include_admin,
-            include_ai_tools=include_ai_tools,
+
+    try:
+        asyncio.get_running_loop()
+        # Match other sync AI helpers: run in a worker thread if a loop exists.
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            future = pool.submit(
+                asyncio.run,
+                build_full_ai_context(
+                    app,
+                    include_routes=include_routes,
+                    include_migrations=include_migrations,
+                    include_admin=include_admin,
+                    include_ai_tools=include_ai_tools,
+                ),
+            )
+            return future.result()
+    except RuntimeError:
+        return asyncio.run(
+            build_full_ai_context(
+                app,
+                include_routes=include_routes,
+                include_migrations=include_migrations,
+                include_admin=include_admin,
+                include_ai_tools=include_ai_tools,
+            )
         )
-    )
 
 
 __all__ = [

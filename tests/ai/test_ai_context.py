@@ -18,6 +18,7 @@ Comprehensive tests for the AI Context module including:
 
 import pytest
 import json
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
@@ -782,6 +783,54 @@ class TestBuildFullContext:
         # Find Article model
         article = next((m for m in context.models if m.name == "Article"), None)
         assert article is not None
+
+    @pytest.mark.asyncio
+    async def test_context_omits_models_hidden_from_ai(self):
+        """Models with ai_agent_exposed=False should be omitted from full AI context."""
+        from aksara.ai.context import build_full_ai_context
+
+        class VisibleArticle(Model):
+            title = fields.String(max_length=200)
+
+            class Meta:
+                table_name = "visible_articles"
+
+        class HiddenArticle(Model):
+            title = fields.String(max_length=200)
+
+            class Meta:
+                table_name = "hidden_articles"
+                ai_agent_exposed = False
+
+        app = Aksara(title="Test App", version="1.0.0", ai_enabled=True)
+
+        context = await build_full_ai_context(app)
+
+        model_names = [model.name for model in context.models]
+        assert "VisibleArticle" in model_names
+        assert "HiddenArticle" not in model_names
+
+    @pytest.mark.asyncio
+    async def test_context_omits_sensitive_model_fields(self):
+        """Sensitive fields should not be exported in full AI context."""
+        from aksara.ai.context import build_full_ai_context
+
+        class SecretArticle(Model):
+            title = fields.String(max_length=200)
+            secret = fields.String(max_length=200, ai_sensitive=True)
+
+            class Meta:
+                table_name = "secret_articles"
+
+        app = Aksara(title="Test App", version="1.0.0", ai_enabled=True)
+
+        context = await build_full_ai_context(app)
+
+        secret_article = next((m for m in context.models if m.name == "SecretArticle"), None)
+        assert secret_article is not None
+        field_names = [field.name for field in secret_article.fields]
+        assert "secret" not in field_names
+        assert "title" in field_names
     
     @pytest.mark.asyncio
     async def test_context_includes_viewsets(self, sample_app):
@@ -893,6 +942,24 @@ class TestContextSerialization:
             json.dumps(context.model_dump(), default=str)
         except ValueError as e:
             pytest.fail(f"Circular reference detected: {e}")
+
+
+class TestBuildFullContextSync:
+    """Tests for build_full_ai_context_sync."""
+
+    def test_build_full_context_sync_without_current_event_loop(self, monkeypatch, sample_app):
+        """The sync helper should not rely on asyncio.get_event_loop()."""
+        from aksara.ai.context import build_full_ai_context_sync
+
+        def fail_get_event_loop():
+            raise RuntimeError("There is no current event loop in thread 'MainThread'.")
+
+        monkeypatch.setattr(asyncio, "get_event_loop", fail_get_event_loop)
+
+        context = build_full_ai_context_sync(sample_app)
+
+        assert context.framework == "aksara"
+        assert context.model_count >= 1
 
 
 # =============================================================================

@@ -190,6 +190,15 @@ class Aksara(FastAPI):
         if middlewares:
             for mw_class, options in reversed(middlewares):
                 self.add_middleware(mw_class, **(options or {}))
+
+        from aksara.conf import settings
+        from aksara.middleware.ai_agent import AIAgentMiddleware
+
+        # Auto-enable AI agent state when token auth is configured so DenyAI can enforce.
+        if getattr(settings, "ai_agent_token", None) and not any(
+            getattr(mw, "cls", None) is AIAgentMiddleware for mw in self.user_middleware
+        ):
+            self.add_middleware(AIAgentMiddleware)
         
         # v0.3.14: Auto-load models from configured apps
         # This ensures models are registered before any routes or migrations

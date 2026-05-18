@@ -37,10 +37,13 @@ class MockModel:
     """Mock model for testing."""
     __name__ = "MockModel"
     __tablename__ = "mock_models"
+    # ai_description must be a concrete value (not a MagicMock) so the
+    # generated Read schema validates against the OpenAPI spec; FastAPI
+    # now publishes this schema in components.
     _fields = {
-        "id": MagicMock(column_name="id"),
-        "name": MagicMock(column_name="name"),
-        "is_active": MagicMock(column_name="is_active"),
+        "id": MagicMock(column_name="id", ai_description=None, primary_key=False, nullable=True),
+        "name": MagicMock(column_name="name", ai_description=None, primary_key=False, nullable=True),
+        "is_active": MagicMock(column_name="is_active", ai_description=None, primary_key=False, nullable=True),
     }
     objects = MagicMock()
 

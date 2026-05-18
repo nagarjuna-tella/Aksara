@@ -166,7 +166,7 @@ class TestDbsetupCommand:
         mock_asyncio_run.return_value = False  # PG check returns False
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["dbsetup"])
+        result = runner.invoke(cli, ["dbsetup"], input="\n\n")
 
         assert result.exit_code != 0
         assert "not running or not reachable" in result.output
@@ -195,7 +195,8 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="testdb\npostgres\n",  # db name, username (password via getpass)
+            # host, port, db name, username (password via getpass)
+            input="\n\ntestdb\npostgres\n",
         )
 
         assert "found" in result.output
@@ -224,7 +225,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="existingdb\npostgres\n",
+            input="\n\nexistingdb\npostgres\n",
         )
 
         assert "already exists, skipping" in result.output
@@ -252,7 +253,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="mydb\npostgres\n",
+            input="\n\nmydb\npostgres\n",
         )
 
         assert result.exit_code != 0
@@ -278,7 +279,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="mydb\nbaduser\n",
+            input="\n\nmydb\nbaduser\n",
         )
 
         assert result.exit_code != 0
@@ -300,7 +301,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="mydb\npostgres\n",
+            input="\n\nmydb\npostgres\n",
         )
 
         # Verify the URL passed to _write_env_database_url has encoded password
@@ -324,7 +325,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup", "--host", "db.example.com", "--port", "5433"],
-            input="mydb\npostgres\n",
+            input="\n\nmydb\npostgres\n",
         )
 
         assert "db.example.com:5433" in result.output
@@ -351,7 +352,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="mydb\npostgres\n",
+            input="\n\nmydb\npostgres\n",
         )
 
         assert result.exit_code != 0
@@ -374,7 +375,7 @@ class TestDbsetupCommand:
         runner = CliRunner()
         result = runner.invoke(
             cli, ["dbsetup"],
-            input="mydb\npostgres\n",
+            input="\n\nmydb\npostgres\n",
         )
 
         assert result.exit_code != 0

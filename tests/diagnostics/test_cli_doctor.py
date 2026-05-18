@@ -182,8 +182,9 @@ class TestDoctorAi:
     def test_ai_no_issues(self):
         with patch("aksara.diagnostics.check_ai_profiles", new_callable=AsyncMock, return_value=[]):
             with patch("aksara.diagnostics.check_ai_provider_secrets", new_callable=AsyncMock, return_value=[]):
-                runner = CliRunner()
-                result = runner.invoke(cli, ["doctor", "ai"])
+                with patch("aksara.diagnostics.check_ai_hub_config", new_callable=AsyncMock, return_value=[]):
+                    runner = CliRunner()
+                    result = runner.invoke(cli, ["doctor", "ai"])
         assert result.exit_code == 0
         assert "No AI issues" in result.output
 

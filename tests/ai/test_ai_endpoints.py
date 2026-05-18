@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
+from aksara._version import __version__
 from aksara.ai.models import AiTool
 from aksara.ai.registry import AiToolRegistry
 from aksara.ai.fastapi import router
@@ -94,7 +95,7 @@ class TestListAiToolsEndpoint:
         assert "tools" in data
         assert "count" in data
         assert "version" in data
-        assert data["version"] == "0.4.0"
+        assert data["version"] == __version__
         
         # Anonymous should only get public tools
         tool_names = [t["name"] for t in data["tools"]]

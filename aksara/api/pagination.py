@@ -9,6 +9,7 @@ v0.5.39: Added CursorPagination for high-performance keyset-based pagination.
 from typing import Any, Dict, Optional, TYPE_CHECKING
 from fastapi import Request
 import base64
+import json
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -170,15 +171,20 @@ class CursorPagination(BasePagination):
         self.page_size = self.default_page_size
         self.cursor = None
         self.next_cursor = None
-        
+        # ModelViewSet._paginate forwards self.limit / self.offset into
+        # _fetch_with_pagination. We expose page_size as limit and 0 as
+        # offset so the requested page_size is honoured by the fetch.
+        self.limit = self.default_page_size
+        self.offset = 0
+
     async def paginate_queryset(self, queryset: "QuerySet", request: Request) -> "QuerySet":
         """
         Paginate using cursor-based approach.
-        
+
         Args:
             queryset: The QuerySet to paginate
             request: The HTTP request
-            
+
         Returns:
             The queryset (pagination applied in viewset's _fetch_with_pagination)
         """
@@ -186,33 +192,39 @@ class CursorPagination(BasePagination):
             self.page_size = int(request.query_params.get("page_size", self.default_page_size))
         except ValueError:
             self.page_size = self.default_page_size
-            
+
         self.page_size = min(self.page_size, self.max_page_size)
-        
-        # Get cursor from query params
+
+        # Mirror page_size into the limit/offset attrs the viewset reads.
+        self.limit = self.page_size
+        self.offset = 0
+
+        # Get cursor from query params and apply it to the queryset so the
+        # next page actually advances past the previous page's last id.
         cursor_str = request.query_params.get(self.cursor_query_param)
         if cursor_str:
             try:
-                # Decode cursor from base64
-                cursor_data = base64.b64decode(cursor_str).decode('utf-8')
-                # In a real implementation, you'd parse the cursor data
-                # and apply it to the queryset for filtering
+                cursor_data = json.loads(
+                    base64.b64decode(cursor_str).decode('utf-8')
+                )
                 self.cursor = cursor_data
             except Exception:
-                # Invalid cursor, ignore it
                 self.cursor = None
-        
+                cursor_data = None
+            if isinstance(cursor_data, dict) and "id" in cursor_data:
+                queryset = queryset.filter(id__gt=cursor_data["id"])
+
         self.count = await queryset.count()
-        
+
         return queryset
-        
+
     def get_paginated_response(self, data: list) -> Dict[str, Any]:
         """
         Return paginated response with cursor for next page.
-        
+
         Args:
             data: The serialized list of items
-            
+
         Returns:
             Dict with count, next_cursor, and results
         """
@@ -220,19 +232,17 @@ class CursorPagination(BasePagination):
             "count": self.count,
             "results": data,
         }
-        
-        # If we have more results than requested, compute next cursor
-        if len(data) >= self.page_size:
-            # In a real implementation, extract sort key from last item
-            # and encode it as the next cursor
-            if data:
-                # Example: next_cursor based on last item's ID
-                last_item = data[-1]
-                if isinstance(last_item, dict) and 'id' in last_item:
-                    cursor_value = last_item['id']
-                    self.next_cursor = base64.b64encode(
-                        str({"id": cursor_value}).encode('utf-8')
-                    ).decode('utf-8')
-                    response["next_cursor"] = self.next_cursor
+
+        # If we have at least page_size results, compute next cursor
+        # from the last item's id. The cursor is JSON-encoded so
+        # paginate_queryset() can json.loads() it back round-trip.
+        if len(data) >= self.page_size and data:
+            last_item = data[-1]
+            if isinstance(last_item, dict) and 'id' in last_item:
+                cursor_value = last_item['id']
+                self.next_cursor = base64.b64encode(
+                    json.dumps({"id": str(cursor_value)}).encode('utf-8')
+                ).decode('utf-8')
+                response["next_cursor"] = self.next_cursor
         
         return response

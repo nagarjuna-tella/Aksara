@@ -45,7 +45,7 @@ from typing import TYPE_CHECKING, Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from .context import tenant_id_var
 
@@ -89,25 +89,35 @@ class TenantMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next) -> Response:
         """Process the request and extract tenant ID."""
-        # Try header first
-        tenant_id: Optional[str] = request.headers.get(self.header_name)
-        
+        # Distinguish "header absent" from "header present but empty".
+        # An empty/whitespace value would later be treated as "no
+        # tenant" by apply_tenant_context() and silently disable
+        # tenant scoping. Reject it here so callers get a clear
+        # failure instead of accidentally bypassing isolation.
+        raw_header = request.headers.get(self.header_name)
+        if raw_header is not None and not raw_header.strip():
+            return JSONResponse(
+                {"detail": f"{self.header_name} header must not be empty"},
+                status_code=400,
+            )
+        tenant_id: Optional[str] = raw_header.strip() if raw_header else None
+
         # Fall back to subdomain if enabled and no header found
         if not tenant_id and self.use_subdomain:
             tenant_id = self._extract_subdomain(request)
-        
+
         # Store in request state for endpoint access
         request.state.tenant_id = tenant_id
-        
+
         # Store in contextvar for access anywhere in the call stack
         token = tenant_id_var.set(tenant_id)
-        
+
         try:
             response = await call_next(request)
         finally:
             # Reset contextvar to prevent leaking to other requests
             tenant_id_var.reset(token)
-        
+
         return response
     
     def _extract_subdomain(self, request: Request) -> Optional[str]:

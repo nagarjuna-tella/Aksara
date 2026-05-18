@@ -403,7 +403,11 @@ def _provider_from_env(kind: ProviderKind) -> ProviderConfig:
             raw[field_name] = val
 
     cfg_cls = _CONFIG_CLASSES[kind]
-    cfg = cfg_cls(**raw)
+    # Keep Ollama placeholders unconfigured until an explicit OLLAMA_* env var exists.
+    if kind == "ollama" and not raw:
+        cfg = cfg_cls(base_url="")
+    else:
+        cfg = cfg_cls(**raw)
     return ProviderConfig(kind=kind, **{kind: cfg})
 
 

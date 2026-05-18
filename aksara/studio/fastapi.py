@@ -278,17 +278,10 @@ async def verify_studio_auth(request: Request) -> None:
     if not getattr(settings, "studio_require_auth", False):
         return
 
-    # In debug mode with no auth token configured, allow through automatically.
-    # This prevents a misconfiguration from locking developers out of Studio
-    # in local development environments.
-    debug = getattr(settings, "debug", False)
     expected_token = getattr(settings, "studio_auth_token", None)
-    if debug and not expected_token:
-        return
 
     # --- Bearer token check ---
     auth_header = request.headers.get("Authorization", "")
-    expected_token = getattr(settings, "studio_auth_token", None)
     if auth_header.startswith("Bearer ") and expected_token:
         import hmac
         provided = auth_header[7:]
@@ -300,9 +293,13 @@ async def verify_studio_auth(request: Request) -> None:
     if session_token:
         try:
             from aksara.contrib.auth import get_user_from_session_token
-            user = await get_user_from_session_token(session_token)
-            if user and getattr(user, "is_staff", False):
-                return
+
+            # Reuse the admin path's DB-backed session lookup for staff cookies.
+            db = getattr(request.scope.get("app"), "db", None)
+            if db is not None:
+                user = await get_user_from_session_token(db, session_token)
+                if user and getattr(user, "is_staff", False):
+                    return
         except Exception:
             pass
 

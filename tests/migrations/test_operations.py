@@ -4,6 +4,8 @@ Tests for Migration Operations
 Tests all Operation classes in aksara.migrations.operations.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
 from aksara.migrations import operations as op
 
@@ -142,6 +144,13 @@ class TestJSONField:
         field = op.JSONField(default={"key": "value"})
         sql = field.to_sql()
         assert "::jsonb" in sql
+
+    def test_default_dict_escapes_apostrophes(self):
+        field = op.JSONField(default={"publisher": "O'Reilly"})
+
+        sql = field.to_sql()
+
+        assert sql == "JSONB DEFAULT '{\"publisher\": \"O''Reilly\"}'::jsonb"
     
     def test_nullable_default(self):
         # JSONField is nullable by default
@@ -377,6 +386,25 @@ class TestAlterFieldNull:
         reverse = alter.reverse()
         assert isinstance(reverse, op.AlterFieldNull)
         assert reverse.nullable is False
+
+
+class TestAlterFieldDefault:
+    """Tests for AlterFieldDefault operation."""
+
+    @pytest.mark.asyncio
+    async def test_apply_formats_json_defaults_as_jsonb_literals(self):
+        connection = AsyncMock()
+        alter = op.AlterFieldDefault(
+            table="items",
+            name="meta",
+            new_default={"publisher": "O'Reilly"},
+        )
+
+        await alter.apply(connection)
+
+        connection.execute.assert_awaited_once_with(
+            'ALTER TABLE "items" ALTER COLUMN "meta" SET DEFAULT \'{"publisher": "O\'\'Reilly"}\'::jsonb'
+        )
 
 
 # =============================================================================
