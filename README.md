@@ -5,14 +5,14 @@
 <h1 align="center">Aksara</h1>
 
 <p align="center">
-  One model definition → REST API, MCP tools for AI agents, interactive AI Console, built-in Studio UI, admin dashboard, and PostgreSQL migrations. Python. No glue code.
+  One model definition → REST API, MCP tools for AI agents, interactive AI Console, built-in Studio UI, admin dashboard, launch diagnostics, and PostgreSQL migrations. Python. No glue code.
 </p>
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-6507%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.47-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/tests-6744%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/version-0.5.48-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -22,6 +22,14 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/docs/docs/assets/aksara-demo.gif" alt="Aksara CLI demo — scaffold to running app in seconds" width="860" />
 </p>
+
+---
+
+## What is Aksara?
+
+Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Studio UI, MCP tools, and system-level AI intelligence. The goal is simple: a new project should have a working API, inspectable data model, AI-facing tool catalog, and launch diagnostics before you start writing glue code.
+
+Current release: **v0.5.48 — Launch Hardening & Golden Path**.
 
 ---
 
@@ -87,6 +95,8 @@ The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote
 
 ## Quickstart
 
+### 10-Minute Quickstart
+
 ```bash
 pip install aksara-framework
 ```
@@ -94,6 +104,7 @@ pip install aksara-framework
 aksara startproject opsdesk && cd opsdesk
 aksara dbsetup
 aksara migrate
+aksara doctor launch-check
 aksara dev
 ```
 
@@ -106,9 +117,11 @@ Now open three things:
 
 | What to try             | URL / Command                                                                                         |
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Studio + AI Console** | [http://localhost:8000/studio/ui](http://localhost:8000/studio/ui) — ask "explain the Incident model" |
-| **MCP tool catalog**    | [http://localhost:8000/ai/tools/mcp](http://localhost:8000/ai/tools/mcp) — point any MCP client here  |
-| **Health check**        | `aksara doctor fix-plan` — diagnose and print the remediation path                                    |
+| **API docs**            | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) — inspect generated OpenAPI                 |
+| **Studio + AI Console** | [http://127.0.0.1:8000/studio/ui](http://127.0.0.1:8000/studio/ui) — ask "explain the Incident model" |
+| **MCP tool catalog**    | [http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp) — point any MCP client here |
+| **Launch check**        | `aksara doctor launch-check` — verify project, DB, Studio, MCP, AI, examples, and dev-mode readiness |
+| **Fix plan**            | `aksara doctor fix-plan` — diagnose and print the remediation path                                    |
 
 That's what makes Aksara different from `pip install fastapi && pip install sqlalchemy && ...`. The AI and diagnostic surfaces exist from the first `aksara dev`.
 
@@ -118,7 +131,37 @@ Aksara is built on FastAPI, so you get its performance and full ecosystem out of
 
 ---
 
-## Features
+### Open Studio
+
+Studio lives at [http://127.0.0.1:8000/studio/ui](http://127.0.0.1:8000/studio/ui). It gives you models, routes, query tools, migrations, diagnostics, AI Console, AI Inspector, Project Graph, Architecture Review, Performance Analyzer, Investigation Sessions, and Daily Briefing from the same running app.
+
+If the first run is incomplete, Studio now surfaces clearer states for missing database configuration, pending migrations, missing AI provider setup, and project graph availability.
+
+### Use AI
+
+AI features are optional on day one. You can run the framework, inspect Studio, browse API docs, and view MCP output without OpenAI, Anthropic, Azure, or Ollama.
+
+When you want AI features:
+
+```bash
+aksara ai-hub status
+aksara ai-hub configure
+```
+
+For a local-first path, use Ollama:
+
+```bash
+ollama serve
+ollama pull llama3
+```
+
+### Use MCP
+
+Aksara exposes generated MCP-compatible tools at [http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp). ViewSets, model fields, custom `@action` endpoints, and AI metadata flow into the catalog so external agents can inspect and call your backend without a hand-written adapter.
+
+---
+
+## Core Features
 
 |     | Feature                  | What it does                                                                                      |
 | --- | ------------------------ | ------------------------------------------------------------------------------------------------- |
@@ -147,6 +190,12 @@ Aksara is built on FastAPI, so you get its performance and full ecosystem out of
 
 ---
 
+## Why Aksara?
+
+Because the first ten minutes of a backend project should prove the system works, not force you to assemble the same stack again. Aksara gives you the database layer, API layer, Studio, AI context, MCP surface, diagnostics, and example paths together, while keeping the model definition as the source of truth.
+
+---
+
 ## The Aksara Difference
 
 Most frameworks stop at the database and the HTTP layer. You define a model, you get a table and an endpoint. Aksara keeps going.
@@ -166,14 +215,24 @@ You write this metadata once, next to the field definition, and it propagates ev
 
 ## Patterns & Examples
 
-| Pattern          | Use Case                          | Command                                           |
-| ---------------- | --------------------------------- | ------------------------------------------------- |
-| **Blog**         | Posts, comments, publish workflow | `aksara startproject myblog --template blog`      |
-| **CRM**          | Customers, deals, pipeline stages | `aksara startproject mycrm --template crm`        |
-| **Multitenant**  | Tenant-aware SaaS apps            | `aksara startproject saas --template multitenant` |
-| **AI Providers** | BYO LLM wiring examples           | See `examples/ai_providers/`                      |
+The bundled examples are the golden paths for learning and launch validation:
+
+| Example          | Use Case                                      | Where to start                                      |
+| ---------------- | --------------------------------------------- | --------------------------------------------------- |
+| **basic_app**    | Smallest working Aksara app                   | `examples/basic_app/`                               |
+| **Blog**         | Posts, comments, publish workflow; models, relations, APIs, Studio, MCP | `aksara startproject myblog --template blog` |
+| **CRM**          | Customers, deals, pipeline stages; business data model and reporting patterns | `aksara startproject mycrm --template crm` |
+| **Multitenant**  | Tenant-aware SaaS apps and tenant-aware app structure | `aksara startproject saas --template multitenant` |
+| **AI Providers** | BYO LLM wiring examples; local and remote AI setup with no secrets | `examples/ai_providers/` |
 
 Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/) | Docs: [Patterns](https://nagarjuna-tella.github.io/Aksara/patterns/)
+
+Validate the examples in a source checkout:
+
+```bash
+aksara examples validate
+aksara examples validate --format json
+```
 
 ---
 
@@ -182,6 +241,7 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 | Section                                       | Description                                            |
 | --------------------------------------------- | ------------------------------------------------------ |
 | [Quickstart](https://nagarjuna-tella.github.io/Aksara/quickstart/) | Build and deploy in 5 minutes                          |
+| [Getting Started](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/) | Install, first project, Studio, AI, MCP, examples      |
 | [ORM Guide](https://nagarjuna-tella.github.io/Aksara/orm/) | Models, fields, relations, queries                     |
 | [API Guide](https://nagarjuna-tella.github.io/Aksara/api/) | ViewSets, actions, serializers                         |
 | [Advanced Guide](https://nagarjuna-tella.github.io/Aksara/advanced/) | Background tasks, media/email, i18n, generic relations |
@@ -192,15 +252,32 @@ Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/exampl
 
 ---
 
+## Roadmap
+
+Current stable: **v0.5.48 — Launch Hardening & Golden Path**.
+
+Next planned milestones:
+
+| Version | Focus |
+| ------- | ----- |
+| v0.5.49 | Durable AI Session Store |
+| v0.5.50 | AI Memory Foundation |
+| v0.5.51 | AI System Radar |
+| v0.6.0  | Production Mode |
+
+See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the full release path.
+
+---
+
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.47**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.48**.
 
-Latest validation: **6507 passed, 3 skipped**.
+Latest validation with local PostgreSQL: **6744 passed, 3 skipped, 0 warnings**.
 
 **Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB/vector ORM support.
 
-**Evolving:** AI Debugger, Architecture Review, Performance Analyzer.
+**Evolving:** AI Debugger, Architecture Review, Performance Analyzer, and long-running AI session surfaces.
 
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for what's next.
 

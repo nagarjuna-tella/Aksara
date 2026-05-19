@@ -2,239 +2,70 @@
 
 Maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
 
-> **Updated Apr 2026**
+> Updated May 2026
 
-Aksara is now an AI-first application framework with a fully integrated
-developer studio, automatic diagnostics, code-generation agents, and
-intelligent tooling. This roadmap reflects the reality of Aksara’s rapid
-2026 development cadence.
+Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-user success, and production readiness over feature sprawl.
 
 ---
 
 ## Current Stable Version
 
-### v0.5.43 (Apr 2026)
+### v0.5.48 - Launch Hardening & Golden Path
 
-- **AI Console, Debugger, Architecture Review, Performance Analyzer** — full AI analysis stack
-- **MCP tool export** at `/ai/tools/mcp`
-- **Studio UX Redesign** — 5 semantic nav groups, ARIA accessibility, keyboard navigation
-- **AI Hub 2.0** — unified configuration layer for all AI providers:
-  `AiHubSettings`, `ProviderConfig`, `AiDefaultModels` in `aksara/ai/hub_settings.py`
-- **7 REST endpoints** under `/studio/ai-hub/` for provider management
-- **Studio UI** — 4 new tabs (Overview, Models, Routing, Onboarding), global
-  sidebar indicator, Alt+A shortcut, onboarding wizard
-- **AI Hub CLI** — `aksara ai-hub` group with `status`, `providers`, `models`,
-  `defaults`, `configure`, `doctor` subcommands
-- **Gap Analysis** — new `ai_hub` category (9 categories total), 6 gap codes
-  with fix-plan commands
-- **Wiring** — AI context includes hub summary, agent workflows inject hub
-  defaults, search embeddings consult hub, diagnostics check hub config
-- **Deprecation** — old `ai_profiles_enabled`, `ai_providers`, `ai_secret_hints`
-  settings marked deprecated (removed in v0.6)
+- Added `aksara doctor launch-check` for first-run readiness.
+- Added `aksara examples validate` for bundled example sanity checks.
+- Promoted `basic_app`, `blog`, `crm`, `multitenant`, and `ai_providers` as golden-path examples.
+- Refreshed README, getting-started docs, roadmap, and changelog for public launch clarity.
+- Added packaging, docs, examples, launch-check, and no-secrets test coverage.
+- Kept AI provider setup optional for first launch.
 
 ---
 
 ## Recent Releases
 
-### v0.5.27 — Sanity Sweep & Docs Lock (Feb 2026)
+### v0.5.47 - ORM/Admin/Write-path/Security Stabilization
 
-- Studio Gap Analysis panel, severity filter buttons, Re-scan action
-- Studio UX consolidation, CLI help fixes, keyboard shortcut reorg
-- Full suite at **3551+ passed**
+- Fixed AI metadata propagation across tool schemas, MCP export, and console prompt packs.
+- Hardened ORM write paths for field conversion, bulk operations, and upsert behavior.
+- Improved migration ordering and generated DDL correctness.
+- Fixed API schema output and pagination behavior.
+- Tightened Studio/auth and tenant/task handling.
 
-### v0.5.26 — Gap Analysis Engine (Feb 2026)
+### v0.5.46 - Packaging and Docs Release Polish
 
-- **Gap Analysis Engine** (`aksara/gapanalysis.py`) — static pre-flight scanner
-  with 8 check categories: `imports`, `db`, `migrations`, `routers`, `providers`,
-  `studio`, `environment`, `ai_pipeline`
-- `GapIssueSeverity` adds a `"critical"` tier above diagnostics' `"error"`
-- `aksara gaps` CLI group — 6 subcommands: `run`, `summary`, `json`,
-  `list-errors`, `list-critical`, `fix-plan`
-- Studio panel at `/studio/gaps` (`GET` + `POST /studio/gaps/run`)
-- `build_fix_plan()` — severity-ordered actionable fix list with per-issue
-  shell commands and required env vars
-- 112 new tests; full suite at **3409 passed**
+- Aligned package metadata, CLI version output, scaffold templates, and docs.
+- Fixed PyPI README asset rendering.
+- Hardened docs deployment with required MkDocs plugins.
 
-### v0.5.25 — AI Hub & Unified Provider System (Feb 2026)
+### v0.5.45 - ORM Expressions, Native Multi-Tenancy, SDK Generation, and Real-Time Streams
 
-- AI Hub Studio panel — provider registration, health checks, model listing
-- Unified Provider abstraction (OpenAI, Anthropic, Azure OpenAI, Ollama)
-- `aksara ai` CLI group with `list-providers`, `test-provider`, `run-agent`
-- Internal API routes hidden from Swagger (`include_in_schema=False`)
-- `admin.py` added to `startapp` scaffold
-- Studio dark mode fixes; Studio menu simplification
-- Admin 2.0 UI audit + theme/logo unification pass
-- 3297 tests passing
-
-### v0.5.24 — Stability & Refactor Pass (Feb 2026)
-
-Includes everything from v0.5.0–v0.5.23 plus:
-
-- Studio 2.0 with Spotlight search (⌘K)
-- Diagnostics 2.0 with autoremediation
-- Query Inspector 2.0
-- Agent Mode with agentic workflows
-- Playbook Engine (8 built-in playbooks)
-- Semantic Search (TF-IDF + pluggable embeddings)
-- Provider Integration Toolkit (OpenAI, Anthropic, Azure, Ollama)
-- AI Profiles / Hints / Schema Doctor
-- Studio Keyboard Shortcuts
-- Full FastAPI/ORM integration
-- Lazy-import helper pattern for testability
-- CLI error handling hardened (exit codes, hints)
-- Studio error feedback (toast notifications)
-- Complete migration system overhaul — new autodetector (1 060 lines), 22 migration bugs fixed, 27 new tests
-- ORM / Fields / Migrations deep audit — 35 bugs fixed
-- 3 250+ test suite
+- Added `Q()` objects, `F()` expressions, aggregation, transactions, tenant-aware models, TypeScript SDK generation, SSE streams, media/email, i18n/timezones, generic relations, durable workflows, and additional field types.
 
 ---
 
-## v0.6.0 — Production Mode
+## Future Roadmap
 
-**Status: In active development**
+### v0.5.49 - Durable AI Session Store
 
-Focus: Make Aksara production-ready for real applications and enterprise loads.
+Persist investigation sessions, AI Console transcripts, and AI review state so multi-step analysis can resume reliably across process restarts.
 
-### Production Infrastructure
+### v0.5.50 - AI Memory Foundation
 
-- PgBouncer-ready connection pooling
-- Query caching layer
-- Read replica routing
-- Async migrations
-- Database failover support
-- Zero-downtime reload signals
-- Schema drift detection
+Introduce a minimal, explicit memory foundation for project-level AI context. This is not part of v0.5.48.
 
-### Studio Production Tools
+### v0.5.51 - AI System Radar
 
-- Slow Query Heatmaps
-- Replica Lag Monitor
-- Connection Pool Dashboard
-- Index Recommendation Engine
-- “Production Mode” UI (read-only safety)
+Add system-level monitoring surfaces for AI-assisted project health. This is not part of v0.5.48.
+
+### v0.6.0 - Production Mode
+
+Focus on production safety: connection-pool guidance, read-only Studio posture, deployment checks, stronger security defaults, and operational documentation.
 
 ---
 
-## v0.7.0 — AI Mode 3.0
+## Long-Term Direction
 
-**Status: Planned**
-
-Next-gen agent capabilities.
-
-### Agentic Development
-
-- Auto PR Reviews
-- Agent Test Writer
-- Regression Analyzer
-- “Fix with AI” buttons throughout Studio
-- Model/Viewset/Serializer refactor assistant
-
-### Multi-Agent Runtime
-
-- Parallel agents
-- Shared session memory
-- Provider orchestration (OpenAI+Azure+Anthropic switching)
-
-### AI Documentation Engine
-
-- API doc generation
-- README/Module doc generation
-- Example snippet generation
-
----
-
-## v0.8.0 — Enterprise Data & Permissions
-
-**Status: Planned**
-
-### Multi-Tenancy 2.0
-
-- Schema-per-tenant
-- Tenant-aware migrations
-- Cross-tenant admin queries
-- Tenant-level DB Inspector
-
-### Advanced Permissioning
-
-- Row-level access policies (RLS)
-- Field-level rules
-- Policy sandboxing & simulation
-- Condition-based dynamic rules
-
-### Audit & Compliance
-
-- Full audit event system
-- Compliance export pipeline
-- Studio Audit Explorer
-
----
-
-## v0.9.0 — Plugins & Ecosystem
-
-**Status: Planned**
-
-### Plugin Architecture
-
-- `aksara add plugin-name`
-- Aksara Registry
-- Official Plugins
-  - Email
-  - Uploads
-  - WebSockets
-  - SSE
-  - PDF exporter
-
-### Developer Experience
-
-- VS Code Extension
-- Aksara Playground (browser dev environment)
-- Dev Server Inspector
-- Latency profiling
-
----
-
-## v1.0.0 — General Availability (GA)
-
-**Status: Planned**
-
-### Release Goals
-
-- API Stability Guarantee
-- 18-Month LTS Window
-- Migration Guide (Django/FastAPI → Aksara)
-- Complete Documentation Rewrite
-- Performance Benchmarks (vs Django/FastAPI/Node)
-- Enterprise Support Tier
-
----
-
-## Feature Requests — Updated Priorities
-
-### High Priority
-
-- WebSockets
-- File Uploads
-- Email
-- Background Task Runner
-
-### Medium
-
-- GraphQL
-- gRPC
-- Server-Sent Events
-
-### Low
-
-- PDF Toolkit
-- UI Components Pack
-
----
-
-## Long-Term Vision
-
-Aksara is aiming to become:
-
-- The fastest framework to go from idea → production
-- The first AI-native dev framework
-- A complete batteries-included enterprise platform
-- An ecosystem & marketplace for plugins & agent workflows
+- Keep the first ten minutes simple and inspectable.
+- Make generated APIs, Studio, MCP, and AI context feel like one system.
+- Preserve local-first and provider-optional workflows.
+- Graduate toward stable production contracts before 1.0.

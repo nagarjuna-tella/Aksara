@@ -32,7 +32,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.47"
+CLI_VERSION = "0.5.48"
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
@@ -826,6 +826,63 @@ def templates_list():
     click.echo("    aksara startproject myproj --template blog")
     click.echo("    aksara startproject mycrm -t crm")
     click.echo()
+
+
+# =============================================================================
+# Examples Commands (v0.5.48)
+# =============================================================================
+
+
+@cli.group("examples")
+def examples_group():
+    """Validate and inspect bundled golden-path examples."""
+    pass
+
+
+@examples_group.command("validate")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def examples_validate(output_format: str):
+    """Validate bundled example projects for first-user completeness."""
+    from aksara.examples_validation import validate_examples
+
+    report = validate_examples()
+    if output_format == "json":
+        click.echo(report.to_json(indent=2))
+        raise click.exceptions.Exit(report.exit_code)
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Examples Validation\033[0m")
+    click.echo()
+
+    for example in report.examples:
+        click.echo(f"  \033[1m{example.name}\033[0m")
+        for check in example.checks:
+            symbol = {
+                "ok": "\033[32m✓\033[0m",
+                "warning": "\033[33m⚠\033[0m",
+                "error": "\033[31m✗\033[0m",
+                "skipped": "\033[90m-\033[0m",
+            }.get(check.status, "-")
+            click.echo(f"    {symbol} {check.message}")
+            if check.hint:
+                click.echo(f"      \033[90mNext: {check.hint}\033[0m")
+        click.echo()
+
+    status_label = {
+        "ready": "READY",
+        "partial": "PARTIAL",
+        "blocked": "BLOCKED",
+    }.get(report.status, report.status.upper())
+    click.echo(f"  Result: {status_label}")
+    click.echo(
+        "  "
+        f"{report.summary.get('ok', 0)} ok, "
+        f"{report.summary.get('warnings', 0)} warnings, "
+        f"{report.summary.get('errors', 0)} errors, "
+        f"{report.summary.get('skipped', 0)} skipped"
+    )
+    click.echo()
+    raise click.exceptions.Exit(report.exit_code)
 
 
 # =============================================================================
@@ -5516,6 +5573,69 @@ def doctor():
     v0.5.17: Doctor Mode
     """
     pass
+
+
+def _render_launch_check_text(report) -> None:
+    """Render launch-check output for humans."""
+    from aksara.launch_check import CATEGORY_ORDER
+
+    category_titles = {
+        "environment": "Environment",
+        "project": "Project",
+        "database": "Database",
+        "studio": "Studio",
+        "ai": "AI",
+        "examples": "Examples",
+        "security": "Security",
+    }
+    symbols = {
+        "ok": "\033[32m✓\033[0m",
+        "warning": "\033[33m⚠\033[0m",
+        "error": "\033[31m✗\033[0m",
+        "skipped": "\033[90m-\033[0m",
+    }
+
+    click.echo()
+    click.echo("  \033[33m⚡\033[0m \033[1mAksara Launch Check\033[0m")
+    click.echo()
+
+    grouped = {}
+    for check in report.checks:
+        grouped.setdefault(check.category, []).append(check)
+
+    for category in CATEGORY_ORDER:
+        checks = grouped.get(category)
+        if not checks:
+            continue
+        click.echo(f"  \033[1m{category_titles.get(category, category.title())}\033[0m")
+        for check in checks:
+            click.echo(f"    {symbols.get(check.status, '-')} {check.message}")
+            if check.hint:
+                click.echo(f"      \033[90mNext: {check.hint}\033[0m")
+        click.echo()
+
+    click.echo("  \033[1mResult\033[0m")
+    click.echo(f"    Launch readiness: {report.status.upper()}")
+    if report.next_steps:
+        click.echo()
+        click.echo("  \033[1mNext steps\033[0m")
+        for index, step in enumerate(report.next_steps, start=1):
+            click.echo(f"    {index}. {step}")
+    click.echo()
+
+
+@doctor.command("launch-check")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def doctor_launch_check(output_format: str):
+    """Check whether this project is ready for a first local launch."""
+    from aksara.launch_check import run_launch_check
+
+    report = run_launch_check()
+    if output_format == "json":
+        click.echo(report.to_json(indent=2))
+    else:
+        _render_launch_check_text(report)
+    raise click.exceptions.Exit(report.exit_code)
 
 
 @doctor.command("run")

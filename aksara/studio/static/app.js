@@ -531,6 +531,28 @@ function renderOverview() {
             pendingEl.className = pending > 0 ? 'status warning' : 'status ok';
         }
     }
+
+    const hintsCard = document.getElementById('overview-launch-hints');
+    const hintsList = document.getElementById('overview-launch-hints-list');
+    if (hintsCard && hintsList) {
+        const hints = [];
+        const db = state.handshake?.database || {};
+        const migStatus = state.contextSummary?.migration_status || {};
+        if (!db.connected) {
+            hints.push('No database connection detected. Set DATABASE_URL or run aksara dbsetup.');
+        }
+        if ((migStatus.pending ?? 0) > 0) {
+            hints.push('Migrations are pending. Run aksara migrate.');
+        }
+        if ((state.contextSummary?.model_count ?? 0) === 0) {
+            hints.push('No models registered yet. Import your app models before creating the Aksara app.');
+        }
+        if (!state.contextSummary) {
+            hints.push('Project summary is unavailable. Run aksara doctor launch-check for setup details.');
+        }
+        hintsCard.style.display = hints.length ? '' : 'none';
+        hintsList.innerHTML = hints.map(h => '<li>' + escapeHtml(h) + '</li>').join('');
+    }
 }
 
 // =============================================================================
@@ -2824,6 +2846,8 @@ async function renderAiHome() {
             if (data.model) parts.push('Model: ' + _esc(data.model));
             if (data.embeddings_model) parts.push('Embeddings: ' + _esc(data.embeddings_model));
             meta.innerHTML = parts.map(p => '<span class="ai-home-meta-item">' + p + '</span>').join('');
+        } else if (meta) {
+            meta.innerHTML = '<span class="ai-home-meta-item">AI provider optional for first launch</span>';
         }
 
         // System snapshot
@@ -2986,7 +3010,7 @@ async function _loadDailyBriefing() {
             ).join('');
         }
     } catch (e) {
-        contentEl.innerHTML = '<p class="text-muted">Briefing unavailable</p>';
+        contentEl.innerHTML = '<p class="text-muted">Briefing unavailable. Configure an AI provider in AI Hub, or continue using non-AI Studio tools.</p>';
     }
 }
 
@@ -5344,7 +5368,7 @@ async function _fetchAiGraph(rebuild) {
         const active = document.querySelector('.ai-graph-tab.active');
         _renderAiGraphTab(active ? active.getAttribute('data-graph-tab') : 'models');
     } catch (e) {
-        if (panel) panel.innerHTML = '<div class="ai-graph-empty">Error loading graph: ' + _esc(e.message) + '</div>';
+        if (panel) panel.innerHTML = '<div class="ai-graph-empty">No project graph available yet. Run an investigation or rebuild the graph after your app imports cleanly. Error: ' + _esc(e.message) + '</div>';
     }
 }
 
@@ -5411,7 +5435,7 @@ function _renderAiGraphTab(tab) {
 
 function _renderGraphModels(panel) {
     const models = _aiGraphData.models || [];
-    if (!models.length) { panel.innerHTML = '<div class="ai-graph-empty">No models in graph</div>'; return; }
+    if (!models.length) { panel.innerHTML = '<div class="ai-graph-empty">No models in graph. Import your models and rebuild the graph.</div>'; return; }
     let html = '<table class="ai-graph-table"><thead><tr><th>Model</th><th>Table</th><th>Fields</th><th>Relations</th><th>Indexes</th></tr></thead><tbody>';
     models.forEach(m => {
         html += '<tr><td><strong>' + _esc(m.name) + '</strong></td><td>' + _esc(m.table) + '</td>'

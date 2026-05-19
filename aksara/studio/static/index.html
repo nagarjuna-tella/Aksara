@@ -263,6 +263,15 @@
                 </div>
             </div>
         </div>
+
+        <div class="card" id="overview-launch-hints" style="display:none;">
+            <div class="card-header">
+                <h3>First-Run Guidance</h3>
+            </div>
+            <div class="card-body">
+                <ul id="overview-launch-hints-list" class="text-muted"></ul>
+            </div>
+        </div>
         
         <div class="card">
             <div class="card-header">
@@ -1421,7 +1430,8 @@
         <!-- Empty / Not Configured State -->
         <div class="ai-home-setup-card card" id="ai-home-setup" style="display:none;">
             <div class="card-body">
-                <h3>Configure AI to get started</h3>
+                <h3>No AI provider configured</h3>
+                <p class="text-muted">Configure one in AI Hub, or continue using non-AI Studio tools.</p>
                 <ol class="ai-home-setup-steps">
                     <li>Configure a provider</li>
                     <li>Choose a default model</li>

@@ -33,12 +33,12 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     os.getenv(
         "AKSARA_DATABASE_URL",
-        "postgresql://postgres:qwertyuiop@localhost:5432/aksara_example"
+        "postgresql://postgres:postgres@localhost:5432/aksara_example"
     )
 )
 
 # Debug mode from environment
-DEBUG = os.getenv("AKSARA_DEBUG", "false").lower() in ("true", "1", "yes")
+DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
 
 # Configure Aksara with our settings
 configure(
@@ -49,7 +49,7 @@ configure(
     migrations_dir="migrations",
     # AI Mode (v0.4.0+)
     ai_enabled=True,
-    mcp_enabled=False,
+    mcp_enabled=True,
     # Studio (v0.5.0+) - enabled by default
     enable_studio=True,
     studio_ui_enabled=True,

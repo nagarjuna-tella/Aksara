@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.5.47"
+version = "0.5.48"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -83,7 +83,10 @@ packages = ["aksara"]
 include = [
     "/aksara",
     "/aksara/studio/static/**/*",
+    "/docs/docs",
     "/examples",
+    "/README.md",
+    "/LICENSE",
 ]
 
 [tool.pytest.ini_options]

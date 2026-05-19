@@ -8,12 +8,13 @@ Includes API key auth, pagination defaults, and AI mode settings.
 import os
 from aksara import configure
 
-# Database URL from environment (set via `aksara dbsetup` or .env)
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. Run `aksara dbsetup` or add it to .env"
-    )
+# Database URL from environment (set via `aksara dbsetup` or .env).
+# The local default keeps the example importable; launch-check will tell you
+# whether the database is actually reachable.
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    os.getenv("AKSARA_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/aksara_blog"),
+)
 
 # Debug mode
 DEBUG = os.getenv("AKSARA_DEBUG", "true").lower() in ("true", "1", "yes")
@@ -42,6 +43,7 @@ configure(
     # Enable features
     enable_studio=True,
     ai_enabled=True,
+    mcp_enabled=True,
 )
 
 # Access settings

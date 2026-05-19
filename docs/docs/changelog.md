@@ -6,6 +6,18 @@ All notable changes to Aksara.
 
 ---
 
+## v0.5.48 — Launch Hardening & Golden Path
+
+- Added `aksara doctor launch-check`.
+- Added `aksara examples validate`.
+- Polished golden-path examples.
+- Improved first-user docs.
+- Added packaging sanity tests.
+- Updated roadmap.
+- Improved first-run Studio/AI guidance.
+
+---
+
 ## [0.5.47] — AI Metadata Enforcement & ORM Write-Path Fixes
 
 ### Fixed — AI Metadata Propagation

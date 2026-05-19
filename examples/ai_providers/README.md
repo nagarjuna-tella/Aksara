@@ -1,98 +1,89 @@
-# AI Providers Example
+# Aksara Example: AI Providers
 
-Demonstrates how to wire Aksara's AI contracts to popular LLM providers without adding hard dependencies.
+This example demonstrates:
+- AI Hub provider configuration
+- Ollama local-first setup
+- OpenAI/Anthropic/Azure environment examples
+- Studio
+- MCP tools
+- AI Console usage
 
-## Overview
+Provider wiring demo. It shows the adapter pattern without making the first-user flow require OpenAI, Anthropic, Azure, or Ollama.
 
-This package shows the **adapter pattern** for BYO (Bring Your Own) LLM integration:
-
-- **Protocol-based interface** — `LlmClient` protocol with `complete()` and `chat()` methods
-- **Three provider adapters** — OpenAI, Azure OpenAI, Anthropic
-- **Soft SDK imports** — Provider SDKs are optional; clear errors when missing
-- **Prompt building from AI metadata** — Uses `@ai_route_hint` decorators
-- **Settings from environment** — All secrets via env vars, never hardcoded
-
-## AI Metadata in This Example
-
-The `DemoPost` model demonstrates all three AI metadata attributes:
-
-| Attribute | Used On | Effect |
-|-----------|---------|--------|
-| `ai_description` | Every field | Appears in AI Console context and MCP tool catalog |
-| `ai_sensitive=True` | `author_email` | Excluded from AI context and `/ai/tools/mcp` exports |
-| `ai_agent_writable=False` | `is_featured` | AI agents can read but cannot modify this field |
-
-These attributes flow through to:
-- `/ai/tools` — AI tools discovery endpoint
-- `/ai/tools/mcp` — MCP (Model Context Protocol) tool catalog for AI agents
-- Studio AI Console — context provided to the interactive AI assistant
-
-## How to Use in Your Project
-
-### 1. Copy the adapters
+## Run
 
 ```bash
-# Copy adapters.py to your project
-cp examples/ai_providers/adapters.py your_project/ai_adapters.py
+cd examples/ai_providers
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ../..
+aksara doctor launch-check
+aksara migrate
+aksara dev
 ```
 
-### 2. Install a provider SDK
+The `aksara migrate` step is safe to run even if you only inspect provider wiring. Add real migrations if you turn this into a persistent app.
+
+## Seed
+
+No seed command is required. This example focuses on provider configuration and adapter structure.
+
+## Open
+
+* API docs: http://127.0.0.1:8000/docs
+* Studio: http://127.0.0.1:8000/studio/ui
+* MCP: http://127.0.0.1:8000/ai/tools/mcp
+
+## Test API
 
 ```bash
-pip install openai       # For OpenAI / Azure OpenAI
-pip install anthropic    # For Anthropic Claude
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/ai/status
+curl http://127.0.0.1:8000/ai/providers
 ```
 
-### 3. Set environment variables
+## Test MCP
 
 ```bash
-# .env
-OPENAI_API_KEY=sk-...
-AI_DEFAULT_PROVIDER=openai
+curl http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-### 4. Use in your views
+Confirm demo ViewSet actions appear without committing provider secrets.
 
-```python
-from your_project.ai_adapters import get_llm_client_from_settings
-from aksara.ai.providers import AiModelProfile
+## Local-First AI With Ollama
 
-client = get_llm_client_from_settings(settings)
-profile = AiModelProfile(model_name="gpt-4o-mini", model_kind="chat", provider="openai")
-
-response = await client.complete("Summarize this post.", model=profile)
+```bash
+ollama serve
+ollama pull llama3
+export AI_DEFAULT_PROVIDER=ollama
+export OLLAMA_BASE_URL=http://127.0.0.1:11434
+aksara ai-hub status
+aksara ai-hub configure
 ```
 
-## Module Structure
+No test in this repository requires the model to exist. The commands document the local path for users who want AI features without a paid provider.
 
-| File | Purpose |
-|------|---------|
-| `adapters.py` | `LlmClient` protocol + OpenAI/Azure/Anthropic adapters |
-| `prompting.py` | Prompt builders using `AiRouteHint` metadata |
-| `settings.py` | Environment-based provider configuration |
-| `views.py` | Example ViewSet with AI-powered actions |
-| `main.py` | App entry point |
+## Remote Provider Environment Examples
 
-## Supported Providers
+Use placeholders only:
 
-| Provider | SDK | Env Vars Required |
-|----------|-----|-------------------|
-| OpenAI | `openai` | `OPENAI_API_KEY` |
-| Azure OpenAI | `openai` | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT` |
-| Anthropic | `anthropic` | `ANTHROPIC_API_KEY` |
+```bash
+export OPENAI_API_KEY=your-key-here
+export ANTHROPIC_API_KEY=your-key-here
+export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+```
 
-## Example AI Actions
+Do not commit real secrets.
 
-The `DemoPostViewSet` includes three AI-powered actions:
+## Try in AI Console
 
-1. **`ai_suggest_tags`** — Analyze post content and suggest tags
-2. **`ai_generate_summary`** — Create a concise summary
-3. **`ai_analyze`** — Full content analysis (readability, topics, suggestions)
+Ask:
 
-Each uses `@ai_route_hint` to document the action for AI agents.
+```text
+Explain the provider adapter pattern
+Review this AI provider configuration
+Investigate this project
+```
 
-## MCP Integration
-
-When Aksara's AI Mode is enabled, the `DemoPost` model and its ViewSet actions are automatically exported as MCP tools at `/ai/tools/mcp`. Any MCP-compatible AI agent (Claude, Cursor, etc.) can discover and call these tools.
-
-The `ai_sensitive` and `ai_agent_writable` metadata flows into the MCP tool schema, so agents know which fields they can/cannot read or write — no second schema required.
+AI provider setup is optional for first launch. Studio, API docs, and MCP inspection can still be used before a provider is configured.

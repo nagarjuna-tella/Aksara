@@ -1,117 +1,73 @@
-# Blog Example
+# Aksara Example: Blog
 
-A complete blogging backend demonstrating real-world Aksara patterns.
+This example demonstrates:
+- Models
+- ViewSets
+- Migrations
+- Studio
+- MCP tools
+- AI Console usage
 
-## Features
+Classic relational app. It includes author-style user data, posts, comments, category/tag metadata, relationships, filtering, Studio graph inspection, and AI Console explanation prompts.
 
-- **Post model** with:
-  - Title, slug, content, excerpt
-  - Tags as JSON array
-  - Publish workflow (draft → published)
-  - View counter (`ai_agent_writable=False` — AI can read but not modify)
-  - Timestamps
-
-- **Comment model** with:
-  - Foreign key to Post
-  - Author name and email (`ai_sensitive=True` — excluded from AI context)
-  - Moderation via `is_approved` (`ai_agent_writable=False` — humans moderate, not agents)
-
-- **API endpoints**:
-  - `GET /api/posts/` - List posts
-  - `POST /api/posts/` - Create post
-  - `GET /api/posts/{id}/` - Get post
-  - `PUT /api/posts/{id}/` - Update post
-  - `DELETE /api/posts/{id}/` - Delete post
-  - `POST /api/posts/{id}/publish/` - Publish post
-  - `POST /api/posts/{id}/view/` - Increment views
-  - `GET /api/posts/published/` - List published only
-  - `GET /api/posts/by_tag/?tag=python` - Filter by tag
-
-- **Admin panel** at `/admin/`
-- **Studio** at `/studio/ui`
-- **AI Tools** at `/ai/tools`
-
-## AI Metadata Patterns
-
-This template demonstrates three AI metadata attributes:
-
-| Attribute | Used On | Why |
-|-----------|---------|-----|
-| `ai_description` | Every field | Tells the AI Console and MCP tool catalog what each field means |
-| `ai_sensitive=True` | `Comment.author_email` | Excludes PII from AI context and MCP exports |
-| `ai_agent_writable=False` | `Post.view_count`, `Comment.is_approved` | AI agents can read these fields but cannot modify them |
-
-## Quick Start
+## Run
 
 ```bash
-# Navigate to blog example
 cd examples/blog
-
-# Set up database interactively
-aksara dbsetup
-
-# Run migrations
-aksara makemigrations --app examples.blog.models
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ../..
+aksara doctor launch-check
 aksara migrate
-
-# Create admin user (optional)
-aksara createsuperuser
-
-# Start server
 aksara dev
 ```
 
-## Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `/` | Welcome page |
-| `/docs` | API documentation |
-| `/admin/` | Admin panel |
-| `/studio/ui` | Studio dashboard |
-| `/ai/tools` | AI tools discovery |
-| `/api/posts/` | Posts CRUD |
-| `/api/comments/` | Comments CRUD |
-
-## Example Requests
-
-### Create a post
+Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
 
 ```bash
-curl -X POST http://localhost:8000/api/posts/ \
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_blog"
+```
+
+## Seed
+
+No seed command is required. Create a first post through the API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/posts/ \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "My First Post",
-    "slug": "my-first-post",
-    "content": "Hello, world!",
-    "tags": ["intro", "tutorial"]
-  }'
+  -d '{"title":"Hello Aksara","slug":"hello-aksara","content":"First post","tags":["intro"]}'
 ```
 
-### Publish a post
+## Open
+
+* API docs: http://127.0.0.1:8000/docs
+* Studio: http://127.0.0.1:8000/studio/ui
+* MCP: http://127.0.0.1:8000/ai/tools/mcp
+
+## Test API
 
 ```bash
-curl -X POST http://localhost:8000/api/posts/{id}/publish/
+curl http://127.0.0.1:8000/api/posts/
+curl http://127.0.0.1:8000/api/comments/
+curl http://127.0.0.1:8000/api/posts/published/
 ```
 
-### Add a comment
+## Test MCP
 
 ```bash
-curl -X POST http://localhost:8000/api/comments/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "post_id": "<post-uuid>",
-    "author_name": "Reader",
-    "text": "Great post!"
-  }'
+curl http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-## AI Integration
+Confirm the catalog describes post/comment tools and marks sensitive fields as protected.
 
-This example is fully integrated with Aksara AI Mode:
+## Try in AI Console
 
-- Models are exposed via `/ai/tools`
-- Studio provides AI context at `/studio/ai/context`
-- ViewSet actions available as AI tools
+Ask:
 
-Use with any LLM that supports function calling or tool use.
+```text
+Explain the BlogPost model
+Review the blog architecture
+Investigate this project
+```
+
+AI provider setup is optional for first launch. For local-first AI later, configure Ollama through AI Hub instead of committing provider secrets.

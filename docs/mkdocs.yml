@@ -46,6 +46,11 @@ nav:
       - getting-started/index.md
       - Installation: getting-started/installation.md
       - Your First 10 Minutes: getting-started/ten-minutes.md
+      - First Project: getting-started/first-project.md
+      - Studio Quickstart: getting-started/studio.md
+      - AI Quickstart: getting-started/ai-quickstart.md
+      - MCP Quickstart: getting-started/mcp.md
+      - Examples: getting-started/examples.md
       - Choosing a Pattern: getting-started/patterns.md
       - Project Layout: getting-started/project-layout.md
       - Settings: getting-started/settings.md

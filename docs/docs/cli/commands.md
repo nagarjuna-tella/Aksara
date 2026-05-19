@@ -584,6 +584,17 @@ See [AI Commands](ai-commands.md) for details.
 
 ---
 
+## Launch Commands
+
+| Command | Description |
+|---------|-------------|
+| `aksara doctor launch-check` | First-user launch readiness check |
+| `aksara doctor launch-check --format json` | Pure JSON launch readiness report |
+| `aksara examples validate` | Validate bundled golden-path examples |
+| `aksara examples validate --format json` | Pure JSON examples validation report |
+
+---
+
 ## Global Options
 
 These options work with all commands and **must be placed before the subcommand**:

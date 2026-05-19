@@ -314,16 +314,16 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.47
+## What's New in v0.5.48
 
-- **AI metadata enforcement** — `ai_sensitive=True` and `ai_agent_writable=False`
-    now propagate correctly across all AI surfaces including tool schemas,
-    MCP export, and console prompt-packs
-- **ORM write-path fixes** — `bulk_create`, `bulk_update`, and `upsert`
-    now generate correct SQL for FK fields and complex types
-- **Security hardening** — user impersonation via `X-User-Id` header closed;
-    tenant scoping now fails closed on empty headers
-- **6507 tests passing**
+- **Launch check** — `aksara doctor launch-check` reports first-run readiness,
+    JSON output, next steps, and clear exit codes
+- **Golden-path examples** — `aksara examples validate` checks bundled examples
+    for README, config, models, imports, migrations, and obvious secrets
+- **First-user docs** — README and Getting Started now center install, Studio,
+    AI Hub, MCP, and examples
+- **Provider-optional AI** — first launch works without OpenAI, Anthropic,
+    Azure, or Ollama
 
 [Full changelog →](changelog.md)
 

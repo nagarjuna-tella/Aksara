@@ -33,17 +33,29 @@ from aksara.api import ModelViewSet, include_viewset
 # Test Fixtures
 # =============================================================================
 
+def _mock_field(column_name: str) -> MagicMock:
+    """Build a minimal concrete field mock for schema generation."""
+    field = MagicMock()
+    field.column_name = column_name
+    field.db_column_name = column_name
+    field.ai_description = None
+    field.primary_key = False
+    field.nullable = True
+    field.default = None
+    field.get_default_value.return_value = None
+    return field
+
+
 class MockModel:
     """Mock model for testing."""
     __name__ = "MockModel"
     __tablename__ = "mock_models"
-    # ai_description must be a concrete value (not a MagicMock) so the
-    # generated Read schema validates against the OpenAPI spec; FastAPI
-    # now publishes this schema in components.
+    # Field metadata must be concrete values so generated schemas do not
+    # publish MagicMock defaults into OpenAPI components.
     _fields = {
-        "id": MagicMock(column_name="id", ai_description=None, primary_key=False, nullable=True),
-        "name": MagicMock(column_name="name", ai_description=None, primary_key=False, nullable=True),
-        "is_active": MagicMock(column_name="is_active", ai_description=None, primary_key=False, nullable=True),
+        "id": _mock_field("id"),
+        "name": _mock_field("name"),
+        "is_active": _mock_field("is_active"),
     }
     objects = MagicMock()
 

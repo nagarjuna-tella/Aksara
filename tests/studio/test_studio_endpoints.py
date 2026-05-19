@@ -849,10 +849,8 @@ class TestStudioAuthentication:
                 mock_registry.all.return_value = {}
                 with patch("aksara.contrib.auth.get_user_from_session_token", new_callable=AsyncMock) as mock_get_user:
                     mock_get_user.return_value = mock_user
-                    response = client.get(
-                        "/studio/handshake",
-                        cookies={"session_token": "session-token"},
-                    )
+                    client.cookies.set("session_token", "session-token")
+                    response = client.get("/studio/handshake")
 
         assert response.status_code == 200
 

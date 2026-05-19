@@ -12,6 +12,10 @@
 # Run all checks
 aksara doctor run
 
+# First-user launch readiness
+aksara doctor launch-check
+aksara doctor launch-check --format json
+
 # JSON output (for CI/CD)
 aksara doctor run --format json
 
@@ -68,6 +72,18 @@ for issue in report.issues:
 | AI Profiles | `ai_profile_issue` | Validates AI provider profiles (v0.5.12 validator) |
 | AI Provider Secrets | `ai_secret_missing` | Checks required env vars for AI providers |
 | Required Settings | `settings_invalid` | Validates DATABASE_URL, pool sizes, thresholds |
+
+## Launch Check
+
+`aksara doctor launch-check` is the first-user readiness check. It reports Python, Aksara version, project structure, settings import, database connection, migrations, Studio, API docs, MCP, AI Hub, examples, and local dev-mode warnings.
+
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| `0` | Ready |
+| `1` | Partial with warnings |
+| `2` | Blocked by errors |
 | Cache Availability | `cache_unavailable` | Checks AKSARA_CACHE_URL / CACHE_URL |
 | File-System Permissions | `file_system_unwritable` | Writes a probe file to temp and migrations dirs |
 | Security | `security_warning` | Checks debug mode, Studio exposure, allowed origins |

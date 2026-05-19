@@ -1,94 +1,73 @@
-# CRM Example
+# Aksara Example: CRM
 
-A simple CRM backend demonstrating real-world Aksara patterns.
+This example demonstrates:
+- Models
+- ViewSets
+- Migrations
+- Studio
+- MCP tools
+- AI Console usage
 
-## Features
+Business app pattern. It includes contacts/customers, companies, deals/opportunities, activities/tasks, status fields, and query examples for pipeline reporting.
 
-- **Customer model** with:
-  - Name, email (`ai_sensitive=True`), phone (`ai_sensitive=True`)
-  - Industry and company size
-  - Notes
-
-- **Deal model** with:
-  - Foreign key to Customer
-  - Pipeline stages (lead, qualified, proposal, negotiation, closed_won, closed_lost)
-  - Amount (`ai_agent_writable=False`) and probability for forecasting
-  - Expected close date
-
-- **Activity model** with:
-  - Foreign key to Deal (three-level FK chain: Customer → Deal → Activity)
-  - Type choices: call, email, meeting, note
-  - Notes — rich `ai_description` for AI summarization
-
-- **Custom endpoints**:
-  - `GET /api/deals/{id}/forecast/` - Get expected revenue
-  - `GET /api/deals/pipeline/` - Pipeline summary by stage
-  - `POST /api/deals/{id}/advance_stage/` - Move deal forward
-  - `POST /api/deals/{id}/close_won/` - Mark deal as won
-  - `POST /api/deals/{id}/mark_lost/` - Mark deal as lost
-
-## AI Metadata Patterns
-
-| Attribute | Used On | Why |
-|-----------|---------|-----|
-| `ai_description` | Every field | Tells the AI Console and MCP tool catalog what each field means |
-| `ai_sensitive=True` | `Customer.email`, `Customer.phone` | PII — excluded from AI context and MCP exports |
-| `ai_agent_writable=False` | `Deal.amount`, `Deal.stage` | AI can read these but cannot modify them — use actions instead |
-
-## Quick Start
+## Run
 
 ```bash
 cd examples/crm
-
-# Set up database interactively
-aksara dbsetup
-
-# Run migrations
-aksara makemigrations --app examples.crm.models
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ../..
+aksara doctor launch-check
 aksara migrate
-
-# Start server
 aksara dev
 ```
 
-## Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `/` | Welcome page |
-| `/docs` | API documentation |
-| `/admin/` | Admin panel |
-| `/api/customers/` | Customers CRUD |
-| `/api/deals/` | Deals CRUD |
-| `/api/activities/` | Activities CRUD |
-| `/api/deals/pipeline/` | Pipeline summary |
-| `/api/deals/{id}/forecast/` | Deal forecast |
-
-## Example: Forecast Calculation
+Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
 
 ```bash
-# Get forecast for a deal
-curl http://localhost:8000/api/deals/{id}/forecast/
-
-# Response:
-{
-  "id": "...",
-  "title": "Enterprise License",
-  "amount": 50000.00,
-  "probability": 60,
-  "expected_revenue": 30000.00,
-  "stage": "proposal",
-  "close_date": "2026-03-15"
-}
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_crm"
 ```
 
-## Pipeline Stages
+## Seed
 
-| Stage | Description | Default Probability |
-|-------|-------------|---------------------|
-| lead | Initial contact | 10% |
-| qualified | Needs confirmed | 25% |
-| proposal | Proposal sent | 50% |
-| negotiation | In negotiation | 75% |
-| closed_won | Deal won | 100% |
-| closed_lost | Deal lost | 0% |
+No seed command is required. Create a first customer and deal through the API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/customers/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme Corp","email":"hello@example.com","industry":"SaaS"}'
+```
+
+## Open
+
+* API docs: http://127.0.0.1:8000/docs
+* Studio: http://127.0.0.1:8000/studio/ui
+* MCP: http://127.0.0.1:8000/ai/tools/mcp
+
+## Test API
+
+```bash
+curl http://127.0.0.1:8000/api/customers/
+curl http://127.0.0.1:8000/api/deals/
+curl http://127.0.0.1:8000/api/deals/pipeline/
+```
+
+## Test MCP
+
+```bash
+curl http://127.0.0.1:8000/ai/tools/mcp
+```
+
+Confirm the catalog includes customer, deal, and activity tools.
+
+## Try in AI Console
+
+Ask:
+
+```text
+Explain the CRM data model
+Review the sales pipeline architecture
+Investigate this project
+```
+
+AI provider setup is optional for first launch. Non-AI Studio tools and MCP inspection work without paid providers.
