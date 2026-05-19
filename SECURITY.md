@@ -1,70 +1,41 @@
 # Security Policy
 
+Aksara is moving fast and we take security seriously. If you find something that looks wrong, please tell us — we'd rather hear it from you first.
+
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 0.5.x   | ✅ Yes    |
-| < 0.5   | ❌ No     |
+We only maintain active security fixes on the current release. If you're on an older version, upgrade first.
+
+| Version | Supported          |
+|---------|--------------------|
+| 0.5.x   | ✅ Active          |
+| < 0.5   | ❌ No longer supported |
 
 ## Reporting a Vulnerability
 
-Please report security issues by email rather than opening a public GitHub issue.
-We aim to respond within 48 hours and issue a patch within 7 days.
+**Please don't open a public issue.** Use GitHub's [private security advisory](../../security/advisories/new) instead — it's visible only to you and the maintainers until a fix is released, then the details are published automatically alongside the patch.
 
----
+When you report, we'll:
 
-## Security Fixes in v0.5.41
+- Acknowledge within **48 hours**
+- Target a patch within **7 days** for critical issues
+- Credit you in the release notes if you'd like
 
-### S1 — AI Patch AST Validator (`aksara/ai/patch.py`)
+## What's In Scope
 
-Added `validate_patch_ast(content: str) -> Tuple[bool, str]` which parses
-AI-generated code patches with `ast.parse` before applying them and rejects:
+- Authentication or authorisation bypass
+- SQL injection or unsafe query construction
+- AI prompt injection or unsafe code execution
+- Cross-tenant or cross-user data leakage
+- Dependency vulnerabilities with a direct exploit path in Aksara
 
-- Any `import` or `from ... import` statements
-- Dangerous built-in calls: `eval`, `exec`, `compile`, `__import__`, `open`,
-  `vars`, `dir`, `getattr`, `setattr`, `delattr`
-- Dangerous attribute access: `__class__`, `__bases__`, `__subclasses__`,
-  `__globals__`, `__builtins__`, `__dict__`
+## What's Out of Scope
 
-A `PatchRejectedError` (subclass of `AksaraError`) is raised when a patch
-fails validation.
+- Theoretical attacks with no proof of concept
+- Vulnerabilities in example apps or documentation
+- Issues introduced by deliberate misconfiguration (e.g. running `debug=True` in production)
+- Upstream dependency vulnerabilities with no Aksara-specific impact (report those to the upstream project)
 
-### S2 — Studio Origin & Authentication (`aksara/studio/fastapi.py`)
+## Security Fix History
 
-Split studio protection into two independent FastAPI router dependencies:
-
-- `_check_studio_origin` — validates `Origin`/`Referer` headers, returns 403
-  on mismatch (prevents CSRF from cross-origin requests)
-- `verify_studio_auth` — checks session credentials, returns 401 when
-  unauthenticated
-
-### S3 — Signed Agent Tokens (`aksara/ai/auth.py`)
-
-Added HMAC-SHA256 signed agent tokens using **stdlib only** (no third-party
-JWT libraries):
-
-- `sign_agent_token(agent_id, secret, *, ttl_seconds=300, extra=None) -> str`
-- `verify_agent_token(token, secret, *, clock_skew_seconds=0) -> dict`
-
-Token format: `header.payload.signature` (URL-safe base64, no padding).
-`hmac.compare_digest` is used for constant-time signature comparison to
-prevent timing attacks. Expired, future-dated, and tampered tokens all raise
-`ValueError`.
-
-### S4 — SQL Codegen Identifier Sanitization (`aksara/ai/codegen.py`)
-
-Added strict input sanitization for AI-generated SQL:
-
-- `sanitize_identifier(name: str) -> str` — validates table/column names
-  against `^[a-zA-Z_][a-zA-Z0-9_]*$`, raising `ValueError` on invalid input
-- `sanitize_column_type(type_str: str) -> str` — validates the base type
-  against an allowlist (`_ALLOWED_COLUMN_TYPES`) of PostgreSQL types
-
-These functions prevent SQL injection through AI-generated schema operations.
-
-### A1 — LLM Client Audit (`aksara/ai/llm_clients/`)
-
-Audited all LLM adapter modules. Confirmed all HTTP communication uses Python
-stdlib `urllib` — no vendor SDK dependencies that could introduce supply-chain
-risk or unexpected network behaviour.
+Past security fixes are documented in [CHANGELOG.md](CHANGELOG.md). Look for `security` entries within each version section.
