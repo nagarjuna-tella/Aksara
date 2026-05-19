@@ -1,6 +1,6 @@
 # Security Policy
 
-Aksara is moving fast and we take security seriously. If you find something that looks wrong, please tell us — we'd rather hear it from you first.
+Aksara is moving fast and we take security seriously. If you find something that looks wrong, please tell us we'd rather hear it from you first.
 
 ## Supported Versions
 
@@ -13,7 +13,7 @@ We only maintain active security fixes on the current release. If you're on an o
 
 ## Reporting a Vulnerability
 
-**Please don't open a public issue.** Use GitHub's [private security advisory](../../security/advisories/new) instead — it's visible only to you and the maintainers until a fix is released, then the details are published automatically alongside the patch.
+**Please don't open a public issue.** Use GitHub's [private security advisory](../../security/advisories/new) instead, it's visible only to you and the maintainers until a fix is released, then the details are published automatically alongside the patch.
 
 When you report, we'll:
 
