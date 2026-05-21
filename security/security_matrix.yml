@@ -10,7 +10,7 @@ metadata:
     and what tests need to cover each risk.
   owner: aksara
   status: active-hardening
-  round: 1
+  round: 2
   created: "2026-05-21"
   notes: >
     Surfaces are derived from inspecting the Aksara codebase at v0.5.48.
@@ -690,3 +690,48 @@ scenarios:
     description: >
       production-check must block when Studio is exposed in production
       without studio_require_auth=True. Covered by test_production_check.py.
+
+  - id: centralized_policy_engine
+    surface: rest_update
+    actor: mcp_agent
+    risk: mcp_overbroad_scope
+    expected: deny
+    status: covered
+    description: >
+      Round 2: PolicyEngine.can() denies MCP agents missing required scopes,
+      expired tokens, and cross-tenant resource access. Covered by
+      tests/security/test_policy_engine.py.
+
+  - id: ai_agent_principal_resolution
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: forged_tenant_context
+    expected: deny
+    status: covered
+    description: >
+      Round 2: AIAgentMiddleware resolves a canonical Principal via
+      principal_from_request() and attaches it to request.state.principal.
+      Downstream code reads from request.state rather than re-parsing headers.
+      Covered by tests/security/test_security_context.py.
+
+  - id: ai_sensitive_field_hidden_from_agent
+    surface: mcp_read_tool
+    actor: mcp_agent
+    risk: ai_metadata_leak
+    expected: deny
+    status: covered
+    description: >
+      Round 2: PolicyEngine.visible_fields() hides fields marked
+      ai_sensitive=True from AI/MCP principals. Covered by
+      tests/security/test_policy_engine.py.
+
+  - id: tenant_field_not_writable_by_agent
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: cross_tenant_write
+    expected: deny
+    status: covered
+    description: >
+      Round 2: PolicyEngine.writable_fields() denies writes to tenant_id
+      and organisation_id fields by non-system principals.
+      Covered by tests/security/test_policy_engine.py.

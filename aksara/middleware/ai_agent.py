@@ -38,6 +38,11 @@ class AIAgentMiddleware(BaseHTTPMiddleware):
         expected_token = _get_settings().ai_agent_token
         if token and expected_token and hmac.compare_digest(token, expected_token):
             request.state.is_ai_agent = True
+            # Resolve a canonical Principal and attach it for downstream consumers.
+            from aksara.security.adapters import annotate_request_state
+            from aksara.security.context import principal_from_request
+            principal = principal_from_request(request)
+            annotate_request_state(request, principal)
 
         try:
             response: Response = await call_next(request)
