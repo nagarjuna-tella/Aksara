@@ -5918,6 +5918,165 @@ def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bo
 
 
 # =============================================================================
+# v0.5.49: Security Baseline Commands (Round 1)
+# =============================================================================
+
+
+def _render_security_check_text(report, command_name: str = "security-check") -> None:
+    """Render security check output for humans."""
+    status_colors = {
+        "pass": "\033[32m",
+        "warn": "\033[33m",
+        "fail": "\033[31m",
+        "block": "\033[31m",
+        "skip": "\033[90m",
+        "unknown": "\033[90m",
+    }
+    status_labels = {
+        "pass": "PASS",
+        "warn": "WARN",
+        "fail": "FAIL",
+        "block": "BLOCK",
+        "skip": "SKIP",
+        "unknown": "UNKNOWN",
+    }
+
+    click.echo()
+    cmd_label = "Production Check" if report.is_production else "Security Check"
+    click.echo(f"  \033[33m⚡\033[0m \033[1mAksara Doctor — {cmd_label}\033[0m")
+    click.echo()
+
+    for result in report.results:
+        c = status_colors.get(result.status, "\033[0m")
+        label = status_labels.get(result.status, result.status.upper())
+        click.echo(f"  {c}[{label:7s}]\033[0m {result.title}")
+        click.echo(f"           {result.message}")
+        if result.recommendation:
+            click.echo(f"           \033[90mFix: {result.recommendation}\033[0m")
+
+    click.echo()
+    overall = report.overall_status
+    overall_c = status_colors.get(overall, "\033[0m")
+    overall_label = status_labels.get(overall, overall.upper())
+    click.echo(f"  Overall: {overall_c}{overall_label}\033[0m")
+
+    blocks = sum(1 for r in report.results if r.status == "block")
+    fails = sum(1 for r in report.results if r.status == "fail")
+    warns = sum(1 for r in report.results if r.status == "warn")
+    passes = sum(1 for r in report.results if r.status == "pass")
+    click.echo(f"  Blocks: {blocks}  Failures: {fails}  Warnings: {warns}  Pass: {passes}")
+    click.echo()
+
+    if report.is_production and report.has_blocks:
+        click.echo("  \033[31m⛔  Blocking issues found. Fix these before production deployment.\033[0m")
+        click.echo()
+
+
+@doctor.command("security-check")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def doctor_security_check(output_format: str):
+    """Run security posture diagnostics for the current Aksara project.
+
+    Reports on security configuration, unsafe defaults, missing settings,
+    and validates the security matrix. Useful in development and CI.
+
+    Does NOT enforce blocking exit codes for all issues — use
+    production-check for stricter enforcement.
+
+    Examples:
+        aksara doctor security-check
+        aksara doctor security-check --format json
+    """
+    import json as json_mod
+    from aksara.security.checks import run_security_checks
+
+    report = run_security_checks(is_production=False)
+
+    if output_format == "json":
+        data = {
+            "check": "security-check",
+            "status": report.overall_status,
+            "results": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "severity": r.severity,
+                    "status": r.status,
+                    "message": r.message,
+                    "recommendation": r.recommendation,
+                }
+                for r in report.results
+            ],
+            "summary": {
+                "blocks": sum(1 for r in report.results if r.status == "block"),
+                "failures": sum(1 for r in report.results if r.status == "fail"),
+                "warnings": sum(1 for r in report.results if r.status == "warn"),
+                "passes": sum(1 for r in report.results if r.status == "pass"),
+            },
+        }
+        click.echo(json_mod.dumps(data, indent=2))
+    else:
+        _render_security_check_text(report, "security-check")
+
+    sys.exit(1 if report.should_exit_nonzero else 0)
+
+
+@doctor.command("production-check")
+@click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
+def doctor_production_check(output_format: str):
+    """Run strict production-readiness security diagnostics.
+
+    Checks for unsafe settings that MUST be fixed before production
+    deployment. Exits with code 1 when any blocking issue is found.
+
+    Blocking conditions include:
+      - DEBUG=True
+      - Missing or weak SECRET_KEY
+      - CORS wildcard with credentials
+      - Studio exposed without auth
+      - MCP enabled without auth
+      - Missing or invalid security_matrix.yml
+
+    Examples:
+        aksara doctor production-check
+        aksara doctor production-check --format json
+    """
+    import json as json_mod
+    from aksara.security.checks import run_security_checks
+
+    report = run_security_checks(is_production=True)
+
+    if output_format == "json":
+        data = {
+            "check": "production-check",
+            "status": report.overall_status,
+            "results": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "severity": r.severity,
+                    "status": r.status,
+                    "message": r.message,
+                    "recommendation": r.recommendation,
+                }
+                for r in report.results
+            ],
+            "summary": {
+                "blocks": sum(1 for r in report.results if r.status == "block"),
+                "failures": sum(1 for r in report.results if r.status == "fail"),
+                "warnings": sum(1 for r in report.results if r.status == "warn"),
+                "passes": sum(1 for r in report.results if r.status == "pass"),
+            },
+            "exit_code": 1 if report.should_exit_nonzero else 0,
+        }
+        click.echo(json_mod.dumps(data, indent=2))
+    else:
+        _render_security_check_text(report, "production-check")
+
+    sys.exit(1 if report.should_exit_nonzero else 0)
+
+
+# =============================================================================
 # v0.5.19: Agent Mode CLI
 # =============================================================================
 

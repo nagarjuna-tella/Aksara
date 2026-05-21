@@ -1,0 +1,692 @@
+version: 1
+
+metadata:
+  name: aksara-security-matrix
+  description: >
+    Security baseline matrix for Aksara generated surfaces, actors,
+    risks, and adversarial scenarios. Created as part of the dedicated
+    security-hardening milestone (Round 1). This file is the source of
+    truth for what surfaces exist, who can call them, what can go wrong,
+    and what tests need to cover each risk.
+  owner: aksara
+  status: active-hardening
+  round: 1
+  created: "2026-05-21"
+  notes: >
+    Surfaces are derived from inspecting the Aksara codebase at v0.5.48.
+    implemented: false means the surface is not yet in the codebase.
+    Scenarios with status: planned require future test coverage.
+
+# =============================================================================
+# SURFACES
+# Every generated or exposed data surface in Aksara.
+# =============================================================================
+
+surfaces:
+
+  # REST CRUD surfaces
+  - id: rest_create
+    name: REST Create
+    category: rest
+    implemented: true
+    description: >
+      Generated REST POST endpoint. Accepts model input, validates via
+      serializer, persists via ORM. Auth required by default.
+
+  - id: rest_read
+    name: REST Read
+    category: rest
+    implemented: true
+    description: >
+      Generated REST GET detail endpoint. Reads a single object by PK.
+      Auth required by default.
+
+  - id: rest_list
+    name: REST List
+    category: rest
+    implemented: true
+    description: >
+      Generated REST GET list endpoint. Supports filtering, ordering,
+      pagination. Auth required by default.
+
+  - id: rest_update
+    name: REST Update
+    category: rest
+    implemented: true
+    description: >
+      Generated REST PUT/PATCH endpoint. Updates model fields via
+      serializer. Auth required by default.
+
+  - id: rest_delete
+    name: REST Delete
+    category: rest
+    implemented: true
+    description: >
+      Generated REST DELETE endpoint. Removes a model object by PK.
+      Auth required by default.
+
+  # Studio surfaces
+  - id: studio_create
+    name: Studio Create
+    category: studio
+    implemented: true
+    description: >
+      Studio UI model create operation. Requires Studio auth token.
+      Protected by studio_require_auth and studio_expose_in_production flags.
+
+  - id: studio_read
+    name: Studio Read
+    category: studio
+    implemented: true
+    description: >
+      Studio UI model read/detail operation. Requires Studio auth token.
+
+  - id: studio_list
+    name: Studio List
+    category: studio
+    implemented: true
+    description: >
+      Studio UI model list/search operation. Requires Studio auth token.
+      Risk area: must not expose data publicly in production without auth.
+
+  - id: studio_update
+    name: Studio Update
+    category: studio
+    implemented: true
+    description: >
+      Studio UI model update operation. Requires Studio auth token.
+
+  - id: studio_delete
+    name: Studio Delete
+    category: studio
+    implemented: true
+    description: >
+      Studio UI model delete operation. Requires Studio auth token.
+
+  # MCP tool surfaces
+  - id: mcp_create_tool
+    name: MCP Create Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated create tool. Disabled by default (mcp_enabled=False).
+      When enabled, requires AKSARA_AI_AGENT_TOKEN validation.
+
+  - id: mcp_read_tool
+    name: MCP Read Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated read/detail tool. Disabled by default.
+
+  - id: mcp_list_tool
+    name: MCP List Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated list/search tool. Disabled by default.
+
+  - id: mcp_update_tool
+    name: MCP Update Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated update tool. Disabled by default.
+      Risk area: fields marked ai_agent_writable=False must be enforced
+      at runtime, not only in generated schemas.
+
+  - id: mcp_delete_tool
+    name: MCP Delete Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated delete tool. Disabled by default.
+
+  # AI Console surface
+  - id: ai_console_action
+    name: AI Console Action
+    category: ai_console
+    implemented: false
+    description: >
+      AI Console action surface. Not yet implemented in the codebase.
+      Planned for a future release with explicit production opt-in.
+
+  # AI / prompt surfaces
+  - id: ai_prompt_pack_export
+    name: AI Prompt Pack Export
+    category: ai
+    implemented: true
+    description: >
+      Prompt/schema export surface for AI clients. Exports model metadata,
+      field descriptions, and tool schemas. Risk area: ai_sensitive fields
+      must not leak into exported schemas.
+
+  # Serializer surfaces
+  - id: serializer_create
+    name: Serializer Create
+    category: serializer
+    implemented: true
+    description: >
+      Serializer create path. Translates incoming request data into
+      validated model input. Field-level restrictions applied here.
+
+  - id: serializer_update
+    name: Serializer Update
+    category: serializer
+    implemented: true
+    description: >
+      Serializer update path. Translates patch/put data into validated
+      model changes. Must strip restricted fields.
+
+  # ORM surfaces
+  - id: bulk_update
+    name: Bulk Update
+    category: orm
+    implemented: true
+    description: >
+      Bulk update operation. Applies changes to multiple objects in one
+      query. Risk area: restricted fields must be excluded.
+
+  - id: upsert
+    name: Upsert
+    category: orm
+    implemented: true
+    description: >
+      Upsert (insert-or-update) operation. Risk area: restricted fields
+      must be excluded from both insert and update paths.
+
+  - id: filter_query
+    name: Filter Query
+    category: orm
+    implemented: true
+    description: >
+      Generated filtering/query system. User-supplied filter values are
+      mapped to SQL WHERE clauses. Risk area: SQL injection via identifier
+      or value handling.
+
+  - id: ordering
+    name: Ordering
+    category: orm
+    implemented: true
+    description: >
+      Generated ordering system. User-supplied ordering fields are used
+      in ORDER BY clauses. Risk area: unsafe identifier handling.
+
+  - id: pagination
+    name: Pagination
+    category: orm
+    implemented: true
+    description: >
+      Pagination and cursor handling. Cursor values may encode object IDs
+      or offsets. Risk area: oversized payloads, cursor forgery.
+
+  # Migration surfaces
+  - id: migration_generation
+    name: Migration Generation
+    category: migrations
+    implemented: true
+    description: >
+      Migration SQL/DDL generation from model definitions. Risk area:
+      unsafe identifier handling, invalid SQL in generated migrations.
+
+  - id: migration_execution
+    name: Migration Execution
+    category: migrations
+    implemented: true
+    description: >
+      Migration execution path. Applies generated SQL to the database.
+      Risk area: destructive DDL, data loss on bad defaults.
+
+  # Background task surface
+  - id: background_task_mutation
+    name: Background Task Mutation
+    category: background_tasks
+    implemented: true
+    description: >
+      Background task mutation path. Tasks run with tenant_id captured
+      at enqueue time. Risk area: tenant context must be restored
+      correctly from trusted server-side state, not client headers.
+
+  # SDK surface
+  - id: sdk_generated_client
+    name: SDK Generated Client
+    category: sdk
+    implemented: false
+    description: >
+      SDK-generated client path. Not yet implemented. When added, must
+      enforce the same field-level restrictions as REST/MCP surfaces.
+
+  # Diagnostics surface
+  - id: doctor_diagnostics
+    name: Doctor Diagnostics
+    category: diagnostics
+    implemented: true
+    description: >
+      Doctor/diagnostics command surface. Exposes environment, settings,
+      and security posture information. Risk area: must not leak secrets
+      or internal config in untrusted environments.
+
+  # Admin surface
+  - id: admin_dashboard
+    name: Admin Dashboard
+    category: admin
+    implemented: true
+    description: >
+      Built-in admin dashboard (aksara.contrib.admin). Protected by
+      admin CSRF and rate limiting. Risk area: auth bypass, CSRF,
+      information disclosure.
+
+# =============================================================================
+# ACTORS
+# Every identity type that may call Aksara surfaces.
+# =============================================================================
+
+actors:
+
+  - id: unauthenticated
+    description: Caller without valid authentication credentials.
+
+  - id: authenticated_user
+    description: Normal authenticated human user with valid session or token.
+
+  - id: wrong_user
+    description: >
+      Authenticated user who does not own or have permission to access
+      the target resource.
+
+  - id: wrong_tenant
+    description: >
+      Authenticated user or agent whose tenant_id does not match the
+      tenant_id of the target resource.
+
+  - id: read_only_role
+    description: User or agent with read-only permissions (no create/update/delete).
+
+  - id: admin_role
+    description: User with administrative permissions across the application.
+
+  - id: ai_agent
+    description: >
+      AI agent identity. Validated via X-Aksara-AI-Token (HMAC-SHA256,
+      short-lived). Has reduced trust compared to authenticated human users.
+
+  - id: mcp_agent
+    description: >
+      MCP client/agent identity. Uses the same AKSARA_AI_AGENT_TOKEN
+      mechanism. Subject to ai_sensitive and ai_agent_writable field controls.
+
+  - id: system_task
+    description: >
+      Trusted internal background/system task. Runs with server-side
+      tenant context captured at enqueue time.
+
+  - id: expired_token
+    description: Caller presenting an expired authentication token.
+
+  - id: replayed_token
+    description: >
+      Caller attempting to reuse or replay a previously valid token
+      or signed request.
+
+  - id: malformed_client
+    description: >
+      Caller sending malformed payloads, invalid field names, oversized
+      inputs, or crafted request shapes designed to bypass validation.
+
+# =============================================================================
+# RISKS
+# Every identified security risk category across Aksara surfaces.
+# =============================================================================
+
+risks:
+
+  - id: missing_auth
+    severity: critical
+    description: Surface allows access without required authentication.
+
+  - id: broken_object_level_authorization
+    severity: critical
+    description: >
+      Caller can access or mutate an object they do not own or cannot
+      access (OWASP API1).
+
+  - id: cross_tenant_read
+    severity: critical
+    description: Caller can read data belonging to another tenant.
+
+  - id: cross_tenant_write
+    severity: critical
+    description: Caller can mutate data belonging to another tenant.
+
+  - id: restricted_field_read
+    severity: high
+    description: >
+      Caller can read a field marked hidden, sensitive (ai_sensitive=True),
+      or otherwise restricted for the caller's identity.
+
+  - id: restricted_field_write
+    severity: high
+    description: >
+      Caller can write a field marked read-only, hidden, ai_agent_writable=False,
+      tenant-owned, or otherwise restricted for the caller's identity.
+
+  - id: schema_bypass
+    severity: high
+    description: >
+      Caller bypasses generated schema restrictions by sending raw JSON
+      or crafted payloads that include fields not in the generated schema.
+      Generated schemas are not security controls — runtime enforcement
+      is required.
+
+  - id: ai_metadata_leak
+    severity: high
+    description: >
+      AI, MCP, or prompt export surfaces expose sensitive model or field
+      metadata (ai_sensitive fields, internal descriptions, system config).
+
+  - id: studio_auth_bypass
+    severity: critical
+    description: >
+      Studio surface allows bypassing authentication or authorization.
+      Historically: debug-mode auth bypass was a known vulnerability.
+
+  - id: mcp_unauthenticated_access
+    severity: critical
+    description: MCP tools are accessible without authentication or scoped credentials.
+
+  - id: mcp_overbroad_scope
+    severity: high
+    description: MCP credentials allow broader field or model access than intended.
+
+  - id: forged_tenant_context
+    severity: critical
+    description: >
+      Client can forge or override tenant context by supplying a
+      client-controlled tenant header that is accepted as authoritative.
+
+  - id: empty_tenant_fail_open
+    severity: critical
+    description: >
+      Missing or empty tenant context results in broad access rather
+      than failing closed. Background tasks must restore tenant context
+      from trusted server-side state.
+
+  - id: sql_injection
+    severity: critical
+    description: User-controlled input reaches a SQL query without safe parameterization.
+
+  - id: unsafe_identifier_handling
+    severity: high
+    description: >
+      Field names, table names, column names, or ordering values are not
+      safely quoted or validated before use in SQL.
+
+  - id: malformed_payload
+    severity: medium
+    description: Malformed payload causes unexpected or unsafe server behavior.
+
+  - id: oversized_payload
+    severity: medium
+    description: Oversized payload causes resource exhaustion or unsafe behavior.
+
+  - id: debug_mode_exposed
+    severity: high
+    description: >
+      Debug mode (debug=True) is enabled in production, potentially
+      exposing stack traces, internal config, or error details.
+
+  - id: cors_wildcard_with_credentials
+    severity: high
+    description: CORS wildcard origin is used together with credentials, allowing any site to make credentialed cross-origin requests.
+
+  - id: weak_secret_key
+    severity: critical
+    description: >
+      SECRET_KEY / session signing material is missing, is a known
+      default value, is too short, or is otherwise unsafe.
+
+  - id: unsigned_or_unsafe_cookies
+    severity: high
+    description: >
+      Session or cookie settings are unsigned, not marked HttpOnly,
+      or not marked Secure for HTTPS deployments.
+
+  - id: missing_rate_limits
+    severity: medium
+    description: Public or auth-sensitive endpoints lack rate limiting.
+
+  - id: missing_rls
+    severity: high
+    description: >
+      Multi-tenant deployment lacks PostgreSQL Row-Level Security (RLS)
+      or equivalent server-side isolation layer.
+
+  - id: unsafe_production_surface
+    severity: high
+    description: >
+      Studio, AI Console, MCP, or introspection surface is exposed in
+      production without explicit safeguards (auth requirement, opt-in flag).
+
+# =============================================================================
+# SCENARIOS
+# Adversarial test scenarios mapping surfaces, actors, and risks.
+# status: covered  = test exists and passes
+# status: partial  = some coverage but incomplete
+# status: planned  = no test yet; planned for a future hardening round
+# status: not_applicable = scenario is not applicable for this surface/actor
+# =============================================================================
+
+scenarios:
+
+  - id: rest_update_hidden_field_raw_payload
+    surface: rest_update
+    actor: authenticated_user
+    risk: restricted_field_write
+    expected: deny
+    status: planned
+    description: >
+      A caller sends a raw JSON body containing a field marked ai_sensitive=True
+      or ai_agent_writable=False that is absent from the generated schema.
+      The server must strip or reject the field at runtime.
+      Note: schema-time filtering does not protect against this — runtime
+      enforcement is required. Planned for Round 2.
+
+  - id: mcp_update_ai_agent_writable_false
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: restricted_field_write
+    expected: deny
+    status: planned
+    description: >
+      MCP agent attempts to update a field explicitly marked ai_agent_writable=False.
+      The MCP tool schema should exclude the field, but a crafted payload
+      must also be rejected at runtime. Planned for Round 2.
+
+  - id: studio_public_without_auth
+    surface: studio_list
+    actor: unauthenticated
+    risk: studio_auth_bypass
+    expected: deny
+    status: covered
+    description: >
+      Studio must not expose model data publicly in production without
+      authentication. Covered by studio_require_auth=True default and
+      test_security_phase2.py.
+
+  - id: studio_debug_auth_bypass
+    surface: studio_read
+    actor: unauthenticated
+    risk: studio_auth_bypass
+    expected: deny
+    status: covered
+    description: >
+      In debug mode, Studio must still enforce authentication. The known
+      debug-mode auth bypass was fixed in v0.5.47 and regression-tested.
+
+  - id: cross_tenant_rest_read
+    surface: rest_read
+    actor: wrong_tenant
+    risk: cross_tenant_read
+    expected: deny
+    status: planned
+    description: >
+      User from tenant A attempts to read an object belonging to tenant B.
+      Application-layer filtering and/or RLS must prevent this.
+      Cross-tenant property tests planned for Round 3.
+
+  - id: cross_tenant_rest_write
+    surface: rest_update
+    actor: wrong_tenant
+    risk: cross_tenant_write
+    expected: deny
+    status: planned
+    description: >
+      User from tenant A attempts to update an object belonging to tenant B.
+      Planned for Round 3.
+
+  - id: forged_tenant_header
+    surface: rest_list
+    actor: authenticated_user
+    risk: forged_tenant_context
+    expected: deny
+    status: planned
+    description: >
+      Caller attempts to override trusted tenant context by sending a
+      client-supplied X-Tenant-Id (or similar) header. Tenant context
+      must be resolved server-side, not accepted from client headers.
+      Planned for Round 3.
+
+  - id: empty_tenant_context_rest
+    surface: rest_list
+    actor: authenticated_user
+    risk: empty_tenant_fail_open
+    expected: deny
+    status: planned
+    description: >
+      If tenant context is missing or empty, the endpoint must fail closed
+      (deny all data) rather than returning cross-tenant results.
+      Planned for Round 3.
+
+  - id: filter_sql_injection
+    surface: filter_query
+    actor: malformed_client
+    risk: sql_injection
+    expected: deny
+    status: partial
+    description: >
+      Caller sends SQL metacharacters through generated filter parameters.
+      Some coverage exists in test_security_phase1.py (identifier quoting).
+      Additional fuzzing tests planned for Round 4.
+
+  - id: ordering_sql_injection
+    surface: ordering
+    actor: malformed_client
+    risk: unsafe_identifier_handling
+    expected: deny
+    status: partial
+    description: >
+      Caller supplies a malicious ordering field value. Must be validated
+      against allowed field names. Partial coverage; ORM fuzzing planned.
+
+  - id: debug_true_in_production
+    surface: doctor_diagnostics
+    actor: system_task
+    risk: debug_mode_exposed
+    expected: block
+    status: covered
+    description: >
+      production-check must block when debug=True is detected in production.
+      Covered by test_production_check.py (Round 1).
+
+  - id: cors_wildcard_credentials
+    surface: doctor_diagnostics
+    actor: system_task
+    risk: cors_wildcard_with_credentials
+    expected: block
+    status: covered
+    description: >
+      production-check must block when CORS wildcard origins are combined
+      with credentials. Covered by test_production_check.py (Round 1).
+
+  - id: mcp_enabled_without_auth
+    surface: doctor_diagnostics
+    actor: system_task
+    risk: mcp_unauthenticated_access
+    expected: block
+    status: covered
+    description: >
+      production-check must block when MCP is enabled but no agent token
+      or auth requirement is configured. Covered by test_production_check.py.
+
+  - id: missing_rls_multitenant
+    surface: doctor_diagnostics
+    actor: system_task
+    risk: missing_rls
+    expected: warn_or_block
+    status: covered
+    description: >
+      production-check must warn or block when multi-tenancy appears enabled
+      but RLS enforcement cannot be confirmed. Covered by test_production_check.py.
+
+  - id: weak_secret_key_production
+    surface: doctor_diagnostics
+    actor: system_task
+    risk: weak_secret_key
+    expected: block
+    status: covered
+    description: >
+      production-check must block when SECRET_KEY is missing, a known
+      default value, or shorter than 32 characters. Covered by test_production_check.py.
+
+  - id: ai_sensitive_field_mcp_export
+    surface: ai_prompt_pack_export
+    actor: mcp_agent
+    risk: ai_metadata_leak
+    expected: deny
+    status: partial
+    description: >
+      Fields marked ai_sensitive=True must not appear in MCP tool schemas
+      or AI prompt pack exports. Schema-time filtering exists; runtime
+      enforcement and audit planned for Round 2.
+
+  - id: mcp_list_unauthenticated
+    surface: mcp_list_tool
+    actor: unauthenticated
+    risk: mcp_unauthenticated_access
+    expected: deny
+    status: planned
+    description: >
+      MCP list tool must reject calls without a valid agent token.
+      MCP is disabled by default; when enabled, auth must be enforced.
+      Planned for Round 2.
+
+  - id: background_task_missing_tenant_context
+    surface: background_task_mutation
+    actor: system_task
+    risk: empty_tenant_fail_open
+    expected: deny
+    status: partial
+    description: >
+      Background tasks must restore tenant context from trusted server-side
+      state captured at enqueue time. If tenant_id is missing, tasks must
+      fail closed. Partial coverage exists; property tests planned for Round 3.
+
+  - id: admin_unauthenticated_access
+    surface: admin_dashboard
+    actor: unauthenticated
+    risk: missing_auth
+    expected: deny
+    status: covered
+    description: >
+      Admin dashboard must reject unauthenticated access. Covered by
+      existing admin auth tests.
+
+  - id: studio_exposed_in_production
+    surface: studio_list
+    actor: unauthenticated
+    risk: unsafe_production_surface
+    expected: block
+    status: covered
+    description: >
+      production-check must block when Studio is exposed in production
+      without studio_require_auth=True. Covered by test_production_check.py.
