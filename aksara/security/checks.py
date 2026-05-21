@@ -465,6 +465,95 @@ def check_ai_field_defaults() -> SecurityCheckResult:
     )
 
 
+def check_mcp_hardening(is_production: bool = False) -> SecurityCheckResult:
+    """Check that MCP is configured with scoped tokens, TTL, audience, and tenant binding."""
+    mcp_enabled = get_setting("mcp_enabled", False)
+
+    if not mcp_enabled:
+        return SecurityCheckResult(
+            id="security.mcp_hardening",
+            title="MCP hardening",
+            severity="info",
+            status="pass",
+            message="MCP is disabled; hardening checks skipped.",
+            recommendation="",
+        )
+
+    require_scoped = is_truthy(get_env("AKSARA_MCP_REQUIRE_SCOPED_TOKENS", False))
+    if not require_scoped:
+        status = "block" if is_production else "warn"
+        return SecurityCheckResult(
+            id="security.mcp_hardening",
+            title="MCP scoped tokens not required",
+            severity="high",
+            status=status,
+            message="MCP is enabled but AKSARA_MCP_REQUIRE_SCOPED_TOKENS is not set. Per-tool scope enforcement is disabled.",
+            recommendation="Set AKSARA_MCP_REQUIRE_SCOPED_TOKENS=true and issue tokens with explicit per-tool scopes.",
+        )
+
+    ttl_raw = get_env("AKSARA_MCP_TOKEN_TTL_SECONDS")
+    if ttl_raw is None:
+        status = "block" if is_production else "warn"
+        return SecurityCheckResult(
+            id="security.mcp_hardening",
+            title="MCP token TTL not configured",
+            severity="high",
+            status=status,
+            message="AKSARA_MCP_TOKEN_TTL_SECONDS is not set. Token lifetime is undefined.",
+            recommendation="Set AKSARA_MCP_TOKEN_TTL_SECONDS (recommended: 300–900 seconds).",
+        )
+
+    try:
+        ttl_seconds = int(ttl_raw)
+    except (ValueError, TypeError):
+        ttl_seconds = 0
+
+    if ttl_seconds > 3600:
+        return SecurityCheckResult(
+            id="security.mcp_hardening",
+            title="MCP token TTL is too long",
+            severity="medium",
+            status="warn",
+            message=f"AKSARA_MCP_TOKEN_TTL_SECONDS={ttl_seconds} exceeds 3600s. Long-lived MCP tokens increase exposure window.",
+            recommendation="Set AKSARA_MCP_TOKEN_TTL_SECONDS to 300–900 seconds.",
+        )
+
+    require_audience = is_truthy(get_env("AKSARA_MCP_REQUIRE_AUDIENCE", False))
+    if not require_audience:
+        status = "block" if is_production else "warn"
+        return SecurityCheckResult(
+            id="security.mcp_hardening",
+            title="MCP audience validation not required",
+            severity="high",
+            status=status,
+            message="AKSARA_MCP_REQUIRE_AUDIENCE is not set. Tokens may be accepted by unintended services.",
+            recommendation="Set AKSARA_MCP_REQUIRE_AUDIENCE=true and AKSARA_MCP_TOKEN_AUDIENCE to a stable service identifier.",
+        )
+
+    multi_tenant = is_truthy(get_env("AKSARA_MULTI_TENANT", False))
+    if multi_tenant:
+        require_tenant_bound = is_truthy(get_env("AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS", False))
+        if not require_tenant_bound:
+            status = "block" if is_production else "warn"
+            return SecurityCheckResult(
+                id="security.mcp_hardening",
+                title="Multi-tenant MCP without tenant-bound tokens",
+                severity="high",
+                status=status,
+                message="Multi-tenancy is enabled (AKSARA_MULTI_TENANT=true) but AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS is not set.",
+                recommendation="Set AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS=true to ensure MCP tokens carry a tenant_id claim.",
+            )
+
+    return SecurityCheckResult(
+        id="security.mcp_hardening",
+        title="MCP credential hardening",
+        severity="info",
+        status="pass",
+        message="MCP scoped tokens, TTL, and audience validation are all configured.",
+        recommendation="",
+    )
+
+
 def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
     """Check that security_matrix.yml exists and validates."""
     from aksara.security.matrix import _find_default_matrix_path, validate_security_matrix, _load_yaml
@@ -541,6 +630,7 @@ def run_security_checks(is_production: bool = False) -> SecurityCheckReport:
     report.add(check_cors(is_production=is_production))
     report.add(check_studio_exposure(is_production=is_production))
     report.add(check_mcp_exposure(is_production=is_production))
+    report.add(check_mcp_hardening(is_production=is_production))
     report.add(check_ai_console_exposure(is_production=is_production))
     report.add(check_cookies())
     report.add(check_rate_limits())

@@ -3,6 +3,7 @@ Aksara Security Module
 
 Round 1: Security baseline — matrix loader, validator, and check helpers.
 Round 2: Principal, PolicyDecision, PolicyEngine, context resolvers, adapters.
+Round 4: MCP credential helpers — MCPCredentialClaims and require_* enforcement helpers.
 
 Public API::
 
@@ -15,6 +16,14 @@ Public API::
         principal_from_user,
         principal_from_mcp_claims,
         principal_from_ai_agent,
+    )
+    from aksara.security import (
+        MCPCredentialClaims,
+        require_scope,
+        require_any_scope,
+        require_all_scopes,
+        require_mcp_audience,
+        require_mcp_tenant,
     )
     from aksara.security.exceptions import PolicyDenied, SecurityError
 """
@@ -35,6 +44,14 @@ from aksara.security.enforcement import (
     enforce_payload_policy,
     enforce_request_payload_policy,
     policy_denied_to_error_payload,
+)
+from aksara.security.mcp import (
+    MCPCredentialClaims,
+    require_scope,
+    require_any_scope,
+    require_all_scopes,
+    require_mcp_audience,
+    require_mcp_tenant,
 )
 
 __all__ = [
@@ -58,6 +75,13 @@ __all__ = [
     "enforce_payload_policy",
     "enforce_request_payload_policy",
     "policy_denied_to_error_payload",
+    # MCP credential helpers (Round 4)
+    "MCPCredentialClaims",
+    "require_scope",
+    "require_any_scope",
+    "require_all_scopes",
+    "require_mcp_audience",
+    "require_mcp_tenant",
     # Exceptions
     "SecurityError",
     "PolicyDenied",

@@ -1,8 +1,8 @@
 # AI and MCP Security Boundaries
 
-> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
-> Runtime field enforcement is **implemented** for REST surfaces as of Round 3.
-> See [Runtime Enforcement](#runtime-enforcement-round-3) below.
+> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
+> Runtime field enforcement is **implemented** for REST surfaces (Round 3).
+> MCP credential hardening (scope, audience, tenant enforcement) is **implemented** (Round 4).
 
 ## Core Principle
 
@@ -64,15 +64,14 @@ class SensitiveResource(AksaraViewSet):
     permission_classes = [IsAuthenticated, DenyAI]
 ```
 
-## Known Gaps (as of Round 3)
+## Known Gaps (as of Round 4)
 
 | Gap | Severity | Planned Round |
 |-----|----------|---------------|
-| Per-tool MCP scope claims | High | Round 4 |
-| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Round 4 |
-| Audience-bound MCP tokens | Medium | Round 4 |
-| Direct MCP tool call enforcement (without REST) | High | Round 4 |
-| Bulk update / upsert enforcement | Medium | Round 4 |
+| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Round 5 |
+| Direct MCP tool call enforcement (without REST) | High | Round 5 |
+| Bulk update / upsert enforcement | Medium | Round 5 |
+| Scoped/audience-bound token issuance in core | Medium | Round 5 |
 
 ## Runtime Enforcement (Round 3)
 
@@ -116,8 +115,63 @@ MCP agents that use the REST surface are automatically covered.
 | Crafted REST payload with `read_only` field rejected | **Covered (Round 3)** |
 | tenant_id override attempt in REST payload rejected | **Covered (Round 3)** |
 | System principal can write `system_only` fields | **Covered (Round 3)** |
-| Cross-tenant access via MCP tool | Planned Round 4 |
-| Field-level audit trail per MCP call | Planned Round 4 |
+| MCP missing scope denied | **Covered (Round 4)** |
+| MCP wrong audience denied | **Covered (Round 4)** |
+| MCP missing tenant denied for tenant-required action | **Covered (Round 4)** |
+| Client tenant header not authoritative | **Covered (Round 4)** |
+| Cross-tenant access via MCP tool | Planned Round 5 |
+| Field-level audit trail per MCP call | Planned Round 5 |
+
+## MCP Credential Hardening (Round 4)
+
+Round 4 adds per-tool scope enforcement, audience binding, and tenant-required checks
+via helpers in `aksara/security/mcp.py`:
+
+```python
+from aksara.security import (
+    require_scope,
+    require_any_scope,
+    require_all_scopes,
+    require_mcp_audience,
+    require_mcp_tenant,
+    MCPCredentialClaims,
+)
+
+# In a viewset or MCP tool handler:
+d = require_scope(principal, "mcp:write:invoice")
+if d.denied:
+    raise HTTPException(status_code=403, detail=d.reason)
+
+d = require_mcp_audience(principal, expected_audience="mcp-service")
+if d.denied:
+    raise HTTPException(status_code=403, detail=d.reason)
+
+d = require_mcp_tenant(principal, tenant_required=True)
+if d.denied:
+    raise HTTPException(status_code=403, detail=d.reason)
+```
+
+`PolicyEngine.can()` also accepts `required_audience` and `tenant_required` kwargs:
+
+```python
+d = engine.can(principal, "update",
+               required_scopes=["mcp:write:invoice"],
+               required_audience="mcp-service",
+               tenant_required=True)
+```
+
+### Doctor check: `security.mcp_hardening`
+
+`aksara doctor security-check` and `aksara doctor production-check` now include a
+`check_mcp_hardening()` check that verifies (when MCP is enabled):
+
+| Condition | Production | Dev |
+|-----------|-----------|-----|
+| `AKSARA_MCP_REQUIRE_SCOPED_TOKENS` not set | block | warn |
+| `AKSARA_MCP_TOKEN_TTL_SECONDS` not set | block | warn |
+| TTL > 3600 seconds | warn | warn |
+| `AKSARA_MCP_REQUIRE_AUDIENCE` not set | block | warn |
+| Multi-tenant + `AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS` not set | block | warn |
 
 ## Future Direction
 

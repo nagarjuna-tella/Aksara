@@ -1,6 +1,6 @@
 # Aksara Threat Model
 
-> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
 > Some controls described here are implemented today; others are planned for upcoming rounds.
 > This threat model will be expanded as the hardening milestone progresses.
 
@@ -93,9 +93,9 @@ Internal boundaries
 | debug_mode_exposed | API8: Security Misconfiguration | debug=True in production | High |
 | unsafe_production_surface | API8: Security Misconfiguration | Studio/MCP exposed without safeguards | High |
 
-## Current Controls (Round 1–3 baseline)
+## Current Controls (Round 1–4 baseline)
 
-- **`aksara doctor security-check`** — Checks SECRET_KEY, debug mode, CORS, Studio, MCP, cookies, rate limits, tenancy/RLS configuration, and security matrix validity.
+- **`aksara doctor security-check`** — Checks SECRET_KEY, debug mode, CORS, Studio, MCP, cookies, rate limits, tenancy/RLS configuration, security matrix validity, and MCP credential hardening.
 - **`aksara doctor production-check`** — Stricter version; blocks deployment on critical issues.
 - **Studio production guard** — `studio_expose_in_production=False` by default; `studio_require_auth=True` by default.
 - **MCP disabled by default** — `mcp_enabled=False`; requires explicit opt-in.
@@ -109,24 +109,26 @@ Internal boundaries
 - **`security_matrix.yml`** — Canonical inventory of surfaces, actors, risks, and adversarial scenarios.
 - **Round 2: Centralized `Principal` / `PolicyEngine`** — Unified principal object and policy engine for all surfaces. `PolicyEngine.can()`, `visible_fields()`, `writable_fields()`, `validate_payload()`.
 - **Round 3: Runtime REST enforcement** — `enforce_request_payload_policy()` wired into `ViewSet.create()` and `ViewSet.update()`. Forbidden fields rejected with 403 + structured `denied_fields` response.
+- **Round 4: Tenant isolation adversarial tests** — `test_tenant_isolation.py` covers cross-tenant resource access, AI/MCP agent cross-tenant, tenant_required fail-closed, forged header ignored, body tenant_id override denied.
+- **Round 4: MCP credential hardening** — `MCPCredentialClaims`, `require_scope()`, `require_mcp_audience()`, `require_mcp_tenant()` in `aksara/security/mcp.py`. `principal_from_mcp_claims()` normalizes `aud` → `audience`. `PolicyEngine.can()` extended with `required_audience` and `tenant_required`. Doctor check `security.mcp_hardening` blocks production deployments with misconfigured MCP credentials.
 
 ## Planned Controls (Future Rounds)
 
 | Round | Control |
 |-------|---------|
-| Round 4 | Field-level audit logging for AI/MCP tool calls |
-| Round 4 | Cross-tenant property-based tests |
-| Round 4 | MCP scoped, audience-bound credentials |
-| Round 4 | Direct MCP tool call enforcement (without REST) |
-| Round 4 | Bulk update / upsert enforcement |
-| Round 5 | ORM/migration/serializer fuzzing (Hypothesis, Schemathesis) |
-| Round 6 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
+| Round 5 | Field-level audit logging for AI/MCP tool calls |
+| Round 5 | Cross-tenant DB-level property-based tests |
+| Round 5 | Direct MCP tool call enforcement (without REST) |
+| Round 5 | Bulk update / upsert enforcement |
+| Round 5 | Scoped/audience-bound MCP token issuance in core |
+| Round 6 | ORM/migration/serializer fuzzing (Hypothesis, Schemathesis) |
+| Round 7 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
 | Pre-v0.6 | External security review before production-mode claim |
 
-## Known Gaps (as of Round 3)
+## Known Gaps (as of Round 4)
 
 1. **Studio write surfaces not enforced.** Studio is internal tooling without user-data CRUD in the current codebase. When public Studio write paths are added, enforcement must be wired.
-2. **Bulk update / upsert not enforced.** These manager-level operations are called programmatically from trusted code. HTTP writes always go through a viewset first. Enforcement here is planned for Round 4.
-3. **No cross-tenant adversarial tests.** Property-based tests are planned for Round 4.
+2. **Bulk update / upsert not enforced.** These manager-level operations are called programmatically from trusted code. HTTP writes always go through a viewset first. Enforcement here is planned for Round 5.
+3. **No DB-level cross-tenant property tests.** Policy-layer isolation is tested; DB-level RLS property tests are planned for Round 5.
 4. **No supply-chain hardening.** No CodeQL, Semgrep, pip-audit, or signed releases.
 5. **No external review.** Planned before v0.6 Production Mode.

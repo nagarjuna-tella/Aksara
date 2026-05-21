@@ -175,6 +175,13 @@ def principal_from_mcp_claims(claims: Mapping[str, Any]) -> Principal:
         except (ValueError, OSError, OverflowError):
             pass
 
+    audience = claims.get("aud") or claims.get("audience")
+    metadata = {k: v for k, v in claims.items()
+                if k not in ("sub", "user_id", "tenant_id", "agent_id",
+                             "token_id", "jti", "scopes", "exp", "iat", "aud", "audience")}
+    if audience:
+        metadata["audience"] = audience
+
     return Principal.for_mcp_agent(
         token_id=token_id,
         human_owner_id=str(human_owner) if human_owner else None,
@@ -182,9 +189,7 @@ def principal_from_mcp_claims(claims: Mapping[str, Any]) -> Principal:
         agent_id=str(agent_id) if agent_id else None,
         scopes=scopes,
         expires_at=expires_at,
-        metadata={k: v for k, v in claims.items()
-                  if k not in ("sub", "user_id", "tenant_id", "agent_id",
-                               "token_id", "jti", "scopes", "exp", "iat")},
+        metadata=metadata,
     )
 
 

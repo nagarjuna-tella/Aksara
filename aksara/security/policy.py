@@ -166,6 +166,25 @@ class PolicyEngine:
                     missing_scopes=missing,
                 )
 
+        # Audience check
+        required_audience = context.get("required_audience")
+        if required_audience is not None:
+            actual = principal.metadata.get("audience") or principal.metadata.get("aud")
+            if actual != required_audience:
+                return PolicyDecision.deny(
+                    f"Token audience '{actual}' does not match required '{required_audience}'.",
+                    action=action,
+                    metadata={"required_audience": required_audience, "actual_audience": actual},
+                )
+
+        # Tenant-required check (no-resource path)
+        if context.get("tenant_required") and not principal.is_system and not principal.tenant_id and not tenant_id:
+            return PolicyDecision.deny(
+                f"Tenant context required for action '{action}', but principal has no tenant_id.",
+                action=action,
+                metadata={"tenant_required": True},
+            )
+
         # Cross-tenant resource check
         effective_tenant = tenant_id or principal.tenant_id
         resource_tenant = _resource_tenant(resource)

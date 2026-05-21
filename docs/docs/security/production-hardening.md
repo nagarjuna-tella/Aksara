@@ -1,6 +1,6 @@
 # Production Hardening Guide
 
-> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
 > Aksara is not yet claiming production-mode status. This guide documents the expected
 > secure posture and the checks you must pass before deploying Aksara in production.
 
@@ -26,6 +26,9 @@ Fix all blocking issues before deploying.
 | `AKSARA_STUDIO_REQUIRE_AUTH` | `true` (default) | Studio must always require auth when exposed |
 | `AKSARA_MCP_ENABLED` | `false` (default) | Only enable if agent tokens are configured |
 | `AKSARA_AI_AGENT_TOKEN` | Strong random value | Required when MCP is enabled |
+| `AKSARA_MCP_REQUIRE_SCOPED_TOKENS` | `true` | Required when MCP is enabled (Round 4) |
+| `AKSARA_MCP_REQUIRE_AUDIENCE` | `true` | Required when MCP is enabled (Round 4) |
+| `AKSARA_MCP_TOKEN_TTL_SECONDS` | `300`–`900` | Required when MCP is enabled; max 3600 (Round 4) |
 | `CORS_ALLOW_ALL_ORIGINS` | `false` | Never combine wildcard with credentials |
 | `AKSARA_COOKIE_SECURE` | `true` (default) | Cookies must be HTTPS-only |
 | `AKSARA_ADMIN_CSRF_ENABLED` | `true` (default) | CSRF must be enabled for admin |
@@ -49,6 +52,9 @@ Fix all blocking issues before deploying.
 | CORS wildcard + credentials | Any site can make credentialed cross-origin requests |
 | Studio exposed without `studio_require_auth=True` | Studio becomes a public data browser |
 | MCP enabled without `AKSARA_AI_AGENT_TOKEN` | AI/MCP tools are accessible without credentials |
+| MCP enabled without scoped tokens (`AKSARA_MCP_REQUIRE_SCOPED_TOKENS`) | Per-tool scope enforcement disabled |
+| MCP enabled without audience check (`AKSARA_MCP_REQUIRE_AUDIENCE`) | Token may be accepted by unintended services |
+| Multi-tenant MCP without tenant-bound tokens | MCP tokens may not carry required tenant context |
 | `security_matrix.yml` missing | Security baseline inventory is absent |
 | `security_matrix.yml` invalid | Security baseline is corrupted |
 

@@ -10,7 +10,7 @@ metadata:
     and what tests need to cover each risk.
   owner: aksara
   status: active-hardening
-  round: 3
+  round: 4
   created: "2026-05-21"
   notes: >
     Surfaces are derived from inspecting the Aksara codebase at v0.5.48.
@@ -530,44 +530,50 @@ scenarios:
     actor: wrong_tenant
     risk: cross_tenant_read
     expected: deny
-    status: planned
+    status: covered
     description: >
       User from tenant A attempts to read an object belonging to tenant B.
-      Application-layer filtering and/or RLS must prevent this.
-      Cross-tenant property tests planned for Round 3.
+      Round 4: PolicyEngine.can() denies cross-tenant resource access.
+      Coverage is at the policy layer (not DB-level RLS).
+      Covered by tests/security/test_tenant_isolation.py.
 
   - id: cross_tenant_rest_write
     surface: rest_update
     actor: wrong_tenant
     risk: cross_tenant_write
     expected: deny
-    status: planned
+    status: covered
     description: >
       User from tenant A attempts to update an object belonging to tenant B.
-      Planned for Round 3.
+      Round 4: PolicyEngine.can() denies cross-tenant resource writes.
+      Coverage is at the policy layer.
+      Covered by tests/security/test_tenant_isolation.py.
 
   - id: forged_tenant_header
     surface: rest_list
     actor: authenticated_user
     risk: forged_tenant_context
     expected: deny
-    status: planned
+    status: covered
     description: >
       Caller attempts to override trusted tenant context by sending a
-      client-supplied X-Tenant-Id (or similar) header. Tenant context
-      must be resolved server-side, not accepted from client headers.
-      Planned for Round 3.
+      client-supplied X-Tenant-Id (or similar) header.
+      Round 4: principal_from_request() only reads tenant_id from
+      server-side middleware state (request.state.tenant_id), never from
+      client headers. Covered by tests/security/test_tenant_isolation.py
+      (test_forged_tenant_header_not_used_by_principal_from_request).
 
   - id: empty_tenant_context_rest
     surface: rest_list
     actor: authenticated_user
     risk: empty_tenant_fail_open
     expected: deny
-    status: planned
+    status: covered
     description: >
-      If tenant context is missing or empty, the endpoint must fail closed
-      (deny all data) rather than returning cross-tenant results.
-      Planned for Round 3.
+      If tenant context is missing or empty, policy must fail closed.
+      Round 4: PolicyEngine.can(..., tenant_required=True) denies access
+      when no tenant_id is on the principal or tenant_id kwarg.
+      Covered by tests/security/test_tenant_isolation.py.
 
   - id: filter_sql_injection
     surface: filter_query
@@ -777,3 +783,52 @@ scenarios:
       control; runtime enforcement is.
       Covered by tests/security/test_rest_runtime_field_enforcement.py
       (test_rest_update_mcp_agent_ai_restricted_field_fails).
+
+  - id: mcp_missing_scope_denied
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: mcp_overbroad_scope
+    expected: deny
+    status: covered
+    description: >
+      Round 4: MCP agent attempts an action without the required per-tool scope.
+      require_scope() / PolicyEngine.can(required_scopes=...) denies the call
+      with missing_scopes in the decision.
+      Covered by tests/security/test_mcp_credentials.py.
+
+  - id: mcp_wrong_audience_denied
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: mcp_unauthenticated_access
+    expected: deny
+    status: covered
+    description: >
+      Round 4: MCP token carries an audience claim that does not match the
+      expected service audience. require_mcp_audience() / PolicyEngine.can()
+      with required_audience denies the call.
+      Covered by tests/security/test_mcp_credentials.py.
+
+  - id: mcp_missing_tenant_denied_for_tenant_required_action
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: empty_tenant_fail_open
+    expected: deny
+    status: covered
+    description: >
+      Round 4: MCP agent token has no tenant_id claim. An action requiring
+      tenant context (tenant_required=True) is denied. require_mcp_tenant()
+      and PolicyEngine.can(..., tenant_required=True) both enforce this.
+      Covered by tests/security/test_mcp_credentials.py.
+
+  - id: client_tenant_header_not_authoritative
+    surface: rest_list
+    actor: authenticated_user
+    risk: forged_tenant_context
+    expected: deny
+    status: covered
+    description: >
+      Round 4: Client sends X-Tenant-Id header alongside an authenticated request.
+      principal_from_request() ignores the header and reads tenant_id only from
+      trusted server-side middleware state (request.state.tenant_id).
+      Covered by tests/security/test_tenant_isolation.py
+      (test_forged_tenant_header_not_used_by_principal_from_request).
