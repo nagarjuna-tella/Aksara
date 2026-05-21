@@ -1,6 +1,6 @@
 # Production Hardening Guide
 
-> **Status:** This guide is part of the Aksara security-hardening milestone (Round 1).
+> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
 > Aksara is not yet claiming production-mode status. This guide documents the expected
 > secure posture and the checks you must pass before deploying Aksara in production.
 

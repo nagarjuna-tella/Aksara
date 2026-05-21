@@ -1,6 +1,6 @@
 # Aksara Threat Model
 
-> **Status:** This document is part of the Aksara security-hardening milestone (Round 1).
+> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
 > Some controls described here are implemented today; others are planned for upcoming rounds.
 > This threat model will be expanded as the hardening milestone progresses.
 
@@ -54,9 +54,10 @@ External world
 Internal boundaries
     │
     ├── Generated schemas → runtime server enforcement
-    │       ⚠ Schemas are NOT security controls.
-    │         A client can send fields absent from the schema.
-    │         Runtime enforcement is required (planned Round 2).
+    │       ✓ Round 3: enforce_request_payload_policy() wired into
+    │         ViewSet.create() and ViewSet.update(). Forbidden fields
+    │         are rejected with 403 + denied_fields before any DB write.
+    │         Remaining: Studio, bulk, upsert, direct MCP tool calls.
     │
     ├── Client-supplied tenant header → trusted tenant context
     │       ⚠ Tenant context must be resolved server-side.
@@ -92,7 +93,7 @@ Internal boundaries
 | debug_mode_exposed | API8: Security Misconfiguration | debug=True in production | High |
 | unsafe_production_surface | API8: Security Misconfiguration | Studio/MCP exposed without safeguards | High |
 
-## Current Controls (Round 1 baseline)
+## Current Controls (Round 1–3 baseline)
 
 - **`aksara doctor security-check`** — Checks SECRET_KEY, debug mode, CORS, Studio, MCP, cookies, rate limits, tenancy/RLS configuration, and security matrix validity.
 - **`aksara doctor production-check`** — Stricter version; blocks deployment on critical issues.
@@ -106,25 +107,26 @@ Internal boundaries
 - **Admin rate limiting and CSRF** — Enabled by default on admin endpoints.
 - **Security regression tests** — 33+ targeted regression tests for v0.5.47 fixes.
 - **`security_matrix.yml`** — Canonical inventory of surfaces, actors, risks, and adversarial scenarios.
+- **Round 2: Centralized `Principal` / `PolicyEngine`** — Unified principal object and policy engine for all surfaces. `PolicyEngine.can()`, `visible_fields()`, `writable_fields()`, `validate_payload()`.
+- **Round 3: Runtime REST enforcement** — `enforce_request_payload_policy()` wired into `ViewSet.create()` and `ViewSet.update()`. Forbidden fields rejected with 403 + structured `denied_fields` response.
 
 ## Planned Controls (Future Rounds)
 
 | Round | Control |
 |-------|---------|
-| Round 2 | Centralized `Principal` object — resolves actor identity for all surfaces |
-| Round 2 | `policy.can()` / `policy.visible_fields()` / `policy.writable_fields()` — unified policy engine |
-| Round 2 | Runtime field enforcement — strip/reject forbidden fields at REST, MCP, Studio, bulk, upsert |
-| Round 2 | Field-level audit logging for AI/MCP tool calls |
-| Round 3 | Cross-tenant property-based tests |
-| Round 3 | MCP scoped, audience-bound credentials |
-| Round 4 | ORM/migration/serializer fuzzing (Hypothesis, Schemathesis) |
-| Round 5 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
+| Round 4 | Field-level audit logging for AI/MCP tool calls |
+| Round 4 | Cross-tenant property-based tests |
+| Round 4 | MCP scoped, audience-bound credentials |
+| Round 4 | Direct MCP tool call enforcement (without REST) |
+| Round 4 | Bulk update / upsert enforcement |
+| Round 5 | ORM/migration/serializer fuzzing (Hypothesis, Schemathesis) |
+| Round 6 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
 | Pre-v0.6 | External security review before production-mode claim |
 
-## Known Gaps (as of Round 1)
+## Known Gaps (as of Round 3)
 
-1. **Runtime field enforcement is missing.** Schema-time filtering is not a security control. A client sending a crafted payload with `ai_sensitive=True` fields will have them accepted.
-2. **No centralized Principal/policy engine.** Each surface manages authorization independently.
-3. **No cross-tenant adversarial tests.** Property-based tests are planned for Round 3.
+1. **Studio write surfaces not enforced.** Studio is internal tooling without user-data CRUD in the current codebase. When public Studio write paths are added, enforcement must be wired.
+2. **Bulk update / upsert not enforced.** These manager-level operations are called programmatically from trusted code. HTTP writes always go through a viewset first. Enforcement here is planned for Round 4.
+3. **No cross-tenant adversarial tests.** Property-based tests are planned for Round 4.
 4. **No supply-chain hardening.** No CodeQL, Semgrep, pip-audit, or signed releases.
 5. **No external review.** Planned before v0.6 Production Mode.

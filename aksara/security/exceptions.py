@@ -22,8 +22,7 @@ class PolicyDenied(SecurityError):
     """
     Raised when a policy engine decision denies an action.
 
-    Round 3 will wire this into every generated write surface.
-    In Round 2, it is available for explicit callers.
+    Round 3: wired into generated REST write surfaces (create, update).
 
     Usage::
 
@@ -36,8 +35,16 @@ class PolicyDenied(SecurityError):
         self.decision = decision
         super().__init__(
             f"Policy denied: {decision.reason} "
-            f"(action={decision.action!r}, resource={decision.resource!r})"
+            f"(action={decision.action!r}, denied_fields={list(decision.denied_fields)})"
         )
+
+    @property
+    def reason(self) -> str:
+        return self.decision.reason
+
+    @property
+    def denied_fields(self) -> tuple:
+        return self.decision.denied_fields
 
 
 class PrincipalResolutionError(SecurityError):

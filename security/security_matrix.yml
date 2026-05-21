@@ -10,7 +10,7 @@ metadata:
     and what tests need to cover each risk.
   owner: aksara
   status: active-hardening
-  round: 2
+  round: 3
   created: "2026-05-21"
   notes: >
     Surfaces are derived from inspecting the Aksara codebase at v0.5.48.
@@ -483,24 +483,26 @@ scenarios:
     actor: authenticated_user
     risk: restricted_field_write
     expected: deny
-    status: planned
+    status: covered
     description: >
       A caller sends a raw JSON body containing a field marked ai_sensitive=True
       or ai_agent_writable=False that is absent from the generated schema.
-      The server must strip or reject the field at runtime.
-      Note: schema-time filtering does not protect against this — runtime
-      enforcement is required. Planned for Round 2.
+      The server rejects the field at runtime with a 403 and denied_fields list.
+      Round 3: enforce_request_payload_policy() wired into ViewSet.update().
+      Covered by tests/security/test_rest_runtime_field_enforcement.py.
 
   - id: mcp_update_ai_agent_writable_false
     surface: mcp_update_tool
     actor: mcp_agent
     risk: restricted_field_write
     expected: deny
-    status: planned
+    status: covered
     description: >
       MCP agent attempts to update a field explicitly marked ai_agent_writable=False.
-      The MCP tool schema should exclude the field, but a crafted payload
-      must also be rejected at runtime. Planned for Round 2.
+      Round 3: MCP agents using REST go through ViewSet.update(), which now calls
+      enforce_request_payload_policy(). Rejected with 403 and denied_fields list.
+      Covered by tests/security/test_rest_runtime_field_enforcement.py
+      (test_rest_update_mcp_agent_ai_restricted_field_fails).
 
   - id: studio_public_without_auth
     surface: studio_list
@@ -735,3 +737,43 @@ scenarios:
       Round 2: PolicyEngine.writable_fields() denies writes to tenant_id
       and organisation_id fields by non-system principals.
       Covered by tests/security/test_policy_engine.py.
+
+  - id: rest_create_rejects_ai_agent_restricted_field
+    surface: rest_create
+    actor: ai_agent
+    risk: restricted_field_write
+    expected: deny
+    status: covered
+    description: >
+      Round 3: AI agent sends a POST with ai_agent_writable=False field.
+      ViewSet.create() calls enforce_request_payload_policy() before save;
+      rejected with 403 and denied_fields in response body.
+      Covered by tests/security/test_rest_runtime_field_enforcement.py
+      (test_rest_create_rejects_raw_ai_restricted_field).
+
+  - id: rest_update_rejects_tenant_id_override
+    surface: rest_update
+    actor: authenticated_user
+    risk: cross_tenant_write
+    expected: deny
+    status: covered
+    description: >
+      Round 3: Normal user sends a PATCH/PUT with tenant_id in the payload.
+      ViewSet.update() calls enforce_request_payload_policy() before save;
+      rejected with 403 and denied_fields in response body.
+      Covered by tests/security/test_rest_runtime_field_enforcement.py
+      (test_rest_update_rejects_tenant_id_override).
+
+  - id: mcp_update_rejects_ai_restricted_field_rest
+    surface: rest_update
+    actor: mcp_agent
+    risk: schema_bypass
+    expected: deny
+    status: covered
+    description: >
+      Round 3: MCP agent sends a raw PATCH with ai_agent_writable=False field,
+      bypassing any schema-level filtering. ViewSet.update() enforces policy at
+      runtime, rejected with 403. Proves generated schemas are not the security
+      control; runtime enforcement is.
+      Covered by tests/security/test_rest_runtime_field_enforcement.py
+      (test_rest_update_mcp_agent_ai_restricted_field_fails).

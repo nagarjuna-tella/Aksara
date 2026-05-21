@@ -1,7 +1,8 @@
 # AI and MCP Security Boundaries
 
-> **Status:** This document is part of the Aksara security-hardening milestone (Round 1).
-> Some controls are implemented today; others are planned for upcoming rounds.
+> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
+> Runtime field enforcement is **implemented** for REST surfaces as of Round 3.
+> See [Runtime Enforcement](#runtime-enforcement-round-3) below.
 
 ## Core Principle
 
@@ -11,9 +12,9 @@ When Aksara generates an MCP tool schema or an AI prompt pack, it filters out fi
 marked `ai_sensitive=True` or `ai_agent_writable=False`. However, that schema is a
 *hint* to clients — it is not enforced at the server.
 
-A malicious or misconfigured client can send a payload containing forbidden fields,
-and the server will currently accept them. Runtime enforcement (planned for Round 2)
-will strip or reject forbidden fields regardless of what the schema says.
+A malicious or misconfigured client can send a payload containing forbidden fields.
+As of Round 3, the REST viewset layer enforces field-level permissions at runtime and
+rejects forbidden fields with a structured 403 error before any database write.
 
 ## Current Controls
 
@@ -38,10 +39,10 @@ class Invoice(AksaraModel):
 | Flag | Default | Meaning |
 |------|---------|---------|
 | `ai_sensitive` | `False` | If `True`, field is excluded from AI/MCP schemas and prompt packs |
-| `ai_agent_writable` | `True` | If `False`, field should not be written by AI agents |
+| `ai_agent_writable` | `True` | If `False`, field cannot be written by AI agents |
 
-**Current enforcement:** Schema-time only. Forbidden fields are excluded from generated
-schemas, but crafted payloads are not yet rejected at runtime.
+**Current enforcement:** Schema-time + runtime. Forbidden fields are excluded from generated
+schemas, and crafted REST payloads are rejected at runtime (Round 3).
 
 ### HMAC agent token authentication
 
@@ -63,16 +64,46 @@ class SensitiveResource(AksaraViewSet):
     permission_classes = [IsAuthenticated, DenyAI]
 ```
 
-## Known Gaps (as of Round 1)
+## Known Gaps (as of Round 3)
 
 | Gap | Severity | Planned Round |
 |-----|----------|---------------|
-| Runtime field enforcement | High | Round 2 |
-| Per-tool MCP scope claims | High | Round 3 |
-| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Round 2 |
-| Audience-bound MCP tokens | Medium | Round 3 |
-| Centralized policy engine for all surfaces | High | Round 2 |
-| `ai_agent_writable=True` default (opt-out rather than opt-in) | Medium | Round 2 |
+| Per-tool MCP scope claims | High | Round 4 |
+| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Round 4 |
+| Audience-bound MCP tokens | Medium | Round 4 |
+| Direct MCP tool call enforcement (without REST) | High | Round 4 |
+| Bulk update / upsert enforcement | Medium | Round 4 |
+
+## Runtime Enforcement (Round 3)
+
+As of Round 3, REST create and update paths enforce field-level policy before any database write.
+The enforcement runs through `aksara/security/enforcement.py`:
+
+```python
+enforce_request_payload_policy(
+    request=request,
+    action="create",  # or "update"
+    model=self.model,
+    payload=data,
+    surface="rest_create",
+)
+```
+
+When a principal sends a field they cannot write, the server responds:
+
+```
+HTTP 403 Forbidden
+{
+    "detail": "Payload contains fields not writable by this principal.",
+    "reason": "Field 'internal_notes' is not writable by AI agents.",
+    "denied_fields": ["internal_notes"],
+    "required_scopes": [],
+    "missing_scopes": []
+}
+```
+
+This enforcement is wired into `ModelViewSet.create()` and `ModelViewSet.update()`.
+MCP agents that use the REST surface are automatically covered.
 
 ## Security Testing Matrix (current coverage)
 
@@ -81,10 +112,12 @@ class SensitiveResource(AksaraViewSet):
 | MCP enabled without auth → `production-check` blocks | Covered (Round 1) |
 | `ai_sensitive` field excluded from MCP schema | Covered (schema-time) |
 | `ai_agent_writable=False` excluded from MCP schema | Covered (schema-time) |
-| Crafted payload with `ai_sensitive` field rejected at runtime | **Planned Round 2** |
-| Crafted payload with `ai_agent_writable=False` field rejected | **Planned Round 2** |
-| Cross-tenant access via MCP tool | **Planned Round 3** |
-| Field-level audit trail per MCP call | **Planned Round 2** |
+| Crafted REST payload with `ai_agent_writable=False` field rejected | **Covered (Round 3)** |
+| Crafted REST payload with `read_only` field rejected | **Covered (Round 3)** |
+| tenant_id override attempt in REST payload rejected | **Covered (Round 3)** |
+| System principal can write `system_only` fields | **Covered (Round 3)** |
+| Cross-tenant access via MCP tool | Planned Round 4 |
+| Field-level audit trail per MCP call | Planned Round 4 |
 
 ## Future Direction
 
@@ -92,7 +125,7 @@ The long-term design goal for Aksara's AI/MCP security:
 
 1. **Deny-by-default in production mode.** `ai_exposed=False`, `ai_agent_writable=False`, `ai_sensitive=True` should be the production defaults. Developers must explicitly opt in.
 2. **Scoped, short-lived credentials.** MCP tokens should carry per-tool scope claims (`mcp:read:invoice`, `mcp:update:invoice.status`) and `audience` binding.
-3. **Runtime payload validation.** Every MCP tool call and REST write from an AI agent must be validated against a central policy engine, not just a generated schema.
+3. **Runtime payload validation.** Every MCP tool call and REST write from an AI agent must be validated against a central policy engine, not just a generated schema. *(REST surfaces: done in Round 3.)*
 4. **Audit logging.** Every tool call must log: actor, tool, tenant, fields_requested, fields_allowed, fields_denied, decision, and reason.
 
-These controls are planned for Rounds 2–3 of the hardening milestone.
+These controls are planned for Rounds 2–4 of the hardening milestone.

@@ -31,6 +31,11 @@ from aksara.security.context import (
     principal_from_mcp_claims,
     principal_from_ai_agent,
 )
+from aksara.security.enforcement import (
+    enforce_payload_policy,
+    enforce_request_payload_policy,
+    policy_denied_to_error_payload,
+)
 
 __all__ = [
     # Principal
@@ -49,6 +54,10 @@ __all__ = [
     "principal_from_request",
     "principal_from_mcp_claims",
     "principal_from_ai_agent",
+    # Runtime enforcement (Round 3)
+    "enforce_payload_policy",
+    "enforce_request_payload_policy",
+    "policy_denied_to_error_payload",
     # Exceptions
     "SecurityError",
     "PolicyDenied",

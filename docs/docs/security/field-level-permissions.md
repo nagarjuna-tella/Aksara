@@ -1,7 +1,8 @@
 # Field-Level Permissions
 
-> **Status:** This document is part of the Aksara security-hardening milestone (Round 1).
-> Field-level metadata exists today; runtime enforcement is planned for Round 2.
+> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
+> Field-level metadata exists and runtime enforcement is **implemented** for REST surfaces.
+> See [Runtime Enforcement](#runtime-enforcement-round-3) for covered and remaining surfaces.
 
 ## Core Principle
 
@@ -21,7 +22,7 @@ control, not a security boundary.
 | Default | `False` |
 |---------|---------|
 | Meaning | If `True`, field is excluded from AI/MCP tool schemas and AI prompt pack exports |
-| Enforced | Schema-time only (NOT at runtime as of Round 1) |
+| Enforced | Schema-time + runtime (Round 3): REST create/update reject writes from AI agents |
 
 ```python
 class PatientRecord(AksaraModel):
@@ -32,8 +33,8 @@ class PatientRecord(AksaraModel):
 
 | Default | `True` |
 |---------|--------|
-| Meaning | If `False`, AI agents should not be able to write this field |
-| Enforced | Schema-time only — field excluded from MCP create/update tool input schemas |
+| Meaning | If `False`, AI agents cannot write this field |
+| Enforced | Schema-time (field excluded from MCP tool schemas) + runtime (Round 3): REST viewset rejects writes |
 
 ```python
 class Invoice(AksaraModel):
@@ -42,12 +43,12 @@ class Invoice(AksaraModel):
 
 ### Read-only fields
 
-Fields can be marked read-only in serializers, which excludes them from create/update input
-schemas. Same limitation applies: crafted payloads can bypass schema-level read-only enforcement.
+Fields can be marked read-only, which excludes them from create/update input schemas. As of Round 3,
+attempts to write `read_only=True` fields via REST are rejected at runtime with a 403.
 
 ## The Schema-Bypass Gap
 
-This is the key unresolved risk as of Round 1:
+This was the key unresolved risk as of Round 1 / Round 2:
 
 ```
 Client sends:
@@ -56,52 +57,78 @@ POST /api/invoices/
                      ↑
             This field is ai_agent_writable=False
             and excluded from generated schemas.
-            But the server currently accepts it.
+            As of Round 3, the server REJECTS this
+            with HTTP 403 + denied_fields list.
 ```
 
-The scenario `rest_update_hidden_field_raw_payload` in `security_matrix.yml` tracks this gap
-with `status: planned` — test coverage and enforcement are planned for Round 2.
+The scenario `rest_update_hidden_field_raw_payload` in `security_matrix.yml` tracks this —
+now `status: covered` as of Round 3.
 
-## Surfaces Where Field Enforcement Is Needed
+## Runtime Enforcement (Round 3)
 
-Every write surface must eventually enforce field-level permissions:
-
-| Surface | Current Gap |
-|---------|-------------|
-| REST create | Schema excludes fields; runtime does not reject |
-| REST update / patch | Same |
-| Studio create | Same |
-| Studio update | Same |
-| MCP create tool | Same |
-| MCP update tool | Same |
-| Bulk update | Same |
-| Upsert | Same |
-| Background task mutation | No field-level check at all |
-| SDK-generated client | Not yet implemented |
-
-## Planned Runtime Enforcement (Round 2)
-
-All create/update/upsert/bulk paths will validate payloads against a central policy engine:
+Round 3 closes the schema-bypass gap for REST surfaces. The central enforcement helpers live
+in `aksara/security/enforcement.py`:
 
 ```python
-# Planned Round 2 implementation
-def validate_write_payload(principal: Principal, model_class, payload: dict) -> dict:
-    """Strip or raise on fields the principal cannot write."""
-    writable = policy.writable_fields(principal, model_class)
-    forbidden = set(payload.keys()) - writable
-    if forbidden:
-        raise PermissionDenied(f"Fields not writable: {forbidden}")
-    return {k: v for k, v in payload.items() if k in writable}
+from aksara.security.enforcement import (
+    enforce_request_payload_policy,
+    policy_denied_to_error_payload,
+)
+from aksara.security.exceptions import PolicyDenied
+from fastapi import HTTPException
+
+# In a viewset create() or update():
+try:
+    enforce_request_payload_policy(
+        request=request,
+        action="create",
+        model=self.model,
+        payload=data,
+        surface="rest_create",
+    )
+except PolicyDenied as exc:
+    raise HTTPException(status_code=403, detail=policy_denied_to_error_payload(exc))
 ```
 
-This enforcement will run server-side regardless of what the client sends or what the
-generated schema says.
+The 403 response body has a structured shape:
 
-## Interim Mitigation
+```json
+{
+    "detail": "Payload contains fields not writable by this principal.",
+    "reason": "...",
+    "denied_fields": ["internal_review_flag"],
+    "required_scopes": [],
+    "missing_scopes": []
+}
+```
 
-Until Round 2, mitigate the schema-bypass gap by:
+### Principal resolution in enforcement
 
-1. Using `DenyAI` permission class on sensitive viewsets to block AI agents entirely.
-2. Explicitly marking all sensitive fields `ai_sensitive=True` and `ai_agent_writable=False`.
-3. Adding custom serializer validation for fields that must never be written by clients.
-4. Monitoring for unexpected field writes in application logs.
+The enforcement helper resolves the principal in this priority order — never as system:
+
+1. `request.state.principal` — pre-resolved by `AIAgentMiddleware`
+2. `principal_from_request(request)` — full resolution from request state/user
+3. `Principal.anonymous()` — if request is None or resolution fails
+
+### PolicyEngine is the single source of truth
+
+`enforce_request_payload_policy` delegates to `PolicyEngine.validate_payload()`, which applies
+the same rules as `PolicyEngine.writable_fields()`. Adding a rule in one place covers all surfaces.
+
+## Surfaces: Covered and Remaining
+
+| Surface | Round 3 Status |
+|---------|---------------|
+| REST create | **Covered** — `ViewSet.create()` enforces via `enforce_request_payload_policy()` |
+| REST update / patch | **Covered** — `ViewSet.update()` enforces via `enforce_request_payload_policy()` |
+| MCP agents via REST | **Covered** — MCP agents using REST go through the same viewset |
+| Studio create / update | **Remaining** — internal tooling, no user-data CRUD in current codebase |
+| MCP direct tool call | **Partial** — schema excludes fields; direct tool calls not wired yet |
+| Bulk update | **Remaining** — lower-level manager operation, no request context |
+| Upsert | **Remaining** — lower-level manager operation, no request context |
+| Background task mutation | **Remaining** — no request/principal context in task signature |
+| SDK-generated client | **Not implemented** — surface not yet in codebase |
+
+> Bulk update and upsert are called programmatically from internal code (trusted callers).
+> HTTP-originated writes reach these only after going through a viewset first. When these
+> surfaces need a public HTTP path, wire enforcement at the viewset layer.

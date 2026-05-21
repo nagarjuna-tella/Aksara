@@ -41,10 +41,17 @@ def _iter_fields(model_or_fields: Any) -> Iterable[Any]:
     Yield field objects from a model class or a collection of fields.
 
     Supports:
-    - objects with a ``fields`` attribute (list/tuple)
+    - Aksara model classes with ``_fields`` dict (canonical model storage)
+    - objects with a ``fields`` attribute (list/tuple or ModelMetaInfo)
     - dict mapping name -> field_obj
     - plain iterables of field objects
     """
+    # Aksara Model class: fields stored in cls._fields dict
+    if hasattr(model_or_fields, "_fields") and isinstance(
+        getattr(model_or_fields, "_fields", None), dict
+    ):
+        yield from model_or_fields._fields.values()
+        return
     if hasattr(model_or_fields, "fields"):
         src = model_or_fields.fields
     elif isinstance(model_or_fields, dict):

@@ -56,6 +56,8 @@ from aksara.api.schemas import (
     generate_read_schema,
     model_to_dict,
 )
+from aksara.security.enforcement import enforce_request_payload_policy, policy_denied_to_error_payload
+from aksara.security.exceptions import PolicyDenied
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -436,13 +438,30 @@ class ModelViewSet:
         # Check permissions
         self.check_permissions(request)
         self.check_ai_access(request)
-        
+
+        # Runtime field-level enforcement (Round 3).
+        # Generated schemas are not security controls — validate the payload
+        # against the resolved Principal's writable fields before any save.
+        try:
+            enforce_request_payload_policy(
+                request=request,
+                action="create",
+                model=self.model,
+                payload=data,
+                surface="rest_create",
+            )
+        except PolicyDenied as exc:
+            raise HTTPException(
+                status_code=403,
+                detail=policy_denied_to_error_payload(exc),
+            )
+
         serializer = self.get_serializer(
             'create',
             data=data,
             context={'request': request},
         )
-        
+
         if serializer is not None:
             # Use serializer flow
             serializer.is_valid(raise_exception=True)
@@ -495,14 +514,29 @@ class ModelViewSet:
         
         # Check object permissions
         self.check_object_permissions(request, instance)
-        
+
+        # Runtime field-level enforcement (Round 3).
+        try:
+            enforce_request_payload_policy(
+                request=request,
+                action="update",
+                model=self.model,
+                payload=data,
+                surface="rest_update",
+            )
+        except PolicyDenied as exc:
+            raise HTTPException(
+                status_code=403,
+                detail=policy_denied_to_error_payload(exc),
+            )
+
         serializer = self.get_serializer(
             'update',
             instance=instance,
             data=data,
             context={'request': request},
         )
-        
+
         if serializer is not None:
             # Use serializer flow
             serializer.is_valid(raise_exception=True)
@@ -514,7 +548,7 @@ class ModelViewSet:
             for key, value in data.items():
                 if value is not None:
                     setattr(instance, key, value)
-            
+
             await instance.save()
             return self._serialize(instance, action='retrieve', request=request)
     
