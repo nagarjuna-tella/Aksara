@@ -1,6 +1,6 @@
 # Production Hardening Guide
 
-> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 5 of the Aksara security-hardening milestone.
 > Aksara is not yet claiming production-mode status. This guide documents the expected
 > secure posture and the checks you must pass before deploying Aksara in production.
 
@@ -15,6 +15,15 @@ aksara doctor production-check
 
 `production-check` will exit with code 1 when any blocking condition is detected.
 Fix all blocking issues before deploying.
+
+For security-hardening validation, run the Round 5 fuzz suite separately:
+
+```bash
+python -m pytest tests/security/fuzz/ -q
+```
+
+This suite is intentionally bounded and separate from the normal fast suite.
+It is not yet a production-check requirement or CI release gate.
 
 ## Required Settings for Production
 
@@ -100,7 +109,39 @@ Use this checklist before each production deployment:
 - [ ] External security review completed
 - [ ] No open critical/high security issues
 - [ ] Supply-chain scan (pip-audit, Bandit) passes
-- [ ] Fuzz smoke tests pass
+- [ ] Fuzz smoke tests pass in CI release gates
+
+### Round 5 fuzzing and generated surface hardening
+
+Round 5 adds adversarial and fuzzing coverage for generated framework surfaces.
+
+Covered:
+
+- Filters.
+- Ordering.
+- Pagination and cursors where applicable.
+- Serializer payloads.
+- Runtime field enforcement bypass attempts.
+- Helper-level bulk/upsert payload shapes where applicable.
+- Migration identifiers/defaults.
+- Malformed and oversized payloads.
+- OpenAPI fuzzing placeholder when Schemathesis is unavailable.
+
+Security invariants:
+
+- Forbidden fields never mutate.
+- Tenant isolation is not bypassed.
+- Hidden/sensitive fields do not leak.
+- Unsafe identifiers do not become unsafe SQL.
+- Malformed inputs fail safely.
+- Oversized inputs fail safely.
+
+Remaining:
+
+- Supply-chain CI.
+- Release gates.
+- External review.
+- Full production-mode claim.
 
 ## Notes
 

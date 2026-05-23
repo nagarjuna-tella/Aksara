@@ -871,24 +871,18 @@ class QuerySet(Generic[T]):
             
             # Get column name
             if field_name == "id":
-                col_name = self._base_column_reference("id", qualify=qualify_base) if qualify_base else "id"
+                col_name = self._base_column_reference("id", qualify=qualify_base)
             elif field_name in self._model._fields:
-                if qualify_base:
-                    col_name = self._base_column_reference(field_name, qualify=True)
-                else:
-                    col_name = self._model._fields[field_name].column_name
+                col_name = self._base_column_reference(field_name, qualify=qualify_base)
             elif field_name.endswith("_id"):
                 # Check if it's a FK column name (e.g., author_id for FK field 'author')
                 base_field_name = field_name[:-3]
                 if base_field_name in self._model._fields:
-                    if qualify_base:
-                        col_name = self._base_column_reference(field_name, qualify=True)
-                    else:
-                        col_name = field_name
+                    col_name = self._base_column_reference(field_name, qualify=qualify_base)
                 else:
-                    col_name = field_name  # Fallback
+                    col_name = quote_identifier(field_name)  # Fallback
             else:
-                col_name = field_name  # Fallback (should have been validated)
+                col_name = quote_identifier(field_name)  # Fallback (should have been validated)
             
             order_parts.append(f"{col_name} {direction}")
         
@@ -1678,7 +1672,7 @@ class Manager(Generic[T]):
                     ids.append(field.to_db(value))
                     param_idx += 2
 
-                col_name = field.column_name
+                col_name = quote_identifier(field.column_name)
                 case_statements[col_name] = " ".join(when_clauses)
             
             # Build the UPDATE statement

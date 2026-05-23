@@ -173,7 +173,7 @@ class UUIDField(FieldOp):
             if self.unique:
                 parts.append("UNIQUE")
             if self.default is not None:
-                parts.append(f"DEFAULT '{self.default}'")
+                parts.append(f"DEFAULT '{_escape_sql_string(str(self.default))}'")
         
         return " ".join(parts)
     
@@ -353,7 +353,7 @@ class DateTimeField(FieldOp):
         if self.auto_now_add:
             parts.append("DEFAULT CURRENT_TIMESTAMP")
         elif self.default is not None:
-            parts.append(f"DEFAULT '{self.default}'")
+            parts.append(f"DEFAULT '{_escape_sql_string(str(self.default))}'")
         
         return " ".join(parts)
     
@@ -379,7 +379,7 @@ class DateField(FieldOp):
         if not self.nullable:
             parts.append("NOT NULL")
         if self.default is not None:
-            parts.append(f"DEFAULT '{self.default}'")
+            parts.append(f"DEFAULT '{_escape_sql_string(str(self.default))}'")
         
         return " ".join(parts)
     
@@ -898,7 +898,7 @@ class TimeField(FieldOp):
         if not self.nullable:
             parts.append("NOT NULL")
         if self.default is not None:
-            parts.append(f"DEFAULT '{self.default}'")
+            parts.append(f"DEFAULT '{_escape_sql_string(str(self.default))}'")
         return " ".join(parts)
 
     def __repr__(self) -> str:
@@ -922,7 +922,7 @@ class DurationField(FieldOp):
         if not self.nullable:
             parts.append("NOT NULL")
         if self.default is not None:
-            parts.append(f"DEFAULT '{self.default}'")
+            parts.append(f"DEFAULT '{_escape_sql_string(str(self.default))}'")
         return " ".join(parts)
 
     def __repr__(self) -> str:

@@ -58,6 +58,9 @@ from aksara.api.schemas import (
 )
 from aksara.security.enforcement import enforce_request_payload_policy, policy_denied_to_error_payload
 from aksara.security.exceptions import PolicyDenied
+from aksara.security.context import principal_from_request
+from aksara.security.policy import get_policy_engine
+from aksara.security.principal import Principal
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -616,8 +619,18 @@ class ModelViewSet:
         Returns:
             QuerySet instance
         """
+        policy_filters: Dict[str, Any] = {}
+        if request is not None:
+            principal = self._resolve_query_principal(request)
+            if principal is not None:
+                decision = get_policy_engine().query_filter(principal, self.model)
+                if decision.denied:
+                    raise HTTPException(status_code=403, detail=decision.reason)
+                policy_filters = dict(decision.metadata.get("filters", {}) or {})
+
         # Remove None values from filters
         valid_filters = {k: v for k, v in filters.items() if v is not None}
+        valid_filters.update(policy_filters)
 
         queryset = self.model.objects.filter(**valid_filters)
 
@@ -626,6 +639,11 @@ class ModelViewSet:
             for backend_class in self.filter_backends:
                 backend = backend_class()
                 queryset = backend.filter_queryset(request, queryset, self)
+
+        # Re-apply required policy filters after filter backends so query
+        # parameters cannot override tenant constraints.
+        if policy_filters:
+            queryset = queryset.filter(**policy_filters)
                 
         return queryset
     
@@ -666,6 +684,10 @@ class ModelViewSet:
         
         # Fallback to default limit/offset pagination if no class defined
         # Enforce max limit
+        if limit < 0:
+            raise HTTPException(status_code=400, detail="limit must be non-negative")
+        if offset < 0:
+            raise HTTPException(status_code=400, detail="offset must be non-negative")
         limit = min(limit, self.max_limit)
 
         # Single round-trip: COUNT(*) OVER() returns the total alongside the
@@ -682,6 +704,18 @@ class ModelViewSet:
                 for item in results
             ],
         }
+
+    def _resolve_query_principal(self, request: Request) -> Optional[Principal]:
+        """Resolve a principal for read/query policy checks without trusting headers."""
+        state = getattr(request, "state", None)
+        if state is not None:
+            cached = getattr(state, "principal", None)
+            if isinstance(cached, Principal):
+                return cached
+        try:
+            return principal_from_request(request)
+        except Exception:
+            return None
     
     async def _fetch_with_pagination(
         self,

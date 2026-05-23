@@ -10,9 +10,29 @@ following Django ORM lookup syntax (?price__gte=50&category__in=tech,news).
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 from fastapi import Request
 
+from aksara.security.context import principal_from_request
+from aksara.security.policy import get_policy_engine
+from aksara.security.principal import Principal
+
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
     from aksara.api.viewsets import ModelViewSet
+
+
+_TENANT_ORDERING_FIELDS = frozenset({"tenant_id", "tenant", "organisation_id", "org_id"})
+
+
+def _resolve_principal_for_filter(request: Request) -> Optional[Principal]:
+    """Resolve a principal for query filtering without trusting client headers."""
+    state = getattr(request, "state", None)
+    if state is not None:
+        cached = getattr(state, "principal", None)
+        if isinstance(cached, Principal):
+            return cached
+    try:
+        return principal_from_request(request)
+    except Exception:
+        return None
 
 
 class BaseFilterBackend:
@@ -218,11 +238,21 @@ class OrderingFilter(BaseFilterBackend):
         # Check against allowed ordering_fields
         # If ordering_fields == "__all__", any field is allowed
         allow_all = ordering_fields == "__all__"
+        principal = _resolve_principal_for_filter(request)
+        visible_fields = None
+        if principal is not None:
+            decision = get_policy_engine().visible_fields(principal, view.model)
+            visible_fields = set(decision.allowed_fields)
         
         for term in terms:
             # Strip '-' to check the actual field name
             field_name = term[1:] if term.startswith("-") else term
-            
+
+            if principal is not None and field_name in _TENANT_ORDERING_FIELDS and not principal.is_system:
+                continue
+            if visible_fields is not None and field_name not in visible_fields:
+                continue
+
             if allow_all or field_name in ordering_fields:
                 valid_terms.append(term)
                 

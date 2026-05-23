@@ -1,6 +1,6 @@
 # Aksara Threat Model
 
-> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 5 of the Aksara security-hardening milestone.
 > Some controls described here are implemented today; others are planned for upcoming rounds.
 > This threat model will be expanded as the hardening milestone progresses.
 
@@ -57,7 +57,10 @@ Internal boundaries
     │       ✓ Round 3: enforce_request_payload_policy() wired into
     │         ViewSet.create() and ViewSet.update(). Forbidden fields
     │         are rejected with 403 + denied_fields before any DB write.
-    │         Remaining: Studio, bulk, upsert, direct MCP tool calls.
+    │       ✓ Round 5: nested/raw payload fuzzing and helper-level
+    │         bulk/upsert payload validation added.
+    │         Remaining: Studio, manager-level bulk/upsert integration,
+    │         direct MCP tool calls.
     │
     ├── Client-supplied tenant header → trusted tenant context
     │       ⚠ Tenant context must be resolved server-side.
@@ -93,7 +96,7 @@ Internal boundaries
 | debug_mode_exposed | API8: Security Misconfiguration | debug=True in production | High |
 | unsafe_production_surface | API8: Security Misconfiguration | Studio/MCP exposed without safeguards | High |
 
-## Current Controls (Round 1–4 baseline)
+## Current Controls (Round 1-5 baseline)
 
 - **`aksara doctor security-check`** — Checks SECRET_KEY, debug mode, CORS, Studio, MCP, cookies, rate limits, tenancy/RLS configuration, security matrix validity, and MCP credential hardening.
 - **`aksara doctor production-check`** — Stricter version; blocks deployment on critical issues.
@@ -111,24 +114,57 @@ Internal boundaries
 - **Round 3: Runtime REST enforcement** — `enforce_request_payload_policy()` wired into `ViewSet.create()` and `ViewSet.update()`. Forbidden fields rejected with 403 + structured `denied_fields` response.
 - **Round 4: Tenant isolation adversarial tests** — `test_tenant_isolation.py` covers cross-tenant resource access, AI/MCP agent cross-tenant, tenant_required fail-closed, forged header ignored, body tenant_id override denied.
 - **Round 4: MCP credential hardening** — `MCPCredentialClaims`, `require_scope()`, `require_mcp_audience()`, `require_mcp_tenant()` in `aksara/security/mcp.py`. `principal_from_mcp_claims()` normalizes `aud` → `audience`. `PolicyEngine.can()` extended with `required_audience` and `tenant_required`. Doctor check `security.mcp_hardening` blocks production deployments with misconfigured MCP credentials.
+- **Round 5: Fuzzing and generated-surface hardening** — `tests/security/fuzz/` adds bounded Hypothesis and adversarial coverage for filters, ordering, pagination/cursors, serializers, runtime field enforcement bypass attempts, JSON path-like inputs, helper-level bulk/upsert payload shapes, migration identifiers/defaults, malformed payloads, and oversized payloads. Schemathesis/OpenAPI fuzzing is represented as an explicit skipped placeholder because Schemathesis is not installed.
+
+## Round 5: Fuzzing and Generated Surface Hardening
+
+Round 5 adds adversarial and fuzzing coverage for generated framework surfaces.
+
+Covered:
+
+- Filters and generated query construction.
+- Ordering parameters, including tenant and AI-sensitive field ordering attempts.
+- Pagination and cursors where applicable.
+- Serializer payloads and raw runtime field enforcement bypass attempts.
+- Nested payloads, aliases, casing variants, dotted keys, and JSON path-like keys.
+- Helper-level bulk/upsert payload shapes, including unsafe conflict targets.
+- Migration identifiers/defaults.
+- Malformed and oversized payloads.
+- OpenAPI fuzzing placeholder when Schemathesis is unavailable.
+
+Security invariants:
+
+- Forbidden fields never mutate.
+- Tenant isolation is not bypassed.
+- Hidden/sensitive fields do not leak through denied generated surfaces.
+- Unsafe identifiers do not become unsafe SQL.
+- Malformed inputs fail safely.
+- Oversized inputs fail safely.
+
+Remaining:
+
+- Supply-chain CI.
+- Release gates.
+- External review.
+- Full production-mode claim.
 
 ## Planned Controls (Future Rounds)
 
 | Round | Control |
 |-------|---------|
-| Round 5 | Field-level audit logging for AI/MCP tool calls |
-| Round 5 | Cross-tenant DB-level property-based tests |
-| Round 5 | Direct MCP tool call enforcement (without REST) |
-| Round 5 | Bulk update / upsert enforcement |
-| Round 5 | Scoped/audience-bound MCP token issuance in core |
-| Round 6 | ORM/migration/serializer fuzzing (Hypothesis, Schemathesis) |
-| Round 7 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
+| Round 6 | Wire fuzzing into release gates / CI |
+| Round 6 | Supply-chain hardening (CodeQL, Semgrep, Bandit, SBOM, PyPI Trusted Publishing) |
+| Future | Field-level audit logging for AI/MCP tool calls |
+| Future | Direct MCP tool call enforcement (without REST) |
+| Future | Manager-level bulk update / upsert principal enforcement |
+| Future | Scoped/audience-bound MCP token issuance in core |
 | Pre-v0.6 | External security review before production-mode claim |
 
-## Known Gaps (as of Round 4)
+## Known Gaps (as of Round 5)
 
 1. **Studio write surfaces not enforced.** Studio is internal tooling without user-data CRUD in the current codebase. When public Studio write paths are added, enforcement must be wired.
-2. **Bulk update / upsert not enforced.** These manager-level operations are called programmatically from trusted code. HTTP writes always go through a viewset first. Enforcement here is planned for Round 5.
-3. **No DB-level cross-tenant property tests.** Policy-layer isolation is tested; DB-level RLS property tests are planned for Round 5.
-4. **No supply-chain hardening.** No CodeQL, Semgrep, pip-audit, or signed releases.
-5. **No external review.** Planned before v0.6 Production Mode.
+2. **Manager-level bulk update / upsert principal enforcement not wired.** Round 5 adds helper-level validation for bulk/upsert-shaped payloads, but direct manager calls remain trusted internal operations.
+3. **OpenAPI fuzzing is not active.** A skipped Schemathesis placeholder exists; Schemathesis is not installed.
+4. **Fuzzing is not wired into CI release gates.** Round 5 keeps fuzzing separately runnable with `python -m pytest tests/security/fuzz/ -q`.
+5. **No supply-chain hardening.** No CodeQL, Semgrep, pip-audit, SBOM, or signed release provenance yet.
+6. **No external review.** Planned before v0.6 Production Mode.

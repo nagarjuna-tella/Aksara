@@ -1,6 +1,6 @@
 # Security Release Gates
 
-> **Status:** This document is part of the Aksara security-hardening milestone (Round 1).
+> **Status:** This document is part of the Aksara security-hardening milestone (updated through Round 5).
 > The gates listed here are the target criteria for Aksara to claim production-mode status.
 > Round 1 establishes the baseline. Release gates will be wired into CI in later rounds.
 
@@ -10,17 +10,51 @@ Aksara should not claim production readiness until security checks are a require
 release process. This document defines the criteria that must pass before a production-mode
 release can be made.
 
-## Current Status (Round 1)
+## Current Status (Round 5)
 
 - [x] `security_matrix.yml` exists and validates
 - [x] `aksara doctor security-check` is implemented
 - [x] `aksara doctor production-check` is implemented
 - [x] Security docs skeleton exists
+- [x] Bounded generated-surface fuzz suite exists under `tests/security/fuzz/`
+- [ ] Fuzzing is wired into CI release gates
 - [ ] All gates below are met (in progress across multiple rounds)
 
 ## Planned Release Gates
 
 The following must all be true before Aksara can claim v0.6.0 Production Mode:
+
+## Round 5: Fuzzing and Generated Surface Hardening
+
+Round 5 adds adversarial and fuzzing coverage for generated framework surfaces.
+
+Covered:
+
+- Filters.
+- Ordering.
+- Pagination/cursors where applicable.
+- Serializer payloads.
+- Runtime field enforcement bypass attempts.
+- Helper-level bulk/upsert payload shapes where applicable.
+- Migration identifiers/defaults.
+- Malformed and oversized payloads.
+- OpenAPI fuzzing placeholder when Schemathesis is unavailable.
+
+Security invariants:
+
+- Forbidden fields never mutate.
+- Tenant isolation is not bypassed.
+- Hidden/sensitive fields do not leak.
+- Unsafe identifiers do not become unsafe SQL.
+- Malformed inputs fail safely.
+- Oversized inputs fail safely.
+
+Remaining:
+
+- Supply-chain CI.
+- Release gates.
+- External review.
+- Full production-mode claim.
 
 ### Security checks
 
@@ -49,12 +83,13 @@ The following must all be true before Aksara can claim v0.6.0 Production Mode:
 - [ ] Forged tenant header rejected at all surfaces
 - [ ] Empty tenant context fails closed at all surfaces
 
-### ORM / fuzzing (Round 4)
+### ORM / fuzzing (Round 5)
 
+- [x] Bounded ORM/migration/filter/serializer/runtime enforcement fuzz tests exist
 - [ ] ORM/migration/filter/serializer fuzz smoke tests pass in CI
 - [ ] OpenAPI fuzzing (Schemathesis) in CI
 
-### Supply chain (Round 5)
+### Supply chain (Round 6)
 
 - [ ] No critical/high dependency vulnerabilities (pip-audit / osv-scanner)
 - [ ] No secrets detected in codebase or history (secret scanning)

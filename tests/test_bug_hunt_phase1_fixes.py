@@ -84,7 +84,7 @@ class TestBulkUpdateCaseSyntax:
         query = db.execute.await_args.args[0]
         # The bug emitted `WHEN $1 THEN $2` (a non-boolean parameter).
         # The fix must compare against the PK column.
-        assert "WHEN id =" in query
+        assert 'WHEN "id" =' in query or "WHEN id =" in query
         assert "WHEN $1 THEN" not in query
 
 

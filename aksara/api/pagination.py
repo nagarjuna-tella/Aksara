@@ -66,6 +66,10 @@ class LimitOffsetPagination(BasePagination):
             self.limit = self.default_limit
             self.offset = 0
             
+        if self.limit < 0:
+            self.limit = self.default_limit
+        if self.offset < 0:
+            self.offset = 0
         self.limit = min(self.limit, self.max_limit)
         
         # Get total count
@@ -112,6 +116,8 @@ class PageNumberPagination(BasePagination):
             
         if self.page < 1:
             self.page = 1
+        if self.page_size < 1:
+            self.page_size = self.default_page_size
             
         self.page_size = min(self.page_size, self.max_page_size)
         
@@ -193,6 +199,8 @@ class CursorPagination(BasePagination):
         except ValueError:
             self.page_size = self.default_page_size
 
+        if self.page_size < 1:
+            self.page_size = self.default_page_size
         self.page_size = min(self.page_size, self.max_page_size)
 
         # Mirror page_size into the limit/offset attrs the viewset reads.

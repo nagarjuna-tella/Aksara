@@ -18,6 +18,7 @@ Design philosophy:
 
 from __future__ import annotations
 
+from collections.abc import Mapping as MappingABC
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
 from aksara.security.decisions import PolicyDecision
@@ -433,13 +434,19 @@ class PolicyEngine:
         Note: Round 2 computes decisions but does NOT enforce rejection on
         every write surface yet. Wiring happens in Round 3.
         """
+        if not isinstance(payload, MappingABC):
+            return PolicyDecision.deny(
+                "Payload must be a mapping.",
+                action=action,
+            )
+
         # Can the principal perform this action at all?
         action_decision = self.can(principal, action, model, **context)
         if action_decision.denied:
             return PolicyDecision.deny(
                 action_decision.reason,
                 action=action,
-                denied_fields=tuple(payload.keys()),
+                denied_fields=tuple(str(k) for k in payload.keys()),
             )
 
         # Compute writable field set
@@ -455,8 +462,23 @@ class PolicyEngine:
                 allowed_fields=tuple(payload.keys()),
             )
 
-        forbidden = tuple(k for k in payload if k not in writable_set)
-        allowed_in_payload = tuple(k for k in payload if k in writable_set)
+        known_field_names = {_field_name(f) for f in _iter_fields(model)}
+        protected_nested_names = known_field_names - writable_set
+
+        forbidden_list = [str(k) for k in payload if k not in writable_set]
+        allowed_in_payload = tuple(str(k) for k in payload if k in writable_set)
+
+        for key, value in payload.items():
+            if key in writable_set and protected_nested_names:
+                forbidden_list.extend(
+                    _find_nested_forbidden_fields(
+                        value,
+                        protected_nested_names,
+                        prefix=str(key),
+                    )
+                )
+
+        forbidden = tuple(dict.fromkeys(forbidden_list))
 
         if forbidden:
             return PolicyDecision.partial(
@@ -527,6 +549,64 @@ def _model_is_tenant_aware(model: Any) -> bool:
     if hasattr(model, "tenant_id"):
         return True
     return False
+
+
+def _find_nested_forbidden_fields(
+    value: Any,
+    protected_names: set[str],
+    *,
+    prefix: str,
+    depth: int = 0,
+    max_depth: int = 32,
+    max_items: int = 100,
+) -> list[str]:
+    """
+    Find protected field names nested under an otherwise writable payload key.
+
+    This keeps raw JSON/nested payloads from smuggling exact protected field
+    names such as ``tenant_id`` or read-only fields while bounding traversal so
+    oversized or deeply recursive inputs fail safely.
+    """
+    if depth >= max_depth:
+        return []
+
+    found: list[str] = []
+
+    if isinstance(value, MappingABC):
+        for index, (nested_key, nested_value) in enumerate(value.items()):
+            if index >= max_items:
+                break
+            nested_name = str(nested_key)
+            nested_path = f"{prefix}.{nested_name}"
+            if nested_name in protected_names:
+                found.append(nested_path)
+                continue
+            found.extend(
+                _find_nested_forbidden_fields(
+                    nested_value,
+                    protected_names,
+                    prefix=nested_path,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                    max_items=max_items,
+                )
+            )
+        return found
+
+    if isinstance(value, (list, tuple)):
+        for index, nested_value in enumerate(value[:max_items]):
+            found.extend(
+                _find_nested_forbidden_fields(
+                    nested_value,
+                    protected_names,
+                    prefix=f"{prefix}[{index}]",
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                    max_items=max_items,
+                )
+            )
+
+    return found
 
 
 # ---------------------------------------------------------------------------

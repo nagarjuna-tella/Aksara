@@ -10,7 +10,7 @@ metadata:
     and what tests need to cover each risk.
   owner: aksara
   status: active-hardening
-  round: 4
+  round: 5
   created: "2026-05-21"
   notes: >
     Surfaces are derived from inspecting the Aksara codebase at v0.5.48.
@@ -580,21 +580,27 @@ scenarios:
     actor: malformed_client
     risk: sql_injection
     expected: deny
-    status: partial
+    status: covered
     description: >
       Caller sends SQL metacharacters through generated filter parameters.
-      Some coverage exists in test_security_phase1.py (identifier quoting).
-      Additional fuzzing tests planned for Round 4.
+      Round 5 bounded fuzzing verifies unknown/unsafe filter fields fail
+      safely, SQL-like values remain parameters, JSON path segments are
+      parameterized, and tenant filters from policy cannot be overridden.
+      Covered by tests/security/fuzz/test_filter_fuzz.py and
+      tests/security/fuzz/test_json_path_fuzz.py.
 
   - id: ordering_sql_injection
     surface: ordering
     actor: malformed_client
     risk: unsafe_identifier_handling
     expected: deny
-    status: partial
+    status: covered
     description: >
       Caller supplies a malicious ordering field value. Must be validated
-      against allowed field names. Partial coverage; ORM fuzzing planned.
+      against allowed field names. Round 5 fuzzing verifies SQL fragments,
+      unknown fields, tenant ordering attempts, and AI-hidden sensitive
+      fields fail safely. ORDER BY compilation quotes identifiers.
+      Covered by tests/security/fuzz/test_ordering_fuzz.py.
 
   - id: debug_true_in_production
     surface: doctor_diagnostics
@@ -832,3 +838,109 @@ scenarios:
       trusted server-side middleware state (request.state.tenant_id).
       Covered by tests/security/test_tenant_isolation.py
       (test_forged_tenant_header_not_used_by_principal_from_request).
+
+  - id: filter_fuzz_rejects_sql_fragments
+    surface: filter_query
+    actor: malformed_client
+    risk: sql_injection
+    expected: deny
+    status: covered
+    description: >
+      Round 5 fuzz tests verify that SQL-like filter field names/fragments fail
+      safely and do not become unsafe identifiers; SQL-like values are treated
+      as bound parameter values. Covered by tests/security/fuzz/test_filter_fuzz.py.
+
+  - id: ordering_fuzz_rejects_sql_fragments
+    surface: ordering
+    actor: malformed_client
+    risk: unsafe_identifier_handling
+    expected: deny
+    status: covered
+    description: >
+      Round 5 fuzz tests verify that SQL-like ordering parameters fail safely,
+      tenant ordering is ignored for non-system principals, AI-sensitive fields
+      are not orderable for AI principals when denied, and generated ORDER BY
+      identifiers are quoted.
+
+  - id: pagination_cursor_fuzz_fails_safely
+    surface: pagination
+    actor: malformed_client
+    risk: oversized_payload
+    expected: deny
+    status: covered
+    description: >
+      Round 5 tests verify negative pagination bounds, huge limits, malformed
+      cursors, oversized cursors, and cursors carrying tenant_id fail safely
+      without extracting tenant context. Covered by
+      tests/security/fuzz/test_pagination_fuzz.py.
+
+  - id: runtime_enforcement_fuzz_denies_forbidden_fields
+    surface: rest_update
+    actor: malformed_client
+    risk: restricted_field_write
+    expected: deny
+    status: covered
+    description: >
+      Round 5 fuzz tests verify that forbidden fields cannot bypass runtime
+      payload enforcement using malformed keys, casing variants, raw JSON,
+      nested payloads, or oversized payload shapes. Covered by
+      tests/security/fuzz/test_runtime_enforcement_fuzz.py and
+      tests/security/fuzz/test_serializer_payload_fuzz.py.
+
+  - id: bulk_upsert_payload_helper_fuzz_denies_forbidden_fields
+    surface: bulk_update
+    actor: malformed_client
+    risk: restricted_field_write
+    expected: deny
+    status: covered
+    description: >
+      Round 5 adds helper-level validation for bulk/upsert-shaped payloads:
+      any item with a forbidden field denies the batch, denied fields are
+      reported, and unsafe upsert conflict targets are rejected. This does not
+      claim manager-level principal enforcement. Covered by
+      tests/security/fuzz/test_bulk_upsert_payload_fuzz.py.
+
+  - id: json_path_fuzz_parameterizes_paths
+    surface: filter_query
+    actor: malformed_client
+    risk: unsafe_identifier_handling
+    expected: deny
+    status: covered
+    description: >
+      Round 5 fuzz tests verify JSON/JSONB path-like filter inputs are either
+      rejected for non-JSON fields or compiled with JSON path segments as bound
+      parameters rather than raw SQL. Covered by
+      tests/security/fuzz/test_json_path_fuzz.py.
+
+  - id: migration_default_fuzz_escapes_values
+    surface: migration_generation
+    actor: malformed_client
+    risk: unsafe_identifier_handling
+    expected: deny
+    status: covered
+    description: >
+      Round 5 fuzz tests verify migration table/column identifiers are quoted
+      and string, JSON, and enum defaults escape safely in generated DDL.
+      Covered by tests/security/fuzz/test_migration_identifier_fuzz.py.
+
+  - id: oversized_payload_fails_safely
+    surface: serializer_create
+    actor: malformed_client
+    risk: oversized_payload
+    expected: deny
+    status: covered
+    description: >
+      Round 5 tests verify oversized strings, deeply nested payloads, many
+      extra fields, large ordering parameters, and large cursors fail safely
+      without unsafe mutation or raw SQL exposure. Covered by tests/security/fuzz/.
+
+  - id: openapi_fuzz_schemathesis_optional
+    surface: rest_create
+    actor: malformed_client
+    risk: malformed_payload
+    expected: deny
+    status: not_applicable
+    description: >
+      Round 5 includes a Schemathesis/OpenAPI fuzzing placeholder, skipped
+      when Schemathesis is not installed and no lightweight generated CRUD
+      OpenAPI app is configured. OpenAPI fuzzing is not marked covered yet.

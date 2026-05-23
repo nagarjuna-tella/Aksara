@@ -1,6 +1,6 @@
 # Field-Level Permissions
 
-> **Status:** Updated through Round 3 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 5 of the Aksara security-hardening milestone.
 > Field-level metadata exists and runtime enforcement is **implemented** for REST surfaces.
 > See [Runtime Enforcement](#runtime-enforcement-round-3) for covered and remaining surfaces.
 
@@ -115,17 +115,43 @@ The enforcement helper resolves the principal in this priority order — never a
 `enforce_request_payload_policy` delegates to `PolicyEngine.validate_payload()`, which applies
 the same rules as `PolicyEngine.writable_fields()`. Adding a rule in one place covers all surfaces.
 
+## Round 5: Fuzzing and Generated Surface Hardening
+
+Round 5 adds bounded adversarial tests for field-level enforcement and generated write surfaces.
+The tests live in `tests/security/fuzz/` and can be run separately:
+
+```bash
+python -m pytest tests/security/fuzz/ -q
+```
+
+Covered:
+
+- Raw payload enforcement bypass attempts.
+- Nested payloads containing forbidden fields.
+- Aliases, weird casing, dotted paths, JSON path-like keys, and extra fields.
+- Serializer payloads and oversized strings.
+- Helper-level bulk/upsert payload shapes.
+
+Security invariants:
+
+- Forbidden fields never mutate.
+- Tenant fields cannot be overridden through body, nested payload, aliases, or bulk/upsert-shaped payloads.
+- `ai_agent_writable=False`, `read_only=True`, and `system_only=True` fields are denied where policy denies them.
+- Malformed and oversized payloads fail safely.
+
+Round 5 also adds `validate_bulk_payload_policy()` and `validate_upsert_payload_policy()` helper-level validation in `aksara/security/enforcement.py`. These helpers prove the enforcement pattern for bulk/upsert-shaped payloads, but they do not claim manager-level principal enforcement for direct `Manager.bulk_update()` or `Manager.upsert()` calls.
+
 ## Surfaces: Covered and Remaining
 
-| Surface | Round 3 Status |
+| Surface | Round 5 Status |
 |---------|---------------|
 | REST create | **Covered** — `ViewSet.create()` enforces via `enforce_request_payload_policy()` |
 | REST update / patch | **Covered** — `ViewSet.update()` enforces via `enforce_request_payload_policy()` |
 | MCP agents via REST | **Covered** — MCP agents using REST go through the same viewset |
 | Studio create / update | **Remaining** — internal tooling, no user-data CRUD in current codebase |
 | MCP direct tool call | **Partial** — schema excludes fields; direct tool calls not wired yet |
-| Bulk update | **Remaining** — lower-level manager operation, no request context |
-| Upsert | **Remaining** — lower-level manager operation, no request context |
+| Bulk update | **Partial** — helper-level payload validation added; direct manager operation has no request context |
+| Upsert | **Partial** — helper-level insert/update/conflict-target validation added; direct manager operation has no request context |
 | Background task mutation | **Remaining** — no request/principal context in task signature |
 | SDK-generated client | **Not implemented** — surface not yet in codebase |
 

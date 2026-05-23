@@ -196,21 +196,21 @@ class TestOrderBySQLGeneration:
         qs = QuerySet(OrderTestUser).order_by("email")
         clause = qs._build_order_by_clause()
         
-        assert clause == "ORDER BY email ASC"
+        assert clause == 'ORDER BY "email" ASC'
     
     def test_build_order_by_clause_descending(self):
         """_build_order_by_clause should generate DESC for - prefix."""
         qs = QuerySet(OrderTestUser).order_by("-email")
         clause = qs._build_order_by_clause()
         
-        assert clause == "ORDER BY email DESC"
+        assert clause == 'ORDER BY "email" DESC'
     
     def test_build_order_by_clause_multiple(self):
         """_build_order_by_clause with multiple fields."""
         qs = QuerySet(OrderTestUser).order_by("is_active", "-email", "name")
         clause = qs._build_order_by_clause()
         
-        assert clause == "ORDER BY is_active ASC, email DESC, name ASC"
+        assert clause == 'ORDER BY "is_active" ASC, "email" DESC, "name" ASC'
     
     def test_build_order_by_clause_empty(self):
         """_build_order_by_clause should return empty string when no ordering."""
@@ -224,7 +224,7 @@ class TestOrderBySQLGeneration:
         qs = QuerySet(OrderTestUser).order_by("-id")
         clause = qs._build_order_by_clause()
         
-        assert clause == "ORDER BY id DESC"
+        assert clause == 'ORDER BY "id" DESC'
 
 
 # =============================================================================
@@ -379,8 +379,8 @@ class TestOrderByQueryExecution:
         # Build the order clause
         clause = qs._build_order_by_clause()
         assert "ORDER BY" in clause
-        assert "email ASC" in clause
-        assert "created_at DESC" in clause
+        assert '"email" ASC' in clause
+        assert '"created_at" DESC' in clause
     
     def test_order_by_first_includes_order(self):
         """Verify order_by is included when calling first()."""
@@ -388,7 +388,7 @@ class TestOrderByQueryExecution:
         
         assert qs._order_by == ["-id"]
         clause = qs._build_order_by_clause()
-        assert clause == "ORDER BY id DESC"
+        assert clause == 'ORDER BY "id" DESC'
     
     def test_filter_and_order_by_for_first(self):
         """filter().order_by().first() should have correct SQL structure."""
@@ -403,7 +403,7 @@ class TestOrderByQueryExecution:
         
         assert "WHERE" in where_clause
         assert "ORDER BY" in order_clause
-        assert "created_at DESC" in order_clause
+        assert '"created_at" DESC' in order_clause
 
 
 # =============================================================================

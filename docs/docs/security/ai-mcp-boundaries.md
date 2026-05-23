@@ -1,6 +1,6 @@
 # AI and MCP Security Boundaries
 
-> **Status:** Updated through Round 4 of the Aksara security-hardening milestone.
+> **Status:** Updated through Round 5 of the Aksara security-hardening milestone.
 > Runtime field enforcement is **implemented** for REST surfaces (Round 3).
 > MCP credential hardening (scope, audience, tenant enforcement) is **implemented** (Round 4).
 
@@ -64,14 +64,15 @@ class SensitiveResource(AksaraViewSet):
     permission_classes = [IsAuthenticated, DenyAI]
 ```
 
-## Known Gaps (as of Round 4)
+## Known Gaps (as of Round 5)
 
 | Gap | Severity | Planned Round |
 |-----|----------|---------------|
-| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Round 5 |
-| Direct MCP tool call enforcement (without REST) | High | Round 5 |
-| Bulk update / upsert enforcement | Medium | Round 5 |
-| Scoped/audience-bound token issuance in core | Medium | Round 5 |
+| Field-level audit logging (fields_requested / fields_allowed / fields_denied) | High | Future |
+| Direct MCP tool call enforcement (without REST) | High | Future |
+| Manager-level bulk update / upsert principal enforcement | Medium | Future |
+| Scoped/audience-bound token issuance in core | Medium | Future |
+| OpenAPI/Schemathesis fuzzing wired into CI | Medium | Round 6 |
 
 ## Runtime Enforcement (Round 3)
 
@@ -119,8 +120,11 @@ MCP agents that use the REST surface are automatically covered.
 | MCP wrong audience denied | **Covered (Round 4)** |
 | MCP missing tenant denied for tenant-required action | **Covered (Round 4)** |
 | Client tenant header not authoritative | **Covered (Round 4)** |
-| Cross-tenant access via MCP tool | Planned Round 5 |
-| Field-level audit trail per MCP call | Planned Round 5 |
+| AI-sensitive field ordering rejected for AI principal | **Covered (Round 5 fuzz)** |
+| Runtime forbidden-field variants and nested payload bypasses rejected | **Covered (Round 5 fuzz)** |
+| Helper-level bulk/upsert payload validation | **Covered (Round 5 helper-level)** |
+| Cross-tenant access via MCP tool | Planned future round |
+| Field-level audit trail per MCP call | Planned future round |
 
 ## MCP Credential Hardening (Round 4)
 
@@ -173,6 +177,39 @@ d = engine.can(principal, "update",
 | `AKSARA_MCP_REQUIRE_AUDIENCE` not set | block | warn |
 | Multi-tenant + `AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS` not set | block | warn |
 
+## Round 5: Fuzzing and Generated Surface Hardening
+
+Round 5 adds adversarial and fuzzing coverage for generated framework surfaces that may be reached by AI/MCP clients through REST or future generated tools.
+
+Covered:
+
+- Filters and ordering, including tenant and AI-sensitive ordering attempts.
+- Pagination/cursors where applicable.
+- Serializer payloads and runtime field enforcement bypass attempts.
+- Nested payloads, aliases, casing variants, dotted keys, and JSON path-like keys.
+- Helper-level bulk/upsert payload shapes.
+- Migration identifiers/defaults.
+- Malformed and oversized payloads.
+- OpenAPI fuzzing placeholder when Schemathesis is unavailable.
+
+Security invariants:
+
+- Forbidden fields never mutate.
+- Tenant isolation is not bypassed.
+- Hidden/sensitive fields do not leak through denied generated surfaces.
+- Unsafe identifiers do not become unsafe SQL.
+- Malformed inputs fail safely.
+- Oversized inputs fail safely.
+
+Remaining:
+
+- Direct MCP tool-call runtime enforcement.
+- Field-level MCP audit logs.
+- Supply-chain CI.
+- Release gates.
+- External review.
+- Full production-mode claim.
+
 ## Future Direction
 
 The long-term design goal for Aksara's AI/MCP security:
@@ -182,4 +219,4 @@ The long-term design goal for Aksara's AI/MCP security:
 3. **Runtime payload validation.** Every MCP tool call and REST write from an AI agent must be validated against a central policy engine, not just a generated schema. *(REST surfaces: done in Round 3.)*
 4. **Audit logging.** Every tool call must log: actor, tool, tenant, fields_requested, fields_allowed, fields_denied, decision, and reason.
 
-These controls are planned for Rounds 2–4 of the hardening milestone.
+These controls continue across future hardening rounds. Round 5 does not claim production readiness.
