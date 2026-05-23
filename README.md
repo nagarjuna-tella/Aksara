@@ -280,6 +280,10 @@ Latest validation with local PostgreSQL: **6744 passed, 3 skipped, 0 warnings**.
 
 **Evolving:** AI Debugger, Architecture Review, Performance Analyzer, and long-running AI session surfaces.
 
+**Release trust:** Security and release-gate workflows prepare dependency audit,
+static analysis, secret scanning, SBOM generation, package verification, and
+Trusted Publishing. They do not constitute a production-readiness claim.
+
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for what's next.
 
 ---

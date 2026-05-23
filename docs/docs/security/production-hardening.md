@@ -109,3 +109,21 @@ python -m pytest tests/security/fuzz/ -q
 
 OpenAPI fuzzing requires optional tooling and is represented as a placeholder
 unless that tooling is installed.
+
+## Release-Trust Gates
+
+Before a production-mode claim, release candidates should also pass the
+release-security workflow:
+
+- Full test suite
+- Security, diagnostics, and fuzz tests
+- Strict docs build
+- Dependency audit
+- Static analysis
+- Secret scanning
+- Package build and `twine check`
+- SBOM generation
+- `aksara doctor production-check`
+
+These checks prepare releases for stronger review. They do not replace external
+security review and do not create a blanket production-readiness claim.

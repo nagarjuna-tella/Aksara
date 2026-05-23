@@ -31,13 +31,15 @@ classifiers = [
 dependencies = [
     "asyncpg>=0.29.0",
     "aiosmtplib>=3.0.0",
-    "fastapi>=0.104.0",
+    "fastapi>=0.136.1",
+    "starlette>=1.0.1",
+    "idna>=3.15",
     "pillow>=10.0.0",
     "pydantic>=2.0.0",
     "click>=8.0.0",
     "rich>=13.7.0",
     "python-dotenv>=1.0.0",
-    "python-multipart>=0.0.6",  # Required for form parsing (admin login)
+    "python-multipart>=0.0.27",  # Required for form parsing (admin login)
     "bcrypt>=4.0.0",  # Required for auth & admin
     "jinja2>=3.0.0",  # Required for admin templates
     "httpx>=0.25.0",  # Required for direct AI provider API calls
@@ -97,3 +99,8 @@ markers = [
     "security: security hardening and regression tests",
     "fuzz: bounded adversarial or property-based fuzz tests",
 ]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "docs"]
+# Existing MD5 uses are deterministic ID generation, not security hashing.
+skips = ["B324"]

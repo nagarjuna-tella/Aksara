@@ -1,0 +1,243 @@
+name: Release Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, master]
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  AKSARA_REQUIRE_SECURITY_MATRIX: "false"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  full-tests:
+    name: Full test suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aksara_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aksara_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run full suite
+        run: python -m pytest --tb=short -q
+
+  security-tests:
+    name: Security, fuzz, and diagnostics tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run security tests
+        run: python -m pytest tests/security/ -q
+
+      - name: Run fuzz tests explicitly
+        run: python -m pytest tests/security/fuzz/ -q
+
+      - name: Run diagnostics tests
+        run: python -m pytest tests/diagnostics/ -q
+
+  diagnostics-production-check:
+    name: Production diagnostics
+    runs-on: ubuntu-latest
+    env:
+      AKSARA_ENV: production
+      AKSARA_DEBUG: "false"
+      AKSARA_SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
+      AKSARA_REQUIRE_SECURITY_MATRIX: "false"
+      AKSARA_MCP_ENABLED: "false"
+      AKSARA_STUDIO_EXPOSE_IN_PRODUCTION: "false"
+      AKSARA_STUDIO_REQUIRE_AUTH: "true"
+      AKSARA_COOKIE_SECURE: "true"
+      AKSARA_ADMIN_RATE_LIMIT_ENABLED: "true"
+      CORS_ALLOW_ALL_ORIGINS: "false"
+      CORS_ALLOW_CREDENTIALS: "false"
+      AKSARA_AI_CONSOLE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run production-check
+        run: aksara doctor production-check --format json
+
+  package-build:
+    name: Package build verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check distributions
+        run: twine check dist/*
+
+      - name: Verify wheel import
+        run: |
+          python -m venv /tmp/aksara-wheel-test
+          /tmp/aksara-wheel-test/bin/python -m pip install --upgrade pip
+          /tmp/aksara-wheel-test/bin/python -m pip install dist/*.whl
+          /tmp/aksara-wheel-test/bin/python -c "import aksara; print(getattr(aksara, '__version__', 'aksara import ok'))"
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and audit tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit --desc .
+
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Bandit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install bandit
+
+      - name: Run Bandit
+        run: bandit -r aksara -x tests,.venv,docs --severity-level high --skip B324
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sbom:
+    name: SBOM generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and SBOM tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install cyclonedx-bom
+
+      - name: Generate CycloneDX SBOM
+        run: cyclonedx-py environment -o sbom.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
+  docs-build:
+    name: Docs strict build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install mkdocs-material mkdocs-autorefs mike "pymdown-extensions>=10.21.3"
+
+      - name: Ensure public security docs do not expose internal round language
+        run: |
+          if grep -RniE "Round [1-5]|this round|future round|later round|hardening round" SECURITY.md docs/docs/security security/README.md; then
+            echo "::error::Public security docs contain internal hardening-round language."
+            exit 1
+          fi
+
+      - name: Build docs strictly
+        run: mkdocs build --strict -f docs/mkdocs.yml

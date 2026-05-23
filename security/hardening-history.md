@@ -81,3 +81,17 @@ should describe the current product posture instead of this sequence.
 - Decide whether manager-level bulk/upsert principal enforcement should be wired
   beyond helper-level validation.
 - Add direct MCP tool-call runtime enforcement where tools bypass REST paths.
+
+## Round 6: Release Trust Preparation
+
+- Added security CI for dependency audit, static analysis, secret scanning,
+  security tests, diagnostics tests, fuzz tests, and public security docs checks.
+- Added release-gate CI for full tests, production diagnostics, package build
+  verification, dependency audit, static analysis, secret scanning, SBOM
+  generation, and strict docs builds.
+- Added CodeQL and Dependabot configuration.
+- Added a manual PyPI Trusted Publishing workflow using GitHub OIDC and a
+  protected `pypi` environment.
+- Added external review scope and hardening report templates.
+- Updated public release-security docs without making a production-readiness
+  claim.

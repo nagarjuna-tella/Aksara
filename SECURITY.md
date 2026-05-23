@@ -37,10 +37,13 @@ When reporting, include:
 
 Aksara includes security diagnostics, runtime field-level enforcement for covered
 generated write paths, tenant-aware policy checks, MCP credential hardening
-helpers, and bounded adversarial tests for generated surfaces.
+helpers, bounded adversarial tests for generated surfaces, and release-trust
+workflow preparation for dependency audit, static analysis, secret scanning,
+SBOM generation, package build verification, and PyPI Trusted Publishing.
 
 Aksara does not currently make a blanket production-readiness claim. Users should
-run production diagnostics and review the hardening guide before deployment.
+run production diagnostics, review the hardening guide, and evaluate release
+gate results before deployment.
 
 ## Security Documentation
 
@@ -49,6 +52,7 @@ Public security documentation lives under:
 - [Security Overview](docs/docs/security/overview.md)
 - [Production Hardening](docs/docs/security/production-hardening.md)
 - [Security Coverage](docs/docs/security/security-coverage.md)
+- [Release Security](docs/docs/security/release-security.md)
 
 ## Private Security Matrix
 

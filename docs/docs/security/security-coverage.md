@@ -44,11 +44,13 @@ diagnostic condition.
 - Serializer payloads
 - Migration defaults and identifiers
 - Malformed and oversized payloads
+- Release-gate package build verification
+- Dependency audit, static analysis, secret scanning, and SBOM generation
 
 ## Limitations
 
 - OpenAPI fuzzing requires optional tooling.
 - Private matrix enforcement is optional unless
   `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
-- Release gates are planned before a production-mode claim.
+- Release gates prepare release trust but do not replace external review.
 - External security review is planned before a production-mode claim.

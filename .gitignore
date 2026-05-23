@@ -9,7 +9,10 @@ __pycache__/
 .agent
 .cursor
 .mypy_cache/
-.github/
+.github/*
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/dependabot.yml
 
 *.tape
 

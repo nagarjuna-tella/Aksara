@@ -195,6 +195,7 @@ nav:
       - Types: reference/types.md
       - CLI Reference: reference/cli-reference.md
   - Roadmap: roadmap.md
+  - Releasing: releasing.md
   - Changelog: changelog.md
   - Glossary: glossary.md
 

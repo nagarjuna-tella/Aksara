@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mkdocs-material mkdocs-autorefs mike
+          pip install mkdocs-material mkdocs-autorefs mike "pymdown-extensions>=10.21.3"
 
       - name: Deploy
         run: mkdocs gh-deploy --force -f docs/mkdocs.yml

@@ -33,3 +33,13 @@ Public user-facing security docs live under:
 ```text
 docs/docs/security/
 ```
+
+## External Review Prep
+
+The following internal/review artifacts support external security review and
+release decision-making:
+
+- `external-review-scope.md`
+- `hardening-report-template.md`
+
+These files are not production-readiness claims.
