@@ -49,6 +49,7 @@ def _patch_safe_env():
         "AKSARA_MCP_REQUIRE_AUTH": "false",
         "AKSARA_MCP_REQUIRE_SCOPED_TOKENS": "false",
         "AKSARA_AI_CONSOLE_ENABLED": "false",
+        "AKSARA_REQUIRE_SECURITY_MATRIX": "false",
     }
 
 
@@ -136,7 +137,7 @@ class TestProductionCheckBlockingConditions:
         assert mcp_result is not None
         assert mcp_result.status == "block"
 
-    def test_missing_matrix_blocks_in_production(self):
+    def test_missing_matrix_warns_in_production(self):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
             with patch("aksara.security.checks.get_setting",
                        side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
@@ -144,15 +145,41 @@ class TestProductionCheckBlockingConditions:
                     report = run_security_checks(is_production=True)
         matrix_result = next((r for r in report.results if r.id == "security.matrix"), None)
         assert matrix_result is not None
+        assert matrix_result.status == "warn"
+
+    def test_missing_matrix_blocks_when_require_flag_set(self):
+        safe_env = dict(_patch_safe_env())
+        safe_env["AKSARA_REQUIRE_SECURITY_MATRIX"] = "true"
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
+            with patch("aksara.security.checks.get_setting",
+                       side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
+                with patch.dict(os.environ, safe_env):
+                    report = run_security_checks(is_production=True)
+        matrix_result = next((r for r in report.results if r.id == "security.matrix"), None)
+        assert matrix_result is not None
         assert matrix_result.status == "block"
 
-    def test_invalid_matrix_blocks_in_production(self, tmp_path):
+    def test_invalid_matrix_fails_in_production(self, tmp_path):
         bad = tmp_path / "security_matrix.yml"
         bad.write_text("version: 1\n", encoding="utf-8")
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=bad):
             with patch("aksara.security.checks.get_setting",
                        side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
                 with patch.dict(os.environ, _patch_safe_env()):
+                    report = run_security_checks(is_production=True)
+        matrix_result = next((r for r in report.results if r.id == "security.matrix"), None)
+        assert matrix_result is not None
+        assert matrix_result.status == "fail"
+
+    def test_invalid_matrix_blocks_when_require_flag_set(self, tmp_path):
+        bad = tmp_path / "security_matrix.yml"
+        bad.write_text("version: 1\n", encoding="utf-8")
+        safe_env = dict(_patch_safe_env())
+        safe_env["AKSARA_REQUIRE_SECURITY_MATRIX"] = "true"
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=bad):
+            with patch("aksara.security.checks.get_setting",
+                       side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
+                with patch.dict(os.environ, safe_env):
                     report = run_security_checks(is_production=True)
         matrix_result = next((r for r in report.results if r.id == "security.matrix"), None)
         assert matrix_result is not None
@@ -299,12 +326,26 @@ class TestDoctorProductionCheckCLI:
         data = json.loads(result.output)
         assert result.exit_code == 1
 
-    def test_production_check_blocks_missing_matrix(self):
+    def test_production_check_warns_missing_matrix(self):
         runner = CliRunner()
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
             with patch("aksara.security.checks.get_setting",
                        side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
                 with patch.dict(os.environ, _patch_safe_env()):
+                    result = runner.invoke(cli, ["doctor", "production-check", "--format", "json"])
+        data = json.loads(result.output)
+        matrix_result = next((r for r in data["results"] if r["id"] == "security.matrix"), None)
+        assert matrix_result is not None
+        assert matrix_result["status"] == "warn"
+
+    def test_production_check_blocks_missing_matrix_when_required(self):
+        runner = CliRunner()
+        safe_env = dict(_patch_safe_env())
+        safe_env["AKSARA_REQUIRE_SECURITY_MATRIX"] = "true"
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
+            with patch("aksara.security.checks.get_setting",
+                       side_effect=lambda n, d=None: _make_safe_settings().get(n, d)):
+                with patch.dict(os.environ, safe_env):
                     result = runner.invoke(cli, ["doctor", "production-check", "--format", "json"])
         data = json.loads(result.output)
         assert result.exit_code == 1

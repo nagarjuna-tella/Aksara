@@ -31,6 +31,7 @@ from aksara.security.checks import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+EXAMPLE_MATRIX_PATH = REPO_ROOT / "security" / "security_matrix.example.yml"
 
 
 # ---------------------------------------------------------------------------
@@ -198,31 +199,56 @@ class TestCheckMcpExposure:
 
 class TestCheckSecurityMatrix:
     def test_valid_matrix_passes(self):
-        result = check_security_matrix(is_production=False)
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=EXAMPLE_MATRIX_PATH):
+            result = check_security_matrix(is_production=False)
         assert result.status == "pass", f"Expected pass but got {result.status}: {result.message}"
 
     def test_missing_matrix_warns_in_dev(self, tmp_path, monkeypatch):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
-            result = check_security_matrix(is_production=False)
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):
+                result = check_security_matrix(is_production=False)
         assert result.status == "warn"
 
-    def test_missing_matrix_blocks_in_production(self):
+    def test_missing_matrix_warns_in_production(self):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
-            result = check_security_matrix(is_production=True)
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):
+                result = check_security_matrix(is_production=True)
+        assert result.status == "warn"
+
+    def test_missing_matrix_blocks_when_require_flag_set(self):
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "true"}):
+                result = check_security_matrix(is_production=False)
+        assert result.status == "block"
+
+    def test_missing_matrix_blocks_in_production_when_require_flag_set(self):
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "true"}):
+                result = check_security_matrix(is_production=True)
         assert result.status == "block"
 
     def test_invalid_matrix_fails_in_dev(self, tmp_path):
         bad = tmp_path / "security_matrix.yml"
         bad.write_text("version: 1\n", encoding="utf-8")
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=bad):
-            result = check_security_matrix(is_production=False)
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):
+                result = check_security_matrix(is_production=False)
         assert result.status in ("fail", "block")
 
-    def test_invalid_matrix_blocks_in_production(self, tmp_path):
+    def test_invalid_matrix_fails_in_production(self, tmp_path):
         bad = tmp_path / "security_matrix.yml"
         bad.write_text("version: 1\n", encoding="utf-8")
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=bad):
-            result = check_security_matrix(is_production=True)
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):
+                result = check_security_matrix(is_production=True)
+        assert result.status == "fail"
+
+    def test_invalid_matrix_blocks_when_require_flag_set(self, tmp_path):
+        bad = tmp_path / "security_matrix.yml"
+        bad.write_text("version: 1\n", encoding="utf-8")
+        with patch("aksara.security.matrix._find_default_matrix_path", return_value=bad):
+            with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "true"}):
+                result = check_security_matrix(is_production=True)
         assert result.status == "block"
 
 
@@ -255,7 +281,8 @@ class TestRunSecurityChecks:
         with patch("aksara.security.checks.get_setting", side_effect=safe_get_setting):
             with patch.dict(os.environ, {"SECRET_KEY": "a" * 64,
                                           "CORS_ALLOW_ALL_ORIGINS": "false",
-                                          "CORS_ALLOW_CREDENTIALS": "false"}):
+                                          "CORS_ALLOW_CREDENTIALS": "false",
+                                          "AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):
                 report = run_security_checks(is_production=False)
 
         blocks = [r for r in report.results if r.status == "block"]

@@ -1,7 +1,9 @@
 """
 Tests for the Aksara security matrix loader and validator.
 
-Round 1: baseline inventory and validation checks.
+The public repository ships only security_matrix.example.yml.
+Projects maintain a private security_matrix.yml (git-ignored).
+These tests validate the example file and the validator logic.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ from aksara.security.matrix import (
     MatrixValidationIssue,
     load_security_matrix,
     validate_security_matrix,
+    _find_example_matrix_path,
 )
 
 # ---------------------------------------------------------------------------
@@ -25,39 +28,7 @@ from aksara.security.matrix import (
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-MATRIX_PATH = REPO_ROOT / "security" / "security_matrix.yml"
-
-REQUIRED_SURFACE_IDS = {
-    "rest_create", "rest_read", "rest_list", "rest_update", "rest_delete",
-    "studio_create", "studio_read", "studio_list", "studio_update", "studio_delete",
-    "mcp_create_tool", "mcp_read_tool", "mcp_list_tool", "mcp_update_tool", "mcp_delete_tool",
-    "ai_console_action", "ai_prompt_pack_export",
-    "serializer_create", "serializer_update",
-    "bulk_update", "upsert", "filter_query", "ordering", "pagination",
-    "migration_generation", "migration_execution",
-    "background_task_mutation", "sdk_generated_client",
-    "doctor_diagnostics", "admin_dashboard",
-}
-
-REQUIRED_ACTOR_IDS = {
-    "unauthenticated", "authenticated_user", "wrong_user", "wrong_tenant",
-    "read_only_role", "admin_role", "ai_agent", "mcp_agent",
-    "system_task", "expired_token", "replayed_token", "malformed_client",
-}
-
-REQUIRED_RISK_IDS = {
-    "missing_auth", "broken_object_level_authorization",
-    "cross_tenant_read", "cross_tenant_write",
-    "restricted_field_read", "restricted_field_write",
-    "schema_bypass", "ai_metadata_leak",
-    "studio_auth_bypass", "mcp_unauthenticated_access", "mcp_overbroad_scope",
-    "forged_tenant_context", "empty_tenant_fail_open",
-    "sql_injection", "unsafe_identifier_handling",
-    "malformed_payload", "oversized_payload",
-    "debug_mode_exposed", "cors_wildcard_with_credentials",
-    "weak_secret_key", "unsigned_or_unsafe_cookies",
-    "missing_rate_limits", "missing_rls", "unsafe_production_surface",
-}
+EXAMPLE_MATRIX_PATH = REPO_ROOT / "security" / "security_matrix.example.yml"
 
 
 def _minimal_valid_matrix():
@@ -98,52 +69,50 @@ def _minimal_valid_matrix():
 
 
 # ---------------------------------------------------------------------------
-# Real matrix file tests
+# Example matrix file tests
 # ---------------------------------------------------------------------------
 
 
-class TestSecurityMatrixFileExists:
-    """Tests that verify the real security_matrix.yml file is present and loadable."""
+class TestExampleSecurityMatrix:
+    """Tests that verify the public security_matrix.example.yml is present and loadable."""
 
-    def test_security_matrix_file_exists(self):
-        assert MATRIX_PATH.exists(), (
-            f"security_matrix.yml not found at {MATRIX_PATH}. "
-            "This file is required for the security baseline."
+    def test_example_matrix_file_exists(self):
+        assert EXAMPLE_MATRIX_PATH.exists(), (
+            f"security_matrix.example.yml not found at {EXAMPLE_MATRIX_PATH}."
         )
 
-    def test_security_matrix_loads_successfully(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_find_example_matrix_path_finds_the_file(self):
+        found = _find_example_matrix_path()
+        assert found is not None, "_find_example_matrix_path() returned None"
+        assert found.exists()
+
+    def test_example_matrix_loads_successfully(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         assert matrix is not None
         assert matrix.version == 1
 
-    def test_security_matrix_has_required_top_level_sections(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_has_required_top_level_sections(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         assert matrix.metadata is not None
         assert isinstance(matrix.surfaces, list)
         assert isinstance(matrix.actors, list)
         assert isinstance(matrix.risks, list)
         assert isinstance(matrix.scenarios, list)
 
-    def test_security_matrix_has_required_surfaces(self):
-        matrix = load_security_matrix(MATRIX_PATH)
-        surface_ids = {s.id for s in matrix.surfaces}
-        missing = REQUIRED_SURFACE_IDS - surface_ids
-        assert not missing, f"Matrix is missing required surface IDs: {sorted(missing)}"
+    def test_example_matrix_has_at_least_one_surface(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
+        assert len(matrix.surfaces) >= 1
 
-    def test_security_matrix_has_required_actors(self):
-        matrix = load_security_matrix(MATRIX_PATH)
-        actor_ids = {a.id for a in matrix.actors}
-        missing = REQUIRED_ACTOR_IDS - actor_ids
-        assert not missing, f"Matrix is missing required actor IDs: {sorted(missing)}"
+    def test_example_matrix_has_at_least_one_actor(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
+        assert len(matrix.actors) >= 1
 
-    def test_security_matrix_has_required_risks(self):
-        matrix = load_security_matrix(MATRIX_PATH)
-        risk_ids = {r.id for r in matrix.risks}
-        missing = REQUIRED_RISK_IDS - risk_ids
-        assert not missing, f"Matrix is missing required risk IDs: {sorted(missing)}"
+    def test_example_matrix_has_at_least_one_risk(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
+        assert len(matrix.risks) >= 1
 
-    def test_security_matrix_scenarios_reference_existing_surfaces_actors_and_risks(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_scenarios_reference_existing_surfaces_actors_and_risks(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         surface_ids = {s.id for s in matrix.surfaces}
         actor_ids = {a.id for a in matrix.actors}
         risk_ids = {r.id for r in matrix.risks}
@@ -159,46 +128,52 @@ class TestSecurityMatrixFileExists:
                 f"Scenario '{sc.id}' references unknown risk '{sc.risk}'"
             )
 
-    def test_security_matrix_scenarios_have_valid_expected_values(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_scenarios_have_valid_expected_values(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         for sc in matrix.scenarios:
             assert sc.expected in VALID_EXPECTED, (
                 f"Scenario '{sc.id}' has invalid expected '{sc.expected}'"
             )
 
-    def test_security_matrix_scenarios_have_valid_status_values(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_scenarios_have_valid_status_values(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         for sc in matrix.scenarios:
             assert sc.status in VALID_STATUSES, (
                 f"Scenario '{sc.id}' has invalid status '{sc.status}'"
             )
 
-    def test_security_matrix_risks_have_valid_severities(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_risks_have_valid_severities(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         for risk in matrix.risks:
             assert risk.severity in VALID_SEVERITIES, (
                 f"Risk '{risk.id}' has invalid severity '{risk.severity}'"
             )
 
-    def test_security_matrix_surfaces_have_no_duplicate_ids(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_surfaces_have_no_duplicate_ids(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         ids = [s.id for s in matrix.surfaces]
         assert len(ids) == len(set(ids)), "Duplicate surface IDs detected"
 
-    def test_security_matrix_actors_have_no_duplicate_ids(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_actors_have_no_duplicate_ids(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         ids = [a.id for a in matrix.actors]
         assert len(ids) == len(set(ids)), "Duplicate actor IDs detected"
 
-    def test_security_matrix_risks_have_no_duplicate_ids(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_risks_have_no_duplicate_ids(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         ids = [r.id for r in matrix.risks]
         assert len(ids) == len(set(ids)), "Duplicate risk IDs detected"
 
-    def test_security_matrix_scenarios_have_no_duplicate_ids(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+    def test_example_matrix_scenarios_have_no_duplicate_ids(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         ids = [sc.id for sc in matrix.scenarios]
         assert len(ids) == len(set(ids)), "Duplicate scenario IDs detected"
+
+    def test_example_matrix_metadata_has_required_fields(self):
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
+        assert matrix.metadata.name
+        assert matrix.metadata.owner
+        assert matrix.metadata.status
 
 
 # ---------------------------------------------------------------------------
@@ -320,7 +295,7 @@ class TestLoadSecurityMatrix:
     """Tests for load_security_matrix() file loading."""
 
     def test_load_with_explicit_path_succeeds(self):
-        matrix = load_security_matrix(MATRIX_PATH)
+        matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)
         assert matrix.version == 1
         assert len(matrix.surfaces) > 0
         assert len(matrix.actors) > 0

@@ -1,0 +1,194 @@
+version: 1
+
+# =============================================================================
+# Aksara Security Matrix — Example Structure
+#
+# This file demonstrates the expected shape of a security_matrix.yml.
+# It is intentionally minimal and non-sensitive.
+#
+# Projects using Aksara may maintain a private security/security_matrix.yml
+# that documents their own surfaces, actors, risks, and adversarial scenarios.
+# That file is listed in .gitignore and should not be committed to public repos.
+#
+# Set AKSARA_REQUIRE_SECURITY_MATRIX=true in production to make a missing
+# security_matrix.yml a blocking deployment condition.
+# =============================================================================
+
+metadata:
+  name: my-aksara-project-security-matrix
+  description: >
+    Security baseline matrix for <your project>. Documents which surfaces exist,
+    who can call them, what can go wrong, and what test coverage exists for each
+    risk scenario.
+  owner: your-team
+  status: active-hardening
+  round: 1
+  created: "2026-01-01"
+  notes: >
+    Copy this file to security/security_matrix.yml and customise it for your project.
+    The security_matrix.yml file is git-ignored in Aksara projects.
+
+# =============================================================================
+# SURFACES
+# Every generated or exposed data surface in your Aksara project.
+# =============================================================================
+
+surfaces:
+
+  - id: rest_create
+    name: REST Create
+    category: rest
+    implemented: true
+    description: >
+      Generated REST POST endpoint. Accepts model input, validates via
+      serializer, persists via ORM. Auth required by default.
+
+  - id: rest_read
+    name: REST Read
+    category: rest
+    implemented: true
+    description: >
+      Generated REST GET detail endpoint. Reads a single object by PK.
+
+  - id: rest_list
+    name: REST List
+    category: rest
+    implemented: true
+    description: >
+      Generated REST GET list endpoint. Supports filtering and pagination.
+
+  - id: rest_update
+    name: REST Update
+    category: rest
+    implemented: true
+    description: >
+      Generated REST PUT/PATCH endpoint. Updates model fields via serializer.
+
+  - id: rest_delete
+    name: REST Delete
+    category: rest
+    implemented: true
+    description: >
+      Generated REST DELETE endpoint. Removes a model object by PK.
+
+  - id: mcp_update_tool
+    name: MCP Update Tool
+    category: mcp
+    implemented: true
+    description: >
+      MCP-generated update tool. Disabled by default (mcp_enabled=False).
+
+# =============================================================================
+# ACTORS
+# Every identity type that may call your surfaces.
+# =============================================================================
+
+actors:
+
+  - id: unauthenticated
+    description: Caller without valid authentication credentials.
+
+  - id: authenticated_user
+    description: Normal authenticated human user with valid session or token.
+
+  - id: wrong_tenant
+    description: >
+      Authenticated user or agent whose tenant_id does not match the
+      tenant_id of the target resource.
+
+  - id: ai_agent
+    description: >
+      AI agent identity. Validated via X-Aksara-AI-Token (HMAC-SHA256).
+      Has reduced trust compared to authenticated human users.
+
+  - id: mcp_agent
+    description: MCP client/agent identity. Uses the same token mechanism as ai_agent.
+
+  - id: system_task
+    description: Trusted internal background/system task.
+
+# =============================================================================
+# RISKS
+# Identified security risk categories across your surfaces.
+# =============================================================================
+
+risks:
+
+  - id: missing_auth
+    severity: critical
+    description: Surface allows access without required authentication.
+
+  - id: cross_tenant_read
+    severity: critical
+    description: Caller can read data belonging to another tenant.
+
+  - id: cross_tenant_write
+    severity: critical
+    description: Caller can mutate data belonging to another tenant.
+
+  - id: restricted_field_write
+    severity: high
+    description: >
+      Caller can write a field marked read-only, ai_agent_writable=False,
+      or otherwise restricted for the caller's identity.
+
+  - id: schema_bypass
+    severity: high
+    description: >
+      Caller bypasses generated schema restrictions by sending raw JSON
+      containing fields not in the generated schema.
+
+  - id: forged_tenant_context
+    severity: critical
+    description: Client can forge or override tenant context via a client-controlled header.
+
+# =============================================================================
+# SCENARIOS
+# Adversarial test scenarios mapping surfaces, actors, and risks.
+# status: covered  = test exists and passes
+# status: partial  = some coverage but incomplete
+# status: planned  = no test yet; planned for a future hardening round
+# status: not_applicable = not applicable for this surface/actor
+# =============================================================================
+
+scenarios:
+
+  - id: unauthenticated_rest_create
+    surface: rest_create
+    actor: unauthenticated
+    risk: missing_auth
+    expected: deny
+    status: planned
+    description: >
+      An unauthenticated caller attempts to POST to a REST endpoint.
+      The server must reject the request with 401 or 403.
+
+  - id: cross_tenant_rest_read
+    surface: rest_read
+    actor: wrong_tenant
+    risk: cross_tenant_read
+    expected: deny
+    status: planned
+    description: >
+      User from tenant A attempts to read an object belonging to tenant B.
+      Application-layer filtering and/or RLS must prevent this.
+
+  - id: ai_agent_restricted_field_write
+    surface: rest_update
+    actor: ai_agent
+    risk: restricted_field_write
+    expected: deny
+    status: planned
+    description: >
+      AI agent attempts to write a field marked ai_agent_writable=False.
+      The server must reject with 403 and a denied_fields list.
+
+  - id: mcp_schema_bypass_raw_payload
+    surface: mcp_update_tool
+    actor: mcp_agent
+    risk: schema_bypass
+    expected: deny
+    status: planned
+    description: >
+      MCP agent sends a raw payload with fields not in the generated schema.
+      Runtime enforcement must reject the forbidden fields.

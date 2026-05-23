@@ -558,16 +558,22 @@ def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
     """Check that security_matrix.yml exists and validates."""
     from aksara.security.matrix import _find_default_matrix_path, validate_security_matrix, _load_yaml
 
+    require_matrix = is_truthy(get_env("AKSARA_REQUIRE_SECURITY_MATRIX", False))
+
     matrix_path = _find_default_matrix_path()
     if matrix_path is None:
-        status = "block" if is_production else "warn"
+        status = "block" if require_matrix else "warn"
         return SecurityCheckResult(
             id="security.matrix",
             title="Security matrix not found",
-            severity="high" if not is_production else "critical",
+            severity="high",
             status=status,
-            message="security/security_matrix.yml was not found. This file is required for the security baseline.",
-            recommendation="Create security/security_matrix.yml or run 'aksara doctor security-check' for guidance.",
+            message="security/security_matrix.yml was not found.",
+            recommendation=(
+                "Copy security/security_matrix.example.yml to security/security_matrix.yml "
+                "and customise it for your project. "
+                "Set AKSARA_REQUIRE_SECURITY_MATRIX=true to make this a blocking check."
+            ),
         )
 
     try:
@@ -576,7 +582,7 @@ def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
         errors = [i for i in issues if i.severity == "error"]
         if errors:
             msgs = "; ".join(f"{i.field}: {i.message}" for i in errors[:3])
-            status = "block" if is_production else "fail"
+            status = "block" if require_matrix else "fail"
             return SecurityCheckResult(
                 id="security.matrix",
                 title="Security matrix invalid",
@@ -595,7 +601,7 @@ def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
             recommendation="Install PyYAML: pip install pyyaml",
         )
     except Exception as e:
-        status = "block" if is_production else "fail"
+        status = "block" if require_matrix else "fail"
         return SecurityCheckResult(
             id="security.matrix",
             title="Security matrix load error",

@@ -20,25 +20,37 @@ from typing import Any, Dict, List, Optional
 # ---------------------------------------------------------------------------
 
 _MATRIX_FILENAME = "security_matrix.yml"
+_MATRIX_EXAMPLE_FILENAME = "security_matrix.example.yml"
 _MATRIX_SEARCH_DIRS = [
     "security",   # <repo_root>/security/security_matrix.yml
     ".",           # <repo_root>/security_matrix.yml
 ]
 
 
-def _find_default_matrix_path() -> Optional[Path]:
-    """Search for security_matrix.yml relative to the project root."""
-    # Try relative to CWD first, then relative to this file's location
+def _matrix_search_roots() -> list:
     search_roots = [Path.cwd()]
     here = Path(__file__).resolve().parent
-    # Walk up from aksara/security/ to find the repo root
     for parent in [here.parent.parent, here.parent.parent.parent]:
         if parent not in search_roots:
             search_roots.append(parent)
+    return search_roots
 
-    for root in search_roots:
+
+def _find_default_matrix_path() -> Optional[Path]:
+    """Search for security_matrix.yml relative to the project root."""
+    for root in _matrix_search_roots():
         for subdir in _MATRIX_SEARCH_DIRS:
             candidate = root / subdir / _MATRIX_FILENAME
+            if candidate.exists():
+                return candidate
+    return None
+
+
+def _find_example_matrix_path() -> Optional[Path]:
+    """Search for security_matrix.example.yml relative to the project root."""
+    for root in _matrix_search_roots():
+        for subdir in _MATRIX_SEARCH_DIRS:
+            candidate = root / subdir / _MATRIX_EXAMPLE_FILENAME
             if candidate.exists():
                 return candidate
     return None
