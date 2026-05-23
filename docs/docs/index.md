@@ -217,7 +217,7 @@ class ArticleViewSet(ModelViewSet):
 
 **What this means:** Unauthorized requests are automatically rejected.
 
-👉 [Learn about Permissions](api/permissions.md)
+👉 [Learn about Security](security/overview.md)
 
 ---
 

@@ -1,55 +1,35 @@
-# Security Matrix
+# Security Engineering Artifacts
 
-Aksara uses a **security matrix** (`security_matrix.yml`) as a canonical inventory of generated
-surfaces, actors, risks, and adversarial test scenarios. It is used by `aksara doctor security-check`
-and `aksara doctor production-check` to validate the security baseline before deployment.
+This directory contains public-safe security engineering artifacts.
 
-## Public vs private
+## Public Example Matrix
 
-The public repository includes only `security_matrix.example.yml` — a minimal, non-sensitive
-example showing the expected file structure. It is safe to commit.
+`security_matrix.example.yml` shows the expected structure of a security matrix.
+It is intentionally minimal and does not publish private project coverage
+details.
 
-Projects using Aksara maintain their own **private** `security_matrix.yml` that documents their
-actual surfaces, actors, risks, and test coverage. This file:
+## Private Matrix
 
-- Is listed in `.gitignore` (never committed to public repos)
-- Lives at `security/security_matrix.yml` relative to the project root
-- Is loaded automatically by `aksara doctor security-check`
+`security_matrix.yml` is intentionally git-ignored and should be used only for
+private/internal coverage tracking if needed.
 
-## Getting started
+Projects may maintain a private `security/security_matrix.yml` for diagnostics
+or release processes. Do not publish private matrices accidentally.
 
-Copy the example file and customise it for your project:
+## Strict Enforcement
 
-```bash
-cp security/security_matrix.example.yml security/security_matrix.yml
-```
-
-Then edit `security/security_matrix.yml` to reflect your actual surfaces, actors, risks, and
-adversarial scenarios.
-
-## Requiring the matrix in production
-
-By default, a missing `security_matrix.yml` produces a **warning** (not a blocking error).
-
-To make a missing or invalid matrix a **blocking deployment condition**, set:
+By default, a missing private matrix is a warning. Set:
 
 ```bash
-export AKSARA_REQUIRE_SECURITY_MATRIX=true
+AKSARA_REQUIRE_SECURITY_MATRIX=true
 ```
 
-With this flag, `aksara doctor production-check` will exit 1 if `security_matrix.yml` is absent
-or fails validation.
+to make a missing or invalid private matrix a blocking diagnostic condition.
 
-## File format
+## Public Security Docs
 
-See `security_matrix.example.yml` for the full structure. The matrix supports:
+Public user-facing security docs live under:
 
-| Section | Description |
-|---------|-------------|
-| `metadata` | Project name, owner, status, round number |
-| `surfaces` | Every generated or exposed data surface |
-| `actors` | Every identity type that may call the surfaces |
-| `risks` | Identified security risk categories |
-| `scenarios` | Adversarial scenarios mapping surfaces, actors, and risks |
-
-Scenario `status` values: `covered`, `partial`, `planned`, `not_applicable`.
+```text
+docs/docs/security/
+```

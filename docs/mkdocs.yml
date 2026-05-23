@@ -91,6 +91,16 @@ nav:
       - Request ID: middleware/request-id.md
       - Tenant: middleware/tenant.md
       - Logging: middleware/logging.md
+  - Security:
+      - Overview: security/overview.md
+      - Threat Model: security/threat-model.md
+      - Production Hardening: security/production-hardening.md
+      - Authentication: security/authentication.md
+      - Field-Level Permissions: security/field-level-permissions.md
+      - Multi-Tenancy: security/multi-tenancy.md
+      - AI/MCP Boundaries: security/ai-mcp-boundaries.md
+      - Security Coverage: security/security-coverage.md
+      - Release Security: security/release-security.md
   - Debugging:
       - debugging/index.md
       - Error Pages: debugging/error-pages.md

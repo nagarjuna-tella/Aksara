@@ -246,6 +246,7 @@ aksara examples validate --format json
 | [API Guide](https://nagarjuna-tella.github.io/Aksara/api/) | ViewSets, actions, serializers                         |
 | [Advanced Guide](https://nagarjuna-tella.github.io/Aksara/advanced/) | Background tasks, media/email, i18n, generic relations |
 | [AI Mode](https://nagarjuna-tella.github.io/Aksara/ai-mode/) | MCP, AI Console, Debugger, Architecture Review         |
+| [Security Guide](https://nagarjuna-tella.github.io/Aksara/security/overview/) | Security posture, hardening, tenant isolation, MCP boundaries |
 | [Studio Guide](https://nagarjuna-tella.github.io/Aksara/studio/) | Visual inspector & debugging                           |
 | [Admin Guide](https://nagarjuna-tella.github.io/Aksara/admin/) | Admin site customization                               |
 | [CLI Reference](https://nagarjuna-tella.github.io/Aksara/cli/) | All CLI commands, including SDK generation             |

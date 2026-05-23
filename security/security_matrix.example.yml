@@ -21,8 +21,7 @@ metadata:
     who can call them, what can go wrong, and what test coverage exists for each
     risk scenario.
   owner: your-team
-  status: active-hardening
-  round: 1
+  status: active
   created: "2026-01-01"
   notes: >
     Copy this file to security/security_matrix.yml and customise it for your project.
@@ -147,7 +146,7 @@ risks:
 # Adversarial test scenarios mapping surfaces, actors, and risks.
 # status: covered  = test exists and passes
 # status: partial  = some coverage but incomplete
-# status: planned  = no test yet; planned for a future hardening round
+# status: planned  = no test yet; planned for future coverage
 # status: not_applicable = not applicable for this surface/actor
 # =============================================================================
 
