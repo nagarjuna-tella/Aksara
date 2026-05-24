@@ -33,7 +33,7 @@ jobs:
           python -m pip install pip-audit
 
       - name: Run pip-audit
-        run: pip-audit --desc .
+        run: pip-audit --desc auto .
 
   static-analysis:
     name: Static analysis
