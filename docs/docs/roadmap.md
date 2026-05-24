@@ -10,6 +10,22 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.49 - Security Hardening & Release Trust
+
+- Added centralized Principal and PolicyEngine foundations.
+- Added runtime field enforcement for covered generated write paths.
+- Added tenant isolation and MCP credential hardening helpers.
+- Added bounded security, diagnostics, and fuzz/adversarial test coverage.
+- Added public-safe security docs and private security matrix handling.
+- Added Security CI, Release Gate, CodeQL, Dependabot, secret scanning,
+  static analysis, dependency audit, SBOM generation, package verification,
+  and PyPI Trusted Publishing prep.
+- Does not claim production readiness or replace external security review.
+
+---
+
+## Recent Releases
+
 ### v0.5.48 - Launch Hardening & Golden Path
 
 - Added `aksara doctor launch-check` for first-run readiness.
@@ -18,10 +34,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 - Refreshed README, getting-started docs, roadmap, and changelog for public launch clarity.
 - Added packaging, docs, examples, launch-check, and no-secrets test coverage.
 - Kept AI provider setup optional for first launch.
-
----
-
-## Recent Releases
 
 ### v0.5.47 - ORM/Admin/Write-path/Security Stabilization
 
@@ -45,17 +57,17 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Future Roadmap
 
-### v0.5.49 - Durable AI Session Store
+### v0.5.50 - Durable AI Session Store
 
 Persist investigation sessions, AI Console transcripts, and AI review state so multi-step analysis can resume reliably across process restarts.
 
-### v0.5.50 - AI Memory Foundation
+### v0.5.51 - AI Memory Foundation
 
-Introduce a minimal, explicit memory foundation for project-level AI context. This is not part of v0.5.48.
+Introduce a minimal, explicit memory foundation for project-level AI context. This is not part of v0.5.49.
 
-### v0.5.51 - AI System Radar
+### v0.5.52 - AI System Radar
 
-Add system-level monitoring surfaces for AI-assisted project health. This is not part of v0.5.48.
+Add system-level monitoring surfaces for AI-assisted project health. This is not part of v0.5.49.
 
 ### v0.6.0 - Production Mode
 

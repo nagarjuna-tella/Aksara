@@ -6,6 +6,59 @@ All notable changes to Aksara.
 
 ---
 
+## v0.5.49 — Security Hardening & Release Trust
+
+### Security
+
+- Added centralized `Principal` and `PolicyEngine` foundations for consistent authorization decisions.
+- Added runtime payload enforcement for covered generated write paths.
+- Added field-level policy handling for AI-sensitive, non-agent-writable, read-only, tenant-owned, and system-only fields.
+- Added tenant-aware policy checks and runtime rejection of tenant override attempts.
+- Added MCP credential validation helpers for scopes, audience, tenant binding, expiration, and token metadata.
+- Added bounded adversarial/fuzz tests for generated filters, ordering, pagination, serializers, runtime enforcement, JSON path-like inputs, migration defaults, and malformed payloads.
+
+### Diagnostics
+
+- Added `aksara doctor security-check`.
+- Added `aksara doctor production-check`.
+- Added security diagnostics for secrets, debug mode, CORS, Studio exposure, MCP hardening, cookies, rate limits, RLS, AI defaults, and private matrix enforcement.
+- Added public-safe `security/security_matrix.example.yml`.
+- Private `security/security_matrix.yml` is now git-ignored and optional unless `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
+
+### Supply Chain and Release Trust
+
+- Added Security CI workflow.
+- Added Release Gate workflow.
+- Added CodeQL workflow.
+- Added Dependabot configuration.
+- Added Gitleaks secret scanning.
+- Added Bandit static-analysis gate.
+- Added `pip-audit` dependency audit.
+- Added CycloneDX SBOM generation.
+- Added package build, `twine check`, and wheel import verification.
+- Added manual PyPI Trusted Publishing workflow using OIDC and a protected `pypi` environment.
+
+### Documentation
+
+- Added public security overview, production hardening, threat model, authentication/principals, field-level permissions, multi-tenancy, AI/MCP boundaries, security coverage, and release-security docs.
+- Added release instructions.
+- Added external review scope and hardening report template.
+- Moved internal hardening history to `security/hardening-history.md`.
+- Removed internal security-round language from public docs.
+
+### Testing
+
+- Added security, diagnostics, runtime enforcement, MCP credential, tenant isolation, and fuzz/adversarial test coverage.
+- Latest validation: security tests `424 passed, 1 skipped`; diagnostics tests `305 passed`; full suite `7120 passed, 165 skipped`; MkDocs strict build passed; package build and `twine check` passed.
+
+### Notes
+
+- This release improves security posture and release trust infrastructure.
+- This release does not constitute an external audit.
+- This release does not make a blanket production-readiness claim.
+
+---
+
 ## v0.5.48 — Launch Hardening & Golden Path
 
 - Added `aksara doctor launch-check`.

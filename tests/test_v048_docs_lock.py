@@ -53,10 +53,11 @@ def test_readme_mentions_launch_path(fragment):
 @pytest.mark.parametrize(
     "fragment",
     [
+        "v0.5.49 - Security Hardening & Release Trust",
         "v0.5.48 - Launch Hardening & Golden Path",
-        "v0.5.49 - Durable AI Session Store",
-        "v0.5.50 - AI Memory Foundation",
-        "v0.5.51 - AI System Radar",
+        "v0.5.50 - Durable AI Session Store",
+        "v0.5.51 - AI Memory Foundation",
+        "v0.5.52 - AI System Radar",
         "v0.6.0 - Production Mode",
     ],
 )

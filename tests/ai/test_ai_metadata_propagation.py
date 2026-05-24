@@ -41,7 +41,7 @@ class _FakeHub:
     providers = [_FakeProvider()]
     defaults = _FakeDefaults()
     active_provider = "openai"
-    version = "0.5.48"
+    version = "0.5.49"
 
     def configured_providers(self):
         return [_FakeProvider()]

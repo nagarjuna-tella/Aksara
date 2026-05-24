@@ -32,7 +32,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.48"
+CLI_VERSION = "0.5.49"
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
@@ -829,7 +829,7 @@ def templates_list():
 
 
 # =============================================================================
-# Examples Commands (v0.5.48)
+# Examples Commands (v0.5.49)
 # =============================================================================
 
 

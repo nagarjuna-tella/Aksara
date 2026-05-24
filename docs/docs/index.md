@@ -314,16 +314,20 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.48
+## What's New in v0.5.49
 
-- **Launch check** — `aksara doctor launch-check` reports first-run readiness,
-    JSON output, next steps, and clear exit codes
-- **Golden-path examples** — `aksara examples validate` checks bundled examples
-    for README, config, models, imports, migrations, and obvious secrets
-- **First-user docs** — README and Getting Started now center install, Studio,
-    AI Hub, MCP, and examples
-- **Provider-optional AI** — first launch works without OpenAI, Anthropic,
-    Azure, or Ollama
+- **Runtime security enforcement** — generated write paths validate
+    field-level permissions before persistence.
+- **Security diagnostics** — `aksara doctor security-check` and
+    `aksara doctor production-check` cover secrets, debug mode, CORS,
+    Studio/MCP exposure, cookies, rate limits, RLS, AI defaults, and matrix
+    enforcement.
+- **Release trust** — Security CI, Release Gate, CodeQL, Dependabot,
+    Gitleaks, Bandit, `pip-audit`, SBOM generation, package verification,
+    and PyPI Trusted Publishing prep are in place.
+- **Security docs** — public security docs now describe current controls,
+    production hardening guidance, coverage, limitations, and review prep
+    without claiming production readiness.
 
 [Full changelog →](changelog.md)
 
