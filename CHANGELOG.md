@@ -13,7 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Improved first-user docs
 - Added packaging sanity tests
 - Updated roadmap
-- Improved first-run Studio/AI guidance
+- Improved first-run Studio/AI guidance docs
 
 ---
 
