@@ -269,6 +269,7 @@ def enforce_request_payload_policy(
     payload: Mapping[str, Any],
     surface: Optional[str] = None,
     policy: Optional[PolicyEngine] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> PolicyDecision:
     """
     Resolve Principal from request, then enforce payload policy.
@@ -287,6 +288,7 @@ def enforce_request_payload_policy(
         payload: The raw write payload dict.
         surface: Optional surface label for logging/matrix.
         policy: Optional PolicyEngine override.
+        context: Optional extra context passed through to the policy engine.
 
     Raises:
         PolicyDenied: When enforcement fails.
@@ -302,6 +304,7 @@ def enforce_request_payload_policy(
         payload=payload,
         policy=policy,
         surface=surface,
+        context=context,
     )
 
 

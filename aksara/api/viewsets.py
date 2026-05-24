@@ -260,6 +260,19 @@ class ModelViewSet:
                     status_code=403,
                     detail=permission.message,
                 )
+
+    def _payload_policy_context(self) -> Dict[str, Any]:
+        """
+        Return permission context for runtime field enforcement.
+
+        Non-empty permission classes have already been evaluated before this
+        helper is used. The policy engine may then treat an explicit public
+        permission such as AllowAny as the route-level gate while it continues
+        to enforce field-level writability.
+        """
+        return {
+            "route_permission_granted": bool(self.get_permissions()),
+        }
     
     def check_ai_access(self, request: Request) -> None:
         """
@@ -452,6 +465,7 @@ class ModelViewSet:
                 model=self.model,
                 payload=data,
                 surface="rest_create",
+                context=self._payload_policy_context(),
             )
         except PolicyDenied as exc:
             raise HTTPException(
@@ -526,6 +540,7 @@ class ModelViewSet:
                 model=self.model,
                 payload=data,
                 surface="rest_update",
+                context=self._payload_policy_context(),
             )
         except PolicyDenied as exc:
             raise HTTPException(

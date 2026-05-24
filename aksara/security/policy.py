@@ -68,6 +68,22 @@ def _field_name(field_obj: Any) -> str:
     return str(_get_field_attr(field_obj, "name", "unknown"))
 
 
+def _field_payload_names(field_obj: Any) -> tuple[str, ...]:
+    """Return accepted payload keys for a field, including generated aliases."""
+    names: list[str] = []
+    for value in (
+        _field_name(field_obj),
+        _get_field_attr(field_obj, "column_name", None),
+        _get_field_attr(field_obj, "db_column_name", None),
+    ):
+        if value is None:
+            continue
+        name = str(value)
+        if name not in names:
+            names.append(name)
+    return tuple(names)
+
+
 def _is_ai_sensitive(field_obj: Any) -> bool:
     return bool(_get_field_attr(field_obj, "ai_sensitive", False))
 
@@ -85,7 +101,7 @@ def _is_system_only(field_obj: Any) -> bool:
 
 
 def _is_tenant_field(field_obj: Any) -> bool:
-    return _field_name(field_obj) in _TENANT_FIELD_NAMES
+    return any(name in _TENANT_FIELD_NAMES for name in _field_payload_names(field_obj))
 
 
 # ---------------------------------------------------------------------------
@@ -312,35 +328,35 @@ class PolicyEngine:
         denied: list[str] = []
 
         for f in _iter_fields(resource_or_model):
-            name = _field_name(f)
+            names = _field_payload_names(f)
 
             # read_only — never writable
             if _is_read_only(f):
-                denied.append(name)
+                denied.extend(names)
                 continue
 
             # system_only — only writable by system
             if _is_system_only(f):
                 if principal.is_system:
-                    allowed.append(name)
+                    allowed.extend(names)
                 else:
-                    denied.append(name)
+                    denied.extend(names)
                 continue
 
             # tenant fields — not writable by normal or AI clients
             if _is_tenant_field(f):
                 if principal.is_system:
-                    allowed.append(name)
+                    allowed.extend(names)
                 else:
-                    denied.append(name)
+                    denied.extend(names)
                 continue
 
             # ai_agent_writable=False — not writable by AI/MCP agents
             if principal.is_ai_agent and not _is_ai_agent_writable(f):
-                denied.append(name)
+                denied.extend(names)
                 continue
 
-            allowed.append(name)
+            allowed.extend(names)
 
         if denied:
             return PolicyDecision.partial(
@@ -443,11 +459,20 @@ class PolicyEngine:
         # Can the principal perform this action at all?
         action_decision = self.can(principal, action, model, **context)
         if action_decision.denied:
-            return PolicyDecision.deny(
-                action_decision.reason,
-                action=action,
-                denied_fields=tuple(str(k) for k in payload.keys()),
+            route_allows_anonymous_write = (
+                context.get("route_permission_granted") is True
+                and principal.is_anonymous
+                and _is_protected_action(action)
+                and not context.get("required_scopes")
+                and not context.get("tenant_required")
+                and context.get("required_audience") is None
             )
+            if not route_allows_anonymous_write:
+                return PolicyDecision.deny(
+                    action_decision.reason,
+                    action=action,
+                    denied_fields=tuple(str(k) for k in payload.keys()),
+                )
 
         # Compute writable field set
         writable_decision = self.writable_fields(principal, model, **context)
@@ -462,7 +487,11 @@ class PolicyEngine:
                 allowed_fields=tuple(payload.keys()),
             )
 
-        known_field_names = {_field_name(f) for f in _iter_fields(model)}
+        known_field_names = {
+            name
+            for f in _iter_fields(model)
+            for name in _field_payload_names(f)
+        }
         protected_nested_names = known_field_names - writable_set
 
         forbidden_list = [str(k) for k in payload if k not in writable_set]

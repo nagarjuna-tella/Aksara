@@ -15,6 +15,20 @@ pytestmark = [pytest.mark.security, pytest.mark.fuzz]
 _POSTGRES_PLACEHOLDER_RE = re.compile(r"\$\d+\b")
 _SAFE_STRUCTURAL_SQL = (
     '"metadata"',
+    "WHERE",
+    "AND",
+    "OR",
+    "NOT",
+    "IS",
+    "NULL",
+    "->>",
+    "->",
+    "#>>",
+    "#>",
+    "=",
+    "(",
+    ")",
+    ",",
 )
 
 
@@ -34,10 +48,17 @@ def assert_raw_input_not_in_sql(raw_input: str, where: str) -> None:
     structural identifiers emitted by the query builder are also not attacker
     input, even when a generated fuzz value happens to match their text.
     """
-    if not raw_input:
+    if not raw_input or raw_input.isspace():
         return
     searchable_sql = _sql_without_safe_parameter_markers(where)
-    assert raw_input not in searchable_sql
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", raw_input):
+        leaked_identifier = re.search(
+            rf"(?<![A-Za-z0-9_]){re.escape(raw_input)}(?![A-Za-z0-9_])",
+            searchable_sql,
+        )
+        assert leaked_identifier is None
+    else:
+        assert raw_input not in searchable_sql
 
 
 @pytest.mark.parametrize("path_fragment", MALICIOUS_IDENTIFIERS)

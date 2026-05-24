@@ -117,6 +117,7 @@ async def tables_created(db, user_model, post_model):
 def user_viewset(user_model):
     """Create a ViewSet for the user model."""
     from aksara.api import ModelViewSet
+    from aksara.permissions import AllowAny
     
     class UserViewSet(ModelViewSet):
         model = user_model
@@ -124,6 +125,7 @@ def user_viewset(user_model):
         tags = ["Users"]
         default_limit = 10
         max_limit = 50
+        permission_classes = [AllowAny]
     
     return UserViewSet
 
@@ -132,11 +134,13 @@ def user_viewset(user_model):
 def post_viewset(post_model):
     """Create a ViewSet for the post model."""
     from aksara.api import ModelViewSet
+    from aksara.permissions import AllowAny
     
     class PostViewSet(ModelViewSet):
         model = post_model
         prefix = "/posts"
         tags = ["Posts"]
+        permission_classes = [AllowAny]
     
     return PostViewSet
 

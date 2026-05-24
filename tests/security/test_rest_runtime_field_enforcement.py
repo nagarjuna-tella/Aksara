@@ -22,6 +22,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from aksara.api.viewsets import ModelViewSet
+from aksara.permissions import AllowAny, IsAuthenticated
 from aksara.security.principal import Principal
 
 
@@ -42,13 +43,14 @@ class FakeFieldDef:
     nullable: bool = True
     # Additional attributes read by generate_create_schema / generate_update_schema
     default: Any = None
+    db_column_name: Optional[str] = None
     ai_description: Optional[str] = None
     unique: bool = False
     db_index: bool = False
 
     @property
     def column_name(self) -> str:
-        return self.name
+        return self.db_column_name or self.name
 
 
 def make_fake_model(name: str, field_defs: List[FakeFieldDef]):
@@ -96,15 +98,17 @@ class FakeUser:
     id: str = "u1"
 
 
-def make_viewset(model_cls):
+def make_viewset(model_cls, permission_classes=None):
     """Instantiate a ModelViewSet subclass for the given fake model.
 
     Sets trivial Pydantic schemas to bypass generate_*_schema() calls,
     which require full field compatibility with Aksara's field types.
     """
+    configured_permissions = list(permission_classes or [])
+
     class TestViewSet(ModelViewSet):
         model = model_cls
-        permission_classes = []
+        permission_classes = configured_permissions
         # Bypass schema generation — we only test the enforcement layer
         create_schema_class = _PassthroughSchema
         update_schema_class = _PassthroughSchema
@@ -244,6 +248,118 @@ class TestRESTCreateEnforcement:
                 ))
         assert result == {"id": "uuid-1"}
 
+    def test_rest_public_allowany_create_allows_anonymous_allowed_fields(self):
+        """Explicit public generated create routes may write allowed fields."""
+        ArticleModel = make_fake_model("Article", [
+            FakeFieldDef(name="title"),
+            FakeFieldDef(name="body"),
+        ])
+        viewset = make_viewset(ArticleModel, permission_classes=[AllowAny])
+        request = make_anonymous_request(method="POST")
+
+        fake_instance = MagicMock()
+        fake_instance.id = "uuid-1"
+        with patch.object(ArticleModel, "objects", create=True) as mock_mgr:
+            mock_mgr.create = AsyncMock(return_value=fake_instance)
+            with patch.object(viewset, "_serialize", return_value={"id": "uuid-1"}):
+                result = run(viewset.create(
+                    data={"title": "Public", "body": "Allowed"},
+                    request=request,
+                ))
+
+        assert result == {"id": "uuid-1"}
+
+    def test_rest_anonymous_create_without_explicit_public_permission_denied(self):
+        """Anonymous writes are denied when a route has no explicit public permission."""
+        ArticleModel = make_fake_model("Article", [
+            FakeFieldDef(name="title"),
+        ])
+        viewset = make_viewset(ArticleModel)
+        request = make_anonymous_request(method="POST")
+
+        with pytest.raises(HTTPException) as exc_info:
+            run(viewset.create(
+                data={"title": "Blocked"},
+                request=request,
+            ))
+
+        assert exc_info.value.status_code == 403
+        assert "Anonymous principal cannot perform 'create'" in exc_info.value.detail["reason"]
+
+    def test_rest_anonymous_protected_create_denied_when_auth_required(self):
+        """Runtime enforcement must not bypass viewset auth requirements."""
+        ArticleModel = make_fake_model("Article", [
+            FakeFieldDef(name="title"),
+        ])
+        viewset = make_viewset(ArticleModel, permission_classes=[IsAuthenticated])
+        request = make_anonymous_request(method="POST")
+
+        with pytest.raises(HTTPException) as exc_info:
+            run(viewset.create(
+                data={"title": "Blocked"},
+                request=request,
+            ))
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "Authentication required."
+
+    def test_rest_public_allowany_create_still_rejects_tenant_id_override(self):
+        """AllowAny opens the route, not protected field writes."""
+        OrderModel = make_fake_model("Order", [
+            FakeFieldDef(name="total"),
+            FakeFieldDef(name="tenant_id"),
+        ])
+        viewset = make_viewset(OrderModel, permission_classes=[AllowAny])
+        request = make_anonymous_request(method="POST")
+
+        with pytest.raises(HTTPException) as exc_info:
+            run(viewset.create(
+                data={"total": 100, "tenant_id": "attacker-tenant"},
+                request=request,
+            ))
+
+        assert exc_info.value.status_code == 403
+        assert "tenant_id" in exc_info.value.detail["denied_fields"]
+
+    def test_rest_public_allowany_create_allows_generated_fk_alias(self):
+        """Generated FK payload aliases inherit the underlying field policy."""
+        PostModel = make_fake_model("Post", [
+            FakeFieldDef(name="title"),
+            FakeFieldDef(name="author", db_column_name="author_id"),
+        ])
+        viewset = make_viewset(PostModel, permission_classes=[AllowAny])
+        request = make_anonymous_request(method="POST")
+
+        fake_instance = MagicMock()
+        fake_instance.id = "uuid-1"
+        with patch.object(PostModel, "objects", create=True) as mock_mgr:
+            mock_mgr.create = AsyncMock(return_value=fake_instance)
+            with patch.object(viewset, "_serialize", return_value={"id": "uuid-1"}):
+                result = run(viewset.create(
+                    data={"title": "Public", "author_id": "author-1"},
+                    request=request,
+                ))
+
+        assert result == {"id": "uuid-1"}
+
+    def test_rest_create_rejects_protected_generated_alias(self):
+        """A protected field remains protected through its generated alias."""
+        PostModel = make_fake_model("Post", [
+            FakeFieldDef(name="title"),
+            FakeFieldDef(name="author", db_column_name="author_id", read_only=True),
+        ])
+        viewset = make_viewset(PostModel, permission_classes=[AllowAny])
+        request = make_anonymous_request(method="POST")
+
+        with pytest.raises(HTTPException) as exc_info:
+            run(viewset.create(
+                data={"title": "Public", "author_id": "author-1"},
+                request=request,
+            ))
+
+        assert exc_info.value.status_code == 403
+        assert "author_id" in exc_info.value.detail["denied_fields"]
+
     def test_rest_create_error_payload_has_denied_fields_key(self):
         """403 response body must include denied_fields list."""
         Model = make_fake_model("Thing", [
@@ -371,6 +487,30 @@ class TestRESTUpdateEnforcement:
                     data={"title": "Updated Title"},
                     request=request,
                 ))
+        assert result == {"id": "obj-1"}
+
+    def test_rest_public_allowany_update_allows_anonymous_allowed_fields(self):
+        """Explicit public generated update routes may write allowed fields."""
+        ArticleModel = make_fake_model("Article", [
+            FakeFieldDef(name="title"),
+            FakeFieldDef(name="body"),
+        ])
+        viewset = make_viewset(ArticleModel, permission_classes=[AllowAny])
+        request = make_anonymous_request(method="PATCH")
+
+        instance = MagicMock()
+        instance.id = "obj-1"
+        instance.save = AsyncMock()
+
+        with patch.object(ArticleModel, "objects", create=True) as mock_mgr:
+            mock_mgr.get = AsyncMock(return_value=instance)
+            with patch.object(viewset, "_serialize", return_value={"id": "obj-1"}):
+                result = run(viewset.update(
+                    pk="obj-1",
+                    data={"title": "Updated Title"},
+                    request=request,
+                ))
+
         assert result == {"id": "obj-1"}
 
     def test_rest_update_mcp_agent_ai_restricted_field_fails(self):
