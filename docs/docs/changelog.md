@@ -6,6 +6,45 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.5.50 Migration Safety Patch
+
+### Migration Safety (P0 Fixes)
+
+- **Transaction atomicity**: Python migrations now wrap all operations and
+  `record_migration` in a single `connection.transaction()` block. A failed
+  operation rolls back all prior operations from the same migration; the
+  migration is never recorded as applied unless every operation succeeds.
+- **Advisory lock**: `apply_migrations()` acquires a PostgreSQL session-level
+  advisory lock before inspecting applied migrations, preventing two concurrent
+  processes from running migrations simultaneously. The lock is always released
+  in a `finally` block.
+- **Multi-statement SQL**: SQL migrations no longer rely on a single
+  `connection.execute()` call (asyncpg only runs the first statement). A new
+  `_split_sql_statements()` helper splits on `;` boundaries; each statement is
+  executed individually inside the same transaction as `record_migration`.
+- **Cycle detection**: `MigrationGraph.execution_order()` now uses a three-state
+  DFS (unvisited → visiting → done). A back-edge raises `ValueError` with a
+  human-readable description of the cycle. Previously, cycles would silently
+  produce incomplete or incorrect ordering.
+- **`ArrayField` in `operations.__all__`**: `ArrayField` was missing from
+  `__all__`, making it invisible to `from aksara.migrations.operations import *`.
+  It is now included.
+- **Array codegen**: `model_to_create_table()` was generating
+  `op.TextField(item_type=...)` for `Array` fields — an invalid call.  It now
+  generates `op.ArrayField(sql_type=...)`, using `Array.TYPE_MAP` to map Python
+  item types (`str`, `int`, `float`, `bool`, `UUID`) to PostgreSQL array type
+  strings.
+
+### Tests
+
+- Added `tests/migrations/test_v0550_safety.py` with 29 unit tests covering
+  all six P0 fixes (transaction wrapping, fake-mode behavior, rollback on
+  failure, multi-statement SQL, `_split_sql_statements` edge cases, three-state
+  DFS cycle detection including diamond and self-cycles, advisory lock
+  acquisition and release).
+
+---
+
 ## v0.5.49 — Security Hardening & Release Trust
 
 ### Security

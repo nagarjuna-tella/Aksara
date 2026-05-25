@@ -1949,6 +1949,7 @@ __all__ = [
     "EnumField",
     "OneToOneField",
     "ManyToManyField",
+    "ArrayField",
     # Extended field types (Django parity)
     "SlugField",
     "TimeField",

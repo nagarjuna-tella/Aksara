@@ -438,6 +438,57 @@ def check_migration_conflicts(
 # Migration Execution
 # =============================================================================
 
+
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _raw_connection(connection):
+    """Yield a raw asyncpg connection.
+
+    `connection` can be either:
+      - an asyncpg Connection/PoolConnectionProxy (already has `.transaction()`)
+      - an Aksara Database wrapper (has `.acquire()` but not `.transaction()`)
+
+    Callers that need a single pinned connection for advisory locking or
+    transactions must go through this helper so both cases are handled.
+    """
+    if hasattr(connection, "transaction"):
+        # Already a raw asyncpg connection — use as-is.
+        yield connection
+    else:
+        # Database wrapper — acquire a dedicated connection from the pool.
+        async with connection.acquire() as conn:
+            yield conn
+
+
+def _split_sql_statements(sql: str) -> list[str]:
+    """Split a SQL script into individual statements on ';' boundaries.
+
+    asyncpg's connection.execute() only runs the first statement in a
+    multi-statement string.  This helper strips comments and blank lines,
+    then splits on ';' so every statement is executed.
+    """
+    statements = []
+    current: list[str] = []
+    for line in sql.splitlines():
+        stripped = line.strip()
+        # Skip line comments and blank lines
+        if stripped.startswith("--") or not stripped:
+            continue
+        current.append(line)
+        if stripped.endswith(";"):
+            stmt = "\n".join(current).strip()
+            if stmt:
+                statements.append(stmt)
+            current = []
+    # Trailing statement without a terminating semicolon
+    remainder = "\n".join(current).strip()
+    if remainder:
+        statements.append(remainder)
+    return statements
+
+
 async def apply_migration(
     connection,
     name: str,
@@ -460,36 +511,44 @@ async def apply_migration(
         True if successful, False otherwise
     """
     try:
-        if file_path.suffix == ".py":
-            # Python migration
-            migration_class = load_migration_module(file_path)
-            migration = migration_class()
-            
-            if not fake:
-                for i, op in enumerate(migration.operations):
-                    if verbose:
-                        logger.info(f"  → {op.describe()}")
-                    await op.apply(connection)
-            
-            await record_migration(connection, name)
-            
-        elif file_path.suffix == ".sql":
-            # Legacy SQL migration
-            sql = file_path.read_text()
-            
-            if not fake:
-                await connection.execute(sql)
-            
-            # Compute simple checksum for SQL
-            import hashlib
-            checksum = hashlib.sha256(sql.encode()).hexdigest()[:16]
-            await record_migration(connection, name, checksum)
-        
-        else:
-            raise ValueError(f"Unknown migration type: {file_path.suffix}")
-        
+        async with _raw_connection(connection) as conn:
+            if file_path.suffix == ".py":
+                # Python migration: all operations + record_migration in one transaction
+                # so a partial failure leaves the DB unchanged and the migration unrecorded.
+                migration_class = load_migration_module(file_path)
+                migration = migration_class()
+
+                if not fake:
+                    async with conn.transaction():
+                        for op in migration.operations:
+                            if verbose:
+                                logger.info(f"  → {op.describe()}")
+                            await op.apply(conn)
+                        await record_migration(conn, name)
+                else:
+                    await record_migration(conn, name)
+
+            elif file_path.suffix == ".sql":
+                # SQL migration: split on statement boundaries so every statement runs,
+                # then record_migration in the same transaction.
+                import hashlib
+                sql = file_path.read_text()
+                checksum = hashlib.sha256(sql.encode()).hexdigest()[:16]
+
+                if not fake:
+                    statements = _split_sql_statements(sql)
+                    async with conn.transaction():
+                        for stmt in statements:
+                            await conn.execute(stmt)
+                        await record_migration(conn, name, checksum)
+                else:
+                    await record_migration(conn, name, checksum)
+
+            else:
+                raise ValueError(f"Unknown migration type: {file_path.suffix}")
+
         return True
-        
+
     except Exception as e:
         logger.error(f"Error applying migration {name}: {e}")
         raise
@@ -520,77 +579,124 @@ async def apply_migrations(
             - errors: List of (name, error) tuples if any
     """
     migrations_path = Path(migrations_path)
-    
-    # Ensure migrations table exists
-    await ensure_migrations_table(connection)
-    
-    # Get applied migrations
-    applied = await get_applied_migrations(connection)
-    
-    # Discover all migrations (internal + user)
-    all_migrations = discover_all_migrations(
-        user_migrations_path=migrations_path,
-        include_internal=include_internal,
+
+    # Pin to a single raw asyncpg connection for the entire migration run.
+    # This is required because:
+    #   1. Advisory locks are session-scoped — releasing the connection also
+    #      releases the lock.
+    #   2. The Database wrapper acquires a fresh pool connection per call, so
+    #      we must hold one explicitly here.
+    async with _raw_connection(connection) as conn:
+        return await _apply_migrations_on_conn(
+            conn,
+            migrations_path,
+            fake=fake,
+            verbose=verbose,
+            include_internal=include_internal,
+        )
+
+
+async def _apply_migrations_on_conn(
+    conn,
+    migrations_path: Path,
+    *,
+    fake: bool,
+    verbose: bool,
+    include_internal: bool,
+) -> Dict[str, Any]:
+    """Inner implementation of apply_migrations that works on a raw asyncpg connection."""
+    # Acquire a session-level advisory lock so that two processes cannot run
+    # migrations concurrently.  pg_try_advisory_lock() is non-blocking; if
+    # another process holds the lock we fail fast rather than silently
+    # double-applying.
+    _ADVISORY_LOCK_KEY = "aksara_migrations"
+    lock_acquired = await conn.fetchval(
+        "SELECT pg_try_advisory_lock(hashtext($1))", _ADVISORY_LOCK_KEY
     )
-    
-    # Get pending migrations
-    pending = get_pending_migrations(all_migrations, applied)
-    
-    results = {
-        "applied": [],
-        "skipped": applied,
-        "errors": [],
-        "total_discovered": len(all_migrations),
-    }
-    
-    if not pending:
+    if not lock_acquired:
+        raise RuntimeError(
+            "Could not acquire migration advisory lock — another process may be "
+            "running migrations.  Wait for that process to finish or release the "
+            f"lock manually: SELECT pg_advisory_unlock(hashtext('{_ADVISORY_LOCK_KEY}'));"
+        )
+
+    try:
+        # Ensure migrations table exists
+        await ensure_migrations_table(conn)
+
+        # Get applied migrations
+        applied = await get_applied_migrations(conn)
+
+        # Discover all migrations (internal + user)
+        all_migrations = discover_all_migrations(
+            user_migrations_path=migrations_path,
+            include_internal=include_internal,
+        )
+
+        # Get pending migrations
+        pending = get_pending_migrations(all_migrations, applied)
+
+        results = {
+            "applied": [],
+            "skipped": applied,
+            "errors": [],
+            "total_discovered": len(all_migrations),
+        }
+
+        if not pending:
+            if verbose:
+                logger.info("No pending migrations.")
+            return results
+
+        # Apply only pending migrations, but do so in dependency order.
+        pending_by_name = {name: path for name, path in pending}
+        ordered_pending = [
+            (node.name, pending_by_name[node.name])
+            for node in build_migration_graph(
+                migrations_path=migrations_path,
+                include_internal=include_internal,
+                migrations_list=all_migrations,
+            ).execution_order()
+            if node.name in pending_by_name
+        ]
+
         if verbose:
-            logger.info("No pending migrations.")
+            logger.info(f"Found {len(pending)} pending migration(s).")
+
+        for name, path in ordered_pending:
+            try:
+                if verbose:
+                    action = "Marking" if fake else "Applying"
+                    logger.info(f"\n{action}: {name}")
+
+                await apply_migration(
+                    conn,
+                    name,
+                    path,
+                    fake=fake,
+                    verbose=verbose,
+                )
+
+                results["applied"].append(name)
+
+                if verbose:
+                    status = "marked as applied" if fake else "applied successfully"
+                    logger.info(f"  ✓ {status}")
+
+            except Exception as e:
+                results["errors"].append((name, str(e)))
+                if verbose:
+                    logger.error(f"  ✗ Error: {e}")
+                # Stop on first error
+                break
+
         return results
 
-    # Apply only pending migrations, but do so in dependency order.
-    pending_by_name = {name: path for name, path in pending}
-    ordered_pending = [
-        (node.name, pending_by_name[node.name])
-        for node in build_migration_graph(
-            migrations_path=migrations_path,
-            include_internal=include_internal,
-            migrations_list=all_migrations,
-        ).execution_order()
-        if node.name in pending_by_name
-    ]
-    
-    if verbose:
-        logger.info(f"Found {len(pending)} pending migration(s).")
-    
-    for name, path in ordered_pending:
-        try:
-            if verbose:
-                action = "Marking" if fake else "Applying"
-                logger.info(f"\n{action}: {name}")
-            
-            await apply_migration(
-                connection,
-                name,
-                path,
-                fake=fake,
-                verbose=verbose,
-            )
-            
-            results["applied"].append(name)
-            
-            if verbose:
-                status = "marked as applied" if fake else "applied successfully"
-                logger.info(f"  ✓ {status}")
-                
-        except Exception as e:
-            results["errors"].append((name, str(e)))
-            if verbose:
-                logger.error(f"  ✗ Error: {e}")
-            # Stop on first error
-            break
-    
-    return results
+    finally:
+        # Always release the advisory lock, even if an error occurred mid-run.
+        await conn.execute(
+            "SELECT pg_advisory_unlock(hashtext($1))", _ADVISORY_LOCK_KEY
+        )
 
 
 # =============================================================================
@@ -921,12 +1027,11 @@ def model_to_create_table(model_class) -> str:
                 field_code = f"op.EnumField({av_repr}, enum_name='{enum_name}')"
         
         elif isinstance(field, Array):
-            # Map item_type to SQL type for the migration
-            type_name = field.item_type.__name__ if hasattr(field.item_type, '__name__') else 'str'
-            parts = [f"item_type='{type_name}'"]
+            sql_type = Array.TYPE_MAP.get(field.item_type, "TEXT[]")
+            parts = [f"sql_type={sql_type!r}"]
             if field.nullable:
                 parts.append("nullable=True")
-            field_code = f"op.TextField({', '.join(parts)})"  # Fallback: array stored as text
+            field_code = f"op.ArrayField({', '.join(parts)})"
         
         elif isinstance(field, ForeignKey):
             # Get target table name (try __tablename__ first, then _table_name)
