@@ -5,7 +5,11 @@
 <h1 align="center">Aksara</h1>
 
 <p align="center">
-  One model definition → REST API, MCP tools for AI agents, interactive AI Console, built-in Studio UI, admin dashboard, launch diagnostics, and PostgreSQL migrations. Python. No glue code.
+  An AI-native Python backend framework for async PostgreSQL apps.
+</p>
+
+<p align="center">
+  Define your model once and generate REST APIs, migrations, Studio/admin surfaces, diagnostics, and safe MCP tools for AI agents — with runtime field enforcement, tenant-aware policies, and release-trust security controls.
 </p>
 
 <p align="center">
@@ -210,6 +214,50 @@ The same `ai_description="Short summary of the incident"` you put on a field:
 `ai_agent_writable=False` on `resolved` means the MCP catalog marks that field read-only — an AI agent can see it but can't change it. `ai_sensitive=True` on `notes` excludes it from AI context entirely.
 
 You write this metadata once, next to the field definition, and it propagates everywhere. No second schema, no separate MCP adapter, no context-building glue code.
+
+---
+
+## Security-First Generated Surfaces
+
+Generated surfaces are security boundaries. A generated OpenAPI schema, an MCP
+tool catalog, a Studio admin view — these all face external callers, and they
+all multiply exposure. Aksara's approach is to keep the security boundary
+server-side rather than trusting the generated schema to stop bad input.
+
+**Principal model.** Every request resolves to a `Principal`: User, AIAgent,
+Anonymous, or System. The `PolicyEngine` makes authorization decisions per
+principal — what actions are allowed, which fields are readable, which fields
+are writable, and which rows are visible.
+
+**Runtime field enforcement.** Generated write paths enforce field policy at
+runtime before the database write. A field marked `ai_agent_writable=False` is
+not only hidden from the MCP schema — it is actively blocked when an AI agent
+sends it in a payload. The rejection is explicit: a 403 with `denied_fields` in
+the response, not a silent strip.
+
+**Tenant isolation.** Tenant-aware models carry `PolicyEngine.query_filter()`
+that scopes every queryset to the caller's tenant. `tenant_id` mutation is
+blocked on covered write paths. Adversarial tests cover cross-tenant access,
+missing tenant context, and forged tenant headers.
+
+**MCP/AI credential boundaries.** MCP is disabled by default. When enabled,
+credential helpers validate scopes, audience, tenant binding, and expiration.
+AI agents resolve to `AIAgent` principals and can be made more restrictive than
+human user principals for the same resource.
+
+**Fuzz coverage.** Generated filter parameters, ordering fields, serializer
+inputs, and migration identifiers have bounded adversarial test coverage. The
+goal is to catch generation logic bugs before they reach callers.
+
+**Release trust.** Security CI, release gates, CodeQL, dependency audit, SBOM
+generation, and PyPI Trusted Publishing are in place. They make the release
+process observable, not just the code. See the
+[Release Security guide](https://nagarjuna-tella.github.io/Aksara/security/release-security/)
+for the gate criteria.
+
+Aksara is pre-1.0 and does not claim production readiness. See the
+[Security Overview](https://nagarjuna-tella.github.io/Aksara/security/overview/)
+for the current posture and known limitations.
 
 ---
 

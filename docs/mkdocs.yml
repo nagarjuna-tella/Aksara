@@ -194,7 +194,14 @@ nav:
       - Exceptions: reference/exceptions.md
       - Types: reference/types.md
       - CLI Reference: reference/cli-reference.md
-  - Roadmap: roadmap.md
+  - Notes:
+      - notes/index.md
+      - Security Architecture (v0.5.49): notes/v0-5-49-security-architecture.md
+      - Announcement (v0.5.49): notes/v0-5-49-announcement.md
+  - Roadmap:
+      - roadmap/index.md
+      - Roadmap: roadmap.md
+      - v0.6 Stability Contract: roadmap/v0-6-stability-contract.md
   - Releasing: releasing.md
   - Changelog: changelog.md
   - Glossary: glossary.md

@@ -69,6 +69,31 @@ Introduce a minimal, explicit memory foundation for project-level AI context. Th
 
 Add system-level monitoring surfaces for AI-assisted project health. This is not part of v0.5.49.
 
+### v0.6.0-alpha.1 - Stability, Auditability, and Reference App
+
+First alpha toward v0.6. Focus is on stability contracts, operational
+auditability, and validating the stack against something that looks like real
+use — not new features.
+
+Planned items:
+
+- **v0.6 stability contract** — published commitment to stable vs. evolving
+  areas, compatibility policy before v1.0, security-fix behavior, generated
+  surface change policy, and migration note expectations. Draft available:
+  [v0.6 Stability Contract](roadmap/v0-6-stability-contract.md).
+- **Multi-tenant support desk reference app** — a deployable Aksara application
+  using multi-tenancy, AI tools, and the security controls stack. Intended to
+  validate the framework against real deployment patterns.
+- **AI/MCP audit logging** — field-level and action-level audit logs for AI
+  agent writes, so tenant administrators can see what AI agents have done.
+- **Production checklist to doctor mapping** — each item on a production
+  readiness checklist corresponds to a specific `aksara doctor` check. Machine-
+  checkable, not just human-readable.
+- **External review package** — bundled scope, threat model, and findings
+  template ready for an external security reviewer.
+- **Benchmark plan** — performance baseline and regression detection before
+  v0.6.0 ships.
+
 ### v0.6.0 - Production Mode
 
 Focus on production safety: connection-pool guidance, read-only Studio posture, deployment checks, stronger security defaults, and operational documentation.
