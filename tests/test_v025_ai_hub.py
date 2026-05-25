@@ -93,9 +93,9 @@ class TestUnifiedAiProvider:
 
     def test_to_safe_dict_redacts_api_key(self):
         from aksara.ai.providers_unified import UnifiedAiProvider
-        p = UnifiedAiProvider(provider="openai", api_key="sk-very-secret-key-12345", model="gpt-4o")
+        p = UnifiedAiProvider(provider="openai", api_key="example-not-a-real-secret", model="gpt-4o")
         safe = p.to_safe_dict()
-        assert "sk-very-secret" not in safe.get("api_key", "")
+        assert "example-not-a-real-secret" not in safe.get("api_key", "")
         assert safe["provider"] == "openai"
         assert safe["model"] == "gpt-4o"
 

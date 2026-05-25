@@ -158,9 +158,9 @@ class TestProviderConfig:
         assert "embeddings" not in modes
 
     def test_to_safe_dict_masks_key(self):
-        cfg = ProviderConfig(kind="openai", openai=OpenAIConfig(api_key="sk-1234567890abcdef"))
+        cfg = ProviderConfig(kind="openai", openai=OpenAIConfig(api_key="example-not-a-real-secret"))
         safe = cfg.to_safe_dict()
-        assert safe["openai"]["api_key"] != "sk-1234567890abcdef"
+        assert safe["openai"]["api_key"] != "example-not-a-real-secret"
         assert "..." in safe["openai"]["api_key"]
 
     def test_to_safe_dict_short_key(self):
@@ -504,11 +504,11 @@ class TestSaveAiHubSettings:
 
     def test_save_masks_secrets(self, tmp_path):
         hub = AiHubSettings(
-            providers=[ProviderConfig(kind="openai", openai=OpenAIConfig(api_key="sk-secretlongkey123"))],
+            providers=[ProviderConfig(kind="openai", openai=OpenAIConfig(api_key="example-not-a-real-secret"))],
         )
         path = save_aihub_settings(hub, str(tmp_path / "aksara.ai.json"))
         data = json.loads(Path(path).read_text())
-        assert "sk-secretlongkey123" not in json.dumps(data)
+        assert "example-not-a-real-secret" not in json.dumps(data)
 
 
 # ==========================================================================

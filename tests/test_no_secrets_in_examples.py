@@ -34,7 +34,7 @@ def test_secret_scanner_allows_documented_placeholders(tmp_path, placeholder):
     [
         ("OPENAI_API_KEY", "sk-" + "abcdefghijklmnopqrstuv1234567890"),
         ("ANTHROPIC_API_KEY", "sk-ant-" + "abcdefghijklmnopqrstuv1234567890"),
-        ("AZURE_OPENAI_API_KEY", "abcdefghijklmnopqrstuv1234567890"),
+        ("AZURE_OPENAI_API_KEY", "abcdefghijklmnopqrstuv" + "1234567890"),
     ],
 )
 def test_secret_scanner_rejects_actual_looking_provider_keys(tmp_path, env_name, value):
