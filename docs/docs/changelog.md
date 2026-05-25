@@ -8,6 +8,21 @@ All notable changes to Aksara.
 
 ## Unreleased — v0.5.50 Migration Safety Patch
 
+### Migration Cleanup (P2-A)
+
+- Removed dead `Migration._initialized` flag. The flag was set in `__init__`
+  but never read. `Migration` subclasses instantiate identically.
+- Removed unreachable `isinstance(field, type(None))` branch from the
+  autodetector's `_model_field_to_op()`. The `else` fallback already covers
+  unknown field types.
+- `RemoveConstraint.apply()` now uses a `_is_missing_constraint_error()`
+  helper that prefers SQLSTATE `42704` (PostgreSQL `undefined_object`) over
+  English message text matching. The string fallback is kept for wrapped
+  exceptions that do not expose `sqlstate`.
+- CLI `aksara migrate` now displays which pending migrations were skipped after
+  a failure, via a new `_display_pending_skipped()` helper. The warning is only
+  shown when there are remaining migrations and only in non-dry-run mode.
+
 ### Migration Safety (P0 Fixes)
 
 - **Transaction atomicity**: Python migrations now wrap all operations and

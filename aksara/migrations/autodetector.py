@@ -314,10 +314,8 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         field_type = "EmailField"
     elif isinstance(field, URL):
         field_type = "URLField"
-    elif isinstance(field, type(None)):
-        field_type = "StringField"
     else:
-        field_type = "StringField"  # default fallback
+        field_type = "StringField"  # default fallback for unknown field types
         for cls, name in type_map.items():
             if isinstance(field, cls):
                 field_type = name

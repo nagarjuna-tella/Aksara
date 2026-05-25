@@ -1221,6 +1221,16 @@ class Migration(Migration):
         ui.command("aksara migrate")
 
 
+def _display_pending_skipped(ui, pending, failed_index: int) -> None:
+    """Display the migrations that were not attempted because of a prior failure."""
+    remaining = [n for n, _ in pending[failed_index + 1:]]
+    if remaining:
+        ui.blank()
+        ui.warning(f"Skipped {len(remaining)} pending migration(s) after failure:")
+        for name in remaining:
+            ui.text(f"  - {name}")
+
+
 @cli.command()
 @click.option("--app", "-a", help="Path to application models module")
 @click.option("--database-url", "-d", envvar="DATABASE_URL",
@@ -1332,7 +1342,7 @@ def migrate(
                 ui.info(f"{len(pending)} pending migration(s):")
 
                 with ui.progress(len(pending), "Applying migrations") as progress:
-                    for name, path in pending:
+                    for i, (name, path) in enumerate(pending):
                         if path.suffix == ".py":
                             if dry_run:
                                 ui.blank()
@@ -1365,6 +1375,7 @@ def migrate(
                                     progress.advance(description=f"Applied {name}")
                                 except Exception as e:
                                     ui.error(f"Error: {e}")
+                                    _display_pending_skipped(ui, pending, i)
                                     return
                         elif path.suffix == ".sql":
                             sql = path.read_text()
@@ -1397,6 +1408,7 @@ def migrate(
                                     progress.advance(description=f"Applied {name}")
                                 except Exception as e:
                                     ui.error(f"Error: {e}")
+                                    _display_pending_skipped(ui, pending, i)
                                     return
             else:
                 # Model-based migrations (v0.1 behavior - fallback)

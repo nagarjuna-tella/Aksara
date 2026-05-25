@@ -1755,14 +1755,27 @@ class AddConstraint(Operation):
         return f"AddConstraint(table='{self.table}', name='{self.name}')"
 
 
+def _is_missing_constraint_error(exc: Exception) -> bool:
+    """Return True when *exc* indicates the constraint does not exist.
+
+    Prefers SQLSTATE 42704 (undefined_object) which asyncpg exposes on the
+    exception as ``exc.sqlstate``.  Falls back to English message matching only
+    when sqlstate is not available (e.g. wrapped exceptions, future drivers).
+    """
+    sqlstate = getattr(exc, "sqlstate", None)
+    if sqlstate is not None:
+        return sqlstate == "42704"
+    return "does not exist" in str(exc).lower()
+
+
 class RemoveConstraint(Operation):
     """
     Remove a constraint from a table.
-    
+
     Example:
         RemoveConstraint(table="users", name="check_age_positive")
     """
-    
+
     def __init__(
         self,
         table: str,
@@ -1773,18 +1786,18 @@ class RemoveConstraint(Operation):
         self.table = table
         self.name = name
         self.if_exists = if_exists
-    
+
     async def apply(self, connection) -> None:
         """Drop the constraint."""
         # PostgreSQL doesn't support IF EXISTS for constraints directly
         sql = f'ALTER TABLE {_quote_ident(self.table)} DROP CONSTRAINT {_quote_ident(self.name)}'
-        
+
         if hasattr(connection, 'execute'):
             try:
                 await connection.execute(sql)
             except Exception as e:
-                if self.if_exists and "does not exist" in str(e).lower():
-                    pass  # Ignore if it doesn't exist
+                if self.if_exists and _is_missing_constraint_error(e):
+                    pass  # Constraint absent — suppress when if_exists=True
                 else:
                     raise
         else:
