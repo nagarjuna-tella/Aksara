@@ -682,16 +682,19 @@ class Migration(Migration):
         assert node.dependencies == []
     
     def test_invalid_migration_file(self, tmp_path):
-        """Invalid migration files should be handled gracefully."""
+        """Invalid migration files raise in strict mode (default) and are tolerated with strict=False."""
         (tmp_path / "0001_broken.py").write_text("this is not valid python :{")
-        
-        # Should not crash, but migration won't be loaded properly
+
+        # strict=True (default) must raise clearly
+        with pytest.raises(ValueError, match="Could not load migration"):
+            build_migration_graph(migrations_path=tmp_path, include_internal=False)
+
+        # strict=False falls back to the old best-effort behaviour (node without deps)
         graph = build_migration_graph(
             migrations_path=tmp_path,
             include_internal=False,
+            strict=False,
         )
-        
-        # Node should still be added (but without dependencies)
         assert len(graph) == 1
     
     def test_migration_without_dependencies_attr(self, tmp_path):

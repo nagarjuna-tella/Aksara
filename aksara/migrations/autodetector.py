@@ -1086,6 +1086,18 @@ def operations_to_code(operations: list) -> str:
 
         elif isinstance(operation, op.AddField):
             field_code = _field_op_to_code(operation.field)
+            f = operation.field
+            is_primary_key = getattr(f, "primary_key", False)
+            is_nullable = getattr(f, "nullable", True)
+            has_default = getattr(f, "default", None) is not None
+            if not is_primary_key and not is_nullable and not has_default:
+                warning = (
+                    f'        # WARNING: Adding non-null field "{operation.name}" without a default '
+                    f'may fail on non-empty table "{operation.table}".\n'
+                    f'        # Add a temporary default, backfill existing rows, or split this into '
+                    f'a nullable field + data migration + nullability change.'
+                )
+                code_parts.append(warning)
             code_parts.append(
                 f'        op.AddField(\n'
                 f'            table="{operation.table}",\n'

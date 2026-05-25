@@ -54,22 +54,42 @@ async def ensure_migrations_table(connection) -> None:
         pass  # Column already nullable or doesn't exist
 
 
+def _compute_file_checksum(path: Path) -> str:
+    """SHA-256 checksum of a migration file, truncated to 16 hex chars."""
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+
+
 async def get_applied_migrations(connection) -> List[str]:
     """
     Get list of applied migration names from the database.
-    
+
     Args:
         connection: Database connection
-        
+
     Returns:
         List of migration names that have been applied
     """
     await ensure_migrations_table(connection)
-    
+
     rows = await connection.fetch(
         "SELECT name FROM aksara_migrations ORDER BY applied_at, id"
     )
     return [row['name'] for row in rows]
+
+
+async def get_applied_migration_records(connection) -> Dict[str, Optional[str]]:
+    """
+    Get applied migrations with their stored checksums.
+
+    Returns:
+        Dict mapping migration name → stored checksum (or None if not stored).
+    """
+    await ensure_migrations_table(connection)
+    rows = await connection.fetch(
+        "SELECT name, checksum FROM aksara_migrations ORDER BY applied_at, id"
+    )
+    return {row["name"]: row["checksum"] for row in rows}
 
 
 async def record_migration(
@@ -315,6 +335,7 @@ def build_migration_graph(
     migrations_path: Optional[Path] = None,
     include_internal: bool = True,
     migrations_list: Optional[List[Tuple[str, Path]]] = None,
+    strict: bool = True,
 ) -> MigrationGraph:
     """
     Build a migration graph from discovered migrations.
@@ -383,9 +404,13 @@ def build_migration_graph(
             graph.add_node(node)
             
         except Exception as e:
-            logger.warning(f"Could not load migration {name}: {e}")
-            # Still add the node without dependencies
             app_label = extract_app_label_from_name(name, path)
+            if strict:
+                raise ValueError(
+                    f"Could not load migration {app_label}.{name} from {path}: {e}"
+                ) from e
+            # Non-strict: warn and continue without dependencies (best-effort graph).
+            logger.warning(f"Could not load migration {app_label}.{name} from {path}: {e}")
             node = MigrationNode(app_label=app_label, name=name)
             graph.add_node(node)
     
@@ -517,6 +542,7 @@ async def apply_migration(
                 # so a partial failure leaves the DB unchanged and the migration unrecorded.
                 migration_class = load_migration_module(file_path)
                 migration = migration_class()
+                checksum = _compute_file_checksum(file_path)
 
                 if not fake:
                     async with conn.transaction():
@@ -524,9 +550,9 @@ async def apply_migration(
                             if verbose:
                                 logger.info(f"  → {op.describe()}")
                             await op.apply(conn)
-                        await record_migration(conn, name)
+                        await record_migration(conn, name, checksum)
                 else:
-                    await record_migration(conn, name)
+                    await record_migration(conn, name, checksum)
 
             elif file_path.suffix == ".sql":
                 # SQL migration: split on statement boundaries so every statement runs,
@@ -624,8 +650,9 @@ async def _apply_migrations_on_conn(
         # Ensure migrations table exists
         await ensure_migrations_table(conn)
 
-        # Get applied migrations
-        applied = await get_applied_migrations(conn)
+        # Get applied migrations with checksums for integrity verification
+        applied_records = await get_applied_migration_records(conn)
+        applied = list(applied_records.keys())
 
         # Discover all migrations (internal + user)
         all_migrations = discover_all_migrations(
@@ -633,12 +660,34 @@ async def _apply_migrations_on_conn(
             include_internal=include_internal,
         )
 
+        # Verify checksums of already-applied migrations whose files are still present.
+        # A mismatch means an applied migration file was edited, which is unsafe.
+        applied_by_name = {name: path for name, path in all_migrations if name in applied_records}
+        for mig_name, mig_path in applied_by_name.items():
+            stored = applied_records.get(mig_name)
+            if stored is None:
+                # Migrated before checksums were introduced — allow but warn.
+                if verbose:
+                    logger.warning(
+                        f"Checksum unavailable for previously applied migration {mig_name!r}. "
+                        "It will not be verified."
+                    )
+                continue
+            current = _compute_file_checksum(mig_path)
+            if current != stored:
+                raise ValueError(
+                    f"Migration checksum mismatch for {mig_name!r}.\n"
+                    "The migration has already been applied but the file contents have changed.\n"
+                    "Do not edit applied migrations. Create a new migration instead."
+                )
+
         # Get pending migrations
         pending = get_pending_migrations(all_migrations, applied)
 
-        results = {
+        results: Dict[str, Any] = {
             "applied": [],
             "skipped": applied,
+            "pending_skipped": [],
             "errors": [],
             "total_discovered": len(all_migrations),
         }
@@ -663,7 +712,7 @@ async def _apply_migrations_on_conn(
         if verbose:
             logger.info(f"Found {len(pending)} pending migration(s).")
 
-        for name, path in ordered_pending:
+        for i, (name, path) in enumerate(ordered_pending):
             try:
                 if verbose:
                     action = "Marking" if fake else "Applying"
@@ -687,6 +736,16 @@ async def _apply_migrations_on_conn(
                 results["errors"].append((name, str(e)))
                 if verbose:
                     logger.error(f"  ✗ Error: {e}")
+                # Collect remaining pending migrations that will not be attempted
+                skipped_remaining = [n for n, _ in ordered_pending[i + 1:]]
+                results["pending_skipped"] = skipped_remaining
+                if verbose and skipped_remaining:
+                    logger.warning(
+                        f"Skipping {len(skipped_remaining)} pending migration(s) "
+                        f"because {name!r} failed:"
+                    )
+                    for skipped_name in skipped_remaining:
+                        logger.warning(f"  - {skipped_name}")
                 # Stop on first error
                 break
 

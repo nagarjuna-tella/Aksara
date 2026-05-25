@@ -35,13 +35,39 @@ All notable changes to Aksara.
   item types (`str`, `int`, `float`, `bool`, `UUID`) to PostgreSQL array type
   strings.
 
+### Migration Safety (P1 Fixes)
+
+- **Generated migration warnings**: `operations_to_code()` emits a `# WARNING`
+  comment before any `op.AddField` that is `nullable=False` with no `default`.
+  Adding a non-null column without a default fails on non-empty tables; the
+  comment directs developers to use a temporary default, a backfill, or a
+  nullable-first data-migration pair. Primary-key fields are exempt.
+- **Checksum recording and verification**: Python migration files now have
+  their SHA-256 checksum stored in `aksara_migrations.checksum` when applied
+  (previously only SQL migrations stored a checksum). Before running pending
+  migrations, `apply_migrations()` verifies the on-disk checksum of every
+  already-applied migration. A mismatch raises `ValueError` with the migration
+  name and clear instructions. Rows with `NULL` checksums (pre-v0.5.50) are
+  warned about but not rejected.
+- **Migration graph load errors**: `build_migration_graph()` now accepts
+  `strict: bool = True`. In strict mode a migration file that cannot be loaded
+  raises `ValueError` with the migration name, file path, and original error.
+  Previously the error was silently logged and the migration was added as a
+  dependency-less root node. Pass `strict=False` to restore the old best-effort
+  behaviour for tooling that needs to inspect partially-broken graphs.
+- **Skipped migration reporting**: `apply_migrations()` result dict now
+  includes `"pending_skipped": list[str]`. When a migration fails, all
+  remaining pending migrations that were not attempted are listed here. Verbose
+  mode logs each skipped name.
+
 ### Tests
 
 - Added `tests/migrations/test_v0550_safety.py` with 29 unit tests covering
-  all six P0 fixes (transaction wrapping, fake-mode behavior, rollback on
-  failure, multi-statement SQL, `_split_sql_statements` edge cases, three-state
-  DFS cycle detection including diamond and self-cycles, advisory lock
-  acquisition and release).
+  all P0 fixes (transaction wrapping, fake-mode behavior, rollback on failure,
+  multi-statement SQL, `_split_sql_statements` edge cases, three-state DFS
+  cycle detection, advisory lock acquisition and release).
+- Added `tests/migrations/test_v0550_p1_safety.py` with 34 unit and DB-backed
+  tests covering all four P1 fixes.
 
 ---
 

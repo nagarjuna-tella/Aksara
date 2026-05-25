@@ -319,7 +319,11 @@ class Migration(Migration):
         conn.transaction.assert_called_once()
         # op and record_migration must have been called inside __aenter__ context
         op_mock.apply.assert_awaited_once()
-        rm.assert_awaited_once_with(conn, "0001_init")
+        rm.assert_awaited_once()
+        call_args = rm.call_args.args
+        assert call_args[0] is conn
+        assert call_args[1] == "0001_init"
+        assert call_args[2] is not None  # checksum stored for Python migrations
 
     @pytest.mark.asyncio
     async def test_py_migration_fake_no_transaction_no_ops(self, tmp_path):
@@ -342,8 +346,11 @@ class Migration(Migration):
         conn.transaction.assert_not_called()
         # No ops run
         op_mock.apply.assert_not_awaited()
-        # But record_migration is still called
-        rm.assert_awaited_once_with(conn, "0001_init")
+        # But record_migration is still called (with checksum)
+        rm.assert_awaited_once()
+        call_args = rm.call_args.args
+        assert call_args[0] is conn
+        assert call_args[1] == "0001_init"
 
     @pytest.mark.asyncio
     async def test_py_migration_op_failure_rolls_back(self, tmp_path):
