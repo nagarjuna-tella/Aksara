@@ -18,9 +18,9 @@ aksara ai-hub configure
 Use environment variables for secrets. Do not commit keys.
 
 ```bash
-export OPENAI_API_KEY=your-key-here
+export OPENAI_API_KEY=<OPENAI_API_KEY>
 export ANTHROPIC_API_KEY=your-key-here
-export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
 ```
 
 ## Local-First With Ollama

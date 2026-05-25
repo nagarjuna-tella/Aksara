@@ -3814,8 +3814,8 @@ function _buildOnboardingKeyForm() {
     });
     // [label, input-type, data-field, placeholder]
     const FIELDS = {
-        openai:    ['OpenAI API Key',       'password', 'api_key',  'sk-...'],
-        anthropic: ['Anthropic API Key',    'password', 'api_key',  'sk-ant-...'],
+        openai:    ['OpenAI API Key',       'password', 'api_key',  '<API_KEY>'],
+        anthropic: ['Anthropic API Key',    'password', 'api_key',  '<ANTHROPIC_API_KEY>'],
         azure:     ['Azure OpenAI API Key', 'password', 'api_key',  ''],
         ollama:    ['Ollama Base URL',      'text',     'base_url', 'http://localhost:11434'],
         custom:    ['Custom HTTP API Key',  'password', 'api_key',  ''],

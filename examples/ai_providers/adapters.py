@@ -183,7 +183,7 @@ class OpenAIClient(BaseLlmClient):
     Example:
         from aksara.ai.providers import AiModelProfile
         
-        client = OpenAIClient(api_key="sk-...")
+        client = OpenAIClient(api_key="<API_KEY>")
         profile = AiModelProfile(model_name="gpt-4o-mini", ...)
         
         response = await client.complete("Hello!", model=profile)
@@ -368,7 +368,7 @@ class AnthropicClient(BaseLlmClient):
         ANTHROPIC_API_KEY - Your Anthropic API key
     
     Example:
-        client = AnthropicClient(api_key="sk-ant-...")
+        client = AnthropicClient(api_key="<ANTHROPIC_API_KEY>")
         profile = AiModelProfile(model_name="claude-3-5-sonnet-20241022", ...)
         
         response = await client.complete("Hello!", model=profile)

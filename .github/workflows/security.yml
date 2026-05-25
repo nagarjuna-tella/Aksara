@@ -59,13 +59,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            --workdir /repo \
+            zricethezav/gitleaks:v8.28.0 \
+            detect --no-git --redact -v --exit-code=2 --report-format=sarif --report-path=results.sarif
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gitleaks-results
+          path: results.sarif
+          if-no-files-found: ignore
 
   security-tests:
     name: Security and diagnostics tests

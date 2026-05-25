@@ -128,17 +128,17 @@ class TestUnifiedAiProvider:
 
     def test_save_to_env_file(self):
         from aksara.ai.providers_unified import UnifiedAiProvider
-        p = UnifiedAiProvider(provider="openai", api_key="sk-test", model="gpt-4o")
+        p = UnifiedAiProvider(provider="openai", api_key="example-not-a-real-secret", model="gpt-4o")
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("aksara.ai.providers_unified.Path.cwd", return_value=Path(tmpdir)):
                 path = p.save_to_env_file()
                 assert Path(path).exists()
                 content = Path(path).read_text()
-                assert "OPENAI_API_KEY=sk-test" in content
+                assert "OPENAI_API_KEY=example-not-a-real-secret" in content
 
     def test_save_to_json(self):
         from aksara.ai.providers_unified import UnifiedAiProvider
-        p = UnifiedAiProvider(provider="openai", api_key="sk-test", model="gpt-4o")
+        p = UnifiedAiProvider(provider="openai", api_key="example-not-a-real-secret", model="gpt-4o")
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("aksara.ai.providers_unified.Path.cwd", return_value=Path(tmpdir)):
                 path = p.save_to_json()
@@ -174,7 +174,7 @@ class TestUnifiedAiProvider:
 
     def test_ping_without_server(self):
         from aksara.ai.providers_unified import UnifiedAiProvider
-        p = UnifiedAiProvider(provider="openai", api_key="sk-fake", model="gpt-4o",
+        p = UnifiedAiProvider(provider="openai", api_key="example-not-a-real-secret", model="gpt-4o",
                               base_url="http://localhost:1")
         # Should return dict with ok=False, not crash
         result = p.ping()

@@ -60,6 +60,11 @@ PLACEHOLDER_TOKENS = {
     "sk-your-key-here",
     "<your-key>",
     "<your-api-key>",
+    "<api_key>",
+    "<openai_api_key>",
+    "<anthropic_api_key>",
+    "<azure_openai_api_key>",
+    "example-not-a-real-secret",
     "example",
     "placeholder",
 }

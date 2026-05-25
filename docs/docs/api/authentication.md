@@ -199,7 +199,7 @@ async def get_token(request):
 ### Using Token
 
 ```bash
-curl -H "Authorization: Bearer abc123..." http://localhost:8000/api/posts/
+curl -H "Authorization: Bearer <BEARER_TOKEN>" http://localhost:8000/api/posts/
 ```
 
 ### In ViewSet

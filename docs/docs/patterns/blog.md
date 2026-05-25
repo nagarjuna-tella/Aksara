@@ -133,7 +133,7 @@ class PostViewSet(ModelViewSet):
 
 ```bash
 curl http://localhost:8000/api/posts/ \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ## Pagination & Ordering (v0.5.8)
@@ -159,19 +159,19 @@ List endpoints support pagination and ordering via query parameters.
 ```bash
 # First page, 10 posts, newest first (default)
 curl http://localhost:8000/api/posts/ \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 
 # Second page, 20 posts per page
 curl "http://localhost:8000/api/posts/?page=2&page_size=20" \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 
 # Sort by title ascending
 curl "http://localhost:8000/api/posts/?order_by=title" \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 
 # Published posts only, oldest first
 curl "http://localhost:8000/api/posts/?is_published=true&order_by=created_at" \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ### Response Format
@@ -224,7 +224,7 @@ async def ai_suggest_tags(self, pk: str, request: Request):
 
 ```bash
 curl http://localhost:8000/api/posts/1/ai-suggest-tags/ \
-  -H "X-API-Key: dev-blog-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ### Response

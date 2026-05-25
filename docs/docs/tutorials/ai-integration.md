@@ -96,10 +96,10 @@ AKSARA = {
 
 ```bash
 # Add to your .env file
-OPENAI_API_KEY=sk-your-key-here
+OPENAI_API_KEY=<OPENAI_API_KEY>
 
 # Or set in terminal
-export OPENAI_API_KEY=sk-your-key-here
+export OPENAI_API_KEY=<OPENAI_API_KEY>
 ```
 
 ---
@@ -225,7 +225,7 @@ def register_routes(app):
 ```bash
 curl -X POST http://localhost:8000/api/ai/query/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -d '{"query": "Posts published this week with at least 3 comments"}'
 ```
 
@@ -449,7 +449,7 @@ Here are example queries that work with the Blog API:
 
 **Solution:** Set the environment variable:
 ```bash
-export OPENAI_API_KEY=sk-your-key-here
+export OPENAI_API_KEY=<OPENAI_API_KEY>
 ```
 
 ### "Query too complex"

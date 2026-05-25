@@ -137,7 +137,7 @@ class DealViewSet(ModelViewSet):
 
 ```bash
 curl http://localhost:8000/api/customers/ \
-  -H "X-API-Key: dev-crm-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ## Pagination & Ordering (v0.5.8)
@@ -165,15 +165,15 @@ List endpoints support pagination and ordering via query parameters.
 ```bash
 # List customers sorted by name
 curl "http://localhost:8000/api/customers/?order_by=name" \
-  -H "X-API-Key: dev-crm-key"
+  -H "X-API-Key: <API_KEY>"
 
 # List deals sorted by value (highest first)
 curl "http://localhost:8000/api/deals/?order_by=-value" \
-  -H "X-API-Key: dev-crm-key"
+  -H "X-API-Key: <API_KEY>"
 
 # Filter deals by stage
 curl "http://localhost:8000/api/deals/?stage=proposal" \
-  -H "X-API-Key: dev-crm-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ### Response Format
@@ -237,7 +237,7 @@ async def ai_context(self, pk: str, request: Request):
 
 ```bash
 curl http://localhost:8000/api/customers/1/ai-context/ \
-  -H "X-API-Key: dev-crm-key"
+  -H "X-API-Key: <API_KEY>"
 ```
 
 ### Response

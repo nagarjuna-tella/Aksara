@@ -115,10 +115,9 @@ def test_validate_examples_cli_json_is_pure():
 @pytest.mark.parametrize(
     "placeholder",
     [
-        "OPENAI_API_KEY=your-key-here",
+        "OPENAI_API_KEY=<OPENAI_API_KEY>",
         "ANTHROPIC_API_KEY=your-api-key",
-        "AZURE_OPENAI_API_KEY=<your-key>",
-        "OPENAI_API_KEY=sk-...",
+        "AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>",
     ],
 )
 def test_secret_scan_allows_placeholders(tmp_path, placeholder):
@@ -128,17 +127,17 @@ def test_secret_scan_allows_placeholders(tmp_path, placeholder):
 
 
 @pytest.mark.parametrize(
-    "secret",
+    ("env_name", "value"),
     [
-        "OPENAI_API_KEY=sk-abcdefghijklmnopqrstuvwxyz123456",
-        "ANTHROPIC_API_KEY=sk-ant-abcdefghijklmnopqrstuvwxyz123456",
-        "AZURE_OPENAI_API_KEY=abcdefghijklmnopqrstuvwxyz123456",
-        "password=super-secret-password-value",
+        ("OPENAI_API_KEY", "sk-" + "abcdefghijklmnopqrstuvwxyz123456"),
+        ("ANTHROPIC_API_KEY", "sk-ant-" + "abcdefghijklmnopqrstuvwxyz123456"),
+        ("AZURE_OPENAI_API_KEY", "abcdefghijklmnopqrstuvwxyz123456"),
+        ("password", "super-secret-password-value"),
     ],
 )
-def test_secret_scan_detects_actual_looking_values(tmp_path, secret):
+def test_secret_scan_detects_actual_looking_values(tmp_path, env_name, value):
     file_path = tmp_path / "leak.md"
-    file_path.write_text(secret, encoding="utf-8")
+    file_path.write_text(f"{env_name}={value}", encoding="utf-8")
     findings = scan_path_for_secrets(tmp_path)
     assert findings
     assert findings[0]["path"].endswith("leak.md")

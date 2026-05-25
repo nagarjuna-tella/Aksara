@@ -30,8 +30,8 @@ Before you start, make sure you have:
 **PostgreSQL is strictly required.** Unlike Django, Aksara uses advanced Postgres-native features (JSONB, pgvector, Listen/Notify) and does not fall back to SQLite. Ensure you have a running PostgreSQL instance (either native, via Docker, or cloud-hosted) before proceeding.
 
 **AI Configuration:** To use the AI features (Console, MCP, Debugger), you will need an API key from an AI provider.
-*   **Anthropic:** `ANTHROPIC_API_KEY="sk-ant-..."`
-*   **OpenAI:** `OPENAI_API_KEY="sk-proj-..."`
+*   **Anthropic:** `ANTHROPIC_API_KEY="<ANTHROPIC_API_KEY>"`
+*   **OpenAI:** `OPENAI_API_KEY="<OPENAI_API_KEY>"`
 *   *(Ollama is also supported for local models)*
 
 ---
@@ -250,10 +250,10 @@ If you want to use the AI Console and diagnostic features in Studio, export the 
 
 ```bash
 # For Anthropic (Recommended)
-export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_API_KEY="<ANTHROPIC_API_KEY>"
 
 # Or for OpenAI
-export OPENAI_API_KEY="sk-proj-..."
+export OPENAI_API_KEY="<OPENAI_API_KEY>"
 ```
 
 Start the development server:

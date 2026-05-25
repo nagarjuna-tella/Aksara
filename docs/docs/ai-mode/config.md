@@ -365,7 +365,7 @@ All settings can be overridden via environment variables:
 ```bash
 # Provider
 export AKSARA_AI_PROVIDER=openai
-export AKSARA_AI_API_KEY=sk-...
+export AKSARA_AI_API_KEY=<API_KEY>
 export AKSARA_AI_MODEL=gpt-4
 
 # Safety

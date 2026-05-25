@@ -10,7 +10,7 @@ Usage::
 
     connector = get_connector("openai")        # uses AI Hub config
     connector = get_connector("ollama")         # local Ollama
-    connector = get_connector("openai", api_key="sk-...")  # explicit creds
+    connector = get_connector("openai", api_key="<API_KEY>")  # explicit creds
 """
 
 from __future__ import annotations

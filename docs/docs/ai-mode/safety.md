@@ -481,7 +481,7 @@ AKSARA = {
 "AI_API_KEY": os.getenv("OPENAI_API_KEY")
 
 # Bad - never commit API keys!
-"AI_API_KEY": "sk-abc123..."
+"AI_API_KEY": "<API_KEY>"
 ```
 
 ### 2. Enable Audit Logging in Production

@@ -880,7 +880,7 @@ class TestCliStudioParity:
             with mock.patch("aksara.ai.hub_settings.save_aihub_settings") as save_mock:
                 result = runner.invoke(cli, [
                     "ai-hub", "configure", "openai",
-                    "--api-key", "sk-test-1234",
+                    "--api-key", "example-not-a-real-secret",
                     "--model", "gpt-4o",
                 ])
         assert result.exit_code == 0

@@ -568,7 +568,7 @@ aksara dev
 ```bash
 curl -X POST http://localhost:8000/api/admin/tenants/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -d '{"name": "Acme Corp", "slug": "acme", "plan": "pro"}'
 ```
 
@@ -578,14 +578,14 @@ curl -X POST http://localhost:8000/api/admin/tenants/ \
 # Using header
 curl -X POST http://localhost:8000/api/projects/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer USER_TOKEN" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -H "X-Tenant-ID: TENANT_UUID" \
   -d '{"name": "Website Redesign"}'
 
 # Using subdomain
 curl -X POST http://acme.localhost:8000/api/projects/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer USER_TOKEN" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -d '{"name": "Website Redesign"}'
 ```
 
@@ -593,7 +593,7 @@ curl -X POST http://acme.localhost:8000/api/projects/ \
 
 ```bash
 curl http://localhost:8000/api/projects/ \
-  -H "Authorization: Bearer USER_TOKEN" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -H "X-Tenant-ID: TENANT_UUID"
 # Only shows projects for this tenant!
 ```

@@ -13,13 +13,13 @@ Run with:
     aksara dev
 
 Required environment variables:
-    OPENAI_API_KEY=sk-...
+    OPENAI_API_KEY=<OPENAI_API_KEY>
     # or
     AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-    AZURE_OPENAI_API_KEY=...
+    AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
     AZURE_OPENAI_DEPLOYMENT=your-deployment
     # or
-    ANTHROPIC_API_KEY=sk-ant-...
+    ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>
 """
 
 from __future__ import annotations

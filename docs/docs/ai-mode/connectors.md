@@ -72,7 +72,7 @@ result = await connector.chat(
 ### With Explicit Credentials
 
 ```python
-connector = get_connector("openai", api_key="sk-...", base_url="https://api.openai.com/v1")
+connector = get_connector("openai", api_key="<API_KEY>", base_url="https://api.openai.com/v1")
 ```
 
 ### Listing Available Connectors

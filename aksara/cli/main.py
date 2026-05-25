@@ -5491,7 +5491,7 @@ def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool,
         
         if provider == "openai":
             click.echo("  \033[36mEnvironment Variables:\033[0m")
-            click.echo("    OPENAI_API_KEY=sk-...")
+            click.echo("    OPENAI_API_KEY=<OPENAI_API_KEY>")
             click.echo("    OPENAI_DEFAULT_MODEL=gpt-4o-mini  (optional)")
             click.echo("    OPENAI_ORG_ID=org-...            (optional)")
             click.echo()
@@ -5506,7 +5506,7 @@ def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool,
         elif provider == "azure":
             click.echo("  \033[36mEnvironment Variables:\033[0m")
             click.echo("    AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/")
-            click.echo("    AZURE_OPENAI_API_KEY=...")
+            click.echo("    AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>")
             click.echo("    AZURE_OPENAI_DEPLOYMENT=your-deployment-name")
             click.echo("    AZURE_OPENAI_API_VERSION=2024-02-01  (optional)")
             click.echo()
@@ -5523,7 +5523,7 @@ def ai_examples(provider: Optional[str], output_dir: Optional[str], force: bool,
             
         elif provider == "anthropic":
             click.echo("  \033[36mEnvironment Variables:\033[0m")
-            click.echo("    ANTHROPIC_API_KEY=sk-ant-...")
+            click.echo("    ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>")
             click.echo("    ANTHROPIC_DEFAULT_MODEL=claude-3-sonnet-20240229  (optional)")
             click.echo()
             click.echo("  \033[36mInstall SDK:\033[0m")
@@ -6751,7 +6751,7 @@ def ai_provider_group():
         aksara ai-provider list
         aksara ai-provider detect
         aksara ai-provider ping
-        aksara ai-provider configure openai --api-key sk-...
+        aksara ai-provider configure openai --api-key <API_KEY>
     """
     pass
 
@@ -6908,7 +6908,7 @@ def ai_provider_configure(provider_name: str, api_key: Optional[str], model: Opt
     Prompts for missing values and writes config to .env or provider.json.
 
     Examples:
-        aksara ai-provider configure openai --api-key sk-... --model gpt-4o
+        aksara ai-provider configure openai --api-key <API_KEY> --model gpt-4o
         aksara ai-provider configure ollama --model llama3
         aksara ai-provider configure anthropic --save-to json
     """
@@ -6973,7 +6973,7 @@ def ai_hub_group():
         aksara ai-hub providers
         aksara ai-hub models
         aksara ai-hub defaults --chat-model gpt-4o
-        aksara ai-hub configure openai --api-key sk-...
+        aksara ai-hub configure openai --api-key <API_KEY>
         aksara ai-hub doctor
 
     v0.5.28: AI Hub 2.0
@@ -7245,7 +7245,7 @@ def ai_hub_configure(provider_name: str, api_key: Optional[str], model: Optional
     Saves to the hub settings file.
 
     Examples:
-        aksara ai-hub configure openai --api-key sk-...
+        aksara ai-hub configure openai --api-key <API_KEY>
         aksara ai-hub configure ollama --base-url http://gpu-server:11434
         aksara ai-hub configure anthropic --disable
     """
@@ -7334,7 +7334,7 @@ def ai_hub_doctor(output_format: str):
             "severity": "warning",
             "check": "providers",
             "message": "No AI providers configured. AI features unavailable.",
-            "hint": "aksara ai-hub configure openai --api-key sk-...",
+            "hint": "aksara ai-hub configure openai --api-key <API_KEY>",
         })
 
     # Check 2: Active provider set?

@@ -456,7 +456,7 @@ class AuthViewSet(ViewSet):
         Get the current logged-in user.
         
         GET /api/auth/me/
-        Headers: Authorization: Bearer <token>
+        Headers: Authorization: Bearer <BEARER_TOKEN>
         """
         return UserSerializer(request.user).data
 
@@ -699,7 +699,7 @@ curl -X POST http://localhost:8000/api/auth/login/ \
 ```bash
 curl -X POST http://localhost:8000/api/posts/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -d '{
     "title": "My First Blog Post",
     "slug": "my-first-post",
@@ -724,7 +724,7 @@ curl "http://localhost:8000/api/posts/?search=first"
 
 ```bash
 curl -X POST http://localhost:8000/api/posts/POST_ID/publish/ \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+  -H "Authorization: Bearer <BEARER_TOKEN>"
 ```
 
 ### Add a Comment
@@ -732,7 +732,7 @@ curl -X POST http://localhost:8000/api/posts/POST_ID/publish/ \
 ```bash
 curl -X POST http://localhost:8000/api/posts/POST_ID/add_comment/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Authorization: Bearer <BEARER_TOKEN>" \
   -d '{"content": "Great post!"}'
 ```
 

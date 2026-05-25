@@ -39,15 +39,15 @@ pip install anthropic   # For Anthropic Claude
 
 ```bash
 # OpenAI
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=<OPENAI_API_KEY>
 
 # OR Azure OpenAI
 export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-export AZURE_OPENAI_API_KEY=...
+export AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
 export AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 
 # OR Anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
+export ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>
 ```
 
 ### 4. Use in Your Views
@@ -316,8 +316,8 @@ def mock_llm_client():
 
 ```python
 # .env (add to .gitignore!)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=<OPENAI_API_KEY>
+ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>
 ```
 
 ```python
@@ -335,7 +335,7 @@ pip install openai  # or anthropic
 
 ### "API key not configured"
 ```bash
-export OPENAI_API_KEY=sk-...  # Check it's in your shell
+export OPENAI_API_KEY=<OPENAI_API_KEY>  # Check it's in your shell
 ```
 
 ### "Invalid API key"

@@ -279,7 +279,7 @@ class TestAiHubConfigureCommand:
             with mock.patch("aksara.ai.hub_settings.save_aihub_settings") as mock_save:
                 result = runner.invoke(cli, [
                     "ai-hub", "configure", "openai",
-                    "--api-key", "sk-testkey12345678",
+                    "--api-key", "example-not-a-real-secret",
                 ])
         assert result.exit_code == 0
         assert "openai" in result.output.lower()
@@ -314,7 +314,7 @@ class TestAiHubConfigureCommand:
             with mock.patch("aksara.ai.hub_settings.save_aihub_settings"):
                 result = runner.invoke(cli, [
                     "ai-hub", "configure", "anthropic",
-                    "--api-key", "sk-ant-test123456",
+                    "--api-key", "example-not-a-real-secret",
                     "--model", "claude-3-5-sonnet-20241022",
                 ])
         assert result.exit_code == 0
@@ -325,10 +325,10 @@ class TestAiHubConfigureCommand:
             with mock.patch("aksara.ai.hub_settings.save_aihub_settings"):
                 result = runner.invoke(cli, [
                     "ai-hub", "configure", "openai",
-                    "--api-key", "sk-verylongapikey5678",
+                    "--api-key", "example-not-a-real-secret",
                 ])
         assert result.exit_code == 0
-        assert "sk-verylongapikey5678" not in result.output
+        assert "example-not-a-real-secret" not in result.output
         assert "***" in result.output
 
 

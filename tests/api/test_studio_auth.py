@@ -1,7 +1,7 @@
 """
 Studio authentication tests.
 
-Tests verify_studio_auth: Authorization: Bearer <token> + studio_require_auth/studio_auth_token
+Tests verify_studio_auth: Authorization: Bearer <BEARER_TOKEN> + studio_require_auth/studio_auth_token
 settings. Returns 401 on auth failure.
 """
 from __future__ import annotations

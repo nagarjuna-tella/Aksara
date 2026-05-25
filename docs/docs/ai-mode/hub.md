@@ -32,7 +32,7 @@ The Hub has 4 tabs:
 aksara ai-provider list          # List all detected providers
 aksara ai-provider detect        # Auto-detect from environment
 aksara ai-provider ping          # Test connectivity
-aksara ai-provider configure openai --api-key sk-...
+aksara ai-provider configure openai --api-key <API_KEY>
 ```
 
 ### API Endpoints
@@ -48,7 +48,7 @@ aksara ai-provider configure openai --api-key sk-...
 
 1. Set an environment variable:
    ```bash
-   export OPENAI_API_KEY=sk-...
+   export OPENAI_API_KEY=<OPENAI_API_KEY>
    ```
 
 2. Verify detection:

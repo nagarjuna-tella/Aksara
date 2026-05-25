@@ -68,9 +68,9 @@ No test in this repository requires the model to exist. The commands document th
 Use placeholders only:
 
 ```bash
-export OPENAI_API_KEY=your-key-here
+export OPENAI_API_KEY=<OPENAI_API_KEY>
 export ANTHROPIC_API_KEY=your-key-here
-export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
 export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 ```
 
