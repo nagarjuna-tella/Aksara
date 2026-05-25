@@ -8,6 +8,25 @@ All notable changes to Aksara.
 
 ## Unreleased — v0.5.50 Migration Safety Patch
 
+### Migration Safety (P2-B Guardrails)
+
+- **M2M constraint name quoting and length bounding**: `ManyToManyField.get_join_table_sql()`
+  now uses a new `_make_constraint_name()` helper that truncates deterministically (SHA-256
+  suffix) when the name exceeds PostgreSQL's 63-byte identifier limit. Constraint names are
+  double-quoted via `_quote_ident()`. Source/target column references are also quoted.
+- **Partial-index predicate validation**: `IndexOp.__init__()` now validates the `where`
+  predicate through `_validate_sql_predicate()` at construction time. The check rejects
+  semicolons, line and block comments, and DDL/DML keywords (DROP, ALTER, DELETE, INSERT,
+  UPDATE, CREATE, TRUNCATE, GRANT, REVOKE, EXECUTE, CALL, COPY) using whole-word matching.
+  Safe predicates like `created_at > NOW()` are not affected.
+- **ArrayField sql_type validation**: `ArrayField.__init__()` now validates `sql_type`
+  through `_validate_array_sql_type()` at construction time. Only types from an explicit
+  allowlist of PostgreSQL base types are accepted. The value is normalised to uppercase.
+  Injection patterns (semicolons, comments, quotes, DDL keywords) are rejected outright.
+  **Migration note**: `ArrayField(sql_type="text[]")` now normalises to `"TEXT[]"`.
+  Custom or third-party PostgreSQL array base types not on the allowlist will raise
+  `ValueError` at construction time; open an issue to have them added.
+
 ### Migration Cleanup (P2-A)
 
 - Removed dead `Migration._initialized` flag. The flag was set in `__init__`
@@ -83,6 +102,12 @@ All notable changes to Aksara.
   cycle detection, advisory lock acquisition and release).
 - Added `tests/migrations/test_v0550_p1_safety.py` with 34 unit and DB-backed
   tests covering all four P1 fixes.
+- Added `tests/migrations/test_v0550_p2a_cleanup.py` with 22 regression tests
+  covering all four P2-A cleanups.
+- Added `tests/migrations/test_v0550_p2b_guardrails.py` with 62 unit tests
+  covering `_make_constraint_name`, M2M constraint quoting, `_validate_sql_predicate`,
+  `IndexOp.where` validation, `_validate_array_sql_type`, and `ArrayField` construction
+  validation.
 
 ---
 

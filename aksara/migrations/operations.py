@@ -16,9 +16,11 @@ Keep them in sync when adding new field types or options.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import re
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple, Union
 
@@ -60,6 +62,140 @@ def _validate_fk_action(action: str) -> str:
             f"Allowed: {', '.join(sorted(_VALID_FK_ACTIONS))}"
         )
     return normalised
+
+
+def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
+    """Build a deterministic PostgreSQL-safe constraint identifier.
+
+    Joins *parts* with underscores.  If the result is within *max_length*
+    bytes it is returned as-is.  When it exceeds the limit the name is
+    truncated to leave room for an 8-character stable hash suffix so that:
+
+      * The result is always <= *max_length* characters.
+      * Different long names produce different constraint names (no silent
+        collision).
+      * The output is deterministic across runs.
+
+    Callers must pass the result through ``_quote_ident()`` before embedding
+    in SQL.
+    """
+    full = "_".join(p for p in parts if p)
+    if len(full) <= max_length:
+        return full
+    # Hash the full name for a stable suffix; use first 8 hex chars.
+    suffix = hashlib.sha256(full.encode()).hexdigest()[:8]
+    # Trim to make room: max_length - 1 underscore - 8 hash chars
+    prefix = full[: max_length - 9]
+    return f"{prefix}_{suffix}"
+
+
+# DDL/DML keywords that must never appear in a partial-index predicate.
+_UNSAFE_PREDICATE_KEYWORDS = frozenset({
+    "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
+    "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY",
+})
+
+
+def _validate_sql_predicate(predicate: str, *, context: str = "SQL predicate") -> str:
+    """Validate a developer-authored SQL predicate (e.g. for a partial index).
+
+    Does **not** attempt to fully parse SQL — only rejects the most obvious
+    multi-statement and DDL/DML patterns that have no place in a WHERE clause:
+
+      * Semicolons (``;``).
+      * Line comments (``--``).
+      * Block comments (``/* … */``).
+      * DDL/DML keywords (DROP, ALTER, DELETE, INSERT, UPDATE, CREATE,
+        TRUNCATE, GRANT, REVOKE, EXECUTE, CALL, COPY).
+
+    Returns *predicate* unchanged when it looks safe.
+    Raises ``ValueError`` with a clear message otherwise.
+    """
+    if not isinstance(predicate, str):
+        raise ValueError(f"Unsafe {context}: must be a string, got {type(predicate).__name__!r}")
+    if ";" in predicate:
+        raise ValueError(f"Unsafe {context} for partial index: semicolons are not allowed.")
+    if "--" in predicate:
+        raise ValueError(f"Unsafe {context} for partial index: line comments (--) are not allowed.")
+    if "/*" in predicate or "*/" in predicate:
+        raise ValueError(f"Unsafe {context} for partial index: block comments are not allowed.")
+    # Word-boundary keyword check — case-insensitive
+    upper = predicate.upper()
+    for kw in _UNSAFE_PREDICATE_KEYWORDS:
+        # Match whole-word only to avoid rejecting 'created_at' for CREATE etc.
+        if re.search(rf"\b{re.escape(kw)}\b", upper):
+            raise ValueError(
+                f"Unsafe {context} for partial index: keyword {kw!r} is not allowed in predicates."
+            )
+    return predicate
+
+
+# Allowed PostgreSQL base types for array columns.
+# Normalised to uppercase; matched after stripping the trailing [] and optional
+# length specifier (e.g. VARCHAR(255)).
+_ALLOWED_ARRAY_BASE_TYPES = frozenset({
+    "TEXT", "INTEGER", "INT", "BIGINT", "SMALLINT",
+    "DOUBLE PRECISION", "REAL", "FLOAT",
+    "BOOLEAN", "UUID",
+    "DATE", "TIMESTAMP", "TIMESTAMPTZ",
+    "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITHOUT TIME ZONE",
+    "JSONB", "JSON",
+    "NUMERIC", "DECIMAL",
+    "VARCHAR", "CHARACTER VARYING",
+})
+
+# Patterns that are never safe inside a sql_type value.
+_UNSAFE_SQL_TYPE_RE = re.compile(r";|--|/\*|\*/|'|\"")
+_UNSAFE_SQL_TYPE_KEYWORDS = frozenset({
+    "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
+    "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY", "SELECT",
+})
+
+
+def _validate_array_sql_type(sql_type: str) -> str:
+    """Validate and normalise an ArrayField sql_type value.
+
+    Requirements:
+      * Must be a non-empty string.
+      * Must end with ``[]`` (case-insensitive normalised to uppercase).
+      * Base type (everything before the final ``[]``) must be on the allowed
+        list after stripping an optional ``(length)`` specifier.
+      * Must not contain semicolons, comments, quotes, or DDL/DML keywords.
+
+    Returns the normalised (uppercased) sql_type string.
+    Raises ``ValueError`` on violation.
+    """
+    if not isinstance(sql_type, str) or not sql_type.strip():
+        raise ValueError(
+            f"ArrayField sql_type must be a non-empty string; got {sql_type!r}"
+        )
+    upper = sql_type.strip().upper()
+    # Reject inline injection patterns
+    if _UNSAFE_SQL_TYPE_RE.search(sql_type):
+        raise ValueError(
+            f"ArrayField sql_type contains unsafe characters: {sql_type!r}"
+        )
+    # Keyword check
+    for kw in _UNSAFE_SQL_TYPE_KEYWORDS:
+        if re.search(rf"\b{re.escape(kw)}\b", upper):
+            raise ValueError(
+                f"ArrayField sql_type contains disallowed keyword {kw!r}: {sql_type!r}"
+            )
+    # Must end with []
+    if not upper.endswith("[]"):
+        raise ValueError(
+            f"ArrayField sql_type must end with '[]', got {sql_type!r}"
+        )
+    # Strip [] and optional (length) to get the base type
+    base = upper[:-2].strip()
+    # Allow optional length specifier like VARCHAR(255)
+    base_no_len = re.sub(r"\(\d+\)$", "", base).strip()
+    if base_no_len not in _ALLOWED_ARRAY_BASE_TYPES:
+        raise ValueError(
+            f"ArrayField sql_type has unknown base type {base_no_len!r}. "
+            f"Allowed base types: {', '.join(sorted(_ALLOWED_ARRAY_BASE_TYPES))}"
+        )
+    return upper
 
 
 def _escape_sql_string(value: str) -> str:
@@ -423,7 +559,7 @@ class ArrayField(FieldOp):
         nullable: bool = True,
         default: Any = None,
     ):
-        self.sql_type = sql_type
+        self.sql_type = _validate_array_sql_type(sql_type)
         self.nullable = nullable
         self.default = default
 
@@ -751,16 +887,20 @@ class ManyToManyField(FieldOp):
         jtn = _quote_ident(self.join_table_name)
         st = _quote_ident(self.source_table)
         tt = _quote_ident(self.target_table)
+        src_constraint = _quote_ident(_make_constraint_name("fk", self.join_table_name, "source"))
+        tgt_constraint = _quote_ident(_make_constraint_name("fk", self.join_table_name, "target"))
+        src_col = _quote_ident(self.source_column)
+        tgt_col = _quote_ident(self.target_column)
         return f'''CREATE TABLE IF NOT EXISTS {jtn} (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "source_id" UUID NOT NULL,
     "target_id" UUID NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT fk_{self.join_table_name}_source 
-        FOREIGN KEY (source_id) REFERENCES {st}({self.source_column}) ON DELETE CASCADE,
-    CONSTRAINT fk_{self.join_table_name}_target 
-        FOREIGN KEY (target_id) REFERENCES {tt}({self.target_column}) ON DELETE CASCADE,
-    UNIQUE (source_id, target_id)
+    CONSTRAINT {src_constraint}
+        FOREIGN KEY ("source_id") REFERENCES {st}({src_col}) ON DELETE CASCADE,
+    CONSTRAINT {tgt_constraint}
+        FOREIGN KEY ("target_id") REFERENCES {tt}({tgt_col}) ON DELETE CASCADE,
+    UNIQUE ("source_id", "target_id")
 )'''
     
     def get_drop_join_table_sql(self) -> str:
@@ -1040,7 +1180,7 @@ class IndexOp:
         self.table = table
         self.columns = columns
         self.unique = unique
-        self.where = where
+        self.where = _validate_sql_predicate(where, context="IndexOp.where") if where is not None else None
         self.method = method
     
     def to_sql(self) -> str:
