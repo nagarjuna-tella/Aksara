@@ -8,6 +8,27 @@ All notable changes to Aksara.
 
 ## Unreleased — v0.5.50 Migration Safety Patch
 
+### Migration Execution Unification (P2-C-lite)
+
+- **CLI migrate now uses the canonical executor path**: `aksara migrate` previously applied
+  migrations through its own manual loop, bypassing the advisory lock, transaction wrapping,
+  SQL statement splitting, and checksum recording introduced in P0/P1. It now delegates to
+  `aksara.migrations.executor.apply_migrations()` for all real and fake-mode runs. The
+  dry-run preview path is unchanged.
+- **Testing helper uses the canonical executor path**: `aksara.testing._apply_test_migrations()`
+  previously applied migrations without transactions and recorded `NULL` checksums. It now
+  delegates to `apply_migrations()`, giving test environments the same safety guarantees as
+  production runs and eliminating spurious checksum warnings on subsequent `apply_migrations()`
+  calls.
+- **CLI legacy helpers preserved**: `MIGRATION_TABLE_SQL`, `compute_checksum`,
+  `ensure_migrations_table`, `get_applied_migrations`, and `record_migration` remain importable
+  from `aksara.cli.main` as compatibility shims. New code should import from
+  `aksara.migrations.executor`.
+- **Deferred**: Migration table schema versioning (`app_label` column, `schema_version` column,
+  `UNIQUE(app_label, name)` redesign) and automatic checksum backfill are deferred to a future
+  design pass. Automatic backfill cannot be done safely because it would bless already-modified
+  migration files with their current checksum, defeating tamper detection.
+
 ### Migration Safety (P2-B Guardrails)
 
 - **M2M constraint name quoting and length bounding**: `ManyToManyField.get_join_table_sql()`
@@ -108,6 +129,10 @@ All notable changes to Aksara.
   covering `_make_constraint_name`, M2M constraint quoting, `_validate_sql_predicate`,
   `IndexOp.where` validation, `_validate_array_sql_type`, and `ArrayField` construction
   validation.
+- Added `tests/migrations/test_v0550_p2c_unification.py` with 17 unit tests verifying
+  that the CLI `migrate` command and the testing helper both delegate to
+  `apply_migrations()`, that the CLI no longer calls `op.apply()` directly, and that
+  `record_migration` is not called independently from the testing helper.
 
 ---
 

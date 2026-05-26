@@ -127,10 +127,20 @@ class TestMigrateCommand:
         return_value=["0001_initial"],
     )
     @patch("aksara.migrations.executor.check_migration_conflicts", return_value=[])
-    @patch("aksara.migrations.executor.get_pending_migrations", return_value=[])
+    @patch(
+        "aksara.migrations.executor.apply_migrations",
+        new_callable=AsyncMock,
+        return_value={
+            "applied": [],
+            "skipped": ["0001_initial"],
+            "pending_skipped": [],
+            "errors": [],
+            "total_discovered": 1,
+        },
+    )
     def test_all_migrations_already_applied(
         self,
-        mock_pending,
+        mock_apply,
         mock_conflicts,
         mock_applied,
         mock_ensure_table,

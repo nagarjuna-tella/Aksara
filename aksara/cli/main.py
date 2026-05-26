@@ -159,13 +159,20 @@ async def get_applied_migrations(db) -> List[str]:
     return [row['name'] for row in rows]
 
 
-# NOTE: This is a legacy module-level helper kept for any external caller that
-# may import `aksara.cli.main.record_migration`. The canonical implementation
-# now lives in `aksara.migrations.executor.record_migration` (Optional checksum)
-# and is what the migrate command uses via a function-local import that shadows
-# this name. Do not call this helper from new code.
+# ---------------------------------------------------------------------------
+# Legacy CLI-level helpers
+#
+# MIGRATION_TABLE_SQL, compute_checksum, ensure_migrations_table,
+# get_applied_migrations, and record_migration below are compatibility
+# shims kept so that external code importing them from aksara.cli.main
+# continues to work.
+#
+# The canonical implementations live in aksara.migrations.executor and are
+# what the `aksara migrate` command now uses internally.  Do not call these
+# CLI-level helpers from new code.
+# ---------------------------------------------------------------------------
 async def record_migration(db, name: str, checksum: str) -> None:
-    """Record a migration as applied (legacy — see note above)."""
+    """Legacy shim — canonical implementation is aksara.migrations.executor.record_migration."""
     await db.execute(
         "INSERT INTO aksara_migrations (name, checksum) VALUES ($1, $2)",
         name, checksum
@@ -1331,85 +1338,69 @@ def migrate(
                         ui.text("Migration aborted. Resolve conflicts first.")
                         return
                 
-                pending = get_pending_migrations(migration_files, applied)
-                
-                if not pending:
+                if dry_run:
+                    # Dry-run: preview what would be applied, nothing is executed or recorded.
+                    pending = get_pending_migrations(migration_files, applied)
+                    if not pending:
+                        ui.blank()
+                        ui.success("All migrations already applied!")
+                        return
                     ui.blank()
-                    ui.success("All migrations already applied!")
-                    return
-                
-                ui.blank()
-                ui.info(f"{len(pending)} pending migration(s):")
-
-                with ui.progress(len(pending), "Applying migrations") as progress:
-                    for i, (name, path) in enumerate(pending):
+                    ui.info(f"{len(pending)} pending migration(s) [DRY RUN]:")
+                    for name, path in pending:
+                        ui.blank()
                         if path.suffix == ".py":
-                            if dry_run:
-                                ui.blank()
-                                ui.info(f"[DRY RUN] Would apply: {name}")
-                                try:
-                                    migration_class = load_migration_module(path)
-                                    migration = migration_class()
-                                    for op in migration.operations:
-                                        ui.text(f"    > {op.describe()}")
-                                except Exception as e:
-                                    ui.warning(f"Error loading: {e}")
-                                progress.advance(description=f"Scanned {name}")
-                            elif fake:
-                                ui.blank()
-                                ui.info(f"Marking as applied: {name}")
-                                await record_migration(db, name)
-                                ui.success("Marked (not executed)")
-                                progress.advance(description=f"Marked {name}")
-                            else:
-                                ui.blank()
-                                ui.info(f"Applying {name}")
-                                try:
-                                    migration_class = load_migration_module(path)
-                                    migration = migration_class()
-                                    for op in migration.operations:
-                                        ui.text(f"    > {op.describe()}")
-                                        await op.apply(db)
-                                    await record_migration(db, name)
-                                    ui.success("Applied successfully")
-                                    progress.advance(description=f"Applied {name}")
-                                except Exception as e:
-                                    ui.error(f"Error: {e}")
-                                    _display_pending_skipped(ui, pending, i)
-                                    return
+                            ui.info(f"[DRY RUN] Would apply: {name}")
+                            try:
+                                migration_class = load_migration_module(path)
+                                migration = migration_class()
+                                for op in migration.operations:
+                                    ui.text(f"    > {op.describe()}")
+                            except Exception as e:
+                                ui.warning(f"Error loading: {e}")
                         elif path.suffix == ".sql":
+                            ui.info(f"[DRY RUN] Would apply SQL: {name}")
                             sql = path.read_text()
-                            checksum = compute_checksum(sql)
+                            lines = sql.strip().split('\n')[:5]
+                            for line in lines:
+                                ui.text(f"    {line}")
+                            if len(sql.strip().split('\n')) > 5:
+                                ui.text(
+                                    f"    ... ({len(sql.strip().split(chr(10)))} lines)"
+                                )
+                    return
+                else:
+                    # Canonical executor path: advisory lock per run, transaction per
+                    # migration, SQL statement splitting, checksum recording and
+                    # verification.  This is the same path used by apply_migrations().
+                    results = await apply_migrations(
+                        db, mig_dir, fake=fake, verbose=False, include_internal=True,
+                    )
 
-                            if dry_run:
-                                ui.blank()
-                                ui.info(f"[DRY RUN] Would apply SQL: {name}")
-                                lines = sql.strip().split('\n')[:5]
-                                for line in lines:
-                                    ui.text(f"    {line}")
-                                if len(sql.strip().split('\n')) > 5:
-                                    ui.text(
-                                        f"    ... ({len(sql.strip().split(chr(10)))} lines)"
-                                    )
-                                progress.advance(description=f"Scanned {name}")
-                            elif fake:
-                                ui.blank()
-                                ui.info(f"Marking as applied: {name}")
-                                await record_migration(db, name, checksum)
-                                ui.success("Marked (not executed)")
-                                progress.advance(description=f"Marked {name}")
-                            else:
-                                ui.blank()
-                                ui.info(f"Applying SQL: {name}")
-                                try:
-                                    await db.execute(sql)
-                                    await record_migration(db, name, checksum)
-                                    ui.success("Applied successfully")
-                                    progress.advance(description=f"Applied {name}")
-                                except Exception as e:
-                                    ui.error(f"Error: {e}")
-                                    _display_pending_skipped(ui, pending, i)
-                                    return
+                    if not results["applied"] and not results["errors"]:
+                        ui.blank()
+                        ui.success("All migrations already applied!")
+                        return
+
+                    if results["applied"]:
+                        ui.blank()
+                        action = "marked as applied" if fake else "applied successfully"
+                        for name in results["applied"]:
+                            ui.success(f"  ✓ {name} — {action}")
+
+                    if results["errors"]:
+                        ui.blank()
+                        for name, err in results["errors"]:
+                            ui.error(f"  ✗ {name}: {err}")
+                        if results["pending_skipped"]:
+                            ui.blank()
+                            ui.warning(
+                                f"Skipped {len(results['pending_skipped'])} pending "
+                                f"migration(s) after failure:"
+                            )
+                            for skipped_name in results["pending_skipped"]:
+                                ui.text(f"  - {skipped_name}")
+                        sys.exit(1)
             else:
                 # Model-based migrations (v0.1 behavior - fallback)
                 models = ModelRegistry.all()
