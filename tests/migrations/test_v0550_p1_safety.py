@@ -138,6 +138,22 @@ class TestChecksumHelper:
         f2.write_text("content B")
         assert _compute_file_checksum(f1) != _compute_file_checksum(f2)
 
+    def test_lf_and_crlf_content_have_same_checksum(self, tmp_path):
+        lf = tmp_path / "lf.py"
+        crlf = tmp_path / "crlf.py"
+        lf.write_bytes(b"line1\nline2\n")
+        crlf.write_bytes(b"line1\r\nline2\r\n")
+
+        assert _compute_file_checksum(lf) == _compute_file_checksum(crlf)
+
+    def test_lf_and_cr_only_content_have_same_checksum(self, tmp_path):
+        lf = tmp_path / "lf.py"
+        cr = tmp_path / "cr.py"
+        lf.write_bytes(b"line1\nline2\n")
+        cr.write_bytes(b"line1\rline2\r")
+
+        assert _compute_file_checksum(lf) == _compute_file_checksum(cr)
+
 
 class TestApplyMigrationStoresChecksum:
     """Unit tests — verify apply_migration passes checksum to record_migration."""
@@ -168,6 +184,31 @@ class TestApplyMigrationStoresChecksum:
         _, call_name, call_checksum = rm.call_args.args
         assert call_checksum is not None
         assert len(call_checksum) == 16
+
+    @pytest.mark.asyncio
+    async def test_python_migration_checksum_normalizes_line_endings(self, tmp_path):
+        lf = tmp_path / "0001_lf.py"
+        crlf = tmp_path / "0001_crlf.py"
+        migration_code_lf = b"from aksara.migrations.base import Migration\n\nclass Migration(Migration):\n    operations = []\n"
+        migration_code_crlf = migration_code_lf.replace(b"\n", b"\r\n")
+        lf.write_bytes(migration_code_lf)
+        crlf.write_bytes(migration_code_crlf)
+        conn = self._make_raw_conn()
+
+        with patch("aksara.migrations.executor.load_migration_module") as lm, \
+             patch("aksara.migrations.executor.record_migration", new_callable=AsyncMock) as rm:
+            mock_mig = MagicMock()
+            mock_mig.return_value.operations = []
+            lm.return_value = mock_mig
+
+            await apply_migration(conn, "0001_lf", lf, fake=False, verbose=False)
+            lf_checksum = rm.await_args.args[2]
+            rm.reset_mock()
+
+            await apply_migration(conn, "0001_crlf", crlf, fake=False, verbose=False)
+            crlf_checksum = rm.await_args.args[2]
+
+        assert lf_checksum == crlf_checksum
 
     @pytest.mark.asyncio
     async def test_direct_apply_ensures_tracking_table_before_transaction(self, tmp_path):
@@ -250,6 +291,26 @@ class TestApplyMigrationStoresChecksum:
         assert call_checksum is not None
         assert len(call_checksum) == 16
 
+    @pytest.mark.asyncio
+    async def test_sql_migration_checksum_normalizes_line_endings(self, tmp_path):
+        lf = tmp_path / "0001_lf.sql"
+        crlf = tmp_path / "0001_crlf.sql"
+        sql_lf = b"CREATE TABLE t (id SERIAL);\nINSERT INTO t VALUES (1);\n"
+        sql_crlf = sql_lf.replace(b"\n", b"\r\n")
+        lf.write_bytes(sql_lf)
+        crlf.write_bytes(sql_crlf)
+        conn = self._make_raw_conn()
+
+        with patch("aksara.migrations.executor.record_migration", new_callable=AsyncMock) as rm:
+            await apply_migration(conn, "0001_lf", lf, fake=False, verbose=False)
+            lf_checksum = rm.await_args.args[2]
+            rm.reset_mock()
+
+            await apply_migration(conn, "0001_crlf", crlf, fake=False, verbose=False)
+            crlf_checksum = rm.await_args.args[2]
+
+        assert lf_checksum == crlf_checksum
+
 
 class TestChecksumVerification:
     """Checksum mismatch and NULL-checksum behavior in apply_migrations."""
@@ -298,6 +359,45 @@ class TestChecksumVerification:
              patch("aksara.migrations.executor.get_applied_migration_records",
                    new_callable=AsyncMock,
                    return_value={"0001_init": "0000000000000000"}), \
+             patch("aksara.migrations.executor.discover_all_migrations",
+                   return_value=[("0001_init", f)]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):
+            with pytest.raises(ValueError, match="checksum mismatch"):
+                await apply_migrations(conn, tmp_path, verbose=False)
+
+    @pytest.mark.asyncio
+    async def test_checksum_verification_ignores_crlf_vs_lf_differences(self, tmp_path):
+        f = tmp_path / "0001_init.py"
+        lf_content = b"# migration\nprint('ok')\n"
+        f.write_bytes(lf_content)
+        stored_cs = _compute_file_checksum(f)
+        f.write_bytes(lf_content.replace(b"\n", b"\r\n"))
+
+        conn = self._make_conn()
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch("aksara.migrations.executor.get_applied_migration_records",
+                   new_callable=AsyncMock,
+                   return_value={"0001_init": stored_cs}), \
+             patch("aksara.migrations.executor.discover_all_migrations",
+                   return_value=[("0001_init", f)]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == []
+        assert result["skipped"] == ["0001_init"]
+
+    @pytest.mark.asyncio
+    async def test_checksum_verification_still_fails_when_content_changes(self, tmp_path):
+        f = tmp_path / "0001_init.py"
+        f.write_bytes(b"# migration\nprint('ok')\n")
+        stored_cs = _compute_file_checksum(f)
+        f.write_bytes(b"# migration\nprint('changed')\n")
+
+        conn = self._make_conn()
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch("aksara.migrations.executor.get_applied_migration_records",
+                   new_callable=AsyncMock,
+                   return_value={"0001_init": stored_cs}), \
              patch("aksara.migrations.executor.discover_all_migrations",
                    return_value=[("0001_init", f)]), \
              patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):

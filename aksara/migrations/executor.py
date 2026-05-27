@@ -57,7 +57,14 @@ async def ensure_migrations_table(connection) -> None:
 def _compute_file_checksum(path: Path) -> str:
     """SHA-256 checksum of a migration file, truncated to 16 hex chars."""
     import hashlib
-    return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+
+    data = _normalize_checksum_bytes(path.read_bytes())
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
+def _normalize_checksum_bytes(data: bytes) -> bytes:
+    """Normalise migration file line endings before checksum hashing."""
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
 
 async def get_applied_migrations(connection) -> List[str]:
