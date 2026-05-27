@@ -13,6 +13,10 @@ workflow and confirm these checks pass:
 - Security tests
 - Diagnostics tests
 - Bounded fuzz/adversarial tests
+- DB-backed migration tests (transactional application, advisory lock, and
+  checksum verification) against a real PostgreSQL database
+- A migration smoke check: `aksara migrate` and `aksara status` against a
+  scratch database, confirming checksum recording and verification
 - `aksara doctor production-check`
 - Strict docs build
 - Dependency audit

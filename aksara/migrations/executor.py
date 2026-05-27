@@ -54,22 +54,49 @@ async def ensure_migrations_table(connection) -> None:
         pass  # Column already nullable or doesn't exist
 
 
+def _compute_file_checksum(path: Path) -> str:
+    """SHA-256 checksum of a migration file, truncated to 16 hex chars."""
+    import hashlib
+
+    data = _normalize_checksum_bytes(path.read_bytes())
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
+def _normalize_checksum_bytes(data: bytes) -> bytes:
+    """Normalise migration file line endings before checksum hashing."""
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 async def get_applied_migrations(connection) -> List[str]:
     """
     Get list of applied migration names from the database.
-    
+
     Args:
         connection: Database connection
-        
+
     Returns:
         List of migration names that have been applied
     """
     await ensure_migrations_table(connection)
-    
+
     rows = await connection.fetch(
         "SELECT name FROM aksara_migrations ORDER BY applied_at, id"
     )
     return [row['name'] for row in rows]
+
+
+async def get_applied_migration_records(connection) -> Dict[str, Optional[str]]:
+    """
+    Get applied migrations with their stored checksums.
+
+    Returns:
+        Dict mapping migration name → stored checksum (or None if not stored).
+    """
+    await ensure_migrations_table(connection)
+    rows = await connection.fetch(
+        "SELECT name, checksum FROM aksara_migrations ORDER BY applied_at, id"
+    )
+    return {row["name"]: row["checksum"] for row in rows}
 
 
 async def record_migration(
@@ -311,10 +338,23 @@ def extract_app_label_from_name(migration_name: str, file_path: Path) -> str:
     return parent if parent else "default"
 
 
+def _format_migration_display_name(app_label: str, name: str) -> str:
+    """Return a readable migration identifier for user-facing messages."""
+    if not app_label:
+        return name
+
+    normalized_app = app_label.replace(".", "_")
+    if name.startswith(f"{normalized_app}_") or name.startswith("aksara_contrib_"):
+        return name
+
+    return f"{app_label}.{name}"
+
+
 def build_migration_graph(
     migrations_path: Optional[Path] = None,
     include_internal: bool = True,
     migrations_list: Optional[List[Tuple[str, Path]]] = None,
+    strict: bool = True,
 ) -> MigrationGraph:
     """
     Build a migration graph from discovered migrations.
@@ -327,9 +367,15 @@ def build_migration_graph(
         include_internal: Whether to include internal migrations
         migrations_list: Optional pre-discovered list of migrations.
                         If provided, migrations_path is ignored.
+        strict: When True, raise ValueError if a Python migration file
+                cannot be loaded. When False, keep legacy best-effort
+                behavior and add a dependency-less node.
         
     Returns:
         A MigrationGraph with all discovered migrations
+
+    Raises:
+        ValueError: If strict=True and a Python migration file cannot be loaded.
         
     Example:
         graph = build_migration_graph(Path("./migrations"))
@@ -383,9 +429,14 @@ def build_migration_graph(
             graph.add_node(node)
             
         except Exception as e:
-            logger.warning(f"Could not load migration {name}: {e}")
-            # Still add the node without dependencies
             app_label = extract_app_label_from_name(name, path)
+            display_name = _format_migration_display_name(app_label, name)
+            if strict:
+                raise ValueError(
+                    f"Could not load migration {display_name} from {path}: {e}"
+                ) from e
+            # Non-strict: warn and continue without dependencies (best-effort graph).
+            logger.warning(f"Could not load migration {display_name} from {path}: {e}")
             node = MigrationNode(app_label=app_label, name=name)
             graph.add_node(node)
     
@@ -438,6 +489,183 @@ def check_migration_conflicts(
 # Migration Execution
 # =============================================================================
 
+
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _raw_connection(connection):
+    """Yield a raw asyncpg connection.
+
+    `connection` can be either:
+      - an asyncpg Connection/PoolConnectionProxy (already has `.transaction()`)
+      - an Aksara Database wrapper (has `.acquire()` but not `.transaction()`)
+
+    Callers that need a single pinned connection for advisory locking or
+    transactions must go through this helper so both cases are handled.
+    """
+    if hasattr(connection, "transaction"):
+        # Already a raw asyncpg connection — use as-is.
+        yield connection
+    else:
+        # Database wrapper — acquire a dedicated connection from the pool.
+        async with connection.acquire() as conn:
+            yield conn
+
+
+def _split_sql_statements(sql: str) -> list[str]:
+    """Split a SQL script into individual statements on ';' boundaries.
+
+    asyncpg's connection.execute() only runs the first statement in a
+    multi-statement string.  This helper uses a character-level scanner that
+    respects single-quoted strings, double-quoted identifiers, dollar-quoted
+    blocks, line comments (--), and block comments (/* ... */) so that
+    semicolons inside any of those constructs are never treated as statement
+    delimiters.
+
+    Raises:
+        ValueError: If the SQL ends while still inside a block comment,
+            single-quoted string, double-quoted identifier, or dollar-quoted
+            block.
+    """
+    sql = sql.replace("\r\n", "\n").replace("\r", "\n")
+    statements: list[str] = []
+    current: list[str] = []
+    i = 0
+    n = len(sql)
+    state = "normal"
+    block_comment_depth = 0
+    dollar_tag: str | None = None
+
+    while i < n:
+        ch = sql[i]
+        nxt = sql[i + 1] if i + 1 < n else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                current.append(ch)
+                state = "normal"
+            i += 1
+            continue
+
+        if state == "block_comment":
+            if ch == "/" and nxt == "*":
+                block_comment_depth += 1
+                i += 2
+                continue
+            if ch == "*" and nxt == "/":
+                block_comment_depth -= 1
+                i += 2
+                if block_comment_depth == 0:
+                    state = "normal"
+                continue
+            i += 1
+            continue
+
+        if state == "single_quote":
+            current.append(ch)
+            i += 1
+            if ch == "'":
+                if i < n and sql[i] == "'":
+                    current.append(sql[i])
+                    i += 1
+                else:
+                    state = "normal"
+            continue
+
+        if state == "double_quote":
+            current.append(ch)
+            i += 1
+            if ch == '"':
+                if i < n and sql[i] == '"':
+                    current.append(sql[i])
+                    i += 1
+                else:
+                    state = "normal"
+            continue
+
+        if state == "dollar_quote":
+            if dollar_tag is not None and sql.startswith(dollar_tag, i):
+                current.extend(dollar_tag)
+                i += len(dollar_tag)
+                dollar_tag = None
+                state = "normal"
+                continue
+            current.append(ch)
+            i += 1
+            continue
+
+        # Line comment: skip to end of line (do not add to current statement)
+        if ch == "-" and nxt == "-":
+            state = "line_comment"
+            i += 2
+            continue
+
+        # Block comment: skip /* ... */
+        if ch == "/" and nxt == "*":
+            state = "block_comment"
+            block_comment_depth = 1
+            current.append(" ")
+            i += 2
+            continue
+
+        # Single-quoted string literal — copy verbatim, handling '' escape
+        if ch == "'":
+            state = "single_quote"
+            current.append(ch)
+            i += 1
+            continue
+
+        # Double-quoted identifier — copy verbatim, handling "" escape
+        if ch == '"':
+            state = "double_quote"
+            current.append(ch)
+            i += 1
+            continue
+
+        # Dollar-quoting: $$...$$  or  $tag$...$tag$
+        if ch == "$":
+            j = i + 1
+            while j < n and sql[j] != "$":
+                if not (sql[j].isalnum() or sql[j] == "_"):
+                    break
+                j += 1
+            if j < n and sql[j] == "$":
+                dollar_tag = sql[i : j + 1]
+                current.extend(dollar_tag)
+                state = "dollar_quote"
+                i = j + 1
+                continue
+
+        # Statement delimiter
+        if ch == ";":
+            stmt = "".join(current).strip()
+            if stmt:
+                statements.append(stmt)
+            current = []
+            i += 1
+            continue
+
+        current.append(ch)
+        i += 1
+
+    if state == "block_comment":
+        raise ValueError("Unterminated block comment in SQL migration")
+    if state == "single_quote":
+        raise ValueError("Unterminated single-quoted string in SQL migration")
+    if state == "double_quote":
+        raise ValueError("Unterminated double-quoted identifier in SQL migration")
+    if state == "dollar_quote":
+        raise ValueError("Unterminated dollar-quoted block in SQL migration")
+
+    # Trailing statement without a terminating semicolon
+    remainder = "".join(current).strip()
+    if remainder:
+        statements.append(remainder)
+
+    return statements
+
+
 async def apply_migration(
     connection,
     name: str,
@@ -445,6 +673,7 @@ async def apply_migration(
     *,
     fake: bool = False,
     verbose: bool = True,
+    ensure_table: bool = True,
 ) -> bool:
     """
     Apply a single migration.
@@ -455,41 +684,57 @@ async def apply_migration(
         file_path: Path to migration file
         fake: If True, record as applied without executing
         verbose: If True, print progress messages
+        ensure_table: If True, ensure the migration tracking table exists
         
     Returns:
         True if successful, False otherwise
     """
     try:
-        if file_path.suffix == ".py":
-            # Python migration
-            migration_class = load_migration_module(file_path)
-            migration = migration_class()
-            
-            if not fake:
-                for i, op in enumerate(migration.operations):
-                    if verbose:
-                        logger.info(f"  → {op.describe()}")
-                    await op.apply(connection)
-            
-            await record_migration(connection, name)
-            
-        elif file_path.suffix == ".sql":
-            # Legacy SQL migration
-            sql = file_path.read_text()
-            
-            if not fake:
-                await connection.execute(sql)
-            
-            # Compute simple checksum for SQL
-            import hashlib
-            checksum = hashlib.sha256(sql.encode()).hexdigest()[:16]
-            await record_migration(connection, name, checksum)
-        
-        else:
-            raise ValueError(f"Unknown migration type: {file_path.suffix}")
-        
+        async with _raw_connection(connection) as conn:
+            # ensure_migrations_table() is idempotent, and direct apply_migration()
+            # calls need the tracking table before recording the migration.
+            if ensure_table:
+                await ensure_migrations_table(conn)
+
+            if file_path.suffix == ".py":
+                # Python migration: all operations + record_migration in one transaction
+                # so a partial failure leaves the DB unchanged and the migration unrecorded.
+                migration_class = load_migration_module(file_path)
+                migration = migration_class()
+                checksum = _compute_file_checksum(file_path)
+
+                if not fake:
+                    async with conn.transaction():
+                        for op in migration.operations:
+                            if verbose:
+                                logger.info(f"  → {op.describe()}")
+                            await op.apply(conn)
+                        await record_migration(conn, name, checksum)
+                else:
+                    await record_migration(conn, name, checksum)
+
+            elif file_path.suffix == ".sql":
+                # SQL migration: split on statement boundaries so every statement runs,
+                # then record_migration in the same transaction.
+                # Use _compute_file_checksum so the checksum matches what integrity
+                # verification will recompute from the file on disk.
+                checksum = _compute_file_checksum(file_path)
+                sql = file_path.read_text()
+
+                if not fake:
+                    statements = _split_sql_statements(sql)
+                    async with conn.transaction():
+                        for stmt in statements:
+                            await conn.execute(stmt)
+                        await record_migration(conn, name, checksum)
+                else:
+                    await record_migration(conn, name, checksum)
+
+            else:
+                raise ValueError(f"Unknown migration type: {file_path.suffix}")
+
         return True
-        
+
     except Exception as e:
         logger.error(f"Error applying migration {name}: {e}")
         raise
@@ -515,82 +760,201 @@ async def apply_migrations(
         
     Returns:
         Dict with results:
-            - applied: List of applied migration names
-            - skipped: List of already-applied migrations
-            - errors: List of (name, error) tuples if any
+            - applied: List of migrations applied in this run.
+                        - skipped: List of migrations discovered for this run that were
+                            already applied before this run.
+            - pending_skipped: List of pending migrations not attempted
+              because an earlier pending migration failed.
+            - errors: List of (name, error) tuples.
+                        - total_discovered: Total number of migrations discovered for this
+                            run after include_internal filtering.
     """
     migrations_path = Path(migrations_path)
-    
-    # Ensure migrations table exists
-    await ensure_migrations_table(connection)
-    
-    # Get applied migrations
-    applied = await get_applied_migrations(connection)
-    
-    # Discover all migrations (internal + user)
-    all_migrations = discover_all_migrations(
-        user_migrations_path=migrations_path,
-        include_internal=include_internal,
+
+    # Pin to a single raw asyncpg connection for the entire migration run.
+    # This is required because:
+    #   1. Advisory locks are session-scoped — releasing the connection also
+    #      releases the lock.
+    #   2. The Database wrapper acquires a fresh pool connection per call, so
+    #      we must hold one explicitly here.
+    async with _raw_connection(connection) as conn:
+        return await _apply_migrations_on_conn(
+            conn,
+            migrations_path,
+            fake=fake,
+            verbose=verbose,
+            include_internal=include_internal,
+        )
+
+
+async def _apply_migrations_on_conn(
+    conn,
+    migrations_path: Path,
+    *,
+    fake: bool,
+    verbose: bool,
+    include_internal: bool,
+) -> Dict[str, Any]:
+    """Inner implementation of apply_migrations that works on a raw asyncpg connection."""
+    # Acquire a session-level advisory lock so that two processes cannot run
+    # migrations concurrently.  pg_try_advisory_lock() is non-blocking; if
+    # another process holds the lock we fail fast rather than silently
+    # double-applying.
+    _ADVISORY_LOCK_KEY = "aksara_migrations"
+    lock_acquired = await conn.fetchval(
+        "SELECT pg_try_advisory_lock(hashtext($1))", _ADVISORY_LOCK_KEY
     )
-    
-    # Get pending migrations
-    pending = get_pending_migrations(all_migrations, applied)
-    
-    results = {
-        "applied": [],
-        "skipped": applied,
-        "errors": [],
-        "total_discovered": len(all_migrations),
-    }
-    
-    if not pending:
+    if not lock_acquired:
+        raise RuntimeError(
+            "Could not acquire Aksara migration advisory lock. Another migration "
+            "process may already be running. Wait for that process to finish. If "
+            "the lock appears stuck, identify the holding backend using "
+            "pg_locks/pg_stat_activity and terminate that backend if appropriate."
+        )
+
+    try:
+        # Ensure migrations table exists
+        await ensure_migrations_table(conn)
+
+        # Get applied migrations with checksums for integrity verification
+        applied_records = await get_applied_migration_records(conn)
+        applied = list(applied_records.keys())
+
+        # Discover migrations used for this execution run.
+        execution_migrations = discover_all_migrations(
+            user_migrations_path=migrations_path,
+            include_internal=include_internal,
+        )
+        execution_names = {name for name, _ in execution_migrations}
+        skipped_for_run = [name for name in applied_records if name in execution_names]
+        known_migrations = execution_migrations
+        if not include_internal:
+            known_migrations = discover_all_migrations(
+                user_migrations_path=migrations_path,
+                include_internal=True,
+            )
+
+        # Warn about applied migration records that no longer have a file on disk.
+        # This is advisory: the migration ran successfully in the past, but the
+        # file has since been deleted.  We warn rather than fail so that teams
+        # can clean up tracking rows deliberately.
+        discovered_names = {name for name, _ in known_migrations}
+        for applied_name in applied_records:
+            if applied_name not in discovered_names:
+                logger.warning(
+                    f"Applied migration {applied_name!r} is recorded in the database "
+                    "but its file was not found on disk. "
+                    "If you intentionally deleted the file, remove the tracking row "
+                    "manually with a parameterized query: "
+                    "DELETE FROM aksara_migrations WHERE name = $1; "
+                    f"migration name: {applied_name!r}"
+                )
+
+        # Verify checksums of already-applied migrations whose files are still present.
+        # A mismatch means an applied migration file was edited, which is unsafe.
+        applied_by_name = {
+            name: path for name, path in known_migrations if name in applied_records
+        }
+        for mig_name, mig_path in applied_by_name.items():
+            stored = applied_records.get(mig_name)
+            if stored is None:
+                # Migrated before checksums were introduced — allow but warn.
+                logger.warning(
+                    f"Checksum unavailable for previously applied migration {mig_name!r}. "
+                    "It will not be verified."
+                )
+                continue
+            current = _compute_file_checksum(mig_path)
+            if current != stored:
+                raise ValueError(
+                    f"Migration checksum mismatch for {mig_name!r}.\n"
+                    "The migration has already been applied but the file contents have changed.\n"
+                    "Do not edit applied migrations. Create a new migration instead."
+                )
+
+        # Get pending migrations
+        pending = get_pending_migrations(execution_migrations, applied)
+
+        results: Dict[str, Any] = {
+            "applied": [],
+            "skipped": skipped_for_run,
+            "pending_skipped": [],
+            "errors": [],
+            "total_discovered": len(execution_migrations),
+        }
+
+        if not pending:
+            if verbose:
+                logger.info("No pending migrations.")
+            return results
+
+        # Apply only pending migrations, but do so in dependency order.
+        pending_by_name = {name: path for name, path in pending}
+        ordered_pending = [
+            (node.name, pending_by_name[node.name])
+            for node in build_migration_graph(
+                migrations_path=migrations_path,
+                include_internal=include_internal,
+                migrations_list=execution_migrations,
+            ).execution_order()
+            if node.name in pending_by_name
+        ]
+
         if verbose:
-            logger.info("No pending migrations.")
+            logger.info(f"Found {len(pending)} pending migration(s).")
+
+        for i, (name, path) in enumerate(ordered_pending):
+            try:
+                if verbose:
+                    action = "Marking" if fake else "Applying"
+                    logger.info(f"\n{action}: {name}")
+
+                await apply_migration(
+                    conn,
+                    name,
+                    path,
+                    fake=fake,
+                    verbose=verbose,
+                    ensure_table=False,
+                )
+
+                results["applied"].append(name)
+
+                if verbose:
+                    status = "marked as applied" if fake else "applied successfully"
+                    logger.info(f"  ✓ {status}")
+
+            except Exception as e:
+                results["errors"].append((name, str(e)))
+                if verbose:
+                    logger.error(f"  ✗ Error: {e}")
+                # Collect remaining pending migrations that will not be attempted
+                skipped_remaining = [n for n, _ in ordered_pending[i + 1:]]
+                results["pending_skipped"] = skipped_remaining
+                if verbose and skipped_remaining:
+                    logger.warning(
+                        f"Skipping {len(skipped_remaining)} pending migration(s) "
+                        f"because {name!r} failed:"
+                    )
+                    for skipped_name in skipped_remaining:
+                        logger.warning(f"  - {skipped_name}")
+                # Stop on first error
+                break
+
         return results
 
-    # Apply only pending migrations, but do so in dependency order.
-    pending_by_name = {name: path for name, path in pending}
-    ordered_pending = [
-        (node.name, pending_by_name[node.name])
-        for node in build_migration_graph(
-            migrations_path=migrations_path,
-            include_internal=include_internal,
-            migrations_list=all_migrations,
-        ).execution_order()
-        if node.name in pending_by_name
-    ]
-    
-    if verbose:
-        logger.info(f"Found {len(pending)} pending migration(s).")
-    
-    for name, path in ordered_pending:
+    finally:
+        # Always release the advisory lock, even if an error occurred mid-run.
         try:
-            if verbose:
-                action = "Marking" if fake else "Applying"
-                logger.info(f"\n{action}: {name}")
-            
-            await apply_migration(
-                connection,
-                name,
-                path,
-                fake=fake,
-                verbose=verbose,
+            released = await conn.fetchval(
+                "SELECT pg_advisory_unlock(hashtext($1))", _ADVISORY_LOCK_KEY
             )
-            
-            results["applied"].append(name)
-            
-            if verbose:
-                status = "marked as applied" if fake else "applied successfully"
-                logger.info(f"  ✓ {status}")
-                
+            if released is False:
+                logger.warning(
+                    "Migration advisory lock was not held or could not be released by this session."
+                )
         except Exception as e:
-            results["errors"].append((name, str(e)))
-            if verbose:
-                logger.error(f"  ✗ Error: {e}")
-            # Stop on first error
-            break
-    
-    return results
+            logger.warning("Failed to release migration advisory lock: %s", e)
 
 
 # =============================================================================
@@ -921,12 +1285,13 @@ def model_to_create_table(model_class) -> str:
                 field_code = f"op.EnumField({av_repr}, enum_name='{enum_name}')"
         
         elif isinstance(field, Array):
-            # Map item_type to SQL type for the migration
-            type_name = field.item_type.__name__ if hasattr(field.item_type, '__name__') else 'str'
-            parts = [f"item_type='{type_name}'"]
-            if field.nullable:
-                parts.append("nullable=True")
-            field_code = f"op.TextField({', '.join(parts)})"  # Fallback: array stored as text
+            sql_type = Array.TYPE_MAP.get(field.item_type, "TEXT[]")
+            parts = [f"sql_type={sql_type!r}"]
+            if not field.nullable:
+                parts.append("nullable=False")
+            if field.default is not None and not callable(field.default):
+                parts.append(f"default={field.default!r}")
+            field_code = f"op.ArrayField({', '.join(parts)})"
         
         elif isinstance(field, ForeignKey):
             # Get target table name (try __tablename__ first, then _table_name)

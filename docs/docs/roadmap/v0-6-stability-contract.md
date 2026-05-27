@@ -93,6 +93,17 @@ The analysis engines and Studio APIs for these features are operational but
 their output schemas, API paths, and scoring models are not frozen. Do not
 build automation that depends on specific output formats from these tools.
 
+### Migration Tracking Metadata
+
+The migration *commands*, the migration *file* format, and existing generated
+migrations are stable (see above). The internal `aksara_migrations` tracking
+table is not. Its columns may evolve in a future release — for example, metadata
+schema versioning or an app-label / name identity split — so do not build
+automation against the tracking table's column layout. Migration execution
+safety, integrity (checksums), and the SQL-generation guardrails are intended to
+remain in place; the metadata-schema redesign that would change the tracking
+table is deferred future work.
+
 ### Long-Running AI Session State
 
 Durable AI session storage and AI Console transcript persistence are planned

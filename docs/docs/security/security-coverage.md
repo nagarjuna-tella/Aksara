@@ -43,6 +43,8 @@ diagnostic condition.
 - Pagination
 - Serializer payloads
 - Migration defaults and identifiers
+- Migration execution safety and integrity (transactional application, advisory
+  locking, checksum verification, and SQL-generation guardrails)
 - Malformed and oversized payloads
 - Release-gate package build verification
 - Dependency audit, static analysis, secret scanning, and SBOM generation

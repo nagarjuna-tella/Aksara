@@ -266,28 +266,41 @@ class MigrationGraph:
         else:
             nodes = dict(self.nodes)
         
-        # Track visited and result
-        visited: Set[Tuple[str, str]] = set()
+        # Three-state DFS: unvisited → visiting → done.
+        # "visiting" lets us detect back-edges (cycles).
+        visiting: Set[Tuple[str, str]] = set()
+        done: Set[Tuple[str, str]] = set()
         result: List[MigrationNode] = []
-        
-        def visit(key: Tuple[str, str]) -> None:
-            if key in visited:
+
+        def visit(key: Tuple[str, str], path: List[Tuple[str, str]]) -> None:
+            if key in done:
                 return
             if key not in nodes:
-                return  # External dependency
-            
-            visited.add(key)
+                return  # External dependency — already applied or from another app
+            if key in visiting:
+                # Back-edge: build a human-readable cycle description
+                cycle_start = path.index(key)
+                cycle = path[cycle_start:] + [key]
+                cycle_str = " → ".join(f"{a}.{m}" for a, m in cycle)
+                raise ValueError(
+                    f"Migration dependency cycle detected: {cycle_str}"
+                )
+
+            visiting.add(key)
             node = nodes[key]
-            
-            # Visit dependencies first
+            path.append(key)
+
             for dep in node.dependencies:
-                visit(dep)
-            
+                visit(dep, path)
+
+            path.pop()
+            visiting.discard(key)
+            done.add(key)
             result.append(node)
-        
+
         # Visit all nodes
         for key in nodes:
-            visit(key)
+            visit(key, [])
         
         return result
     

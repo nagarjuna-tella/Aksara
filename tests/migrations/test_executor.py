@@ -665,14 +665,26 @@ class Migration(Migration):
 
     applied_order = []
 
-    async def _record_apply(_connection, name, path, *, fake=False, verbose=True):
+    async def _record_apply(
+        _connection,
+        name,
+        path,
+        *,
+        fake=False,
+        verbose=True,
+        ensure_table=True,
+    ):
         applied_order.append(name)
 
     monkeypatch.setattr(migration_executor, "ensure_migrations_table", AsyncMock())
-    monkeypatch.setattr(migration_executor, "get_applied_migrations", AsyncMock(return_value=[]))
+    monkeypatch.setattr(migration_executor, "get_applied_migration_records", AsyncMock(return_value={}))
     monkeypatch.setattr(migration_executor, "apply_migration", _record_apply)
 
-    result = await apply_migrations(object(), tmp_path, verbose=False, include_internal=False)
+    # Use a minimal async-capable connection mock that satisfies the advisory lock calls
+    mock_conn = AsyncMock()
+    mock_conn.fetchval = AsyncMock(return_value=True)  # lock acquired
+
+    result = await apply_migrations(mock_conn, tmp_path, verbose=False, include_internal=False)
 
     assert result["errors"] == []
     assert applied_order == [dependency_name, dependent_name]

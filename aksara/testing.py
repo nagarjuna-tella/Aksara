@@ -187,46 +187,44 @@ async def create_test_app(
 
 
 async def _apply_test_migrations(database_url: str) -> None:
-    """Apply pending migrations for testing."""
+    """Apply pending migrations via the canonical executor path.
+
+    Delegates to apply_migrations() so test environments get the same
+    advisory-lock, transaction-per-migration, SQL-splitting, and checksum
+    guarantees as production runs.  Previously this helper used a manual
+    loop that recorded NULL checksums and skipped transaction wrapping.
+
+    Raises:
+        RuntimeError: If apply_migrations() reports one or more migration
+            errors, including the first failed migration and any skipped
+            pending migrations.
+    """
     from pathlib import Path
     from aksara.db import Database
     from aksara.conf import settings
-    from aksara.migrations.executor import (
-        discover_migrations,
-        get_pending_migrations,
-        ensure_migrations_table,
-        get_applied_migrations,
-        record_migration,
-        load_migration_module,
-        discover_internal_migrations,
-    )
-    
+    from aksara.migrations.executor import apply_migrations
+
+    mig_dir = Path(settings.migrations_dir)
     db = Database(database_url)
     await db.connect()
-    
     try:
-        await ensure_migrations_table(db)
-        applied = await get_applied_migrations(db)
-        
-        # Discover all migrations
-        mig_dir = Path(settings.migrations_dir)
-        user_migrations = discover_migrations(mig_dir) if mig_dir.exists() else []
-        internal_migrations = discover_internal_migrations()
-        all_migrations = user_migrations + internal_migrations
-        
-        pending = get_pending_migrations(all_migrations, applied)
-        
-        for name, path in pending:
-            if path.suffix == ".py":
-                migration_class = load_migration_module(path)
-                migration = migration_class()
-                for op in migration.operations:
-                    await op.apply(db)
-                await record_migration(db, name)
-            elif path.suffix == ".sql":
-                sql = path.read_text()
-                await db.execute(sql)
-                await record_migration(db, name)
+        result = await apply_migrations(
+            db,
+            mig_dir,
+            fake=False,
+            verbose=False,
+            include_internal=True,
+        )
+        errors = result.get("errors") or []
+        if errors:
+            failed_name, failed_error = errors[0]
+            pending_skipped = result.get("pending_skipped") or []
+            message = (
+                f"Test migration application failed at {failed_name}: {failed_error}."
+            )
+            if pending_skipped:
+                message += f" Pending migrations skipped: {pending_skipped}"
+            raise RuntimeError(message)
     finally:
         await db.disconnect()
 

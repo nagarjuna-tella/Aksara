@@ -159,6 +159,15 @@ aksara migrate --migrations-dir dir     # Custom migrations directory
 aksara migrate --database-url URL       # Specify database
 ```
 
+When migration files exist, `aksara migrate` applies them through the canonical
+executor: each migration runs in a transaction, a PostgreSQL advisory lock
+prevents concurrent runners, already-applied migrations are skipped after their
+checksums are verified, a checksum mismatch fails clearly, historical
+migrations without a checksum may warn, and pending migrations skipped after a
+failure are reported. If no migration files exist, the command can still fall
+back to a legacy model-based bootstrap path, which does not provide the full
+file-based migration integrity model. See [Migration Safety](../orm/migration-safety.md).
+
 ### shell
 
 Interactive Python shell with models loaded:

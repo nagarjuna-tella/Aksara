@@ -137,6 +137,18 @@ aksara status
 #  [ ] 0003_auto_add_avatar              # Not applied
 ```
 
+### How Migrations Are Applied Safely
+
+`aksara migrate` and the testing helpers apply migrations through one canonical
+executor that wraps each migration in a transaction, takes a PostgreSQL advisory
+lock so two processes cannot migrate at once, executes multi-statement SQL
+statement-by-statement, and verifies the checksum of every already-applied
+migration before running new ones.
+
+See [Migration Safety](migration-safety.md) for the full behavior, including what
+happens when a migration fails, what a checksum mismatch means, and how historical
+migrations without a stored checksum are handled.
+
 ---
 
 ## Migration Operations
@@ -452,6 +464,10 @@ Once a migration has been applied to any environment:
 - Don't modify it
 - Create a new migration for further changes
 
+Aksara enforces this: each applied migration's checksum is verified against the
+file on disk before new migrations run, and an edited applied migration fails the
+run with a clear error. See [Migration Safety](migration-safety.md).
+
 ### Preview Before Applying
 
 ```bash
@@ -585,6 +601,7 @@ aksara status
 
 ## Related Documentation
 
+- [Migration Safety](migration-safety.md) — how migrations are applied and verified
 - [Models](models.md) — Model definition
 - [Fields](fields.md) — Field types
 - [CLI Reference](../cli/index.md) — All CLI commands

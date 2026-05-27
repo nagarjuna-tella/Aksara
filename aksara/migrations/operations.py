@@ -16,9 +16,11 @@ Keep them in sync when adding new field types or options.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import re
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple, Union
 
@@ -60,6 +62,276 @@ def _validate_fk_action(action: str) -> str:
             f"Allowed: {', '.join(sorted(_VALID_FK_ACTIONS))}"
         )
     return normalised
+
+
+def _truncate_utf8(value: str, max_bytes: int) -> str:
+    """Truncate a string to a UTF-8 byte budget without splitting characters."""
+    encoded = value.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return value
+
+    out: list[str] = []
+    used = 0
+    for ch in value:
+        ch_bytes = ch.encode("utf-8")
+        if used + len(ch_bytes) > max_bytes:
+            break
+        out.append(ch)
+        used += len(ch_bytes)
+    return "".join(out)
+
+
+def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
+    """Build a deterministic PostgreSQL-safe constraint identifier.
+
+    Joins *parts* with underscores.  If the result is within *max_length*
+    bytes it is returned as-is.  When it exceeds the limit the name is
+    truncated to leave room for an 8-character stable hash suffix so that:
+
+      * The result is always <= *max_length* UTF-8 bytes.
+      * Different long names produce different constraint names (no silent
+        collision).
+      * The output is deterministic across runs.
+
+    Callers must pass the result through ``_quote_ident()`` before embedding
+    in SQL.
+    """
+    if max_length < 10:
+        raise ValueError("max_length must be at least 10")
+
+    full = "_".join(p for p in parts if p)
+    if len(full.encode("utf-8")) <= max_length:
+        return full
+    # Hash the full name for a stable suffix; use first 8 hex chars.
+    suffix = hashlib.sha256(full.encode("utf-8")).hexdigest()[:8]
+    # Trim to make room: max_length - 1 underscore - 8 hash chars
+    prefix = _truncate_utf8(full, max_length - 9)
+    result = f"{prefix}_{suffix}"
+    return result
+
+
+# DDL/DML keywords that must never appear in a partial-index predicate.
+_UNSAFE_PREDICATE_KEYWORDS = frozenset({
+    "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
+    "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY",
+})
+
+
+def _scan_sql_predicate_unquoted(predicate: str, *, context: str) -> str:
+    """Return only unquoted predicate text while rejecting unsafe tokens."""
+    unquoted: list[str] = []
+    i = 0
+    n = len(predicate)
+
+    while i < n:
+        ch = predicate[i]
+
+        if ch == "'":
+            i += 1
+            while i < n:
+                if predicate[i] == "'":
+                    if i + 1 < n and predicate[i + 1] == "'":
+                        i += 2
+                        continue
+                    i += 1
+                    break
+                i += 1
+            else:
+                raise ValueError(
+                    f"Unsafe {context} for partial index: unterminated single-quoted string."
+                )
+            unquoted.append(" ")
+            continue
+
+        if ch == '"':
+            i += 1
+            while i < n:
+                if predicate[i] == '"':
+                    if i + 1 < n and predicate[i + 1] == '"':
+                        i += 2
+                        continue
+                    i += 1
+                    break
+                i += 1
+            else:
+                raise ValueError(
+                    f"Unsafe {context} for partial index: unterminated double-quoted identifier."
+                )
+            unquoted.append(" ")
+            continue
+
+        if ch == ";":
+            raise ValueError(f"Unsafe {context} for partial index: semicolons are not allowed.")
+        if ch == "-" and i + 1 < n and predicate[i + 1] == "-":
+            raise ValueError(
+                f"Unsafe {context} for partial index: line comments (--) are not allowed."
+            )
+        if (
+            (ch == "/" and i + 1 < n and predicate[i + 1] == "*")
+            or (ch == "*" and i + 1 < n and predicate[i + 1] == "/")
+        ):
+            raise ValueError(
+                f"Unsafe {context} for partial index: block comments are not allowed."
+            )
+
+        unquoted.append(ch)
+        i += 1
+
+    return "".join(unquoted)
+
+
+def _validate_sql_predicate(predicate: str, *, context: str = "SQL predicate") -> str:
+    """Validate a developer-authored SQL predicate (e.g. for a partial index).
+
+    Does **not** attempt to fully parse SQL — only rejects the most obvious
+    unquoted multi-statement and DDL/DML patterns that have no place in a
+    WHERE clause:
+
+      * Semicolons (``;``).
+      * Line comments (``--``).
+      * Block comments (``/* … */``).
+      * DDL/DML keywords (DROP, ALTER, DELETE, INSERT, UPDATE, CREATE,
+        TRUNCATE, GRANT, REVOKE, EXECUTE, CALL, COPY).
+
+    Returns *predicate* unchanged when it looks safe.
+    Raises ``ValueError`` with a clear message otherwise.
+    """
+    if not isinstance(predicate, str):
+        raise ValueError(f"Unsafe {context}: must be a string, got {type(predicate).__name__!r}")
+    predicate = predicate.strip()
+    if not predicate:
+        raise ValueError(f"Unsafe {context} for partial index: predicate must not be empty.")
+    unquoted = _scan_sql_predicate_unquoted(predicate, context=context)
+    # Word-boundary keyword check — case-insensitive
+    upper = unquoted.upper()
+    for kw in _UNSAFE_PREDICATE_KEYWORDS:
+        # Match whole-word only to avoid rejecting 'created_at' for CREATE etc.
+        if re.search(rf"\b{re.escape(kw)}\b", upper):
+            raise ValueError(
+                f"Unsafe {context} for partial index: keyword {kw!r} is not allowed in predicates."
+            )
+    return predicate
+
+
+# Allowed PostgreSQL base types for array columns.
+# Normalised to uppercase; matched after stripping the trailing [] and optional
+# length specifier (e.g. VARCHAR(255)).
+_ALLOWED_ARRAY_BASE_TYPES = frozenset({
+    "TEXT", "INTEGER", "INT", "BIGINT", "SMALLINT",
+    "DOUBLE PRECISION", "REAL", "FLOAT",
+    "BOOLEAN", "UUID",
+    "DATE", "TIMESTAMP", "TIMESTAMPTZ",
+    "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITHOUT TIME ZONE",
+    "JSONB", "JSON",
+    "NUMERIC", "DECIMAL",
+    "VARCHAR", "CHARACTER VARYING",
+})
+_ARRAY_LENGTH_TYPES = frozenset({"VARCHAR", "CHARACTER VARYING"})
+_ARRAY_PRECISION_SCALE_TYPES = frozenset({"NUMERIC", "DECIMAL"})
+_ARRAY_TIMESTAMP_PRECISION_TYPES = frozenset({
+    "TIMESTAMP", "TIMESTAMPTZ",
+    "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITHOUT TIME ZONE",
+})
+
+# Patterns that are never safe inside a sql_type value.
+_UNSAFE_SQL_TYPE_RE = re.compile(r";|--|/\*|\*/|'|\"")
+_UNSAFE_SQL_TYPE_KEYWORDS = frozenset({
+    "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
+    "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY", "SELECT",
+})
+_ARRAY_SQL_TYPE_ARGS_RE = re.compile(r"^([A-Z ]+)\(([^()]*)\)$")
+
+
+def _validate_array_sql_type_args(base_name: str, args_spec: str, sql_type: str) -> None:
+    """Validate a parenthesized ArrayField base-type argument specifier."""
+    parts = [part.strip() for part in args_spec.split(",")]
+    if any(not part or not part.isdigit() for part in parts):
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_LENGTH_TYPES:
+        if len(parts) == 1:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_PRECISION_SCALE_TYPES:
+        if len(parts) in {1, 2}:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_TIMESTAMP_PRECISION_TYPES:
+        if len(parts) == 1:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    raise ValueError(
+        f"ArrayField sql_type base type {base_name!r} does not allow length/precision specifier: {sql_type!r}"
+    )
+
+
+def _validate_array_sql_type(sql_type: str) -> str:
+    """Validate and normalise an ArrayField sql_type value.
+
+    Requirements:
+      * Must be a non-empty string.
+      * Must end with ``[]`` (case-insensitive normalised to uppercase).
+      * Base type (everything before the final ``[]``) must be on the allowed
+                list after stripping an optional numeric length/precision specifier.
+      * Must not contain semicolons, comments, quotes, or DDL/DML keywords.
+
+    Returns the normalised (uppercased) sql_type string.
+    Raises ``ValueError`` on violation.
+    """
+    if not isinstance(sql_type, str) or not sql_type.strip():
+        raise ValueError(
+            f"ArrayField sql_type must be a non-empty string; got {sql_type!r}"
+        )
+    upper = sql_type.strip().upper()
+    # Reject inline injection patterns
+    if _UNSAFE_SQL_TYPE_RE.search(sql_type):
+        raise ValueError(
+            f"ArrayField sql_type contains unsafe characters: {sql_type!r}"
+        )
+    # Keyword check
+    for kw in _UNSAFE_SQL_TYPE_KEYWORDS:
+        if re.search(rf"\b{re.escape(kw)}\b", upper):
+            raise ValueError(
+                f"ArrayField sql_type contains disallowed keyword {kw!r}: {sql_type!r}"
+            )
+    # Must end with []
+    if not upper.endswith("[]"):
+        raise ValueError(
+            f"ArrayField sql_type must end with '[]', got {sql_type!r}"
+        )
+    # Strip [] and parse any numeric length/precision suffix.
+    base = upper[:-2].strip()
+    base_name = base
+    args_match = _ARRAY_SQL_TYPE_ARGS_RE.fullmatch(base)
+    if args_match:
+        base_name = args_match.group(1).strip()
+        if base_name not in _ALLOWED_ARRAY_BASE_TYPES:
+            raise ValueError(
+                f"ArrayField sql_type has unknown base type {base_name!r}. "
+                f"Allowed base types: {', '.join(sorted(_ALLOWED_ARRAY_BASE_TYPES))}"
+            )
+        _validate_array_sql_type_args(base_name, args_match.group(2), sql_type)
+    elif "(" in base or ")" in base:
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+    if base_name not in _ALLOWED_ARRAY_BASE_TYPES:
+        raise ValueError(
+            f"ArrayField sql_type has unknown base type {base_name!r}. "
+            f"Allowed base types: {', '.join(sorted(_ALLOWED_ARRAY_BASE_TYPES))}"
+        )
+    return upper
 
 
 def _escape_sql_string(value: str) -> str:
@@ -423,7 +695,7 @@ class ArrayField(FieldOp):
         nullable: bool = True,
         default: Any = None,
     ):
-        self.sql_type = sql_type
+        self.sql_type = _validate_array_sql_type(sql_type)
         self.nullable = nullable
         self.default = default
 
@@ -751,16 +1023,20 @@ class ManyToManyField(FieldOp):
         jtn = _quote_ident(self.join_table_name)
         st = _quote_ident(self.source_table)
         tt = _quote_ident(self.target_table)
+        src_constraint = _quote_ident(_make_constraint_name("fk", self.join_table_name, "source"))
+        tgt_constraint = _quote_ident(_make_constraint_name("fk", self.join_table_name, "target"))
+        src_col = _quote_ident(self.source_column)
+        tgt_col = _quote_ident(self.target_column)
         return f'''CREATE TABLE IF NOT EXISTS {jtn} (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "source_id" UUID NOT NULL,
     "target_id" UUID NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT fk_{self.join_table_name}_source 
-        FOREIGN KEY (source_id) REFERENCES {st}({self.source_column}) ON DELETE CASCADE,
-    CONSTRAINT fk_{self.join_table_name}_target 
-        FOREIGN KEY (target_id) REFERENCES {tt}({self.target_column}) ON DELETE CASCADE,
-    UNIQUE (source_id, target_id)
+    CONSTRAINT {src_constraint}
+        FOREIGN KEY ("source_id") REFERENCES {st}({src_col}) ON DELETE CASCADE,
+    CONSTRAINT {tgt_constraint}
+        FOREIGN KEY ("target_id") REFERENCES {tt}({tgt_col}) ON DELETE CASCADE,
+    UNIQUE ("source_id", "target_id")
 )'''
     
     def get_drop_join_table_sql(self) -> str:
@@ -1040,7 +1316,7 @@ class IndexOp:
         self.table = table
         self.columns = columns
         self.unique = unique
-        self.where = where
+        self.where = _validate_sql_predicate(where, context="IndexOp.where") if where is not None else None
         self.method = method
     
     def to_sql(self) -> str:
@@ -1755,14 +2031,41 @@ class AddConstraint(Operation):
         return f"AddConstraint(table='{self.table}', name='{self.name}')"
 
 
+def _is_missing_constraint_error(exc: Exception) -> bool:
+    """Return True when *exc* indicates the constraint does not exist.
+
+    Prefers SQLSTATE 42704 (undefined_object) which asyncpg exposes on the
+    exception as ``exc.sqlstate``.  Falls back to English message matching only
+    when sqlstate is not available anywhere on the wrapped exception chain.
+    """
+    sqlstate = _extract_sqlstate(exc)
+    if sqlstate is not None:
+        return sqlstate == "42704"
+    return "does not exist" in str(exc).lower()
+
+
+def _extract_sqlstate(exc: BaseException) -> str | None:
+    """Return the first available SQLSTATE from an exception chain."""
+    for candidate in (
+        exc,
+        getattr(exc, "original_exception", None),
+        getattr(exc, "__cause__", None),
+        getattr(exc, "__context__", None),
+    ):
+        sqlstate = getattr(candidate, "sqlstate", None)
+        if sqlstate is not None:
+            return sqlstate
+    return None
+
+
 class RemoveConstraint(Operation):
     """
     Remove a constraint from a table.
-    
+
     Example:
         RemoveConstraint(table="users", name="check_age_positive")
     """
-    
+
     def __init__(
         self,
         table: str,
@@ -1773,18 +2076,18 @@ class RemoveConstraint(Operation):
         self.table = table
         self.name = name
         self.if_exists = if_exists
-    
+
     async def apply(self, connection) -> None:
         """Drop the constraint."""
         # PostgreSQL doesn't support IF EXISTS for constraints directly
         sql = f'ALTER TABLE {_quote_ident(self.table)} DROP CONSTRAINT {_quote_ident(self.name)}'
-        
+
         if hasattr(connection, 'execute'):
             try:
                 await connection.execute(sql)
             except Exception as e:
-                if self.if_exists and "does not exist" in str(e).lower():
-                    pass  # Ignore if it doesn't exist
+                if self.if_exists and _is_missing_constraint_error(e):
+                    pass  # Constraint absent — suppress when if_exists=True
                 else:
                     raise
         else:
@@ -1949,6 +2252,7 @@ __all__ = [
     "EnumField",
     "OneToOneField",
     "ManyToManyField",
+    "ArrayField",
     # Extended field types (Django parity)
     "SlugField",
     "TimeField",

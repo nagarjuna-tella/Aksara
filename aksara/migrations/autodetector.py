@@ -314,10 +314,8 @@ def _model_field_to_state(field_name: str, field) -> FieldState:
         field_type = "EmailField"
     elif isinstance(field, URL):
         field_type = "URLField"
-    elif isinstance(field, type(None)):
-        field_type = "StringField"
     else:
-        field_type = "StringField"  # default fallback
+        field_type = "StringField"  # default fallback for unknown field types
         for cls, name in type_map.items():
             if isinstance(field, cls):
                 field_type = name
@@ -1086,6 +1084,25 @@ def operations_to_code(operations: list) -> str:
 
         elif isinstance(operation, op.AddField):
             field_code = _field_op_to_code(operation.field)
+            f = operation.field
+            is_primary_key = getattr(f, "primary_key", False)
+            is_nullable = getattr(f, "nullable", True)
+            has_python_default = getattr(f, "default", None) is not None
+            field_sql = f.to_sql()
+            has_db_default = " DEFAULT " in f" {field_sql.upper()} "
+            if (
+                not is_primary_key
+                and not is_nullable
+                and not has_python_default
+                and not has_db_default
+            ):
+                warning = (
+                    f'        # WARNING: Adding non-null field "{operation.name}" without a default '
+                    f'may fail on non-empty table "{operation.table}".\n'
+                    f'        # Add a temporary default, backfill existing rows, or split this into '
+                    f'a nullable field + data migration + nullability change.'
+                )
+                code_parts.append(warning)
             code_parts.append(
                 f'        op.AddField(\n'
                 f'            table="{operation.table}",\n'

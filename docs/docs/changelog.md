@@ -6,6 +6,120 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.5.50 Migration Safety & Correctness
+
+This patch makes migrations apply safely and consistently across every entry
+point, verifies the integrity of already-applied migrations, and hardens the SQL
+that the framework generates. It does not change the migration file format and
+does not require any action on existing projects.
+
+### Migration execution safety
+
+- **Transactional Python migrations**: every operation in a Python migration and
+  the row that records the migration as applied now run inside a single
+  transaction. If any operation fails, the whole migration rolls back and is
+  never recorded as applied.
+- **Statement-by-statement SQL migrations**: SQL migrations are split into
+  individual statements and executed one at a time inside the same transaction
+  as the recording step, so multi-statement SQL files apply completely instead
+  of stopping after the first statement.
+- **Advisory lock**: applying migrations now acquires a PostgreSQL advisory lock
+  before inspecting and running pending migrations, so two processes cannot run
+  migrations at the same time. The lock is always released, even on failure.
+- **Cycle detection**: the migration dependency graph detects circular
+  dependencies and raises a clear error naming the cycle instead of silently
+  producing an incorrect order.
+
+### Migration integrity
+
+- **Checksums for Python and SQL migrations**: both Python and SQL migrations now
+  store a checksum when applied. Before running pending migrations, the checksum
+  of every already-applied migration is verified against the file on disk. A
+  mismatch fails with the migration name and clear next steps, so a quietly
+  edited migration cannot be applied as if unchanged.
+- **Backward compatibility**: migrations recorded before this version may have no
+  stored checksum. These are reported as a warning and remain valid — they are
+  not rejected.
+- **Safer generated non-null fields**: adding a non-null field without a default
+  fails on a table that already has rows. Generated migrations now include a
+  warning comment on such fields, pointing to a temporary default, a backfill, or
+  a nullable-first data migration. Primary keys are exempt.
+
+### Failure reporting
+
+- **Strict graph loading by default**: a migration file that cannot be loaded now
+  raises a clear error naming the migration, its path, and the underlying cause,
+  instead of being silently skipped. A non-strict mode remains available for
+  tooling that needs to inspect a partially broken graph.
+- **Pending migrations skipped after a failure**: when a migration fails, the
+  remaining pending migrations that were not attempted are reported, and the CLI
+  shows which migrations were skipped.
+
+### SQL-generation guardrails
+
+- **Many-to-many constraint and column quoting**: join-table constraint names are
+  deterministic, double-quoted, and bounded to PostgreSQL's identifier length
+  limit; source and target column references are quoted.
+- **Partial-index predicate validation**: an index `where` predicate is validated
+  when it is defined. Obvious unsafe patterns — statement terminators, comments,
+  and DDL/DML keywords — are rejected. Ordinary predicates such as
+  `created_at > NOW()` are unaffected.
+- **Array field type validation**: an array field's SQL type is validated against
+  an allowlist of PostgreSQL base types and normalised to a canonical form.
+  Injection-style input is rejected when the field is defined.
+  **Compatibility note**: `ArrayField(sql_type="text[]")` now normalises to
+  `"TEXT[]"`. A base type that is not on the allowlist raises an error when the
+  field is defined; open an issue to have additional types added.
+
+### Unified execution path
+
+- **One canonical executor for file-based migrations**: `aksara migrate` and the
+  testing helpers now apply file-based migrations through the same canonical
+  executor. Previously the CLI and the test helper each had their own apply loop
+  that bypassed transactions, the advisory lock, SQL statement splitting, and
+  checksum recording.
+- **Consistent guarantees for file-based CLI and test runs**: because those
+  entry points now share the same executor for file-based migrations, CLI runs
+  and test runs get the same transactions, advisory lock, SQL splitting,
+  checksum recording, and checksum verification. Test environments no longer
+  record empty checksums or emit spurious checksum warnings on later runs. The
+  legacy model-based CLI fallback remains available for bootstrap scenarios and
+  does not provide the full file-based migration integrity model.
+- The dry-run preview path is unchanged.
+
+### Compatibility notes
+
+- The migration file format is unchanged. Existing migrations are not
+  re-generated or altered.
+- Legacy CLI helpers (`MIGRATION_TABLE_SQL`, `compute_checksum`,
+  `ensure_migrations_table`, `get_applied_migrations`, and `record_migration`)
+  remain importable from `aksara.cli.main` as compatibility shims; new code
+  should import from `aksara.migrations.executor`.
+
+### Deferred work
+
+The following migration-metadata items are intentionally **not** part of this
+patch and remain future work:
+
+- Migration metadata schema versioning (a `schema_version` column).
+- An app-label / name identity split (an `app_label` column and a
+  `UNIQUE(app_label, name)` redesign of the tracking table).
+- Automatic checksum backfill for historical rows. Backfilling automatically is
+  unsafe because it would bless already-edited files with their current checksum
+  and defeat tamper detection.
+- A dedicated migration verify/backfill command.
+
+### Tests
+
+- Added unit and DB-backed test coverage for the new migration behavior:
+  transactional application and rollback, fake-mode behavior, multi-statement SQL
+  splitting, cycle detection, advisory lock acquisition and release, checksum
+  recording and verification, strict graph loading, skipped-migration reporting,
+  the SQL-generation guardrails, and the unified executor path shared by the CLI
+  and the testing helpers.
+
+---
+
 ## v0.5.49 — Security Hardening & Release Trust
 
 ### Security

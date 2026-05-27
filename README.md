@@ -261,6 +261,22 @@ for the current posture and known limitations.
 
 ---
 
+## Migration Safety
+
+File-based Aksara migrations are applied through a canonical executor that uses
+PostgreSQL advisory locks, per-migration transactions, checksum verification, SQL
+statement splitting, cycle detection, and clearer failure reporting. The CLI and
+the testing helpers share that executor for file-based runs, so local, CI, and
+production file-based runs get the same guarantees. When no migration files
+exist, `aksara migrate` can still use a legacy model-based bootstrap fallback;
+that path is intended for initial/simple setup and does not provide the full
+file-based migration integrity model.
+
+See the [Migration Safety guide](https://nagarjuna-tella.github.io/Aksara/orm/migration-safety/)
+for details.
+
+---
+
 ## Patterns & Examples
 
 The bundled examples are the golden paths for learning and launch validation:
@@ -309,9 +325,10 @@ Next planned milestones:
 
 | Version | Focus |
 | ------- | ----- |
-| v0.5.50 | Durable AI Session Store |
-| v0.5.51 | AI Memory Foundation |
-| v0.5.52 | AI System Radar |
+| v0.5.50 | Migration Safety & Correctness |
+| v0.5.51 | Durable AI Session Store |
+| v0.5.52 | AI Memory Foundation |
+| v0.5.53 | AI System Radar |
 | v0.6.0  | Production Mode |
 
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the full release path.

@@ -150,6 +150,20 @@ aksara migrate --fake
 aksara migrate --migrations-dir custom_migrations
 ```
 
+**Behavior:**
+
+- Migrations are applied through the canonical migration executor.
+- Each migration runs inside a transaction; a failed migration rolls back and is
+  not recorded as applied.
+- A PostgreSQL advisory lock prevents two runners from migrating concurrently.
+- Already-applied migrations are skipped. Their checksums are verified first, and
+  a mismatch (an applied migration was edited) fails the run with a clear message.
+- Migrations recorded before checksums existed may warn but are not rejected.
+- If a migration fails, the pending migrations that were skipped are reported.
+
+`--dry-run` only previews; it does not apply migrations. See
+[Migration Safety](../orm/migration-safety.md) for details.
+
 ---
 
 ### status

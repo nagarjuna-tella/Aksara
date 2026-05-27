@@ -21,6 +21,9 @@ as first-class security concerns.
   expiration, and token metadata
 - Studio/MCP production exposure diagnostics
 - Bounded adversarial tests for generated surfaces
+- Migration safety controls that improve the reliability and integrity of
+  generated schema changes (transactional application, advisory locking,
+  checksum verification of applied migrations, and SQL-generation guardrails)
 - Public security matrix example with optional private matrix enforcement
 
 ## Generated Surfaces

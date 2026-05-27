@@ -43,11 +43,5 @@ class Migration:
     # List of operations to apply in this migration
     operations: List["Operation"] = []
     
-    def __init__(self):
-        """Initialize the migration instance."""
-        # Ensure operations is a copy to avoid shared state
-        if not hasattr(self, '_initialized'):
-            self._initialized = True
-    
     def __repr__(self) -> str:
         return f"<Migration operations={len(self.operations)}>"
