@@ -1289,8 +1289,12 @@ def migrate(
         ui.info(f"Found {len(migration_files)} migration file(s) in {mig_dir}")
         
         # v0.3.16: Build migration graph and check for conflicts
-        with ui.status("Building migration graph", animate=False):
-            graph = build_migration_graph(migrations_list=migration_files)
+        try:
+            with ui.status("Building migration graph", animate=False):
+                graph = build_migration_graph(migrations_list=migration_files)
+        except ValueError as e:
+            ui.error(f"Could not build migration graph: {e}")
+            sys.exit(1)
         
     else:
         # Fall back to model-based migration (v0.1 behavior)

@@ -117,11 +117,75 @@ _UNSAFE_PREDICATE_KEYWORDS = frozenset({
 })
 
 
+def _scan_sql_predicate_unquoted(predicate: str, *, context: str) -> str:
+    """Return only unquoted predicate text while rejecting unsafe tokens."""
+    unquoted: list[str] = []
+    i = 0
+    n = len(predicate)
+
+    while i < n:
+        ch = predicate[i]
+
+        if ch == "'":
+            i += 1
+            while i < n:
+                if predicate[i] == "'":
+                    if i + 1 < n and predicate[i + 1] == "'":
+                        i += 2
+                        continue
+                    i += 1
+                    break
+                i += 1
+            else:
+                raise ValueError(
+                    f"Unsafe {context} for partial index: unterminated single-quoted string."
+                )
+            unquoted.append(" ")
+            continue
+
+        if ch == '"':
+            i += 1
+            while i < n:
+                if predicate[i] == '"':
+                    if i + 1 < n and predicate[i + 1] == '"':
+                        i += 2
+                        continue
+                    i += 1
+                    break
+                i += 1
+            else:
+                raise ValueError(
+                    f"Unsafe {context} for partial index: unterminated double-quoted identifier."
+                )
+            unquoted.append(" ")
+            continue
+
+        if ch == ";":
+            raise ValueError(f"Unsafe {context} for partial index: semicolons are not allowed.")
+        if ch == "-" and i + 1 < n and predicate[i + 1] == "-":
+            raise ValueError(
+                f"Unsafe {context} for partial index: line comments (--) are not allowed."
+            )
+        if (
+            (ch == "/" and i + 1 < n and predicate[i + 1] == "*")
+            or (ch == "*" and i + 1 < n and predicate[i + 1] == "/")
+        ):
+            raise ValueError(
+                f"Unsafe {context} for partial index: block comments are not allowed."
+            )
+
+        unquoted.append(ch)
+        i += 1
+
+    return "".join(unquoted)
+
+
 def _validate_sql_predicate(predicate: str, *, context: str = "SQL predicate") -> str:
     """Validate a developer-authored SQL predicate (e.g. for a partial index).
 
     Does **not** attempt to fully parse SQL — only rejects the most obvious
-    multi-statement and DDL/DML patterns that have no place in a WHERE clause:
+    unquoted multi-statement and DDL/DML patterns that have no place in a
+    WHERE clause:
 
       * Semicolons (``;``).
       * Line comments (``--``).
@@ -137,14 +201,9 @@ def _validate_sql_predicate(predicate: str, *, context: str = "SQL predicate") -
     predicate = predicate.strip()
     if not predicate:
         raise ValueError(f"Unsafe {context} for partial index: predicate must not be empty.")
-    if ";" in predicate:
-        raise ValueError(f"Unsafe {context} for partial index: semicolons are not allowed.")
-    if "--" in predicate:
-        raise ValueError(f"Unsafe {context} for partial index: line comments (--) are not allowed.")
-    if "/*" in predicate or "*/" in predicate:
-        raise ValueError(f"Unsafe {context} for partial index: block comments are not allowed.")
+    unquoted = _scan_sql_predicate_unquoted(predicate, context=context)
     # Word-boundary keyword check — case-insensitive
-    upper = predicate.upper()
+    upper = unquoted.upper()
     for kw in _UNSAFE_PREDICATE_KEYWORDS:
         # Match whole-word only to avoid rejecting 'created_at' for CREATE etc.
         if re.search(rf"\b{re.escape(kw)}\b", upper):

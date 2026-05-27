@@ -214,6 +214,37 @@ class TestMigrateCommand:
         assert result.exit_code == 0
         assert "All migrations already applied!" in result.output
 
+    @patch("aksara.migrations.executor.discover_migrations")
+    @patch(
+        "aksara.migrations.executor.build_migration_graph",
+        side_effect=ValueError("Could not load migration app.0001_bad"),
+    )
+    def test_preflight_graph_error_is_clean_cli_failure(
+        self,
+        mock_graph,
+        mock_discover,
+        monkeypatch,
+        tmp_path,
+    ) -> None:
+        from aksara.conf import settings
+
+        migrations_dir = tmp_path / "migrations"
+        migration_path = migrations_dir / "0001_bad.py"
+        migrations_dir.mkdir()
+        migration_path.write_text("def broken(:")
+
+        monkeypatch.setattr(settings, "database_url", "postgresql://localhost/test", raising=False)
+        monkeypatch.setattr(settings, "migrations_dir", str(migrations_dir), raising=False)
+        mock_discover.return_value = [("0001_bad", migration_path)]
+
+        result = runner.invoke(cli, ["migrate"])
+
+        assert result.exit_code != 0
+        assert "Could not build migration graph" in result.output
+        assert "Could not load migration" in result.output
+        assert "Traceback" not in result.output
+        mock_graph.assert_called_once()
+
     def test_apply_migrations_runtime_error_is_clean_cli_failure(
         self, monkeypatch, tmp_path
     ) -> None:

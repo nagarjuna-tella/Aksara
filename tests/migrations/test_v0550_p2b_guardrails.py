@@ -163,17 +163,41 @@ class TestValidateSqlPredicate:
     def test_complex_but_safe_predicate_passes(self):
         assert _validate_sql_predicate("amount > 0 AND currency = 'USD'") is not None
 
+    def test_line_comment_marker_inside_string_passes(self):
+        assert _validate_sql_predicate("note LIKE '%--%'") == "note LIKE '%--%'"
+
+    def test_block_comment_marker_inside_string_passes(self):
+        assert _validate_sql_predicate("note LIKE '%/*%'") == "note LIKE '%/*%'"
+
+    def test_semicolon_inside_string_passes(self):
+        assert _validate_sql_predicate("note = 'a;b'") == "note = 'a;b'"
+
+    def test_keyword_inside_string_and_quoted_identifier_passes(self):
+        assert _validate_sql_predicate('"order" = \'drop\'') == '"order" = \'drop\''
+
     def test_semicolon_rejected(self):
         with pytest.raises(ValueError, match="semicolons"):
             _validate_sql_predicate("active = true; DROP TABLE users")
+
+    def test_semicolon_after_string_rejected(self):
+        with pytest.raises(ValueError, match="semicolons"):
+            _validate_sql_predicate("status = 'active'; DROP TABLE users")
 
     def test_line_comment_rejected(self):
         with pytest.raises(ValueError, match="line comments"):
             _validate_sql_predicate("active = true -- bypass")
 
+    def test_line_comment_after_string_rejected(self):
+        with pytest.raises(ValueError, match="line comments"):
+            _validate_sql_predicate("status = 'active' -- comment")
+
     def test_block_comment_open_rejected(self):
         with pytest.raises(ValueError, match="block comments"):
             _validate_sql_predicate("active = true /* inject */")
+
+    def test_block_comment_after_string_rejected(self):
+        with pytest.raises(ValueError, match="block comments"):
+            _validate_sql_predicate("status = 'active' /* comment */")
 
     def test_block_comment_close_rejected(self):
         with pytest.raises(ValueError, match="block comments"):
@@ -234,6 +258,14 @@ class TestValidateSqlPredicate:
     def test_predicate_is_stripped(self):
         assert _validate_sql_predicate(" status = 'active' ") == "status = 'active'"
 
+    def test_unterminated_single_quote_rejected(self):
+        with pytest.raises(ValueError, match="unterminated single"):
+            _validate_sql_predicate("status = 'active")
+
+    def test_unterminated_double_quote_rejected(self):
+        with pytest.raises(ValueError, match="unterminated double"):
+            _validate_sql_predicate('"bad_identifier = 1')
+
 
 class TestIndexOpWhereValidation:
     def test_valid_where_accepted(self):
@@ -268,6 +300,24 @@ class TestIndexOpWhereValidation:
             where=" status = 'active' ",
         )
         assert idx.where == "status = 'active'"
+
+    def test_quoted_string_comment_markers_in_where_accepted(self):
+        idx = IndexOp(
+            name="idx_note",
+            table="notes",
+            columns=["id"],
+            where="note LIKE '%--%' AND body LIKE '%/*%'",
+        )
+        assert idx.where == "note LIKE '%--%' AND body LIKE '%/*%'"
+
+    def test_semicolon_inside_quoted_string_in_where_accepted(self):
+        idx = IndexOp(
+            name="idx_note",
+            table="notes",
+            columns=["id"],
+            where="note = 'a;b'",
+        )
+        assert idx.where == "note = 'a;b'"
 
     def test_other_params_unaffected(self):
         idx = IndexOp(
