@@ -235,6 +235,26 @@ class TestSplitSqlStatements:
         parts = _split_sql_statements(sql)
         assert len(parts) == 2
 
+    def test_unterminated_block_comment_raises(self):
+        sql = "CREATE TABLE a(id int); /* unterminated"
+        with pytest.raises(ValueError, match="Unterminated block comment in SQL migration"):
+            _split_sql_statements(sql)
+
+    def test_unterminated_single_quoted_string_raises(self):
+        sql = "INSERT INTO t (v) VALUES ('unterminated);"
+        with pytest.raises(ValueError, match="Unterminated single-quoted string in SQL migration"):
+            _split_sql_statements(sql)
+
+    def test_unterminated_double_quoted_identifier_raises(self):
+        sql = 'CREATE TABLE "unterminated (id int);'
+        with pytest.raises(ValueError, match="Unterminated double-quoted identifier in SQL migration"):
+            _split_sql_statements(sql)
+
+    def test_unterminated_dollar_quoted_block_raises(self):
+        sql = "CREATE FUNCTION f() RETURNS void AS $$ BEGIN NULL; END;"
+        with pytest.raises(ValueError, match="Unterminated dollar-quoted block in SQL migration"):
+            _split_sql_statements(sql)
+
     def test_semicolon_inside_single_quoted_string(self):
         sql = "INSERT INTO t (v) VALUES ('hello; world');"
         parts = _split_sql_statements(sql)
@@ -253,16 +273,35 @@ class TestSplitSqlStatements:
         parts = _split_sql_statements(sql)
         assert len(parts) == 1
 
+    def test_tagged_dollar_quoted_function_body_with_semicolons_is_one_statement(self):
+        sql = (
+            "CREATE FUNCTION f() RETURNS void AS $body$ "
+            "BEGIN PERFORM 1; PERFORM 2; END; $body$ LANGUAGE plpgsql;"
+        )
+        parts = _split_sql_statements(sql)
+        assert parts == [sql.rstrip(";")]
+
     def test_block_comment_with_semicolon_ignored(self):
         sql = "/* ignore this; */ CREATE TABLE x (id int);"
         parts = _split_sql_statements(sql)
         assert len(parts) == 1
         assert "ignore" not in parts[0]
 
+    def test_valid_block_comment_still_works(self):
+        sql = "CREATE TABLE x (id int) /* valid comment */;"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+        assert parts[0].startswith("CREATE TABLE x (id int)")
+
     def test_block_comment_preserves_token_separator(self):
         sql = "SELECT/*x*/1;"
         parts = _split_sql_statements(sql)
         assert parts == ["SELECT 1"]
+
+    def test_block_comment_between_tokens_preserves_spacing(self):
+        sql = "SELECT/* comment */FROM dual;"
+        parts = _split_sql_statements(sql)
+        assert parts == ["SELECT FROM dual"]
 
     def test_block_comment_between_statements_splits_cleanly(self):
         sql = "CREATE TABLE a(id int); /* comment */ CREATE TABLE b(id int);"
@@ -501,6 +540,27 @@ class Migration(Migration):
         # record_migration called inside same transaction
         rm.assert_awaited_once()
         conn.transaction.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_sql_migration_with_unterminated_block_comment_fails_before_record(self, tmp_path):
+        sql = "CREATE TABLE a(id int); /* unterminated"
+        f = tmp_path / "0001_init.sql"
+        f.write_text(sql)
+
+        conn, tx = self._make_connection()
+
+        with patch("aksara.migrations.executor.record_migration", new_callable=AsyncMock) as rm:
+            with pytest.raises(ValueError, match="Unterminated block comment in SQL migration"):
+                await apply_migration(conn, "0001_init", f, fake=False, verbose=False)
+
+        conn.transaction.assert_not_called()
+        migration_executes = [
+            call.args[0]
+            for call in conn.execute.await_args_list
+            if call.args and call.args[0].startswith("CREATE TABLE a")
+        ]
+        assert migration_executes == []
+        rm.assert_not_awaited()
 
 
 # =============================================================================

@@ -502,63 +502,104 @@ def _split_sql_statements(sql: str) -> list[str]:
     blocks, line comments (--), and block comments (/* ... */) so that
     semicolons inside any of those constructs are never treated as statement
     delimiters.
+
+    Raises:
+        ValueError: If the SQL ends while still inside a block comment,
+            single-quoted string, double-quoted identifier, or dollar-quoted
+            block.
     """
     statements: list[str] = []
     current: list[str] = []
     i = 0
     n = len(sql)
+    state = "normal"
+    block_comment_depth = 0
+    dollar_tag: str | None = None
 
     while i < n:
         ch = sql[i]
+        nxt = sql[i + 1] if i + 1 < n else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                current.append(ch)
+                state = "normal"
+            i += 1
+            continue
+
+        if state == "block_comment":
+            if ch == "/" and nxt == "*":
+                block_comment_depth += 1
+                i += 2
+                continue
+            if ch == "*" and nxt == "/":
+                block_comment_depth -= 1
+                i += 2
+                if block_comment_depth == 0:
+                    state = "normal"
+                continue
+            i += 1
+            continue
+
+        if state == "single_quote":
+            current.append(ch)
+            i += 1
+            if ch == "'":
+                if i < n and sql[i] == "'":
+                    current.append(sql[i])
+                    i += 1
+                else:
+                    state = "normal"
+            continue
+
+        if state == "double_quote":
+            current.append(ch)
+            i += 1
+            if ch == '"':
+                if i < n and sql[i] == '"':
+                    current.append(sql[i])
+                    i += 1
+                else:
+                    state = "normal"
+            continue
+
+        if state == "dollar_quote":
+            if dollar_tag is not None and sql.startswith(dollar_tag, i):
+                current.extend(dollar_tag)
+                i += len(dollar_tag)
+                dollar_tag = None
+                state = "normal"
+                continue
+            current.append(ch)
+            i += 1
+            continue
 
         # Line comment: skip to end of line (do not add to current statement)
-        if ch == "-" and i + 1 < n and sql[i + 1] == "-":
-            while i < n and sql[i] != "\n":
-                i += 1
+        if ch == "-" and nxt == "-":
+            state = "line_comment"
+            i += 2
             continue
 
         # Block comment: skip /* ... */
-        if ch == "/" and i + 1 < n and sql[i + 1] == "*":
+        if ch == "/" and nxt == "*":
+            state = "block_comment"
+            block_comment_depth = 1
             current.append(" ")
             i += 2
-            while i < n:
-                if sql[i] == "*" and i + 1 < n and sql[i + 1] == "/":
-                    i += 2
-                    break
-                i += 1
             continue
 
         # Single-quoted string literal — copy verbatim, handling '' escape
         if ch == "'":
+            state = "single_quote"
             current.append(ch)
             i += 1
-            while i < n:
-                c = sql[i]
-                current.append(c)
-                i += 1
-                if c == "'":
-                    if i < n and sql[i] == "'":
-                        # Escaped quote inside string
-                        current.append(sql[i])
-                        i += 1
-                    else:
-                        break
             continue
 
         # Double-quoted identifier — copy verbatim, handling "" escape
         if ch == '"':
+            state = "double_quote"
             current.append(ch)
             i += 1
-            while i < n:
-                c = sql[i]
-                current.append(c)
-                i += 1
-                if c == '"':
-                    if i < n and sql[i] == '"':
-                        current.append(sql[i])
-                        i += 1
-                    else:
-                        break
             continue
 
         # Dollar-quoting: $$...$$  or  $tag$...$tag$
@@ -569,16 +610,10 @@ def _split_sql_statements(sql: str) -> list[str]:
                     break
                 j += 1
             if j < n and sql[j] == "$":
-                tag = sql[i : j + 1]
-                current.extend(tag)
+                dollar_tag = sql[i : j + 1]
+                current.extend(dollar_tag)
+                state = "dollar_quote"
                 i = j + 1
-                while i < n:
-                    if sql[i : i + len(tag)] == tag:
-                        current.extend(tag)
-                        i += len(tag)
-                        break
-                    current.append(sql[i])
-                    i += 1
                 continue
 
         # Statement delimiter
@@ -592,6 +627,15 @@ def _split_sql_statements(sql: str) -> list[str]:
 
         current.append(ch)
         i += 1
+
+    if state == "block_comment":
+        raise ValueError("Unterminated block comment in SQL migration")
+    if state == "single_quote":
+        raise ValueError("Unterminated single-quoted string in SQL migration")
+    if state == "double_quote":
+        raise ValueError("Unterminated double-quoted identifier in SQL migration")
+    if state == "dollar_quote":
+        raise ValueError("Unterminated dollar-quoted block in SQL migration")
 
     # Trailing statement without a terminating semicolon
     remainder = "".join(current).strip()
