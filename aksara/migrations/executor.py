@@ -733,9 +733,10 @@ async def _apply_migrations_on_conn(
     )
     if not lock_acquired:
         raise RuntimeError(
-            "Could not acquire migration advisory lock — another process may be "
-            "running migrations.  Wait for that process to finish or release the "
-            f"lock manually: SELECT pg_advisory_unlock(hashtext('{_ADVISORY_LOCK_KEY}'));"
+            "Could not acquire Aksara migration advisory lock. Another migration "
+            "process may already be running. Wait for that process to finish. If "
+            "the lock appears stuck, identify the holding backend using "
+            "pg_locks/pg_stat_activity and terminate that backend if appropriate."
         )
 
     try:

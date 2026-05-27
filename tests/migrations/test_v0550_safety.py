@@ -530,8 +530,14 @@ class TestAdvisoryLock:
         conn.fetchval = AsyncMock(return_value=False)  # lock NOT acquired
         conn.execute = AsyncMock()
 
-        with pytest.raises(RuntimeError, match="advisory lock"):
+        with pytest.raises(RuntimeError) as exc_info:
             await apply_migrations(conn, tmp_path, verbose=False)
+
+        message = str(exc_info.value)
+        assert "Another migration process" in message
+        assert "Wait for that process to finish" in message
+        assert "pg_locks/pg_stat_activity" in message
+        assert "pg_advisory_unlock" not in message
 
     @pytest.mark.asyncio
     async def test_lock_released_on_exception(self, tmp_path):
