@@ -1228,13 +1228,14 @@ class Migration(Migration):
         ui.command("aksara migrate")
 
 
-def _display_pending_skipped(ui, pending, failed_index: int) -> None:
+def _display_pending_skipped(ui, pending_skipped: list[str]) -> None:
     """Display the migrations that were not attempted because of a prior failure."""
-    remaining = [n for n, _ in pending[failed_index + 1:]]
-    if remaining:
+    if pending_skipped:
         ui.blank()
-        ui.warning(f"Skipped {len(remaining)} pending migration(s) after failure:")
-        for name in remaining:
+        ui.warning(
+            f"Skipped {len(pending_skipped)} pending migration(s) after failure:"
+        )
+        for name in pending_skipped:
             ui.text(f"  - {name}")
 
 
@@ -1260,7 +1261,6 @@ def migrate(
         apply_migrations,
         discover_migrations,
         get_pending_migrations,
-        ensure_migrations_table,
         get_applied_migrations as get_applied_migs,
         record_migration,
         load_migration_module,
@@ -1317,10 +1317,6 @@ def migrate(
             with ui.status("Connecting to database"):
                 await db.connect()
             ui.success("Connected to database")
-            
-            # Ensure migrations table exists
-            with ui.status("Ensuring migrations table", animate=False):
-                await ensure_migrations_table(db)
             
             if migration_files:
                 # File-based migrations (v0.3.3 path)
@@ -1401,14 +1397,7 @@ def migrate(
                         ui.blank()
                         for name, err in results["errors"]:
                             ui.error(f"  ✗ {name}: {err}")
-                        if results["pending_skipped"]:
-                            ui.blank()
-                            ui.warning(
-                                f"Skipped {len(results['pending_skipped'])} pending "
-                                f"migration(s) after failure:"
-                            )
-                            for skipped_name in results["pending_skipped"]:
-                                ui.text(f"  - {skipped_name}")
+                        _display_pending_skipped(ui, results["pending_skipped"])
                         sys.exit(1)
             else:
                 # Model-based migrations (v0.1 behavior - fallback)

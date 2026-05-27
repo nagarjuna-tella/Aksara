@@ -254,25 +254,23 @@ class TestRemoveConstraintErrorHandling:
 class TestCLIPendingSkippedDisplay:
     """Unit-test the _display_pending_skipped helper directly."""
 
-    def test_no_remaining_shows_nothing(self):
+    def test_empty_list_shows_nothing(self):
         from aksara.cli.main import _display_pending_skipped
 
         ui = MagicMock()
-        pending = [("0001_a", None), ("0002_b", None)]
-        # failed_index=1 (last item) — nothing after it
-        _display_pending_skipped(ui, pending, 1)
+        _display_pending_skipped(ui, [])
 
+        ui.blank.assert_not_called()
         ui.warning.assert_not_called()
         ui.text.assert_not_called()
 
-    def test_remaining_shows_warning_and_names(self):
+    def test_non_empty_list_shows_warning_and_names(self):
         from aksara.cli.main import _display_pending_skipped
 
         ui = MagicMock()
-        pending = [("0001_a", None), ("0002_b", None), ("0003_c", None)]
-        # failed at index 0
-        _display_pending_skipped(ui, pending, 0)
+        _display_pending_skipped(ui, ["0002_b", "0003_c"])
 
+        ui.blank.assert_called_once()
         ui.warning.assert_called_once()
         warning_msg = ui.warning.call_args.args[0]
         assert "2" in warning_msg or "Skipped" in warning_msg
@@ -280,34 +278,3 @@ class TestCLIPendingSkippedDisplay:
         text_calls = [str(c) for c in ui.text.call_args_list]
         assert any("0002_b" in c for c in text_calls)
         assert any("0003_c" in c for c in text_calls)
-        assert not any("0001_a" in c for c in text_calls)
-
-    def test_failure_in_middle_skips_only_later(self):
-        from aksara.cli.main import _display_pending_skipped
-
-        ui = MagicMock()
-        pending = [
-            ("0001_alpha", None),
-            ("0002_beta", None),
-            ("0003_gamma", None),
-            ("0004_delta", None),
-        ]
-        # failed at index 1 ("0002_beta")
-        _display_pending_skipped(ui, pending, 1)
-
-        text_calls = [str(c) for c in ui.text.call_args_list]
-        assert any("0003_gamma" in c for c in text_calls)
-        assert any("0004_delta" in c for c in text_calls)
-        assert not any("0001_alpha" in c for c in text_calls)
-        assert not any("0002_beta" in c for c in text_calls)
-
-    def test_single_remaining(self):
-        from aksara.cli.main import _display_pending_skipped
-
-        ui = MagicMock()
-        pending = [("first", None), ("second", None)]
-        _display_pending_skipped(ui, pending, 0)
-
-        ui.warning.assert_called_once()
-        text_calls = [str(c) for c in ui.text.call_args_list]
-        assert any("second" in c for c in text_calls)

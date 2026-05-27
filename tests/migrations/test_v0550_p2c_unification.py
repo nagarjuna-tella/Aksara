@@ -20,7 +20,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from click.testing import CliRunner
 
-from aksara.cli.main import cli
+from aksara.cli.main import _display_pending_skipped, cli
 
 
 runner = CliRunner()
@@ -101,6 +101,36 @@ class TestCLIMigrateDelegation:
         )
         assert result.exit_code == 0
         apply_mock.assert_awaited_once()
+
+    def test_canonical_path_does_not_pre_ensure_migrations_table(
+        self, tmp_path, monkeypatch
+    ):
+        from aksara.conf import settings
+        from contextlib import ExitStack
+
+        migrations_dir = tmp_path / "migrations"
+        migrations_dir.mkdir()
+        migration_path = migrations_dir / "0001_init.py"
+        migration_path.write_text("# migration")
+
+        monkeypatch.setattr(
+            settings, "database_url", "postgresql://localhost/test", raising=False
+        )
+        monkeypatch.setattr(settings, "migrations_dir", str(migrations_dir), raising=False)
+
+        patches = _cli_patches(
+            tmp_path, migration_path, apply_result=_apply_result(applied=["0001_init"])
+        )
+        with ExitStack() as stack:
+            mocks = [stack.enter_context(p) for p in patches]
+            ensure_mock = mocks[3]
+            apply_mock = mocks[-1]
+
+            result = runner.invoke(cli, ["migrate"])
+
+        assert result.exit_code == 0
+        apply_mock.assert_awaited_once()
+        ensure_mock.assert_not_awaited()
 
     def test_apply_migrations_receives_db_and_path(self, tmp_path, monkeypatch):
         result, apply_mock = self._run(
@@ -220,6 +250,41 @@ class TestCLIMigrateOutput:
         assert result.exit_code != 0
         assert "0002_add_field" in result.output
         assert "0003_add_index" in result.output
+
+    def test_pending_skipped_display_uses_helper(self, tmp_path, monkeypatch):
+        from aksara.conf import settings
+        from contextlib import ExitStack
+
+        migrations_dir = tmp_path / "migrations"
+        migrations_dir.mkdir()
+        migration_path = migrations_dir / "0001_init.py"
+        migration_path.write_text("# migration")
+
+        monkeypatch.setattr(
+            settings, "database_url", "postgresql://localhost/test", raising=False
+        )
+        monkeypatch.setattr(settings, "migrations_dir", str(migrations_dir), raising=False)
+
+        patches = _cli_patches(
+            tmp_path,
+            migration_path,
+            apply_result=_apply_result(
+                errors=[("0001_init", "boom")],
+                pending_skipped=["0002_add_field", "0003_add_index"],
+            ),
+        )
+        with ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            with patch(
+                "aksara.cli.main._display_pending_skipped",
+                wraps=_display_pending_skipped,
+            ) as mock_display:
+                result = runner.invoke(cli, ["migrate"])
+
+        assert result.exit_code != 0
+        mock_display.assert_called_once()
+        assert mock_display.call_args.args[1] == ["0002_add_field", "0003_add_index"]
 
     def test_exit_nonzero_on_errors(self, tmp_path, monkeypatch):
         result = self._invoke(
