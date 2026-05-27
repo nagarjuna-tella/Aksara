@@ -10,6 +10,26 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.50 - Migration Safety & Correctness
+
+- File-based CLI and test-helper migrations now use one canonical executor with
+  transactions, advisory locking, SQL statement splitting, checksum recording,
+  and checksum verification.
+- Migration graph loading is strict by default, cycles are reported clearly, and
+  pending migrations skipped after a failure are surfaced.
+- SQL-generation guardrails cover many-to-many constraint names, partial-index
+  predicates, and array SQL type validation.
+- The migration file format is unchanged. The legacy model-based CLI fallback
+  remains for bootstrap scenarios and does not provide the full file-based
+  migration integrity model.
+- Migration metadata schema versioning, an app-label / name identity split,
+  automatic checksum backfill, and a migration verify/backfill command remain
+  future work.
+
+---
+
+## Recent Releases
+
 ### v0.5.49 - Security Hardening & Release Trust
 
 - Added centralized Principal and PolicyEngine foundations.
@@ -21,10 +41,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
   static analysis, dependency audit, SBOM generation, package verification,
   and PyPI Trusted Publishing prep.
 - Does not claim production readiness or replace external security review.
-
----
-
-## Recent Releases
 
 ### v0.5.48 - Launch Hardening & Golden Path
 
@@ -56,19 +72,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 ---
 
 ## Future Roadmap
-
-### v0.5.50 - Migration Safety & Correctness
-
-Make migrations apply safely and consistently across every entry point. Python
-migrations are transactional, SQL migrations execute statement-by-statement,
-applying migrations takes a PostgreSQL advisory lock, the dependency graph
-detects cycles, and checksums verify that already-applied migrations have not
-changed on disk. The CLI and testing helpers share one canonical executor, and
-SQL-generation guardrails harden the generated DDL.
-
-Migration metadata schema versioning, an app-label / name identity split,
-automatic checksum backfill, and a migration verify/backfill command remain
-future work.
 
 ### v0.5.51 - Durable AI Session Store
 

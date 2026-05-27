@@ -314,20 +314,20 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.49
+## What's New in v0.5.50
 
-- **Runtime security enforcement** — generated write paths validate
-    field-level permissions before persistence.
-- **Security diagnostics** — `aksara doctor security-check` and
-    `aksara doctor production-check` cover secrets, debug mode, CORS,
-    Studio/MCP exposure, cookies, rate limits, RLS, AI defaults, and matrix
-    enforcement.
-- **Release trust** — Security CI, Release Gate, CodeQL, Dependabot,
-    Gitleaks, Bandit, `pip-audit`, SBOM generation, package verification,
-    and PyPI Trusted Publishing prep are in place.
-- **Security docs** — public security docs now describe current controls,
-    production hardening guidance, coverage, limitations, and review prep
-    without claiming production readiness.
+- **Safer file-based migrations** — CLI and test-helper migration runs now use
+    the same canonical executor with transactions, advisory locking, SQL
+    statement splitting, checksum recording, and checksum verification.
+- **Clearer migration failures** — strict graph loading, cycle detection,
+    checksum mismatch reporting, and skipped-pending-migration output make failed
+    runs easier to diagnose.
+- **Migration SQL guardrails** — generated constraint names, partial-index
+    predicates, and array SQL types are validated more carefully.
+- **Compatibility notes** — the migration file format is unchanged, the
+    model-based CLI fallback remains legacy/limited, and migration metadata
+    schema versioning, app-label/name identity split, checksum backfill, and a
+    verify/backfill command remain future work.
 
 [Full changelog →](changelog.md)
 

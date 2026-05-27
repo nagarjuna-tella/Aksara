@@ -21,7 +21,7 @@ admin views, AI prompt context, and MCP tool descriptions. That's the point —
 it removes the glue code you would otherwise write yourself.
 
 But generated surfaces multiply exposure. Every surface you didn't write by
-hand is a surface you might not have audited by hand either. The OpenAPI schema
+hand is a surface you might not have reviewed by hand either. The OpenAPI schema
 your client reads, the MCP tool catalog an AI agent queries, the filter
 parameters your generated list view accepts — these are all derived from your
 model definition, and they all face external callers.
@@ -203,8 +203,8 @@ so CI does not silently omit the intent.
 
 v0.5.49 ships a release-trust infrastructure alongside the code. "Release
 trust" means the steps between a commit and a published package have
-observable security properties. It does not mean the package has been
-externally audited.
+observable security properties. It does not mean the package has completed an
+external security review.
 
 What is in place:
 
@@ -234,7 +234,7 @@ review having taken place.
 
 To be direct:
 
-- **Not production-ready.** v0.5.49 does not claim production readiness. The
+- **No production-mode claim.** v0.5.49 does not claim production readiness. The
   security hardening is meaningful and the test coverage is real, but
   production readiness requires external review, operational validation, and
   a production-mode claim that has not been made.

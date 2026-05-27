@@ -123,7 +123,7 @@ class TestCliUiBehavior:
 
         with patch("click.echo") as echo:
             ui.dev_server_banner(
-                "0.5.49",
+                "0.5.50",
                 env="prod",
                 debug=False,
                 base_url="http://127.0.0.1:8000",

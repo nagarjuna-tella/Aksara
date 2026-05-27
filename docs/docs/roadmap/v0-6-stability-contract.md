@@ -143,7 +143,7 @@ documented in the changelog with a migration path. Changes to evolving areas
 may occur without a migration path. Deprecations in stable areas will be
 announced one minor version before removal where possible.
 
-**Patch versions (v0.5.49 → v0.5.50):** No intentional breaking changes to
+**Patch versions (v0.5.50 → v0.5.51):** No intentional breaking changes to
 stable areas. Bug fixes and additive changes only. If a patch inadvertently
 breaks stable behavior, that is a bug and will be fixed in a follow-on patch.
 

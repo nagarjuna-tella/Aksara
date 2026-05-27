@@ -349,7 +349,7 @@ You should see:
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝              
 
-    AI-native async backend  ·  Dev Server  ·  v0.5.49
+    AI-native async backend  ·  Dev Server  ·  v0.5.50
 
     ● App       http://127.0.0.1:8000/
     ● Admin     http://127.0.0.1:8000/admin/

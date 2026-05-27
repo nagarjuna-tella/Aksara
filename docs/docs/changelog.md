@@ -6,12 +6,12 @@ All notable changes to Aksara.
 
 ---
 
-## Unreleased — v0.5.50 Migration Safety & Correctness
+## v0.5.50 — Migration Safety & Correctness
 
-This patch makes migrations apply safely and consistently across every entry
-point, verifies the integrity of already-applied migrations, and hardens the SQL
-that the framework generates. It does not change the migration file format and
-does not require any action on existing projects.
+This patch makes file-based migrations apply safely and consistently across the
+CLI and test helper entry points, verifies the integrity of already-applied
+migrations, and hardens the SQL that the framework generates. It does not change
+the migration file format and does not require any action on existing projects.
 
 ### Migration execution safety
 

@@ -5,12 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased — v0.5.50 Migration Safety & Correctness
+## v0.5.50 — Migration Safety & Correctness
 
-Migrations apply safely and consistently across every entry point, the integrity
-of already-applied migrations is verified, and the SQL the framework generates is
-hardened. The migration file format is unchanged and no action is required on
-existing projects.
+File-based migrations now apply safely and consistently across the CLI and test
+helper entry points, the integrity of already-applied migrations is verified,
+and the SQL the framework generates is hardened. The migration file format is
+unchanged and no action is required on existing projects.
 
 ### Migration execution safety
 

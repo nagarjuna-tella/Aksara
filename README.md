@@ -15,8 +15,8 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-7120%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.49-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/tests-7391%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/version-0.5.50-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -33,7 +33,7 @@
 
 Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Studio UI, MCP tools, and system-level AI intelligence. The goal is simple: a new project should have a working API, inspectable data model, AI-facing tool catalog, and launch diagnostics before you start writing glue code.
 
-Current release: **v0.5.49 — Security Hardening & Release Trust**.
+Current release: **v0.5.50 — Migration Safety & Correctness**.
 
 ---
 
@@ -319,13 +319,12 @@ aksara examples validate --format json
 
 ## Roadmap
 
-Current stable: **v0.5.49 — Security Hardening & Release Trust**.
+Current stable: **v0.5.50 — Migration Safety & Correctness**.
 
 Next planned milestones:
 
 | Version | Focus |
 | ------- | ----- |
-| v0.5.50 | Migration Safety & Correctness |
 | v0.5.51 | Durable AI Session Store |
 | v0.5.52 | AI Memory Foundation |
 | v0.5.53 | AI System Radar |
@@ -337,9 +336,9 @@ See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the ful
 
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.49**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.50**.
 
-Latest local validation: **7120 passed, 165 skipped**.
+Latest local validation: **7391 passed, 168 skipped**.
 
 **Stable:** ORM, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB/vector ORM support.
 

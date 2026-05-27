@@ -32,7 +32,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.49"
+CLI_VERSION = "0.5.50"
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
@@ -836,7 +836,7 @@ def templates_list():
 
 
 # =============================================================================
-# Examples Commands (v0.5.49)
+# Examples Commands
 # =============================================================================
 
 
@@ -5923,7 +5923,7 @@ def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bo
 
 
 # =============================================================================
-# v0.5.49: Security Baseline Commands (Round 1)
+# Security Baseline Commands
 # =============================================================================
 
 
