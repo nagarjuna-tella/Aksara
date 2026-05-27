@@ -488,8 +488,15 @@ class Migration(Migration):
         with patch("aksara.migrations.executor.record_migration", new_callable=AsyncMock) as rm:
             await apply_migration(conn, "0001_init", f, fake=False, verbose=False)
 
-        # execute() must have been called twice — once per statement
-        assert conn.execute.await_count == 2
+        statement_calls = [
+            call.args[0]
+            for call in conn.execute.await_args_list
+            if call.args and call.args[0].startswith("CREATE TABLE ")
+        ]
+        assert statement_calls == [
+            "CREATE TABLE a (id SERIAL)",
+            "CREATE TABLE b (id SERIAL)",
+        ]
         # record_migration called inside same transaction
         rm.assert_awaited_once()
         conn.transaction.assert_called_once()
@@ -666,6 +673,131 @@ class TestMissingFromDiskWarning:
             for record in caplog.records
             if record.levelno == logging.WARNING
         ), "Expected a WARNING mentioning the missing migration name"
+
+    @pytest.mark.asyncio
+    async def test_include_internal_false_does_not_warn_for_present_internal_or_apply_it(
+        self, tmp_path, caplog
+    ):
+        import logging
+
+        internal_name = "aksara_internal_present"
+        internal_file = tmp_path / f"{internal_name}.py"
+        internal_file.write_text("# internal migration")
+        user_file = tmp_path / "0002_user.py"
+        user_file.write_text("# user migration")
+        graph = MagicMock()
+        graph.execution_order.return_value = [type("Node", (), {"name": "0002_user"})()]
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={internal_name: "abc123"},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 side_effect=[
+                     [("0002_user", user_file)],
+                     [(internal_name, internal_file), ("0002_user", user_file)],
+                 ],
+             ) as discover_mock, \
+             patch(
+                 "aksara.migrations.executor.get_pending_migrations",
+                 return_value=[("0002_user", user_file)],
+             ), \
+             patch("aksara.migrations.executor.build_migration_graph", return_value=graph), \
+             patch(
+                 "aksara.migrations.executor.apply_migration",
+                 new_callable=AsyncMock,
+             ) as apply_mock, \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            result = await apply_migrations(
+                conn,
+                tmp_path,
+                verbose=False,
+                include_internal=False,
+            )
+
+        missing_warnings = [
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING and "not found on disk" in record.message
+        ]
+        assert missing_warnings == []
+        assert result["applied"] == ["0002_user"]
+        assert apply_mock.await_count == 1
+        assert apply_mock.await_args.args[1] == "0002_user"
+        assert discover_mock.call_args_list[0].kwargs["include_internal"] is False
+        assert discover_mock.call_args_list[1].kwargs["include_internal"] is True
+
+    @pytest.mark.asyncio
+    async def test_include_internal_false_still_warns_for_missing_user_migration(
+        self, tmp_path, caplog
+    ):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={"0001_deleted": "abc123"},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 side_effect=[[], []],
+             ) as discover_mock, \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            await apply_migrations(conn, tmp_path, verbose=False, include_internal=False)
+
+        assert any(
+            "0001_deleted" in record.message and "not found on disk" in record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+        )
+        assert discover_mock.call_args_list[0].kwargs["include_internal"] is False
+        assert discover_mock.call_args_list[1].kwargs["include_internal"] is True
+
+    @pytest.mark.asyncio
+    async def test_include_internal_false_warns_for_truly_missing_internal_migration(
+        self, tmp_path, caplog
+    ):
+        import logging
+
+        missing_internal = "aksara_internal_deleted"
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={missing_internal: "abc123"},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 side_effect=[[], []],
+             ) as discover_mock, \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            await apply_migrations(conn, tmp_path, verbose=False, include_internal=False)
+
+        assert any(
+            missing_internal in record.message and "not found on disk" in record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+        )
+        assert discover_mock.call_args_list[0].kwargs["include_internal"] is False
+        assert discover_mock.call_args_list[1].kwargs["include_internal"] is True
 
     @pytest.mark.asyncio
     async def test_missing_from_disk_warning_uses_parameterized_delete(self, tmp_path, caplog):

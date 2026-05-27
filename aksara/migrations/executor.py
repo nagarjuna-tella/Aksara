@@ -624,6 +624,10 @@ async def apply_migration(
     """
     try:
         async with _raw_connection(connection) as conn:
+            # ensure_migrations_table() is idempotent, and direct apply_migration()
+            # calls need the tracking table before recording the migration.
+            await ensure_migrations_table(conn)
+
             if file_path.suffix == ".py":
                 # Python migration: all operations + record_migration in one transaction
                 # so a partial failure leaves the DB unchanged and the migration unrecorded.
@@ -752,12 +756,18 @@ async def _apply_migrations_on_conn(
             user_migrations_path=migrations_path,
             include_internal=include_internal,
         )
+        warning_migrations = all_migrations
+        if not include_internal:
+            warning_migrations = discover_all_migrations(
+                user_migrations_path=migrations_path,
+                include_internal=True,
+            )
 
         # Warn about applied migration records that no longer have a file on disk.
         # This is advisory: the migration ran successfully in the past, but the
         # file has since been deleted.  We warn rather than fail so that teams
         # can clean up tracking rows deliberately.
-        discovered_names = {name for name, _ in all_migrations}
+        discovered_names = {name for name, _ in warning_migrations}
         for applied_name in applied_records:
             if applied_name not in discovered_names:
                 logger.warning(

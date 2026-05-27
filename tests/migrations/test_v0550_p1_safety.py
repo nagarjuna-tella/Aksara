@@ -170,6 +170,46 @@ class TestApplyMigrationStoresChecksum:
         assert len(call_checksum) == 16
 
     @pytest.mark.asyncio
+    async def test_direct_apply_ensures_tracking_table_before_transaction(self, tmp_path):
+        f = tmp_path / "0001_init.py"
+        f.write_text("")
+        conn = self._make_raw_conn()
+        tx = conn.transaction.return_value
+        events = []
+
+        def _enter_transaction():
+            events.append("tx_enter")
+            return tx
+
+        async def _ensure_table(_conn):
+            events.append("ensure_table")
+
+        async def _record(*_args):
+            events.append("record_migration")
+
+        tx.__aenter__.side_effect = _enter_transaction
+
+        with patch(
+            "aksara.migrations.executor.ensure_migrations_table",
+            new_callable=AsyncMock,
+            side_effect=_ensure_table,
+        ) as ensure_mock, patch("aksara.migrations.executor.load_migration_module") as lm, \
+             patch(
+                 "aksara.migrations.executor.record_migration",
+                 new_callable=AsyncMock,
+                 side_effect=_record,
+             ):
+            mock_mig = MagicMock()
+            mock_mig.return_value.operations = []
+            lm.return_value = mock_mig
+
+            await apply_migration(conn, "0001_init", f, fake=False, verbose=False)
+
+        ensure_mock.assert_awaited_once()
+        assert events[:2] == ["ensure_table", "tx_enter"]
+        assert "record_migration" in events
+
+    @pytest.mark.asyncio
     async def test_sql_migration_stores_checksum(self, tmp_path):
         f = tmp_path / "0001_init.sql"
         f.write_text("CREATE TABLE t (id SERIAL);")
@@ -356,6 +396,54 @@ async def test_python_migration_records_checksum_in_db(db, tmp_path):
     records = await get_applied_migration_records(db)
     assert "test_p1_0001" in records
     assert records["test_p1_0001"] == expected_cs
+
+
+@pytest.mark.asyncio
+async def test_direct_apply_creates_tracking_table_on_fresh_db(db, tmp_path):
+    f = tmp_path / "test_p1_0002_fresh.py"
+    f.write_text("# migration content")
+    expected_cs = _compute_file_checksum(f)
+    existing_rows = await db.fetch(
+        "SELECT name, checksum, applied_at FROM aksara_migrations ORDER BY applied_at, id"
+    )
+
+    try:
+        await db.execute("DROP TABLE IF EXISTS aksara_migrations")
+
+        with patch("aksara.migrations.executor.load_migration_module") as lm:
+            mock_mig = MagicMock()
+            mock_mig.return_value.operations = []
+            lm.return_value = mock_mig
+            await apply_migration(db, "test_p1_0002_fresh", f, fake=False, verbose=False)
+
+        table_exists = await db.fetchval(
+            """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = 'aksara_migrations'
+            )
+            """
+        )
+        assert table_exists is True
+
+        stored_checksum = await db.fetchval(
+            "SELECT checksum FROM aksara_migrations WHERE name = $1",
+            "test_p1_0002_fresh",
+        )
+        assert stored_checksum == expected_cs
+    finally:
+        await ensure_migrations_table(db)
+        await db.execute("DELETE FROM aksara_migrations")
+        for row in existing_rows:
+            await db.execute(
+                """
+                INSERT INTO aksara_migrations (name, checksum, applied_at)
+                VALUES ($1, $2, $3)
+                """,
+                row["name"],
+                row["checksum"],
+                row["applied_at"],
+            )
 
 
 @pytest.mark.asyncio
