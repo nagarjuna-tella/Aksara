@@ -1087,8 +1087,15 @@ def operations_to_code(operations: list) -> str:
             f = operation.field
             is_primary_key = getattr(f, "primary_key", False)
             is_nullable = getattr(f, "nullable", True)
-            has_default = getattr(f, "default", None) is not None
-            if not is_primary_key and not is_nullable and not has_default:
+            has_python_default = getattr(f, "default", None) is not None
+            field_sql = f.to_sql()
+            has_db_default = " DEFAULT " in f" {field_sql.upper()} "
+            if (
+                not is_primary_key
+                and not is_nullable
+                and not has_python_default
+                and not has_db_default
+            ):
                 warning = (
                     f'        # WARNING: Adding non-null field "{operation.name}" without a default '
                     f'may fail on non-empty table "{operation.table}".\n'

@@ -59,6 +59,10 @@ class TestAddFieldNonNullWarning:
         code = self._code_for(op.StringField(nullable=False, default="draft"))
         assert "WARNING" not in code
 
+    def test_non_null_string_default_no_warning(self):
+        code = self._code_for(op.StringField(nullable=False, default="x"))
+        assert "WARNING" not in code
+
     def test_nullable_no_warning(self):
         code = self._code_for(op.StringField(nullable=True))
         assert "WARNING" not in code
@@ -78,6 +82,18 @@ class TestAddFieldNonNullWarning:
 
     def test_integer_non_null_with_default_no_warning(self):
         code = self._code_for(op.IntegerField(nullable=False, default=0))
+        assert "WARNING" not in code
+
+    def test_datetime_auto_now_add_db_default_no_warning(self):
+        code = self._code_for(op.DateTimeField(auto_now_add=True, nullable=False))
+        assert "WARNING" not in code
+
+    def test_datetime_non_null_no_default_gets_warning(self):
+        code = self._code_for(op.DateTimeField(nullable=False))
+        assert "WARNING" in code
+
+    def test_boolean_non_null_with_default_no_warning(self):
+        code = self._code_for(op.BooleanField(default=True, nullable=False))
         assert "WARNING" not in code
 
     def test_add_field_still_present_when_warned(self):

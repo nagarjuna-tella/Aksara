@@ -348,9 +348,15 @@ def build_migration_graph(
         include_internal: Whether to include internal migrations
         migrations_list: Optional pre-discovered list of migrations.
                         If provided, migrations_path is ignored.
+        strict: When True, raise ValueError if a Python migration file
+                cannot be loaded. When False, keep legacy best-effort
+                behavior and add a dependency-less node.
         
     Returns:
         A MigrationGraph with all discovered migrations
+
+    Raises:
+        ValueError: If strict=True and a Python migration file cannot be loaded.
         
     Example:
         graph = build_migration_graph(Path("./migrations"))
@@ -682,9 +688,13 @@ async def apply_migrations(
         
     Returns:
         Dict with results:
-            - applied: List of applied migration names
-            - skipped: List of already-applied migrations
-            - errors: List of (name, error) tuples if any
+            - applied: List of migrations applied in this run.
+            - skipped: List of migrations already applied before this run.
+            - pending_skipped: List of pending migrations not attempted
+              because an earlier pending migration failed.
+            - errors: List of (name, error) tuples.
+            - total_discovered: Total number of migrations discovered before
+              filtering applied/pending.
     """
     migrations_path = Path(migrations_path)
 
