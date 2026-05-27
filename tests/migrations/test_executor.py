@@ -665,7 +665,15 @@ class Migration(Migration):
 
     applied_order = []
 
-    async def _record_apply(_connection, name, path, *, fake=False, verbose=True):
+    async def _record_apply(
+        _connection,
+        name,
+        path,
+        *,
+        fake=False,
+        verbose=True,
+        ensure_table=True,
+    ):
         applied_order.append(name)
 
     monkeypatch.setattr(migration_executor, "ensure_migrations_table", AsyncMock())

@@ -608,6 +608,7 @@ async def apply_migration(
     *,
     fake: bool = False,
     verbose: bool = True,
+    ensure_table: bool = True,
 ) -> bool:
     """
     Apply a single migration.
@@ -618,6 +619,7 @@ async def apply_migration(
         file_path: Path to migration file
         fake: If True, record as applied without executing
         verbose: If True, print progress messages
+        ensure_table: If True, ensure the migration tracking table exists
         
     Returns:
         True if successful, False otherwise
@@ -626,7 +628,8 @@ async def apply_migration(
         async with _raw_connection(connection) as conn:
             # ensure_migrations_table() is idempotent, and direct apply_migration()
             # calls need the tracking table before recording the migration.
-            await ensure_migrations_table(conn)
+            if ensure_table:
+                await ensure_migrations_table(conn)
 
             if file_path.suffix == ".py":
                 # Python migration: all operations + record_migration in one transaction
@@ -751,14 +754,14 @@ async def _apply_migrations_on_conn(
         applied_records = await get_applied_migration_records(conn)
         applied = list(applied_records.keys())
 
-        # Discover all migrations (internal + user)
-        all_migrations = discover_all_migrations(
+        # Discover migrations used for this execution run.
+        execution_migrations = discover_all_migrations(
             user_migrations_path=migrations_path,
             include_internal=include_internal,
         )
-        warning_migrations = all_migrations
+        known_migrations = execution_migrations
         if not include_internal:
-            warning_migrations = discover_all_migrations(
+            known_migrations = discover_all_migrations(
                 user_migrations_path=migrations_path,
                 include_internal=True,
             )
@@ -767,7 +770,7 @@ async def _apply_migrations_on_conn(
         # This is advisory: the migration ran successfully in the past, but the
         # file has since been deleted.  We warn rather than fail so that teams
         # can clean up tracking rows deliberately.
-        discovered_names = {name for name, _ in warning_migrations}
+        discovered_names = {name for name, _ in known_migrations}
         for applied_name in applied_records:
             if applied_name not in discovered_names:
                 logger.warning(
@@ -781,7 +784,9 @@ async def _apply_migrations_on_conn(
 
         # Verify checksums of already-applied migrations whose files are still present.
         # A mismatch means an applied migration file was edited, which is unsafe.
-        applied_by_name = {name: path for name, path in all_migrations if name in applied_records}
+        applied_by_name = {
+            name: path for name, path in known_migrations if name in applied_records
+        }
         for mig_name, mig_path in applied_by_name.items():
             stored = applied_records.get(mig_name)
             if stored is None:
@@ -800,14 +805,14 @@ async def _apply_migrations_on_conn(
                 )
 
         # Get pending migrations
-        pending = get_pending_migrations(all_migrations, applied)
+        pending = get_pending_migrations(execution_migrations, applied)
 
         results: Dict[str, Any] = {
             "applied": [],
             "skipped": applied,
             "pending_skipped": [],
             "errors": [],
-            "total_discovered": len(all_migrations),
+            "total_discovered": len(execution_migrations),
         }
 
         if not pending:
@@ -822,7 +827,7 @@ async def _apply_migrations_on_conn(
             for node in build_migration_graph(
                 migrations_path=migrations_path,
                 include_internal=include_internal,
-                migrations_list=all_migrations,
+                migrations_list=execution_migrations,
             ).execution_order()
             if node.name in pending_by_name
         ]
@@ -842,6 +847,7 @@ async def _apply_migrations_on_conn(
                     path,
                     fake=fake,
                     verbose=verbose,
+                    ensure_table=False,
                 )
 
                 results["applied"].append(name)

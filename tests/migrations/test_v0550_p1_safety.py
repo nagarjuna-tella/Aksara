@@ -210,6 +210,33 @@ class TestApplyMigrationStoresChecksum:
         assert "record_migration" in events
 
     @pytest.mark.asyncio
+    async def test_direct_apply_can_skip_tracking_table_setup(self, tmp_path):
+        f = tmp_path / "0001_init.py"
+        f.write_text("")
+        conn = self._make_raw_conn()
+
+        with patch(
+            "aksara.migrations.executor.ensure_migrations_table",
+            new_callable=AsyncMock,
+        ) as ensure_mock, patch("aksara.migrations.executor.load_migration_module") as lm, \
+             patch("aksara.migrations.executor.record_migration", new_callable=AsyncMock) as rm:
+            mock_mig = MagicMock()
+            mock_mig.return_value.operations = []
+            lm.return_value = mock_mig
+
+            await apply_migration(
+                conn,
+                "0001_init",
+                f,
+                fake=False,
+                verbose=False,
+                ensure_table=False,
+            )
+
+        ensure_mock.assert_not_awaited()
+        rm.assert_awaited_once()
+
+    @pytest.mark.asyncio
     async def test_sql_migration_stores_checksum(self, tmp_path):
         f = tmp_path / "0001_init.sql"
         f.write_text("CREATE TABLE t (id SERIAL);")
@@ -341,6 +368,92 @@ class TestChecksumVerification:
         assert result["errors"] == []
         assert result["applied"] == ["0002_pending"]
         apply_mock.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_include_internal_false_verifies_applied_internal_checksums(self, tmp_path):
+        internal_name = "aksara_contrib_auth_migrations_0001_initial"
+        internal_file = tmp_path / "0001_internal.py"
+        internal_file.write_text("# internal migration")
+        internal_checksum = _compute_file_checksum(internal_file)
+        pending = tmp_path / "0002_pending.py"
+        pending.write_text("# pending")
+        graph = MagicMock()
+        graph.execution_order.return_value = [type("Node", (), {"name": "0002_pending"})()]
+        original_compute = _compute_file_checksum
+        computed_paths = []
+
+        def _track_checksum(path):
+            computed_paths.append(path)
+            return original_compute(path)
+
+        conn = self._make_conn()
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={internal_name: internal_checksum},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 side_effect=[
+                     [("0002_pending", pending)],
+                     [(internal_name, internal_file), ("0002_pending", pending)],
+                 ],
+             ), \
+             patch(
+                 "aksara.migrations.executor.get_pending_migrations",
+                 return_value=[("0002_pending", pending)],
+             ), \
+             patch("aksara.migrations.executor.build_migration_graph", return_value=graph), \
+             patch(
+                 "aksara.migrations.executor.apply_migration",
+                 new_callable=AsyncMock,
+             ) as apply_mock, \
+             patch(
+                 "aksara.migrations.executor._compute_file_checksum",
+                 side_effect=_track_checksum,
+             ):
+            result = await apply_migrations(conn, tmp_path, verbose=False, include_internal=False)
+
+        assert result["errors"] == []
+        assert internal_file in computed_paths
+        apply_mock.assert_awaited_once()
+        assert result["applied"] == ["0002_pending"]
+
+    @pytest.mark.asyncio
+    async def test_include_internal_false_raises_on_applied_internal_checksum_mismatch(self, tmp_path):
+        internal_name = "aksara_contrib_auth_migrations_0001_initial"
+        internal_file = tmp_path / "0001_internal.py"
+        internal_file.write_text("# internal migration")
+        pending = tmp_path / "0002_pending.py"
+        pending.write_text("# pending")
+
+        conn = self._make_conn()
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={internal_name: "deadbeefdeadbeef"},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 side_effect=[
+                     [("0002_pending", pending)],
+                     [(internal_name, internal_file), ("0002_pending", pending)],
+                 ],
+             ), \
+             patch(
+                 "aksara.migrations.executor.get_pending_migrations",
+                 return_value=[("0002_pending", pending)],
+             ), \
+             patch(
+                 "aksara.migrations.executor.apply_migration",
+                 new_callable=AsyncMock,
+             ) as apply_mock:
+            with pytest.raises(ValueError, match="checksum mismatch"):
+                await apply_migrations(conn, tmp_path, verbose=False, include_internal=False)
+
+        apply_mock.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_error_message_includes_migration_name(self, tmp_path):
@@ -592,7 +705,7 @@ class TestPendingSkippedReporting:
 
         conn = self._make_conn()
 
-        async def _fail_first(conn, name, path, *, fake, verbose):
+        async def _fail_first(conn, name, path, *, fake, verbose, ensure_table):
             if name == "0001_a":
                 raise RuntimeError("first fails")
 
@@ -627,7 +740,7 @@ class TestPendingSkippedReporting:
 
         conn = self._make_conn()
 
-        async def _fail_second(conn, name, path, *, fake, verbose):
+        async def _fail_second(conn, name, path, *, fake, verbose, ensure_table):
             if name == "0002_b":
                 raise RuntimeError("second fails")
             applied_migs.append(name)
@@ -662,7 +775,7 @@ class TestPendingSkippedReporting:
         attempted = []
         conn = self._make_conn()
 
-        async def _track_and_fail(conn, name, path, *, fake, verbose):
+        async def _track_and_fail(conn, name, path, *, fake, verbose, ensure_table):
             attempted.append(name)
             if name == "0001_a":
                 raise RuntimeError("fail")

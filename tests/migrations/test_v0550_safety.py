@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 from aksara.migrations import operations as op
 from aksara.migrations.graph import MigrationGraph, MigrationNode
 from aksara.migrations.executor import (
+    _compute_file_checksum,
     _split_sql_statements,
     apply_migration,
     apply_migrations,
@@ -683,6 +684,7 @@ class TestMissingFromDiskWarning:
         internal_name = "aksara_internal_present"
         internal_file = tmp_path / f"{internal_name}.py"
         internal_file.write_text("# internal migration")
+        internal_checksum = _compute_file_checksum(internal_file)
         user_file = tmp_path / "0002_user.py"
         user_file.write_text("# user migration")
         graph = MagicMock()
@@ -692,11 +694,11 @@ class TestMissingFromDiskWarning:
         conn.fetchval = AsyncMock(return_value=True)
         conn.execute = AsyncMock()
 
-        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock) as ensure_mock, \
              patch(
                  "aksara.migrations.executor.get_applied_migration_records",
                  new_callable=AsyncMock,
-                 return_value={internal_name: "abc123"},
+                 return_value={internal_name: internal_checksum},
              ), \
              patch(
                  "aksara.migrations.executor.discover_all_migrations",
@@ -729,8 +731,10 @@ class TestMissingFromDiskWarning:
         ]
         assert missing_warnings == []
         assert result["applied"] == ["0002_user"]
+        ensure_mock.assert_awaited_once()
         assert apply_mock.await_count == 1
         assert apply_mock.await_args.args[1] == "0002_user"
+        assert apply_mock.await_args.kwargs["ensure_table"] is False
         assert discover_mock.call_args_list[0].kwargs["include_internal"] is False
         assert discover_mock.call_args_list[1].kwargs["include_internal"] is True
 
