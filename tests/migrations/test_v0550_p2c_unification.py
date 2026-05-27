@@ -333,6 +333,65 @@ class TestApplyTestMigrationsDelegation:
             assert call_kwargs.get("include_internal") is True
 
     @pytest.mark.asyncio
+    async def test_no_errors_result_does_not_raise(self, tmp_path, monkeypatch):
+        from aksara.conf import settings
+        from aksara.testing import _apply_test_migrations
+
+        monkeypatch.setattr(settings, "migrations_dir", str(tmp_path / "migrations"),
+                            raising=False)
+
+        with patch(
+            "aksara.migrations.executor.apply_migrations",
+            new_callable=AsyncMock,
+            return_value={
+                "applied": ["0001_init"],
+                "skipped": [],
+                "pending_skipped": [],
+                "errors": [],
+                "total_discovered": 1,
+            },
+        ) as mock_apply, patch("aksara.db.Database") as mock_db_cls:
+            mock_db = AsyncMock()
+            mock_db_cls.return_value = mock_db
+
+            await _apply_test_migrations("postgresql://localhost/test")
+
+            mock_apply.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_error_result_raises_runtime_error_with_pending_skipped(
+        self, tmp_path, monkeypatch
+    ):
+        from aksara.conf import settings
+        from aksara.testing import _apply_test_migrations
+
+        monkeypatch.setattr(settings, "migrations_dir", str(tmp_path / "migrations"),
+                            raising=False)
+
+        with patch(
+            "aksara.migrations.executor.apply_migrations",
+            new_callable=AsyncMock,
+            return_value={
+                "applied": [],
+                "skipped": [],
+                "pending_skipped": ["0002_add_field", "0003_add_index"],
+                "errors": [("0001_init", "syntax error near DROP")],
+                "total_discovered": 3,
+            },
+        ), patch("aksara.db.Database") as mock_db_cls:
+            mock_db = AsyncMock()
+            mock_db_cls.return_value = mock_db
+
+            with pytest.raises(RuntimeError) as exc_info:
+                await _apply_test_migrations("postgresql://localhost/test")
+
+        message = str(exc_info.value)
+        assert "0001_init" in message
+        assert "syntax error near DROP" in message
+        assert "0002_add_field" in message
+        assert "0003_add_index" in message
+
+    @pytest.mark.asyncio
     async def test_no_longer_calls_record_migration_directly(self, tmp_path, monkeypatch):
         """The testing helper must not bypass apply_migrations with its own record calls."""
         from aksara.conf import settings

@@ -66,7 +66,7 @@ class TestArrayCodegen:
         assert "op.ArrayField" in code, (
             "Array field must generate op.ArrayField, not op.TextField"
         )
-        assert "op.TextField" not in code or "op.ArrayField" in code
+        assert "op.TextField" not in code
         assert "TEXT[]" in code
 
     def test_array_int_maps_to_integer_array(self):
