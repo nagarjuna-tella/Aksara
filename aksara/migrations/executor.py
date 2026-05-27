@@ -740,12 +740,13 @@ async def apply_migrations(
     Returns:
         Dict with results:
             - applied: List of migrations applied in this run.
-            - skipped: List of migrations already applied before this run.
+                        - skipped: List of migrations discovered for this run that were
+                            already applied before this run.
             - pending_skipped: List of pending migrations not attempted
               because an earlier pending migration failed.
             - errors: List of (name, error) tuples.
-            - total_discovered: Total number of migrations discovered before
-              filtering applied/pending.
+                        - total_discovered: Total number of migrations discovered for this
+                            run after include_internal filtering.
     """
     migrations_path = Path(migrations_path)
 
@@ -803,6 +804,8 @@ async def _apply_migrations_on_conn(
             user_migrations_path=migrations_path,
             include_internal=include_internal,
         )
+        execution_names = {name for name, _ in execution_migrations}
+        skipped_for_run = [name for name in applied_records if name in execution_names]
         known_migrations = execution_migrations
         if not include_internal:
             known_migrations = discover_all_migrations(
@@ -853,7 +856,7 @@ async def _apply_migrations_on_conn(
 
         results: Dict[str, Any] = {
             "applied": [],
-            "skipped": applied,
+            "skipped": skipped_for_run,
             "pending_skipped": [],
             "errors": [],
             "total_discovered": len(execution_migrations),

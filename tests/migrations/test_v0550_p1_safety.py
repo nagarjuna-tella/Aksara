@@ -283,6 +283,9 @@ class TestChecksumVerification:
 
         assert result["errors"] == []
         assert result["applied"] == []
+        assert result["skipped"] == ["0001_init"]
+        assert result["total_discovered"] == 1
+        assert len(result["skipped"]) <= result["total_discovered"]
 
     @pytest.mark.asyncio
     async def test_checksum_mismatch_raises(self, tmp_path):
@@ -416,6 +419,9 @@ class TestChecksumVerification:
             result = await apply_migrations(conn, tmp_path, verbose=False, include_internal=False)
 
         assert result["errors"] == []
+        assert result["skipped"] == []
+        assert result["total_discovered"] == 1
+        assert len(result["skipped"]) <= result["total_discovered"]
         assert internal_file in computed_paths
         apply_mock.assert_awaited_once()
         assert result["applied"] == ["0002_pending"]

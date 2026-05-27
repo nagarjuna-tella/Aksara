@@ -750,13 +750,16 @@ class TestMissingFromDiskWarning:
              patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
              patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
              caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
-            await apply_migrations(conn, tmp_path, verbose=True)
+            result = await apply_migrations(conn, tmp_path, verbose=True)
 
         assert any(
             "0001_deleted" in record.message
             for record in caplog.records
             if record.levelno == logging.WARNING
         ), "Expected a WARNING mentioning the missing migration name"
+        assert result["skipped"] == []
+        assert result["total_discovered"] == 0
+        assert len(result["skipped"]) <= result["total_discovered"]
 
     @pytest.mark.asyncio
     async def test_include_internal_false_does_not_warn_for_present_internal_or_apply_it(
@@ -814,12 +817,44 @@ class TestMissingFromDiskWarning:
         ]
         assert missing_warnings == []
         assert result["applied"] == ["0002_user"]
+        assert result["skipped"] == []
+        assert result["total_discovered"] == 1
+        assert len(result["skipped"]) <= result["total_discovered"]
         ensure_mock.assert_awaited_once()
         assert apply_mock.await_count == 1
         assert apply_mock.await_args.args[1] == "0002_user"
         assert apply_mock.await_args.kwargs["ensure_table"] is False
         assert discover_mock.call_args_list[0].kwargs["include_internal"] is False
         assert discover_mock.call_args_list[1].kwargs["include_internal"] is True
+
+    @pytest.mark.asyncio
+    async def test_discovered_applied_user_migration_is_included_in_skipped_only_once(
+        self, tmp_path
+    ):
+        user_name = "0001_present"
+        user_file = tmp_path / f"{user_name}.py"
+        user_file.write_text("# migration")
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={user_name: _compute_file_checksum(user_file), "0001_deleted": "abc123"},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 return_value=[(user_name, user_file)],
+             ), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["skipped"] == [user_name]
+        assert result["total_discovered"] == 1
+        assert len(result["skipped"]) <= result["total_discovered"]
 
     @pytest.mark.asyncio
     async def test_include_internal_false_still_warns_for_missing_user_migration(
