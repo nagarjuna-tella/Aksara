@@ -263,11 +263,14 @@ for the current posture and known limitations.
 
 ## Migration Safety
 
-Aksara migrations are applied through a single canonical executor that uses
+File-based Aksara migrations are applied through a canonical executor that uses
 PostgreSQL advisory locks, per-migration transactions, checksum verification, SQL
 statement splitting, cycle detection, and clearer failure reporting. The CLI and
-the testing helpers use the same executor path, so local, CI, and production runs
-get the same guarantees.
+the testing helpers share that executor for file-based runs, so local, CI, and
+production file-based runs get the same guarantees. When no migration files
+exist, `aksara migrate` can still use a legacy model-based bootstrap fallback;
+that path is intended for initial/simple setup and does not provide the full
+file-based migration integrity model.
 
 See the [Migration Safety guide](https://nagarjuna-tella.github.io/Aksara/orm/migration-safety/)
 for details.

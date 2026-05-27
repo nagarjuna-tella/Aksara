@@ -167,6 +167,12 @@ _ALLOWED_ARRAY_BASE_TYPES = frozenset({
     "NUMERIC", "DECIMAL",
     "VARCHAR", "CHARACTER VARYING",
 })
+_ARRAY_LENGTH_TYPES = frozenset({"VARCHAR", "CHARACTER VARYING"})
+_ARRAY_PRECISION_SCALE_TYPES = frozenset({"NUMERIC", "DECIMAL"})
+_ARRAY_TIMESTAMP_PRECISION_TYPES = frozenset({
+    "TIMESTAMP", "TIMESTAMPTZ",
+    "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITHOUT TIME ZONE",
+})
 
 # Patterns that are never safe inside a sql_type value.
 _UNSAFE_SQL_TYPE_RE = re.compile(r";|--|/\*|\*/|'|\"")
@@ -174,7 +180,41 @@ _UNSAFE_SQL_TYPE_KEYWORDS = frozenset({
     "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
     "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY", "SELECT",
 })
-_ARRAY_SQL_TYPE_ARGS_RE = re.compile(r"^([A-Z ]+)\((\d+)(?:\s*,\s*\d+)?\)$")
+_ARRAY_SQL_TYPE_ARGS_RE = re.compile(r"^([A-Z ]+)\(([^()]*)\)$")
+
+
+def _validate_array_sql_type_args(base_name: str, args_spec: str, sql_type: str) -> None:
+    """Validate a parenthesized ArrayField base-type argument specifier."""
+    parts = [part.strip() for part in args_spec.split(",")]
+    if any(not part or not part.isdigit() for part in parts):
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_LENGTH_TYPES:
+        if len(parts) == 1:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_PRECISION_SCALE_TYPES:
+        if len(parts) in {1, 2}:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    if base_name in _ARRAY_TIMESTAMP_PRECISION_TYPES:
+        if len(parts) == 1:
+            return
+        raise ValueError(
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+
+    raise ValueError(
+        f"ArrayField sql_type base type {base_name!r} does not allow length/precision specifier: {sql_type!r}"
+    )
 
 
 def _validate_array_sql_type(sql_type: str) -> str:
@@ -217,6 +257,12 @@ def _validate_array_sql_type(sql_type: str) -> str:
     args_match = _ARRAY_SQL_TYPE_ARGS_RE.fullmatch(base)
     if args_match:
         base_name = args_match.group(1).strip()
+        if base_name not in _ALLOWED_ARRAY_BASE_TYPES:
+            raise ValueError(
+                f"ArrayField sql_type has unknown base type {base_name!r}. "
+                f"Allowed base types: {', '.join(sorted(_ALLOWED_ARRAY_BASE_TYPES))}"
+            )
+        _validate_array_sql_type_args(base_name, args_match.group(2), sql_type)
     elif "(" in base or ")" in base:
         raise ValueError(
             f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"

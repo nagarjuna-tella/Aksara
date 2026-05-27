@@ -52,9 +52,11 @@ existing projects.
 ### Unified execution path
 
 - `aksara migrate` and the testing helpers apply migrations through the same
-  canonical executor, so CLI and test runs get the same transactions, advisory
-  lock, SQL splitting, checksum recording, and checksum verification. The dry-run
-  preview path is unchanged.
+  canonical executor, so file-based CLI and test runs get the same transactions,
+  advisory lock, SQL splitting, checksum recording, and checksum verification.
+  The legacy model-based CLI fallback remains for bootstrap scenarios and does
+  not provide the full file-based migration integrity model. The dry-run preview
+  path is unchanged.
 
 ### Compatibility notes
 

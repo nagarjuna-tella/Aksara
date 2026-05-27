@@ -306,6 +306,12 @@ class TestValidateArraySqlType:
     def test_varchar_with_length_passes(self):
         assert _validate_array_sql_type("VARCHAR(255)[]") == "VARCHAR(255)[]"
 
+    def test_character_varying_with_length_passes(self):
+        assert (
+            _validate_array_sql_type("CHARACTER VARYING(255)[]")
+            == "CHARACTER VARYING(255)[]"
+        )
+
     def test_numeric_with_precision_scale_passes(self):
         assert _validate_array_sql_type("NUMERIC(10,2)[]") == "NUMERIC(10,2)[]"
 
@@ -315,8 +321,29 @@ class TestValidateArraySqlType:
     def test_decimal_with_precision_scale_passes(self):
         assert _validate_array_sql_type("DECIMAL(12,4)[]") == "DECIMAL(12,4)[]"
 
+    def test_decimal_with_precision_only_passes(self):
+        assert _validate_array_sql_type("DECIMAL(12)[]") == "DECIMAL(12)[]"
+
+    def test_timestamp_with_precision_passes(self):
+        assert _validate_array_sql_type("TIMESTAMP(3)[]") == "TIMESTAMP(3)[]"
+
+    def test_timestamptz_with_precision_passes(self):
+        assert _validate_array_sql_type("TIMESTAMPTZ(6)[]") == "TIMESTAMPTZ(6)[]"
+
     def test_timestamp_with_time_zone_passes(self):
         assert _validate_array_sql_type("TIMESTAMP WITH TIME ZONE[]") == "TIMESTAMP WITH TIME ZONE[]"
+
+    def test_timestamp_with_time_zone_precision_passes(self):
+        assert (
+            _validate_array_sql_type("TIMESTAMP WITH TIME ZONE(3)[]")
+            == "TIMESTAMP WITH TIME ZONE(3)[]"
+        )
+
+    def test_timestamp_without_time_zone_precision_passes(self):
+        assert (
+            _validate_array_sql_type("TIMESTAMP WITHOUT TIME ZONE(3)[]")
+            == "TIMESTAMP WITHOUT TIME ZONE(3)[]"
+        )
 
     def test_missing_brackets_rejected(self):
         with pytest.raises(ValueError, match="must end with"):
@@ -362,6 +389,26 @@ class TestValidateArraySqlType:
     def test_numeric_with_too_many_args_rejected(self):
         with pytest.raises(ValueError, match="malformed length/precision"):
             _validate_array_sql_type("NUMERIC(10,2,3)[]")
+
+    def test_uuid_with_length_rejected(self):
+        with pytest.raises(ValueError, match="does not allow length/precision"):
+            _validate_array_sql_type("UUID(1)[]")
+
+    def test_text_with_length_rejected(self):
+        with pytest.raises(ValueError, match="does not allow length/precision"):
+            _validate_array_sql_type("TEXT(10)[]")
+
+    def test_jsonb_with_length_rejected(self):
+        with pytest.raises(ValueError, match="does not allow length/precision"):
+            _validate_array_sql_type("JSONB(1)[]")
+
+    def test_boolean_with_length_rejected(self):
+        with pytest.raises(ValueError, match="does not allow length/precision"):
+            _validate_array_sql_type("BOOLEAN(1)[]")
+
+    def test_integer_with_length_rejected(self):
+        with pytest.raises(ValueError, match="does not allow length/precision"):
+            _validate_array_sql_type("INTEGER(10)[]")
 
     def test_numeric_with_unsafe_sql_rejected(self):
         with pytest.raises(ValueError, match="unsafe characters"):

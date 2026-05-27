@@ -1,9 +1,10 @@
 # Migration Safety
 
-Aksara applies migrations through a single, canonical execution path designed to
-be safe to run repeatedly, safe to run from more than one place, and safe to run
-against a database that already has data. This page explains what that path does
-and why, so you can reason about what happens when you run `aksara migrate`.
+Aksara applies file-based migrations through a single, canonical execution path
+designed to be safe to run repeatedly, safe to run from more than one place,
+and safe to run against a database that already has data. This page explains
+what that file-based path does and why, so you can reason about what happens
+when you run `aksara migrate` with migration files present.
 
 If you are looking for how to *write* migrations — operations, dependencies, data
 migrations — see [Migrations](migrations.md). This page is about how migrations
@@ -13,17 +14,23 @@ are *applied* and verified.
 
 ## Canonical executor path
 
-Every migration run goes through the same executor in
+File-based migration runs go through the same executor in
 `aksara.migrations.executor`:
 
-- `aksara migrate` applies migrations through it.
+- `aksara migrate` applies file-based migrations through it when migration
+  files exist.
 - The testing helpers (for example, applying migrations in a test database) use
   the same executor.
 
-Because there is one path, local, CI, and production runs get the same
-guarantees: transactions, the advisory lock, SQL statement splitting, checksum
-recording, and checksum verification. There is no "lighter" code path that skips
-safety checks.
+Because file-based migrations share one path, local, CI, and production
+file-based runs get the same guarantees: transactions, the advisory lock, SQL
+statement splitting, checksum recording, and checksum verification.
+
+The legacy model-based fallback path is still available when `aksara migrate`
+finds no migration files. That path is intended for initial/simple bootstrap
+scenarios and does not provide the full file-based migration integrity model.
+In particular, it does not make the same checksum-verification claims as the
+file-based executor.
 
 The `aksara migrate --dry-run` preview path does not apply anything — it only
 shows what would run — and is unchanged.
