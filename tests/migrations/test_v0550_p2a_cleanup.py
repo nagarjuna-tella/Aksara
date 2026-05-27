@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aksara.migrations.base import Migration
 from aksara.migrations.operations import (
     RemoveConstraint,
+    _extract_sqlstate,
     _is_missing_constraint_error,
 )
 
@@ -111,6 +112,33 @@ class TestAutodetectorFallback:
 # Task 3: RemoveConstraint _is_missing_constraint_error
 # =============================================================================
 
+class TestExtractSqlstate:
+    def test_direct_sqlstate_is_returned_first(self):
+        exc = Exception("db error")
+        exc.sqlstate = "42704"
+        assert _extract_sqlstate(exc) == "42704"
+
+    def test_original_exception_sqlstate_is_returned(self):
+        exc = Exception("wrapped")
+        original = Exception("inner")
+        original.sqlstate = "42704"
+        exc.original_exception = original
+        assert _extract_sqlstate(exc) == "42704"
+
+    def test_cause_sqlstate_is_returned(self):
+        exc = Exception("wrapped")
+        cause = Exception("cause")
+        cause.sqlstate = "42704"
+        exc.__cause__ = cause
+        assert _extract_sqlstate(exc) == "42704"
+
+    def test_context_sqlstate_is_returned(self):
+        exc = Exception("wrapped")
+        context = Exception("context")
+        context.sqlstate = "42704"
+        exc.__context__ = context
+        assert _extract_sqlstate(exc) == "42704"
+
 class TestIsMissingConstraintError:
     def test_sqlstate_42704_returns_true(self):
         exc = Exception("some db error")
@@ -136,6 +164,34 @@ class TestIsMissingConstraintError:
         """Even if the string says 'does not exist', a non-42704 sqlstate wins."""
         exc = Exception("does not exist in some other way")
         exc.sqlstate = "08006"  # connection_failure
+        assert _is_missing_constraint_error(exc) is False
+
+    def test_original_exception_sqlstate_42704_returns_true(self):
+        exc = Exception("wrapped error")
+        original = Exception('constraint "foo" does not exist')
+        original.sqlstate = "42704"
+        exc.original_exception = original
+        assert _is_missing_constraint_error(exc) is True
+
+    def test_cause_sqlstate_42704_returns_true(self):
+        exc = Exception("wrapped error")
+        cause = Exception('constraint "foo" does not exist')
+        cause.sqlstate = "42704"
+        exc.__cause__ = cause
+        assert _is_missing_constraint_error(exc) is True
+
+    def test_context_sqlstate_42704_returns_true(self):
+        exc = Exception("wrapped error")
+        context = Exception('constraint "foo" does not exist')
+        context.sqlstate = "42704"
+        exc.__context__ = context
+        assert _is_missing_constraint_error(exc) is True
+
+    def test_non_42704_sqlstate_blocks_string_fallback_when_wrapped(self):
+        exc = Exception('constraint "foo" does not exist')
+        original = Exception('constraint "foo" does not exist')
+        original.sqlstate = "23505"
+        exc.original_exception = original
         assert _is_missing_constraint_error(exc) is False
 
 

@@ -1931,12 +1931,26 @@ def _is_missing_constraint_error(exc: Exception) -> bool:
 
     Prefers SQLSTATE 42704 (undefined_object) which asyncpg exposes on the
     exception as ``exc.sqlstate``.  Falls back to English message matching only
-    when sqlstate is not available (e.g. wrapped exceptions, future drivers).
+    when sqlstate is not available anywhere on the wrapped exception chain.
     """
-    sqlstate = getattr(exc, "sqlstate", None)
+    sqlstate = _extract_sqlstate(exc)
     if sqlstate is not None:
         return sqlstate == "42704"
     return "does not exist" in str(exc).lower()
+
+
+def _extract_sqlstate(exc: BaseException) -> str | None:
+    """Return the first available SQLSTATE from an exception chain."""
+    for candidate in (
+        exc,
+        getattr(exc, "original_exception", None),
+        getattr(exc, "__cause__", None),
+        getattr(exc, "__context__", None),
+    ):
+        sqlstate = getattr(candidate, "sqlstate", None)
+        if sqlstate is not None:
+            return sqlstate
+    return None
 
 
 class RemoveConstraint(Operation):

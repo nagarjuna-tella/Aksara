@@ -210,6 +210,24 @@ class TestSplitSqlStatements:
         assert len(parts) == 1
         assert "--" not in parts[0]
 
+    def test_crlf_line_comments_split_correctly(self):
+        sql = "-- create table\r\nCREATE TABLE foo (id SERIAL);\r\n-- done\r\n"
+        parts = _split_sql_statements(sql)
+        assert parts == ["CREATE TABLE foo (id SERIAL)"]
+
+    def test_cr_only_line_comments_split_correctly(self):
+        sql = "-- create table\rCREATE TABLE foo (id SERIAL);\r-- done\r"
+        parts = _split_sql_statements(sql)
+        assert parts == ["CREATE TABLE foo (id SERIAL)"]
+
+    def test_cr_only_comment_does_not_drop_following_statement(self):
+        sql = "-- first\rCREATE TABLE a (id int);\rCREATE TABLE b (id int);"
+        parts = _split_sql_statements(sql)
+        assert parts == [
+            "CREATE TABLE a (id int)",
+            "CREATE TABLE b (id int)",
+        ]
+
     def test_blank_lines_ignored(self):
         sql = "\n\nCREATE TABLE foo (id SERIAL);\n\n"
         parts = _split_sql_statements(sql)
@@ -226,6 +244,11 @@ class TestSplitSqlStatements:
 
     def test_only_comments(self):
         sql = "-- nothing here\n-- still nothing\n"
+        parts = _split_sql_statements(sql)
+        assert parts == []
+
+    def test_only_comments_with_cr_only_returns_empty(self):
+        sql = "-- nothing here\r-- still nothing\r"
         parts = _split_sql_statements(sql)
         assert parts == []
 

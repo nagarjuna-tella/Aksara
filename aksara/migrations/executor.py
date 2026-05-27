@@ -515,6 +515,7 @@ def _split_sql_statements(sql: str) -> list[str]:
             single-quoted string, double-quoted identifier, or dollar-quoted
             block.
     """
+    sql = sql.replace("\r\n", "\n").replace("\r", "\n")
     statements: list[str] = []
     current: list[str] = []
     i = 0
