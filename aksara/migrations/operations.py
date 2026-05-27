@@ -79,6 +79,9 @@ def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
     Callers must pass the result through ``_quote_ident()`` before embedding
     in SQL.
     """
+    if max_length < 10:
+        raise ValueError("max_length must be at least 10")
+
     full = "_".join(p for p in parts if p)
     if len(full) <= max_length:
         return full
@@ -113,6 +116,9 @@ def _validate_sql_predicate(predicate: str, *, context: str = "SQL predicate") -
     """
     if not isinstance(predicate, str):
         raise ValueError(f"Unsafe {context}: must be a string, got {type(predicate).__name__!r}")
+    predicate = predicate.strip()
+    if not predicate:
+        raise ValueError(f"Unsafe {context} for partial index: predicate must not be empty.")
     if ";" in predicate:
         raise ValueError(f"Unsafe {context} for partial index: semicolons are not allowed.")
     if "--" in predicate:

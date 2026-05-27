@@ -1373,9 +1373,18 @@ def migrate(
                     # Canonical executor path: advisory lock per run, transaction per
                     # migration, SQL statement splitting, checksum recording and
                     # verification.  This is the same path used by apply_migrations().
-                    results = await apply_migrations(
-                        db, mig_dir, fake=fake, verbose=False, include_internal=True,
-                    )
+                    try:
+                        results = await apply_migrations(
+                            db, mig_dir, fake=fake, verbose=False, include_internal=True,
+                        )
+                    except (RuntimeError, ValueError) as e:
+                        ui.blank()
+                        ui.error(f"Migration failed: {e}")
+                        sys.exit(1)
+                    except Exception as e:
+                        ui.blank()
+                        ui.error(f"Migration failed unexpectedly: {e}")
+                        sys.exit(1)
 
                     if not results["applied"] and not results["errors"]:
                         ui.blank()

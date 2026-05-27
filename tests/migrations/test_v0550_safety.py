@@ -130,6 +130,49 @@ class TestArrayCodegen:
             "op.ArrayField has no item_type parameter; codegen must not emit it"
         )
 
+    def test_array_nullable_false_is_emitted(self):
+        from aksara.model.base import Model
+        from aksara import fields
+        self._clear_registry()
+
+        class RequiredTagsModel(Model):
+            id = fields.UUID(primary_key=True)
+            tags = fields.Array(item_type=str, nullable=False)
+
+        code = model_to_create_table(RequiredTagsModel)
+        self._clear_registry()
+
+        assert "op.ArrayField(sql_type='TEXT[]', nullable=False)" in code
+
+    def test_array_nullable_true_uses_default_codegen(self):
+        from aksara.model.base import Model
+        from aksara import fields
+        self._clear_registry()
+
+        class OptionalTagsModel(Model):
+            id = fields.UUID(primary_key=True)
+            tags = fields.Array(item_type=str, nullable=True)
+
+        code = model_to_create_table(OptionalTagsModel)
+        self._clear_registry()
+
+        assert "op.ArrayField(sql_type='TEXT[]')" in code
+        assert "nullable=True" not in code
+
+    def test_array_non_callable_default_is_preserved(self):
+        from aksara.model.base import Model
+        from aksara import fields
+        self._clear_registry()
+
+        class DefaultTagsModel(Model):
+            id = fields.UUID(primary_key=True)
+            tags = fields.Array(item_type=str, default=["alpha", "beta"])
+
+        code = model_to_create_table(DefaultTagsModel)
+        self._clear_registry()
+
+        assert "default=['alpha', 'beta']" in code
+
 
 # =============================================================================
 # Fix 4: _split_sql_statements()
@@ -214,6 +257,25 @@ class TestSplitSqlStatements:
         parts = _split_sql_statements(sql)
         assert len(parts) == 1
         assert "ignore" not in parts[0]
+
+    def test_block_comment_preserves_token_separator(self):
+        sql = "SELECT/*x*/1;"
+        parts = _split_sql_statements(sql)
+        assert parts == ["SELECT 1"]
+
+    def test_block_comment_between_statements_splits_cleanly(self):
+        sql = "CREATE TABLE a(id int); /* comment */ CREATE TABLE b(id int);"
+        parts = _split_sql_statements(sql)
+        assert parts == [
+            "CREATE TABLE a(id int)",
+            "CREATE TABLE b(id int)",
+        ]
+
+    def test_block_comment_inside_quoted_string_is_preserved(self):
+        sql = "INSERT INTO t (v) VALUES ('keep /* not a comment */ text');"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+        assert "/* not a comment */" in parts[0]
 
     def test_escaped_single_quote_in_string(self):
         sql = "INSERT INTO t (v) VALUES ('it''s fine; ok');"

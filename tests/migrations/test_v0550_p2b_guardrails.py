@@ -61,6 +61,18 @@ class TestMakeConstraintName:
         name = _make_constraint_name("fk", "table", "col", max_length=20)
         assert len(name) <= 20
 
+    def test_max_length_less_than_10_rejected(self):
+        with pytest.raises(ValueError, match="at least 10"):
+            _make_constraint_name("too", "short", max_length=9)
+
+    def test_max_length_10_is_respected_for_long_input(self):
+        name = _make_constraint_name("x" * 50, max_length=10)
+        assert len(name) <= 10
+
+    def test_default_63_char_bound_still_applies(self):
+        name = _make_constraint_name("x" * 100)
+        assert len(name) <= 63
+
 
 class TestManyToManyFieldConstraintNames:
     def _get_sql(self, source="users", target="posts", field="liked_posts"):
@@ -185,6 +197,17 @@ class TestValidateSqlPredicate:
         with pytest.raises(ValueError, match="my_context"):
             _validate_sql_predicate("DROP TABLE x", context="my_context")
 
+    def test_empty_string_rejected(self):
+        with pytest.raises(ValueError, match="must not be empty"):
+            _validate_sql_predicate("")
+
+    def test_whitespace_only_rejected(self):
+        with pytest.raises(ValueError, match="must not be empty"):
+            _validate_sql_predicate("   ")
+
+    def test_predicate_is_stripped(self):
+        assert _validate_sql_predicate(" status = 'active' ") == "status = 'active'"
+
 
 class TestIndexOpWhereValidation:
     def test_valid_where_accepted(self):
@@ -206,6 +229,19 @@ class TestIndexOpWhereValidation:
     def test_line_comment_in_where_raises(self):
         with pytest.raises(ValueError, match="line comments"):
             IndexOp(name="idx_bad", table="users", columns=["id"], where="1=1 -- bypass")
+
+    def test_whitespace_only_where_raises(self):
+        with pytest.raises(ValueError, match="must not be empty"):
+            IndexOp(name="idx_bad", table="users", columns=["id"], where="   ")
+
+    def test_where_is_stripped(self):
+        idx = IndexOp(
+            name="idx_active",
+            table="users",
+            columns=["id"],
+            where=" status = 'active' ",
+        )
+        assert idx.where == "status = 'active'"
 
     def test_other_params_unaffected(self):
         idx = IndexOp(

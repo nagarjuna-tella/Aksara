@@ -513,6 +513,7 @@ def _split_sql_statements(sql: str) -> list[str]:
 
         # Block comment: skip /* ... */
         if ch == "/" and i + 1 < n and sql[i + 1] == "*":
+            current.append(" ")
             i += 2
             while i < n:
                 if sql[i] == "*" and i + 1 < n and sql[i + 1] == "/":
@@ -762,11 +763,10 @@ async def _apply_migrations_on_conn(
             stored = applied_records.get(mig_name)
             if stored is None:
                 # Migrated before checksums were introduced — allow but warn.
-                if verbose:
-                    logger.warning(
-                        f"Checksum unavailable for previously applied migration {mig_name!r}. "
-                        "It will not be verified."
-                    )
+                logger.warning(
+                    f"Checksum unavailable for previously applied migration {mig_name!r}. "
+                    "It will not be verified."
+                )
                 continue
             current = _compute_file_checksum(mig_path)
             if current != stored:
@@ -1183,8 +1183,10 @@ def model_to_create_table(model_class) -> str:
         elif isinstance(field, Array):
             sql_type = Array.TYPE_MAP.get(field.item_type, "TEXT[]")
             parts = [f"sql_type={sql_type!r}"]
-            if field.nullable:
-                parts.append("nullable=True")
+            if not field.nullable:
+                parts.append("nullable=False")
+            if field.default is not None and not callable(field.default):
+                parts.append(f"default={field.default!r}")
             field_code = f"op.ArrayField({', '.join(parts)})"
         
         elif isinstance(field, ForeignKey):

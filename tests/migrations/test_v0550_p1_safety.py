@@ -8,6 +8,7 @@ Covers four P1 fixes:
   4. apply_migrations reports pending_skipped after a failure
 """
 
+import logging
 import os
 import pytest
 from pathlib import Path
@@ -234,6 +235,56 @@ class TestChecksumVerification:
             result = await apply_migrations(conn, tmp_path, verbose=False)
 
         assert result["errors"] == []
+
+    @pytest.mark.asyncio
+    async def test_null_checksum_warning_emitted_when_not_verbose(self, tmp_path, caplog):
+        """Operators should see legacy NULL-checksum warnings even in CLI mode."""
+        f = tmp_path / "0001_init.py"
+        f.write_text("# migration")
+
+        conn = self._make_conn()
+        caplog.set_level(logging.WARNING, logger="aksara.migrations.executor")
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch("aksara.migrations.executor.get_applied_migration_records",
+                   new_callable=AsyncMock,
+                   return_value={"0001_init": None}), \
+             patch("aksara.migrations.executor.discover_all_migrations",
+                   return_value=[("0001_init", f)]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == []
+        assert "Checksum unavailable" in caplog.text
+        assert "0001_init" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_null_checksum_does_not_block_pending_migrations(self, tmp_path):
+        legacy = tmp_path / "0001_legacy.py"
+        legacy.write_text("# legacy")
+        pending = tmp_path / "0002_pending.py"
+        pending.write_text("# pending")
+
+        graph = MagicMock()
+        graph.execution_order.return_value = [type("Node", (), {"name": "0002_pending"})()]
+
+        conn = self._make_conn()
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch("aksara.migrations.executor.get_applied_migration_records",
+                   new_callable=AsyncMock,
+                   return_value={"0001_legacy": None}), \
+             patch("aksara.migrations.executor.discover_all_migrations",
+                   return_value=[("0001_legacy", legacy), ("0002_pending", pending)]), \
+             patch("aksara.migrations.executor.get_pending_migrations",
+                   return_value=[("0002_pending", pending)]), \
+             patch("aksara.migrations.executor.build_migration_graph",
+                   return_value=graph), \
+             patch("aksara.migrations.executor.apply_migration",
+                   new_callable=AsyncMock) as apply_mock:
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == []
+        assert result["applied"] == ["0002_pending"]
+        apply_mock.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_error_message_includes_migration_name(self, tmp_path):
