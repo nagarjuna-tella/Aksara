@@ -698,6 +698,11 @@ async def test_null_checksum_backward_compat_in_db(db, tmp_path):
 # =============================================================================
 
 class TestBuildMigrationGraphStrictErrors:
+    def _make_user_migration_path(self, tmp_path, app_label: str, name: str) -> Path:
+        migrations_dir = tmp_path / app_label / "migrations"
+        migrations_dir.mkdir(parents=True)
+        return migrations_dir / f"{name}.py"
+
     def test_syntax_error_raises_value_error(self, tmp_path):
         bad = tmp_path / "0001_bad.py"
         bad.write_text("def broken(:")
@@ -732,6 +737,39 @@ class TestBuildMigrationGraphStrictErrors:
 
         assert exc_info.value.__cause__ is not None
 
+    def test_user_migration_error_includes_app_label_and_name(self, tmp_path):
+        bad = self._make_user_migration_path(tmp_path, "blog", "0001_bad")
+        bad.write_text("def broken(:")
+
+        with pytest.raises(ValueError) as exc_info:
+            build_migration_graph(migrations_path=bad.parent, include_internal=False)
+
+        assert "blog.0001_bad" in str(exc_info.value)
+
+    def test_internal_migration_error_avoids_redundant_app_prefix(self, tmp_path):
+        bad = tmp_path / "internal_bad.py"
+        bad.write_text("def broken(:")
+        internal_name = "aksara_contrib_auth_migrations_0001_initial"
+
+        with pytest.raises(ValueError) as exc_info:
+            build_migration_graph(migrations_list=[(internal_name, bad)], include_internal=False)
+
+        message = str(exc_info.value)
+        assert "auth.aksara_contrib_auth_migrations_0001_initial" not in message
+        assert internal_name in message
+
+    def test_internal_migration_error_includes_path_and_original_exception(self, tmp_path):
+        bad = tmp_path / "internal_bad.py"
+        bad.write_text("def broken(:")
+        internal_name = "aksara_contrib_auth_migrations_0001_initial"
+
+        with pytest.raises(ValueError) as exc_info:
+            build_migration_graph(migrations_list=[(internal_name, bad)], include_internal=False)
+
+        message = str(exc_info.value)
+        assert str(bad) in message
+        assert "invalid syntax" in message.lower()
+
     def test_non_strict_does_not_raise(self, tmp_path):
         bad = tmp_path / "0001_bad.py"
         bad.write_text("def broken(:")
@@ -741,6 +779,24 @@ class TestBuildMigrationGraphStrictErrors:
             migrations_path=tmp_path, include_internal=False, strict=False
         )
         assert len(graph) == 1
+
+    def test_non_strict_warning_uses_internal_display_name_formatting(self, tmp_path):
+        bad = tmp_path / "internal_bad.py"
+        bad.write_text("def broken(:")
+        internal_name = "aksara_contrib_auth_migrations_0001_initial"
+
+        with patch("aksara.migrations.executor.logger.warning") as mock_warning:
+            graph = build_migration_graph(
+                migrations_list=[(internal_name, bad)],
+                include_internal=False,
+                strict=False,
+            )
+
+        assert len(graph) == 1
+        warning_message = mock_warning.call_args.args[0]
+        assert "auth.aksara_contrib_auth_migrations_0001_initial" not in warning_message
+        assert internal_name in warning_message
+        assert str(bad) in warning_message
 
     def test_valid_migrations_build_graph_correctly(self, tmp_path):
         good = tmp_path / "0001_good.py"

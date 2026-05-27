@@ -338,6 +338,18 @@ def extract_app_label_from_name(migration_name: str, file_path: Path) -> str:
     return parent if parent else "default"
 
 
+def _format_migration_display_name(app_label: str, name: str) -> str:
+    """Return a readable migration identifier for user-facing messages."""
+    if not app_label:
+        return name
+
+    normalized_app = app_label.replace(".", "_")
+    if name.startswith(f"{normalized_app}_") or name.startswith("aksara_contrib_"):
+        return name
+
+    return f"{app_label}.{name}"
+
+
 def build_migration_graph(
     migrations_path: Optional[Path] = None,
     include_internal: bool = True,
@@ -418,12 +430,13 @@ def build_migration_graph(
             
         except Exception as e:
             app_label = extract_app_label_from_name(name, path)
+            display_name = _format_migration_display_name(app_label, name)
             if strict:
                 raise ValueError(
-                    f"Could not load migration {app_label}.{name} from {path}: {e}"
+                    f"Could not load migration {display_name} from {path}: {e}"
                 ) from e
             # Non-strict: warn and continue without dependencies (best-effort graph).
-            logger.warning(f"Could not load migration {app_label}.{name} from {path}: {e}")
+            logger.warning(f"Could not load migration {display_name} from {path}: {e}")
             node = MigrationNode(app_label=app_label, name=name)
             graph.add_node(node)
     
