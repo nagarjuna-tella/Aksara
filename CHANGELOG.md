@@ -5,6 +5,78 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased — v0.5.50 Migration Safety & Correctness
+
+Migrations apply safely and consistently across every entry point, the integrity
+of already-applied migrations is verified, and the SQL the framework generates is
+hardened. The migration file format is unchanged and no action is required on
+existing projects.
+
+### Migration execution safety
+
+- Python migrations are transactional — every operation and the recording of the
+  migration run in one transaction and roll back together on failure.
+- SQL migrations execute statement-by-statement inside that same transaction, so
+  multi-statement files apply completely.
+- Applying migrations acquires a PostgreSQL advisory lock so two processes cannot
+  migrate at the same time; the lock is always released.
+- The migration dependency graph detects circular dependencies and reports the
+  cycle clearly.
+
+### Migration integrity
+
+- Python and SQL migrations store a checksum when applied.
+- Already-applied migrations are verified against their stored checksum before new
+  migrations run; a mismatch fails with the migration name and next steps.
+- Historical rows with no stored checksum remain valid and produce a warning, not
+  an error.
+- Generated migrations that add a non-null field without a default include a
+  warning comment pointing to a safe rollout (temporary default, backfill, or a
+  nullable-first data migration). Primary keys are exempt.
+
+### Failure reporting
+
+- Migration graph loading is strict by default — a file that cannot be loaded
+  raises a clear error instead of being silently skipped.
+- When a migration fails, the pending migrations that were skipped are reported,
+  and the CLI shows them.
+
+### SQL-generation guardrails
+
+- Many-to-many join-table constraint names are deterministic, quoted, and bounded
+  to PostgreSQL's identifier length limit; source/target columns are quoted.
+- Partial-index `where` predicates are validated for obvious unsafe patterns.
+- Array field SQL types are validated against an allowlist and normalised.
+  `ArrayField(sql_type="text[]")` now normalises to `"TEXT[]"`.
+
+### Unified execution path
+
+- `aksara migrate` and the testing helpers apply migrations through the same
+  canonical executor, so CLI and test runs get the same transactions, advisory
+  lock, SQL splitting, checksum recording, and checksum verification. The dry-run
+  preview path is unchanged.
+
+### Compatibility notes
+
+- The migration file format is unchanged; existing migrations are not
+  re-generated or altered.
+- Legacy CLI helpers (`MIGRATION_TABLE_SQL`, `compute_checksum`,
+  `ensure_migrations_table`, `get_applied_migrations`, `record_migration`) remain
+  importable from `aksara.cli.main` as compatibility shims; new code should import
+  from `aksara.migrations.executor`.
+
+### Deferred work
+
+These migration-metadata items are intentionally not part of this patch:
+
+- Migration metadata schema versioning (`schema_version` column).
+- App-label / name identity split (`app_label` column and `UNIQUE(app_label, name)`).
+- Automatic checksum backfill for historical rows (unsafe to automate — it would
+  bless already-edited files and defeat tamper detection).
+- A dedicated migration verify/backfill command.
+
+---
+
 ## v0.5.49 — Security Hardening & Release Trust
 
 ### Security

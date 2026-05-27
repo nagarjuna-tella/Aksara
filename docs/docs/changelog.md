@@ -6,133 +6,113 @@ All notable changes to Aksara.
 
 ---
 
-## Unreleased — v0.5.50 Migration Safety Patch
+## Unreleased — v0.5.50 Migration Safety & Correctness
 
-### Migration Execution Unification (P2-C-lite)
+This patch makes migrations apply safely and consistently across every entry
+point, verifies the integrity of already-applied migrations, and hardens the SQL
+that the framework generates. It does not change the migration file format and
+does not require any action on existing projects.
 
-- **CLI migrate now uses the canonical executor path**: `aksara migrate` previously applied
-  migrations through its own manual loop, bypassing the advisory lock, transaction wrapping,
-  SQL statement splitting, and checksum recording introduced in P0/P1. It now delegates to
-  `aksara.migrations.executor.apply_migrations()` for all real and fake-mode runs. The
-  dry-run preview path is unchanged.
-- **Testing helper uses the canonical executor path**: `aksara.testing._apply_test_migrations()`
-  previously applied migrations without transactions and recorded `NULL` checksums. It now
-  delegates to `apply_migrations()`, giving test environments the same safety guarantees as
-  production runs and eliminating spurious checksum warnings on subsequent `apply_migrations()`
-  calls.
-- **CLI legacy helpers preserved**: `MIGRATION_TABLE_SQL`, `compute_checksum`,
-  `ensure_migrations_table`, `get_applied_migrations`, and `record_migration` remain importable
-  from `aksara.cli.main` as compatibility shims. New code should import from
-  `aksara.migrations.executor`.
-- **Deferred**: Migration table schema versioning (`app_label` column, `schema_version` column,
-  `UNIQUE(app_label, name)` redesign) and automatic checksum backfill are deferred to a future
-  design pass. Automatic backfill cannot be done safely because it would bless already-modified
-  migration files with their current checksum, defeating tamper detection.
+### Migration execution safety
 
-### Migration Safety (P2-B Guardrails)
+- **Transactional Python migrations**: every operation in a Python migration and
+  the row that records the migration as applied now run inside a single
+  transaction. If any operation fails, the whole migration rolls back and is
+  never recorded as applied.
+- **Statement-by-statement SQL migrations**: SQL migrations are split into
+  individual statements and executed one at a time inside the same transaction
+  as the recording step, so multi-statement SQL files apply completely instead
+  of stopping after the first statement.
+- **Advisory lock**: applying migrations now acquires a PostgreSQL advisory lock
+  before inspecting and running pending migrations, so two processes cannot run
+  migrations at the same time. The lock is always released, even on failure.
+- **Cycle detection**: the migration dependency graph detects circular
+  dependencies and raises a clear error naming the cycle instead of silently
+  producing an incorrect order.
 
-- **M2M constraint name quoting and length bounding**: `ManyToManyField.get_join_table_sql()`
-  now uses a new `_make_constraint_name()` helper that truncates deterministically (SHA-256
-  suffix) when the name exceeds PostgreSQL's 63-byte identifier limit. Constraint names are
-  double-quoted via `_quote_ident()`. Source/target column references are also quoted.
-- **Partial-index predicate validation**: `IndexOp.__init__()` now validates the `where`
-  predicate through `_validate_sql_predicate()` at construction time. The check rejects
-  semicolons, line and block comments, and DDL/DML keywords (DROP, ALTER, DELETE, INSERT,
-  UPDATE, CREATE, TRUNCATE, GRANT, REVOKE, EXECUTE, CALL, COPY) using whole-word matching.
-  Safe predicates like `created_at > NOW()` are not affected.
-- **ArrayField sql_type validation**: `ArrayField.__init__()` now validates `sql_type`
-  through `_validate_array_sql_type()` at construction time. Only types from an explicit
-  allowlist of PostgreSQL base types are accepted. The value is normalised to uppercase.
-  Injection patterns (semicolons, comments, quotes, DDL keywords) are rejected outright.
-  **Migration note**: `ArrayField(sql_type="text[]")` now normalises to `"TEXT[]"`.
-  Custom or third-party PostgreSQL array base types not on the allowlist will raise
-  `ValueError` at construction time; open an issue to have them added.
+### Migration integrity
 
-### Migration Cleanup (P2-A)
+- **Checksums for Python and SQL migrations**: both Python and SQL migrations now
+  store a checksum when applied. Before running pending migrations, the checksum
+  of every already-applied migration is verified against the file on disk. A
+  mismatch fails with the migration name and clear next steps, so a quietly
+  edited migration cannot be applied as if unchanged.
+- **Backward compatibility**: migrations recorded before this version may have no
+  stored checksum. These are reported as a warning and remain valid — they are
+  not rejected.
+- **Safer generated non-null fields**: adding a non-null field without a default
+  fails on a table that already has rows. Generated migrations now include a
+  warning comment on such fields, pointing to a temporary default, a backfill, or
+  a nullable-first data migration. Primary keys are exempt.
 
-- Removed dead `Migration._initialized` flag. The flag was set in `__init__`
-  but never read. `Migration` subclasses instantiate identically.
-- Removed unreachable `isinstance(field, type(None))` branch from the
-  autodetector's `_model_field_to_op()`. The `else` fallback already covers
-  unknown field types.
-- `RemoveConstraint.apply()` now uses a `_is_missing_constraint_error()`
-  helper that prefers SQLSTATE `42704` (PostgreSQL `undefined_object`) over
-  English message text matching. The string fallback is kept for wrapped
-  exceptions that do not expose `sqlstate`.
-- CLI `aksara migrate` now displays which pending migrations were skipped after
-  a failure, via a new `_display_pending_skipped()` helper. The warning is only
-  shown when there are remaining migrations and only in non-dry-run mode.
+### Failure reporting
 
-### Migration Safety (P0 Fixes)
+- **Strict graph loading by default**: a migration file that cannot be loaded now
+  raises a clear error naming the migration, its path, and the underlying cause,
+  instead of being silently skipped. A non-strict mode remains available for
+  tooling that needs to inspect a partially broken graph.
+- **Pending migrations skipped after a failure**: when a migration fails, the
+  remaining pending migrations that were not attempted are reported, and the CLI
+  shows which migrations were skipped.
 
-- **Transaction atomicity**: Python migrations now wrap all operations and
-  `record_migration` in a single `connection.transaction()` block. A failed
-  operation rolls back all prior operations from the same migration; the
-  migration is never recorded as applied unless every operation succeeds.
-- **Advisory lock**: `apply_migrations()` acquires a PostgreSQL session-level
-  advisory lock before inspecting applied migrations, preventing two concurrent
-  processes from running migrations simultaneously. The lock is always released
-  in a `finally` block.
-- **Multi-statement SQL**: SQL migrations no longer rely on a single
-  `connection.execute()` call (asyncpg only runs the first statement). A new
-  `_split_sql_statements()` helper splits on `;` boundaries; each statement is
-  executed individually inside the same transaction as `record_migration`.
-- **Cycle detection**: `MigrationGraph.execution_order()` now uses a three-state
-  DFS (unvisited → visiting → done). A back-edge raises `ValueError` with a
-  human-readable description of the cycle. Previously, cycles would silently
-  produce incomplete or incorrect ordering.
-- **`ArrayField` in `operations.__all__`**: `ArrayField` was missing from
-  `__all__`, making it invisible to `from aksara.migrations.operations import *`.
-  It is now included.
-- **Array codegen**: `model_to_create_table()` was generating
-  `op.TextField(item_type=...)` for `Array` fields — an invalid call.  It now
-  generates `op.ArrayField(sql_type=...)`, using `Array.TYPE_MAP` to map Python
-  item types (`str`, `int`, `float`, `bool`, `UUID`) to PostgreSQL array type
-  strings.
+### SQL-generation guardrails
 
-### Migration Safety (P1 Fixes)
+- **Many-to-many constraint and column quoting**: join-table constraint names are
+  deterministic, double-quoted, and bounded to PostgreSQL's identifier length
+  limit; source and target column references are quoted.
+- **Partial-index predicate validation**: an index `where` predicate is validated
+  when it is defined. Obvious unsafe patterns — statement terminators, comments,
+  and DDL/DML keywords — are rejected. Ordinary predicates such as
+  `created_at > NOW()` are unaffected.
+- **Array field type validation**: an array field's SQL type is validated against
+  an allowlist of PostgreSQL base types and normalised to a canonical form.
+  Injection-style input is rejected when the field is defined.
+  **Compatibility note**: `ArrayField(sql_type="text[]")` now normalises to
+  `"TEXT[]"`. A base type that is not on the allowlist raises an error when the
+  field is defined; open an issue to have additional types added.
 
-- **Generated migration warnings**: `operations_to_code()` emits a `# WARNING`
-  comment before any `op.AddField` that is `nullable=False` with no `default`.
-  Adding a non-null column without a default fails on non-empty tables; the
-  comment directs developers to use a temporary default, a backfill, or a
-  nullable-first data-migration pair. Primary-key fields are exempt.
-- **Checksum recording and verification**: Python migration files now have
-  their SHA-256 checksum stored in `aksara_migrations.checksum` when applied
-  (previously only SQL migrations stored a checksum). Before running pending
-  migrations, `apply_migrations()` verifies the on-disk checksum of every
-  already-applied migration. A mismatch raises `ValueError` with the migration
-  name and clear instructions. Rows with `NULL` checksums (pre-v0.5.50) are
-  warned about but not rejected.
-- **Migration graph load errors**: `build_migration_graph()` now accepts
-  `strict: bool = True`. In strict mode a migration file that cannot be loaded
-  raises `ValueError` with the migration name, file path, and original error.
-  Previously the error was silently logged and the migration was added as a
-  dependency-less root node. Pass `strict=False` to restore the old best-effort
-  behaviour for tooling that needs to inspect partially-broken graphs.
-- **Skipped migration reporting**: `apply_migrations()` result dict now
-  includes `"pending_skipped": list[str]`. When a migration fails, all
-  remaining pending migrations that were not attempted are listed here. Verbose
-  mode logs each skipped name.
+### Unified execution path
+
+- **One canonical executor**: `aksara migrate` and the testing helpers now apply
+  migrations through the same canonical executor. Previously the CLI and the test
+  helper each had their own apply loop that bypassed transactions, the advisory
+  lock, SQL statement splitting, and checksum recording.
+- **Consistent guarantees everywhere**: because every entry point shares the same
+  executor, CLI runs and test runs get the same transactions, advisory lock, SQL
+  splitting, checksum recording, and checksum verification. Test environments no
+  longer record empty checksums or emit spurious checksum warnings on later runs.
+- The dry-run preview path is unchanged.
+
+### Compatibility notes
+
+- The migration file format is unchanged. Existing migrations are not
+  re-generated or altered.
+- Legacy CLI helpers (`MIGRATION_TABLE_SQL`, `compute_checksum`,
+  `ensure_migrations_table`, `get_applied_migrations`, and `record_migration`)
+  remain importable from `aksara.cli.main` as compatibility shims; new code
+  should import from `aksara.migrations.executor`.
+
+### Deferred work
+
+The following migration-metadata items are intentionally **not** part of this
+patch and remain future work:
+
+- Migration metadata schema versioning (a `schema_version` column).
+- An app-label / name identity split (an `app_label` column and a
+  `UNIQUE(app_label, name)` redesign of the tracking table).
+- Automatic checksum backfill for historical rows. Backfilling automatically is
+  unsafe because it would bless already-edited files with their current checksum
+  and defeat tamper detection.
+- A dedicated migration verify/backfill command.
 
 ### Tests
 
-- Added `tests/migrations/test_v0550_safety.py` with 29 unit tests covering
-  all P0 fixes (transaction wrapping, fake-mode behavior, rollback on failure,
-  multi-statement SQL, `_split_sql_statements` edge cases, three-state DFS
-  cycle detection, advisory lock acquisition and release).
-- Added `tests/migrations/test_v0550_p1_safety.py` with 34 unit and DB-backed
-  tests covering all four P1 fixes.
-- Added `tests/migrations/test_v0550_p2a_cleanup.py` with 22 regression tests
-  covering all four P2-A cleanups.
-- Added `tests/migrations/test_v0550_p2b_guardrails.py` with 62 unit tests
-  covering `_make_constraint_name`, M2M constraint quoting, `_validate_sql_predicate`,
-  `IndexOp.where` validation, `_validate_array_sql_type`, and `ArrayField` construction
-  validation.
-- Added `tests/migrations/test_v0550_p2c_unification.py` with 17 unit tests verifying
-  that the CLI `migrate` command and the testing helper both delegate to
-  `apply_migrations()`, that the CLI no longer calls `op.apply()` directly, and that
-  `record_migration` is not called independently from the testing helper.
+- Added unit and DB-backed test coverage for the new migration behavior:
+  transactional application and rollback, fake-mode behavior, multi-statement SQL
+  splitting, cycle detection, advisory lock acquisition and release, checksum
+  recording and verification, strict graph loading, skipped-migration reporting,
+  the SQL-generation guardrails, and the unified executor path shared by the CLI
+  and the testing helpers.
 
 ---
 

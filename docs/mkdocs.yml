@@ -69,6 +69,7 @@ nav:
       - Signals: orm/signals.md
       - Fixtures: orm/fixtures.md
       - Migrations: orm/migrations.md
+      - Migration Safety: orm/migration-safety.md
       - Model Meta: orm/model-meta.md
   - API:
       - api/index.md

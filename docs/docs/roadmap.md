@@ -57,17 +57,30 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Future Roadmap
 
-### v0.5.50 - Durable AI Session Store
+### v0.5.50 - Migration Safety & Correctness
+
+Make migrations apply safely and consistently across every entry point. Python
+migrations are transactional, SQL migrations execute statement-by-statement,
+applying migrations takes a PostgreSQL advisory lock, the dependency graph
+detects cycles, and checksums verify that already-applied migrations have not
+changed on disk. The CLI and testing helpers share one canonical executor, and
+SQL-generation guardrails harden the generated DDL.
+
+Migration metadata schema versioning, an app-label / name identity split,
+automatic checksum backfill, and a migration verify/backfill command remain
+future work.
+
+### v0.5.51 - Durable AI Session Store
 
 Persist investigation sessions, AI Console transcripts, and AI review state so multi-step analysis can resume reliably across process restarts.
 
-### v0.5.51 - AI Memory Foundation
+### v0.5.52 - AI Memory Foundation
 
-Introduce a minimal, explicit memory foundation for project-level AI context. This is not part of v0.5.49.
+Introduce a minimal, explicit memory foundation for project-level AI context.
 
-### v0.5.52 - AI System Radar
+### v0.5.53 - AI System Radar
 
-Add system-level monitoring surfaces for AI-assisted project health. This is not part of v0.5.49.
+Add system-level monitoring surfaces for AI-assisted project health.
 
 ### v0.6.0-alpha.1 - Stability, Auditability, and Reference App
 
