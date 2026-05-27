@@ -182,8 +182,43 @@ class TestSplitSqlStatements:
 
     def test_only_comments(self):
         sql = "-- nothing here\n-- still nothing\n"
-        parts = _split_sql_statements("")
+        parts = _split_sql_statements(sql)
         assert parts == []
+
+    def test_inline_two_statements_same_line(self):
+        # Regression: old line-based splitter missed semicolons mid-line.
+        sql = "CREATE TABLE a (id int); CREATE TABLE b (id int);"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 2
+
+    def test_semicolon_inside_single_quoted_string(self):
+        sql = "INSERT INTO t (v) VALUES ('hello; world');"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+
+    def test_semicolon_inside_double_quoted_identifier(self):
+        sql = 'CREATE TABLE "my;table" (id int);'
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+
+    def test_semicolon_inside_dollar_quoted_block(self):
+        sql = (
+            "CREATE FUNCTION f() RETURNS void AS $$ "
+            "BEGIN NULL; END; $$ LANGUAGE plpgsql;"
+        )
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+
+    def test_block_comment_with_semicolon_ignored(self):
+        sql = "/* ignore this; */ CREATE TABLE x (id int);"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
+        assert "ignore" not in parts[0]
+
+    def test_escaped_single_quote_in_string(self):
+        sql = "INSERT INTO t (v) VALUES ('it''s fine; ok');"
+        parts = _split_sql_statements(sql)
+        assert len(parts) == 1
 
 
 # =============================================================================
@@ -451,3 +486,66 @@ class TestAdvisoryLock:
         unlock_calls = [c for c in conn.execute.call_args_list
                         if "pg_advisory_unlock" in str(c)]
         assert unlock_calls, "pg_advisory_unlock must be called even when an error occurs"
+
+
+# =============================================================================
+# Missing-from-disk warning
+# =============================================================================
+
+class TestMissingFromDiskWarning:
+    @pytest.mark.asyncio
+    async def test_applied_migration_missing_from_disk_warns(self, tmp_path, caplog):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)  # advisory lock acquired
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={"0001_deleted": "abc123"},
+             ), \
+             patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            await apply_migrations(conn, tmp_path, verbose=True)
+
+        assert any(
+            "0001_deleted" in record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+        ), "Expected a WARNING mentioning the missing migration name"
+
+    @pytest.mark.asyncio
+    async def test_no_warning_when_all_applied_are_on_disk(self, tmp_path, caplog):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        mig_file = tmp_path / "0001_present.py"
+        mig_file.write_text("# migration")
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 # None = applied before checksums were introduced; verification skipped
+                 return_value={"0001_present": None},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 return_value=[("0001_present", mig_file)],
+             ), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            await apply_migrations(conn, tmp_path, verbose=True)
+
+        missing_warnings = [
+            r for r in caplog.records
+            if r.levelno == logging.WARNING and "not found on disk" in r.message
+        ]
+        assert missing_warnings == [], "No missing-from-disk warnings expected"

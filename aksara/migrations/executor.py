@@ -491,26 +491,106 @@ def _split_sql_statements(sql: str) -> list[str]:
     """Split a SQL script into individual statements on ';' boundaries.
 
     asyncpg's connection.execute() only runs the first statement in a
-    multi-statement string.  This helper strips comments and blank lines,
-    then splits on ';' so every statement is executed.
+    multi-statement string.  This helper uses a character-level scanner that
+    respects single-quoted strings, double-quoted identifiers, dollar-quoted
+    blocks, line comments (--), and block comments (/* ... */) so that
+    semicolons inside any of those constructs are never treated as statement
+    delimiters.
     """
-    statements = []
+    statements: list[str] = []
     current: list[str] = []
-    for line in sql.splitlines():
-        stripped = line.strip()
-        # Skip line comments and blank lines
-        if stripped.startswith("--") or not stripped:
+    i = 0
+    n = len(sql)
+
+    while i < n:
+        ch = sql[i]
+
+        # Line comment: skip to end of line (do not add to current statement)
+        if ch == "-" and i + 1 < n and sql[i + 1] == "-":
+            while i < n and sql[i] != "\n":
+                i += 1
             continue
-        current.append(line)
-        if stripped.endswith(";"):
-            stmt = "\n".join(current).strip()
+
+        # Block comment: skip /* ... */
+        if ch == "/" and i + 1 < n and sql[i + 1] == "*":
+            i += 2
+            while i < n:
+                if sql[i] == "*" and i + 1 < n and sql[i + 1] == "/":
+                    i += 2
+                    break
+                i += 1
+            continue
+
+        # Single-quoted string literal — copy verbatim, handling '' escape
+        if ch == "'":
+            current.append(ch)
+            i += 1
+            while i < n:
+                c = sql[i]
+                current.append(c)
+                i += 1
+                if c == "'":
+                    if i < n and sql[i] == "'":
+                        # Escaped quote inside string
+                        current.append(sql[i])
+                        i += 1
+                    else:
+                        break
+            continue
+
+        # Double-quoted identifier — copy verbatim, handling "" escape
+        if ch == '"':
+            current.append(ch)
+            i += 1
+            while i < n:
+                c = sql[i]
+                current.append(c)
+                i += 1
+                if c == '"':
+                    if i < n and sql[i] == '"':
+                        current.append(sql[i])
+                        i += 1
+                    else:
+                        break
+            continue
+
+        # Dollar-quoting: $$...$$  or  $tag$...$tag$
+        if ch == "$":
+            j = i + 1
+            while j < n and sql[j] != "$":
+                if not (sql[j].isalnum() or sql[j] == "_"):
+                    break
+                j += 1
+            if j < n and sql[j] == "$":
+                tag = sql[i : j + 1]
+                current.extend(tag)
+                i = j + 1
+                while i < n:
+                    if sql[i : i + len(tag)] == tag:
+                        current.extend(tag)
+                        i += len(tag)
+                        break
+                    current.append(sql[i])
+                    i += 1
+                continue
+
+        # Statement delimiter
+        if ch == ";":
+            stmt = "".join(current).strip()
             if stmt:
                 statements.append(stmt)
             current = []
+            i += 1
+            continue
+
+        current.append(ch)
+        i += 1
+
     # Trailing statement without a terminating semicolon
-    remainder = "\n".join(current).strip()
+    remainder = "".join(current).strip()
     if remainder:
         statements.append(remainder)
+
     return statements
 
 
@@ -557,9 +637,10 @@ async def apply_migration(
             elif file_path.suffix == ".sql":
                 # SQL migration: split on statement boundaries so every statement runs,
                 # then record_migration in the same transaction.
-                import hashlib
+                # Use _compute_file_checksum so the checksum matches what integrity
+                # verification will recompute from the file on disk.
+                checksum = _compute_file_checksum(file_path)
                 sql = file_path.read_text()
-                checksum = hashlib.sha256(sql.encode()).hexdigest()[:16]
 
                 if not fake:
                     statements = _split_sql_statements(sql)
@@ -659,6 +740,20 @@ async def _apply_migrations_on_conn(
             user_migrations_path=migrations_path,
             include_internal=include_internal,
         )
+
+        # Warn about applied migration records that no longer have a file on disk.
+        # This is advisory: the migration ran successfully in the past, but the
+        # file has since been deleted.  We warn rather than fail so that teams
+        # can clean up tracking rows deliberately.
+        discovered_names = {name for name, _ in all_migrations}
+        for applied_name in applied_records:
+            if applied_name not in discovered_names:
+                logger.warning(
+                    f"Applied migration {applied_name!r} is recorded in the database "
+                    "but its file was not found on disk. "
+                    "If you intentionally deleted the file, remove the tracking row "
+                    f"manually: DELETE FROM aksara_migrations WHERE name = '{applied_name}';"
+                )
 
         # Verify checksums of already-applied migrations whose files are still present.
         # A mismatch means an applied migration file was edited, which is unsafe.

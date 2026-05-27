@@ -171,7 +171,7 @@ async def get_applied_migrations(db) -> List[str]:
 # what the `aksara migrate` command now uses internally.  Do not call these
 # CLI-level helpers from new code.
 # ---------------------------------------------------------------------------
-async def record_migration(db, name: str, checksum: str) -> None:
+async def record_migration(db, name: str, checksum: str | None = None) -> None:
     """Legacy shim — canonical implementation is aksara.migrations.executor.record_migration."""
     await db.execute(
         "INSERT INTO aksara_migrations (name, checksum) VALUES ($1, $2)",

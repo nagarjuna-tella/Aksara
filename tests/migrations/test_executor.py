@@ -669,7 +669,7 @@ class Migration(Migration):
         applied_order.append(name)
 
     monkeypatch.setattr(migration_executor, "ensure_migrations_table", AsyncMock())
-    monkeypatch.setattr(migration_executor, "get_applied_migrations", AsyncMock(return_value=[]))
+    monkeypatch.setattr(migration_executor, "get_applied_migration_records", AsyncMock(return_value={}))
     monkeypatch.setattr(migration_executor, "apply_migration", _record_apply)
 
     # Use a minimal async-capable connection mock that satisfies the advisory lock calls
