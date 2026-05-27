@@ -174,6 +174,7 @@ _UNSAFE_SQL_TYPE_KEYWORDS = frozenset({
     "DROP", "ALTER", "DELETE", "INSERT", "UPDATE", "CREATE",
     "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY", "SELECT",
 })
+_ARRAY_SQL_TYPE_ARGS_RE = re.compile(r"^([A-Z ]+)\((\d+)(?:\s*,\s*\d+)?\)$")
 
 
 def _validate_array_sql_type(sql_type: str) -> str:
@@ -183,7 +184,7 @@ def _validate_array_sql_type(sql_type: str) -> str:
       * Must be a non-empty string.
       * Must end with ``[]`` (case-insensitive normalised to uppercase).
       * Base type (everything before the final ``[]``) must be on the allowed
-        list after stripping an optional ``(length)`` specifier.
+                list after stripping an optional numeric length/precision specifier.
       * Must not contain semicolons, comments, quotes, or DDL/DML keywords.
 
     Returns the normalised (uppercased) sql_type string.
@@ -210,13 +211,19 @@ def _validate_array_sql_type(sql_type: str) -> str:
         raise ValueError(
             f"ArrayField sql_type must end with '[]', got {sql_type!r}"
         )
-    # Strip [] and optional (length) to get the base type
+    # Strip [] and parse any numeric length/precision suffix.
     base = upper[:-2].strip()
-    # Allow optional length specifier like VARCHAR(255)
-    base_no_len = re.sub(r"\(\d+\)$", "", base).strip()
-    if base_no_len not in _ALLOWED_ARRAY_BASE_TYPES:
+    base_name = base
+    args_match = _ARRAY_SQL_TYPE_ARGS_RE.fullmatch(base)
+    if args_match:
+        base_name = args_match.group(1).strip()
+    elif "(" in base or ")" in base:
         raise ValueError(
-            f"ArrayField sql_type has unknown base type {base_no_len!r}. "
+            f"ArrayField sql_type has malformed length/precision specifier: {sql_type!r}"
+        )
+    if base_name not in _ALLOWED_ARRAY_BASE_TYPES:
+        raise ValueError(
+            f"ArrayField sql_type has unknown base type {base_name!r}. "
             f"Allowed base types: {', '.join(sorted(_ALLOWED_ARRAY_BASE_TYPES))}"
         )
     return upper

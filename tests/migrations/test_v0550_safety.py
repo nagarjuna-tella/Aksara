@@ -570,16 +570,22 @@ class Migration(Migration):
 class TestAdvisoryLock:
     @pytest.mark.asyncio
     async def test_advisory_lock_acquired_and_released(self, tmp_path):
+        import logging
+
         conn = AsyncMock()
-        # First fetchval = lock acquired (True), subsequent = empty list for applied
-        conn.fetchval = AsyncMock(side_effect=[True])
-        conn.fetch = AsyncMock(return_value=[])
-        conn.execute = AsyncMock()
+        conn.fetchval = AsyncMock(side_effect=[True, True])
 
         with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
-             patch("aksara.migrations.executor.get_applied_migrations", new_callable=AsyncMock, return_value=[]), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={},
+             ), \
              patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
-             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]):
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             patch(
+                 "aksara.migrations.executor.logger.warning",
+             ) as warning_mock:
             await apply_migrations(conn, tmp_path, verbose=False)
 
         # Verify advisory lock was acquired
@@ -588,15 +594,15 @@ class TestAdvisoryLock:
         assert lock_calls, "pg_try_advisory_lock must be called"
 
         # Verify advisory lock was released in finally block
-        unlock_calls = [c for c in conn.execute.call_args_list
+        unlock_calls = [c for c in conn.fetchval.call_args_list
                         if "pg_advisory_unlock" in str(c)]
         assert unlock_calls, "pg_advisory_unlock must be called in finally"
+        warning_mock.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_lock_not_acquired_raises(self, tmp_path):
         conn = AsyncMock()
         conn.fetchval = AsyncMock(return_value=False)  # lock NOT acquired
-        conn.execute = AsyncMock()
 
         with pytest.raises(RuntimeError) as exc_info:
             await apply_migrations(conn, tmp_path, verbose=False)
@@ -610,8 +616,7 @@ class TestAdvisoryLock:
     @pytest.mark.asyncio
     async def test_lock_released_on_exception(self, tmp_path):
         conn = AsyncMock()
-        conn.fetchval = AsyncMock(return_value=True)  # lock acquired
-        conn.execute = AsyncMock()
+        conn.fetchval = AsyncMock(side_effect=[True, True])  # acquire then release
 
         with patch("aksara.migrations.executor.ensure_migrations_table",
                    new_callable=AsyncMock, side_effect=RuntimeError("db down")), \
@@ -619,17 +624,37 @@ class TestAdvisoryLock:
             await apply_migrations(conn, tmp_path, verbose=False)
 
         # Even though ensure_migrations_table raised, the lock must be released
-        unlock_calls = [c for c in conn.execute.call_args_list
+        unlock_calls = [c for c in conn.fetchval.call_args_list
                         if "pg_advisory_unlock" in str(c)]
         assert unlock_calls, "pg_advisory_unlock must be called even when an error occurs"
+
+    @pytest.mark.asyncio
+    async def test_unlock_false_logs_warning(self, tmp_path, caplog):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(side_effect=[True, False])
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={},
+             ), \
+             patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == []
+        assert "could not be released by this session" in caplog.text
 
     @pytest.mark.asyncio
     async def test_unlock_failure_does_not_mask_original_error(self, tmp_path, caplog):
         import logging
 
         conn = AsyncMock()
-        conn.fetchval = AsyncMock(return_value=True)
-        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+        conn.fetchval = AsyncMock(side_effect=[True, RuntimeError("unlock failed")])
 
         with patch("aksara.migrations.executor.ensure_migrations_table",
                    new_callable=AsyncMock, side_effect=RuntimeError("primary failure")), \
@@ -645,8 +670,7 @@ class TestAdvisoryLock:
         import logging
 
         conn = AsyncMock()
-        conn.fetchval = AsyncMock(return_value=True)
-        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+        conn.fetchval = AsyncMock(side_effect=[True, RuntimeError("unlock failed")])
 
         with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
              patch(
@@ -661,7 +685,7 @@ class TestAdvisoryLock:
 
         assert result["errors"] == []
         assert "unlock failed" in caplog.text
-        unlock_calls = [c for c in conn.execute.call_args_list
+        unlock_calls = [c for c in conn.fetchval.call_args_list
                         if "pg_advisory_unlock" in str(c)]
         assert unlock_calls, "pg_advisory_unlock must still be attempted"
 
@@ -675,8 +699,7 @@ class TestAdvisoryLock:
         graph.execution_order.return_value = [type("Node", (), {"name": "0001_fail"})()]
 
         conn = AsyncMock()
-        conn.fetchval = AsyncMock(return_value=True)
-        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+        conn.fetchval = AsyncMock(side_effect=[True, RuntimeError("unlock failed")])
 
         with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
              patch(

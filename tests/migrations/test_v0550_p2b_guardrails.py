@@ -306,6 +306,15 @@ class TestValidateArraySqlType:
     def test_varchar_with_length_passes(self):
         assert _validate_array_sql_type("VARCHAR(255)[]") == "VARCHAR(255)[]"
 
+    def test_numeric_with_precision_scale_passes(self):
+        assert _validate_array_sql_type("NUMERIC(10,2)[]") == "NUMERIC(10,2)[]"
+
+    def test_numeric_with_spaced_precision_scale_preserves_spacing(self):
+        assert _validate_array_sql_type("numeric(10, 2)[]") == "NUMERIC(10, 2)[]"
+
+    def test_decimal_with_precision_scale_passes(self):
+        assert _validate_array_sql_type("DECIMAL(12,4)[]") == "DECIMAL(12,4)[]"
+
     def test_timestamp_with_time_zone_passes(self):
         assert _validate_array_sql_type("TIMESTAMP WITH TIME ZONE[]") == "TIMESTAMP WITH TIME ZONE[]"
 
@@ -346,6 +355,18 @@ class TestValidateArraySqlType:
     def test_numeric_array_passes(self):
         assert _validate_array_sql_type("NUMERIC[]") == "NUMERIC[]"
 
+    def test_numeric_with_non_numeric_scale_rejected(self):
+        with pytest.raises(ValueError, match="malformed length/precision"):
+            _validate_array_sql_type("NUMERIC(10,x)[]")
+
+    def test_numeric_with_too_many_args_rejected(self):
+        with pytest.raises(ValueError, match="malformed length/precision"):
+            _validate_array_sql_type("NUMERIC(10,2,3)[]")
+
+    def test_numeric_with_unsafe_sql_rejected(self):
+        with pytest.raises(ValueError, match="unsafe characters"):
+            _validate_array_sql_type("NUMERIC(10); DROP TABLE x;--[]")
+
 
 class TestArrayFieldSqlTypeValidation:
     def test_default_text_array_accepted(self):
@@ -359,6 +380,10 @@ class TestArrayFieldSqlTypeValidation:
     def test_lowercase_normalised(self):
         f = ArrayField(sql_type="uuid[]")
         assert f.sql_type == "UUID[]"
+
+    def test_numeric_precision_scale_accepted_at_construction(self):
+        f = ArrayField(sql_type="numeric(10,2)[]")
+        assert f.sql_type == "NUMERIC(10,2)[]"
 
     def test_invalid_type_raises_at_construction(self):
         with pytest.raises(ValueError):

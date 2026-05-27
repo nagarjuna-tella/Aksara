@@ -922,9 +922,13 @@ async def _apply_migrations_on_conn(
     finally:
         # Always release the advisory lock, even if an error occurred mid-run.
         try:
-            await conn.execute(
+            released = await conn.fetchval(
                 "SELECT pg_advisory_unlock(hashtext($1))", _ADVISORY_LOCK_KEY
             )
+            if released is False:
+                logger.warning(
+                    "Migration advisory lock was not held or could not be released by this session."
+                )
         except Exception as e:
             logger.warning("Failed to release migration advisory lock: %s", e)
 
