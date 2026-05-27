@@ -753,7 +753,9 @@ async def _apply_migrations_on_conn(
                     f"Applied migration {applied_name!r} is recorded in the database "
                     "but its file was not found on disk. "
                     "If you intentionally deleted the file, remove the tracking row "
-                    f"manually: DELETE FROM aksara_migrations WHERE name = '{applied_name}';"
+                    "manually with a parameterized query: "
+                    "DELETE FROM aksara_migrations WHERE name = $1; "
+                    f"migration name: {applied_name!r}"
                 )
 
         # Verify checksums of already-applied migrations whose files are still present.
@@ -848,9 +850,12 @@ async def _apply_migrations_on_conn(
 
     finally:
         # Always release the advisory lock, even if an error occurred mid-run.
-        await conn.execute(
-            "SELECT pg_advisory_unlock(hashtext($1))", _ADVISORY_LOCK_KEY
-        )
+        try:
+            await conn.execute(
+                "SELECT pg_advisory_unlock(hashtext($1))", _ADVISORY_LOCK_KEY
+            )
+        except Exception as e:
+            logger.warning("Failed to release migration advisory lock: %s", e)
 
 
 # =============================================================================

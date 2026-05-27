@@ -39,7 +39,7 @@ class TestMakeConstraintName:
     def test_64_char_name_gets_hash_suffix(self):
         part = "a" * 64
         name = _make_constraint_name(part)
-        assert len(name) <= 63
+        assert len(name.encode("utf-8")) <= 63
         assert "_" in name
         # suffix is last 8 chars after final underscore
         suffix = name.rsplit("_", 1)[-1]
@@ -59,7 +59,7 @@ class TestMakeConstraintName:
 
     def test_custom_max_length(self):
         name = _make_constraint_name("fk", "table", "col", max_length=20)
-        assert len(name) <= 20
+        assert len(name.encode("utf-8")) <= 20
 
     def test_max_length_less_than_10_rejected(self):
         with pytest.raises(ValueError, match="at least 10"):
@@ -67,11 +67,37 @@ class TestMakeConstraintName:
 
     def test_max_length_10_is_respected_for_long_input(self):
         name = _make_constraint_name("x" * 50, max_length=10)
-        assert len(name) <= 10
+        assert len(name.encode("utf-8")) <= 10
 
     def test_default_63_char_bound_still_applies(self):
         name = _make_constraint_name("x" * 100)
-        assert len(name) <= 63
+        assert len(name.encode("utf-8")) <= 63
+
+    def test_ascii_long_name_fits_63_bytes(self):
+        name = _make_constraint_name("ascii_" + ("x" * 100))
+        assert len(name.encode("utf-8")) <= 63
+
+    def test_non_ascii_name_under_byte_limit_returns_unchanged(self):
+        part = "é" * 31
+        name = _make_constraint_name(part)
+        assert name == part
+        assert len(name.encode("utf-8")) == 62
+
+    def test_non_ascii_long_name_fits_63_bytes(self):
+        name = _make_constraint_name("名" * 30)
+        assert len(name.encode("utf-8")) <= 63
+        assert "_" in name
+
+    def test_non_ascii_truncation_does_not_split_character(self):
+        name = _make_constraint_name("é" * 20, max_length=14)
+        prefix, suffix = name.rsplit("_", 1)
+        assert prefix == "éé"
+        assert len(suffix) == 8
+        assert len(name.encode("utf-8")) <= 14
+
+    def test_non_ascii_max_length_10_fits_byte_budget(self):
+        name = _make_constraint_name("é" * 20, max_length=10)
+        assert len(name.encode("utf-8")) <= 10
 
 
 class TestManyToManyFieldConstraintNames:

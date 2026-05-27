@@ -549,6 +549,87 @@ class TestAdvisoryLock:
                         if "pg_advisory_unlock" in str(c)]
         assert unlock_calls, "pg_advisory_unlock must be called even when an error occurs"
 
+    @pytest.mark.asyncio
+    async def test_unlock_failure_does_not_mask_original_error(self, tmp_path, caplog):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+
+        with patch("aksara.migrations.executor.ensure_migrations_table",
+                   new_callable=AsyncMock, side_effect=RuntimeError("primary failure")), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"), \
+             pytest.raises(RuntimeError, match="primary failure"):
+            await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert "unlock failed" in caplog.text
+        assert "Failed to release migration advisory lock" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_unlock_failure_logged_on_success_path(self, tmp_path, caplog):
+        import logging
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={},
+             ), \
+             patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == []
+        assert "unlock failed" in caplog.text
+        unlock_calls = [c for c in conn.execute.call_args_list
+                        if "pg_advisory_unlock" in str(c)]
+        assert unlock_calls, "pg_advisory_unlock must still be attempted"
+
+    @pytest.mark.asyncio
+    async def test_unlock_failure_preserves_migration_result_error(self, tmp_path, caplog):
+        import logging
+
+        migration_path = tmp_path / "0001_fail.py"
+        migration_path.write_text("# migration")
+        graph = MagicMock()
+        graph.execution_order.return_value = [type("Node", (), {"name": "0001_fail"})()]
+
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock(side_effect=RuntimeError("unlock failed"))
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={},
+             ), \
+             patch(
+                 "aksara.migrations.executor.discover_all_migrations",
+                 return_value=[("0001_fail", migration_path)],
+             ), \
+             patch(
+                 "aksara.migrations.executor.get_pending_migrations",
+                 return_value=[("0001_fail", migration_path)],
+             ), \
+             patch("aksara.migrations.executor.build_migration_graph", return_value=graph), \
+             patch(
+                 "aksara.migrations.executor.apply_migration",
+                 new_callable=AsyncMock,
+                 side_effect=RuntimeError("migration failed"),
+             ), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            result = await apply_migrations(conn, tmp_path, verbose=False)
+
+        assert result["errors"] == [("0001_fail", "migration failed")]
+        assert "unlock failed" in caplog.text
+
 
 # =============================================================================
 # Missing-from-disk warning
@@ -579,6 +660,35 @@ class TestMissingFromDiskWarning:
             for record in caplog.records
             if record.levelno == logging.WARNING
         ), "Expected a WARNING mentioning the missing migration name"
+
+    @pytest.mark.asyncio
+    async def test_missing_from_disk_warning_uses_parameterized_delete(self, tmp_path, caplog):
+        import logging
+
+        missing_name = "0001_o'hai"
+        conn = AsyncMock()
+        conn.fetchval = AsyncMock(return_value=True)
+        conn.execute = AsyncMock()
+
+        with patch("aksara.migrations.executor.ensure_migrations_table", new_callable=AsyncMock), \
+             patch(
+                 "aksara.migrations.executor.get_applied_migration_records",
+                 new_callable=AsyncMock,
+                 return_value={missing_name: "abc123"},
+             ), \
+             patch("aksara.migrations.executor.discover_all_migrations", return_value=[]), \
+             patch("aksara.migrations.executor.get_pending_migrations", return_value=[]), \
+             caplog.at_level(logging.WARNING, logger="aksara.migrations.executor"):
+            await apply_migrations(conn, tmp_path, verbose=True)
+
+        warning = next(
+            record.message
+            for record in caplog.records
+            if record.levelno == logging.WARNING and "not found on disk" in record.message
+        )
+        assert "DELETE FROM aksara_migrations WHERE name = $1;" in warning
+        assert f"WHERE name = '{missing_name}'" not in warning
+        assert missing_name in warning
 
     @pytest.mark.asyncio
     async def test_no_warning_when_all_applied_are_on_disk(self, tmp_path, caplog):

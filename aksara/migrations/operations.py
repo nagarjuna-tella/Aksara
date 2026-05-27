@@ -64,6 +64,23 @@ def _validate_fk_action(action: str) -> str:
     return normalised
 
 
+def _truncate_utf8(value: str, max_bytes: int) -> str:
+    """Truncate a string to a UTF-8 byte budget without splitting characters."""
+    encoded = value.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return value
+
+    out: list[str] = []
+    used = 0
+    for ch in value:
+        ch_bytes = ch.encode("utf-8")
+        if used + len(ch_bytes) > max_bytes:
+            break
+        out.append(ch)
+        used += len(ch_bytes)
+    return "".join(out)
+
+
 def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
     """Build a deterministic PostgreSQL-safe constraint identifier.
 
@@ -71,7 +88,7 @@ def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
     bytes it is returned as-is.  When it exceeds the limit the name is
     truncated to leave room for an 8-character stable hash suffix so that:
 
-      * The result is always <= *max_length* characters.
+      * The result is always <= *max_length* UTF-8 bytes.
       * Different long names produce different constraint names (no silent
         collision).
       * The output is deterministic across runs.
@@ -83,13 +100,14 @@ def _make_constraint_name(*parts: str, max_length: int = 63) -> str:
         raise ValueError("max_length must be at least 10")
 
     full = "_".join(p for p in parts if p)
-    if len(full) <= max_length:
+    if len(full.encode("utf-8")) <= max_length:
         return full
     # Hash the full name for a stable suffix; use first 8 hex chars.
-    suffix = hashlib.sha256(full.encode()).hexdigest()[:8]
+    suffix = hashlib.sha256(full.encode("utf-8")).hexdigest()[:8]
     # Trim to make room: max_length - 1 underscore - 8 hash chars
-    prefix = full[: max_length - 9]
-    return f"{prefix}_{suffix}"
+    prefix = _truncate_utf8(full, max_length - 9)
+    result = f"{prefix}_{suffix}"
+    return result
 
 
 # DDL/DML keywords that must never appear in a partial-index predicate.
