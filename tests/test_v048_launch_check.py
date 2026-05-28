@@ -58,7 +58,7 @@ def test_launch_check_item_rejects_unknown_status():
     [("ready", 0, True), ("partial", 1, False), ("blocked", 2, False)],
 )
 def test_report_exit_codes(status, exit_code, ok):
-    report = LaunchCheckReport(ok=ok, status=status, version="0.5.50", checks=[], next_steps=[])
+    report = LaunchCheckReport(ok=ok, status=status, version="0.5.51", checks=[], next_steps=[])
     assert report.exit_code == exit_code
 
 
@@ -66,7 +66,7 @@ def test_report_json_is_parseable():
     report = LaunchCheckReport(
         ok=False,
         status="partial",
-        version="0.5.50",
+        version="0.5.51",
         checks=[LaunchCheckItem("ai", "provider_configured", "warning", "No AI provider configured")],
         next_steps=["Configure AI provider optionally"],
     )
@@ -189,7 +189,7 @@ def test_launch_check_cli_uses_report_exit_code(monkeypatch, fmt):
     report = LaunchCheckReport(
         ok=False,
         status="partial",
-        version="0.5.50",
+        version="0.5.51",
         checks=[LaunchCheckItem("ai", "provider_configured", "warning", "No AI provider configured")],
         next_steps=["Configure AI provider optionally"],
     )
@@ -203,7 +203,7 @@ def test_launch_check_cli_json_is_pure(monkeypatch):
     report = LaunchCheckReport(
         ok=True,
         status="ready",
-        version="0.5.50",
+        version="0.5.51",
         checks=[LaunchCheckItem("environment", "python_version", "ok", "Python 3.12 detected")],
         next_steps=[],
     )
@@ -219,7 +219,7 @@ def test_launch_check_cli_json_is_pure(monkeypatch):
     [("ready", 0), ("partial", 1), ("blocked", 2)],
 )
 def test_launch_check_cli_exit_codes(monkeypatch, status, code):
-    report = LaunchCheckReport(ok=status == "ready", status=status, version="0.5.50", checks=[], next_steps=[])
+    report = LaunchCheckReport(ok=status == "ready", status=status, version="0.5.51", checks=[], next_steps=[])
     monkeypatch.setattr("aksara.launch_check.run_launch_check", lambda: report)
     result = CliRunner().invoke(cli, ["doctor", "launch-check", "--format", "json"])
     assert result.exit_code == code
@@ -234,7 +234,7 @@ def test_redacted_database_url_does_not_expose_password(tmp_path):
 
 
 def test_json_output_contains_no_ansi_sequences(monkeypatch):
-    report = LaunchCheckReport(ok=True, status="ready", version="0.5.50", checks=[], next_steps=[])
+    report = LaunchCheckReport(ok=True, status="ready", version="0.5.51", checks=[], next_steps=[])
     monkeypatch.setattr("aksara.launch_check.run_launch_check", lambda: report)
     result = CliRunner().invoke(cli, ["doctor", "launch-check", "--format", "json"])
     assert "\x1b[" not in result.output

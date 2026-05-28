@@ -6,18 +6,51 @@ All notable changes to Aksara.
 
 ---
 
-## Unreleased v0.5.51 — ORM Primitive Correctness
+## v0.5.51 — ORM Primitive Correctness
+
+This release focuses on ORM primitive field correctness. It makes field
+conversion stricter and more predictable before values reach PostgreSQL, while
+leaving broader query semantics, relation behavior, and advanced field policy as
+planned follow-up work.
 
 ### Fixed
 
-- Integer fields now reject non-integral numeric inputs instead of truncating
-  them.
-- Integer fields now validate PostgreSQL range boundaries before persistence.
-- Boolean fields now parse strict true/false forms.
+- Integer-family fields now reject non-integral numeric inputs instead of
+  truncating them with `int(value)`.
+- Integer-family fields mapped to PostgreSQL `INTEGER`, `SMALLINT`, and `BIGINT`
+  now validate database range boundaries before persistence.
+- Boolean fields now parse strict true/false forms instead of applying
+  `bool(value)` to arbitrary strings.
 - Decimal fields now enforce `max_digits` and `decimal_places` before
-  persistence.
+  persistence and do not rely on PostgreSQL rounding.
 - Float fields now reject `NaN`, positive infinity, and negative infinity.
-- Email validation now rejects invalid local-part dot placement.
+- Email validation now rejects local parts that start with a dot, end with a
+  dot, or contain consecutive dots.
+
+### Tests
+
+- Added unit and DB-backed regression coverage for integer coercion and
+  database bounds, boolean string parsing, decimal precision/scale enforcement,
+  finite float handling, and email local-part dot validation.
+
+### Community
+
+- Added a Code of Conduct.
+- Added a contribution guide.
+- Added bug-report and feature-request issue templates.
+- Added a pull request template covering tests, docs impact, changelog impact,
+  and secret-safety checks.
+
+### Compatibility Notes
+
+- Stricter validation may reject values that previous releases accepted through
+  permissive coercion.
+- Integer fields no longer truncate non-integral numeric inputs.
+- Boolean fields no longer treat arbitrary non-empty strings as `True`.
+- Decimals with extra scale are rejected instead of allowing PostgreSQL to
+  round them.
+- `NaN` and infinity float values are rejected.
+- Aksara remains pre-1.0, and additional ORM correctness work remains planned.
 
 ### Known Remaining ORM Correctness Work
 

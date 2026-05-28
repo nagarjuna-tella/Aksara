@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to file a bug report. Please do **not** use
-        this form for security issues — follow [SECURITY.md](../../blob/main/SECURITY.md) instead.
+        this form for security issues — follow [SECURITY.md](https://github.com/nagarjuna-tella/Aksara/blob/main/SECURITY.md) instead.
   - type: textarea
     id: description
     attributes:
@@ -44,7 +44,7 @@ body:
     attributes:
       label: Aksara Version
       description: Output of `aksara --version`.
-      placeholder: "0.5.50"
+      placeholder: "0.5.51"
     validations:
       required: true
   - type: input

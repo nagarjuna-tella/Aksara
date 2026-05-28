@@ -10,6 +10,24 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.51 - ORM Primitive Correctness
+
+- Integer-family fields now reject non-integral numeric inputs instead of
+  truncating them, and validate PostgreSQL range boundaries before persistence.
+- Boolean fields now parse strict true/false forms instead of treating arbitrary
+  non-empty strings as `True`.
+- Decimal fields enforce `max_digits` and `decimal_places` before database
+  writes, finite float validation rejects `NaN`/infinity, and email validation
+  rejects invalid local-part dot placement.
+- Unit and DB-backed regression coverage protects the primitive field behavior.
+- This is a primitive correctness release only. Query semantics, write-path
+  consistency, relation safety, and advanced Array/vector/file field policy
+  remain planned work.
+
+---
+
+## Recent Releases
+
 ### v0.5.50 - Migration Safety & Correctness
 
 - File-based CLI and test-helper migrations now use one canonical executor with
@@ -25,10 +43,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 - Migration metadata schema versioning, an app-label / name identity split,
   automatic checksum backfill, and a migration verify/backfill command remain
   future work.
-
----
-
-## Recent Releases
 
 ### v0.5.49 - Security Hardening & Release Trust
 
@@ -73,15 +87,25 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Future Roadmap
 
-### v0.5.51 - Durable AI Session Store
+### Remaining ORM Correctness Work
+
+Planned ORM correctness work after v0.5.51:
+
+- Query semantics, including `NULL` filtering and `__isnull` behavior.
+- FK alias filtering and reverse FK filters.
+- Write-path consistency across bulk create/update surfaces.
+- Relation DDL safety.
+- Advanced Array/vector/file field policy.
+
+### v0.5.x - Durable AI Session Store
 
 Persist investigation sessions, AI Console transcripts, and AI review state so multi-step analysis can resume reliably across process restarts.
 
-### v0.5.52 - AI Memory Foundation
+### v0.5.x - AI Memory Foundation
 
 Introduce a minimal, explicit memory foundation for project-level AI context.
 
-### v0.5.53 - AI System Radar
+### v0.5.x - AI System Radar
 
 Add system-level monitoring surfaces for AI-assisted project health.
 

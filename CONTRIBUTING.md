@@ -63,15 +63,16 @@ for setup options (Homebrew, apt, Docker).
 The full suite uses `pytest`:
 
 ```bash
-pytest
+DATABASE_URL="postgresql://user:pass@localhost:5432/aksara_test" pytest tests/
 ```
 
 Useful subsets:
 
 ```bash
-pytest -m security    # security hardening and regression tests
+pytest tests/fields* tests/test_fields.py tests/test_fields_new.py tests/test_fields_extended.py
+pytest tests/security/
+pytest tests/diagnostics/
 pytest -m fuzz        # bounded adversarial / property-based tests
-pytest tests/orm      # a specific area
 ```
 
 New code should ship with tests. Bug fixes should include a regression test that
@@ -124,8 +125,13 @@ User-facing changes should be reflected in [CHANGELOG.md](CHANGELOG.md).
 Docs are built with MkDocs and live under `docs/docs/`. Preview locally:
 
 ```bash
-pip install mkdocs-material
-mkdocs serve -f docs/mkdocs.yml
+python -m mkdocs serve -f docs/mkdocs.yml
+```
+
+Before opening a docs PR, run the strict build:
+
+```bash
+python -m mkdocs build --strict -f docs/mkdocs.yml
 ```
 
 ## Questions

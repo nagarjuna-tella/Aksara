@@ -314,20 +314,24 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.50
+## What's New in v0.5.51
 
-- **Safer file-based migrations** — CLI and test-helper migration runs now use
-    the same canonical executor with transactions, advisory locking, SQL
-    statement splitting, checksum recording, and checksum verification.
-- **Clearer migration failures** — strict graph loading, cycle detection,
-    checksum mismatch reporting, and skipped-pending-migration output make failed
-    runs easier to diagnose.
-- **Migration SQL guardrails** — generated constraint names, partial-index
-    predicates, and array SQL types are validated more carefully.
-- **Compatibility notes** — the migration file format is unchanged, the
-    model-based CLI fallback remains legacy/limited, and migration metadata
-    schema versioning, app-label/name identity split, checksum backfill, and a
-    verify/backfill command remain future work.
+- **Strict integer-family coercion** — integer fields reject bools and
+    non-integral numeric inputs instead of truncating them, and validate
+    PostgreSQL range boundaries before persistence.
+- **Predictable boolean parsing** — boolean fields accept explicit true/false
+    strings and numeric `1`/`0` only.
+- **Decimal write validation** — `max_digits` and `decimal_places` are enforced
+    before database writes, so PostgreSQL does not silently round values.
+- **Finite float validation** — `NaN`, positive infinity, and negative infinity
+    are rejected.
+- **Email local-part validation** — local parts may not start with a dot, end
+    with a dot, or contain consecutive dots.
+- **Community files** — Code of Conduct, contribution guide, issue templates,
+    and a pull request template are now included.
+- **Compatibility notes** — this is a primitive field correctness release.
+    Query semantics, write-path consistency, relation safety, and advanced
+    Array/vector/file field policy remain planned work.
 
 [Full changelog →](changelog.md)
 
