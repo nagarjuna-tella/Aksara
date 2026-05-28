@@ -117,15 +117,13 @@ class TestFieldValidation:
             field.validate(Decimal("12345.67"))  # 7 total digits
     
     def test_decimal_validation_too_many_decimal_places(self):
-        """Decimal places exceeding limit are handled by database (no Python error)."""
+        """Decimal places exceeding limit fail before database writes."""
         from aksara.fields import Decimal as DecimalField
         
         field = DecimalField(max_digits=10, decimal_places=2)
         
-        # Extra decimal places are truncated/rounded by DB, not validated in Python
-        # This is consistent with how NUMERIC type works in PostgreSQL
-        result = field.validate(Decimal("123.456"))
-        assert result == Decimal("123.456")  # Returned as-is, DB handles truncation
+        with pytest.raises(ValueError, match="decimal places"):
+            field.validate(Decimal("123.456"))
 
 
 class TestSerializerReadOnlyFields:
