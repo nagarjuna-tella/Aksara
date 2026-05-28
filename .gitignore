@@ -13,6 +13,8 @@ __pycache__/
 !.github/workflows/
 !.github/workflows/*.yml
 !.github/dependabot.yml
+!.github/ISSUE_TEMPLATE/
+!.github/PULL_REQUEST_TEMPLATE.md
 
 *.tape
 
@@ -25,3 +27,5 @@ opsdesk/
 security/security_matrix.yml
 
 .claude/
+
+orm-audit/

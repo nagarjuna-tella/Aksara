@@ -6,6 +6,29 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased v0.5.51 — ORM Primitive Correctness
+
+### Fixed
+
+- Integer fields now reject non-integral numeric inputs instead of truncating
+  them.
+- Integer fields now validate PostgreSQL range boundaries before persistence.
+- Boolean fields now parse strict true/false forms.
+- Decimal fields now enforce `max_digits` and `decimal_places` before
+  persistence.
+- Float fields now reject `NaN`, positive infinity, and negative infinity.
+- Email validation now rejects invalid local-part dot placement.
+
+### Known Remaining ORM Correctness Work
+
+- `NULL` filtering and `__isnull` query semantics.
+- FK alias filtering and reverse FK filters.
+- `bulk_create`/write-path consistency.
+- Relation DDL safety.
+- Array/vector/file advanced field policy.
+
+---
+
 ## v0.5.50 — Migration Safety & Correctness
 
 This patch makes file-based migrations apply safely and consistently across the

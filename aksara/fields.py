@@ -76,6 +76,14 @@ EMAIL_REGEX = re.compile(
     r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 )
 
+INTEGER_MIN = -(2**31)
+INTEGER_MAX = 2**31 - 1
+BIGINT_MIN = -(2**63)
+BIGINT_MAX = 2**63 - 1
+SMALLINT_MIN = -32_768
+SMALLINT_MAX = 32_767
+INTEGER_STRING_REGEX = re.compile(r"^[+-]?\d+$")
+
 # URL validation regex (http/https only)
 URL_REGEX = re.compile(
     r"^https?://[^\s/$.?#].[^\s]*$",
@@ -272,6 +280,76 @@ def _slugify(value: str, *, allow_unicode: bool = False) -> str:
     return value.strip('-_')
 
 
+def _coerce_strict_integer(value: Any, field_name: str) -> int:
+    """Coerce supported integer inputs without truncating fractional values."""
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} does not accept boolean values")
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not INTEGER_STRING_REGEX.fullmatch(text):
+            raise ValueError(
+                f"{field_name} requires a base-10 integer string, got {value!r}"
+            )
+        return int(text, 10)
+
+    if isinstance(value, float):
+        if not math.isfinite(value) or not value.is_integer():
+            raise ValueError(f"{field_name} requires an integral value, got {value!r}")
+        return int(value)
+
+    if isinstance(value, PyDecimal):
+        if value.is_nan() or value.is_infinite() or value != value.to_integral_value():
+            raise ValueError(f"{field_name} requires an integral value, got {value!r}")
+        return int(value)
+
+    raise ValueError(
+        f"{field_name} requires an int, base-10 integer string, "
+        "integral float, or integral Decimal"
+    )
+
+
+def _validate_integer_bounds(value: int, minimum: int, maximum: int, field_name: str) -> None:
+    if not (minimum <= value <= maximum):
+        raise ValueError(
+            f"Value {value} is out of {field_name} range ({minimum}..{maximum})."
+        )
+
+
+def _coerce_strict_boolean(value: Any) -> bool:
+    """Parse booleans from explicit true/false forms only."""
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        text = value.strip().lower()
+        true_values = {"true", "1", "yes", "y", "on"}
+        false_values = {"false", "0", "no", "n", "off"}
+        if text in true_values:
+            return True
+        if text in false_values:
+            return False
+        raise ValueError(f"Boolean requires a strict true/false string, got {value!r}")
+
+    if isinstance(value, (int, float, PyDecimal)):
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError(f"Boolean numeric values must be 1 or 0, got {value!r}")
+        if isinstance(value, PyDecimal) and (value.is_nan() or value.is_infinite()):
+            raise ValueError(f"Boolean numeric values must be 1 or 0, got {value!r}")
+        if value == 1:
+            return True
+        if value == 0:
+            return False
+        raise ValueError(f"Boolean numeric values must be 1 or 0, got {value!r}")
+
+    raise ValueError(
+        "Boolean requires bool, numeric 1/0, or a strict true/false string"
+    )
+
+
 class String(Field):
     """
     String field mapping to VARCHAR.
@@ -428,12 +506,13 @@ class Integer(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "Integer")
     
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
+        v = _coerce_strict_integer(value, "Integer")
+        _validate_integer_bounds(v, INTEGER_MIN, INTEGER_MAX, "INTEGER")
         if self.min_value is not None and v < self.min_value:
             raise ValueError(
                 f"Value {v} is below the minimum of {self.min_value}"
@@ -503,12 +582,19 @@ class Boolean(Field):
     def to_python(self, value: Any) -> Optional[bool]:
         if value is None:
             return None
-        return bool(value)
+        return _coerce_strict_boolean(value)
     
     def to_db(self, value: Any) -> Optional[bool]:
         if value is None:
             return None
-        return bool(value)
+        return _coerce_strict_boolean(value)
+
+    def validate(self, value: Any) -> bool:
+        if value is None:
+            if self.nullable:
+                return None
+            raise ValueError("Boolean cannot be null")
+        return _coerce_strict_boolean(value)
 
 
 class DateTime(Field):
@@ -1329,6 +1415,14 @@ class Email(Field):
         # Validate format
         if not EMAIL_REGEX.match(email):
             raise ValueError(f"Invalid email format: {value}")
+
+        local_part = email.split("@", 1)[0]
+        if (
+            local_part.startswith(".")
+            or local_part.endswith(".")
+            or ".." in local_part
+        ):
+            raise ValueError(f"Invalid email format: {value}")
         
         # Check length
         if len(email) > self.max_length:
@@ -1490,28 +1584,40 @@ class Decimal(Field):
         
         try:
             dec = PyDecimal(str(value))
-        except InvalidOperation:
+        except (InvalidOperation, ValueError):
             raise ValueError(f"Invalid decimal value: {value}")
         
         # Reject NaN and Infinity
         if dec.is_nan() or dec.is_infinite():
             raise ValueError(f"Invalid decimal value: {value}")
         
-        # Check precision
-        sign, digits, exponent = dec.as_tuple()
-        # For values like 100000 (1E+5): digits=(1,), exponent=5 → 6 integer digits
-        # For values like 12.34: digits=(1,2,3,4), exponent=-2 → 2 integer digits
+        # Check precision and scale before persistence so PostgreSQL never
+        # silently rounds values to fit NUMERIC(precision, scale).
+        _sign, digits, exponent = dec.as_tuple()
         if exponent >= 0:
             integer_digits = len(digits) + exponent
+            fractional_digits = 0
         else:
             integer_digits = max(len(digits) + exponent, 0)
-        
+            fractional_digits = -exponent
+
+        if fractional_digits > self.decimal_places:
+            raise ValueError(
+                f"Decimal value {value} exceeds maximum decimal places "
+                f"({self.decimal_places})"
+            )
+
         if integer_digits > (self.max_digits - self.decimal_places):
             raise ValueError(
                 f"Decimal value {value} exceeds maximum integer digits "
                 f"({self.max_digits - self.decimal_places})"
             )
-        
+
+        if integer_digits + fractional_digits > self.max_digits:
+            raise ValueError(
+                f"Decimal value {value} exceeds maximum digits ({self.max_digits})"
+            )
+
         # Range validation
         if self.min_value is not None and dec < self.min_value:
             raise ValueError(
@@ -1770,6 +1876,8 @@ class Float(Field):
         if value is None:
             return None
         v = float(value)
+        if not math.isfinite(v):
+            raise ValueError("Float values must be finite")
         if self.min_value is not None and v < self.min_value:
             raise ValueError(
                 f"Value {v} is below the minimum of {self.min_value}"
@@ -1985,8 +2093,8 @@ class SmallInteger(Field):
             rating = fields.SmallIntegerField()
     """
 
-    _SMALLINT_MIN = -32_768
-    _SMALLINT_MAX = 32_767
+    _SMALLINT_MIN = SMALLINT_MIN
+    _SMALLINT_MAX = SMALLINT_MAX
 
     def __init__(
         self,
@@ -2019,17 +2127,13 @@ class SmallInteger(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "SmallInteger")
 
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
-        if not (self._SMALLINT_MIN <= v <= self._SMALLINT_MAX):
-            raise ValueError(
-                f"Value {v} is out of SMALLINT range "
-                f"({self._SMALLINT_MIN}..{self._SMALLINT_MAX})."
-            )
+        v = _coerce_strict_integer(value, "SmallInteger")
+        _validate_integer_bounds(v, self._SMALLINT_MIN, self._SMALLINT_MAX, "SMALLINT")
         if self._choices_valid is not None and v not in self._choices_valid:
             raise ValueError(
                 f"Value {v!r} is not a valid choice. "
@@ -2068,8 +2172,8 @@ class BigInteger(Field):
             total_views = fields.BigIntegerField(default=0)
     """
 
-    _BIGINT_MIN = -(2**63)
-    _BIGINT_MAX = 2**63 - 1
+    _BIGINT_MIN = BIGINT_MIN
+    _BIGINT_MAX = BIGINT_MAX
 
     def __init__(
         self,
@@ -2099,17 +2203,13 @@ class BigInteger(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "BigInteger")
 
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
-        if not (self._BIGINT_MIN <= v <= self._BIGINT_MAX):
-            raise ValueError(
-                f"Value {v} is out of BIGINT range "
-                f"({self._BIGINT_MIN}..{self._BIGINT_MAX})."
-            )
+        v = _coerce_strict_integer(value, "BigInteger")
+        _validate_integer_bounds(v, self._BIGINT_MIN, self._BIGINT_MAX, "BIGINT")
         return v
 
 
@@ -2166,16 +2266,17 @@ class PositiveInteger(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "PositiveInteger")
 
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
+        v = _coerce_strict_integer(value, "PositiveInteger")
         if v < 0:
             raise ValueError(
                 f"PositiveIntegerField requires a non-negative value, got {v}."
             )
+        _validate_integer_bounds(v, 0, INTEGER_MAX, "INTEGER")
         return v
 
 
@@ -2201,7 +2302,7 @@ class PositiveSmallInteger(Field):
             priority = fields.PositiveSmallIntegerField(default=0)
     """
 
-    _MAX = 32_767
+    _MAX = SMALLINT_MAX
 
     def __init__(
         self,
@@ -2231,12 +2332,12 @@ class PositiveSmallInteger(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "PositiveSmallInteger")
 
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
+        v = _coerce_strict_integer(value, "PositiveSmallInteger")
         if not (0 <= v <= self._MAX):
             raise ValueError(
                 f"Value {v} is out of POSITIVE SMALLINT range (0..{self._MAX})."
@@ -2293,16 +2394,17 @@ class PositiveBigInteger(Field):
     def to_python(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        return int(value)
+        return _coerce_strict_integer(value, "PositiveBigInteger")
 
     def to_db(self, value: Any) -> Optional[int]:
         if value is None:
             return None
-        v = int(value)
+        v = _coerce_strict_integer(value, "PositiveBigInteger")
         if v < 0:
             raise ValueError(
                 f"PositiveBigIntegerField requires a non-negative value, got {v}."
             )
+        _validate_integer_bounds(v, 0, BIGINT_MAX, "BIGINT")
         return v
 
 

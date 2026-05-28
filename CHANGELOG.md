@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased v0.5.51 — ORM Primitive Correctness
+
+### Fixed
+
+- Integer-family fields now reject non-integral numeric inputs instead of
+  truncating them with `int(value)`.
+- Integer-family fields mapped to PostgreSQL `INTEGER`, `SMALLINT`, and `BIGINT`
+  now validate database range boundaries before persistence.
+- Boolean fields now parse strict true/false forms instead of applying
+  `bool(value)` to arbitrary strings.
+- Decimal fields now enforce `max_digits` and `decimal_places` before
+  persistence and do not rely on PostgreSQL rounding.
+- Float fields now reject `NaN`, positive infinity, and negative infinity.
+- Email validation now rejects local parts that start with a dot, end with a
+  dot, or contain consecutive dots.
+
+### Known Remaining ORM Correctness Work
+
+- `NULL` filtering and `__isnull` query semantics.
+- FK alias filtering and reverse FK filters.
+- `bulk_create`/write-path consistency.
+- Relation DDL safety.
+- Array/vector/file advanced field policy.
+
+---
+
 ## v0.5.50 — Migration Safety & Correctness
 
 File-based migrations now apply safely and consistently across the CLI and test
