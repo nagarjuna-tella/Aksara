@@ -25,6 +25,16 @@ if TYPE_CHECKING:
 MAX_AUTO_FILTER_CHOICES = 50
 
 
+def _normalize_choice(choice: Any) -> Tuple[str, str]:
+    """Return a template/query-safe (value, label) pair for field choices."""
+    if isinstance(choice, (tuple, list)) and len(choice) == 2:
+        value, label = choice
+        return str(value), str(label)
+
+    value = str(choice)
+    return value, value.replace("_", " ").title()
+
+
 class SimpleListFilter:
     """
     Base class for custom admin list filters.
@@ -143,11 +153,15 @@ class FieldListFilter:
 
         choices = getattr(field, "choices", None)
         if choices:
-            return [(str(c), str(c).replace("_", " ").title()) for c in choices]
+            return [_normalize_choice(choice) for choice in choices]
 
         # Fall back to distinct values present in the table (bounded).
         try:
-            objects = await model.objects.all()
+            queryset = model.objects.filter()
+            if not hasattr(queryset, "limit"):
+                return []
+            bounded_qs = queryset.limit(MAX_AUTO_FILTER_CHOICES + 1)
+            objects = await bounded_qs.all()
         except Exception:
             return []
 

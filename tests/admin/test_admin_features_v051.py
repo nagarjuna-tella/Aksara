@@ -26,7 +26,7 @@ from aksara.contrib.admin.actions import (
     queue_message,
     write_messages_cookie,
 )
-from aksara.contrib.admin.filters import FieldListFilter
+from aksara.contrib.admin.filters import FieldListFilter, MAX_AUTO_FILTER_CHOICES
 from aksara.contrib.admin.urls import build_admin_router
 from aksara.permissions import IsAdminUser
 from aksara.registry import ModelRegistry
@@ -365,6 +365,182 @@ class TestSimpleListFilter:
         assert any(c["label"] == "A" and c["selected"] for c in choices)
 
 
+class TestFieldListFilter:
+    class _Meta:
+        def __init__(self, field):
+            self.field = field
+
+        def get_field(self, name):
+            return self.field
+
+    class _BoundedQuery:
+        def __init__(self, values):
+            self.values = values
+            self.limit_arg = None
+            self.materialized_count = 0
+
+        def limit(self, n):
+            self.limit_arg = n
+            return TestFieldListFilter._LimitedQuery(self, self.values[:n])
+
+        async def all(self):
+            raise AssertionError("unbounded filter choice query was materialized")
+
+    class _LimitedQuery:
+        def __init__(self, parent, values):
+            self.parent = parent
+            self.values = values
+
+        async def all(self):
+            self.parent.materialized_count = len(self.values)
+            return [SimpleNamespace(category=value) for value in self.values]
+
+    class _Manager:
+        def __init__(self, query):
+            self.query = query
+
+        def filter(self):
+            return self.query
+
+        async def all(self):
+            raise AssertionError("unbounded manager all() should not be called")
+
+    def _admin_for_field(self, field, manager=None):
+        class FakeModel:
+            pass
+
+        FakeModel.meta = self._Meta(field)
+        if manager is not None:
+            FakeModel.objects = manager
+        return SimpleNamespace(model=FakeModel)
+
+    async def test_django_style_choice_pairs_keep_value_and_label(self):
+        field = SimpleNamespace(choices=[("draft", "Draft")])
+        ma = self._admin_for_field(field)
+
+        filt = await FieldListFilter.create(
+            "status",
+            make_request(query={"status": "draft"}),
+            ma,
+        )
+
+        assert filt.lookup_choices == [("draft", "Draft")]
+        rendered = filt.choices_for_template()
+        assert any(
+            choice["value"] == "draft"
+            and choice["label"] == "Draft"
+            and choice["selected"]
+            for choice in rendered
+        )
+
+        class RecordingQuerySet:
+            def __init__(self):
+                self.kwargs = None
+
+            def filter(self, **kwargs):
+                self.kwargs = kwargs
+                return self
+
+        queryset = RecordingQuerySet()
+        assert filt.apply(queryset) is queryset
+        assert queryset.kwargs == {"status": "draft"}
+
+    async def test_scalar_choices_render_as_before(self):
+        field = SimpleNamespace(choices=["in_review"])
+        ma = self._admin_for_field(field)
+
+        filt = await FieldListFilter.create("status", make_request(), ma)
+
+        assert filt.lookup_choices == [("in_review", "In Review")]
+
+    async def test_boolean_filter_choices_are_static(self):
+        class Boolean:
+            pass
+
+        ma = self._admin_for_field(Boolean())
+
+        filt = await FieldListFilter.create("pinned", make_request(), ma)
+
+        assert filt.lookup_choices == [("true", "Yes"), ("false", "No")]
+
+    async def test_fallback_choices_are_loaded_through_bounded_limit(self):
+        query = self._BoundedQuery(["tools", "food", "tools"])
+        ma = self._admin_for_field(
+            SimpleNamespace(choices=None),
+            manager=self._Manager(query),
+        )
+
+        filt = await FieldListFilter.create("category", make_request(), ma)
+
+        assert query.limit_arg == MAX_AUTO_FILTER_CHOICES + 1
+        assert query.materialized_count == 3
+        assert filt.lookup_choices == [("tools", "tools"), ("food", "food")]
+
+    async def test_high_cardinality_fallback_does_not_materialize_all_rows(self):
+        values = [f"value_{i}" for i in range(MAX_AUTO_FILTER_CHOICES + 10)]
+        query = self._BoundedQuery(values)
+        ma = self._admin_for_field(
+            SimpleNamespace(choices=None),
+            manager=self._Manager(query),
+        )
+
+        filt = await FieldListFilter.create("category", make_request(), ma)
+
+        assert query.limit_arg == MAX_AUTO_FILTER_CHOICES + 1
+        assert query.materialized_count == MAX_AUTO_FILTER_CHOICES + 1
+        assert filt.lookup_choices == []
+
+
+class TestPaginationHelpers:
+    def _request(self, query=None):
+        return SimpleNamespace(
+            query_params=query or {},
+            url=SimpleNamespace(path="/admin/docs/doc/"),
+        )
+
+    def test_show_all_url_exists_for_capped_multi_page_results(self):
+        from aksara.contrib.admin.views import _build_pagination
+
+        pagination = _build_pagination(
+            self._request(), 1, 2, total=50, per_page=25, show_all=False, max_show_all=50
+        )
+
+        assert pagination["show_all_url"] == "/admin/docs/doc/?all=1"
+
+    def test_show_all_url_is_hidden_above_cap(self):
+        from aksara.contrib.admin.views import _build_pagination
+
+        pagination = _build_pagination(
+            self._request(), 1, 5, total=101, per_page=25, show_all=False, max_show_all=100
+        )
+
+        assert pagination["show_all_url"] is None
+
+    def test_show_all_url_is_hidden_when_already_showing_all(self):
+        from aksara.contrib.admin.views import _build_pagination
+
+        pagination = _build_pagination(
+            self._request(query={"all": "1"}),
+            1,
+            1,
+            total=50,
+            per_page=25,
+            show_all=True,
+            max_show_all=50,
+        )
+
+        assert pagination["show_all_url"] is None
+
+    def test_show_all_url_is_hidden_for_single_page_results(self):
+        from aksara.contrib.admin.views import _build_pagination
+
+        pagination = _build_pagination(
+            self._request(), 1, 1, total=20, per_page=25, show_all=False, max_show_all=50
+        )
+
+        assert pagination["show_all_url"] is None
+
+
 class TestMultiSiteRouter:
     def test_route_names_namespaced(self):
         site = AdminSite(name="ops")
@@ -580,6 +756,163 @@ class TestDBBackedFeatures:
         target = (await _base_qs(ma)).filter(id__in=ids)
         await delete_selected(ma, req, target)
         assert await (await _base_qs(ma)).count() == 3
+
+
+class LockedNote(Model):
+    name = fields.String()
+    locked = fields.String(nullable=True)
+
+    class Meta:
+        app_label = "locked_notes"
+
+
+class LockedNoteAdmin(ModelAdmin):
+    fields = ["name", "locked"]
+    readonly_fields = ["locked"]
+
+
+class TestAdminReadonlyHTTPIntegration:
+    """Readonly fields remain display-only across crafted create/change posts."""
+
+    def setup_method(self):
+        ModelRegistry.clear()
+        from aksara.contrib.admin import site
+
+        site.clear()
+
+    def _reset_schema(self):
+        import asyncio
+        from aksara.db import Database
+
+        async def run():
+            db = Database(os.getenv("DATABASE_URL"))
+            await db.connect()
+            await db.execute(f"DROP TABLE IF EXISTS {LockedNote.__tablename__} CASCADE")
+            await db.execute(LockedNote.get_create_table_sql())
+            await db.disconnect()
+
+        asyncio.run(run())
+
+    def _drop_schema(self):
+        import asyncio
+        from aksara.db import Database
+
+        async def run():
+            db = Database(os.getenv("DATABASE_URL"))
+            await db.connect()
+            await db.execute(f"DROP TABLE IF EXISTS {LockedNote.__tablename__} CASCADE")
+            await db.disconnect()
+
+        asyncio.run(run())
+
+    def _create_note(self, name, locked):
+        import asyncio
+        from aksara.db import Database
+
+        async def run():
+            db = Database(os.getenv("DATABASE_URL"))
+            await db.connect()
+            note = await LockedNote.objects.create(name=name, locked=locked)
+            await db.disconnect()
+            return str(note.id)
+
+        return asyncio.run(run())
+
+    def _notes(self):
+        import asyncio
+        from aksara.db import Database
+
+        async def run():
+            db = Database(os.getenv("DATABASE_URL"))
+            await db.connect()
+            rows = await LockedNote.objects.all()
+            await db.disconnect()
+            return rows
+
+        return asyncio.run(run())
+
+    def test_readonly_field_is_displayed_but_ignored_on_create(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                form = client.get("/admin/locked_notes/lockednote/add/")
+                assert form.status_code == 200
+                assert 'name="locked"' in form.text
+                assert "readonly" in form.text
+
+                response = client.post(
+                    "/admin/locked_notes/lockednote/add/",
+                    data={"name": "created", "locked": "crafted"},
+                )
+                assert response.status_code == 303
+
+            rows = self._notes()
+            assert len(rows) == 1
+            assert rows[0].name == "created"
+            assert rows[0].locked is None
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
+
+    def test_readonly_field_is_displayed_but_ignored_on_update(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        pk = self._create_note("original", "server")
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                form = client.get(f"/admin/locked_notes/lockednote/{pk}/change/")
+                assert form.status_code == 200
+                assert 'name="locked"' in form.text
+                assert "readonly" in form.text
+
+                response = client.post(
+                    f"/admin/locked_notes/lockednote/{pk}/change/",
+                    data={"name": "updated", "locked": "crafted"},
+                )
+                assert response.status_code == 303
+
+            rows = self._notes()
+            assert len(rows) == 1
+            assert rows[0].name == "updated"
+            assert rows[0].locked == "server"
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
 
 
 # ---------------------------------------------------------------------------

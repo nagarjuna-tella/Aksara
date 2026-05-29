@@ -532,9 +532,10 @@ async def model_list(
     # rejected by PostgreSQL.
     per_page = max(int(model_admin.list_per_page or 100), 1)
     total = await queryset.count()
+    max_show_all = int(model_admin.list_max_show_all or 200)
     show_all = (
         request.query_params.get("all") == "1"
-        and total <= int(model_admin.list_max_show_all or 200)
+        and total <= max_show_all
     )
     try:
         page = max(int(request.query_params.get("p", "1")), 1)
@@ -580,7 +581,9 @@ async def model_list(
                 cells.append({"value": value, "is_html": False, "is_link": is_link})
         rows.append({"obj": obj, "cells": cells})
 
-    pagination = _build_pagination(request, page, num_pages, total, per_page, show_all)
+    pagination = _build_pagination(
+        request, page, num_pages, total, per_page, show_all, max_show_all
+    )
 
     return _render_admin_template(
         request,
@@ -644,6 +647,7 @@ def _build_pagination(
     total: int,
     per_page: int,
     show_all: bool,
+    max_show_all: int,
 ) -> Dict[str, Any]:
     return {
         "page": page,
@@ -656,7 +660,7 @@ def _build_pagination(
         "prev_url": _with_params(request, p=page - 1) if page > 1 else None,
         "next_url": _with_params(request, p=page + 1) if page < num_pages else None,
         "show_all_url": _with_params(request, all="1", p=None)
-        if (not show_all and total <= per_page * num_pages and num_pages > 1)
+        if (not show_all and num_pages > 1 and total <= max_show_all)
         else None,
     }
 
@@ -683,12 +687,15 @@ async def model_add(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
 
     form_fields = model_admin.get_form_fields(request)
+    readonly_fields = set(model_admin.get_readonly_fields(request))
     errors: Dict[str, str] = {}
     form_data: Dict[str, Any] = {}
 
     if request.method == "POST":
         raw_form = await _read_admin_form(request)
         form_data = _parse_form_data(raw_form, model, form_fields)
+        for field_name in readonly_fields:
+            form_data.pop(field_name, None)
 
         try:
             obj = model(**form_data)
