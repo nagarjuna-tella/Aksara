@@ -60,7 +60,7 @@ aksara --version
 
 Expected output:
 ```
-aksara, version 0.5.52
+aksara, version 0.5.53
 ```
 
 You can also check the Python package:
@@ -68,7 +68,7 @@ You can also check the Python package:
 ```python
 >>> import aksara
 >>> aksara.__version__
-'0.5.52'
+'0.5.53'
 ```
 
 For a project-level readiness check, run this from inside an Aksara project:

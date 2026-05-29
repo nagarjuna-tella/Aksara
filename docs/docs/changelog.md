@@ -6,12 +6,18 @@ All notable changes to Aksara.
 
 ---
 
-## Unreleased — v0.5.53
+## v0.5.53 — ORM Query Semantics & Migration Generation Correctness
+
+Released 2026-05-29.
+
+This release focuses on ORM query semantics correctness and migration generation
+correctness. It does not claim that all ORM correctness work is complete,
+and intentionally leaves write-path consistency, relation DDL safety, and
+advanced field policy as planned follow-up work.
 
 ### ORM Query Semantics & NULL Correctness
 
-This unreleased section tracks focused ORM query-semantics fixes. It does not
-claim that all ORM correctness work is complete.
+This section covers focused ORM query-semantics fixes.
 
 #### Fixed
 
@@ -47,6 +53,25 @@ claim that all ORM correctness work is complete.
 - Vector `bulk_update()` casting still needs follow-up work.
 - Relation DDL safety remains on the audit backlog.
 - Array, vector, and file advanced-field policy decisions remain open.
+
+### Compatibility Notes
+
+- `filter(field=None)` and `filter(field__exact=None)` now return rows where the
+  field is `NULL`. Previously these queries compiled to equality against a `NULL`
+  parameter and returned no rows. Code that relied on the old behavior of
+  returning no results must be updated.
+- `__isnull` parsing is stricter. String values like `"False"` and `"0"` are now
+  treated as false. Invalid values now raise a validation error instead of
+  being treated as truthy. Only the documented boolean and string forms are
+  accepted.
+- Foreign key column aliases such as `author_id` are now accepted in filters
+  when they correspond to a real FK or O2O database column.
+- Generated migration table ordering may change for apps with FK or O2O
+  relationships. `CreateTable` operations are now ordered by dependency, so
+  referenced tables appear before dependent tables in migration output.
+- Generated migration code for `Array(nullable=False)` fields is now stricter;
+  these fields now emit `nullable=False` correctly in migration output.
+- Aksara remains pre-1.0. Additional ORM correctness work is planned.
 
 ---
 

@@ -314,25 +314,27 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.52
+## What's New in v0.5.53
 
-- **Admin correctness** — custom prefixes, multi-site routing, custom
-    login/logout redirects, CSRF cookie paths, session lookup logging, and admin
-    branding/template options now behave consistently.
-- **Permission semantics** — site `permission_classes` apply during login and
-    access, model visibility is filtered by `has_module_permission`, and bulk
-    actions check object-level permissions before running.
-- **Safer admin writes** — readonly fields are enforced on create/update,
-    invalid many-to-many ids are reported instead of silently ignored, relation
-    updates are transactional, and Boolean `False` renders unchecked.
-- **Richer admin lists and forms** — search, field/custom filters, ordering,
-    pagination, "show all" caps, custom columns, actions, fieldsets, widgets,
-    and flash messages are covered by focused admin tests.
-- **API filter compatibility** — `AksaraFilterBackend` is the preferred public
-    name, and `DjangoFilterBackend` remains available as a compatibility alias.
-- **Compatibility notes** — Aksara remains pre-1.0. This release improves admin
-    correctness and permissions without claiming production readiness or
-    completing the remaining ORM correctness roadmap.
+- **NULL filter correctness** — `filter(field=None)` and
+    `filter(field__exact=None)` now compile to `IS NULL` instead of equality
+    against a NULL parameter, so NULL rows are now returned.
+- **Strict `__isnull` parsing** — string values like `"False"` and `"0"` are
+    treated as false; invalid values raise a validation error instead of being
+    treated as truthy.
+- **FK alias filters** — column aliases like `author_id` are accepted in filters
+    when they correspond to a real `ForeignKey` or `OneToOne` database column,
+    and reverse FK filters work through the corrected alias handling.
+- **Migration table ordering** — `CreateTable` operations are ordered by FK/O2O
+    dependency, and `DropTable` uses reverse order; `makemigrations --sql` uses
+    the same ordering.
+- **Array nullable=False in migrations** — `Array(nullable=False)` fields now
+    emit `nullable=False` correctly in generated migration code.
+- **Extended migration codegen** — `SmallIntegerField`, `TimeField`,
+    `DurationField`, `SlugField`, `IPAddressField`, `BinaryField`, and
+    `FilePathField` now have codegen support.
+- **Compatibility notes** — `filter(field=None)` behavior change is intentional.
+    Aksara remains pre-1.0. Additional ORM correctness work is planned.
 
 [Full changelog →](changelog.md)
 

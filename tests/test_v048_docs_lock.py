@@ -58,6 +58,7 @@ def test_readme_mentions_launch_path(fragment):
         "v0.5.50 - Migration Safety & Correctness",
         "v0.5.52 - Admin Correctness & Permissions",
         "v0.5.51 - ORM Primitive Correctness",
+        "v0.5.53 - ORM Query Semantics & Migration Generation Correctness",
         "Remaining ORM Correctness Work",
         "v0.5.x - Durable AI Session Store",
         "v0.5.x - AI Memory Foundation",

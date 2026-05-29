@@ -5,6 +5,54 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## v0.5.53 — ORM Query Semantics & Migration Generation Correctness
+
+Released 2026-05-29.
+
+This release focuses on ORM query semantics correctness and migration generation
+correctness. It does not claim that all ORM correctness work is complete,
+and intentionally leaves write-path consistency, relation DDL safety, and
+advanced field policy as planned follow-up work.
+
+### Fixed
+
+- `filter(field=None)` and `filter(field__exact=None)` now compile to `IS NULL`
+  instead of SQL equality against a `NULL` parameter.
+- `__isnull` filters now use strict boolean parsing; string values like `"False"`
+  and `"0"` are treated as false, and invalid values raise a validation error.
+- FK/O2O column aliases such as `author_id` are accepted in filters when they
+  correspond to a real relation database column.
+- Reverse FK filters now work through the corrected alias handling.
+- `CreateTable` migration operations are now ordered by FK/O2O dependencies so
+  referenced tables are emitted before dependent tables.
+- `DropTable` operations use reverse dependency order so dependent tables are
+  dropped before referenced tables.
+- Legacy `makemigrations --sql` output now uses FK dependency ordering.
+- `models_to_migration_code()` delegates through the autodetector path.
+- `Array(nullable=False)` fields now emit `op.ArrayField(..., nullable=False)` in
+  generated migration code.
+- Migration codegen now supports `SmallIntegerField`, `TimeField`,
+  `DurationField`, `SlugField`, `IPAddressField`, `BinaryField`, and
+  `FilePathField`.
+
+### Tests
+
+- Added regression coverage for FK dependency ordering across `CreateTable`,
+  `DropTable`, legacy SQL output, executor delegation, Array nullability, and
+  extended FieldOp code generation.
+
+### Compatibility Notes
+
+- `filter(field=None)` now returns `NULL` rows instead of returning no rows.
+- `__isnull` parsing is stricter; invalid values now raise instead of being
+  treated as truthy.
+- FK column aliases are now accepted in filters.
+- Generated migration ordering may change for apps with FK/O2O relationships.
+- Generated migration code for `Array(nullable=False)` is now stricter.
+- Package remains pre-1.0 and additional ORM correctness work remains planned.
+
+---
+
 ## v0.5.52 — Admin Correctness & Permissions
 
 This release focuses on admin correctness, permission semantics, and API naming

@@ -10,6 +10,28 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.53 - ORM Query Semantics & Migration Generation Correctness
+
+- `filter(field=None)` and `filter(field__exact=None)` now compile to `IS NULL`
+  instead of equality against a NULL parameter.
+- `__isnull` filters use strict boolean parsing; `"False"` and `"0"` are treated
+  as false, and invalid values raise a validation error.
+- FK/O2O column aliases like `author_id` are accepted in filters when they
+  correspond to a real relation database column.
+- Reverse FK filters now work through the corrected alias handling.
+- `CreateTable` migration operations are ordered by FK/O2O dependencies.
+- `DropTable` operations use reverse dependency order.
+- Legacy `makemigrations --sql` output uses FK dependency ordering.
+- `Array(nullable=False)` fields emit `nullable=False` correctly in generated
+  migration code.
+- Migration codegen supports additional field operations.
+- This release focuses on query semantics and migration generation correctness.
+  It does not claim production readiness or external security review.
+
+---
+
+## Recent Releases
+
 ### v0.5.52 - Admin Correctness & Permissions
 
 - Admin mounting now honors custom prefixes, custom login/logout redirects,
@@ -25,10 +47,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
   `DjangoFilterBackend` remains as a compatibility alias.
 - This release improves admin correctness and permissions. It does not claim
   production readiness or external security review.
-
----
-
-## Recent Releases
 
 ### v0.5.51 - ORM Primitive Correctness
 
@@ -107,9 +125,9 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 Planned ORM correctness work remains:
 
-- Query semantics, including `NULL` filtering and `__isnull` behavior.
-- FK alias filtering and reverse FK filters.
-- Write-path consistency across bulk create/update surfaces.
+- Write-path consistency across `bulk_create()`, `bulk_update()`, and other
+  write surfaces.
+- `QuerySet.update()` explicit `updated_at` policy.
 - Relation DDL safety.
 - Advanced Array/vector/file field policy.
 

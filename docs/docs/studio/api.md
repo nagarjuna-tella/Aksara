@@ -46,7 +46,7 @@ Complete handshake endpoint for Studio IDE. Returns everything Studio needs to u
   "project": {
     "name": "My App",
     "version": "1.0.0",
-    "aksara_version": "0.5.52",
+    "aksara_version": "0.5.53",
     "python_version": "3.11.5",
     "debug_mode": true,
     "environment": "development"
@@ -233,7 +233,7 @@ Simple health check endpoint.
 ```json
 {
   "status": "healthy",
-  "aksara_version": "0.5.52",
+  "aksara_version": "0.5.53",
   "database": {
     "connected": true,
     "dialect": "postgresql",
