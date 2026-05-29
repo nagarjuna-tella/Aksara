@@ -25,6 +25,21 @@ claim that all ORM correctness work is complete.
   they correspond to an actual `ForeignKey` or `OneToOne` database column.
 - Reverse foreign key filters now work with the corrected FK alias handling.
 
+### Migration Generation Correctness
+
+#### Fixed
+
+- New `CreateTable` migration operations are now ordered by foreign-key and one-to-one dependencies so referenced tables are emitted before dependent tables.
+- `DropTable` migration operations now use reverse dependency order so dependent tables are dropped before referenced tables.
+- Legacy `makemigrations --sql` output now uses the same FK dependency ordering.
+- `models_to_migration_code()` now uses the same model dependency ordering and delegates field conversion through the autodetector path.
+- Runtime `Array(nullable=False)` fields now emit `op.ArrayField(..., nullable=False)` instead of becoming nullable in generated migrations.
+- Migration code generation now supports additional field operations, including `SmallIntegerField`, `TimeField`, `DurationField`, `SlugField`, `IPAddressField`, `BinaryField`, and `FilePathField`.
+
+#### Tests
+
+- Added regression coverage for FK dependency ordering across `CreateTable`, `DropTable`, legacy SQL output, executor delegation, Array nullability, and extended FieldOp code generation.
+
 #### Remaining Known ORM Correctness Work
 
 - `bulk_create()` and other write paths still need consistency work.
