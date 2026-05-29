@@ -87,6 +87,8 @@ nav:
       - Admin Site: admin/admin-site.md
       - Model Admin: admin/model-admin.md
       - Admin Permissions: admin/admin-permissions.md
+      - Actions: admin/actions.md
+      - Widgets: admin/widgets.md
   - Middleware:
       - middleware/index.md
       - Request ID: middleware/request-id.md

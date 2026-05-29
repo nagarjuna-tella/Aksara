@@ -194,4 +194,6 @@ include_admin(app)
 - [AdminSite](admin-site.md) — Configure and mount admin sites
 - [ModelAdmin](model-admin.md) — Customize how each model appears
 - [Permissions](admin-permissions.md) — Control who can access what
+- [Actions](actions.md) — Define and guard bulk operations
+- [Widgets](widgets.md) — Configure JSON and array form widgets
 - [Models](../orm/models.md) — Define your data structure

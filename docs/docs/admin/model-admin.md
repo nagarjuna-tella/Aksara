@@ -185,6 +185,8 @@ determines the form layout.
 
 Fields shown on the form but not editable. Listed readonly fields appear when
 included via `fields`/`fieldsets`; otherwise they're omitted from the default form.
+The admin also enforces readonly fields on create and update POSTs, so displaying
+a field as readonly does not make it writable through a crafted request.
 
 ```python
 class PostAdmin(ModelAdmin):
@@ -368,4 +370,6 @@ back if a later step fails.
 
 - [AdminSite](admin-site.md) — Configure and mount the admin
 - [Permissions](admin-permissions.md) — Control access
+- [Actions](actions.md) — Bulk operation behavior
+- [Widgets](widgets.md) — JSON and array form widgets
 - [Models](../orm/models.md) — Define your data

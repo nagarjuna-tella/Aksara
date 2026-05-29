@@ -36,15 +36,15 @@ def _read_static(name: str) -> str:
 class TestVersion:
     def test_version_string(self):
         from aksara._version import __version__
-        assert __version__ == "0.5.51"
+        assert __version__ == "0.5.52"
 
     def test_pyproject_version(self):
         toml = (STATIC_DIR.parent.parent.parent / "pyproject.toml").read_text()
-        assert 'version = "0.5.51"' in toml
+        assert 'version = "0.5.52"' in toml
 
     def test_cli_version(self):
         cli = (STATIC_DIR.parent.parent / "cli" / "main.py").read_text()
-        assert 'CLI_VERSION = "0.5.51"' in cli
+        assert 'CLI_VERSION = "0.5.52"' in cli
 
 
 # ═══════════════════════════════════════════════════════════════════════════

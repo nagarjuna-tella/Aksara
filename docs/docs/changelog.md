@@ -6,6 +6,81 @@ All notable changes to Aksara.
 
 ---
 
+## v0.5.52 — Admin Correctness & Permissions
+
+This release focuses on admin correctness, permission semantics, and API naming
+compatibility. It makes the generated admin more predictable under custom
+prefixes, multiple admin sites, object-level permission hooks, readonly fields,
+and bulk actions. It does not claim production readiness or external security
+review, and intentionally leaves broader ORM correctness work on the roadmap.
+
+### Fixed
+
+- Custom admin prefixes now scope the admin CSRF cookie to the mounted prefix,
+  so forms under paths such as `/manage/` receive the right cookie path.
+- Multi-site admin routing now builds routes bound to the mounted `AdminSite`,
+  keeping route names, branding, registry lookups, and permission checks
+  isolated per site.
+- Custom `login_url` and `logout_url` settings are honored for admin redirects.
+- Site `permission_classes` are honored consistently during login and normal
+  admin access, including async permission checks in the admin request path.
+- Admin session lookup errors are logged and treated as unauthenticated
+  requests instead of failing silently.
+- Bulk actions now perform object-level permission checks for selected objects
+  before running the action. The built-in delete action does not bypass
+  per-object delete permissions.
+- Many-to-many admin saves now validate submitted related ids and apply relation
+  updates transactionally instead of silently dropping invalid ids.
+- `readonly_fields` are enforced on both create and update POSTs, even when a
+  readonly field is included explicitly via `fields` or `fieldsets`.
+- Boolean admin checkboxes now render saved `False` values unchecked.
+
+### Improved
+
+- Admin list views now support database-backed search, field/custom filters,
+  ordering, pagination, "show all" caps, sortable headers, custom columns,
+  actions, and flash messages.
+- Admin form layout now supports `fields`, `exclude`, `fieldsets`,
+  `readonly_fields`, `prepopulated_fields`, `raw_id_fields`, and JSON/array
+  widgets where implemented.
+- Admin site configuration now supports branding, themes, custom index
+  templates, extra CSS, custom login/logout redirects, multiple sites, and
+  site-level permission classes.
+- The public API filter backend name is now `AksaraFilterBackend`.
+  `DjangoFilterBackend` remains available as a backward-compatible alias.
+
+### Documentation
+
+- Expanded admin docs for Admin vs Studio guidance, `include_admin()` setup,
+  custom prefixes, CSRF behavior, permissions, actions, widgets, filters,
+  pagination, form layout, and bulk action permission checks.
+- Updated API filtering docs to prefer `AksaraFilterBackend` and describe
+  `DjangoFilterBackend` only as a compatibility alias.
+
+### Tests
+
+- Added focused admin coverage for custom admin prefixes, multi-site routing,
+  custom login/logout redirects, site and object permission checks, bulk
+  actions, list filters, pagination, readonly fields, Boolean checkbox
+  rendering, M2M validation, and admin HTTP integration.
+- Added API compatibility tests proving `DjangoFilterBackend is
+  AksaraFilterBackend` from both `aksara.api.filters` and `aksara.api`.
+
+### Compatibility Notes
+
+- `AksaraFilterBackend` is the preferred public name for new code.
+- `DjangoFilterBackend` remains importable as a compatibility alias.
+- Admin `permission_classes` now apply consistently to login and access. Sites
+  with custom permission policies may see login behavior match their policy more
+  strictly than before.
+- Admin readonly fields are now enforced more strictly on create and update.
+- Bulk actions may now reject a selection when any selected object fails the
+  relevant object-level permission check.
+- Custom admin prefixes should now receive CSRF cookies scoped to the correct
+  path.
+
+---
+
 ## v0.5.51 — ORM Primitive Correctness
 
 This release focuses on ORM primitive field correctness. It makes field

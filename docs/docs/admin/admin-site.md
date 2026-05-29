@@ -196,8 +196,9 @@ admin = AdminSite(permission_classes=[IsAdminUser])
 ```
 
 When `permission_classes` is set, it replaces the default staff-only gate for
-site access. Per-model access is still governed by each `ModelAdmin`'s permission
-methods.
+site access, including the built-in login flow. Permission methods may be sync or
+async when evaluated by admin requests. Per-model access is still governed by
+each `ModelAdmin`'s permission methods.
 
 ---
 
@@ -231,4 +232,6 @@ post_admin = site.get_model_admin(Post)
 
 - [ModelAdmin](model-admin.md) — Customize how models appear
 - [Permissions](admin-permissions.md) — Fine-grained access control
+- [Actions](actions.md) — Bulk action behavior
+- [Widgets](widgets.md) — Form widget customization
 - [Models](../orm/models.md) — Define your data structure

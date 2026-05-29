@@ -314,24 +314,25 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.51
+## What's New in v0.5.52
 
-- **Strict integer-family coercion** — integer fields reject bools and
-    non-integral numeric inputs instead of truncating them, and validate
-    PostgreSQL range boundaries before persistence.
-- **Predictable boolean parsing** — boolean fields accept explicit true/false
-    strings and numeric `1`/`0` only.
-- **Decimal write validation** — `max_digits` and `decimal_places` are enforced
-    before database writes, so PostgreSQL does not silently round values.
-- **Finite float validation** — `NaN`, positive infinity, and negative infinity
-    are rejected.
-- **Email local-part validation** — local parts may not start with a dot, end
-    with a dot, or contain consecutive dots.
-- **Community files** — Code of Conduct, contribution guide, issue templates,
-    and a pull request template are now included.
-- **Compatibility notes** — this is a primitive field correctness release.
-    Query semantics, write-path consistency, relation safety, and advanced
-    Array/vector/file field policy remain planned work.
+- **Admin correctness** — custom prefixes, multi-site routing, custom
+    login/logout redirects, CSRF cookie paths, session lookup logging, and admin
+    branding/template options now behave consistently.
+- **Permission semantics** — site `permission_classes` apply during login and
+    access, model visibility is filtered by `has_module_permission`, and bulk
+    actions check object-level permissions before running.
+- **Safer admin writes** — readonly fields are enforced on create/update,
+    invalid many-to-many ids are reported instead of silently ignored, relation
+    updates are transactional, and Boolean `False` renders unchecked.
+- **Richer admin lists and forms** — search, field/custom filters, ordering,
+    pagination, "show all" caps, custom columns, actions, fieldsets, widgets,
+    and flash messages are covered by focused admin tests.
+- **API filter compatibility** — `AksaraFilterBackend` is the preferred public
+    name, and `DjangoFilterBackend` remains available as a compatibility alias.
+- **Compatibility notes** — Aksara remains pre-1.0. This release improves admin
+    correctness and permissions without claiming production readiness or
+    completing the remaining ORM correctness roadmap.
 
 [Full changelog →](changelog.md)
 

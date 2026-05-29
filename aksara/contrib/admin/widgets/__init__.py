@@ -196,3 +196,22 @@ class NumberInput(TextInput):
         attrs = attrs or {}
         attrs["type"] = "number"
         super().__init__(attrs)
+
+
+from aksara.contrib.admin.widgets.array import ArrayAdminWidget
+from aksara.contrib.admin.widgets.json import JSONAdminWidget
+
+
+__all__ = [
+    "Widget",
+    "TextInput",
+    "TextArea",
+    "CheckboxInput",
+    "DateTimeInput",
+    "Select",
+    "EmailInput",
+    "URLInput",
+    "NumberInput",
+    "ArrayAdminWidget",
+    "JSONAdminWidget",
+]

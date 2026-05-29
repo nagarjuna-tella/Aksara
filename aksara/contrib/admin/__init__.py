@@ -20,7 +20,7 @@ Usage:
 The admin interface provides:
 - Automatic model CRUD views
 - Customizable list display
-- Permission checks (requires is_staff=True)
+- Site, model, and object permission checks
 - Form generation from model fields
 """
 

@@ -15,8 +15,8 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-7619%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.51-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/tests-7679%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+  <img src="https://img.shields.io/badge/version-0.5.52-3b82f6?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -33,7 +33,14 @@
 
 Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Studio UI, MCP tools, and system-level AI intelligence. The goal is simple: a new project should have a working API, inspectable data model, AI-facing tool catalog, and launch diagnostics before you start writing glue code.
 
-Current release: **v0.5.51 — ORM Primitive Correctness**.
+Current release: **v0.5.52 — Admin Correctness & Permissions**.
+
+This release tightens the generated admin surface: site permission classes now
+apply consistently during login and access checks, custom admin prefixes get the
+right CSRF cookie path, bulk actions respect object-level permissions, readonly
+fields are enforced on create/update, and `AksaraFilterBackend` is the preferred
+API filter backend name while `DjangoFilterBackend` remains as a compatibility
+alias.
 
 ---
 
@@ -319,7 +326,7 @@ aksara examples validate --format json
 
 ## Roadmap
 
-Current stable: **v0.5.51 — ORM Primitive Correctness**.
+Current stable: **v0.5.52 — Admin Correctness & Permissions**.
 
 Next planned milestones:
 
@@ -338,9 +345,9 @@ See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the ful
 
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.51**.
+Aksara is **pre-1.0** and actively evolving. Current version: **0.5.52**.
 
-Latest local validation: **7619 passed, 3 skipped**.
+Latest local validation: **7679 passed, 3 skipped**.
 
 **Stable:** ORM primitive field validation, migrations, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB ORM support.
 

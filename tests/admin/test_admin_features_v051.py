@@ -1,5 +1,5 @@
 """
-Tests for the v0.5.51 admin feature build:
+Tests for the v0.5.52 admin feature build:
 
 - AdminSite configuration, multi-model register, index_view, permission_classes
 - ModelAdmin list_display_links, custom columns, fields/exclude/fieldsets,
@@ -222,6 +222,12 @@ class TestModelAdminOptions:
         ma = doc_admin()
         assert ma.has_module_permission(make_request(user=staff_user())) is True
         assert ma.has_module_permission(make_request(user=None)) is False
+
+    def test_structured_widgets_are_exported_from_package(self):
+        from aksara.contrib.admin.widgets import ArrayAdminWidget, JSONAdminWidget
+
+        assert JSONAdminWidget is not None
+        assert ArrayAdminWidget is not None
 
 
 class TestActionsResolution:

@@ -62,7 +62,7 @@ def test_sdist_includes_public_assets(path):
 
 
 def test_project_version_is_048():
-    assert _pyproject()["project"]["version"] == "0.5.51"
+    assert _pyproject()["project"]["version"] == "0.5.52"
 
 
 def test_console_script_points_to_cli():
@@ -95,7 +95,7 @@ def test_template_module_documents_bundled_examples(fragment):
     assert fragment in text
 
 
-@pytest.mark.parametrize("fragment", ["v0.5.51", "aksara>=0.5.51"])
+@pytest.mark.parametrize("fragment", ["v0.5.52", "aksara>=0.5.52"])
 def test_scaffold_template_version_is_current(fragment):
     text = (ROOT / "aksara" / "cli" / "scaffold.py").read_text(encoding="utf-8")
     assert fragment in text

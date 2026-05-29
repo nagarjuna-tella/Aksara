@@ -39,7 +39,9 @@ admin = AdminSite(permission_classes=[IsSuperuser])
 ```
 
 Combine requirements with the built-in `IsAuthenticated`, `IsAdminUser`, etc., or
-your own `BasePermission` subclasses.
+your own `BasePermission` subclasses. The built-in admin request handling honors
+these checks during both login and subsequent admin page access, and supports
+sync or async `has_permission()` methods.
 
 ---
 
@@ -101,6 +103,9 @@ class ProjectAdmin(ModelAdmin):
 ## Field-Level Permissions
 
 ### Read-only fields per user
+
+Readonly fields are display-only on both create and update POSTs. Even if a
+client submits a readonly field explicitly, the admin removes it before saving.
 
 ```python
 class PostAdmin(ModelAdmin):
@@ -248,4 +253,5 @@ class PostAdmin(ModelAdmin):
 
 - [AdminSite](admin-site.md) — Configure and mount the admin
 - [ModelAdmin](model-admin.md) — Customize model display
+- [Actions](actions.md) — Bulk action permission checks
 - [Authentication](../api/authentication.md) — User login system

@@ -10,6 +10,26 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.52 - Admin Correctness & Permissions
+
+- Admin mounting now honors custom prefixes, custom login/logout redirects,
+  multi-site route namespaces, and prefix-scoped CSRF cookie paths.
+- Site permission classes now apply consistently during login and access, and
+  bulk actions check object-level permissions before running.
+- Admin writes now enforce readonly fields on create/update, validate
+  many-to-many ids, update relations transactionally, and render Boolean
+  `False` checkboxes correctly.
+- Admin docs now cover Admin vs Studio, setup, CSRF, permissions, actions,
+  widgets, filters, pagination, and compatibility notes.
+- `AksaraFilterBackend` is the preferred API filter backend name;
+  `DjangoFilterBackend` remains as a compatibility alias.
+- This release improves admin correctness and permissions. It does not claim
+  production readiness or external security review.
+
+---
+
+## Recent Releases
+
 ### v0.5.51 - ORM Primitive Correctness
 
 - Integer-family fields now reject non-integral numeric inputs instead of
@@ -23,10 +43,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 - This is a primitive correctness release only. Query semantics, write-path
   consistency, relation safety, and advanced Array/vector/file field policy
   remain planned work.
-
----
-
-## Recent Releases
 
 ### v0.5.50 - Migration Safety & Correctness
 
@@ -89,7 +105,7 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ### Remaining ORM Correctness Work
 
-Planned ORM correctness work after v0.5.51:
+Planned ORM correctness work remains:
 
 - Query semantics, including `NULL` filtering and `__isnull` behavior.
 - FK alias filtering and reverse FK filters.
