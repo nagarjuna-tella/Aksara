@@ -514,6 +514,112 @@ def diff_states(
 # Generate Operations from Diff
 # =============================================================================
 
+def sort_table_names_by_fk_dependencies(
+    table_names: List[str],
+    model_state: ProjectState,
+) -> List[str]:
+    """
+    Order tables so referenced tables come before dependents.
+
+    CreateTable emits FK constraints inline, so PostgreSQL requires a referenced
+    table to exist before a referencing table can be created.
+    """
+    selected_tables = set(table_names)
+    dependencies: Dict[str, Set[str]] = {}
+
+    for table_name in table_names:
+        table = model_state.tables.get(table_name)
+        deps: Set[str] = set()
+        if table is not None:
+            for field in table.fields.values():
+                referenced_table = field.references_table
+                if (
+                    referenced_table in selected_tables
+                    and referenced_table != table_name
+                ):
+                    deps.add(referenced_table)
+        dependencies[table_name] = deps
+
+    ordered: List[str] = []
+    emitted: Set[str] = set()
+    remaining = set(table_names)
+
+    while remaining:
+        ready = sorted(
+            table_name
+            for table_name in remaining
+            if dependencies[table_name].issubset(emitted)
+        )
+        if not ready:
+            # Cyclic FK dependencies cannot be satisfied with inline constraints.
+            # Keep the remaining output deterministic and let migration execution
+            # surface the schema design issue.
+            ordered.extend(
+                table_name
+                for table_name in table_names
+                if table_name in remaining
+            )
+            break
+
+        for table_name in ready:
+            ordered.append(table_name)
+            emitted.add(table_name)
+            remaining.remove(table_name)
+
+    return ordered
+
+
+def sort_model_items_by_fk_dependencies(
+    models: Dict[str, type],
+) -> List[Tuple[str, type]]:
+    """Return model items ordered so referenced tables come first."""
+    model_state = build_state_from_models(models)
+    table_to_item: Dict[str, Tuple[str, type]] = {}
+    table_names: List[str] = []
+
+    for model_name, model_class in models.items():
+        table_name = _get_table_name_for_model(model_class)
+        if table_name not in table_to_item:
+            table_names.append(table_name)
+        table_to_item[table_name] = (model_name, model_class)
+
+    return [
+        table_to_item[table_name]
+        for table_name in sort_table_names_by_fk_dependencies(
+            table_names,
+            model_state,
+        )
+        if table_name in table_to_item
+    ]
+
+
+def sort_models_by_fk_dependencies(models: Dict[str, type]) -> List[type]:
+    """Return model classes ordered so referenced tables come first."""
+    return [
+        model_class
+        for _, model_class in sort_model_items_by_fk_dependencies(models)
+    ]
+
+
+def model_to_create_table_operation(model_class):
+    """Convert a runtime model class to a CreateTable operation."""
+    from aksara.fields import ForeignKey, OneToOne
+    from aksara.migrations import operations as op
+
+    table_name = _get_table_name_for_model(model_class)
+    fields_list = []
+
+    for field_name, field in model_class._fields.items():
+        if isinstance(field, (ForeignKey, OneToOne)):
+            col_name = field.db_column_name
+        else:
+            col_name = field_name
+
+        fields_list.append((col_name, _model_field_to_op(col_name, field)))
+
+    return op.CreateTable(name=table_name, fields=fields_list)
+
+
 def _model_field_to_op(field_name: str, field):
     """Convert a runtime Aksara field to a migration FieldOp instance."""
     from aksara.fields import (
@@ -833,8 +939,8 @@ def _model_field_to_op(field_name: str, field):
     elif isinstance(field, Array):
         # Preserve PostgreSQL array semantics instead of downgrading to TEXT.
         kwargs = {}
-        if field.nullable:
-            kwargs['nullable'] = True
+        if not field.nullable:
+            kwargs['nullable'] = False
         default = _normalize_default(field.default)
         if default is not None:
             kwargs['default'] = default
@@ -879,22 +985,15 @@ def generate_operations_from_diff(
         tname = _get_table_name_for_model(model_class)
         table_to_model[tname] = model_class
 
-    for table_name in diff.new_tables:
+    for table_name in sort_table_names_by_fk_dependencies(
+        diff.new_tables,
+        model_state,
+    ):
         model_class = table_to_model.get(table_name)
         if model_class is None:
             continue
 
-        fields_list = []
-        for field_name, field in model_class._fields.items():
-            # For FK/O2O use DB column name
-            if isinstance(field, (ForeignKey, OneToOne)):
-                col_name = field.db_column_name
-            else:
-                col_name = field_name
-            field_op = _model_field_to_op(col_name, field)
-            fields_list.append((col_name, field_op))
-
-        operations.append(op.CreateTable(name=table_name, fields=fields_list))
+        operations.append(model_to_create_table_operation(model_class))
 
         if is_tenant_model(model_class):
             operations.append(
@@ -1003,7 +1102,11 @@ def generate_operations_from_diff(
                 ))
 
     # 5. Drop removed tables
-    for table_name in diff.removed_tables:
+    drop_state = migration_state or ProjectState()
+    drop_order = reversed(
+        sort_table_names_by_fk_dependencies(diff.removed_tables, drop_state)
+    )
+    for table_name in drop_order:
         operations.append(op.DropTable(name=table_name))
 
     return operations
@@ -1249,6 +1352,20 @@ def _field_op_to_code(field_op) -> str:
             parts.append(f"default={field_op.default!r}")
         return f"op.BigIntegerField({', '.join(parts)})" if parts else "op.BigIntegerField()"
 
+    elif isinstance(field_op, op.SmallIntegerField):
+        parts = []
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if field_op.default is not None:
+            parts.append(f"default={field_op.default!r}")
+        return (
+            f"op.SmallIntegerField({', '.join(parts)})"
+            if parts
+            else "op.SmallIntegerField()"
+        )
+
     elif isinstance(field_op, op.BooleanField):
         parts = []
         if field_op.nullable:
@@ -1274,6 +1391,26 @@ def _field_op_to_code(field_op) -> str:
         if getattr(field_op, 'default', None) is not None:
             parts.append(f"default={field_op.default!r}")
         return f"op.DateField({', '.join(parts)})" if parts else "op.DateField()"
+
+    elif isinstance(field_op, op.TimeField):
+        parts = []
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return f"op.TimeField({', '.join(parts)})" if parts else "op.TimeField()"
+
+    elif isinstance(field_op, op.DurationField):
+        parts = []
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return (
+            f"op.DurationField({', '.join(parts)})"
+            if parts
+            else "op.DurationField()"
+        )
 
     elif isinstance(field_op, op.JSONField):
         parts = []
@@ -1346,6 +1483,18 @@ def _field_op_to_code(field_op) -> str:
             parts.append(f"default={field_op.default!r}")
         return f"op.FileField({', '.join(parts)})" if parts else "op.FileField()"
 
+    elif isinstance(field_op, op.SlugField):
+        parts = []
+        if getattr(field_op, 'max_length', 50) != 50:
+            parts.append(str(field_op.max_length))
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return f"op.SlugField({', '.join(parts)})" if parts else "op.SlugField()"
+
     elif isinstance(field_op, op.URLField):
         parts = []
         if field_op.nullable:
@@ -1353,6 +1502,42 @@ def _field_op_to_code(field_op) -> str:
         if field_op.unique:
             parts.append("unique=True")
         return f"op.URLField({', '.join(parts)})" if parts else "op.URLField()"
+
+    elif isinstance(field_op, op.IPAddressField):
+        parts = []
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return (
+            f"op.IPAddressField({', '.join(parts)})"
+            if parts
+            else "op.IPAddressField()"
+        )
+
+    elif isinstance(field_op, op.BinaryField):
+        parts = []
+        if field_op.nullable:
+            parts.append("nullable=True")
+        return f"op.BinaryField({', '.join(parts)})" if parts else "op.BinaryField()"
+
+    elif isinstance(field_op, op.FilePathField):
+        parts = []
+        if getattr(field_op, 'max_length', 100) != 100:
+            parts.append(str(field_op.max_length))
+        if field_op.nullable:
+            parts.append("nullable=True")
+        if field_op.unique:
+            parts.append("unique=True")
+        if getattr(field_op, 'default', None) is not None:
+            parts.append(f"default={field_op.default!r}")
+        return (
+            f"op.FilePathField({', '.join(parts)})"
+            if parts
+            else "op.FilePathField()"
+        )
 
     elif isinstance(field_op, op.EnumField):
         # allowed_values is the first positional arg

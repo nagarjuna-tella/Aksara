@@ -6,6 +6,35 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.5.53
+
+### ORM Query Semantics & NULL Correctness
+
+This unreleased section tracks focused ORM query-semantics fixes. It does not
+claim that all ORM correctness work is complete.
+
+#### Fixed
+
+- Exact `None` filters such as `filter(email=None)` and
+  `filter(email__exact=None)` now compile to `IS NULL` instead of SQL equality
+  against a NULL parameter.
+- `__isnull` filters now use strict boolean parsing. Supported string values
+  include `true`, `false`, `1`, `0`, `yes`, `no`, `y`, `n`, `on`, and `off`;
+  invalid values now raise a clear validation error.
+- Foreign key column aliases such as `author_id` are accepted in filters when
+  they correspond to an actual `ForeignKey` or `OneToOne` database column.
+- Reverse foreign key filters now work with the corrected FK alias handling.
+
+#### Remaining Known ORM Correctness Work
+
+- `bulk_create()` and other write paths still need consistency work.
+- `QuerySet.update()` still needs an explicit `updated_at` policy.
+- Vector `bulk_update()` casting still needs follow-up work.
+- Relation DDL safety remains on the audit backlog.
+- Array, vector, and file advanced-field policy decisions remain open.
+
+---
+
 ## v0.5.52 — Admin Correctness & Permissions
 
 This release focuses on admin correctness, permission semantics, and API naming
