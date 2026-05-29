@@ -183,6 +183,9 @@ class TestAdminModelListView:
         with patch.object(ItemAdmin, 'get_queryset', new_callable=AsyncMock) as mock_qs:
             mock_queryset = MagicMock()
             mock_queryset.all = AsyncMock(return_value=[])
+            mock_queryset.count = AsyncMock(return_value=0)
+            for _chain in ("order_by", "search", "filter", "limit", "offset"):
+                getattr(mock_queryset, _chain).return_value = mock_queryset
             mock_qs.return_value = mock_queryset
             
             client = TestClient(app)
@@ -440,6 +443,9 @@ class TestAdmin20Features:
         with patch.object(ArticleAdmin, 'get_queryset', new_callable=AsyncMock) as mock_qs:
             mock_queryset = MagicMock()
             mock_queryset.all = AsyncMock(return_value=[])
+            mock_queryset.count = AsyncMock(return_value=0)
+            for _chain in ("order_by", "search", "filter", "limit", "offset"):
+                getattr(mock_queryset, _chain).return_value = mock_queryset
             mock_qs.return_value = mock_queryset
             
             client = TestClient(app)

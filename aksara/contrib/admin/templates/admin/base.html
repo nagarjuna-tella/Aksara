@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <title>{% block title %}{{ site_title }}{% endblock %}</title>
     <style>
         * {
             margin: 0;
@@ -617,13 +617,13 @@
             <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
-            <a href="{{ request.url_for('admin:index') }}">{{ site_name }}</a>
+            <a href="{{ request.url_for(url_namespace ~ ':index') }}">{{ site_name }}</a>
             {% if debug %}<span class="debug-badge">DEBUG</span>{% endif %}
         </div>
         <div class="admin-user">
             {% if user %}
                 <span>{{ user.email or user.id }}</span>
-                <form method="post" action="{{ request.url_for('admin:logout') }}" style="display: inline; margin: 0;">
+                <form method="post" action="{{ request.url_for(url_namespace ~ ':logout') }}" style="display: inline; margin: 0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="logout-link" style="background: none; border: 0; padding: 0; cursor: pointer;">Logout</button>
                 </form>

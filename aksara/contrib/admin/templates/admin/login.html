@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | {{ site_name }}</title>
+    <title>Login | {{ site_title }}</title>
     <style>
         * {
             margin: 0;
@@ -366,7 +366,7 @@
             </div>
             {% endif %}
             
-            <form method="POST" action="{{ request.url_for('admin:login') }}">
+            <form method="POST" action="{{ request.url_for(url_namespace ~ ':login') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>

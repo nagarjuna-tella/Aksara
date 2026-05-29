@@ -1,218 +1,234 @@
 """
 Admin Site
 
-Central AdminSite class for managing model registrations.
+Central AdminSite class for managing model registrations and admin-wide
+configuration (branding, theme, access control, custom dashboard).
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type
 
 if TYPE_CHECKING:
     from aksara.model.base import Model
     from aksara.contrib.admin.options import ModelAdmin
+    from fastapi import Request
 
 
 class AdminSite:
     """
-    Central admin site managing model registrations.
-    
-    Provides model registration and lookup functionality for the admin interface.
-    
+    Central admin site managing model registrations and presentation.
+
     Usage:
         from aksara.contrib.admin import site, ModelAdmin
         from myapp.models import Article
-        
-        # Simple registration
+
         site.register(Article)
-        
-        # Custom admin class
+
+        @site.register(Article)
         class ArticleAdmin(ModelAdmin):
             list_display = ["title", "author", "created_at"]
-            search_fields = ["title", "body"]
-        
-        site.register(Article, ArticleAdmin)
+
+    A custom site can be created and mounted independently:
+
+        from aksara.contrib.admin import AdminSite, include_admin
+
+        ops = AdminSite(name="ops", site_header="Ops Console")
+        ops.register(Incident)
+        include_admin(app, prefix="/ops", site=ops)
     """
-    
-    def __init__(self, name: str = "admin"):
+
+    def __init__(
+        self,
+        name: str = "admin",
+        *,
+        title: str = "Aksara Admin",
+        site_header: str = "Aksara Admin",
+        index_title: str = "Dashboard",
+        login_url: Optional[str] = None,
+        logout_url: Optional[str] = None,
+        theme: str = "default",
+        index_template: Optional[str] = None,
+        extra_css: Optional[List[str]] = None,
+        permission_classes: Optional[List[Any]] = None,
+    ):
         """
-        Initialize the admin site.
-        
         Args:
-            name: Name identifier for this admin site (default: "admin")
+            name: Identifier for this site (used in route names).
+            title: Browser tab text.
+            site_header: Header shown on every admin page.
+            index_title: Heading on the dashboard.
+            login_url / logout_url: Override auth redirect targets.
+            theme: "default" or "dark".
+            index_template: Custom dashboard template path.
+            extra_css: Additional stylesheet URLs to include.
+            permission_classes: Optional BasePermission list gating site access.
+                When provided, it replaces the default staff-only gate.
         """
         self.name = name
+        self.title = title
+        self.site_header = site_header
+        self.index_title = index_title
+        self.login_url = login_url
+        self.logout_url = logout_url
+        self.theme = theme
+        self.index_template = index_template
+        self.extra_css = list(extra_css or [])
+        self.permission_classes = list(permission_classes or [])
         self._registry: Dict[Type["Model"], "ModelAdmin"] = {}
-    
+        self._index_view_func: Optional[Callable] = None
+
+    # -------------------------------------------------------------------------
+    # Registration
+    # -------------------------------------------------------------------------
+
     def register(
         self,
-        model: Type["Model"],
+        *models: Any,
         admin_class: Optional[Type["ModelAdmin"]] = None,
     ):
         """
-        Register a model with the admin site.
-        
-        Can be used as a direct method call or as a decorator:
-        
-        Direct call (without custom admin):
-            site.register(Book)
-        
-        Direct call (with custom admin):
-            site.register(Book, BookAdmin)
-        
-        As a decorator:
-            @site.register(Book)
-            class BookAdmin(ModelAdmin):
-                list_display = ["title", "author"]
-        
-        Args:
-            model: The Model class to register
-            admin_class: Optional ModelAdmin subclass for customization
-            
-        Returns:
-            When used as a decorator, returns a function that accepts the admin class.
-            When used directly, returns None.
-            
+        Register one or more models with the admin site.
+
+        Direct call:        site.register(Book)
+        With custom admin:  site.register(Book, BookAdmin)
+        As a decorator:     @site.register(Book)
+                            class BookAdmin(ModelAdmin): ...
+        Several models:     @site.register(Post, Draft)
+                            class ContentAdmin(ModelAdmin): ...
+
         Raises:
-            ValueError: If the model is already registered
+            ValueError: If a model is already registered, or no model is given.
         """
+        from aksara.model.base import Model
         from aksara.contrib.admin.options import ModelAdmin as DefaultModelAdmin
-        
-        def decorator(admin_cls: Type["ModelAdmin"]) -> Type["ModelAdmin"]:
-            """Inner decorator that registers the admin class."""
+
+        model_classes: List[Type["Model"]] = []
+        inline_admin: Optional[Type["ModelAdmin"]] = admin_class
+
+        for arg in models:
+            if isinstance(arg, type) and issubclass(arg, DefaultModelAdmin):
+                inline_admin = arg
+            elif isinstance(arg, type) and issubclass(arg, Model):
+                model_classes.append(arg)
+            else:
+                raise TypeError(
+                    f"register() expects Model and ModelAdmin classes, got {arg!r}"
+                )
+
+        if not model_classes:
+            raise ValueError("register() requires at least one model.")
+
+        def _register_one(model: Type["Model"], cls: Type["ModelAdmin"]) -> None:
             if model in self._registry:
                 raise ValueError(f"Model {model.__name__} is already registered.")
-            self._registry[model] = admin_cls(model, self)
-            return admin_cls
-        
-        # If admin_class is provided, register directly
-        if admin_class is not None:
-            if model in self._registry:
-                raise ValueError(f"Model {model.__name__} is already registered.")
-            self._registry[model] = admin_class(model, self)
+            self._registry[model] = cls(model, self)
+
+        if inline_admin is not None:
+            for model in model_classes:
+                _register_one(model, inline_admin)
             return None
-        
-        # Check if this is likely decorator usage (model is actually _just_ a model reference)
-        # Decorator usage: @site.register(MyModel) followed by class definition
-        # Direct usage: site.register(MyModel) as a standalone call
-        # 
-        # The key insight is that when used as @decorator(arg), Python first calls
-        # register(MyModel) which returns the decorator function, then Python calls
-        # that decorator with the class being decorated.
-        #
-        # When used directly as site.register(MyModel), the return value is ignored,
-        # but we still need to register the model with a default admin.
-        #
-        # Unfortunately, we can't distinguish between these at call time.
-        # The solution is to return a decorator that ALSO registers with default
-        # if not called as a decorator within a reasonable time.
-        #
-        # Simpler approach: always return a decorator, but if it's used directly,
-        # it won't matter since the return value is ignored. For direct usage with
-        # default admin, we need to register immediately.
-        
-        # Return a decorator that can be used with @syntax
-        # BUT also register with default admin for direct-call usage compatibility
-        if model in self._registry:
-            raise ValueError(f"Model {model.__name__} is already registered.")
-        
-        # Register with default admin immediately (for direct call usage)
-        self._registry[model] = DefaultModelAdmin(model, self)
-        
-        # Return decorator for @syntax usage (it will re-register, overwriting default)
-        def decorating_register(admin_cls: Type["ModelAdmin"]) -> Type["ModelAdmin"]:
-            """Re-register with the actual admin class when used as decorator."""
-            self._registry[model] = admin_cls(model, self)
+
+        # No admin class yet. Register each model with the default admin now so
+        # direct calls work, and return a decorator that re-registers with the
+        # decorated class for @decorator usage.
+        for model in model_classes:
+            _register_one(model, DefaultModelAdmin)
+
+        def decorator(admin_cls: Type["ModelAdmin"]) -> Type["ModelAdmin"]:
+            for model in model_classes:
+                self._registry[model] = admin_cls(model, self)
             return admin_cls
-        
-        return decorating_register
-    
+
+        return decorator
+
     def unregister(self, model: Type["Model"]) -> None:
-        """
-        Unregister a model from the admin site.
-        
-        Args:
-            model: The Model class to unregister
-        """
+        """Unregister a model from the admin site."""
         self._registry.pop(model, None)
-    
+
     def is_registered(self, model: Type["Model"]) -> bool:
-        """
-        Check if a model is registered.
-        
-        Args:
-            model: The Model class to check
-            
-        Returns:
-            True if the model is registered
-        """
+        """Check if a model is registered."""
         return model in self._registry
-    
+
     @property
     def registry(self) -> Dict[Type["Model"], "ModelAdmin"]:
-        """
-        Get the model registry.
-        
-        Returns:
-            Dictionary mapping Model classes to ModelAdmin instances
-        """
+        """The model registry (Model class -> ModelAdmin instance)."""
         return self._registry
-    
+
     def get_model_admin(self, model: Type["Model"]) -> Optional["ModelAdmin"]:
-        """
-        Get the ModelAdmin for a registered model.
-        
-        Args:
-            model: The Model class to look up
-            
-        Returns:
-            The ModelAdmin instance or None if not registered
-        """
+        """Get the ModelAdmin for a registered model."""
         return self._registry.get(model)
-    
+
     def get_model_by_name(
-        self,
-        app_label: str,
-        model_name: str,
+        self, app_label: str, model_name: str
     ) -> Optional[Type["Model"]]:
-        """
-        Look up a registered model by app_label and model name.
-        
-        Args:
-            app_label: The app_label (from Model.meta.app_label)
-            model_name: The model class name (case-insensitive)
-            
-        Returns:
-            The Model class or None if not found
-        """
+        """Look up a registered model by app_label and model name."""
         model_name_lower = model_name.lower()
-        
         for model in self._registry:
             model_app_label = model.meta.app_label or "default"
-            if model_app_label == app_label and model.__name__.lower() == model_name_lower:
+            if (
+                model_app_label == app_label
+                and model.__name__.lower() == model_name_lower
+            ):
                 return model
-        
         return None
-    
+
     def get_app_list(self) -> Dict[str, list]:
-        """
-        Get models grouped by app_label.
-        
-        Returns:
-            Dictionary mapping app_label to list of Model classes
-        """
+        """Get models grouped by app_label."""
         apps: Dict[str, list] = {}
-        
         for model in self._registry:
             app_label = model.meta.app_label or "default"
             apps.setdefault(app_label, []).append(model)
-        
         return apps
-    
+
     def clear(self) -> None:
-        """
-        Clear all registered models.
-        
-        Useful for testing.
-        """
+        """Clear all registered models (useful for testing)."""
         self._registry.clear()
+
+    # -------------------------------------------------------------------------
+    # Presentation / access
+    # -------------------------------------------------------------------------
+
+    def index_view(self, func: Callable) -> Callable:
+        """
+        Decorator to register a custom dashboard context provider.
+
+        The decorated function receives the request and returns a dict that is
+        merged into the index template context:
+
+            @site.index_view
+            async def dashboard(request):
+                return {"total_users": await User.objects.count()}
+        """
+        self._index_view_func = func
+        return func
+
+    def base_context(self, request: "Request") -> Dict[str, Any]:
+        """Common template context for every admin page (branding/theme)."""
+        return {
+            "site_name": self.site_header,
+            "site_title": self.title,
+            "site_header": self.site_header,
+            "index_title": self.index_title,
+            "admin_theme": self.theme,
+            "extra_css": self.extra_css,
+        }
+
+    def check_site_permission(
+        self, request: "Request"
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Evaluate site-level access.
+
+        Returns (allowed, message). When ``permission_classes`` is set it is the
+        authority; otherwise access requires an authenticated staff user.
+        """
+        if self.permission_classes:
+            from aksara.permissions import check_permissions
+
+            return check_permissions(self.permission_classes, request)
+
+        user = getattr(request.state, "user", None)
+        if user and getattr(user, "is_staff", False):
+            return True, None
+        return False, "Admin access forbidden. Staff access required."

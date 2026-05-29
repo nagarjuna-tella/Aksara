@@ -1,27 +1,15 @@
 {% extends "admin/base_new.html" %}
 
-{% block title %}{% if is_add %}Add{% else %}Change{% endif %} {{ model_name }} - {{ site_name }}{% endblock %}
+{% block title %}{% if is_add %}Add{% else %}Change{% endif %} {{ model_name }} - {{ site_title }}{% endblock %}
 
 {% block breadcrumb %}
 <nav class="admin-breadcrumb" aria-label="Breadcrumb">
-    <a href="{{ request.url_for('admin:index') }}" class="breadcrumb-link">Home</a>
-    <span class="breadcrumb-separator">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-    </span>
-    <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}" class="breadcrumb-link">{{ app_label }}</a>
-    <span class="breadcrumb-separator">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-    </span>
-    <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="breadcrumb-link">{{ model_name }}</a>
-    <span class="breadcrumb-separator">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-    </span>
+    <a href="{{ request.url_for(url_namespace ~ ':index') }}" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ request.url_for(url_namespace ~ ':app_index', app_label=app_label) }}" class="breadcrumb-link">{{ app_label }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ request.url_for(url_namespace ~ ':model_list', app_label=app_label, model_name=model_name|lower) }}" class="breadcrumb-link">{{ model_name }}</a>
+    <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{% if is_add %}Add{% else %}Edit{% endif %}</span>
 </nav>
 {% endblock %}
@@ -38,160 +26,75 @@
 
 {% if errors and errors.__all__ %}
 <div class="alert alert-danger">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-    </svg>
     <span>{{ errors.__all__ }}</span>
 </div>
 {% endif %}
 
 <div class="card form-card">
-    <form method="post" class="admin-form">
+    <form method="post" class="admin-form" id="admin-model-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="form-body">
-            {% for field in fields %}
-            <div class="form-group {% if errors and field.name in errors %}has-error{% endif %}">
-                <label for="{{ field.name }}" class="form-label">
-                    {{ field.label }}
-                    {% if field.required %}<span class="required-indicator">*</span>{% endif %}
-                </label>
-                
-                {% if field.widget_html %}
-                    {# Use custom widget HTML if provided #}
-                    {{ field.widget_html|safe }}
-                {% elif field.type == "checkbox" %}
-                    <div class="checkbox-wrapper">
-                        <input 
-                            type="checkbox" 
-                            id="{{ field.name }}" 
-                            name="{{ field.name }}"
-                            {% if field.value %}checked{% endif %}
-                            {% if field.readonly %}disabled{% endif %}
-                            class="form-checkbox"
-                        >
-                        <label for="{{ field.name }}" class="checkbox-label">{{ field.help_text or 'Enabled' }}</label>
-                    </div>
-                {% elif field.type == "textarea" %}
-                    <textarea 
-                        id="{{ field.name }}" 
-                        name="{{ field.name }}" 
-                        class="form-input form-textarea"
-                        {% if field.readonly %}readonly{% endif %}
-                        {% if field.required %}required{% endif %}
-                        rows="{{ field.rows|default(5) }}"
-                        placeholder="{% if field.help_text %}{{ field.help_text }}{% endif %}"
-                    >{{ field.value }}</textarea>
-                    {% if field.help_text %}
-                    <small class="form-help">{{ field.help_text }}</small>
+
+        {% for section in fieldsets %}
+        <fieldset class="form-fieldset {% if 'collapse' in section.classes %}is-collapsible{% endif %}">
+            {% if section.title %}
+            <legend class="form-fieldset-title">{{ section.title }}</legend>
+            {% endif %}
+            {% if section.description %}
+            <p class="form-fieldset-description">{{ section.description }}</p>
+            {% endif %}
+            <div class="form-body">
+                {% for field in section.fields %}
+                <div class="form-group {% if errors and field.name in errors %}has-error{% endif %}">
+                    <label for="{{ field.name }}" class="form-label">
+                        {{ field.label }}
+                        {% if field.required %}<span class="required-indicator">*</span>{% endif %}
+                    </label>
+
+                    {% if field.widget_html %}
+                        {{ field.widget_html|safe }}
+                    {% elif field.type == "checkbox" %}
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" {% if field.value %}checked{% endif %} {% if field.readonly %}disabled{% endif %} class="form-checkbox">
+                        </div>
+                    {% elif field.type == "textarea" %}
+                        <textarea id="{{ field.name }}" name="{{ field.name }}" class="form-input form-textarea" {% if field.readonly %}readonly{% endif %} {% if field.required %}required{% endif %} rows="5">{{ field.value }}</textarea>
+                    {% elif field.type == "select" %}
+                        <select id="{{ field.name }}" name="{{ field.name }}" class="form-input form-select" {% if field.readonly %}disabled{% endif %} {% if field.required %}required{% endif %}>
+                            <option value="">Select {{ field.label }}...</option>
+                            {% for choice_value, choice_label in field.choices %}
+                            <option value="{{ choice_value }}" {% if field.value == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                            {% endfor %}
+                        </select>
+                    {% elif field.type == "multiselect" %}
+                        <select id="{{ field.name }}" name="{{ field.name }}" class="form-input form-select multiselect" multiple {% if field.readonly %}disabled{% endif %}>
+                            {% for choice_value, choice_label in field.choices %}
+                            <option value="{{ choice_value }}" {% if choice_value in field.value %}selected{% endif %}>{{ choice_label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-help">Hold Ctrl/Cmd to select multiple items</small>
+                    {% else %}
+                        <input type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}" class="form-input" {% if field.readonly %}readonly{% endif %} {% if field.required %}required{% endif %} {% if field.type == "number" %}step="any"{% endif %}>
                     {% endif %}
-                {% elif field.type == "select" %}
-                    <select
-                        id="{{ field.name }}"
-                        name="{{ field.name }}"
-                        class="form-input form-select"
-                        {% if field.readonly %}disabled{% endif %}
-                        {% if field.required %}required{% endif %}
-                    >
-                        <option value="">Select {{ field.label }}...</option>
-                        {% for choice_value, choice_label in field.choices %}
-                        <option value="{{ choice_value }}" {% if field.value == choice_value %}selected{% endif %}>
-                            {{ choice_label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    {% if field.help_text %}
-                    <small class="form-help">{{ field.help_text }}</small>
+
+                    {% if errors and field.name in errors %}
+                    <div class="form-error">{{ errors[field.name] }}</div>
                     {% endif %}
-                {% elif field.type == "multiselect" %}
-                    <select
-                        id="{{ field.name }}"
-                        name="{{ field.name }}"
-                        class="form-input form-select multiselect"
-                        multiple
-                        {% if field.readonly %}disabled{% endif %}
-                    >
-                        {% for choice_value, choice_label in field.choices %}
-                        <option value="{{ choice_value }}" {% if choice_value in field.value %}selected{% endif %}>
-                            {{ choice_label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="form-help">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="16" x2="12" y2="12"/>
-                            <line x1="12" y1="8" x2="12.01" y2="8"/>
-                        </svg>
-                        Hold Ctrl/Cmd to select multiple items
-                    </small>
-                {% else %}
-                    <input 
-                        type="{{ field.type }}" 
-                        id="{{ field.name }}" 
-                        name="{{ field.name }}" 
-                        value="{{ field.value }}"
-                        class="form-input"
-                        {% if field.readonly %}readonly{% endif %}
-                        {% if field.required %}required{% endif %}
-                        {% if field.type == "number" %}step="any"{% endif %}
-                        {% if field.help_text and field.type == "text" %}placeholder="{{ field.help_text }}"{% endif %}
-                    >
-                    {% if field.help_text and field.type != "text" %}
-                    <small class="form-help">{{ field.help_text }}</small>
-                    {% endif %}
-                {% endif %}
-                
-                {% if errors and field.name in errors %}
-                <div class="form-error">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ errors[field.name] }}
                 </div>
-                {% endif %}
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-        
+        </fieldset>
+        {% endfor %}
+
         <div class="form-actions sticky-actions">
             <div class="form-actions-left">
-                <button type="submit" class="btn btn-primary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
-                    </svg>
-                    {% if is_add %}Create{% else %}Save{% endif %}
-                </button>
-                <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-ghost">
-                    Cancel
-                </a>
+                <button type="submit" class="btn btn-primary">{% if is_add %}Create{% else %}Save{% endif %}</button>
+                <a href="{{ request.url_for(url_namespace ~ ':model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-ghost">Cancel</a>
             </div>
-            
-            {% if not is_add and can_delete %}
-            <div class="form-actions-right">
-                <button 
-                    type="button" 
-                    class="btn btn-danger-outline"
-                    onclick="if(confirm('Are you sure you want to delete this {{ model_name }}?')) { document.getElementById('delete-form').submit(); }"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                    Delete
-                </button>
-            </div>
-            {% endif %}
         </div>
     </form>
-    
+
     {% if not is_add and can_delete %}
-    <form id="delete-form" method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: none;">
+    <form id="delete-form" method="post" action="{{ request.url_for(url_namespace ~ ':model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}" style="display: none;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     </form>
     {% endif %}
@@ -199,32 +102,45 @@
 
 {% if not is_add and can_delete %}
 <div class="card danger-zone">
-    <div class="danger-zone-header">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <h2>Danger Zone</h2>
-    </div>
-    <p class="text-muted">
-        Permanently delete this {{ model_name }}. This action cannot be undone.
-    </p>
-    <form method="post" action="{{ request.url_for('admin:model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}">
+    <h2>Danger Zone</h2>
+    <p class="text-muted">Permanently delete this {{ model_name }}. This action cannot be undone.</p>
+    <form method="post" action="{{ request.url_for(url_namespace ~ ':model_delete', app_label=app_label, model_name=model_name|lower, pk=obj.id|string) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button 
-            type="submit" 
-            class="btn btn-danger" 
-            onclick="return confirm('Are you sure you want to delete this {{ model_name }}? This action cannot be undone.')"
-        >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            Delete {{ model_name }}
-        </button>
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this {{ model_name }}? This cannot be undone.')">Delete {{ model_name }}</button>
     </form>
 </div>
 {% endif %}
 
+{% if prepopulated %}
+<script>
+(function () {
+    var config = {{ prepopulated|tojson }};
+    function slugify(value) {
+        return value.toString().toLowerCase().trim()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+    Object.keys(config).forEach(function (target) {
+        var targetEl = document.getElementById(target);
+        if (!targetEl) return;
+        var sources = config[target];
+        var edited = false;
+        targetEl.addEventListener('input', function () { edited = true; });
+        function recompute() {
+            if (edited) return;
+            var parts = sources.map(function (name) {
+                var el = document.getElementById(name);
+                return el ? el.value : '';
+            }).filter(Boolean);
+            targetEl.value = slugify(parts.join(' '));
+        }
+        sources.forEach(function (name) {
+            var el = document.getElementById(name);
+            if (el) el.addEventListener('input', recompute);
+        });
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}

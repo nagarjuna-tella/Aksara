@@ -6,6 +6,7 @@ Helper function to mount admin routes on a FastAPI/Aksara app.
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,8 @@ from starlette.responses import Response
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+logger = logging.getLogger("aksara.contrib.admin")
 
 
 def _get_settings():
@@ -46,8 +49,8 @@ class AdminSessionMiddleware(BaseHTTPMiddleware):
                     user = await get_user_from_session_token(db, token)
                     if user:
                         request.state.user = user
-            except Exception:
-                pass  # Session lookup failed, continue without user
+            except Exception as exc:
+                logger.warning("Admin session lookup failed: %s", exc, exc_info=True)
         
         return await call_next(request)
 
@@ -103,43 +106,63 @@ class AdminRateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-def include_admin(app: "FastAPI", prefix: str = "/admin") -> None:
+def include_admin(
+    app: "FastAPI",
+    prefix: str = "/admin",
+    site: "Any" = None,
+) -> None:
     """
-    Mount the admin interface on a FastAPI/Aksara application.
-    
+    Mount an admin interface on a FastAPI/Aksara application.
+
     Args:
         app: The FastAPI/Aksara application instance
         prefix: URL prefix for admin (default: "/admin")
-        
+        site: AdminSite to mount. Defaults to the global ``site`` singleton.
+            Pass a custom site to mount additional, independently-configured
+            admin interfaces under different prefixes.
+
     Example:
         from aksara import Aksara
         from aksara.contrib.admin import include_admin
-        
+
         app = Aksara(database_url="...")
-        include_admin(app)  # Mounts at /admin/
-        
-        # Or with custom prefix
-        include_admin(app, prefix="/dashboard")
+        include_admin(app)  # Mounts the default site at /admin/
+
+        # A second, separately-configured site
+        from aksara.contrib.admin import AdminSite
+        ops = AdminSite(name="ops", site_header="Ops Console")
+        include_admin(app, prefix="/ops", site=ops)
     """
     import os
     from starlette.staticfiles import StaticFiles
-    from aksara.contrib.admin.urls import router as admin_router
-    
-    # Add admin security middlewares
+    from aksara.contrib.admin.urls import build_admin_router
+
+    if site is None:
+        from aksara.contrib.admin import site as default_site
+        site = default_site
+
+    # Session middleware is global; add it only once even with multiple sites.
+    if not getattr(app.state, "_aksara_admin_session_mw", False):
+        app.add_middleware(AdminSessionMiddleware)
+        app.state._aksara_admin_session_mw = True
+
+    # Rate limiting is scoped to each admin prefix.
     app.add_middleware(AdminRateLimitMiddleware, prefix=prefix)
-    app.add_middleware(AdminSessionMiddleware)
-    
+
     # Mount admin static files at app level so templates can reference
-    # /static/admin/css/admin.css regardless of admin prefix.
-    # Directory layout: admin/static/admin/{css,js}/... 
-    # We mount the inner static/admin/ dir at /static/admin/
-    admin_dir = os.path.dirname(os.path.abspath(__file__))
-    static_admin_dir = os.path.join(admin_dir, "static", "admin")
-    if os.path.exists(static_admin_dir):
-        app.mount(
-            "/static/admin",
-            StaticFiles(directory=static_admin_dir),
-            name="admin_static",
-        )
-    
-    app.include_router(admin_router, prefix=prefix, include_in_schema=False)
+    # /static/admin/css/admin.css regardless of admin prefix. Shared across
+    # all sites, so mount it only once.
+    if not getattr(app.state, "_aksara_admin_static_mounted", False):
+        admin_dir = os.path.dirname(os.path.abspath(__file__))
+        static_admin_dir = os.path.join(admin_dir, "static", "admin")
+        if os.path.exists(static_admin_dir):
+            app.mount(
+                "/static/admin",
+                StaticFiles(directory=static_admin_dir),
+                name="admin_static",
+            )
+            app.state._aksara_admin_static_mounted = True
+
+    app.include_router(
+        build_admin_router(site, prefix=prefix), prefix=prefix, include_in_schema=False
+    )

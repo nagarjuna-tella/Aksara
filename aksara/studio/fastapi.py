@@ -295,7 +295,7 @@ async def verify_studio_auth(request: Request) -> None:
             from aksara.contrib.auth import get_user_from_session_token
 
             # Reuse the admin path's DB-backed session lookup for staff cookies.
-            db = getattr(request.scope.get("app"), "db", None)
+            db = getattr(request.app, "db", None)
             if db is not None:
                 user = await get_user_from_session_token(db, session_token)
                 if user and getattr(user, "is_staff", False):
