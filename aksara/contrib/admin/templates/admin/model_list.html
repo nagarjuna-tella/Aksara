@@ -1,21 +1,13 @@
 {% extends "admin/base_new.html" %}
 
-{% block title %}{{ model_name }} - {{ site_name }}{% endblock %}
+{% block title %}{{ model_name }} - {{ site_title }}{% endblock %}
 
 {% block breadcrumb %}
 <nav class="admin-breadcrumb" aria-label="Breadcrumb">
-    <a href="{{ request.url_for('admin:index') }}" class="breadcrumb-link">Home</a>
-    <span class="breadcrumb-separator">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-    </span>
-    <a href="{{ request.url_for('admin:app_index', app_label=app_label) }}" class="breadcrumb-link">{{ app_label }}</a>
-    <span class="breadcrumb-separator">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9 18 6-6-6-6"/>
-        </svg>
-    </span>
+    <a href="{{ request.url_for(url_namespace ~ ':index') }}" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ request.url_for(url_namespace ~ ':app_index', app_label=app_label) }}" class="breadcrumb-link">{{ app_label }}</a>
+    <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ model_name }}</span>
 </nav>
 {% endblock %}
@@ -24,18 +16,12 @@
 <div class="page-header">
     <div class="page-header-content">
         <h1>{{ model_name }}</h1>
-        {% if objects %}
-        <span class="badge badge-secondary">{{ objects|length }} record{% if objects|length != 1 %}s{% endif %}</span>
-        {% endif %}
+        <span class="badge badge-secondary">{{ pagination.total }} record{% if pagination.total != 1 %}s{% endif %}</span>
     </div>
     <div class="page-actions">
         {% if can_add %}
-        <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add {{ model_name }}
+        <a href="{{ request.url_for(url_namespace ~ ':model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
+            + Add {{ model_name }}
         </a>
         {% endif %}
     </div>
@@ -45,134 +31,170 @@
 <div class="card search-card">
     <form method="get" class="search-form">
         <div class="search-input-group">
-            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input 
-                type="search" 
-                name="q" 
-                value="{{ search_query }}" 
-                placeholder="Search {{ model_name }}..." 
-                class="form-input search-input"
-            >
+            <input type="search" name="q" value="{{ search_query }}" placeholder="Search {{ model_name }}..." class="form-input search-input">
             <button type="submit" class="btn btn-primary">Search</button>
             {% if search_query %}
-            <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-ghost">Clear</a>
+            <a href="{{ clear_url }}" class="btn btn-ghost">Clear</a>
             {% endif %}
         </div>
     </form>
 </div>
 {% endif %}
 
-{% if search_query %}
-<div class="alert alert-info">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="16" x2="12" y2="12"/>
-        <line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>
-    <span>Showing {{ objects|length }} result{% if objects|length != 1 %}s{% endif %} for "{{ search_query }}"</span>
-</div>
-{% endif %}
+<div class="admin-list-layout">
+    <div class="admin-list-main">
+        <div class="card" style="padding: 0; overflow: hidden;">
+            {% if rows %}
+            <form method="post" action="{{ request.url.path }}" class="admin-actions-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if actions %}
+                <div class="admin-actions-bar">
+                    <label for="action-select" class="sr-only">Action</label>
+                    <select name="action" id="action-select" class="form-input form-select">
+                        <option value="">— Action —</option>
+                        {% for act in actions %}
+                        <option value="{{ act.name }}">{{ act.description }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-secondary">Go</button>
+                    <span class="admin-actions-hint" data-selected-count>0 selected</span>
+                </div>
+                {% endif %}
 
-<div class="card" style="padding: 0; overflow: hidden;">
-    {% if objects %}
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    {% for field_name in list_display %}
-                    <th>{{ field_name.replace('_', ' ').title() }}</th>
-                    {% endfor %}
-                    <th class="actions-column">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in objects %}
-                <tr>
-                    {% for value in row["values"] %}
-                    <td>
-                        {% if loop.first %}
-                        <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row['obj'].id|string) }}" class="table-link-primary">
-                            {{ value if value and value != '-' else '—' }}
-                        </a>
-                        {% elif value == '✓' %}
-                        <span class="value-badge value-badge-success">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            Yes
-                        </span>
-                        {% elif value == '✗' %}
-                        <span class="value-badge value-badge-danger">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            No
-                        </span>
-                        {% elif value == '-' or not value %}
-                        <span class="value-null">—</span>
-                        {% elif value and '...' in value|string and value|string|length <= 12 %}
-                        <code class="value-code">{{ value }}</code>
-                        {% else %}
-                        {{ value }}
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                    <td class="actions-cell">
-                        <a href="{{ request.url_for('admin:model_change', app_label=app_label, model_name=model_name|lower, pk=row['obj'].id|string) }}" 
-                           class="btn btn-sm btn-ghost" title="Edit">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                            Edit
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-state">
-        {% if search_query %}
-        <div class="empty-state-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-                <line x1="8" y1="8" x2="14" y2="14"/>
-                <line x1="14" y1="8" x2="8" y2="14"/>
-            </svg>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                {% if actions %}
+                                <th class="select-column"><input type="checkbox" data-select-all aria-label="Select all"></th>
+                                {% endif %}
+                                {% for header in list_headers %}
+                                <th>
+                                    {% if header.sort_url %}
+                                    <a href="{{ header.sort_url }}" class="sortable-header">
+                                        {{ header.label }}{% if header.sort_dir == 'asc' %} ▲{% elif header.sort_dir == 'desc' %} ▼{% endif %}
+                                    </a>
+                                    {% else %}
+                                    {{ header.label }}
+                                    {% endif %}
+                                </th>
+                                {% endfor %}
+                                <th class="actions-column">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                {% if actions %}
+                                <td class="select-column"><input type="checkbox" name="_selected" value="{{ row.obj.id }}" data-row-select></td>
+                                {% endif %}
+                                {% for cell in row.cells %}
+                                <td>
+                                    {% if cell.is_link %}
+                                    <a href="{{ request.url_for(url_namespace ~ ':model_change', app_label=app_label, model_name=model_name|lower, pk=row.obj.id|string) }}" class="table-link-primary">
+                                        {% if cell.is_html %}{{ cell.value|safe }}{% else %}{{ cell.value if cell.value and cell.value != '-' else '—' }}{% endif %}
+                                    </a>
+                                    {% elif cell.is_html %}
+                                    {{ cell.value|safe }}
+                                    {% elif cell.value == '✓' %}
+                                    <span class="value-badge value-badge-success">Yes</span>
+                                    {% elif cell.value == '✗' %}
+                                    <span class="value-badge value-badge-danger">No</span>
+                                    {% elif cell.value == '-' or not cell.value %}
+                                    <span class="value-null">—</span>
+                                    {% else %}
+                                    {{ cell.value }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td class="actions-cell">
+                                    <a href="{{ request.url_for(url_namespace ~ ':model_change', app_label=app_label, model_name=model_name|lower, pk=row.obj.id|string) }}" class="btn btn-sm btn-ghost">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            {% else %}
+            <div class="empty-state">
+                {% if search_query %}
+                <h3>No results found</h3>
+                <p class="text-muted">No {{ model_name }} objects match "{{ search_query }}".</p>
+                <a href="{{ clear_url }}" class="btn btn-secondary">Clear Search</a>
+                {% else %}
+                <h3>No {{ model_name }} objects yet</h3>
+                <p class="text-muted">Get started by creating your first {{ model_name }}.</p>
+                {% if can_add %}
+                <a href="{{ request.url_for(url_namespace ~ ':model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">+ Add {{ model_name }}</a>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
-        <h3>No results found</h3>
-        <p class="text-muted">No {{ model_name }} objects match "{{ search_query }}".</p>
-        <a href="{{ request.url_for('admin:model_list', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-secondary">
-            Clear Search
-        </a>
-        {% else %}
-        <div class="empty-state-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="21" x2="9" y2="9"/>
-            </svg>
+
+        {% if pagination.num_pages > 1 or pagination.show_all %}
+        <div class="admin-pagination">
+            <div class="admin-pagination-info">
+                {% if pagination.show_all %}
+                Showing all {{ pagination.total }}
+                {% else %}
+                Page {{ pagination.page }} of {{ pagination.num_pages }} ({{ pagination.total }} total)
+                {% endif %}
+            </div>
+            <div class="admin-pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="{{ pagination.prev_url }}" class="btn btn-sm btn-ghost">‹ Prev</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ pagination.next_url }}" class="btn btn-sm btn-ghost">Next ›</a>
+                {% endif %}
+                {% if pagination.show_all_url %}
+                <a href="{{ pagination.show_all_url }}" class="btn btn-sm btn-ghost">Show all</a>
+                {% endif %}
+            </div>
         </div>
-        <h3>No {{ model_name }} objects yet</h3>
-        <p class="text-muted">Get started by creating your first {{ model_name }}.</p>
-        {% if can_add %}
-        <a href="{{ request.url_for('admin:model_add', app_label=app_label, model_name=model_name|lower) }}" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add {{ model_name }}
-        </a>
-        {% endif %}
         {% endif %}
     </div>
+
+    {% if filters %}
+    <aside class="admin-list-filters">
+        <div class="card">
+            <h3 class="filter-heading">Filters</h3>
+            {% for filter in filters %}
+            <div class="filter-group">
+                <div class="filter-group-title">{{ filter.title }}</div>
+                <ul class="filter-options">
+                    {% for choice in filter.choices %}
+                    <li class="filter-option {% if choice.selected %}is-selected{% endif %}">
+                        <a href="{{ choice.url }}">{{ choice.label }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </aside>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    var selectAll = document.querySelector('[data-select-all]');
+    var rowBoxes = Array.prototype.slice.call(document.querySelectorAll('[data-row-select]'));
+    var counter = document.querySelector('[data-selected-count]');
+    function updateCount() {
+        if (!counter) return;
+        var n = rowBoxes.filter(function (b) { return b.checked; }).length;
+        counter.textContent = n + ' selected';
+    }
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            rowBoxes.forEach(function (b) { b.checked = selectAll.checked; });
+            updateCount();
+        });
+    }
+    rowBoxes.forEach(function (b) { b.addEventListener('change', updateCount); });
+})();
+</script>
 {% endblock %}

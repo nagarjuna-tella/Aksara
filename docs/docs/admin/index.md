@@ -8,83 +8,66 @@ A web-based dashboard that lets you view, create, edit, and delete your data wit
 
 An **admin interface** (or admin panel) is a private website where you manage your application's data. Instead of writing database queries or building forms manually, Aksara generates a complete management interface automatically from your models.
 
-Think of it like a spreadsheet for your database—but with forms, search, filters, and user permissions built in.
-
 ```python
-from aksara.contrib.admin import AdminSite, ModelAdmin
-from myapp.models import Post, Author
+from aksara.contrib.admin import site, ModelAdmin, include_admin
+from myapp.models import Post
 
-# Create an admin site (the main admin dashboard)
-admin = AdminSite()
-
-# Register a model (tell admin to manage this data)
-@admin.register(Post)
+# Register a model with the admin site
+@site.register(Post)
 class PostAdmin(ModelAdmin):
     list_display = ["title", "author", "is_published", "created_at"]
     search_fields = ["title", "content"]
+    list_filter = ["is_published"]
 
-# Attach admin to your app at the /admin/ URL
-app.mount("/admin", admin)
+# Mount the admin onto your app at /admin/
+include_admin(app)
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Create an Admin Site
+### 1. Register Models
 
-An **AdminSite** is the main container for your admin interface. It holds all the models you want to manage.
+There is a ready-to-use global admin site, `site`. **Registering** a model tells the admin: "I want to manage this type of data." Once registered, the admin creates pages to list, add, edit, and delete records.
 
 ```python
 # admin.py
-from aksara.contrib.admin import AdminSite
-
-admin = AdminSite(
-    title="My Admin",           # Browser tab title
-    site_header="My App Admin", # Header text shown on every page
-)
-```
-
-### 2. Register Models
-
-**Registering** a model tells the admin: "I want to manage this type of data." Once registered, the admin creates pages to list, add, edit, and delete records.
-
-```python
-from aksara.contrib.admin import ModelAdmin
+from aksara.contrib.admin import site, ModelAdmin
 from myapp.models import Post, Author, Category
 
 # Full control: customize how Post appears in admin
-@admin.register(Post)
+@site.register(Post)
 class PostAdmin(ModelAdmin):
     list_display = ["title", "author", "is_published"]
 
-# Another customized model
-@admin.register(Author)
-class AuthorAdmin(ModelAdmin):
-    list_display = ["name", "email"]
-
 # Quick registration: use all defaults
-admin.register(Category)
+site.register(Category)
 ```
 
-### 3. Mount the Admin
+### 2. Mount the Admin
 
-**Mounting** attaches the admin to your application at a URL path. This makes the admin accessible via your web server.
+`include_admin()` attaches the admin routes (and the required session/CSRF middleware and static files) to your application.
 
 ```python
 # main.py
 from aksara import Aksara
-from myapp.admin import admin
+from aksara.contrib.admin import include_admin
+import myapp.admin  # noqa: F401 — registers models with `site`
 
-app = Aksara()
-app.mount("/admin", admin)  # Admin is now at /admin/
+app = Aksara(database_url="postgresql://localhost/myapp")
+include_admin(app)              # Admin at /admin/
+# include_admin(app, prefix="/manage")   # …or a custom prefix
 ```
 
-### 4. Access the Admin
+!!! note "Auto-mount in development"
+    When `debug=True` (and the auth contrib is available), Aksara auto-mounts the
+    admin at `/admin/`, so an explicit `include_admin(app)` is optional in
+    development. Set `enable_admin=True` to mount it in production.
 
-Start your server and navigate to `http://localhost:8000/admin/`
+### 3. Access the Admin
 
-You'll see a dashboard listing all your registered models, with options to manage each one.
+Start your server and navigate to `http://localhost:8000/admin/`. You'll see a dashboard listing the apps and models you can manage. Admin access requires an authenticated **staff** user (`is_staff=True`).
 
 ---
 
@@ -92,11 +75,14 @@ You'll see a dashboard listing all your registered models, with options to manag
 
 | Feature | What It Does |
 |---------|--------------|
-| **Auto-generated UI** | Creates list, add, edit, delete pages automatically from your models |
-| **Search** | Find records by typing keywords |
-| **Filters** | Narrow down records by field values (like "show only published posts") |
-| **Permissions** | Control who can view, add, edit, or delete data |
-| **Responsive** | Works on phones, tablets, and desktops |
+| **Auto-generated UI** | List, add, edit, and delete pages generated from your models |
+| **Search** | `search_fields` adds a search box across model fields |
+| **Filters** | `list_filter` adds a sidebar to narrow records by field value |
+| **Ordering & pagination** | `ordering`, sortable columns, and `list_per_page` |
+| **Bulk actions** | Run an operation on selected rows (incl. built-in delete) |
+| **Permissions** | Per-model and per-object access control |
+| **Custom columns** | Computed/formatted columns from `ModelAdmin` methods |
+| **Structured widgets** | JSON and array editors for complex fields |
 
 ---
 
@@ -104,153 +90,108 @@ You'll see a dashboard listing all your registered models, with options to manag
 
 ### Models vs. ModelAdmin
 
-- A **Model** defines your data structure (what fields exist, what types they are)
-- A **ModelAdmin** controls how that model appears in the admin (which columns show, what's searchable)
+- A **Model** defines your data structure (what fields exist, what types they are).
+- A **ModelAdmin** controls how that model appears in the admin (which columns show, what's searchable, how forms are laid out).
 
 ```python
-# This is a MODEL - defines the data
 class Post(Model):
     title = fields.String(max_length=200)
     content = fields.Text()
     is_published = fields.Boolean(default=False)
 
-# This is a MODELADMIN - controls the admin interface
-@admin.register(Post)
+@site.register(Post)
 class PostAdmin(ModelAdmin):
-    list_display = ["title", "is_published"]  # Columns in the list
-    search_fields = ["title", "content"]       # Fields to search
+    list_display = ["title", "is_published"]   # columns in the list
+    search_fields = ["title", "content"]        # fields to search
 ```
 
 ### List View vs. Detail View
 
-The admin has two main views for each model:
+- **List View**: a paginated table of records, with optional search, filters, sortable columns and bulk actions.
+- **Detail View**: a form for creating or editing a single record, optionally grouped into fieldsets.
 
-- **List View**: A table showing all records (like a spreadsheet)
-- **Detail View**: A form for viewing/editing a single record
+### Admin vs. Studio
 
-```
-List View (all posts)          Detail View (editing one post)
-┌────────────────────────┐     ┌────────────────────────┐
-│ Title     │ Published  │     │ Title: [My Post     ]  │
-├───────────┼────────────┤     │ Content:               │
-│ My Post   │ ✓          │────▶│ [                   ]  │
-│ Draft     │ ✗          │     │ Published: [✓]         │
-│ News      │ ✓          │     │ [Save] [Delete]        │
-└────────────────────────┘     └────────────────────────┘
-```
+Aksara ships two browser UIs with different jobs:
+
+| UI | Path | Use it for |
+|----|------|------------|
+| **Admin** | `/admin/` | Day-to-day data management by authenticated staff users: create records, edit content, run bulk actions, and review model data. |
+| **Studio** | `/studio/ui` | Developer/operator inspection: models, routes, migrations, diagnostics, AI tools, and project health. |
+
+Use Admin when a user is managing application data. Use Studio when a developer
+or operator is inspecting how the application is built and running. They share
+the same app process, but their security settings are separate.
 
 ---
 
-## Section Contents
+## Security Defaults
 
-<div class="grid cards" markdown>
+Admin access requires a staff user by default. Form POSTs use a same-site CSRF
+cookie and hidden form token, and login/action POSTs are rate-limited.
 
--   :material-cog: **[AdminSite](admin-site.md)**
-    
-    Configure the main admin dashboard
-
--   :material-view-list: **[ModelAdmin](model-admin.md)**
-    
-    Customize how each model appears
-
--   :material-shield-lock: **[Permissions](admin-permissions.md)**
-    
-    Control who can access what
-
-</div>
+!!! warning "Do not disable CSRF in production"
+    `AKSARA_ADMIN_CSRF_ENABLED=false` is intended only for controlled tests or
+    local debugging. Leave CSRF enabled for deployed admin sites.
 
 ---
 
 ## Complete Example
 
-Here's a full admin setup for a blog application:
-
 ```python
 # admin.py
-from aksara.contrib.admin import AdminSite, ModelAdmin
+from aksara.contrib.admin import site, ModelAdmin, action
 from myapp.models import Post, Author, Category, Tag
 
 
-# Create the admin site
-admin = AdminSite(
-    title="Blog Admin",
-    site_header="Blog Administration",
-    index_title="Dashboard",
-)
-
-
-@admin.register(Post)
+@site.register(Post)
 class PostAdmin(ModelAdmin):
     """Manage blog posts."""
-    
-    # List view: what columns to show
+
     list_display = ["title", "author", "category", "is_published", "created_at"]
-    
-    # List view: sidebar filters
-    list_filter = ["is_published", "category", "created_at"]
-    
-    # List view: searchable fields
+    list_display_links = ["title"]
+    list_filter = ["is_published", "category"]
     search_fields = ["title", "content"]
-    
-    # List view: default sort order (- means descending)
     ordering = ["-created_at"]
-    
-    # Detail view: which fields to show on the edit form
-    fields = [
-        "title", "slug", "content",
-        "author", "category", "tags",
-        "is_published", "is_featured",
+    list_per_page = 25
+
+    fieldsets = [
+        (None, {"fields": ["title", "slug", "content"]}),
+        ("Publication", {
+            "fields": ["author", "category", "tags", "is_published"],
+            "classes": ["collapse"],
+        }),
     ]
-    
-    # Detail view: fields that can't be edited
     readonly_fields = ["created_at", "updated_at"]
+    prepopulated_fields = {"slug": ("title",)}
+    actions = ["publish_selected"]
+
+    @action(description="Publish selected posts", permissions=["change"])
+    async def publish_selected(self, request, queryset):
+        count = await queryset.update(is_published=True)
+        self.message_user(request, f"Published {count} posts.")
 
 
-@admin.register(Author)
-class AuthorAdmin(ModelAdmin):
-    """Manage authors."""
-    
-    list_display = ["name", "email", "post_count", "created_at"]
-    search_fields = ["name", "email"]
-    
-    def post_count(self, obj):
-        """Custom column: count how many posts this author has."""
-        return len(obj.posts)
-
-
-@admin.register(Category)
-class CategoryAdmin(ModelAdmin):
-    """Manage categories."""
-    
-    list_display = ["name", "slug", "parent"]
-    
-    # Auto-fill slug when typing name
-    prepopulated_fields = {"slug": ("name",)}
-
-
-# Simple registration with all defaults
-admin.register(Tag)
+site.register(Author)
+site.register(Category)
+site.register(Tag)
 ```
 
 ```python
 # main.py
 from aksara import Aksara
-from aksara.contrib.auth.middleware import AuthenticationMiddleware
-from myapp.admin import admin
+from aksara.contrib.admin import include_admin
+import myapp.admin  # noqa: F401
 
-app = Aksara()
-
-# Required: authentication so admin knows who's logged in
-app.add_middleware(AuthenticationMiddleware)
-
-# Mount admin at /admin/
-app.mount("/admin", admin)
+app = Aksara(database_url="postgresql://localhost/myapp")
+include_admin(app)
 ```
 
 ---
 
 ## Related Documentation
 
+- [AdminSite](admin-site.md) — Configure and mount admin sites
+- [ModelAdmin](model-admin.md) — Customize how each model appears
+- [Permissions](admin-permissions.md) — Control who can access what
 - [Models](../orm/models.md) — Define your data structure
-- [Authentication](../api/authentication.md) — User login system
-- [Permissions](admin-permissions.md) — Control access to admin

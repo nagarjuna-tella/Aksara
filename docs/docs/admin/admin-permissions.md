@@ -4,523 +4,248 @@ Control who can see, add, edit, and delete data in the admin interface.
 
 ---
 
-## What are Permissions?
+## Levels of Permission
 
-**Permissions** determine what users can do. Without permissions, anyone could access your admin and modify data—which would be a security disaster.
+| Level | Controls | Where |
+|-------|----------|-------|
+| **Site** | Access to the admin at all | `AdminSite(permission_classes=...)` |
+| **Module** | Whether a model appears in the dashboard/sidebar | `ModelAdmin.has_module_permission` |
+| **Object** | View/add/change/delete records | `ModelAdmin.has_*_permission` |
+| **Field** | Which fields are visible / editable | `get_fields`, `get_readonly_fields` |
+| **Action** | Who can run a bulk action | `@action(permissions=[...])` |
 
-Aksara admin permissions work at four levels:
-
-| Level | What It Controls | Example |
-|-------|------------------|---------|
-| **Site** | Who can access the admin at all | "Only staff members can open `/admin/`" |
-| **Model** | Who can see a model in the admin | "Only superusers can see the Settings model" |
-| **Object** | Who can edit specific records | "Authors can only edit their own posts" |
-| **Action** | Who can perform bulk operations | "Only admins can bulk-delete posts" |
+The admin reads the current user from `request.state.user` (populated by the
+admin session middleware from the `session_token` cookie).
 
 ---
 
 ## Site-Level Permissions
 
-Site-level permissions control who can access the admin interface at all.
-
-### Default: Staff Only
-
-By default, users need `is_staff=True` to access admin:
-
-```python
-# Give a user admin access
-user = await User.objects.get(email="alice@example.com")
-user.is_staff = True
-await user.save()
-# Now Alice can access /admin/
-```
-
-### Superuser Only
-
-Restrict to superusers (users with full system access):
+By default the admin requires an authenticated **staff** user (`is_staff=True`).
+To customize, pass `permission_classes` — standard `aksara.permissions`
+classes — to the site. When set, they replace the default staff gate for site
+access.
 
 ```python
+from aksara.contrib.admin import AdminSite
 from aksara.permissions import BasePermission
 
 class IsSuperuser(BasePermission):
-    """Only superusers can access."""
-    
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.is_superuser
-        )
+    def has_permission(self, request, view=None):
+        user = self.get_user(request)
+        return bool(user and getattr(user, "is_superuser", False))
 
-admin = AdminSite(
-    permission_classes=[IsSuperuser],
-)
+admin = AdminSite(permission_classes=[IsSuperuser])
 ```
 
-### Custom Role Check
-
-Check for specific roles or attributes:
-
-```python
-class IsEditorOrHigher(BasePermission):
-    """Editors, admins, and superusers can access."""
-    
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        
-        # Check user's role
-        return request.user.role in ["editor", "admin", "superuser"]
-
-admin = AdminSite(
-    permission_classes=[IsEditorOrHigher],
-)
-```
-
-### Multiple Requirements (AND)
-
-When you pass multiple permission classes, ALL must pass:
-
-```python
-admin = AdminSite(
-    permission_classes=[
-        IsAuthenticated,  # Must be logged in
-        IsStaff,          # AND must be staff
-        HasVerifiedEmail, # AND must have verified email
-    ],
-)
-```
+Combine requirements with the built-in `IsAuthenticated`, `IsAdminUser`, etc., or
+your own `BasePermission` subclasses.
 
 ---
 
-## Model-Level Permissions
+## Module-Level Permissions
 
-Model-level permissions control which models appear in the admin and what users can do with them.
-
-### has_module_permission
-
-**What it does**: Controls whether the model appears in the admin sidebar/index.
-
-**When to use**: To completely hide sensitive models from certain users.
+`has_module_permission(self, request)` controls whether a model shows up in the
+dashboard and app index for the current user. It defaults to the view permission.
 
 ```python
 class SettingsAdmin(ModelAdmin):
     def has_module_permission(self, request):
-        """Only superusers can see Settings in the admin."""
-        return request.user.is_superuser
+        return request.state.user.is_superuser
 ```
 
-**Result**: Non-superusers won't see "Settings" in the admin menu at all.
-
-### CRUD Permissions
-
-These four methods control Create, Read, Update, Delete access:
-
-```python
-class PostAdmin(ModelAdmin):
-    
-    def has_view_permission(self, request, obj=None):
-        """Can user VIEW posts in the admin?"""
-        return True  # Everyone can view
-    
-    def has_add_permission(self, request):
-        """Can user CREATE new posts?"""
-        return request.user.is_staff  # Staff only
-    
-    def has_change_permission(self, request, obj=None):
-        """Can user EDIT posts?"""
-        return request.user.is_staff  # Staff only
-    
-    def has_delete_permission(self, request, obj=None):
-        """Can user DELETE posts?"""
-        return request.user.is_superuser  # Superusers only
-```
-
-**Note**: The `obj` parameter is `None` for list views (checking general permission) and contains the specific object for detail views (checking permission on that specific record).
+Non-superusers won't see the model listed (the underlying detail routes are also
+guarded by the view/change permissions below).
 
 ---
 
-## Object-Level Permissions
+## Object-Level (CRUD) Permissions
 
-Object-level permissions let you control access to specific records, not just the model as a whole.
-
-### "Edit Your Own" Pattern
-
-The most common pattern: users can only edit records they created.
+Override these to control Create, Read, Update, Delete. They may be **sync or
+async**. `obj` is `None` for list-level checks and the specific record for
+detail-level checks.
 
 ```python
 class PostAdmin(ModelAdmin):
-    
+    def has_view_permission(self, request, obj=None):
+        return request.state.user.is_staff
+
+    def has_add_permission(self, request):
+        return request.state.user.is_staff
+
     def has_change_permission(self, request, obj=None):
-        """Users can only edit their own posts."""
-        
-        # List view: check general permission
-        if obj is None:
-            return request.user.is_staff
-        
-        # Detail view: check specific object
-        # Superusers can edit anything
-        if request.user.is_superuser:
-            return True
-        
-        # Others can only edit their own posts
-        return str(obj.author_id) == str(request.user.id)
-    
+        user = request.state.user
+        if obj is None or user.is_superuser:
+            return user.is_staff
+        return str(obj.author_id) == str(user.id)   # edit your own only
+
     def has_delete_permission(self, request, obj=None):
-        """Users can only delete their own posts."""
-        
-        if obj is None:
-            return request.user.is_staff
-        
-        if request.user.is_superuser:
-            return True
-        
-        return str(obj.author_id) == str(request.user.id)
+        return request.state.user.is_superuser
 ```
 
-**How it works**:
-- Alice creates a post → Alice and superusers can edit/delete it
-- Bob creates a post → Bob and superusers can edit/delete it
-- Alice cannot edit Bob's post (unless she's a superuser)
+### Async permissions
 
-### Team-Based Permissions
-
-For collaborative apps where teams share access:
+When a check needs a database lookup, define it as `async def`:
 
 ```python
 class ProjectAdmin(ModelAdmin):
-    
     async def has_change_permission(self, request, obj=None):
-        """Team members can edit their team's projects."""
-        
-        if obj is None:
-            return request.user.is_staff
-        
-        if request.user.is_superuser:
-            return True
-        
-        # Check if user is a member of the project's team
-        is_member = await obj.team.members.filter(
-            id=str(request.user.id)
-        ).exists()
-        
-        return is_member
-```
-
-### Manager/Subordinate Permissions
-
-For hierarchical organizations:
-
-```python
-class EmployeeAdmin(ModelAdmin):
-    
-    async def has_change_permission(self, request, obj=None):
-        """Managers can edit their direct reports."""
-        
-        if obj is None:
-            return request.user.is_staff
-        
-        if request.user.is_superuser:
-            return True
-        
-        # Check if this employee reports to the current user
-        return str(obj.manager_id) == str(request.user.id)
-```
-
----
-
-## Action Permissions
-
-Control who can perform bulk actions (operations on multiple selected records).
-
-### Restrict by CRUD Permission
-
-Link actions to existing permission methods:
-
-```python
-class PostAdmin(ModelAdmin):
-    actions = ["publish", "feature", "archive"]
-    
-    @admin.action(description="Publish selected posts")
-    async def publish(self, request, queryset):
-        await queryset.update(is_published=True)
-    # Requires "change" permission (has_change_permission)
-    publish.allowed_permissions = ["change"]
-    
-    @admin.action(description="Feature selected posts")
-    async def feature(self, request, queryset):
-        await queryset.update(is_featured=True)
-    # Also requires "change" permission
-    feature.allowed_permissions = ["change"]
-    
-    @admin.action(description="Archive selected posts")
-    async def archive(self, request, queryset):
-        await queryset.update(is_archived=True)
-    # Requires "delete" permission (more restrictive)
-    archive.allowed_permissions = ["delete"]
-```
-
-### Custom Action Permissions
-
-Create custom permission methods for specific actions:
-
-```python
-class PostAdmin(ModelAdmin):
-    actions = ["export_csv"]
-    
-    @admin.action(description="Export to CSV")
-    async def export_csv(self, request, queryset):
-        """Export selected posts to a CSV file."""
-        # ... export logic ...
-    
-    def has_export_csv_permission(self, request):
-        """Custom permission: only users with export role."""
-        return (
-            request.user.is_superuser or
-            "exporter" in request.user.roles
-        )
-    
-    # Link action to custom permission
-    export_csv.allowed_permissions = ["export_csv"]
+        user = request.state.user
+        if obj is None or user.is_superuser:
+            return user.is_staff
+        return await obj.team.members.filter(id=str(user.id)).exists()
 ```
 
 ---
 
 ## Field-Level Permissions
 
-Control which fields users can see or edit.
-
-### Read-Only Fields for Some Users
+### Read-only fields per user
 
 ```python
 class PostAdmin(ModelAdmin):
-    
     def get_readonly_fields(self, request, obj=None):
-        """Some fields are read-only for non-superusers."""
-        
-        # Start with base readonly fields
         readonly = list(self.readonly_fields)
-        
-        if not request.user.is_superuser:
-            # Regular staff can't edit these sensitive fields
-            readonly.extend([
-                "is_featured",   # Only admins can feature posts
-                "view_count",    # System-managed
-                "author",        # Can't reassign posts
-            ])
-        
+        if not request.state.user.is_superuser:
+            readonly += ["is_featured", "author"]
         return readonly
 ```
 
-### Hide Fields Entirely
+### Show different fields per user or action
 
 ```python
 class UserAdmin(ModelAdmin):
-    
     def get_fields(self, request, obj=None):
-        """Hide sensitive fields from non-superusers."""
-        
-        # Default fields
-        fields = ["email", "name", "role", "is_active"]
-        
-        if request.user.is_superuser:
-            # Superusers can see everything
-            fields.extend(["password_hash", "api_key", "internal_notes"])
-        
-        return fields
-```
-
-### Different Fields for Add vs. Edit
-
-```python
-class PostAdmin(ModelAdmin):
-    
-    def get_fields(self, request, obj=None):
-        """Different fields when creating vs. editing."""
-        
-        if obj is None:
-            # Creating new post: minimal fields
-            return ["title", "content", "category"]
-        else:
-            # Editing existing post: all fields
-            return [
-                "title", "slug", "content", "category",
-                "is_published", "published_at", "is_featured",
-            ]
+        base = ["email", "name", "role", "is_active"]
+        if request.state.user.is_superuser:
+            base += ["api_key", "internal_notes"]
+        return base
 ```
 
 ---
 
-## Filtering What Users Can See
+## Filtering Visible Records
 
-### QuerySet Filtering
-
-Users only see records they have access to:
+Override `get_queryset` (async) so users only see records they should:
 
 ```python
 class PostAdmin(ModelAdmin):
-    
-    def get_queryset(self, request):
-        """Filter which posts appear in the list."""
-        
-        qs = super().get_queryset(request)
-        
-        if request.user.is_superuser:
-            # Superusers see everything
+    async def get_queryset(self, request):
+        qs = await super().get_queryset(request)
+        user = request.state.user
+        if user.is_superuser:
             return qs
-        
-        # Others only see their own posts
-        return qs.filter(author_id=str(request.user.id))
-```
-
-**Result**: When Alice views the post list, she only sees her posts. Bob only sees his. Superusers see all posts.
-
-### Combining with Permissions
-
-```python
-class PostAdmin(ModelAdmin):
-    
-    def get_queryset(self, request):
-        """Authors see own posts; editors see all."""
-        
-        qs = super().get_queryset(request)
-        
-        if request.user.is_superuser:
-            return qs
-        
-        if request.user.role == "editor":
-            # Editors see all posts but can only edit assigned ones
-            return qs
-        
-        # Regular authors only see their own
-        return qs.filter(author_id=str(request.user.id))
-    
-    def has_change_permission(self, request, obj=None):
-        """Editors can only edit posts assigned to them."""
-        
-        if obj is None:
-            return request.user.is_staff
-        
-        if request.user.is_superuser:
-            return True
-        
-        if request.user.role == "editor":
-            # Editors can edit posts assigned to them
-            return str(obj.assigned_editor_id) == str(request.user.id)
-        
-        # Authors can edit their own posts
-        return str(obj.author_id) == str(request.user.id)
+        return qs.filter(author_id=str(user.id))
 ```
 
 ---
 
-## Permission Quick Reference
+## Action Permissions
 
-| Method | Controls | When `obj` is None |
-|--------|----------|-------------------|
-| `has_module_permission(request)` | Model visibility in admin | N/A |
-| `has_view_permission(request, obj)` | Can view records | List view permission |
-| `has_add_permission(request)` | Can create records | N/A (no object yet) |
-| `has_change_permission(request, obj)` | Can edit records | List view permission |
-| `has_delete_permission(request, obj)` | Can delete records | List view permission |
-
----
-
-## Complete Example
+Tie a bulk action to a permission with the `permissions` argument of `@action`.
+Each name `X` is checked against `has_X_permission(request)` before the action
+runs.
 
 ```python
-from aksara.contrib.admin import ModelAdmin, AdminSite
-from aksara.permissions import BasePermission
+from aksara.contrib.admin import ModelAdmin, action
 
-
-class IsStaffOrReadOnly(BasePermission):
-    """Staff can do anything; others can only view."""
-    
-    def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            return True
-        return False
-
-
-admin = AdminSite(
-    permission_classes=[IsStaffOrReadOnly],
-)
-
-
-@admin.register(Post)
 class PostAdmin(ModelAdmin):
-    list_display = ["title", "author", "is_published"]
-    actions = ["publish", "feature"]
-    
-    # ─── Model Permissions ─────────────────────────────
-    
-    def has_module_permission(self, request):
-        """Everyone can see Posts in the menu."""
-        return True
-    
-    def has_view_permission(self, request, obj=None):
-        """Everyone can view posts."""
-        return True
-    
-    def has_add_permission(self, request):
-        """Only staff can create posts."""
-        return request.user.is_staff
-    
-    def has_change_permission(self, request, obj=None):
-        """Staff can edit; authors can edit their own."""
-        if obj is None:
-            return request.user.is_staff
-        if request.user.is_superuser:
-            return True
-        return str(obj.author_id) == str(request.user.id)
-    
-    def has_delete_permission(self, request, obj=None):
-        """Only superusers and post authors can delete."""
-        if obj is None:
-            return request.user.is_staff
-        if request.user.is_superuser:
-            return True
-        return str(obj.author_id) == str(request.user.id)
-    
-    # ─── QuerySet Filtering ────────────────────────────
-    
-    def get_queryset(self, request):
-        """Superusers see all; others see own posts."""
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(author_id=str(request.user.id))
-    
-    # ─── Field Permissions ─────────────────────────────
-    
-    def get_readonly_fields(self, request, obj=None):
-        """Regular users can't modify featured status."""
-        readonly = ["created_at", "updated_at"]
-        if not request.user.is_superuser:
-            readonly.append("is_featured")
-        return readonly
-    
-    # ─── Action Permissions ────────────────────────────
-    
-    @admin.action(description="Publish selected")
+    actions = ["publish", "archive"]
+
+    @action(description="Publish selected", permissions=["change"])
     async def publish(self, request, queryset):
         await queryset.update(is_published=True)
-    publish.allowed_permissions = ["change"]
-    
-    @admin.action(description="Feature selected")
-    async def feature(self, request, queryset):
-        await queryset.update(is_featured=True)
-    # Custom permission: only superusers can feature
-    feature.allowed_permissions = ["feature"]
-    
-    def has_feature_permission(self, request):
-        """Only superusers can feature posts."""
-        return request.user.is_superuser
+
+    @action(description="Archive selected", permissions=["delete"])
+    async def archive(self, request, queryset):
+        await queryset.update(is_archived=True)
 ```
+
+If the current user fails the required permission, the action is rejected with a
+403.
+
+For object-aware hooks such as `has_change_permission(request, obj)` and
+`has_delete_permission(request, obj)`, bulk actions also check each selected
+object before the action runs. If any selected object fails, the whole action is
+rejected and no built-in delete is performed.
+
+---
+
+## Complete Pattern
+
+This example combines module visibility, row filtering, object-level edit/delete
+rules, readonly fields, and a guarded bulk action:
+
+```python
+from aksara.contrib.admin import ModelAdmin, action
+
+class PostAdmin(ModelAdmin):
+    list_display = ["title", "author", "is_published"]
+    actions = ["publish_selected", "delete_selected"]
+
+    def has_module_permission(self, request):
+        return request.state.user.is_staff
+
+    async def get_queryset(self, request):
+        qs = await super().get_queryset(request)
+        user = request.state.user
+        if user.is_superuser:
+            return qs
+        return qs.filter(author_id=str(user.id))
+
+    def has_change_permission(self, request, obj=None):
+        user = request.state.user
+        if obj is None:
+            return user.is_staff
+        return user.is_superuser or str(obj.author_id) == str(user.id)
+
+    def has_delete_permission(self, request, obj=None):
+        user = request.state.user
+        if obj is None:
+            return user.is_staff
+        return user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.state.user.is_superuser:
+            return ["created_at", "updated_at"]
+        return ["created_at", "updated_at", "author"]
+
+    @action(description="Publish selected", permissions=["change"])
+    async def publish_selected(self, request, queryset):
+        count = await queryset.update(is_published=True)
+        self.message_user(request, f"Published {count} posts.", level="success")
+```
+
+---
+
+## Security Notes
+
+- Keep admin CSRF enabled in production. Disabling
+  `AKSARA_ADMIN_CSRF_ENABLED` should be limited to tests or controlled local
+  debugging.
+- A model hidden by `has_module_permission()` is not shown in the dashboard, but
+  direct model routes are still protected by `has_view_permission`,
+  `has_change_permission`, and related hooks.
+- Use `get_queryset()` for data visibility. Permission hooks decide whether an
+  operation is allowed; the queryset decides which rows the user can list and
+  select.
+
+---
+
+## Quick Reference
+
+| Method | Controls | `obj=None` means |
+|--------|----------|------------------|
+| `has_module_permission(request)` | Model visibility in the dashboard | n/a |
+| `has_view_permission(request, obj)` | View records | list-level check |
+| `has_add_permission(request)` | Create records | n/a |
+| `has_change_permission(request, obj)` | Edit records | list-level check |
+| `has_delete_permission(request, obj)` | Delete records | list-level check |
 
 ---
 
 ## Related Documentation
 
-- [AdminSite](admin-site.md) — Configure the admin interface
+- [AdminSite](admin-site.md) — Configure and mount the admin
 - [ModelAdmin](model-admin.md) — Customize model display
 - [Authentication](../api/authentication.md) — User login system

@@ -6,7 +6,9 @@ Aksara provides powerful, out-of-the-box filtering and search capabilities for y
 
 ## Automatic URL Filtering
 
-Manually parsing query parameters is tedious and error-prone. Aksara provides `DjangoFilterBackend` to automatically parse Django-style query parameters.
+Manually parsing query parameters is tedious and error-prone. Aksara provides `AksaraFilterBackend` to automatically parse Django-style query parameters.
+
+`DjangoFilterBackend` remains available as a backward-compatible alias, but `AksaraFilterBackend` is the preferred name for new code.
 
 ### Setup
 
@@ -14,7 +16,7 @@ Add the backend to your `ModelViewSet` and specify which fields are filterable:
 
 ```python
 from aksara import Model, fields
-from aksara.api import ModelViewSet, DjangoFilterBackend
+from aksara.api import ModelViewSet, AksaraFilterBackend
 
 class Product(Model):
     name = fields.String()
@@ -24,7 +26,7 @@ class Product(Model):
 
 class ProductViewSet(ModelViewSet):
     model = Product
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [AksaraFilterBackend]
     filterable_fields = ['price', 'category', 'in_stock']
 
 # ✅ Now all these queries work automatically:
@@ -120,7 +122,7 @@ You can combine multiple backends to provide comprehensive list endpoints:
 ```python
 class PostViewSet(ModelViewSet):
     model = Post
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [AksaraFilterBackend, SearchFilter, OrderingFilter]
     filterable_fields = ['status', 'author_id']
     search_fields = ['title', 'content']
     ordering_fields = ['created_at', 'views']

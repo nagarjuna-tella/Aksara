@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from hypothesis import given, strategies as st
 
-from aksara.api.filters import DjangoFilterBackend
+from aksara.api.filters import AksaraFilterBackend
 from aksara.api.viewsets import ModelViewSet
 from aksara.manager import QuerySet
 
@@ -16,7 +16,7 @@ pytestmark = [pytest.mark.security, pytest.mark.fuzz]
 class FuzzAccountViewSet(ModelViewSet):
     model = FuzzAccount
     prefix = "/security-fuzz-accounts"
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [AksaraFilterBackend]
     filterable_fields = ["name", "tenant_id", "metadata"]
 
 
