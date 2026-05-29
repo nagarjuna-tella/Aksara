@@ -1077,8 +1077,10 @@ def makemigrations(
     
     if sql:
         # Legacy SQL mode — no autodetection, always dumps all models
+        from aksara.migrations.autodetector import sort_model_items_by_fk_dependencies
+
         sql_statements = []
-        for model_name, model in models.items():
+        for model_name, model in sort_model_items_by_fk_dependencies(models):
             sql_stmt = model.get_create_table_sql()
             sql_statements.append(f"-- Model: {model_name}")
             sql_statements.append(sql_stmt)

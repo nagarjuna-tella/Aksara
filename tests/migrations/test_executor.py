@@ -266,6 +266,23 @@ class TestModelToCreateTable:
         
         ModelRegistry._models.clear()
 
+    def test_model_uses_autodetector_field_codegen(self):
+        from aksara.model.base import Model
+        from aksara import fields
+        from aksara.registry import ModelRegistry
+
+        ModelRegistry._models.clear()
+
+        class ExtendedModel(Model):
+            id = fields.UUID(primary_key=True)
+            slug = fields.Slug(max_length=80, unique=True)
+
+        code = model_to_create_table(ExtendedModel)
+
+        assert "op.SlugField(80, unique=True)" in code
+
+        ModelRegistry._models.clear()
+
 
 class TestModelsToMigrationCode:
     """Tests for converting multiple models to migration code."""
@@ -292,6 +309,35 @@ class TestModelsToMigrationCode:
         # Check for table names (lowercase pluralized)
         assert code.count("CreateTable") == 2
         
+        ModelRegistry._models.clear()
+
+    def test_multiple_models_ordered_by_foreign_key_dependencies(self):
+        from aksara.model.base import Model
+        from aksara import fields
+        from aksara.registry import ModelRegistry
+
+        ModelRegistry._models.clear()
+
+        class ExecOrderUser(Model):
+            id = fields.UUID(primary_key=True)
+
+            class Meta:
+                table_name = "exec_order_users"
+
+        class ExecOrderPost(Model):
+            id = fields.UUID(primary_key=True)
+            author = fields.ForeignKey(ExecOrderUser)
+
+            class Meta:
+                table_name = "exec_order_posts"
+
+        models = {"ExecOrderPost": ExecOrderPost, "ExecOrderUser": ExecOrderUser}
+        code = models_to_migration_code(models)
+
+        assert code.index('name="exec_order_users"') < code.index(
+            'name="exec_order_posts"'
+        )
+
         ModelRegistry._models.clear()
 
 

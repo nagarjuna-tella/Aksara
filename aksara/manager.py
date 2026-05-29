@@ -51,6 +51,28 @@ def _json_numeric_cast(value: Any) -> Optional[str]:
     return None
 
 
+def _parse_isnull_value(value: Any) -> bool:
+    """Parse __isnull values without relying on Python truthiness."""
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off"}:
+            return False
+        raise ValueError(
+            "__isnull lookup expects a boolean or one of: "
+            "true/false, 1/0, yes/no, y/n, on/off"
+        )
+
+    raise TypeError(
+        "__isnull lookup expects a boolean or strict boolean string, "
+        f"got {type(value).__name__}"
+    )
+
+
 def parse_lookup(key: str) -> Tuple[str, str]:
     """
     Parse a filter key into field name and lookup type.
@@ -403,22 +425,31 @@ class QuerySet(Generic[T]):
 
     def _base_column_reference(self, field_name: str, qualify: bool = False) -> str:
         """Resolve a column on the base model, optionally qualifying it."""
-        if field_name == "id":
-            column_name = "id"
-        elif field_name in self._model._fields:
-            column_name = self._model._fields[field_name].column_name
-        elif field_name.endswith("_id"):
-            base_field_name = field_name[:-3]
-            field = self._model._fields.get(base_field_name)
-            if field is None or field.column_name != field_name:
-                raise ValueError(f"Unknown field reference: {field_name}")
-            column_name = field_name
-        else:
-            raise ValueError(f"Unknown field reference: {field_name}")
+        _, _, column_name = self._resolve_field_reference(field_name)
 
         if not qualify:
             return quote_identifier(column_name)
         return self._qualified_column(self._model.__tablename__, column_name)
+
+    def _resolve_field_reference(self, field_name: str):
+        """Resolve model field names and FK/O2O DB-column aliases."""
+        from aksara.fields import ForeignKey, OneToOne
+
+        if field_name == "id" and field_name in self._model._fields:
+            field = self._model._fields[field_name]
+            return field_name, field, "id"
+
+        if field_name in self._model._fields:
+            field = self._model._fields[field_name]
+            return field_name, field, field.column_name
+
+        for model_field_name, field in self._model._fields.items():
+            if not isinstance(field, (ForeignKey, OneToOne)):
+                continue
+            if field.db_column_name == field_name:
+                return model_field_name, field, field.db_column_name
+
+        raise ValueError(f"Unknown field reference: {field_name}")
 
     def _new_join_state(self) -> Dict[str, Any]:
         """Create state for deterministic join registration during compilation."""
@@ -619,10 +650,11 @@ class QuerySet(Generic[T]):
 
         field_name, json_path, lookup = split_json_lookup(self._model, key)
 
-        if field_name not in self._model._fields:
-            raise ValueError(f"Unknown field: {field_name}")
+        try:
+            _model_field_name, field, _ = self._resolve_field_reference(field_name)
+        except ValueError as exc:
+            raise ValueError(f"Unknown field: {field_name}") from exc
 
-        field = self._model._fields[field_name]
         col_name = self._base_column_reference(field_name, qualify=qualify_base)
 
         if json_path:
@@ -636,7 +668,8 @@ class QuerySet(Generic[T]):
             text_expr = f"{json_expr} ->> ${len(values)}"
 
             if lookup == "isnull":
-                return f"{raw_expr} IS NULL" if value else f"{raw_expr} IS NOT NULL"
+                is_null = _parse_isnull_value(value)
+                return f"{raw_expr} IS NULL" if is_null else f"{raw_expr} IS NOT NULL"
 
             if lookup in {"icontains", "contains"}:
                 values.append(f"%{value}%")
@@ -673,8 +706,13 @@ class QuerySet(Generic[T]):
             return f"${index}"
 
         if lookup == "exact":
+            if value is None:
+                return f"{col_name} IS NULL"
             if is_expression(value):
-                return f"{col_name} = {compile_expression(self._model, value, values)}"
+                return (
+                    f"{col_name} = "
+                    f"{compile_expression(self._model, value, values)}"
+                )
             values.append(field.to_db(value))
             return f"{col_name} = {_parameter(len(values))}"
 
@@ -715,7 +753,8 @@ class QuerySet(Generic[T]):
             return f"{col_name} IN ({', '.join(placeholders)})"
 
         if lookup == "isnull":
-            return f"{col_name} IS NULL" if value else f"{col_name} IS NOT NULL"
+            is_null = _parse_isnull_value(value)
+            return f"{col_name} IS NULL" if is_null else f"{col_name} IS NOT NULL"
 
         if lookup == "icontains":
             if is_expression(value):

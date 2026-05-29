@@ -105,6 +105,47 @@ class TestMakemigrationsCommand:
         assert "Python Migration created" in result.output
         assert (migrations_dir / "0001_auto.py").exists()
 
+    def test_sql_stdout_orders_models_by_foreign_key_dependencies(self) -> None:
+        from aksara import Model, fields
+        from aksara.registry import ModelRegistry
+
+        ModelRegistry._models.clear()
+
+        try:
+            class SqlOrderUser(Model):
+                id = fields.UUID(primary_key=True)
+
+                class Meta:
+                    table_name = "sql_order_users"
+
+            class SqlOrderPost(Model):
+                id = fields.UUID(primary_key=True)
+                author = fields.ForeignKey(SqlOrderUser)
+
+                class Meta:
+                    table_name = "sql_order_posts"
+
+            models = {
+                "SqlOrderPost": SqlOrderPost,
+                "SqlOrderUser": SqlOrderUser,
+            }
+
+            with patch("aksara.cli.main.discover_models"), patch(
+                "aksara.registry.ModelRegistry.all",
+                return_value=models,
+            ):
+                result = runner.invoke(
+                    cli,
+                    ["makemigrations", "--sql", "--stdout"],
+                )
+
+            assert result.exit_code == 0
+            assert result.output.index("-- Model: SqlOrderUser") < result.output.index(
+                "-- Model: SqlOrderPost"
+            )
+        finally:
+            ModelRegistry._models.clear()
+
 
 class TestMigrateCommand:
     def _invoke_with_apply_exception(self, tmp_path, monkeypatch, exc):

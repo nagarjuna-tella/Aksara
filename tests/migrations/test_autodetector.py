@@ -136,6 +136,114 @@ class TestAutodetector:
         assert "posts" in diff.new_tables
         assert any(isinstance(o, op.CreateTable) for o in ops)
 
+    def test_new_tables_are_ordered_by_foreign_key_dependencies(self):
+        """Referenced new tables are created before tables with FK constraints."""
+        class FKOrderRoom(Model):
+            number = fields.String(max_length=20)
+
+            class Meta:
+                table_name = "rooms"
+
+        class FKOrderGuest(Model):
+            name = fields.String(max_length=100)
+            room = fields.ForeignKey(FKOrderRoom)
+
+            class Meta:
+                table_name = "guests"
+
+        class FKOrderStaffMember(Model):
+            name = fields.String(max_length=100)
+
+            class Meta:
+                table_name = "staff_members"
+
+        class FKOrderServiceRequest(Model):
+            guest = fields.ForeignKey(FKOrderGuest)
+            staff_member = fields.ForeignKey(FKOrderStaffMember, nullable=True)
+            summary = fields.String(max_length=200)
+
+            class Meta:
+                table_name = "service_requests"
+
+        diff, ops = detect_changes(
+            [],
+            _models(
+                FKOrderGuest,
+                FKOrderServiceRequest,
+                FKOrderStaffMember,
+                FKOrderRoom,
+            ),
+        )
+
+        assert diff.has_changes
+        create_order = [
+            operation.name
+            for operation in ops
+            if isinstance(operation, op.CreateTable)
+        ]
+
+        assert create_order.index("rooms") < create_order.index("guests")
+        assert create_order.index("guests") < create_order.index(
+            "service_requests"
+        )
+        assert create_order.index("staff_members") < create_order.index(
+            "service_requests"
+        )
+
+    def test_removed_tables_are_ordered_by_foreign_key_dependencies(self):
+        """Dependent tables are dropped before referenced tables."""
+        migration = (
+            'from aksara.migrations import Migration\n'
+            'from aksara.migrations import operations as op\n\n'
+            'class Migration(Migration):\n'
+            '    dependencies = []\n'
+            '    operations = [\n'
+            '        op.CreateTable(\n'
+            '            name="rooms",\n'
+            '            fields=[("id", op.UUIDField(primary_key=True))],\n'
+            '        ),\n'
+            '        op.CreateTable(\n'
+            '            name="guests",\n'
+            '            fields=[\n'
+            '                ("id", op.UUIDField(primary_key=True)),\n'
+            '                ("room_id", op.ForeignKeyField("rooms")),\n'
+            '            ],\n'
+            '        ),\n'
+            '        op.CreateTable(\n'
+            '            name="staff_members",\n'
+            '            fields=[("id", op.UUIDField(primary_key=True))],\n'
+            '        ),\n'
+            '        op.CreateTable(\n'
+            '            name="service_requests",\n'
+            '            fields=[\n'
+            '                ("id", op.UUIDField(primary_key=True)),\n'
+            '                ("guest_id", op.ForeignKeyField("guests")),\n'
+            '                ("staff_member_id", '
+            'op.ForeignKeyField("staff_members")),\n'
+            '            ],\n'
+            '        ),\n'
+            '    ]\n'
+        )
+
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "0001_initial.py"
+            p.write_text(migration)
+
+            diff, ops = detect_changes([("0001_initial", p)], {})
+
+        assert diff.has_changes
+        drop_order = [
+            operation.name
+            for operation in ops
+            if isinstance(operation, op.DropTable)
+        ]
+
+        assert drop_order.index("service_requests") < drop_order.index("guests")
+        assert drop_order.index("service_requests") < drop_order.index(
+            "staff_members"
+        )
+        assert drop_order.index("guests") < drop_order.index("rooms")
+
     def test_no_changes_when_models_match_migrations(self):
         """Models identical to existing migration -> no changes."""
         Post = _make_post()
@@ -241,6 +349,28 @@ class TestAutodetector:
         code = operations_to_code(ops)
         assert "op.ArrayField(sql_type='TEXT[]')" in code
         assert "TextField" not in code.split('("tags",', 1)[1].split(")", 1)[0]
+
+    def test_required_array_fields_preserve_nullability(self):
+        """Array(nullable=False) should generate a NOT NULL array column."""
+        class PostRequiredArray(Model):
+            tags = fields.Array(item_type=str, nullable=False)
+
+            class Meta:
+                table_name = "posts"
+
+        diff, ops = detect_changes([], _models(PostRequiredArray))
+
+        assert diff.has_changes
+        create_table = next(
+            operation for operation in ops if isinstance(operation, op.CreateTable)
+        )
+        generated_fields = dict(create_table.fields)
+
+        assert generated_fields["tags"].nullable is False
+        assert "NOT NULL" in generated_fields["tags"].to_sql()
+
+        code = operations_to_code(ops)
+        assert "op.ArrayField(sql_type='TEXT[]', nullable=False)" in code
 
     def test_decimal_defaults_are_preserved_in_generated_migrations(self):
         """Decimal runtime defaults should survive CreateTable generation."""
@@ -459,6 +589,67 @@ class TestFieldOpCodeGenEdgeCases:
         assert "BigIntegerField" in code
         assert "nullable=True" in code
         assert "unique=True" in code
+
+    def test_extended_field_code_generation_preserves_options(self):
+        """Extended FieldOps should not fall back to empty constructor code."""
+        test_ops = [
+            op.AddField(
+                table="posts",
+                name="slug",
+                field=op.SlugField(max_length=80, unique=True, default="hello"),
+            ),
+            op.AddField(
+                table="posts",
+                name="rank",
+                field=op.SmallIntegerField(nullable=True, unique=True, default=1),
+            ),
+            op.AddField(
+                table="posts",
+                name="publish_time",
+                field=op.TimeField(nullable=True, default="09:30:00"),
+            ),
+            op.AddField(
+                table="posts",
+                name="window",
+                field=op.DurationField(default="1 hour"),
+            ),
+            op.AddField(
+                table="posts",
+                name="ip",
+                field=op.IPAddressField(unique=True, default="127.0.0.1"),
+            ),
+            op.AddField(
+                table="posts",
+                name="payload",
+                field=op.BinaryField(nullable=True),
+            ),
+            op.AddField(
+                table="posts",
+                name="path",
+                field=op.FilePathField(
+                    max_length=255,
+                    nullable=True,
+                    unique=True,
+                    default="/tmp/a.txt",
+                ),
+            ),
+        ]
+
+        code = operations_to_code(test_ops)
+
+        assert "op.SlugField(80, unique=True, default='hello')" in code
+        assert (
+            "op.SmallIntegerField(nullable=True, unique=True, default=1)"
+            in code
+        )
+        assert "op.TimeField(nullable=True, default='09:30:00')" in code
+        assert "op.DurationField(default='1 hour')" in code
+        assert "op.IPAddressField(unique=True, default='127.0.0.1')" in code
+        assert "op.BinaryField(nullable=True)" in code
+        assert (
+            "op.FilePathField(255, nullable=True, unique=True, "
+            "default='/tmp/a.txt')"
+        ) in code
 
     def test_enum_field_code_with_name(self):
         """EnumField preserves enum_name in code gen."""

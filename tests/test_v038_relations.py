@@ -532,6 +532,27 @@ class TestReverseFKIntegration:
         count = await user.posts.count()
         
         assert count == 3
+
+    @pytest.mark.asyncio
+    async def test_reverse_fk_filter(self, db, setup_relation_tables):
+        """Test user.posts.filter() applies the parent FK and extra filters."""
+        models = setup_relation_tables
+
+        user = models['User'](name="Filter User", email="filter@example.com")
+        await user.save()
+        other_user = models['User'](name="Other User", email="other@example.com")
+        await other_user.save()
+
+        first = models['Post'](title="Match", author_id=user.id)
+        await first.save()
+        second = models['Post'](title="Skip", author_id=user.id)
+        await second.save()
+        other = models['Post'](title="Match", author_id=other_user.id)
+        await other.save()
+
+        posts = await user.posts.filter(title="Match")
+
+        assert [post.id for post in posts] == [first.id]
     
     @pytest.mark.asyncio
     async def test_reverse_fk_empty(self, db, setup_relation_tables):

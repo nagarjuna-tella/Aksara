@@ -4,6 +4,9 @@ Tests for Admin Widgets
 Tests the widget rendering system including JSON and Array widgets.
 """
 
+import re
+from urllib.parse import urlparse
+
 import pytest
 from aksara.contrib.admin.widgets import (
     Widget,
@@ -84,7 +87,9 @@ def test_url_widget():
     html = widget.render("website", "https://example.com", field)
     
     assert 'url' in html
-    assert 'example.com' in html
+    value_match = re.search(r'value="([^"]+)"', html)
+    assert value_match is not None
+    assert urlparse(value_match.group(1)).hostname == "example.com"
 
 
 def test_number_widget():

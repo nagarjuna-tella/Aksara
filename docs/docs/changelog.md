@@ -6,6 +6,50 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.5.53
+
+### ORM Query Semantics & NULL Correctness
+
+This unreleased section tracks focused ORM query-semantics fixes. It does not
+claim that all ORM correctness work is complete.
+
+#### Fixed
+
+- Exact `None` filters such as `filter(email=None)` and
+  `filter(email__exact=None)` now compile to `IS NULL` instead of SQL equality
+  against a NULL parameter.
+- `__isnull` filters now use strict boolean parsing. Supported string values
+  include `true`, `false`, `1`, `0`, `yes`, `no`, `y`, `n`, `on`, and `off`;
+  invalid values now raise a clear validation error.
+- Foreign key column aliases such as `author_id` are accepted in filters when
+  they correspond to an actual `ForeignKey` or `OneToOne` database column.
+- Reverse foreign key filters now work with the corrected FK alias handling.
+
+### Migration Generation Correctness
+
+#### Fixed
+
+- New `CreateTable` migration operations are now ordered by foreign-key and one-to-one dependencies so referenced tables are emitted before dependent tables.
+- `DropTable` migration operations now use reverse dependency order so dependent tables are dropped before referenced tables.
+- Legacy `makemigrations --sql` output now uses the same FK dependency ordering.
+- `models_to_migration_code()` now uses the same model dependency ordering and delegates field conversion through the autodetector path.
+- Runtime `Array(nullable=False)` fields now emit `op.ArrayField(..., nullable=False)` instead of becoming nullable in generated migrations.
+- Migration code generation now supports additional field operations, including `SmallIntegerField`, `TimeField`, `DurationField`, `SlugField`, `IPAddressField`, `BinaryField`, and `FilePathField`.
+
+#### Tests
+
+- Added regression coverage for FK dependency ordering across `CreateTable`, `DropTable`, legacy SQL output, executor delegation, Array nullability, and extended FieldOp code generation.
+
+#### Remaining Known ORM Correctness Work
+
+- `bulk_create()` and other write paths still need consistency work.
+- `QuerySet.update()` still needs an explicit `updated_at` policy.
+- Vector `bulk_update()` casting still needs follow-up work.
+- Relation DDL safety remains on the audit backlog.
+- Array, vector, and file advanced-field policy decisions remain open.
+
+---
+
 ## v0.5.52 — Admin Correctness & Permissions
 
 This release focuses on admin correctness, permission semantics, and API naming
