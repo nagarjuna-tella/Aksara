@@ -5,7 +5,7 @@ Unit tests for all new v0.5.44 enterprise DX features.
 These tests verify that all new features are properly implemented and accessible.
 
 v0.5.44 Features Tested:
-1. DjangoFilterBackend (see test_v044_filter_backends.py)
+1. AksaraFilterBackend (see test_v044_filter_backends.py)
 2. Pagination backends (see test_v044_pagination.py)
 3. Bulk operations (bulk_create, bulk_update)
 4. Upsert operations
@@ -162,8 +162,8 @@ class TestPublicAPIExports:
     
     def test_filter_backends_in_api_export(self):
         """Test filter backends are exported from aksara.api."""
-        from aksara.api import DjangoFilterBackend
-        assert DjangoFilterBackend is not None
+        from aksara.api import AksaraFilterBackend
+        assert AksaraFilterBackend is not None
     
     def test_pagination_in_api_export(self):
         """Test pagination classes are exported from aksara.api."""
@@ -179,8 +179,8 @@ class TestDocumentationExamples:
     """Test that code examples in documentation are valid."""
     
     def test_django_filter_backend_example(self):
-        """Test DjangoFilterBackend example code is valid."""
-        from aksara.api import ModelViewSet, DjangoFilterBackend
+        """Test AksaraFilterBackend example code is valid."""
+        from aksara.api import ModelViewSet, AksaraFilterBackend
         
         class TestModel(Model):
             status = fields.String()
@@ -188,7 +188,7 @@ class TestDocumentationExamples:
         
         class TestViewSet(ModelViewSet):
             model = TestModel
-            filter_backends = [DjangoFilterBackend]
+            filter_backends = [AksaraFilterBackend]
             filterable_fields = ['status', 'category']
         
         # Should construct without errors
@@ -229,11 +229,11 @@ class Testv044Features:
     
     def test_category_1_features(self):
         """Test Category 1 (API & ViewSet DX) features are available."""
-        from aksara.api import DjangoFilterBackend, SearchFilter, OrderingFilter
+        from aksara.api import AksaraFilterBackend, SearchFilter, OrderingFilter
         from aksara.api import PageNumberPagination, LimitOffsetPagination, CursorPagination
         
         # All Category 1 features should be importable
-        assert DjangoFilterBackend is not None
+        assert AksaraFilterBackend is not None
         assert SearchFilter is not None
         assert OrderingFilter is not None
         assert PageNumberPagination is not None

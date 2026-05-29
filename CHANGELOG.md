@@ -457,7 +457,7 @@ These migration-metadata items are intentionally not part of this patch:
 
 #### Added
 
-- **DjangoFilterBackend** (`aksara/api/filters.py`): Automatic query parameter filtering with Django ORM lookup syntax support
+- **AksaraFilterBackend** (`aksara/api/filters.py`): Automatic query parameter filtering with Django ORM lookup syntax support
   - Supports 9 lookup types: `exact`, `gt`, `gte`, `lt`, `lte`, `in`, `isnull`, `icontains`, `contains`
   - Example: `?price__gte=50&category__in=tech,news&in_stock=true`
   - Automatically coerces values (booleans, None, numbers)
@@ -470,7 +470,7 @@ These migration-metadata items are intentionally not part of this patch:
   - Includes `get_paginated_response()` with `next_cursor` support
 
 - **Enhanced Filter/Search/Order Exports** (`aksara/api/__init__.py`): Centralized re-export of all pagination classes
-  - `BaseFilterBackend`, `DjangoFilterBackend`, `SearchFilter`, `OrderingFilter`
+  - `BaseFilterBackend`, `AksaraFilterBackend`, `SearchFilter`, `OrderingFilter`
   - `BasePagination`, `LimitOffsetPagination`, `PageNumberPagination`, `CursorPagination`
 
 ### Category 2: Database & ORM DX

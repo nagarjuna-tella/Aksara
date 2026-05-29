@@ -3,7 +3,7 @@ API Filter Backends
 
 Provides DRF-style filter backends for Aksara ViewSets.
 
-v0.5.39: Added DjangoFilterBackend for automatic query parameter filtering
+v0.5.39: Added AksaraFilterBackend for automatic query parameter filtering
 following Django ORM lookup syntax (?price__gte=50&category__in=tech,news).
 """
 
@@ -53,7 +53,7 @@ class BaseFilterBackend:
         return queryset
 
 
-class DjangoFilterBackend(BaseFilterBackend):
+class AksaraFilterBackend(BaseFilterBackend):
     """
     Filter backend that automatically parses query parameters following Django ORM syntax.
     
@@ -73,7 +73,7 @@ class DjangoFilterBackend(BaseFilterBackend):
     Example:
         class ProductViewSet(ModelViewSet):
             model = Product
-            filter_backends = [DjangoFilterBackend]
+            filter_backends = [AksaraFilterBackend]
             filterable_fields = ['price', 'category', 'in_stock']
         
         # GET /products/?price__gte=50&category=electronics&in_stock=true

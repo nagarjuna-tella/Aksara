@@ -82,7 +82,7 @@ from aksara.api.prefetch import (
 )
 from aksara.api.filters import (
     BaseFilterBackend,
-    DjangoFilterBackend,
+    AksaraFilterBackend,
     SearchFilter,
     OrderingFilter,
 )
@@ -125,7 +125,7 @@ __all__ = [
     "clear_schema_cache",
     # Filter Backends (v0.5.44)
     "BaseFilterBackend",
-    "DjangoFilterBackend",
+    "AksaraFilterBackend",
     "SearchFilter",
     "OrderingFilter",
     # Pagination Classes (v0.5.44)

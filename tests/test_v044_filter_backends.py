@@ -1,14 +1,14 @@
 """
 Test Filter Backends
 
-Tests for DjangoFilterBackend and query parameter parsing.
+Tests for AksaraFilterBackend and query parameter parsing.
 
 v0.5.44: Comprehensive test coverage for filter backends.
 """
 
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from aksara.api import DjangoFilterBackend
+from aksara.api import AksaraFilterBackend
 from aksara.registry import ModelRegistry
 
 
@@ -21,11 +21,11 @@ def clear_registry():
 
 
 class TestFilterBackendParameterParsing:
-    """Test DjangoFilterBackend query parameter parsing."""
+    """Test AksaraFilterBackend query parameter parsing."""
     
     def test_exact_match_filter(self):
         """Test exact match filtering (field=value)."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         
         # Mock request with query params
         request = Mock()
@@ -38,7 +38,7 @@ class TestFilterBackendParameterParsing:
     
     def test_boolean_coercion(self):
         """Test boolean value coercion."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         
         # Test various boolean representations
@@ -58,7 +58,7 @@ class TestFilterBackendParameterParsing:
     
     def test_null_coercion(self):
         """Test null/None coercion."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'value': 'null'}
         
@@ -67,7 +67,7 @@ class TestFilterBackendParameterParsing:
     
     def test_gt_gte_lookups(self):
         """Test greater than lookups."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'age__gt': '18', 'age__gte': '18'}
         
@@ -77,7 +77,7 @@ class TestFilterBackendParameterParsing:
     
     def test_in_lookup(self):
         """Test IN lookup with comma-separated values."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'category__in': 'tech,news,science'}
         
@@ -86,7 +86,7 @@ class TestFilterBackendParameterParsing:
     
     def test_icontains_lookup(self):
         """Test case-insensitive contains."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'name__icontains': 'john'}
         
@@ -95,7 +95,7 @@ class TestFilterBackendParameterParsing:
     
     def test_float_coercion(self):
         """Test float value coercion."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'price__gte': '19.99'}
         
@@ -104,7 +104,7 @@ class TestFilterBackendParameterParsing:
     
     def test_unknown_field_filtered(self):
         """Test that unknown fields are ignored."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'status': 'active', 'unknown': 'value'}
         
@@ -116,7 +116,7 @@ class TestFilterBackendParameterParsing:
     
     def test_multiple_filters(self):
         """Test parsing multiple filter parameters."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {
             'status': 'active',
@@ -140,7 +140,7 @@ class TestFilterBackendMockIntegration:
     def test_filter_backend_integrates_with_view(self):
         """Test that filter backend integrates with view configuration."""
         # This test verifies the filter backend is available and can be used
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         
         # Verify backend has required methods
         assert hasattr(backend, 'filter_queryset')
@@ -152,19 +152,19 @@ class TestFilterBackendViewSetConfiguration:
     """Test ViewSet configuration with filter backends."""
     
     def test_filter_backends_list(self):
-        """Test that DjangoFilterBackend is available for ViewSets."""
+        """Test that AksaraFilterBackend is available for ViewSets."""
         # Verify the backend can be imported and used in ViewSets
         from aksara.api import ModelViewSet
         
-        # DjangoFilterBackend should be available for use in filter_backends list
-        assert DjangoFilterBackend is not None
-        assert callable(DjangoFilterBackend)
+        # AksaraFilterBackend should be available for use in filter_backends list
+        assert AksaraFilterBackend is not None
+        assert callable(AksaraFilterBackend)
     
     def test_viewset_filter_backends_attribute(self):
         """Test ViewSet accepts filter_backends attribute."""
         # ViewSets have a filter_backends attribute that can be set
         # This is tested indirectly through the documentation examples
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         assert hasattr(backend, 'filterable_fields') or True  # Optional attribute
 
 
@@ -173,7 +173,7 @@ class TestFilterBackendEdgeCases:
     
     def test_empty_query_params(self):
         """Test with no query parameters."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {}
         
@@ -182,7 +182,7 @@ class TestFilterBackendEdgeCases:
     
     def test_invalid_number_value(self):
         """Test invalid numeric value."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'age': 'not-a-number'}
         
@@ -192,7 +192,7 @@ class TestFilterBackendEdgeCases:
     
     def test_empty_in_value(self):
         """Test empty IN value."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         request.query_params = {'category__in': ''}
         
@@ -202,7 +202,7 @@ class TestFilterBackendEdgeCases:
     
     def test_isnull_boolean_values(self):
         """Test various isnull parameter values."""
-        backend = DjangoFilterBackend()
+        backend = AksaraFilterBackend()
         request = Mock()
         
         for value in ['true', 'yes', '1']:
