@@ -8,7 +8,7 @@ v0.5.44: Comprehensive test coverage for filter backends.
 
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from aksara.api import AksaraFilterBackend
+from aksara.api import AksaraFilterBackend, DjangoFilterBackend
 from aksara.registry import ModelRegistry
 
 
@@ -134,6 +134,28 @@ class TestFilterBackendParameterParsing:
         assert filters['category__in'] == ['tech', 'news']
 
 
+class TestFilterBackendCompatibilityAliases:
+    """Test preferred and legacy public import names."""
+
+    def test_module_imports_expose_preferred_and_legacy_names(self):
+        from aksara.api.filters import (
+            AksaraFilterBackend as ModuleAksaraFilterBackend,
+            DjangoFilterBackend as ModuleDjangoFilterBackend,
+        )
+
+        assert ModuleAksaraFilterBackend is AksaraFilterBackend
+        assert ModuleDjangoFilterBackend is ModuleAksaraFilterBackend
+
+    def test_api_package_exports_preferred_and_legacy_names(self):
+        from aksara.api import (
+            AksaraFilterBackend as PackageAksaraFilterBackend,
+            DjangoFilterBackend as PackageDjangoFilterBackend,
+        )
+
+        assert PackageAksaraFilterBackend is AksaraFilterBackend
+        assert PackageDjangoFilterBackend is PackageAksaraFilterBackend
+
+
 class TestFilterBackendMockIntegration:
     """Test filter backend with mocked QuerySet."""
     
@@ -218,4 +240,3 @@ class TestFilterBackendEdgeCases:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
-

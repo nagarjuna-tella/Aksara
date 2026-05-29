@@ -647,6 +647,142 @@ class TestAdminRoutingSecurity:
         assert "<title>Operations Home - Ops Browser</title>" in response.text
         assert "<h1>Operations Home</h1>" in response.text
 
+    def test_default_staff_user_can_login(self):
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import include_admin
+
+        site = AdminSite(name="stafflogin")
+        app = Aksara(database_url=None, debug=True, auto_discover_views=False, enable_admin=False)
+        include_admin(app, prefix="/stafflogin", site=site)
+        user = MagicMock()
+        user.is_staff = True
+
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                with patch("aksara.contrib.auth.authenticate", new=AsyncMock(return_value=user)):
+                    with patch(
+                        "aksara.contrib.auth.create_session_token",
+                        new=AsyncMock(return_value="token"),
+                    ):
+                        response = client.post(
+                            "/stafflogin/login/",
+                            data={"username": "admin@test.com", "password": "secret"},
+                        )
+
+            assert response.status_code == 302
+            assert response.headers["location"] == "/stafflogin/"
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+
+    def test_default_non_staff_user_is_denied_login(self):
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import include_admin
+
+        site = AdminSite(name="staffonly")
+        app = Aksara(database_url=None, debug=True, auto_discover_views=False, enable_admin=False)
+        include_admin(app, prefix="/staffonly", site=site)
+        user = MagicMock()
+        user.is_staff = False
+
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                create_session = AsyncMock(return_value="token")
+                with patch("aksara.contrib.auth.authenticate", new=AsyncMock(return_value=user)):
+                    with patch("aksara.contrib.auth.create_session_token", new=create_session):
+                        response = client.post(
+                            "/staffonly/login/",
+                            data={"username": "member@test.com", "password": "secret"},
+                        )
+
+            assert response.status_code == 200
+            assert "Staff access required" in response.text
+            create_session.assert_not_awaited()
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+
+    def test_custom_async_permission_can_allow_non_staff_login(self):
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import include_admin
+
+        class AllowMember:
+            message = "Member access required."
+
+            async def has_permission(self, request, view=None):
+                user = getattr(request.state, "user", None)
+                return getattr(user, "email", None) == "member@test.com"
+
+        site = AdminSite(name="memberadmin", permission_classes=[AllowMember])
+        app = Aksara(database_url=None, debug=True, auto_discover_views=False, enable_admin=False)
+        include_admin(app, prefix="/memberadmin", site=site)
+        user = MagicMock()
+        user.is_staff = False
+        user.email = "member@test.com"
+
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                with patch("aksara.contrib.auth.authenticate", new=AsyncMock(return_value=user)):
+                    with patch(
+                        "aksara.contrib.auth.create_session_token",
+                        new=AsyncMock(return_value="token"),
+                    ):
+                        response = client.post(
+                            "/memberadmin/login/",
+                            data={"username": "member@test.com", "password": "secret"},
+                        )
+
+            assert response.status_code == 302
+            assert response.headers["location"] == "/memberadmin/"
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+
+    def test_custom_async_permission_can_deny_staff_login(self):
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import include_admin
+
+        class DenyAll:
+            message = "Denied by policy."
+
+            async def has_permission(self, request, view=None):
+                return False
+
+        site = AdminSite(name="lockedadmin", permission_classes=[DenyAll])
+        app = Aksara(database_url=None, debug=True, auto_discover_views=False, enable_admin=False)
+        include_admin(app, prefix="/lockedadmin", site=site)
+        user = MagicMock()
+        user.is_staff = True
+
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                create_session = AsyncMock(return_value="token")
+                with patch("aksara.contrib.auth.authenticate", new=AsyncMock(return_value=user)):
+                    with patch("aksara.contrib.auth.create_session_token", new=create_session):
+                        response = client.post(
+                            "/lockedadmin/login/",
+                            data={"username": "admin@test.com", "password": "secret"},
+                        )
+
+            assert response.status_code == 200
+            assert "Staff access required" in response.text
+            create_session.assert_not_awaited()
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+
 
 class TestModelAdminSaveSafety:
     async def test_invalid_m2m_ids_do_not_save_or_clear_relations(self):
@@ -761,13 +897,14 @@ class TestDBBackedFeatures:
 class LockedNote(Model):
     name = fields.String()
     locked = fields.String(nullable=True)
+    enabled = fields.Boolean(default=False)
 
     class Meta:
         app_label = "locked_notes"
 
 
 class LockedNoteAdmin(ModelAdmin):
-    fields = ["name", "locked"]
+    fields = ["name", "locked", "enabled"]
     readonly_fields = ["locked"]
 
 
@@ -805,14 +942,16 @@ class TestAdminReadonlyHTTPIntegration:
 
         asyncio.run(run())
 
-    def _create_note(self, name, locked):
+    def _create_note(self, name, locked, enabled=False):
         import asyncio
         from aksara.db import Database
 
         async def run():
             db = Database(os.getenv("DATABASE_URL"))
             await db.connect()
-            note = await LockedNote.objects.create(name=name, locked=locked)
+            note = await LockedNote.objects.create(
+                name=name, locked=locked, enabled=enabled
+            )
             await db.disconnect()
             return str(note.id)
 
@@ -913,6 +1052,158 @@ class TestAdminReadonlyHTTPIntegration:
         finally:
             configure(admin_csrf_enabled=original_csrf)
             self._drop_schema()
+
+    def _enabled_checkbox(self, html):
+        import re
+
+        match = re.search(r'<input[^>]+name="enabled"[^>]*>', html)
+        assert match is not None
+        return match.group(0)
+
+    def test_boolean_add_form_default_false_renders_unchecked(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                form = client.get("/admin/locked_notes/lockednote/add/")
+
+            assert form.status_code == 200
+            assert "checked" not in self._enabled_checkbox(form.text)
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
+
+    def test_boolean_false_edit_form_renders_unchecked(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        pk = self._create_note("disabled", "server", enabled=False)
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                form = client.get(f"/admin/locked_notes/lockednote/{pk}/change/")
+
+            assert form.status_code == 200
+            assert "checked" not in self._enabled_checkbox(form.text)
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
+
+    def test_boolean_true_edit_form_renders_checked(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        pk = self._create_note("enabled", "server", enabled=True)
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                form = client.get(f"/admin/locked_notes/lockednote/{pk}/change/")
+
+            assert form.status_code == 200
+            assert "checked" in self._enabled_checkbox(form.text)
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
+
+    def test_boolean_checkbox_post_parses_checked_value(self):
+        if not os.getenv("DATABASE_URL"):
+            pytest.skip("DATABASE_URL is unavailable for live database tests")
+
+        from starlette.testclient import TestClient
+        from aksara import Aksara
+        from aksara.conf import configure, settings
+        from aksara.contrib.admin import site
+
+        site.register(LockedNote, LockedNoteAdmin)
+        self._reset_schema()
+        pk = self._create_note("flag", "server", enabled=False)
+        original_csrf = settings.admin_csrf_enabled
+        configure(admin_csrf_enabled=False)
+        try:
+            app = Aksara(
+                database_url=os.getenv("DATABASE_URL"),
+                debug=True,
+                auto_discover_views=False,
+            )
+            app.add_middleware(_staff_middleware())
+
+            with TestClient(app, raise_server_exceptions=False, follow_redirects=False) as client:
+                checked = client.post(
+                    f"/admin/locked_notes/lockednote/{pk}/change/",
+                    data={"name": "checked", "locked": "crafted", "enabled": "on"},
+                )
+                assert checked.status_code == 303
+
+            rows = self._notes()
+            assert len(rows) == 1
+            assert rows[0].name == "checked"
+            assert rows[0].enabled is True
+        finally:
+            configure(admin_csrf_enabled=original_csrf)
+            self._drop_schema()
+
+    def test_boolean_checkbox_missing_post_value_parses_false(self):
+        from aksara.contrib.admin.views import _parse_form_data
+
+        class FakeForm(dict):
+            def getlist(self, key):
+                return self.get(key, [])
+
+        parsed = _parse_form_data(
+            FakeForm({"name": "missing"}),
+            LockedNote,
+            ["name", "enabled"],
+        )
+
+        assert parsed["name"] == "missing"
+        assert parsed["enabled"] is False
 
 
 # ---------------------------------------------------------------------------

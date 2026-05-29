@@ -187,6 +187,9 @@ class AksaraFilterBackend(BaseFilterBackend):
         return self._coerce_value(value)
 
 
+DjangoFilterBackend = AksaraFilterBackend
+
+
 class SearchFilter(BaseFilterBackend):
     """
     Search filter backend.

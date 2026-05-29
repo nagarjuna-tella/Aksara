@@ -146,7 +146,33 @@ def _with_params(request: Request, **changes: Any) -> str:
 # Auth
 # -----------------------------------------------------------------------------
 
-def require_admin_user(
+async def _check_site_permission(
+    site: "AdminSite",
+    request: Request,
+) -> Tuple[bool, Optional[str]]:
+    """Evaluate admin site access, including async permission classes."""
+    if not site.permission_classes:
+        return site.check_site_permission(request)
+
+    for permission in site.permission_classes:
+        perm = permission() if isinstance(permission, type) else permission
+        allowed = await _maybe_await(perm.has_permission(request, None))
+        if not allowed:
+            return False, getattr(perm, "message", "Permission denied.")
+    return True, None
+
+
+async def _check_site_permission_for_user(
+    site: "AdminSite",
+    request: Request,
+    user: Any,
+) -> Tuple[bool, Optional[str]]:
+    """Evaluate site access for an authenticated login candidate."""
+    request.state.user = user
+    return await _check_site_permission(site, request)
+
+
+async def require_admin_user(
     request: Request, site: "AdminSite"
 ) -> Tuple[Any, Optional[RedirectResponse]]:
     """
@@ -156,7 +182,7 @@ def require_admin_user(
     Access is governed by the site's ``permission_classes`` if set, otherwise by
     the default staff-only rule.
     """
-    allowed, _message = site.check_site_permission(request)
+    allowed, _message = await _check_site_permission(site, request)
     if allowed:
         return getattr(request.state, "user", None), None
 
@@ -311,7 +337,7 @@ async def _visible_models_by_app(
 async def admin_index(request: Request, site: "AdminSite" = None) -> HTMLResponse:
     """Admin dashboard showing accessible apps and models. Route: GET /admin/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -337,7 +363,7 @@ async def app_index(
 ) -> HTMLResponse:
     """Show accessible models for a specific app. Route: GET /admin/{app_label}/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -503,7 +529,7 @@ async def model_list(
 ) -> HTMLResponse:
     """List objects for a model. Route: GET, POST /admin/{app_label}/{model_name}/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -677,7 +703,7 @@ async def model_add(
 ) -> HTMLResponse:
     """Add a new object. Route: GET, POST /admin/{app_label}/{model_name}/add/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -740,7 +766,7 @@ async def model_change(
 ) -> HTMLResponse:
     """Edit an object. Route: GET, POST /admin/{app_label}/{model_name}/{pk}/change/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -813,7 +839,7 @@ async def model_delete(
 ) -> RedirectResponse:
     """Delete an object. Route: POST /admin/{app_label}/{model_name}/{pk}/delete/"""
     site = _resolve_site(site)
-    user, redirect = require_admin_user(request, site)
+    user, redirect = await require_admin_user(request, site)
     if redirect:
         return redirect
 
@@ -990,6 +1016,9 @@ async def _build_field_info(
             value = form_data[field_name]
         elif obj is not None:
             value = getattr(obj, field_name, "")
+        elif field_type == "checkbox":
+            default = getattr(field, "default", None)
+            value = default() if callable(default) else default
         else:
             value = ""
 
@@ -1003,7 +1032,9 @@ async def _build_field_info(
                 except (ValueError, AttributeError):
                     pass
 
-        if not isinstance(value, list):
+        if field_type == "checkbox":
+            value = value in (True, "true", "True", "1", "on", 1)
+        elif not isinstance(value, list):
             value = str(value) if value is not None else ""
 
     field_info: Dict[str, Any] = {
@@ -1079,8 +1110,10 @@ async def admin_login(request: Request, site: "AdminSite" = None) -> HTMLRespons
     )
 
     user = getattr(request.state, "user", None)
-    if user and getattr(user, "is_staff", False):
-        return RedirectResponse(url=next_url, status_code=status.HTTP_302_FOUND)
+    if user:
+        allowed, _message = await _check_site_permission(site, request)
+        if allowed:
+            return RedirectResponse(url=next_url, status_code=status.HTTP_302_FOUND)
 
     if request.method == "POST":
         form_data = await _read_admin_form(request)
@@ -1096,7 +1129,10 @@ async def admin_login(request: Request, site: "AdminSite" = None) -> HTMLRespons
                     request.app.db, username=username, password=password
                 )
                 if user:
-                    if not getattr(user, "is_staff", False):
+                    allowed, _message = await _check_site_permission_for_user(
+                        site, request, user
+                    )
+                    if not allowed:
                         error = (
                             "You don't have permission to access the admin. "
                             "Staff access required."

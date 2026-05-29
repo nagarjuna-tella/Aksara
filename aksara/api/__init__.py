@@ -83,6 +83,7 @@ from aksara.api.prefetch import (
 from aksara.api.filters import (
     BaseFilterBackend,
     AksaraFilterBackend,
+    DjangoFilterBackend,
     SearchFilter,
     OrderingFilter,
 )
@@ -126,6 +127,7 @@ __all__ = [
     # Filter Backends (v0.5.44)
     "BaseFilterBackend",
     "AksaraFilterBackend",
+    "DjangoFilterBackend",
     "SearchFilter",
     "OrderingFilter",
     # Pagination Classes (v0.5.44)

@@ -8,6 +8,8 @@ Aksara provides powerful, out-of-the-box filtering and search capabilities for y
 
 Manually parsing query parameters is tedious and error-prone. Aksara provides `AksaraFilterBackend` to automatically parse Django-style query parameters.
 
+`DjangoFilterBackend` remains available as a backward-compatible alias, but `AksaraFilterBackend` is the preferred name for new code.
+
 ### Setup
 
 Add the backend to your `ModelViewSet` and specify which fields are filterable:
