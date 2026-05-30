@@ -66,9 +66,10 @@ Supported item types:
 | `bool` | `BOOLEAN[]` |
 | `uuid.UUID` | `UUID[]` |
 
-If earlier public docs showed `base_type=`, v0.5.55 should either accept it as
-an explicit compatibility alias or update all docs/tests to use `item_type`.
-New examples should use `item_type`.
+`base_type=` was never an accepted `Array` constructor argument; some earlier
+docs used it incorrectly. v0.5.55 resolves this by updating all field docs and
+examples to the canonical `item_type=` form rather than introducing a
+`base_type` alias. New examples should use `item_type`.
 
 ### Value Contract
 

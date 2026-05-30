@@ -929,6 +929,54 @@ async def _get_display_value(
     return str(value)
 
 
+def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
+    """Convert array widget form input into a typed Python list.
+
+    The admin array widget serializes items as a JSON list (falling back to a
+    comma-separated string). Core ORM Array fields now require explicit lists,
+    so this adapter parses the submitted value and coerces each item to the
+    field's ``item_type`` before the value reaches ``Array.to_db``.
+    """
+    import json
+    import uuid as _uuid
+
+    if raw_value is None:
+        return None
+    if isinstance(raw_value, list):
+        items = raw_value
+    elif isinstance(raw_value, str):
+        text = raw_value.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            items = parsed if isinstance(parsed, list) else [parsed]
+        except (json.JSONDecodeError, TypeError):
+            items = [piece.strip() for piece in text.split(",") if piece.strip()]
+    else:
+        items = [raw_value]
+
+    item_type = getattr(field, "item_type", str)
+    coerced: List[Any] = []
+    for item in items:
+        if item is None:
+            continue
+        if item_type is bool:
+            if isinstance(item, bool):
+                coerced.append(item)
+            else:
+                coerced.append(str(item).strip().lower() in ("true", "1", "yes", "on"))
+        elif item_type is int:
+            coerced.append(int(item))
+        elif item_type is float:
+            coerced.append(float(item))
+        elif item_type is _uuid.UUID:
+            coerced.append(item if isinstance(item, _uuid.UUID) else _uuid.UUID(str(item)))
+        else:
+            coerced.append(str(item))
+    return coerced
+
+
 def _parse_form_data(
     raw_form: Any, model: Type["Model"], form_fields: List[str]
 ) -> Dict[str, Any]:
@@ -963,6 +1011,11 @@ def _parse_form_data(
             elif field_type == "JSON":
                 import json
                 data[field_name] = json.loads(raw_value) if raw_value else None
+            elif field_type == "Array":
+                # The array widget submits a JSON-encoded list; convert it to a
+                # typed Python list here (the adapter boundary) so core ORM
+                # validation receives a real list, not a delimited string.
+                data[field_name] = _coerce_array_form_value(raw_value, field)
             elif field_type == "ForeignKey":
                 if raw_value:
                     import uuid

@@ -6,6 +6,87 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.5.55 — Advanced Field Policy
+
+This release tightens correctness for advanced ORM field types. It does not
+claim that all ORM correctness work is complete; relation features below remain
+deferred. Aksara is pre-1.0, so some ambiguous behaviors are replaced with
+explicit validation errors.
+
+### Advanced Field Policy
+
+#### Array
+
+- `Array` is documented as homogeneous and one-dimensional, with `item_type`
+  as the canonical constructor option.
+- Array elements are now validated against `item_type` on every write path:
+  `str` requires strings, `int` excludes `bool` and rejects non-integral
+  floats/Decimals, `float` rejects `NaN`/infinity and excludes `bool`, `bool`
+  accepts only real booleans, and `uuid.UUID` accepts UUID instances or
+  parseable UUID strings.
+- Nested lists/tuples now raise a clear "use JSON for nested lists" error, and
+  `Array(item_type=list)` / `Array(item_type=Array(...))` are rejected at
+  construction.
+- Null array items are rejected; use `JSON` if null elements are required.
+- Core ORM `Array` validation no longer splits arbitrary delimited strings into
+  arrays. Assign explicit Python lists; the admin array form converts its input
+  to a typed list at the form boundary.
+
+#### Vector
+
+- `Vector` write paths now reject `NaN`, `Infinity`, `-Infinity`, boolean
+  items, and empty vectors, and enforce the configured `dimensions` length.
+- Vector serialization now uses a high-precision representation
+  (`repr(float)`), replacing the previous six-significant-digit format. The
+  `Vector.to_db` path, the asyncpg vector codec, and vector-distance expression
+  helpers share the same precision policy.
+
+#### JSON
+
+- `JSON` now consistently supports top-level scalar values (`str`, `int`,
+  `float`, `bool`) in addition to objects and arrays. Top-level `None` remains
+  SQL `NULL`.
+- All non-`None` JSON values are serialized with
+  `json.dumps(..., allow_nan=False)`, so `NaN`/infinity and non-JSON-serializable
+  objects fail before SQL execution.
+
+#### File and Image
+
+- The `FileField`/`ImageField` contract is documented: stored state and
+  `to_python()` are normalized path strings, while model attribute access
+  returns a `FieldFile` wrapper.
+- `update()` and `bulk_update()` reject unresolved upload-like objects with a
+  clear error because those paths cannot persist file content; use
+  `save()`/`create()`/`bulk_create()` for uploads.
+
+#### API schemas
+
+- Generated API/Pydantic schemas now describe `JSON` fields as any JSON value
+  (objects, arrays, and scalars) instead of object/array only, and expose
+  `Array`/`Vector` fields as typed lists. File and image fields remain
+  string-typed.
+
+### Compatibility
+
+- Code assigning comma-separated strings directly to `Array` fields must assign
+  lists instead.
+- Code relying on null array elements or undocumented nested arrays now fails
+  clearly; use `JSON` for those shapes.
+- Passing `NaN`, infinities, booleans, or empty vectors to `Vector` fields now
+  fails before SQL execution; stored vector text may show more precision than
+  before. Tests comparing exact vector formatting should compare numeric values.
+- Non-finite or non-serializable `JSON` values now fail earlier.
+
+### Deferred
+
+- Lazy forward FK object loading remains deferred; forward FK/O2O attributes and
+  their `*_id` aliases expose the stored FK id, loaded explicitly or via
+  `select_related()` + `get_related()`.
+- Custom `ManyToMany(..., through=...)` models remain unsupported and continue
+  to fail clearly.
+
+---
+
 ## v0.5.54 — ORM Write & Relation Correctness
 
 Released 2026-05-30.

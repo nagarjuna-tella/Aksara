@@ -90,13 +90,18 @@ class CombinedExpression(BaseExpression):
 
 def _format_vector_literal(value: Sequence[float]) -> str:
     """Serialize a Python vector into pgvector text format."""
-    parts = []
+    numbers = []
     for item in value:
+        # bool is an int subclass; reject it to match Vector field policy.
+        if isinstance(item, bool):
+            raise ValueError("Vector values do not accept boolean values")
         number = float(item)
         if not math.isfinite(number):
             raise ValueError("Vector values must be finite numbers")
-        parts.append(format(number, "g"))
-    return f"[{','.join(parts)}]"
+        numbers.append(number)
+    from aksara.fields import serialize_vector_components
+
+    return serialize_vector_components(numbers)
 
 
 class VectorLiteral(BaseExpression):

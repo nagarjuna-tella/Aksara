@@ -166,6 +166,14 @@ document.attachment = ("report.pdf", pdf_bytes)
 await document.save()
 ```
 
+Internally and in the database, the field stores a normalized path string (or
+`None`); the `FieldFile` wrapper is only the model attribute view. Upload-like
+values are persisted only through `save()`, `create()`, and `bulk_create()`,
+which run the storage preparation step. `update()` and `bulk_update()` cannot
+persist file content, so they reject unresolved upload-like values with a clear
+error — pass an already-stored path string or `FieldFile` to those paths. See
+the [Advanced Field Policy](advanced-field-policy.md).
+
 ### ImageField
 
 Image-specialized file field with Pillow-backed validation.
@@ -449,6 +457,12 @@ dark_mode_users = await User.objects.filter(
 )
 ```
 
+`JSON` accepts any JSON-compatible value, including top-level scalars (`"draft"`,
+`3.14`, `True`) as well as objects and arrays. Top-level `None` is stored as SQL
+`NULL`. Values are serialized with `allow_nan=False`, so `NaN`/infinity and
+non-JSON-serializable objects raise a validation error before reaching the
+database. See the [Advanced Field Policy](advanced-field-policy.md).
+
 ### Vector
 
 pgvector-backed embeddings for similarity search and ranking.
@@ -472,6 +486,13 @@ document = await Document.objects.create(
 
 assert document.embedding == [0.12, 0.33, 0.98]
 ```
+
+Vector components must be finite numbers. `NaN`, `Infinity`, `-Infinity`,
+boolean items, and empty vectors are rejected before SQL execution, and a
+configured `dimensions` is enforced on every write path. Values are serialized
+with high precision (`repr(float)`), so persisted text may show more digits than
+older output; compare numeric values rather than exact strings in tests. See the
+[Advanced Field Policy](advanced-field-policy.md).
 
 !!! note
     `Vector` requires PostgreSQL's `vector` extension. Enable it with
@@ -501,34 +522,38 @@ PostgreSQL type: `VARCHAR` (stores the string value)
 
 ### Array
 
-PostgreSQL array columns for storing lists of values.
+Homogeneous, one-dimensional PostgreSQL array columns for storing lists of
+values.
 
 ```python
-tags = fields.Array(base_type="text", default=list)
-scores = fields.Array(base_type="integer", nullable=True)
-ratings = fields.Array(base_type="float")
+import uuid
+
+tags = fields.Array(item_type=str, default=list)
+scores = fields.Array(item_type=int, nullable=True)
+ratings = fields.Array(item_type=float)
+ids = fields.Array(item_type=uuid.UUID, default=list)
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `base_type` | `str` | `"text"` | Element type: `text`, `integer`, `float`, `boolean`, `uuid` |
+| `item_type` | `type` | `str` | Element type: `str`, `int`, `float`, `bool`, `uuid.UUID` |
 
 PostgreSQL types:
 
-| `base_type` | PostgreSQL Type |
+| `item_type` | PostgreSQL Type |
 |-------------|----------------|
-| `text` | `TEXT[]` |
-| `integer` | `INTEGER[]` |
+| `str` | `TEXT[]` |
+| `int` | `INTEGER[]` |
 | `float` | `DOUBLE PRECISION[]` |
-| `boolean` | `BOOLEAN[]` |
-| `uuid` | `UUID[]` |
+| `bool` | `BOOLEAN[]` |
+| `uuid.UUID` | `UUID[]` |
 
 Example usage:
 
 ```python
 class Article(Model):
-    tags = fields.Array(base_type="text", default=list)
-    view_counts = fields.Array(base_type="integer", default=list)
+    tags = fields.Array(item_type=str, default=list)
+    view_counts = fields.Array(item_type=int, default=list)
 
 article = await Article.objects.create(
     tags=["python", "async", "orm"],
@@ -543,8 +568,15 @@ await article.save()
 
 !!! tip "When to Use Array vs JSON"
     - Use `Array` for homogeneous lists (all same type) that need indexing
-    - Use `JSON` for heterogeneous data or nested structures
+    - Use `JSON` for heterogeneous data, nested structures, or null elements
     - PostgreSQL array operators work with `Array` fields
+
+!!! note "Array values must be Python lists"
+    Assign explicit Python lists whose items match `item_type`. The ORM
+    validates each element and rejects nested lists, `None` items, and
+    type mismatches (for example, a string in an `int` array). Delimited
+    strings are not parsed into arrays by the ORM — convert them before
+    assignment. See the [Advanced Field Policy](advanced-field-policy.md).
 
 ### Slug
 

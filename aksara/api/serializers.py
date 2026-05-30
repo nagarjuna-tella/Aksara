@@ -59,6 +59,16 @@ if TYPE_CHECKING:
 _serializer_model_cache: Dict[str, Dict[str, Type[BaseModel]]] = {}
 
 
+# Map Array item_type to the Python/Pydantic type used in generated schemas.
+_ARRAY_ITEM_TYPES = {
+    str: str,
+    int: int,
+    float: float,
+    bool: bool,
+    UUID: UUID,
+}
+
+
 def _get_python_type(field: aksara_fields.Field) -> type:
     """
     Map Aksara field type to Python/Pydantic type.
@@ -98,9 +108,18 @@ def _get_python_type(field: aksara_fields.Field) -> type:
     elif isinstance(field, aksara_fields.DateTime):
         return datetime
     elif isinstance(field, aksara_fields.JSON):
-        return Union[dict, list, None]
+        # JSON accepts any JSON-compatible value, including top-level scalars,
+        # not just objects/arrays.
+        return Union[dict, list, str, int, float, bool, None]
     elif isinstance(field, aksara_fields.Decimal):
         return Decimal
+    # Vector is checked before Array (it is not an Array subclass, but keep the
+    # numeric contract explicit) and exposes a list of floats.
+    elif isinstance(field, aksara_fields.Vector):
+        return List[float]
+    elif isinstance(field, aksara_fields.Array):
+        item_python = _ARRAY_ITEM_TYPES.get(field.item_type, Any)
+        return List[item_python]
     # Float used to fall through to Any; map to float so validation runs.
     elif isinstance(field, aksara_fields.Float):
         return float

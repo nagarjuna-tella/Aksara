@@ -32,7 +32,11 @@ def _encode_vector(value: Any) -> str:
     """Encode Python vectors into pgvector text format."""
     if isinstance(value, str):
         return value
-    return "[" + ",".join(format(float(item), "g") for item in value) + "]"
+    # Reuse the ORM precision policy (repr(float)) so values encoded by the
+    # asyncpg codec match Vector.to_db exactly.
+    from aksara.fields import serialize_vector_components
+
+    return serialize_vector_components(value)
 
 
 async def _initialize_connection(connection: asyncpg.Connection) -> None:

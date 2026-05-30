@@ -5,6 +5,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased — v0.5.55 — Advanced Field Policy
+
+Tightens correctness for advanced ORM field types. This does not claim that all
+ORM correctness work is complete; lazy forward FK object loading and custom
+ManyToMany through models remain deferred. Aksara is pre-1.0, so some ambiguous
+behaviors are replaced with explicit validation errors.
+
+### Changed
+
+- `Array` validates each element against `item_type` on every write path and
+  rejects nested lists/tuples, `None` items, `bool` in `int`/`float` arrays,
+  non-integral values in `int` arrays, and `NaN`/infinity in `float` arrays.
+  `item_type` is the canonical constructor option (`str`, `int`, `float`,
+  `bool`, `uuid.UUID`).
+- Core ORM `Array` validation no longer splits delimited strings into arrays;
+  assign explicit Python lists. The admin array form converts its input to a
+  typed list at the form boundary.
+- `Vector` write paths reject `NaN`, `Infinity`, `-Infinity`, boolean items, and
+  empty vectors, and enforce the configured `dimensions` length.
+- `Vector` serialization uses high-precision `repr(float)` instead of a
+  six-significant-digit format, shared by `Vector.to_db`, the asyncpg vector
+  codec, and vector-distance expression helpers.
+- `JSON` consistently supports top-level scalars (`str`, `int`, `float`, `bool`)
+  in addition to objects and arrays, serializing every non-`None` value with
+  `json.dumps(..., allow_nan=False)`. Top-level `None` remains SQL `NULL`.
+- Generated API/Pydantic schemas describe `JSON` fields as any JSON value and
+  expose `Array`/`Vector` fields as typed lists; file/image fields stay
+  string-typed.
+
+### Fixed
+
+- `JSON` now rejects `NaN`/infinity and non-JSON-serializable values before SQL
+  execution instead of emitting invalid JSONB or silently passing scalars.
+- `update()` and `bulk_update()` reject unresolved upload-like values for
+  `FileField`/`ImageField` with a clear error; use `save()`/`create()`/
+  `bulk_create()` for uploads. `to_python()` returns a normalized path string
+  while model attribute access returns a `FieldFile` wrapper.
+
+### Deferred
+
+- Lazy forward FK object loading remains deferred; forward FK/O2O attributes and
+  `*_id` aliases expose the stored FK id.
+- Custom `ManyToMany(..., through=...)` models remain unsupported and fail
+  clearly.
+
+---
+
 ## v0.5.54 — ORM Write & Relation Correctness
 
 Released 2026-05-30.

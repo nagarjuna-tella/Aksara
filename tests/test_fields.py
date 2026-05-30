@@ -228,7 +228,16 @@ class TestVectorField:
 
     def test_to_db(self):
         field = Vector(dimensions=3)
-        assert field.to_db([1, 2, 3]) == "[1,2,3]"
+        # v0.5.55: high-precision serialization via repr(float), so integers
+        # round-trip as floats. Compare parsed numeric values, not formatting.
+        serialized = field.to_db([1, 2, 3])
+        parsed = [float(part) for part in serialized.strip("[]").split(",")]
+        assert parsed == [1.0, 2.0, 3.0]
+
+    def test_to_db_high_precision(self):
+        field = Vector()
+        # Must not truncate to six significant digits.
+        assert field.to_db([0.123456789]) == "[0.123456789]"
 
     def test_validate_rejects_wrong_dimensions(self):
         field = Vector(dimensions=2)

@@ -197,7 +197,13 @@ class TestAnnotations:
 
         assert '"embedding" <=> CAST($1 AS vector)' in select_clause
         assert '"embedding" <-> CAST($2 AS vector)' in select_clause
-        assert values == ["[1,2,3]", "[3,1,2]"]
+        # v0.5.55: vector literals use high-precision repr(float) serialization,
+        # so integers render as floats. Compare parsed numeric values.
+        parsed = [
+            [float(part) for part in literal.strip("[]").split(",")]
+            for literal in values
+        ]
+        assert parsed == [[1.0, 2.0, 3.0], [3.0, 1.0, 2.0]]
 
     @pytest.mark.asyncio
     async def test_aggregate_returns_summary_dict(self, monkeypatch):
