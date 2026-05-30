@@ -12,6 +12,7 @@ from aksara.fields import (
     ManyToManyManager,
 )
 from aksara.model.base import Model
+from aksara.relations import OnDelete
 
 
 # Mock models for testing
@@ -53,8 +54,21 @@ class TestForeignKeySafety:
         assert field.on_delete == "RESTRICT"
 
     def test_foreign_key_rejects_invalid_on_delete(self):
-        with pytest.raises(ValueError, match="Invalid on_delete action.*Allowed"):
+        with pytest.raises(ValueError, match="Invalid on_delete action.*Allowed") as exc_info:
             ForeignKey(MockCategory, on_delete="DROP TABLE users")
+
+        message = str(exc_info.value)
+        assert "CASCADE" in message
+        assert "SET NULL" in message
+        assert "RESTRICT" in message
+        assert "PROTECT" in message
+        assert "case-insensitive" in message
+        assert "SET_NULL" in message
+        assert "OnDelete enum" in message
+
+    def test_foreign_key_accepts_on_delete_enum_instances(self):
+        field = ForeignKey(MockCategory, on_delete=OnDelete.CASCADE)
+        assert field.on_delete == "CASCADE"
 
     def test_one_to_one_rejects_invalid_on_delete(self):
         with pytest.raises(ValueError, match="Invalid on_delete action.*Allowed"):

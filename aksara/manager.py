@@ -20,6 +20,13 @@ T = TypeVar("T", bound="Model")
 _UNSET = object()
 
 
+def _is_vector_field(field: Any) -> bool:
+    """Return True for Vector fields, including subclasses."""
+    from aksara.fields import Vector
+
+    return isinstance(field, Vector)
+
+
 # Supported lookup types
 LOOKUP_OPERATORS = {
     "exact": "=",          # field__exact=value (same as field=value)
@@ -1274,7 +1281,7 @@ class QuerySet(Generic[T]):
                 set_clauses.append(f"{col_name} = {compile_expression(self._model, value, values)}")
             else:
                 values.append(field.to_db(value))
-                if field.__class__.__name__ == "Vector":
+                if _is_vector_field(field):
                     set_clauses.append(f"{col_name} = CAST(${len(values)} AS vector)")
                 else:
                     set_clauses.append(f"{col_name} = ${len(values)}")
@@ -1595,9 +1602,23 @@ class Manager(Generic[T]):
         ):
             return "DEFAULT", False
 
-        if field.__class__.__name__ == "Vector":
+        if _is_vector_field(field):
             return f"CAST(${param_idx} AS vector)", True
         return f"${param_idx}", True
+
+    def _hydrate_bulk_created_object(self, obj: T, record: Any) -> None:
+        """Update the caller's object with all columns returned by INSERT."""
+        from aksara.fields import ForeignKey
+
+        record_keys = set(record.keys())
+        for field_name, field in self._model._fields.items():
+            if isinstance(field, ForeignKey):
+                col_name = field.db_column_name
+                if col_name in record_keys:
+                    obj._data[field_name] = field.to_python(record[col_name])
+            elif field_name in record_keys:
+                obj._data[field_name] = field.to_python(record[field_name])
+        obj._is_new = False
     
     async def bulk_create(
         self,
@@ -1696,10 +1717,17 @@ class Manager(Generic[T]):
             
             records = await db.fetch(query, *all_values)
             
-            # Reconstruct model instances from returned records
-            for record in records:
-                instance = self._model._from_record(record)
-                created_instances.append(instance)
+            # Hydrate original objects when PostgreSQL returned one row per
+            # input object. With ignore_conflicts=True PostgreSQL may return
+            # fewer rows, and the skipped input rows cannot be matched safely.
+            if len(records) == len(batch):
+                for obj, record in zip(batch, records):
+                    self._hydrate_bulk_created_object(obj, record)
+                    created_instances.append(obj)
+            else:
+                for record in records:
+                    instance = self._model._from_record(record)
+                    created_instances.append(instance)
         
         return created_instances
     
@@ -1770,7 +1798,7 @@ class Manager(Generic[T]):
                     # compare the primary key column to the parameter, not just
                     # bind the PK value as the condition.
                     value_sql = f"${param_idx + 1}"
-                    if field.__class__.__name__ == "Vector":
+                    if _is_vector_field(field):
                         value_sql = f"CAST(${param_idx + 1} AS vector)"
                     when_clauses.append(
                         f"WHEN {quote_identifier('id')} = ${param_idx} THEN {value_sql}"

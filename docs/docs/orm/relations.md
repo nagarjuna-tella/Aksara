@@ -63,15 +63,17 @@ Access the stored foreign-key value from the child:
 post = await Post.objects.get(id=post_id)
 
 # Forward FK fields currently expose the stored FK value/id.
-author_value = post.author
 author_id = post.author_id
+# post.author currently exposes the same stored FK value/id.
+same_author_id = post.author
 
 # Load the related object explicitly.
 author = await Author.objects.get(id=author_id)
 ```
 
-For eager loading, use `select_related()` and then read the loaded object with
-`get_related("author")`.
+Today, `post.author` and `post.author_id` expose the same stored FK value/id;
+`post.author` is not a lazy-loaded related object. For eager loading, use
+`select_related()` and then read the loaded object with `get_related("author")`.
 
 ### Reverse Access
 
@@ -193,7 +195,8 @@ class UserProfile(Model):
 
 ```python
 profile = await UserProfile.objects.get(id=profile_id)
-user_id = profile.user
+user_id = profile.user_id
+# profile.user currently exposes the same stored FK value/id.
 user = await User.objects.get(id=user_id)
 print(user.email)
 ```
@@ -343,7 +346,7 @@ child = await Category.objects.create(name="Phones", parent=parent)
 phones = await parent.children.all()
 
 # Access parent
-electronics_id = child.parent
+electronics_id = child.parent_id
 electronics = await Category.objects.get(id=electronics_id)
 ```
 

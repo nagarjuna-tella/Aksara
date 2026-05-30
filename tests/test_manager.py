@@ -319,9 +319,27 @@ class TestWritePathSQL:
         assert params == (explicit_updated,)
 
     @pytest.mark.asyncio
-    async def test_bulk_update_vector_casts_case_values(self):
+    async def test_queryset_update_vector_subclass_uses_vector_cast(self):
+        class CustomVector(fields.Vector):
+            pass
+
         class Embedding(Model):
-            embedding = fields.Vector(dimensions=3)
+            embedding = CustomVector(dimensions=3)
+
+        db = _CapturingDB(execute_return="UPDATE 1")
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await QuerySet(Embedding).update(embedding=[1, 2, 3])
+
+        query = db.execute.await_args.args[0]
+        assert '"embedding" = CAST($1 AS vector)' in query
+
+    @pytest.mark.asyncio
+    async def test_bulk_update_vector_casts_case_values(self):
+        class CustomVector(fields.Vector):
+            pass
+
+        class Embedding(Model):
+            embedding = CustomVector(dimensions=3)
 
         instance = Embedding(embedding=[1, 2, 3])
         instance._is_new = False
@@ -336,6 +354,23 @@ class TestWritePathSQL:
         normalized = " ".join(query.split())
         assert 'WHEN "id" = $1 THEN CAST($2 AS vector)' in normalized
         assert '"embedding" = CASE' in normalized
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_vector_subclass_uses_vector_cast(self):
+        class CustomVector(fields.Vector):
+            pass
+
+        class Embedding(Model):
+            embedding = CustomVector(dimensions=3)
+
+        instance = Embedding(embedding=[1, 2, 3])
+
+        db = _CapturingDB()
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await Embedding.objects.bulk_create([instance])
+
+        query = db.fetch.await_args.args[0]
+        assert "CAST($1 AS vector)" in query
 
 
 class TestExceptions:
@@ -453,17 +488,23 @@ class TestWritePathDatabase:
         await db.execute(BulkCreatedAtUser.get_create_table_sql())
 
         try:
-            await BulkCreatedAtUser.objects.bulk_create([
-                BulkCreatedAtUser(email="first@example.com"),
-                BulkCreatedAtUser(
-                    email="second@example.com",
-                    created_at=explicit_created,
-                ),
-            ])
+            first_obj = BulkCreatedAtUser(email="first@example.com")
+            second_obj = BulkCreatedAtUser(
+                email="second@example.com",
+                created_at=explicit_created,
+            )
+            returned = await BulkCreatedAtUser.objects.bulk_create([first_obj, second_obj])
 
             first = await BulkCreatedAtUser.objects.get(email="first@example.com")
             second = await BulkCreatedAtUser.objects.get(email="second@example.com")
 
+            assert returned == [first_obj, second_obj]
+            assert first_obj.created_at is not None
+            assert first_obj.created_at == first.created_at
+            assert second_obj.created_at == explicit_created
+            assert second_obj.created_at == second.created_at
+            assert first_obj._is_new is False
+            assert second_obj._is_new is False
             assert first.created_at is not None
             assert second.created_at == explicit_created
         finally:

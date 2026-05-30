@@ -5,6 +5,65 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## v0.5.54 — ORM Write & Relation Correctness
+
+Unreleased.
+
+This release focuses on targeted write-path consistency and relation safety
+fixes from the ORM audit. It does not claim that all ORM correctness issues are
+fixed.
+
+### Fixed
+
+- `bulk_create()` now aligns more closely with `create()` and `save()` for
+  auto-managed fields, runs field preparation hooks, and preserves explicit
+  per-row `auto_now_add` values such as `created_at`.
+- `bulk_update()` now casts `Vector` field CASE branch parameters with
+  `CAST($n AS vector)`.
+- `ForeignKey` and `OneToOne` now validate `on_delete` values and reject
+  unknown actions before DDL generation.
+- Migration relation DDL now validates `ON DELETE` and `ON UPDATE` actions
+  before emitting SQL.
+- `ManyToMany(..., through=...)` now fails clearly because custom through
+  models are not supported yet.
+- The forward FK access contract is documented: forward FK/O2O attributes
+  expose the stored FK value/id; load related objects explicitly or via
+  `select_related()` plus `get_related()`.
+
+### Changed
+
+- `QuerySet.update()` now refreshes `auto_now` fields such as `updated_at` when
+  regular fields are updated. Explicit `updated_at` values are respected, and
+  `update(updated_at=...)` does not override itself.
+
+### Compatibility / Behavior Changes
+
+- `ForeignKey(..., on_delete="SET_NULL")` and
+  `ForeignKey(..., on_delete="SET NULL")` now require `nullable=True` because
+  `SET NULL` on a non-nullable relation creates contradictory runtime and DDL
+  behavior.
+
+  Before:
+
+  ```python
+  author = fields.ForeignKey(User, on_delete="SET_NULL")
+  ```
+
+  Now:
+
+  ```python
+  author = fields.ForeignKey(User, on_delete="SET_NULL", nullable=True)
+  ```
+
+### Tests
+
+- Added regression coverage for write-path timestamp hydration, vector
+  subclass casting, relation `on_delete` validation, nullable `SET NULL`
+  enforcement, migration DDL action validation, custom through rejection, and
+  forward FK id access.
+
+---
+
 ## v0.5.53 — ORM Query Semantics & Migration Generation Correctness
 
 Released 2026-05-29.

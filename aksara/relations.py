@@ -70,7 +70,7 @@ _DDL_FK_ACTIONS = {
 }
 
 
-def _normalise_action_token(action: Any) -> str:
+def _normalize_action_token(action: Any) -> str:
     raw = getattr(action, "value", action)
     return str(raw).strip().upper().replace("_", " ")
 
@@ -82,11 +82,13 @@ def normalize_on_delete(action: Any, *, nullable: Optional[bool] = None) -> str:
     Runtime relation fields intentionally support the behaviours Aksara can
     enforce today: CASCADE, SET NULL, and RESTRICT/PROTECT.
     """
-    token = _normalise_action_token(action)
+    token = _normalize_action_token(action)
     if token not in _RUNTIME_ON_DELETE_ACTIONS:
         raise ValueError(
             f"Invalid on_delete action: {action!r}. "
-            "Allowed: CASCADE, SET NULL, RESTRICT, PROTECT"
+            "Allowed canonical values: CASCADE, SET NULL, RESTRICT, PROTECT. "
+            "Values are case-insensitive; underscore and space variants such as "
+            "SET_NULL and SET NULL are accepted; OnDelete enum instances are accepted."
         )
 
     normalized = _RUNTIME_ON_DELETE_ACTIONS[token]
@@ -99,7 +101,7 @@ def normalize_fk_action(action: Any) -> str:
     """
     Normalize and validate SQL FK referential actions for migration DDL.
     """
-    token = _normalise_action_token(action)
+    token = _normalize_action_token(action)
     if token not in _DDL_FK_ACTIONS:
         raise ValueError(
             f"Invalid FK action: {action!r}. "

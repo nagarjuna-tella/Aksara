@@ -26,9 +26,6 @@ fixed.
 - `bulk_create()` now determines insert columns after row preparation and
   preserves explicit per-row `auto_now_add` values such as `created_at` instead
   of silently ignoring later-row values.
-- `QuerySet.update()` now has an explicit `updated_at` policy: auto-managed
-  `auto_now` fields are refreshed when regular fields are updated, while
-  caller-provided `updated_at` values are respected.
 - `bulk_update()` now casts `Vector` field CASE branch parameters with
   `CAST($n AS vector)`, matching normal vector update behavior.
 - `ForeignKey` and `OneToOne` now validate `on_delete` values, normalize
@@ -43,6 +40,33 @@ fixed.
 - The forward FK access contract is documented: forward FK/O2O attributes
   expose the stored FK value/id, while related objects should be loaded
   explicitly or through `select_related()` plus `get_related()`.
+
+#### Changed
+
+- `QuerySet.update()` now refreshes `auto_now` fields such as `updated_at` when
+  regular fields are updated, matching `save()` more closely. Explicit
+  `updated_at` values are respected, and `update(updated_at=...)` does not
+  override itself.
+
+#### Compatibility / Behavior Changes
+
+- `ForeignKey(..., on_delete="SET_NULL")` and
+  `ForeignKey(..., on_delete="SET NULL")` now require `nullable=True`.
+  `SET NULL` on a non-nullable relation creates contradictory runtime and DDL
+  semantics: the delete policy needs to write `NULL`, while the column rejects
+  `NULL`.
+
+  Before:
+
+  ```python
+  author = fields.ForeignKey(User, on_delete="SET_NULL")
+  ```
+
+  Now:
+
+  ```python
+  author = fields.ForeignKey(User, on_delete="SET_NULL", nullable=True)
+  ```
 
 #### Tests
 
