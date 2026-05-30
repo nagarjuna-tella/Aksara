@@ -16,9 +16,9 @@ behaviors are replaced with explicit validation errors.
 
 - `Array` validates each element against `item_type` on every write path and
   rejects nested lists/tuples, `None` items, `bool` in `int`/`float` arrays,
-  non-integral values in `int` arrays, and `NaN`/infinity in `float` arrays.
-  `item_type` is the canonical constructor option (`str`, `int`, `float`,
-  `bool`, `uuid.UUID`).
+  non-integral values in `int` arrays, out-of-range values for the 32-bit
+  `INTEGER[]` type, and `NaN`/infinity in `float` arrays. `item_type` is the
+  canonical constructor option (`str`, `int`, `float`, `bool`, `uuid.UUID`).
 - Core ORM `Array` validation no longer splits delimited strings into arrays;
   assign explicit Python lists. The admin array form converts its input to a
   typed list at the form boundary.
@@ -38,6 +38,13 @@ behaviors are replaced with explicit validation errors.
 
 - `JSON` now rejects `NaN`/infinity and non-JSON-serializable values before SQL
   execution instead of emitting invalid JSONB or silently passing scalars.
+  Invalid `JSON` field defaults raise before DDL generation instead of silently
+  becoming `DEFAULT NULL`.
+- The asyncpg vector codec, vector-distance expressions, and migration
+  `VectorField` defaults now share the same vector validation (rejecting
+  boolean/non-finite/empty values) and high-precision serialization as
+  `Vector.to_db`, so invalid vectors fail before SQL execution at every entry
+  point.
 - `update()` and `bulk_update()` reject unresolved upload-like values for
   `FileField`/`ImageField` with a clear error; use `save()`/`create()`/
   `bulk_create()` for uploads. `to_python()` returns a normalized path string

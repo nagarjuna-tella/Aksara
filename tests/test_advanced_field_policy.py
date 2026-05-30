@@ -25,6 +25,7 @@ from aksara.fields import (
     JSON,
     Vector,
     serialize_vector_components,
+    validate_vector_components,
 )
 from aksara.registry import ModelRegistry
 
@@ -146,6 +147,83 @@ class TestVectorPolicy:
     def test_none_when_nullable(self):
         field = Vector(nullable=True)
         assert field.to_db(None) is None
+
+
+class TestVectorCodecValidation:
+    """The asyncpg codec must validate, not only serialize (Issue 5)."""
+
+    def test_codec_rejects_bool(self):
+        with pytest.raises(ValueError, match="boolean"):
+            _encode_vector([True])
+
+    def test_codec_rejects_nan(self):
+        with pytest.raises(ValueError, match="finite"):
+            _encode_vector([float("nan")])
+
+    def test_codec_rejects_inf(self):
+        with pytest.raises(ValueError, match="finite"):
+            _encode_vector([float("inf")])
+
+    def test_codec_rejects_negative_inf(self):
+        with pytest.raises(ValueError, match="finite"):
+            _encode_vector([float("-inf")])
+
+    def test_codec_rejects_empty(self):
+        with pytest.raises(ValueError, match="at least one dimension"):
+            _encode_vector([])
+
+    def test_codec_high_precision(self):
+        assert _encode_vector([0.123456789]) == "[0.123456789]"
+
+    def test_codec_passes_through_serialized_string(self):
+        # Already-serialized strings (from Vector.to_db) pass through unchanged.
+        assert _encode_vector("[1.0,2.0]") == "[1.0,2.0]"
+
+    def test_validate_helper_rejects_bool(self):
+        with pytest.raises(ValueError, match="boolean"):
+            validate_vector_components([True])
+
+    def test_validate_helper_enforces_dimensions(self):
+        with pytest.raises(ValueError, match="requires 2 dimensions"):
+            validate_vector_components([1.0], dimensions=2)
+
+
+class TestJSONDefaultPolicy:
+    """Invalid JSON defaults must raise, not become DEFAULT NULL (Issue 2)."""
+
+    def test_valid_object_default(self):
+        field = JSON(default={"a": 1})
+        field.name = "meta"
+        sql = field._format_default()
+        assert sql == '\'{"a": 1}\'::jsonb'
+
+    def test_valid_array_with_nested_null_default(self):
+        field = JSON(default=["a", None])
+        field.name = "meta"
+        sql = field._format_default()
+        assert sql == '\'["a", null]\'::jsonb'
+
+    def test_none_default_is_sql_null(self):
+        field = JSON(default=None)
+        assert field._format_default() == "NULL"
+
+    def test_nan_default_raises(self):
+        field = JSON(default=float("nan"))
+        field.name = "meta"
+        with pytest.raises(ValueError, match="non-finite"):
+            field._format_default()
+
+    def test_infinity_default_raises(self):
+        field = JSON(default={"x": float("inf")})
+        field.name = "meta"
+        with pytest.raises(ValueError, match="non-finite"):
+            field._format_default()
+
+    def test_non_serializable_default_raises(self):
+        field = JSON(default=object())
+        field.name = "meta"
+        with pytest.raises(ValueError, match="not JSON-serializable"):
+            field._format_default()
 
 
 # ---------------------------------------------------------------------------

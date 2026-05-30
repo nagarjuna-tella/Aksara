@@ -777,13 +777,26 @@ class JSON(Field):
         return "JSONB"
     
     def _format_default(self) -> str:
-        """Format the default value for SQL."""
+        """Format the default value for SQL.
+
+        Invalid JSON defaults (non-serializable objects, NaN/infinity) raise a
+        clear error before DDL generation instead of being silently converted
+        to ``DEFAULT NULL``, which would mask a configuration mistake.
+        """
         if self.default is None:
             return "NULL"
+        field_label = f" for field '{self.name}'" if self.name else ""
         try:
             literal = json.dumps(self.default, allow_nan=False)
-        except (TypeError, ValueError):
-            return "NULL"
+        except ValueError as exc:
+            raise ValueError(
+                f"JSON default{field_label} contains a non-finite number "
+                "(NaN/Infinity); JSON cannot portably represent it"
+            ) from exc
+        except TypeError as exc:
+            raise ValueError(
+                f"JSON default{field_label} is not JSON-serializable: {exc}"
+            ) from exc
         escaped = literal.replace("'", "''")
         return f"'{escaped}'::jsonb"
 
@@ -824,15 +837,76 @@ class JSON(Field):
             ) from exc
 
 
-def serialize_vector_components(values: Any) -> str:
-    """Serialize numeric components into pgvector text format.
+def validate_vector_components(
+    value: Any,
+    *,
+    dimensions: Optional[int] = None,
+    field_label: Optional[str] = None,
+) -> list[float]:
+    """Validate vector components and return a list of finite ``float`` values.
 
-    Uses ``repr(float(...))`` so the shortest exact round-trippable decimal is
-    emitted instead of a lossy six-significant-digit format. This is the single
-    precision policy shared by ``Vector.to_db``, the asyncpg vector codec, and
-    vector-distance expression helpers.
+    Rejects non-list/tuple inputs, boolean items, non-numeric items,
+    ``NaN``/``Infinity``/``-Infinity``, and empty vectors, and enforces
+    ``dimensions`` when known. This is the single validation policy shared by
+    ``Vector.to_db``, the asyncpg vector codec, vector-distance expression
+    helpers, and migration defaults, so invalid vectors fail before SQL
+    execution regardless of the entry point.
     """
-    return "[" + ",".join(repr(float(item)) for item in values) + "]"
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("Vector fields require a list or tuple of numbers")
+
+    vector: list[float] = []
+    for item in value:
+        # bool is an int subclass; reject it explicitly so True/False are
+        # never silently stored as 1.0/0.0 embedding components.
+        if isinstance(item, bool):
+            raise ValueError("Vector fields do not accept boolean values")
+        try:
+            number = float(item)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Vector fields require numeric values, got {item!r}"
+            ) from exc
+        if not math.isfinite(number):
+            raise ValueError(
+                "Vector fields only support finite numbers; "
+                "NaN, Infinity, and -Infinity are not allowed"
+            )
+        vector.append(number)
+
+    if not vector:
+        raise ValueError(
+            "Vector fields require at least one dimension; "
+            "empty vectors are not allowed"
+        )
+
+    if dimensions is not None and len(vector) != dimensions:
+        label = f"Vector field '{field_label}'" if field_label else "Vector"
+        raise ValueError(
+            f"{label} requires {dimensions} dimensions, got {len(vector)}"
+        )
+
+    return vector
+
+
+def serialize_vector_components(
+    value: Any,
+    *,
+    dimensions: Optional[int] = None,
+    field_label: Optional[str] = None,
+) -> str:
+    """Validate, then serialize numeric components into pgvector text format.
+
+    Validation (finite/non-bool/non-empty plus optional ``dimensions``) runs
+    before serialization so callers that bypass ``Vector.to_db`` — the asyncpg
+    codec, vector-distance expressions, migration defaults — still reject
+    invalid vectors. Uses ``repr(float(...))`` for the shortest exact
+    round-trippable decimal instead of a lossy six-significant-digit format.
+    """
+    vector = validate_vector_components(
+        value, dimensions=dimensions, field_label=field_label
+    )
+    return "[" + ",".join(repr(item) for item in vector) + "]"
 
 
 class Vector(Field):
@@ -877,40 +951,9 @@ class Vector(Field):
         if isinstance(value, str):
             value = self.to_python(value)
 
-        if not isinstance(value, (list, tuple)):
-            raise ValueError("Vector fields require a list or tuple of numbers")
-
-        vector: list[float] = []
-        for item in value:
-            # bool is an int subclass; reject it explicitly so True/False are
-            # never silently stored as 1.0/0.0 embedding components.
-            if isinstance(item, bool):
-                raise ValueError("Vector fields do not accept boolean values")
-            try:
-                number = float(item)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"Vector fields require numeric values, got {item!r}"
-                ) from exc
-            if not math.isfinite(number):
-                raise ValueError(
-                    "Vector fields only support finite numbers; "
-                    "NaN, Infinity, and -Infinity are not allowed"
-                )
-            vector.append(number)
-
-        if not vector:
-            raise ValueError(
-                "Vector fields require at least one dimension; "
-                "empty vectors are not allowed"
-            )
-
-        if self.dimensions is not None and len(vector) != self.dimensions:
-            raise ValueError(
-                f"Vector field '{self.name}' requires {self.dimensions} dimensions, got {len(vector)}"
-            )
-
-        return vector
+        return validate_vector_components(
+            value, dimensions=self.dimensions, field_label=self.name
+        )
 
     def to_python(self, value: Any) -> Optional[list[float]]:
         if value is None:
@@ -1038,25 +1081,32 @@ class Array(Field):
                     f"Array field '{self.name}' (int) does not accept boolean values"
                 )
             if isinstance(item, int):
-                return item
-            if isinstance(item, float):
+                coerced = item
+            elif isinstance(item, float):
                 if not math.isfinite(item) or not item.is_integer():
                     raise ValueError(
                         f"Array field '{self.name}' (int) requires integral "
                         f"values, got {item!r}"
                     )
-                return int(item)
-            if isinstance(item, PyDecimal):
+                coerced = int(item)
+            elif isinstance(item, PyDecimal):
                 if item.is_nan() or item.is_infinite() or item != item.to_integral_value():
                     raise ValueError(
                         f"Array field '{self.name}' (int) requires integral "
                         f"values, got {item!r}"
                     )
-                return int(item)
-            raise ValueError(
-                f"Array field '{self.name}' (int) expects integers, "
-                f"got {type(item).__name__}"
+                coerced = int(item)
+            else:
+                raise ValueError(
+                    f"Array field '{self.name}' (int) expects integers, "
+                    f"got {type(item).__name__}"
+                )
+            # INTEGER[] columns are 32-bit; reject out-of-range values here
+            # rather than letting PostgreSQL fail at execution time.
+            _validate_integer_bounds(
+                coerced, INTEGER_MIN, INTEGER_MAX, f"Array field '{self.name}' (INTEGER)"
             )
+            return coerced
 
         if it is float:
             if isinstance(item, bool):

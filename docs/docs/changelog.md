@@ -20,10 +20,10 @@ explicit validation errors.
 - `Array` is documented as homogeneous and one-dimensional, with `item_type`
   as the canonical constructor option.
 - Array elements are now validated against `item_type` on every write path:
-  `str` requires strings, `int` excludes `bool` and rejects non-integral
-  floats/Decimals, `float` rejects `NaN`/infinity and excludes `bool`, `bool`
-  accepts only real booleans, and `uuid.UUID` accepts UUID instances or
-  parseable UUID strings.
+  `str` requires strings, `int` excludes `bool`, rejects non-integral
+  floats/Decimals, and enforces the 32-bit PostgreSQL `INTEGER` range, `float`
+  rejects `NaN`/infinity and excludes `bool`, `bool` accepts only real booleans,
+  and `uuid.UUID` accepts UUID instances or parseable UUID strings.
 - Nested lists/tuples now raise a clear "use JSON for nested lists" error, and
   `Array(item_type=list)` / `Array(item_type=Array(...))` are rejected at
   construction.
@@ -38,8 +38,10 @@ explicit validation errors.
   items, and empty vectors, and enforce the configured `dimensions` length.
 - Vector serialization now uses a high-precision representation
   (`repr(float)`), replacing the previous six-significant-digit format. The
-  `Vector.to_db` path, the asyncpg vector codec, and vector-distance expression
-  helpers share the same precision policy.
+  `Vector.to_db` path, the asyncpg vector codec, vector-distance expression
+  helpers, and migration `VectorField` defaults share the same validation
+  (rejecting boolean/non-finite/empty values) and precision policy, so invalid
+  vectors fail before SQL execution at every entry point.
 
 #### JSON
 
@@ -48,7 +50,8 @@ explicit validation errors.
   SQL `NULL`.
 - All non-`None` JSON values are serialized with
   `json.dumps(..., allow_nan=False)`, so `NaN`/infinity and non-JSON-serializable
-  objects fail before SQL execution.
+  objects fail before SQL execution. Invalid `JSON` field defaults now raise
+  before DDL generation instead of silently becoming `DEFAULT NULL`.
 
 #### File and Image
 

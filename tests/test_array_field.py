@@ -215,6 +215,38 @@ def test_array_int_accepts_integral_float():
     assert field.to_db([2.0, 3]) == [2, 3]
 
 
+def test_array_int_accepts_32bit_bounds():
+    field = Array(item_type=int)
+    assert field.to_db([2147483647]) == [2147483647]
+    assert field.to_db([-2147483648]) == [-2147483648]
+
+
+def test_array_int_rejects_above_max():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([2147483648])
+
+
+def test_array_int_rejects_below_min():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([-2147483649])
+
+
+def test_array_int_rejects_large_python_int():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([2 ** 40])
+
+
+def test_array_int_rejects_out_of_range_decimal():
+    from decimal import Decimal
+
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([Decimal("2147483648")])
+
+
 def test_array_float_rejects_nan():
     field = Array(item_type=float)
     with pytest.raises(ValueError, match="finite"):

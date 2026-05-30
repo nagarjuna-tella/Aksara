@@ -940,6 +940,8 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
     import json
     import uuid as _uuid
 
+    from aksara.fields import _coerce_strict_boolean
+
     if raw_value is None:
         return None
     if isinstance(raw_value, list):
@@ -959,13 +961,16 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
     item_type = getattr(field, "item_type", str)
     coerced: List[Any] = []
     for item in items:
+        # Preserve None items rather than silently dropping them; core Array
+        # validation rejects null elements per the Advanced Field Policy.
         if item is None:
+            coerced.append(None)
             continue
         if item_type is bool:
-            if isinstance(item, bool):
-                coerced.append(item)
-            else:
-                coerced.append(str(item).strip().lower() in ("true", "1", "yes", "on"))
+            # Strict boolean parsing: real bools pass through, recognized
+            # true/false tokens convert, and anything else raises rather than
+            # silently becoming False.
+            coerced.append(item if isinstance(item, bool) else _coerce_strict_boolean(item))
         elif item_type is int:
             coerced.append(int(item))
         elif item_type is float:

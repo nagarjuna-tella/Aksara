@@ -176,7 +176,35 @@ class TestVectorField:
     def test_default(self):
         field = op.VectorField(dimensions=2, default=[1, 2])
         sql = field.to_sql()
-        assert "'[1,2]'::vector" in sql
+        # v0.5.55: high-precision serialization (repr(float)), so integers
+        # render as floats.
+        assert "'[1.0,2.0]'::vector" in sql
+
+    def test_default_high_precision(self):
+        field = op.VectorField(dimensions=1, default=[0.123456789])
+        sql = field.to_sql()
+        # Must not truncate to six significant digits.
+        assert "'[0.123456789]'::vector" in sql
+
+    def test_default_rejects_bool(self):
+        field = op.VectorField(dimensions=1, default=[True])
+        with pytest.raises(ValueError, match="boolean"):
+            field.to_sql()
+
+    def test_default_rejects_nan(self):
+        field = op.VectorField(dimensions=1, default=[float("nan")])
+        with pytest.raises(ValueError, match="finite"):
+            field.to_sql()
+
+    def test_default_rejects_inf(self):
+        field = op.VectorField(dimensions=1, default=[float("inf")])
+        with pytest.raises(ValueError, match="finite"):
+            field.to_sql()
+
+    def test_default_rejects_empty_vector(self):
+        field = op.VectorField(dimensions=2, default=[])
+        with pytest.raises(ValueError, match="at least one dimension"):
+            field.to_sql()
 
 
 class TestForeignKeyField:

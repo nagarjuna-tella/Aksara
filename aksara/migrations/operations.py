@@ -733,7 +733,14 @@ class VectorField(FieldOp):
             parts.append("NOT NULL")
         if self.default is not None:
             if isinstance(self.default, (list, tuple)):
-                default_literal = "[" + ",".join(format(float(item), "g") for item in self.default) + "]"
+                # Reuse the shared vector policy so migration defaults reject
+                # bool/non-finite/empty values and use high-precision
+                # serialization, matching runtime Vector fields.
+                from aksara.fields import serialize_vector_components
+
+                default_literal = serialize_vector_components(
+                    self.default, dimensions=self.dimensions
+                )
             else:
                 default_literal = str(self.default)
             parts.append(f"DEFAULT '{default_literal}'::vector")
