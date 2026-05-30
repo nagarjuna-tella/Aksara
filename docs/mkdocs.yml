@@ -61,6 +61,7 @@ nav:
       - orm/index.md
       - Models: orm/models.md
       - Fields: orm/fields.md
+      - Advanced Field Policy: orm/advanced-field-policy.md
       - Relations: orm/relations.md
       - Querying: orm/querying.md
       - Expressions & Transactions: orm/expressions-and-transactions.md
