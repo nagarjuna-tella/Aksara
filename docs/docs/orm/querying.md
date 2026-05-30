@@ -506,7 +506,7 @@ posts = await Post.objects.filter(category__is_active=True)
 # ❌ Bad: 1 query for posts + 1 query per post to get author
 posts = await Post.objects.all()
 for post in posts:
-    author = await post.author  # Database call!
+    author = await Author.objects.get(id=post.author_id)
     print(f"{post.title} by {author.name}")
 ```
 
@@ -516,8 +516,13 @@ for post in posts:
 # ✅ Good: 1 query gets posts AND authors
 posts = await Post.objects.select_related("author").all()
 for post in posts:
-    print(f"{post.title} by {post.author.name}")  # No extra query!
+    author = post.get_related("author")
+    print(f"{post.title} by {author.name}")  # No extra query!
 ```
+
+Forward FK/O2O attributes such as `post.author` and `post.author_id` expose the
+stored FK value/id. They are not lazy-loaded related objects; use explicit
+queries or `select_related()` with `get_related()` when you need the object.
 
 ### prefetch_related()
 
@@ -534,7 +539,7 @@ for post in posts:
 
 | Method | Use For | Example |
 |--------|---------|---------|
-| `select_related` | ForeignKey (single related object) | `post.author` |
+| `select_related` | ForeignKey (single related object) | `post.get_related("author")` |
 | `prefetch_related` | ManyToMany, reverse FK (multiple objects) | `post.tags`, `author.posts` |
 
 ---

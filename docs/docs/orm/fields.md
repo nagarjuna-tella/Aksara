@@ -683,7 +683,10 @@ class Post(Model):
 |--------|------|---------|-------------|
 | `to` | `str` or `type` | Required | Target model |
 | `related_name` | `str` | Auto | Reverse accessor name |
-| `through` | `str` | Auto | Junction table name |
+| `through` | `str` | Unsupported | Custom through models are not supported yet |
+
+Passing `through=` currently raises a clear configuration error. Aksara creates
+its own junction table for built-in many-to-many relations.
 
 ### OneToOne
 
@@ -712,6 +715,9 @@ When a referenced object is deleted:
 | `SET_NULL` | Set the FK to NULL (requires `nullable=True`) |
 | `RESTRICT` | Prevent deletion if references exist |
 | `PROTECT` | Alias for RESTRICT |
+
+Values are normalized case-insensitively. `SET_NULL` and `SET NULL` are both
+accepted, and enum values from `aksara.relations.OnDelete` may be used.
 
 ```python
 from aksara import fields, CASCADE, SET_NULL, RESTRICT

@@ -7,21 +7,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## v0.5.54 — ORM Write & Relation Correctness
 
-Unreleased.
+Released 2026-05-30.
 
 This release focuses on targeted write-path consistency and relation safety
-fixes from the ORM audit. It does not claim that all ORM correctness issues are
-fixed.
+fixes. It does not claim that all ORM correctness issues are fixed.
 
 ### Fixed
 
 - `bulk_create()` now aligns more closely with `create()` and `save()` for
-  auto-managed fields, runs field preparation hooks, and preserves explicit
-  per-row `auto_now_add` values such as `created_at`.
+  auto-managed fields. It prepares rows before insert, applies non-null
+  `updated_at` values for default timestamp fields, runs field preparation
+  hooks such as `Slug(auto_from=...)`, and preserves explicit per-row
+  `auto_now_add` values such as `created_at`.
 - `bulk_update()` now casts `Vector` field CASE branch parameters with
   `CAST($n AS vector)`.
 - `ForeignKey` and `OneToOne` now validate `on_delete` values and reject
-  unknown actions before DDL generation.
+  unknown actions before DDL generation. Valid actions are normalized from
+  supported casing and alias variants.
+- `on_delete=SET NULL` now requires `nullable=True` for `ForeignKey`,
+  `OneToOne`, and migration relation field operations.
 - Migration relation DDL now validates `ON DELETE` and `ON UPDATE` actions
   before emitting SQL.
 - `ManyToMany(..., through=...)` now fails clearly because custom through
@@ -55,12 +59,32 @@ fixed.
   author = fields.ForeignKey(User, on_delete="SET_NULL", nullable=True)
   ```
 
+- `QuerySet.update()` may now include `auto_now` fields such as `updated_at`
+  when regular fields change. Explicit `updated_at` values remain respected.
+- Invalid or arbitrary `on_delete` text now raises instead of being emitted into
+  relation DDL.
+- `ManyToMany(..., through=...)` now raises a clear unsupported-feature error
+  instead of implying custom through model support.
+- `bulk_update()` SQL for Vector fields now includes `CAST($n AS vector)`
+  inside CASE branches.
+- Aksara remains pre-1.0, and additional ORM correctness work remains planned.
+
 ### Tests
 
 - Added regression coverage for write-path timestamp hydration, vector
   subclass casting, relation `on_delete` validation, nullable `SET NULL`
   enforcement, migration DDL action validation, custom through rejection, and
   forward FK id access.
+
+### Remaining Known ORM Correctness Work
+
+- Lazy forward FK object loading, if desired.
+- Custom ManyToMany through model support.
+- Array item typing and nested array policy.
+- Vector precision policy.
+- FileField/ImageField `to_python()` contract.
+- JSON scalar behavior.
+- Relation features not implemented by the current relation manager APIs.
 
 ---
 

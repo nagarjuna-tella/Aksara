@@ -25,6 +25,12 @@ created_users = await User.objects.bulk_create(
 # ❌ Instead of 10,000 individual INSERT queries
 ```
 
+`bulk_create()` prepares every row before insertion. Auto-managed timestamp
+fields such as `updated_at` are populated before insert, field preparation hooks
+such as `Slug(auto_from=...)` run, and explicit per-row `auto_now_add` values
+such as `created_at` are preserved. Returned objects are hydrated from
+`INSERT ... RETURNING *`, including database-generated defaults.
+
 ### Ignoring Conflicts
 
 If you want to skip records that violate unique constraints instead of raising exceptions, use `ignore_conflicts=True`. This utilizes PostgreSQL's `ON CONFLICT DO NOTHING`.
@@ -63,6 +69,14 @@ updated_count = await Post.objects.bulk_update(
 
 print(f"Updated {updated_count} posts")
 ```
+
+For Vector fields, `bulk_update()` casts CASE branch parameters as PostgreSQL
+`vector` values. Ordinary scalar and foreign-key bulk updates keep their normal
+SQL shape.
+
+`QuerySet.update()` also refreshes `auto_now` fields such as `updated_at` when
+regular fields are updated. If you explicitly pass `updated_at`, that value is
+respected; `update(updated_at=...)` does not override itself.
 
 ---
 

@@ -314,27 +314,24 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.53
+## What's New in v0.5.54
 
-- **NULL filter correctness** — `filter(field=None)` and
-    `filter(field__exact=None)` now compile to `IS NULL` instead of equality
-    against a NULL parameter, so NULL rows are now returned.
-- **Strict `__isnull` parsing** — string values like `"False"` and `"0"` are
-    treated as false; invalid values raise a validation error instead of being
-    treated as truthy.
-- **FK alias filters** — column aliases like `author_id` are accepted in filters
-    when they correspond to a real `ForeignKey` or `OneToOne` database column,
-    and reverse FK filters work through the corrected alias handling.
-- **Migration table ordering** — `CreateTable` operations are ordered by FK/O2O
-    dependency, and `DropTable` uses reverse order; `makemigrations --sql` uses
-    the same ordering.
-- **Array nullable=False in migrations** — `Array(nullable=False)` fields now
-    emit `nullable=False` correctly in generated migration code.
-- **Extended migration codegen** — `SmallIntegerField`, `TimeField`,
-    `DurationField`, `SlugField`, `IPAddressField`, `BinaryField`, and
-    `FilePathField` now have codegen support.
-- **Compatibility notes** — `filter(field=None)` behavior change is intentional.
-    Aksara remains pre-1.0. Additional ORM correctness work is planned.
+- **Bulk write preparation** — `bulk_create()` now prepares rows before insert,
+    applies auto-managed timestamps, runs field preparation hooks such as
+    `Slug(auto_from=...)`, and preserves mixed implicit/explicit
+    `auto_now_add` values.
+- **Explicit update timestamp policy** — `QuerySet.update()` now refreshes
+    `auto_now` fields such as `updated_at` when regular fields change, while
+    respecting explicit `updated_at` values.
+- **Vector bulk updates** — `bulk_update()` now casts Vector CASE branch values
+    with `CAST($n AS vector)`.
+- **Relation action safety** — `ForeignKey` and `OneToOne` now normalize and
+    validate `on_delete` actions before DDL generation.
+- **SET_NULL compatibility note** — `SET_NULL` / `SET NULL` now requires
+    `nullable=True`.
+- **Relation contracts** — custom through models fail clearly while unsupported,
+    and forward FK/O2O attributes are documented as stored id access; use
+    explicit queries or `select_related()` plus `get_related()` for objects.
 
 [Full changelog →](changelog.md)
 

@@ -54,6 +54,10 @@ class Post(Model):
 | `related_name` | `str` | `{model}_set` | Name for reverse relation |
 | `nullable` | `bool` | `False` | Allow NULL values |
 
+`on_delete` accepts the canonical values `CASCADE`, `SET NULL`, `RESTRICT`, and
+`PROTECT`. Matching is case-insensitive, `SET_NULL`-style underscore variants
+are accepted, and `OnDelete` enum instances may be used.
+
 ### Forward Access
 
 Access the stored foreign-key value from the child:

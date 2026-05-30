@@ -10,6 +10,29 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.5.54 - ORM Write & Relation Correctness
+
+- `bulk_create()` now prepares rows before insert, applies auto-managed
+  timestamps, runs field preparation hooks, and preserves mixed
+  implicit/explicit `auto_now_add` values.
+- `QuerySet.update()` now refreshes `auto_now` fields such as `updated_at` when
+  regular fields change, while respecting explicit `updated_at` values.
+- `bulk_update()` now casts Vector values inside CASE branches.
+- `ForeignKey` and `OneToOne` now share normalized `on_delete` validation, and
+  invalid actions are rejected before DDL generation.
+- `SET_NULL` / `SET NULL` now requires `nullable=True`.
+- Custom `ManyToMany(..., through=...)` models now fail clearly because custom
+  through models are not supported yet.
+- The forward FK access contract is documented: field and `*_id` attributes
+  expose the stored FK id; load related objects explicitly or with
+  `select_related()` plus `get_related()`.
+- This release focuses on ORM write-path consistency and relation safety.
+  It does not claim production readiness or external security review.
+
+---
+
+## Recent Releases
+
 ### v0.5.53 - ORM Query Semantics & Migration Generation Correctness
 
 - `filter(field=None)` and `filter(field__exact=None)` now compile to `IS NULL`
@@ -27,10 +50,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 - Migration codegen supports additional field operations.
 - This release focuses on query semantics and migration generation correctness.
   It does not claim production readiness or external security review.
-
----
-
-## Recent Releases
 
 ### v0.5.52 - Admin Correctness & Permissions
 
@@ -125,11 +144,13 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 Planned ORM correctness work remains:
 
-- Write-path consistency across `bulk_create()`, `bulk_update()`, and other
-  write surfaces.
-- `QuerySet.update()` explicit `updated_at` policy.
-- Relation DDL safety.
-- Advanced Array/vector/file field policy.
+- Lazy forward FK object loading, if desired.
+- Custom ManyToMany through model support.
+- Advanced Array/vector/file field policy, including array item/nested array
+  handling and vector precision.
+- FileField/ImageField `to_python()` contract.
+- JSON scalar behavior.
+- Relation features not implemented by the current relation manager APIs.
 
 ### v0.5.x - Durable AI Session Store
 

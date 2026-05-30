@@ -50,7 +50,7 @@ Verify it worked:
 
 ```bash
 aksara --version
-# Output: aksara, version 0.5.53
+# Output: aksara, version 0.5.54
 ```
 
 ---
@@ -114,7 +114,7 @@ This will:
 After the prompts, a successful run ends with output like this:
 
 ```
-  ⚡ Aksara v0.5.53
+  ⚡ Aksara v0.5.54
   Database Setup
 
   ✓ found (localhost:5432)
@@ -282,7 +282,7 @@ aksara dev main:app
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
 
-    AI-native async backend  ·  Dev Server  ·  v0.5.53
+    AI-native async backend  ·  Dev Server  ·  v0.5.54
 
   ● App       http://127.0.0.1:8000/
   ● Admin     http://127.0.0.1:8000/admin/

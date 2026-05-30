@@ -8,11 +8,10 @@ All notable changes to Aksara.
 
 ## v0.5.54 — ORM Write & Relation Correctness
 
-Unreleased.
+Released 2026-05-30.
 
 This release focuses on targeted write-path consistency and relation safety
-fixes from the ORM audit. It does not claim that all ORM correctness issues are
-fixed.
+fixes. It does not claim that all ORM correctness issues are fixed.
 
 ### ORM Write & Relation Correctness
 
@@ -50,6 +49,9 @@ fixed.
 
 #### Compatibility / Behavior Changes
 
+- `QuerySet.update()` may now include `auto_now` fields such as `updated_at`
+  when regular fields change. Explicit `updated_at` values remain respected,
+  and `update(updated_at=...)` does not override itself.
 - `ForeignKey(..., on_delete="SET_NULL")` and
   `ForeignKey(..., on_delete="SET NULL")` now require `nullable=True`.
   `SET NULL` on a non-nullable relation creates contradictory runtime and DDL
@@ -67,6 +69,14 @@ fixed.
   ```python
   author = fields.ForeignKey(User, on_delete="SET_NULL", nullable=True)
   ```
+
+- Invalid or arbitrary `on_delete` text now raises instead of being emitted into
+  relation DDL.
+- `ManyToMany(..., through=...)` now raises a clear unsupported-feature error
+  instead of implying custom through model support.
+- `bulk_update()` SQL for Vector fields now includes `CAST($n AS vector)`
+  inside CASE branches.
+- Aksara remains pre-1.0, and additional ORM correctness work remains planned.
 
 #### Tests
 
@@ -136,7 +146,7 @@ This section covers focused ORM query-semantics fixes.
 - `bulk_create()` and other write paths still need consistency work.
 - `QuerySet.update()` still needs an explicit `updated_at` policy.
 - Vector `bulk_update()` casting still needs follow-up work.
-- Relation DDL safety remains on the audit backlog.
+- Relation DDL safety remains on the planned follow-up backlog.
 - Array, vector, and file advanced-field policy decisions remain open.
 
 ### Compatibility Notes
