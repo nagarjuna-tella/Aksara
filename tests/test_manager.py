@@ -4,13 +4,25 @@ Tests for QuerySet and Manager
 Unit tests for the query API.
 """
 
+import asyncio
 import os
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 from aksara import Model, fields
+from aksara.db.expressions import F
 from aksara.manager import QuerySet, Manager, DoesNotExist, MultipleObjectsReturned
 from aksara.registry import ModelRegistry
+
+
+class _CapturingDB:
+    """Stand-in for the Database singleton that records write calls."""
+
+    def __init__(self, fetch_return=None, execute_return="UPDATE 0"):
+        self.fetch = AsyncMock(return_value=fetch_return or [])
+        self.execute = AsyncMock(return_value=execute_return)
 
 
 @pytest.fixture(autouse=True)
@@ -225,6 +237,142 @@ class TestManager:
         assert qs._filters == {"email": "test@example.com"}
 
 
+class TestWritePathSQL:
+    """SQL-level regressions for write-path consistency fixes."""
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_prepares_slug_and_keeps_later_explicit_created_at(self):
+        class Article(Model):
+            title = fields.String(max_length=200)
+            slug = fields.Slug(max_length=200, auto_from="title")
+
+        explicit_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        first = Article(title="Hello World")
+        second = Article(title="Second Post", created_at=explicit_created)
+
+        db = _CapturingDB()
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await Article.objects.bulk_create([first, second])
+
+        query = db.fetch.await_args.args[0]
+        params = db.fetch.await_args.args[1:]
+
+        assert first.slug == "hello-world"
+        assert second.slug == "second-post"
+        assert first.updated_at is not None
+        assert second.updated_at is not None
+        assert '"created_at"' in query
+        assert "DEFAULT" in query
+        assert explicit_created in params
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_auto_now_overwrites_explicit_updated_at_like_save(self):
+        class Article(Model):
+            title = fields.String(max_length=200)
+
+        explicit_updated = datetime(1999, 1, 1, tzinfo=timezone.utc)
+        article = Article(title="Old timestamp", updated_at=explicit_updated)
+
+        db = _CapturingDB()
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await Article.objects.bulk_create([article])
+
+        params = db.fetch.await_args.args[1:]
+        assert article.updated_at is not None
+        assert article.updated_at != explicit_updated
+        assert explicit_updated not in params
+
+    @pytest.mark.asyncio
+    async def test_queryset_update_adds_auto_now_for_regular_updates(self):
+        class User(Model):
+            age = fields.Integer(default=0)
+
+        db = _CapturingDB(execute_return="UPDATE 1")
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            updated = await QuerySet(User).filter(age__gte=0).update(age=F("age") + 1)
+
+        query = db.execute.await_args.args[0]
+        params = db.execute.await_args.args[1:]
+
+        assert updated == 1
+        assert '"age" = ("age" + $1)' in query
+        assert '"updated_at" = $2' in query
+        assert 'WHERE "age" >= $3' in query
+        assert params[0] == 1
+        assert isinstance(params[1], datetime)
+        assert params[2] == 0
+
+    @pytest.mark.asyncio
+    async def test_queryset_update_respects_explicit_updated_at_only_update(self):
+        class User(Model):
+            age = fields.Integer(default=0)
+
+        explicit_updated = datetime(2001, 1, 1, tzinfo=timezone.utc)
+        db = _CapturingDB(execute_return="UPDATE 1")
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await QuerySet(User).update(updated_at=explicit_updated)
+
+        query = db.execute.await_args.args[0]
+        params = db.execute.await_args.args[1:]
+
+        assert query.count('"updated_at"') == 1
+        assert params == (explicit_updated,)
+
+    @pytest.mark.asyncio
+    async def test_queryset_update_vector_subclass_uses_vector_cast(self):
+        class CustomVector(fields.Vector):
+            pass
+
+        class Embedding(Model):
+            embedding = CustomVector(dimensions=3)
+
+        db = _CapturingDB(execute_return="UPDATE 1")
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await QuerySet(Embedding).update(embedding=[1, 2, 3])
+
+        query = db.execute.await_args.args[0]
+        assert '"embedding" = CAST($1 AS vector)' in query
+
+    @pytest.mark.asyncio
+    async def test_bulk_update_vector_casts_case_values(self):
+        class CustomVector(fields.Vector):
+            pass
+
+        class Embedding(Model):
+            embedding = CustomVector(dimensions=3)
+
+        instance = Embedding(embedding=[1, 2, 3])
+        instance._is_new = False
+        instance._data["id"] = uuid4()
+        instance.embedding = [4, 5, 6]
+
+        db = _CapturingDB(execute_return="UPDATE 1")
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await Embedding.objects.bulk_update([instance], ["embedding"])
+
+        query = db.execute.await_args.args[0]
+        normalized = " ".join(query.split())
+        assert 'WHEN "id" = $1 THEN CAST($2 AS vector)' in normalized
+        assert '"embedding" = CASE' in normalized
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_vector_subclass_uses_vector_cast(self):
+        class CustomVector(fields.Vector):
+            pass
+
+        class Embedding(Model):
+            embedding = CustomVector(dimensions=3)
+
+        instance = Embedding(embedding=[1, 2, 3])
+
+        db = _CapturingDB()
+        with patch("aksara.db.Database.get_instance", return_value=db):
+            await Embedding.objects.bulk_create([instance])
+
+        query = db.fetch.await_args.args[0]
+        assert "CAST($1 AS vector)" in query
+
+
 class TestExceptions:
     """Tests for ORM exceptions."""
     
@@ -297,3 +445,131 @@ class TestQuerySetNullDatabase:
         users = await null_user_model.objects.filter(email__isnull="False").all()
 
         assert [user.id for user in users] == [present_user.id]
+
+
+@pytest.mark.skipif(not os.getenv("DATABASE_URL"), reason="DATABASE_URL not set")
+class TestWritePathDatabase:
+    """DB-backed regressions for ORM write-path consistency."""
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_sets_updated_at_for_single_and_multiple_rows(self, db):
+        class BulkTimestampUser(Model):
+            __tablename__ = "bulk_timestamp_users_v054"
+            email = fields.String(max_length=255)
+
+        await db.execute('DROP TABLE IF EXISTS "bulk_timestamp_users_v054" CASCADE')
+        await db.execute(BulkTimestampUser.get_create_table_sql())
+
+        try:
+            created = await BulkTimestampUser.objects.create(email="create@example.com")
+            single = await BulkTimestampUser.objects.bulk_create([
+                BulkTimestampUser(email="bulk-one@example.com")
+            ])
+            many = await BulkTimestampUser.objects.bulk_create([
+                BulkTimestampUser(email="bulk-two@example.com"),
+                BulkTimestampUser(email="bulk-three@example.com"),
+            ])
+
+            assert created.updated_at is not None
+            assert single[0].updated_at is not None
+            assert all(user.updated_at is not None for user in many)
+        finally:
+            await db.execute('DROP TABLE IF EXISTS "bulk_timestamp_users_v054" CASCADE')
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_preserves_later_explicit_created_at(self, db):
+        class BulkCreatedAtUser(Model):
+            __tablename__ = "bulk_created_at_users_v054"
+            email = fields.String(max_length=255)
+
+        explicit_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+
+        await db.execute('DROP TABLE IF EXISTS "bulk_created_at_users_v054" CASCADE')
+        await db.execute(BulkCreatedAtUser.get_create_table_sql())
+
+        try:
+            first_obj = BulkCreatedAtUser(email="first@example.com")
+            second_obj = BulkCreatedAtUser(
+                email="second@example.com",
+                created_at=explicit_created,
+            )
+            returned = await BulkCreatedAtUser.objects.bulk_create([first_obj, second_obj])
+
+            first = await BulkCreatedAtUser.objects.get(email="first@example.com")
+            second = await BulkCreatedAtUser.objects.get(email="second@example.com")
+
+            assert returned == [first_obj, second_obj]
+            assert first_obj.created_at is not None
+            assert first_obj.created_at == first.created_at
+            assert second_obj.created_at == explicit_created
+            assert second_obj.created_at == second.created_at
+            assert first_obj._is_new is False
+            assert second_obj._is_new is False
+            assert first.created_at is not None
+            assert second.created_at == explicit_created
+        finally:
+            await db.execute('DROP TABLE IF EXISTS "bulk_created_at_users_v054" CASCADE')
+
+    @pytest.mark.asyncio
+    async def test_bulk_create_runs_async_prepare_for_slug(self, db):
+        class BulkSlugArticle(Model):
+            __tablename__ = "bulk_slug_articles_v054"
+            title = fields.String(max_length=200)
+            slug = fields.Slug(max_length=200, auto_from="title")
+
+        await db.execute('DROP TABLE IF EXISTS "bulk_slug_articles_v054" CASCADE')
+        await db.execute(BulkSlugArticle.get_create_table_sql())
+
+        try:
+            bulk = await BulkSlugArticle.objects.bulk_create([
+                BulkSlugArticle(title="Hello World")
+            ])
+            created = await BulkSlugArticle.objects.create(title="Hello World")
+
+            assert bulk[0].slug == "hello-world"
+            assert created.slug == "hello-world"
+        finally:
+            await db.execute('DROP TABLE IF EXISTS "bulk_slug_articles_v054" CASCADE')
+
+    @pytest.mark.asyncio
+    async def test_queryset_update_updated_at_policy(self, db):
+        class UpdatePolicyUser(Model):
+            __tablename__ = "update_policy_users_v054"
+            email = fields.String(max_length=255)
+            age = fields.Integer(default=0)
+
+        await db.execute('DROP TABLE IF EXISTS "update_policy_users_v054" CASCADE')
+        await db.execute(UpdatePolicyUser.get_create_table_sql())
+
+        try:
+            user = await UpdatePolicyUser.objects.create(
+                email="update-policy@example.com",
+                age=0,
+            )
+            initial_updated_at = user.updated_at
+
+            await asyncio.sleep(0.01)
+            await UpdatePolicyUser.objects.filter(id=user.id).update(age=1)
+            after_age_update = await UpdatePolicyUser.objects.get(id=user.id)
+
+            assert after_age_update.age == 1
+            assert after_age_update.updated_at > initial_updated_at
+
+            explicit_updated = datetime(2001, 1, 1, tzinfo=timezone.utc)
+            await UpdatePolicyUser.objects.filter(id=user.id).update(
+                updated_at=explicit_updated
+            )
+            after_explicit_update = await UpdatePolicyUser.objects.get(id=user.id)
+
+            assert after_explicit_update.updated_at == explicit_updated
+
+            await asyncio.sleep(0.01)
+            await UpdatePolicyUser.objects.filter(id=user.id).update(
+                age=F("age") + 1
+            )
+            after_f_update = await UpdatePolicyUser.objects.get(id=user.id)
+
+            assert after_f_update.age == 2
+            assert after_f_update.updated_at > explicit_updated
+        finally:
+            await db.execute('DROP TABLE IF EXISTS "update_policy_users_v054" CASCADE')

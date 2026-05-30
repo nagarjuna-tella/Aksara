@@ -270,9 +270,15 @@ class TestUpdateExpressions:
         assert updated == 3
         query = fake_db.execute.await_args.args[0]
         params = fake_db.execute.await_args.args[1:]
-        assert 'UPDATE "metric_records" SET "views" = ("views" + $1), "title" = $2' in query
-        assert 'WHERE "likes" >= $3' in query
-        assert params == (1, "popular", 10)
+        assert (
+            'UPDATE "metric_records" SET "views" = ("views" + $1), '
+            '"title" = $2, "updated_at" = $3'
+        ) in query
+        assert 'WHERE "likes" >= $4' in query
+        assert params[0] == 1
+        assert params[1] == "popular"
+        assert isinstance(params[2], datetime)
+        assert params[3] == 10
 
     def test_from_record_handles_iterator_keys_and_assigns_annotation_attributes(self):
         class FakeAsyncpgRecord:

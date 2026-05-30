@@ -55,6 +55,61 @@ class OnDelete(str, Enum):
         return self.value
 
 
+_RUNTIME_ON_DELETE_ACTIONS = {
+    "CASCADE": "CASCADE",
+    "SET NULL": "SET NULL",
+    "RESTRICT": "RESTRICT",
+    "PROTECT": "RESTRICT",
+}
+
+_DDL_FK_ACTIONS = {
+    **_RUNTIME_ON_DELETE_ACTIONS,
+    "SET DEFAULT": "SET DEFAULT",
+    "NO ACTION": "NO ACTION",
+    "DO NOTHING": "NO ACTION",
+}
+
+
+def _normalize_action_token(action: Any) -> str:
+    raw = getattr(action, "value", action)
+    return str(raw).strip().upper().replace("_", " ")
+
+
+def normalize_on_delete(action: Any, *, nullable: Optional[bool] = None) -> str:
+    """
+    Normalize and validate runtime FK/O2O ``on_delete`` values.
+
+    Runtime relation fields intentionally support the behaviours Aksara can
+    enforce today: CASCADE, SET NULL, and RESTRICT/PROTECT.
+    """
+    token = _normalize_action_token(action)
+    if token not in _RUNTIME_ON_DELETE_ACTIONS:
+        raise ValueError(
+            f"Invalid on_delete action: {action!r}. "
+            "Allowed canonical values: CASCADE, SET NULL, RESTRICT, PROTECT. "
+            "Values are case-insensitive; underscore and space variants such as "
+            "SET_NULL and SET NULL are accepted; OnDelete enum instances are accepted."
+        )
+
+    normalized = _RUNTIME_ON_DELETE_ACTIONS[token]
+    if normalized == OnDelete.SET_NULL.value and nullable is False:
+        raise ValueError("on_delete=SET NULL requires nullable=True")
+    return normalized
+
+
+def normalize_fk_action(action: Any) -> str:
+    """
+    Normalize and validate SQL FK referential actions for migration DDL.
+    """
+    token = _normalize_action_token(action)
+    if token not in _DDL_FK_ACTIONS:
+        raise ValueError(
+            f"Invalid FK action: {action!r}. "
+            f"Allowed: {', '.join(sorted(set(_DDL_FK_ACTIONS.values())))}"
+        )
+    return _DDL_FK_ACTIONS[token]
+
+
 class RelationMeta:
     """
     Metadata about a relation between two models.

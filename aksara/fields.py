@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from aksara.relations import OnDelete as OnDeleteType
 
 from aksara.i18n import normalize_datetime_for_storage, normalize_datetime_from_storage
+from aksara.relations import normalize_on_delete
 from aksara.storage import FieldFile, build_upload_name, get_default_storage, read_uploaded_content
 
 
@@ -2890,8 +2891,7 @@ class ForeignKey(Field):
         )
         self._to = to
         self._column_name = column_name
-        # Normalize on_delete to string (handles both string and OnDelete enum)
-        self.on_delete = on_delete.upper() if isinstance(on_delete, str) else str(on_delete)
+        self.on_delete = normalize_on_delete(on_delete, nullable=nullable)
         self.related_name = related_name
         
         # These will be set after model class creation
@@ -3149,6 +3149,9 @@ class ManyToMany(Field):
         ai_agent_writable: bool = True,
     ):
         # ManyToMany doesn't have a direct column, so nullable doesn't apply
+        if through is not None:
+            raise ValueError("Custom through models are not supported yet")
+
         super().__init__(
             nullable=True,  # No actual column
             ai_description=ai_description,

@@ -16,7 +16,7 @@ Aksara supports three types of relationships:
 
 All relationships support:
 
-- **Forward access** — Access related objects from the defining model
+- **Forward access** — Access stored FK values or relation managers from the defining model
 - **Reverse access** — Access back from the related model
 - **AI metadata** — Relationship descriptions for LLMs
 
@@ -56,19 +56,24 @@ class Post(Model):
 
 ### Forward Access
 
-Access the related object from the child:
+Access the stored foreign-key value from the child:
 
 ```python
 # Get a post
 post = await Post.objects.get(id=post_id)
 
-# Access the author (async call for lazy loading)
-author = await post.author
-print(author.name)
-
-# Or access the raw FK value (synchronous)
+# Forward FK fields currently expose the stored FK value/id.
 author_id = post.author_id
+# post.author currently exposes the same stored FK value/id.
+same_author_id = post.author
+
+# Load the related object explicitly.
+author = await Author.objects.get(id=author_id)
 ```
+
+Today, `post.author` and `post.author_id` expose the same stored FK value/id;
+`post.author` is not a lazy-loaded related object. For eager loading, use
+`select_related()` and then read the loaded object with `get_related("author")`.
 
 ### Reverse Access
 
@@ -190,7 +195,9 @@ class UserProfile(Model):
 
 ```python
 profile = await UserProfile.objects.get(id=profile_id)
-user = await profile.user
+user_id = profile.user_id
+# profile.user currently exposes the same stored FK value/id.
+user = await User.objects.get(id=user_id)
 print(user.email)
 ```
 
@@ -237,7 +244,7 @@ class Post(Model):
 |--------|------|---------|-------------|
 | `to` | `str` or `type` | Required | Target model |
 | `related_name` | `str` | `{model}_set` | Name for reverse relation |
-| `through` | `str` | Auto-generated | Custom junction table |
+| `through` | `str` | Unsupported | Custom through models are not supported yet |
 
 ### Forward Access
 
@@ -291,27 +298,9 @@ CREATE TABLE post_tags (
 
 ### Custom Through Model
 
-For additional data on the relationship:
-
-```python
-class PostTag(Model):
-    """Junction table with extra fields."""
-    post = fields.ForeignKey(Post, on_delete=CASCADE)
-    tag = fields.ForeignKey(Tag, on_delete=CASCADE)
-    added_at = fields.DateTime(auto_now_add=True)
-    added_by = fields.ForeignKey(User, on_delete=SET_NULL, nullable=True)
-    
-    class Meta:
-        unique_together = [("post", "tag")]
-
-class Post(Model):
-    title = fields.String(max_length=200)
-    tags = fields.ManyToMany(
-        Tag,
-        through="PostTag",  # Use custom junction
-        related_name="posts",
-    )
-```
+Custom through models are not supported yet. Passing `through=` raises a clear
+configuration error instead of silently creating a join table that cannot store
+the custom model's extra fields.
 
 ---
 
@@ -357,7 +346,8 @@ child = await Category.objects.create(name="Phones", parent=parent)
 phones = await parent.children.all()
 
 # Access parent
-electronics = await child.parent
+electronics_id = child.parent_id
+electronics = await Category.objects.get(id=electronics_id)
 ```
 
 ---
@@ -385,12 +375,13 @@ Avoid N+1 queries by loading related objects in one query:
 # Without select_related: N+1 queries
 posts = await Post.objects.all()
 for post in posts:
-    author = await post.author  # Query per post!
+    author = await Author.objects.get(id=post.author_id)  # Query per post
 
 # With select_related: Single query
 posts = await Post.objects.select_related("author").all()
 for post in posts:
-    print(post.author.name)  # Already loaded
+    author = post.get_related("author")
+    print(author.name)
 ```
 
 ### Prefetch Related (For M2M)
@@ -399,7 +390,7 @@ for post in posts:
 # Efficient M2M loading
 posts = await Post.objects.prefetch_related("tags").all()
 for post in posts:
-    for tag in post.tags:
+    for tag in post.get_prefetched_m2m("tags"):
         print(tag.name)
 ```
 

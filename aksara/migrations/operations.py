@@ -24,18 +24,14 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple, Union
 
+from aksara.relations import normalize_fk_action
+
 logger = logging.getLogger(__name__)
 
 
 # =============================================================================
 # Security: SQL Identifier Quoting
 # =============================================================================
-
-# Valid FK referential actions
-_VALID_FK_ACTIONS = frozenset({
-    "CASCADE", "SET NULL", "SET DEFAULT", "RESTRICT", "NO ACTION",
-})
-
 
 def _quote_ident(name: str) -> str:
     """
@@ -55,12 +51,14 @@ def _validate_fk_action(action: str) -> str:
     Raises ValueError if the action is not a recognised PostgreSQL
     referential action keyword.
     """
-    normalised = action.strip().upper()
-    if normalised not in _VALID_FK_ACTIONS:
-        raise ValueError(
-            f"Invalid FK action: {action!r}. "
-            f"Allowed: {', '.join(sorted(_VALID_FK_ACTIONS))}"
-        )
+    return normalize_fk_action(action)
+
+
+def _validate_fk_delete_action(action: str, *, nullable: bool) -> str:
+    """Validate an ON DELETE action against the relation column nullability."""
+    normalised = _validate_fk_action(action)
+    if normalised == "SET NULL" and not nullable:
+        raise ValueError("on_delete=SET NULL requires nullable=True")
     return normalised
 
 
@@ -962,6 +960,9 @@ class OneToOneField(FieldOp):
         self.column_type = column_type
     
     def to_sql(self) -> str:
+        _validate_fk_delete_action(self.on_delete, nullable=self.nullable)
+        _validate_fk_action(self.on_update)
+
         parts = [self.column_type]
         
         if not self.nullable:
@@ -973,7 +974,7 @@ class OneToOneField(FieldOp):
     def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
         prefix = f"{table_name}_" if table_name else ""
-        on_del = _validate_fk_action(self.on_delete)
+        on_del = _validate_fk_delete_action(self.on_delete, nullable=self.nullable)
         on_upd = _validate_fk_action(self.on_update)
         return (
             f"CONSTRAINT fk_{prefix}{column_name} "
@@ -1068,6 +1069,9 @@ class ForeignKeyField(FieldOp):
         self.column_type = column_type
     
     def to_sql(self) -> str:
+        _validate_fk_delete_action(self.on_delete, nullable=self.nullable)
+        _validate_fk_action(self.on_update)
+
         parts = [self.column_type]
         
         if not self.nullable:
@@ -1079,7 +1083,7 @@ class ForeignKeyField(FieldOp):
     def get_constraint_sql(self, column_name: str, table_name: str = "") -> str:
         """Generate the FOREIGN KEY constraint SQL."""
         prefix = f"{table_name}_" if table_name else ""
-        on_del = _validate_fk_action(self.on_delete)
+        on_del = _validate_fk_delete_action(self.on_delete, nullable=self.nullable)
         on_upd = _validate_fk_action(self.on_update)
         return (
             f"CONSTRAINT fk_{prefix}{column_name} "

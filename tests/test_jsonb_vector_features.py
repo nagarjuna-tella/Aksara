@@ -101,3 +101,34 @@ class TestVectorFieldIntegration:
         fetched = await EmbeddingRecord.objects.get(id=created.id)
 
         assert fetched.embedding == [1.0, 2.0, 3.0]
+
+    @pytest.mark.asyncio
+    async def test_bulk_update_vectors_when_extension_available(self, db):
+        extension_available = await db.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM pg_available_extensions WHERE name = 'vector')"
+        )
+        if not extension_available:
+            pytest.skip("pgvector extension is not available")
+
+        await db.execute("CREATE EXTENSION IF NOT EXISTS vector")
+
+        class EmbeddingRecord(Model):
+            title = fields.String(max_length=200)
+            embedding = fields.Vector(dimensions=3)
+
+            class Meta:
+                table_name = "json_vector_records"
+
+        await db.execute(EmbeddingRecord.get_create_table_sql())
+
+        created = await EmbeddingRecord.objects.create(
+            title="Vector",
+            embedding=[1, 2, 3],
+        )
+        created.embedding = [4, 5, 6]
+
+        updated = await EmbeddingRecord.objects.bulk_update([created], ["embedding"])
+        fetched = await EmbeddingRecord.objects.get(id=created.id)
+
+        assert updated == 1
+        assert fetched.embedding == [4.0, 5.0, 6.0]
