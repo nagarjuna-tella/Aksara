@@ -33,6 +33,61 @@ class MockArticle(Model):
         table = "articles"
 
 
+class TestForeignKeySafety:
+    """Tests for FK/O2O relation configuration safety."""
+
+    def test_foreign_key_on_delete_accepts_valid_values(self):
+        field = ForeignKey(MockCategory, on_delete="CASCADE")
+        assert field.on_delete == "CASCADE"
+
+    def test_foreign_key_on_delete_normalizes_case(self):
+        field = ForeignKey(MockCategory, on_delete="cascade")
+        assert field.on_delete == "CASCADE"
+
+    def test_foreign_key_on_delete_normalizes_set_null_constant_style(self):
+        field = ForeignKey(MockCategory, on_delete="SET_NULL", nullable=True)
+        assert field.on_delete == "SET NULL"
+
+    def test_foreign_key_protect_aliases_to_restrict(self):
+        field = ForeignKey(MockCategory, on_delete="PROTECT")
+        assert field.on_delete == "RESTRICT"
+
+    def test_foreign_key_rejects_invalid_on_delete(self):
+        with pytest.raises(ValueError, match="Invalid on_delete action.*Allowed"):
+            ForeignKey(MockCategory, on_delete="DROP TABLE users")
+
+    def test_one_to_one_rejects_invalid_on_delete(self):
+        with pytest.raises(ValueError, match="Invalid on_delete action.*Allowed"):
+            OneToOne(MockCategory, on_delete="DROP TABLE users")
+
+    def test_foreign_key_set_null_requires_nullable_true(self):
+        with pytest.raises(ValueError, match="SET NULL requires nullable=True"):
+            ForeignKey(MockCategory, on_delete="SET NULL", nullable=False)
+
+    def test_foreign_key_set_null_nullable_true_passes(self):
+        field = ForeignKey(MockCategory, on_delete="SET NULL", nullable=True)
+        assert field.on_delete == "SET NULL"
+        assert field.nullable is True
+
+    def test_one_to_one_set_null_requires_nullable_true(self):
+        with pytest.raises(ValueError, match="SET NULL requires nullable=True"):
+            OneToOne(MockCategory, on_delete="SET NULL", nullable=False)
+
+    def test_forward_fk_access_returns_stored_id_and_alias(self):
+        class Author(Model):
+            name = String(max_length=100)
+
+        class Post(Model):
+            title = String(max_length=100)
+            author = ForeignKey(Author)
+
+        author_id = uuid4()
+        post = Post(title="Contract", author_id=author_id)
+
+        assert post.author == author_id
+        assert post.author_id == author_id
+
+
 class TestOneToOneField:
     """Tests for OneToOne field."""
     
@@ -76,7 +131,7 @@ class TestOneToOneField:
         assert field.on_delete == "CASCADE"
     
     def test_on_delete_custom(self):
-        field = OneToOne(MockCategory, on_delete="SET NULL")
+        field = OneToOne(MockCategory, on_delete="SET NULL", nullable=True)
         assert field.on_delete == "SET NULL"
     
     def test_to_model(self):
@@ -103,6 +158,10 @@ class TestManyToManyField:
     def test_related_name(self):
         field = ManyToMany(MockTag, related_name="articles")
         assert field.related_name == "articles"
+
+    def test_custom_through_model_is_rejected_until_supported(self):
+        with pytest.raises(ValueError, match="Custom through models are not supported yet"):
+            ManyToMany(MockTag, through=MockArticle)
     
     def test_join_table_name_generation(self):
         field = ManyToMany(MockTag)

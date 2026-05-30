@@ -6,6 +6,67 @@ All notable changes to Aksara.
 
 ---
 
+## v0.5.54 — ORM Write & Relation Correctness
+
+Unreleased.
+
+This release focuses on targeted write-path consistency and relation safety
+fixes from the ORM audit. It does not claim that all ORM correctness issues are
+fixed.
+
+### ORM Write & Relation Correctness
+
+#### Fixed
+
+- `bulk_create()` now aligns more closely with `create()` and `save()` for
+  auto-managed fields, including non-null `updated_at` values for default
+  timestamp fields.
+- `bulk_create()` now runs field preparation hooks before insertion, so fields
+  such as `Slug(auto_from=...)` behave consistently with `save()`.
+- `bulk_create()` now determines insert columns after row preparation and
+  preserves explicit per-row `auto_now_add` values such as `created_at` instead
+  of silently ignoring later-row values.
+- `QuerySet.update()` now has an explicit `updated_at` policy: auto-managed
+  `auto_now` fields are refreshed when regular fields are updated, while
+  caller-provided `updated_at` values are respected.
+- `bulk_update()` now casts `Vector` field CASE branch parameters with
+  `CAST($n AS vector)`, matching normal vector update behavior.
+- `ForeignKey` and `OneToOne` now validate `on_delete` values, normalize
+  supported casing/aliases, and reject unknown actions before DDL generation.
+- `on_delete=SET NULL` now requires `nullable=True` for `ForeignKey`,
+  `OneToOne`, and migration relation field operations.
+- Migration relation DDL now validates `ON DELETE` and `ON UPDATE` actions
+  before emitting SQL, so arbitrary text cannot be interpolated into relation
+  constraints.
+- `ManyToMany(..., through=...)` now fails clearly because custom through
+  models are not supported yet.
+- The forward FK access contract is documented: forward FK/O2O attributes
+  expose the stored FK value/id, while related objects should be loaded
+  explicitly or through `select_related()` plus `get_related()`.
+
+#### Tests
+
+- Added SQL-level and DB-backed regression coverage for `bulk_create()`
+  timestamp handling, async field preparation, mixed explicit/implicit
+  `created_at`, `QuerySet.update()` `updated_at` policy, F-expression updates,
+  vector `bulk_update()` casting, relation `on_delete` validation, nullable
+  `SET NULL` enforcement, migration DDL action validation, custom through
+  rejection, and forward FK id access.
+
+#### Remaining Known ORM Correctness Work
+
+- Lazy forward FK object loading is not implemented; use explicit queries or
+  `select_related()` with `get_related()`.
+- Custom ManyToMany through models remain intentionally unsupported.
+- Array item typing and nested array policy.
+- Vector precision policy.
+- FileField/ImageField `to_python()` contract.
+- JSON scalar behavior.
+- Other relation features intentionally not implemented by the current
+  relation manager APIs.
+
+---
+
 ## v0.5.53 — ORM Query Semantics & Migration Generation Correctness
 
 Released 2026-05-29.

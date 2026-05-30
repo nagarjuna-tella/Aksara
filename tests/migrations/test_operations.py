@@ -199,6 +199,43 @@ class TestForeignKeyField:
         assert 'REFERENCES "users"(id)' in constraint
         assert "ON DELETE CASCADE" in constraint
 
+    def test_constraint_sql_normalizes_lowercase_on_delete(self):
+        field = op.ForeignKeyField("users", on_delete="cascade")
+        constraint = field.get_constraint_sql("author_id")
+        assert "ON DELETE CASCADE" in constraint
+
+    def test_to_sql_rejects_invalid_on_delete(self):
+        field = op.ForeignKeyField("users", on_delete="DROP TABLE x")
+        with pytest.raises(ValueError, match="Invalid FK action"):
+            field.to_sql()
+
+    def test_constraint_sql_rejects_invalid_on_delete(self):
+        field = op.ForeignKeyField("users", on_delete="DROP TABLE x")
+        with pytest.raises(ValueError, match="Invalid FK action"):
+            field.get_constraint_sql("author_id")
+
+    def test_set_null_requires_nullable_true(self):
+        field = op.ForeignKeyField("users", on_delete="SET NULL", nullable=False)
+        with pytest.raises(ValueError, match="SET NULL requires nullable=True"):
+            field.to_sql()
+
+    def test_set_null_nullable_true_passes(self):
+        field = op.ForeignKeyField("users", on_delete="SET NULL", nullable=True)
+        sql = field.to_sql()
+        constraint = field.get_constraint_sql("author_id")
+        assert "NOT NULL" not in sql
+        assert "ON DELETE SET NULL" in constraint
+
+    def test_one_to_one_to_sql_rejects_invalid_on_delete(self):
+        field = op.OneToOneField("users", on_delete="DROP TABLE x")
+        with pytest.raises(ValueError, match="Invalid FK action"):
+            field.to_sql()
+
+    def test_one_to_one_set_null_requires_nullable_true(self):
+        field = op.OneToOneField("users", on_delete="SET NULL", nullable=False)
+        with pytest.raises(ValueError, match="SET NULL requires nullable=True"):
+            field.to_sql()
+
 
 # =============================================================================
 # Index Operation Tests

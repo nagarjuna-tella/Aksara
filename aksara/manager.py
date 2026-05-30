@@ -6,6 +6,7 @@ Django-like query interface for Aksara models.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Tuple, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -1247,10 +1248,23 @@ class QuerySet(Generic[T]):
         if not kwargs:
             raise ValueError("update() requires at least one field assignment")
 
+        assignments = dict(kwargs)
+        auto_now_fields = [
+            name
+            for name, field in self._model._fields.items()
+            if getattr(field, "auto_now", False)
+        ]
+        auto_now_field_set = set(auto_now_fields)
+        updates_non_auto_field = any(name not in auto_now_field_set for name in assignments)
+        if auto_now_fields and updates_non_auto_field:
+            now = datetime.now(timezone.utc)
+            for field_name in auto_now_fields:
+                assignments.setdefault(field_name, now)
+
         values: List[Any] = []
         set_clauses = []
 
-        for field_name, value in kwargs.items():
+        for field_name, value in assignments.items():
             if field_name not in self._model._fields:
                 raise ValueError(f"Unknown field: {field_name}")
 
@@ -1524,6 +1538,66 @@ class Manager(Generic[T]):
             create_kwargs = {**kwargs, **(defaults or {})}
             instance = await self.create(**create_kwargs)
             return instance, True
+
+    async def _prepare_bulk_create_objects(self, objs: List[T]) -> None:
+        """Apply save-path preparation and auto_now timestamps before bulk insert."""
+        from aksara.db.expressions import is_expression
+
+        for obj in objs:
+            for field_name in self._model._fields:
+                if is_expression(obj._data.get(field_name)):
+                    raise ValueError("Expressions are not supported in bulk_create()")
+
+            for field_name, field in self._model._async_prepare_fields.items():
+                obj._data[field_name] = await field.async_prepare(
+                    obj._data.get(field_name),
+                    instance=obj,
+                )
+
+            for field in self._model._generic_fk_fields.values():
+                await field.async_prepare(obj)
+
+            await obj._validate_fields()
+
+        now = datetime.now(timezone.utc)
+        for obj in objs:
+            for field_name, field in self._model._fields.items():
+                if getattr(field, "auto_now", False):
+                    obj._data[field_name] = now
+
+    def _bulk_create_field_names(self, batch: List[T]) -> List[str]:
+        """Return the DB insert field set after all batch rows are prepared."""
+        field_names = []
+        for field_name, field in self._model._fields.items():
+            values = [obj._data.get(field_name) for obj in batch]
+
+            if field_name == "id" and all(value is None for value in values):
+                continue
+            if getattr(field, "auto_now_add", False) and all(value is None for value in values):
+                continue
+
+            if any(value is not None for value in values) or getattr(field, "nullable", False):
+                field_names.append(field_name)
+
+        return field_names
+
+    def _bulk_create_value_sql(
+        self,
+        field_name: str,
+        field: Any,
+        value: Any,
+        param_idx: int,
+    ) -> tuple[str, bool]:
+        """Return the SQL token for a bulk-create value and whether it binds a param."""
+        if value is None and (
+            field_name == "id"
+            or getattr(field, "auto_now_add", False)
+        ):
+            return "DEFAULT", False
+
+        if field.__class__.__name__ == "Vector":
+            return f"CAST(${param_idx} AS vector)", True
+        return f"${param_idx}", True
     
     async def bulk_create(
         self,
@@ -1556,7 +1630,6 @@ class Manager(Generic[T]):
             created_users = await User.objects.bulk_create(users_to_create, batch_size=1000)
         """
         from aksara.db import Database
-        from aksara.db.expressions import is_expression
         
         if not objs:
             return []
@@ -1565,6 +1638,8 @@ class Manager(Generic[T]):
         for obj in objs:
             if not obj._is_new:
                 raise ValueError("bulk_create() requires unsaved model instances")
+
+        await self._prepare_bulk_create_objects(objs)
         
         db = Database.get_instance()
         created_instances = []
@@ -1574,36 +1649,29 @@ class Manager(Generic[T]):
             batch = objs[batch_start : batch_start + batch_size]
             
             # Build multi-row INSERT statement
-            field_names = []
+            field_names = self._bulk_create_field_names(batch)
             all_values = []
             placeholders = []
             param_idx = 1
-            row_num = 0
             
             for obj in batch:
                 row_placeholders = []
                 
-                for field_name, field in self._model._fields.items():
-                    if row_num == 0:  # First row - collect field names
-                        # Skip auto-generated primary keys without values
-                        if field_name == 'id' and obj._data.get('id') is None:
-                            continue
-                        # Skip auto_now_add fields unless explicitly set
-                        if hasattr(field, 'auto_now_add') and field.auto_now_add and obj._data.get(field_name) is None:
-                            continue
-                        field_names.append(field_name)
-                    
-                    # Only include fields we're inserting for this row
-                    if field_name in field_names:
-                        value = obj._data.get(field_name)
-                        if is_expression(value):
-                            raise ValueError("Expressions are not supported in bulk_create()")
+                for field_name in field_names:
+                    field = self._model._fields[field_name]
+                    value = obj._data.get(field_name)
+                    value_sql, binds_param = self._bulk_create_value_sql(
+                        field_name,
+                        field,
+                        value,
+                        param_idx,
+                    )
+                    row_placeholders.append(value_sql)
+                    if binds_param:
                         all_values.append(field.to_db(value))
-                        row_placeholders.append(f"${param_idx}")
                         param_idx += 1
                 
                 placeholders.append(f"({', '.join(row_placeholders)})")
-                row_num += 1
             
             # Build the INSERT statement using each field's DB column name
             # (e.g. ForeignKey "owner" → column "owner_id"), not the Python
@@ -1701,8 +1769,11 @@ class Manager(Generic[T]):
                     # Searched CASE requires a boolean WHEN expression — must
                     # compare the primary key column to the parameter, not just
                     # bind the PK value as the condition.
+                    value_sql = f"${param_idx + 1}"
+                    if field.__class__.__name__ == "Vector":
+                        value_sql = f"CAST(${param_idx + 1} AS vector)"
                     when_clauses.append(
-                        f"WHEN id = ${param_idx} THEN ${param_idx + 1}"
+                        f"WHEN {quote_identifier('id')} = ${param_idx} THEN {value_sql}"
                     )
                     ids.append(obj.id)
                     value = obj._data.get(field_name)

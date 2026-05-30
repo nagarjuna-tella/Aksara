@@ -345,7 +345,7 @@ class TestForeignKey:
     
     def test_foreign_key_on_delete_set_null(self):
         """Test ForeignKey with SET NULL on delete."""
-        fk = fields.ForeignKey("User", on_delete="SET NULL")
+        fk = fields.ForeignKey("User", on_delete="SET NULL", nullable=True)
         assert fk.on_delete == "SET NULL"
     
     def test_foreign_key_default_sql_type(self):
