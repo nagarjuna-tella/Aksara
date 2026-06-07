@@ -527,6 +527,28 @@ class TestCoerceArrayFormValue:
 
         assert _coerce_array_form_value([True, False], self._field(bool)) == [True, False]
 
+    def test_int_array_rejects_json_bool_item(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError, match="boolean"):
+            _coerce_array_form_value([True], self._field(int))
+
+    def test_float_array_rejects_json_bool_item(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError, match="boolean"):
+            _coerce_array_form_value([False], self._field(float))
+
+    def test_int_array_numeric_strings_still_coerce(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value('["1", "2"]', self._field(int)) == [1, 2]
+
+    def test_float_array_numeric_strings_still_coerce(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value('["1.5", "2"]', self._field(float)) == [1.5, 2.0]
+
     def test_unknown_bool_string_raises(self):
         from aksara.contrib.admin.views import _coerce_array_form_value
 

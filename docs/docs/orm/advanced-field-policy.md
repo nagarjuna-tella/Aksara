@@ -1,8 +1,9 @@
 # Advanced Field Policy
 
-This page is the design contract for Aksara's remaining advanced ORM field
-correctness work. It defines the intended v0.5.55 behavior before runtime
-changes are made.
+Advanced Field Policy defines Aksara's runtime contract for advanced ORM fields
+in v0.5.55 and later. It describes how `Array`, `Vector`, `JSON`,
+`FileField`, and `ImageField` values are validated, serialized, and exposed
+through model attributes, APIs, and database writes.
 
 The goal is clarity over ambiguous persistence. When a value cannot be
 represented safely, Aksara should raise an explicit validation error before

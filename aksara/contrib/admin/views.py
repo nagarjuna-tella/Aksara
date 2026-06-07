@@ -972,8 +972,12 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
             # silently becoming False.
             coerced.append(item if isinstance(item, bool) else _coerce_strict_boolean(item))
         elif item_type is int:
+            if isinstance(item, bool):
+                raise ValueError("Array field (int) does not accept boolean values")
             coerced.append(int(item))
         elif item_type is float:
+            if isinstance(item, bool):
+                raise ValueError("Array field (float) does not accept boolean values")
             coerced.append(float(item))
         elif item_type is _uuid.UUID:
             coerced.append(item if isinstance(item, _uuid.UUID) else _uuid.UUID(str(item)))
