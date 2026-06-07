@@ -1,0 +1,2 @@
+"""Aksara ORM benchmark adapter."""
+

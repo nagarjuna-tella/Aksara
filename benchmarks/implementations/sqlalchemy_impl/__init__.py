@@ -1,0 +1,2 @@
+"""SQLAlchemy async benchmark adapter."""
+

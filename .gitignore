@@ -24,6 +24,9 @@ docs/site/
 
 opsdesk/
 
+benchmarks/results/*
+!benchmarks/results/.gitkeep
+
 # Internal security matrix — keep private; see security/security_matrix.example.yml
 security/security_matrix.yml
 
