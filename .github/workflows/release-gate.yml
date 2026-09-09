@@ -156,6 +156,50 @@ jobs:
           /tmp/aksara-wheel-test/bin/python -m pip install dist/*.whl
           /tmp/aksara-wheel-test/bin/python -c "import aksara; print(getattr(aksara, '__version__', 'aksara import ok'))"
 
+  production-reference-app:
+    name: Packaged production reference app
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aksara_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aksara_test
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build wheel and install gate dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" build
+          python -m build --wheel
+
+      - name: Run production reference app gate
+        run: python scripts/run_support_desk_gate.py --wheel dist/*.whl
+
+      - name: Upload production reference evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: support-desk-production-gate
+          path: audit-evidence/v060/support-desk-gate.json
+          if-no-files-found: error
+
   dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-latest

@@ -117,6 +117,36 @@ def clear_content_type_cache() -> None:
 async def ensure_content_types_table(db: Optional[Database] = None) -> None:
     """Create the internal content types table when missing."""
     database = _get_db(db)
+    ready = await database.fetchval(
+        f"""
+        SELECT
+            (
+                SELECT COUNT(*) = 6
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = '{CONTENT_TYPES_TABLE}'
+                  AND column_name IN (
+                      'id', 'app_label', 'model', 'module', 'created_at', 'updated_at'
+                  )
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'uq_{CONTENT_TYPES_TABLE}'
+                  AND conrelid = to_regclass('{CONTENT_TYPES_TABLE}')
+            )
+            AND COALESCE((
+                SELECT bool_and(column_default IS NOT NULL)
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = '{CONTENT_TYPES_TABLE}'
+                  AND column_name IN ('created_at', 'updated_at')
+            ), FALSE)
+        """
+    )
+    if ready:
+        return
+
     await database.execute(CONTENT_TYPES_TABLE_SQL)
     # Idempotent schema migrations for tables created by older versions.
     await database.execute(

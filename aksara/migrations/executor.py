@@ -137,6 +137,7 @@ async def unrecord_migration(connection, name: str) -> None:
 # Internal migration packages (auto-discovered)
 INTERNAL_MIGRATION_PACKAGES = [
     "aksara.contrib.auth.migrations",
+    "aksara.core.migrations",
 ]
 
 

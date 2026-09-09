@@ -113,6 +113,7 @@ class TestDBSessionModule:
         from aksara.contrib.auth.session import _ensure_sessions_table
 
         mock_db = AsyncMock()
+        mock_db.fetchval.return_value = False
         await _ensure_sessions_table(mock_db)
 
         mock_db.execute.assert_called_once()

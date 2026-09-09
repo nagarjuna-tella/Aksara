@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "gate": "support-desk-production-reference",
+  "status": "passed",
+  "started_at": "2026-09-09T23:45:42.564674+00:00",
+  "finished_at": "2026-09-09T23:45:50.543789+00:00",
+  "wheel": "aksara_framework-0.5.55-py3-none-any.whl",
+  "wheel_sha256": "e3fa703033041d85d3bfab4df315a2fdaeb3fa0a9e237022ace38aa98e74b6d9",
+  "database": "aksara_test",
+  "checks": [
+    {
+      "name": "wheel installed in isolated environment",
+      "status": "pass",
+      "details": {
+        "version": "0.5.55",
+        "import_location": "isolated-venv"
+      }
+    },
+    {
+      "name": "invalid production configuration fails fast",
+      "status": "pass",
+      "details": {
+        "exit_code": 1
+      }
+    },
+    {
+      "name": "database-unavailable startup fails",
+      "status": "pass",
+      "details": {
+        "exit_code": 3
+      }
+    },
+    {
+      "name": "restricted application role",
+      "status": "pass",
+      "details": {
+        "superuser": false,
+        "bypass_rls": false
+      }
+    },
+    {
+      "name": "fresh schema migration",
+      "status": "pass",
+      "details": {
+        "applied": [
+          "aksara_contrib_auth_migrations_0001_initial",
+          "aksara_core_migrations_0001_runtime_tables",
+          "support_desk_0001_initial"
+        ]
+      }
+    },
+    {
+      "name": "unapplied migration fails startup",
+      "status": "pass",
+      "details": {
+        "exit_code": 3
+      }
+    },
+    {
+      "name": "failed startup releases connections",
+      "status": "pass",
+      "details": {
+        "active_connections": 0
+      }
+    },
+    {
+      "name": "existing schema upgrade",
+      "status": "pass",
+      "details": {
+        "applied": [
+          "support_desk_0002_ticket_priority"
+        ]
+      }
+    },
+    {
+      "name": "upgrade preserves existing rows",
+      "status": "pass",
+      "details": {
+        "priority": "normal"
+      }
+    },
+    {
+      "name": "existing schema migration is idempotent",
+      "status": "pass",
+      "details": {
+        "skipped": 4
+      }
+    },
+    {
+      "name": "tenant tables force PostgreSQL RLS",
+      "status": "pass",
+      "details": {
+        "tables": [
+          "support_agents",
+          "support_delivery_attempts",
+          "support_tickets"
+        ]
+      }
+    },
+    {
+      "name": "pool reuse resets tenant context",
+      "status": "pass",
+      "details": {
+        "backend_count": 1,
+        "switches": 6
+      }
+    },
+    {
+      "name": "transaction failure rolls back",
+      "status": "pass",
+      "details": {
+        "persisted_rows": 0
+      }
+    },
+    {
+      "name": "normal startup health and production surfaces",
+      "status": "pass",
+      "details": {
+        "liveness": 200,
+        "readiness": 200,
+        "admin": 200,
+        "studio": 404
+      }
+    },
+    {
+      "name": "generated API rejects anonymous caller",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "generated related-model API",
+      "status": "pass",
+      "details": {
+        "status": 201
+      }
+    },
+    {
+      "name": "generated CRUD injects authenticated tenants",
+      "status": "pass",
+      "details": {
+        "tenant_a_status": 201,
+        "tenant_b_status": 201
+      }
+    },
+    {
+      "name": "tenant switching and cross-tenant abuse are isolated",
+      "status": "pass",
+      "details": {
+        "forged_status": 422,
+        "cross_tenant_status": 404
+      }
+    },
+    {
+      "name": "MCP tool catalog is available",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "MCP-scoped mutation obeys tenant RLS",
+      "status": "pass",
+      "details": {
+        "own_tenant_status": 200,
+        "cross_tenant_status": 404,
+        "transport": "catalog-described REST operation"
+      }
+    },
+    {
+      "name": "tenant-aware task enqueue",
+      "status": "pass",
+      "details": {
+        "status": 200
+      }
+    },
+    {
+      "name": "task status is tenant-scoped",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "durable task records failed attempt",
+      "status": "pass",
+      "details": {
+        "status": "pending",
+        "attempts": 1
+      }
+    },
+    {
+      "name": "worker process crash simulated",
+      "status": "pass",
+      "details": {
+        "exit_code": -9
+      }
+    },
+    {
+      "name": "task retry survives worker and app restart",
+      "status": "pass",
+      "details": {
+        "task_attempts": 2,
+        "delivered": true
+      }
+    },
+    {
+      "name": "database connection recovers after backend termination",
+      "status": "pass",
+      "details": {
+        "terminated_connections": 5
+      }
+    },
+    {
+      "name": "concurrent requests across app instances",
+      "status": "pass",
+      "details": {
+        "requests": 24,
+        "instances": 2
+      }
+    },
+    {
+      "name": "graceful process shutdown",
+      "status": "pass",
+      "details": {
+        "exit_code": 0
+      }
+    },
+    {
+      "name": "request is in flight before shutdown",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "graceful shutdown drains in-flight request",
+      "status": "pass",
+      "details": {
+        "response_status": 200,
+        "exit_code": 0
+      }
+    },
+    {
+      "name": "shutdown releases application connections",
+      "status": "pass",
+      "details": {
+        "active_connections": 0
+      }
+    }
+  ],
+  "error": null
+}

@@ -9,7 +9,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## migrations
 
-- [ ] Preserve the 452 passing migration cases; validate a fresh bootstrap plus an existing-schema upgrade under the final supported environment. Existing locking/checksum implementation should be reused.
+- [x] Preserve the migration suite and validate fresh bootstrap, existing-schema upgrade, idempotent replay, and unapplied-migration startup failure from the packaged reference app; `audit-evidence/v060/support-desk-gate.json` records the PostgreSQL run.
 
 ## relations
 
@@ -30,8 +30,8 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## MCP
 
-- [ ] Verify route-derived tool inventory and schema against a running generated app; discovery survives both supported dependency boundaries, while the end-to-end authorization gate remains open.
-- [ ] Keep protocol-level MCP execution outside the v0.6 guarantee unless a real transport is implemented and exercised; this repository currently exposes an MCP-shaped catalog only.
+- [x] Verify route-derived tool inventory and schema against the running packaged support desk app, including an authorized same-tenant mutation and denied cross-tenant mutation.
+- [x] Keep protocol-level MCP execution outside the v0.6 guarantee; the reference app and public documentation explicitly identify the supported surface as a catalog-described REST operation.
 
 ## Agent/AI
 
@@ -57,7 +57,8 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 ## operations
 
 - [x] P0: Validate connection/session cleanup after tenant setup and transaction startup failures, including real-pool cancellation and reset failures.
-- [ ] Before claiming restart/shutdown reliability, execute a bounded real deployment failure test; this audit did not certify it.
+- [x] P0: Release database and worker state when custom lifespan startup fails; provision internal runtime tables through migrations so a current schema starts with DML-only service grants.
+- [x] Execute a bounded packaged-app deployment gate covering unavailable DB, invalid config, pending migration, task/worker recovery, backend reconnection, two app instances, in-flight graceful shutdown, and connection cleanup; see `audit-evidence/v060/support-desk-gate.json`.
 
 ## observability
 
@@ -81,6 +82,6 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 ## release engineering
 
 - [x] P1: Inspect live PR #15 through the public GitHub API; it is open/mergeable with the original head green, and all eight review comments were independently rechecked.
-- [x] Triage 504 mypy errors and 7,290 Ruff findings; fix high-signal defects and explicitly baseline the remaining 501 mypy / 7,230 Ruff findings by error code without blanket ignores.
+- [x] Triage 504 mypy errors and 7,290 Ruff findings; fix high-signal defects and explicitly baseline the remaining 501 mypy / 7,222 Ruff findings by error code without blanket ignores.
 - [ ] Replay required release checks on the exact intended revision, including supported Python/PostgreSQL environments.
 - [x] Split Advanced Field Policy correctness from the benchmark overhaul: correctness is on `codex/v055-correctness`; the unchanged overhaul head is preserved on `codex/benchmark-overhaul`.

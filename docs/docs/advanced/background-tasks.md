@@ -408,10 +408,13 @@ Tasks should be idempotent when possible, and payloads should be kept small.
 
 ## Operational Notes
 
-- `aksara_tasks` and `aksara_cron_state` are created lazily on first use via
-  idempotent `CREATE TABLE IF NOT EXISTS`.
-- The queue column is added to existing `aksara_tasks` tables via
-  `ALTER TABLE … ADD COLUMN IF NOT EXISTS` — safe to run against a live table.
+- `aksara migrate` provisions `aksara_tasks` and `aksara_cron_state` through
+  an internal migration. Run migrations with a schema-owning release role
+  before starting application instances.
+- Runtime checks skip DDL when the internal schema is current, so a production
+  worker can run with DML-only table grants. Older schemas still use the
+  idempotent compatibility path; use a role allowed to alter those tables for
+  that one-time migration.
 - Workers claim jobs with `FOR UPDATE SKIP LOCKED`, so multiple app instances
   share the same queue safely.
 - The built-in queue is intentionally lightweight. For very high throughput

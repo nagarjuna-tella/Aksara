@@ -7,6 +7,7 @@ Core FastAPI functionality remains untouched.
 
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
@@ -47,6 +48,8 @@ from aksara._version import __version__
 from aksara.apps import load_app_models
 from aksara.db import Database
 from aksara.routing import iter_routes
+
+logger = logging.getLogger(__name__)
 
 # Aksara SVG logo (blue lightning bolt with gradient)
 AKSARA_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366F1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/%3E%3C/svg%3E'''
@@ -244,43 +247,76 @@ class Aksara(FastAPI):
         if not self._database_url:
             return
 
-        self._db = Database(
-            self._database_url,
-            min_size=self._min_pool_size,
-            max_size=self._max_pool_size,
-        )
-        await self._db.connect()
+        try:
+            self._db = Database(
+                self._database_url,
+                min_size=self._min_pool_size,
+                max_size=self._max_pool_size,
+            )
+            await self._db.connect()
 
-        from aksara.conf import settings
-        if "aksara.contrib.auth" in settings.installed_apps:
-            from aksara.contrib.auth.session import _ensure_sessions_table
-            await _ensure_sessions_table(self._db)
+            from aksara.conf import settings
+            if "aksara.contrib.auth" in settings.installed_apps:
+                from aksara.contrib.auth.session import _ensure_sessions_table
+                await _ensure_sessions_table(self._db)
 
-        from aksara.model.base import finalize_relations
-        finalize_relations()
+            from aksara.model.base import finalize_relations
+            finalize_relations()
 
-        from aksara.contenttypes import clear_content_type_cache, sync_content_types
-        clear_content_type_cache()
-        await sync_content_types(self._db, prune_stale=True)
+            from aksara.contenttypes import clear_content_type_cache, sync_content_types
+            clear_content_type_cache()
+            await sync_content_types(self._db, prune_stale=True)
 
-        if settings.tasks_enabled:
-            from aksara.tasks import TaskWorker
+            if settings.tasks_enabled:
+                from aksara.tasks import TaskWorker
 
-            self._task_worker = TaskWorker(self._db)
-            await self._task_worker.start()
+                self._task_worker = TaskWorker(self._db)
+                await self._task_worker.start()
 
-        self._print_startup()
+            self._print_startup()
+        except BaseException:
+            await self._cleanup_runtime_after_error("runtime startup")
+            raise
 
     async def _shutdown_runtime(self) -> None:
         """Stop database-backed runtime services."""
+        first_error: BaseException | None = None
         if self._task_worker is not None:
-            await self._task_worker.stop()
-            self._task_worker = None
+            try:
+                await self._task_worker.stop()
+            except BaseException as exc:  # noqa: BLE001 - shutdown must continue after cancellation
+                first_error = exc
+            finally:
+                self._task_worker = None
 
         if self._db is not None:
-            await self._db.disconnect()
-            self._db = None
-            self._print_shutdown()
+            try:
+                await self._db.disconnect()
+            except BaseException as exc:
+                if first_error is None:
+                    first_error = exc
+                else:
+                    logger.exception(
+                        "Database disconnect also failed during runtime shutdown",
+                        exc_info=(type(exc), exc, exc.__traceback__),
+                    )
+            finally:
+                self._db = None
+
+        if first_error is not None:
+            raise first_error
+        self._print_shutdown()
+
+    async def _cleanup_runtime_after_error(self, stage: str) -> None:
+        """Release partial runtime state without replacing the triggering error."""
+        try:
+            await self._shutdown_runtime()
+        except BaseException as exc:
+            logger.exception(
+                "Aksara cleanup failed after %s",
+                stage,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
     
     def _maybe_mount_admin(self) -> None:
         """
@@ -602,12 +638,16 @@ class Aksara(FastAPI):
         @asynccontextmanager
         async def wrapped_lifespan(app: FastAPI):
             await self._startup_runtime()
-            
-            # Run user's lifespan
-            async with user_lifespan(app):
-                yield
-            
-            await self._shutdown_runtime()
+
+            try:
+                # Run user's lifespan
+                async with user_lifespan(app):
+                    yield
+            except BaseException:
+                await self._cleanup_runtime_after_error("application lifespan")
+                raise
+            else:
+                await self._shutdown_runtime()
         
         return wrapped_lifespan
     
@@ -615,10 +655,14 @@ class Aksara(FastAPI):
     async def _default_lifespan(self, app: FastAPI):
         """Default lifespan with DB management."""
         await self._startup_runtime()
-        
-        yield
-        
-        await self._shutdown_runtime()
+
+        try:
+            yield
+        except BaseException:
+            await self._cleanup_runtime_after_error("application lifespan")
+            raise
+        else:
+            await self._shutdown_runtime()
     
     def _print_startup(self) -> None:
         """Print Aksara startup banner."""
@@ -716,8 +760,6 @@ class Aksara(FastAPI):
         """
         from aksara.ai import AiToolRegistry
         from aksara.ai.fastapi import router as ai_router
-        from aksara.conf import settings
-        
         # Initialize the registry
         self.ai_registry = AiToolRegistry()
         

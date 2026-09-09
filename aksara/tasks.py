@@ -38,10 +38,10 @@ from datetime import datetime, timedelta
 from functools import update_wrapper
 from typing import Any, Callable, Literal, Optional
 from uuid import UUID
+from weakref import WeakSet
 
 from aksara.db import Database
 from aksara.logging import logger
-
 
 TaskStatus = Literal["pending", "running", "completed", "failed"]
 
@@ -88,6 +88,8 @@ CRON_STATE_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{CRON_STATE_TABLE}" (
 );'''
 
 _TASK_REGISTRY: dict[str, "RegisteredTask"] = {}
+_TASKS_SCHEMA_READY_FOR: WeakSet[Database] = WeakSet()
+_CRON_SCHEMA_READY_FOR: WeakSet[Database] = WeakSet()
 
 
 @dataclass
@@ -282,16 +284,61 @@ def task(
 async def ensure_tasks_table(db: Optional[Database] = None) -> None:
     """Create (or migrate) the internal task table."""
     database = _get_db(db)
+    if database in _TASKS_SCHEMA_READY_FOR:
+        return
+    ready = await database.fetchval(
+        f"""
+        SELECT
+            (
+                SELECT COUNT(*) = 15
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = '{TASKS_TABLE}'
+                  AND column_name IN (
+                      'id', 'task_name', 'queue', 'tenant_id', 'payload', 'status',
+                      'attempts', 'max_attempts', 'available_at', 'locked_at',
+                      'completed_at', 'last_error', 'result', 'created_at', 'updated_at'
+                  )
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM pg_indexes
+                WHERE schemaname = current_schema()
+                  AND tablename = '{TASKS_TABLE}'
+                  AND indexname = 'idx_{TASKS_TABLE}_pending'
+            )
+        """
+    )
+    if ready:
+        _TASKS_SCHEMA_READY_FOR.add(database)
+        return
+
     await database.execute(TASKS_TABLE_SQL)
     await database.execute(_TASKS_MIGRATE_QUEUE_SQL)
     await database.execute(_TASKS_MIGRATE_TENANT_ID_SQL)
     await database.execute(TASKS_INDEX_SQL)
+    _TASKS_SCHEMA_READY_FOR.add(database)
 
 
 async def ensure_cron_state_table(db: Optional[Database] = None) -> None:
     """Create the recurring-task cron-state table when needed."""
     database = _get_db(db)
+    if database in _CRON_SCHEMA_READY_FOR:
+        return
+    ready = await database.fetchval(
+        f"""
+        SELECT COUNT(*) = 2
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = '{CRON_STATE_TABLE}'
+          AND column_name IN ('task_name', 'last_enqueued_at')
+        """
+    )
+    if ready:
+        _CRON_SCHEMA_READY_FOR.add(database)
+        return
     await database.execute(CRON_STATE_TABLE_SQL)
+    _CRON_SCHEMA_READY_FOR.add(database)
 
 
 def _resolve_task_definition(task_ref: "str | RegisteredTask") -> RegisteredTask:
@@ -312,6 +359,7 @@ async def enqueue_task(
 ) -> TaskRecord:
     """Persist a task invocation for background execution."""
     from aksara.conf import settings
+
     # Capture the enqueuing tenant context so the worker can restore the
     # same tenant scope at execution time. Without this the durable
     # payload drops all tenant provenance and tenant-aware ORM operations

@@ -8,8 +8,8 @@ import importlib
 import json
 import re
 import sys
-from copy import deepcopy
 from contextlib import contextmanager
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -34,6 +34,11 @@ EXAMPLE_SPECS: dict[str, dict[str, Any]] = {
         "import_modules": ["models", "settings", "views"],
     },
     "multitenant": {
+        "needs_models": True,
+        "needs_migrations": True,
+        "import_modules": ["models", "settings", "views"],
+    },
+    "support_desk": {
         "needs_models": True,
         "needs_migrations": True,
         "import_modules": ["models", "settings", "views"],
@@ -299,7 +304,7 @@ def _check_imports(example_path: Path, module_stems: list[str], add) -> None:
             module_name = f"{package_name}.{stem}" if package_name else stem
             try:
                 importlib.import_module(module_name)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - validation reports import failures
                 failures.append(f"{module_name}: {exc!r}")
     if failures:
         add("imports", "error", "project import failed", "Fix import errors", failures=failures)
@@ -331,9 +336,7 @@ def _is_placeholder_secret(value: str) -> bool:
         return True
     if any(char in normalized for char in "(){}[]"):
         return True
-    if normalized.startswith(("hash_", "fields.", "field.", "os.getenv")):
-        return True
-    return False
+    return normalized.startswith(("hash_", "fields.", "field.", "os.getenv"))
 
 
 def _summarize(results: list[ExampleValidationResult]) -> dict[str, int]:

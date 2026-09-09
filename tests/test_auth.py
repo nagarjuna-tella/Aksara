@@ -362,6 +362,7 @@ class TestSessionStore:
         from aksara.contrib.auth.session import SESSIONS_TABLE, _ensure_sessions_table
 
         db = MagicMock()
+        db.fetchval = AsyncMock(return_value=False)
         db.execute = AsyncMock(return_value="CREATE TABLE")
 
         await _ensure_sessions_table(db)

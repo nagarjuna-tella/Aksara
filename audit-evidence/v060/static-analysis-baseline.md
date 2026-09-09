@@ -3,7 +3,7 @@
 Date: 2026-09-09
 
 The v0.6 audit began with 7,290 Ruff findings and 504 mypy errors. After
-correctness-focused cleanup, the reviewed repository-wide baseline is 7,230
+correctness-focused cleanup, the reviewed repository-wide baseline was 7,230
 Ruff findings and 501 mypy errors. `static-analysis-baseline.json` records both
 totals and every individual rule or error-code count; it does not disable rule
 families or add a repository-wide ignore.
@@ -20,7 +20,10 @@ Enforced command:
 PYTHONPYCACHEPREFIX=/tmp/aksara-v060-pycache /tmp/aksara-v055-py311/bin/python scripts/check_static_baseline.py
 ```
 
-Result: exit **0**; Ruff **7,230 / 7,230**, mypy **501 / 501**.
+The production reference-app phase then removed eight more Ruff findings without
+adding mypy debt and tightened the committed baseline accordingly.
+
+Result: exit **0**; Ruff **7,222 / 7,222**, mypy **501 / 501**.
 
 The same command using a deliberately lower temporary baseline exited **1**
 and reported total and per-code overages for both tools. This proves the gate
