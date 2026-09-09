@@ -27,7 +27,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
 from uuid import UUID
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, ConfigDict, create_model
 from pydantic import Field as PydanticField
 
 from aksara import fields as aksara_fields
@@ -105,6 +105,11 @@ def _should_include_in_create(field_name: str, field: aksara_fields.Field) -> bo
     Includes:
         - ManyToMany (as list of UUIDs)
     """
+    # Tenant identity is assigned from the authenticated request principal by
+    # ModelViewSet. It must never be accepted as client input.
+    if field_name == "tenant_id":
+        return False
+
     # Skip primary key
     if field.primary_key:
         return False
@@ -205,6 +210,7 @@ def generate_create_schema(model: Type[Model]) -> Type[BaseModel]:
     schema = create_model(
         cache_key,
         __base__=BaseModel,
+        __config__=ConfigDict(extra="forbid"),
         **field_definitions
     )
     
@@ -268,6 +274,7 @@ def generate_update_schema(model: Type[Model]) -> Type[BaseModel]:
     schema = create_model(
         cache_key,
         __base__=BaseModel,
+        __config__=ConfigDict(extra="forbid"),
         **field_definitions
     )
     

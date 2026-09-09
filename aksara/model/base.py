@@ -781,10 +781,15 @@ class Model(metaclass=ModelMeta):
 
             # Run field-specific validation
             validator = getattr(field, 'validate', None)
-            if not callable(validator):
-                continue
             try:
-                validator(value)
+                if callable(validator):
+                    validator(value)
+                else:
+                    # Several core fields enforce their constraints while
+                    # preparing a database value. Exercise that pure
+                    # conversion here so persistence failures are reported as
+                    # model validation errors before any SQL is issued.
+                    field.to_db(value)
             except ValueError as e:
                 errors[field_name] = str(e)
 

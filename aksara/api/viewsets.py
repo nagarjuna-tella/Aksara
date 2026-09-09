@@ -61,6 +61,7 @@ from aksara.security.exceptions import PolicyDenied
 from aksara.security.context import principal_from_request
 from aksara.security.policy import get_policy_engine
 from aksara.security.principal import Principal
+from aksara.tenancy import is_tenant_model
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -473,6 +474,8 @@ class ModelViewSet:
                 detail=policy_denied_to_error_payload(exc),
             )
 
+        server_fields = self._server_controlled_create_fields(request)
+
         serializer = self.get_serializer(
             'create',
             data=data,
@@ -482,11 +485,11 @@ class ModelViewSet:
         if serializer is not None:
             # Use serializer flow
             serializer.is_valid(raise_exception=True)
-            instance = await serializer.save()
+            instance = await serializer.save(**server_fields)
             return self._serialize(instance, action='retrieve', request=request)
         else:
             # Schema flow (original behavior)
-            instance = await self.model.objects.create(**data)
+            instance = await self.model.objects.create(**data, **server_fields)
             return self._serialize(instance, action='retrieve', request=request)
     
     async def update(
@@ -731,6 +734,23 @@ class ModelViewSet:
             return principal_from_request(request)
         except Exception:
             return None
+
+    def _server_controlled_create_fields(self, request: Request) -> Dict[str, Any]:
+        """Return trusted fields injected into generated create operations."""
+        if not is_tenant_model(self.model):
+            return {}
+
+        principal = self._resolve_query_principal(request)
+        tenant_id = principal.tenant_id if principal is not None else None
+        if not tenant_id:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "tenant_context_required",
+                    "message": "Tenant-scoped creates require an authenticated tenant context.",
+                },
+            )
+        return {"tenant_id": tenant_id}
     
     async def _fetch_with_pagination(
         self,

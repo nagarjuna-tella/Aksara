@@ -21,16 +21,17 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## security
 
-- [ ] P1: Replace skipped OpenAPI fuzz placeholders with generated-CRUD invalid-input and forbidden-field mutation invariants.
+- [x] P1: Replace skipped OpenAPI fuzz placeholders with generated-CRUD invalid-input and forbidden-field mutation invariants; `audit-evidence/v060/generated-api-abuse.md` records the real PostgreSQL run.
 - [ ] P1: Set an explicit release policy for Doctor warnings and security-matrix requirements; test both safe and unsafe cases.
 
 ## tenancy
 
-- [ ] P1: Run cross-tenant ORM/API/MCP checks with a non-superuser, non-BYPASSRLS application role; include pool reuse and task context.
+- [x] P1: Run cross-tenant ORM/generated-API/task checks with a non-superuser, non-BYPASSRLS application role, including one-connection pool reuse and an MCP-principal call to a catalog-described REST operation; see `audit-evidence/v060/restricted-role-tenancy.md`.
 
 ## MCP
 
 - [ ] Verify route-derived tool inventory and schema against a running generated app; discovery survives both supported dependency boundaries, while the end-to-end authorization gate remains open.
+- [ ] Keep protocol-level MCP execution outside the v0.6 guarantee unless a real transport is implemented and exercised; this repository currently exposes an MCP-shaped catalog only.
 
 ## Agent/AI
 
