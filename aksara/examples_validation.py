@@ -8,6 +8,7 @@ import importlib
 import json
 import re
 import sys
+from copy import deepcopy
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -146,10 +147,18 @@ def validate_examples(project_root: str | Path | None = None) -> ExamplesValidat
         )
         results.append(result)
 
-        def add(name: str, status: str, message: str, hint: str | None = None, **details: Any) -> None:
-            result.checks.append(
+        def add(
+            name: str,
+            status: str,
+            message: str,
+            hint: str | None = None,
+            _result: ExampleValidationResult = result,
+            _example_name: str = example_name,
+            **details: Any,
+        ) -> None:
+            _result.checks.append(
                 ExampleValidationCheck(
-                    example=example_name,
+                    example=_example_name,
                     name=name,
                     status=status,
                     message=message,
@@ -285,7 +294,7 @@ def _check_imports(example_path: Path, module_stems: list[str], add) -> None:
     package_name = _package_name(example_path)
     base_path = _import_base_path(example_path)
     failures: list[str] = []
-    with _temporary_sys_path(base_path):
+    with _preserve_aksara_settings(), _temporary_sys_path(base_path):
         for stem in module_stems:
             module_name = f"{package_name}.{stem}" if package_name else stem
             try:
@@ -356,6 +365,20 @@ def _import_base_path(example_path: Path) -> Path:
     while (cursor / "__init__.py").exists():
         cursor = cursor.parent
     return cursor
+
+
+@contextmanager
+def _preserve_aksara_settings():
+    """Keep example configuration imports from changing caller settings."""
+    from aksara.conf import configure, settings
+
+    snapshot = deepcopy(settings)
+    try:
+        yield
+    finally:
+        was_configured = snapshot._configured
+        configure(snapshot)
+        settings._configured = was_configured
 
 
 @contextmanager

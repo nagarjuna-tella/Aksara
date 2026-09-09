@@ -72,7 +72,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 - [x] Update the advanced-policy roadmap for the unpublished candidate without rewriting historical release claims.
 - [ ] P1: Publish tested stable surfaces and explicit experimental/unverified limitations.
-- [ ] Align CONTRIBUTING lint/type requirements with enforced, reviewed gates.
+- [x] Align CONTRIBUTING lint/type requirements with enforced, reviewed gates; CI and pre-commit run the same pinned Ruff/mypy debt ratchet.
 
 ## performance
 
@@ -81,6 +81,6 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 ## release engineering
 
 - [x] P1: Inspect live PR #15 through the public GitHub API; it is open/mergeable with the original head green, and all eight review comments were independently rechecked.
-- [ ] Triage 504 mypy errors and 7290 Ruff findings; fix substantive issues and explicitly baseline legacy debt instead of blanket ignoring it.
+- [x] Triage 504 mypy errors and 7,290 Ruff findings; fix high-signal defects and explicitly baseline the remaining 501 mypy / 7,230 Ruff findings by error code without blanket ignores.
 - [ ] Replay required release checks on the exact intended revision, including supported Python/PostgreSQL environments.
 - [x] Split Advanced Field Policy correctness from the benchmark overhaul: correctness is on `codex/v055-correctness`; the unchanged overhaul head is preserved on `codex/benchmark-overhaul`.

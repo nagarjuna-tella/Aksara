@@ -15,6 +15,8 @@ from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
 if TYPE_CHECKING:
     import asyncpg
 
+    from aksara.db.engine import Database
+
 # Context variable to store the current database connection
 _session_context: ContextVar[Optional["asyncpg.Connection"]] = ContextVar(
     "aksara_session", default=None
@@ -62,7 +64,6 @@ class session_context:
     """
     
     def __init__(self, db: "Database"):
-        from aksara.db.engine import Database
         self.db = db
         self._connection: Optional["asyncpg.Connection"] = None
         self._token = None

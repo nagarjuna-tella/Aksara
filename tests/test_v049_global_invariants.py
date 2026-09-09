@@ -32,7 +32,7 @@ class TestImportsAndPublicAPI:
         # We can't actually do `from aksara import *` in a function,
         # so we test via exec
         namespace: dict[str, Any] = {}
-        exec("from aksara import *", namespace)
+        exec("from aksara import *", namespace)  # noqa: S102 - exercise star-import semantics
         
         # Should have imported things
         assert "Model" in namespace
@@ -255,7 +255,8 @@ print(f"{end - start:.3f}")
             [sys.executable, "-c", code],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False,
         )
         
         import_time = float(result.stdout.strip())

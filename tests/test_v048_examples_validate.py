@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -86,6 +87,15 @@ def test_validate_examples_ready():
     assert report.status == "ready"
     assert report.summary["errors"] == 0
     assert report.summary["warnings"] == 0
+
+
+def test_validate_examples_preserves_global_settings():
+    from aksara.conf import settings
+
+    before = deepcopy(settings.__dict__)
+    validate_examples(ROOT)
+
+    assert settings.__dict__ == before
 
 
 def test_validate_examples_json_shape():

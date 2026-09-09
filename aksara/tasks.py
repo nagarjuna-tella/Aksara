@@ -850,6 +850,5 @@ __all__ = [
     "ensure_tasks_table",
     "get_registered_task",
     "get_task_record",
-    "recover_stale_locks",
     "task",
 ]

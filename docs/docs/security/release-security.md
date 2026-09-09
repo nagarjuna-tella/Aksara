@@ -45,6 +45,12 @@ requires covered evidence for each implemented surface. Applications can point
 the same setting at a private project matrix; `security/security_matrix.yml`
 remains ignored by default.
 
+Ruff and mypy use the reviewed counts in `static-analysis-baseline.json`.
+`scripts/check_static_baseline.py` fails if the total or any rule/error-code
+count grows; it permits counts to fall so cleanup can proceed incrementally.
+The baseline does not disable rule families and does not represent a clean
+type-checking claim.
+
 Bandit currently gates high-severity findings. The existing non-security MD5 ID
 generation finding is excluded from the blocking gate; medium and low findings
 remain review backlog unless promoted by maintainers.

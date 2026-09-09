@@ -187,10 +187,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install Bandit
+      - name: Install static-analysis tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install bandit
+          python -m pip install -e ".[dev]" bandit
+
+      - name: Enforce reviewed Ruff and mypy baseline
+        run: python scripts/check_static_baseline.py
 
       - name: Run Bandit
         run: bandit -r aksara -x tests,.venv,docs --severity-level high --skip B324

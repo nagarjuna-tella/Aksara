@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: static-analysis-baseline
+        name: static analysis debt baseline
+        entry: python scripts/check_static_baseline.py
+        language: system
+        pass_filenames: false
+        always_run: true

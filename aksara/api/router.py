@@ -27,7 +27,7 @@ Usage:
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -48,6 +48,9 @@ from aksara.exceptions import (
     ForeignKeyConstraintError,
     DatabaseError,
 )
+
+if TYPE_CHECKING:
+    from aksara.app import Aksara
 
 
 # Cache of paginated response wrappers, keyed by the Read schema class so

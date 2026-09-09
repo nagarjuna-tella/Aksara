@@ -288,15 +288,13 @@ class Aksara(FastAPI):
         
         v0.3.15: Admin mounting rules:
         - enable_admin=None (default):
-          - If settings.debug == True and auth is available → mount /admin
+          - If this application has debug=True and auth is available → mount /admin
           - Else → no admin
         - enable_admin=True:
           - Always mount /admin, requires auth contrib → or RuntimeError
         - enable_admin=False:
           - Never mount admin
         """
-        from aksara.conf import settings
-        
         # Check if auth contrib is available (including bcrypt dependency)
         auth_available = False
         auth_error = None
@@ -326,8 +324,7 @@ class Aksara(FastAPI):
         
         elif self.enable_admin is None:
             # Default: auto-enable in debug mode only if auth is available
-            is_debug = self._debug or getattr(settings, "debug", False)
-            if is_debug and auth_available:
+            if self._debug and auth_available:
                 from aksara.contrib.admin import include_admin
                 include_admin(self)
         
@@ -338,8 +335,7 @@ class Aksara(FastAPI):
         from aksara.conf import settings
         from aksara.storage import FileSystemStorage, get_default_storage
 
-        is_debug = self._debug or getattr(settings, "debug", False)
-        if not is_debug:
+        if not self._debug:
             return
 
         storage = get_default_storage()
@@ -750,8 +746,7 @@ class Aksara(FastAPI):
             return False
         
         # In production, require explicit flag
-        is_debug = self._debug or settings.debug
-        if not is_debug and not settings.studio_expose_in_production:
+        if not self._debug and not settings.studio_expose_in_production:
             return False
         
         return True

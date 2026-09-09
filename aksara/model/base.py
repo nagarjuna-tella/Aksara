@@ -10,13 +10,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from aksara.db import quote_identifier
 from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField, GenericForeignKey, Vector
 from aksara.i18n import serialize_value
 from aksara.registry import ModelRegistry
+
+if TYPE_CHECKING:
+    from aksara.db import Database
+    from aksara.manager import Manager
 
 
 T = TypeVar("T", bound="Model")

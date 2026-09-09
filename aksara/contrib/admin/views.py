@@ -881,7 +881,12 @@ def _safe_error_message(exc: Exception, action: str) -> str:
     anything else is logged and replaced with a generic message to avoid
     leaking internal details into the UI.
     """
-    logger.warning("Admin %s failed: %s", action, exc, exc_info=True)
+    logger.warning(
+        "Admin %s failed: %s",
+        action,
+        exc,
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
     if isinstance(exc, (ValueError, TypeError)):
         return str(exc)
     return f"Could not {action} this record. Please check the values and try again."
@@ -1224,8 +1229,8 @@ async def admin_login(request: Request, site: "AdminSite" = None) -> HTMLRespons
                     error = "Invalid username or password."
             except ImportError:
                 error = "Authentication module not configured. Please set up aksara.contrib.auth."
-            except Exception as exc:
-                logger.exception("Admin login error: %s", exc)
+            except Exception:
+                logger.exception("Admin login error")
                 error = "Login failed. Please try again."
         else:
             error = "Please enter both username and password."

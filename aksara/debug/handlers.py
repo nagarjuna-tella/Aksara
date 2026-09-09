@@ -20,6 +20,7 @@ from starlette.responses import HTMLResponse, JSONResponse, Response
 from starlette.types import ASGIApp
 
 if TYPE_CHECKING:
+    from aksara.ai.debug import AiDebugContext
     from aksara.app import Aksara
 
 
@@ -246,10 +247,6 @@ def render_debug_page(
     Returns:
         HTMLResponse with the styled error page.
     """
-    from typing import TYPE_CHECKING
-    if TYPE_CHECKING:
-        from aksara.ai.debug import AiDebugContext
-    
     # Build traceback HTML
     traceback_html = _build_traceback_html(context.traceback_frames)
     

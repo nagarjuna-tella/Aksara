@@ -15,13 +15,10 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from aksara.migrations.base import Migration
 from aksara.migrations.graph import MigrationGraph, MigrationNode, find_conflicts
-
-if TYPE_CHECKING:
-    from aksara.migrations.graph import MigrationGraph
 
 logger = logging.getLogger(__name__)
 

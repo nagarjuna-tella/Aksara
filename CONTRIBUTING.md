@@ -80,16 +80,23 @@ fails before the fix and passes after.
 
 ## Code Quality
 
-The project uses `black`, `ruff`, and `mypy`. Run them before pushing:
+The project uses Black, Ruff, and mypy. Historical Ruff and mypy debt is
+recorded by rule/error code and must only move downward. Run the enforced gate
+before pushing:
 
 ```bash
-black .
-ruff check .
-mypy aksara
+python scripts/check_static_baseline.py
 ```
 
-`pre-commit` runs these automatically on staged files. If a hook fails, fix the
-underlying issue rather than bypassing it.
+Format new Python files and focused new code with Black. Run Ruff on new files
+directly; when editing a legacy file, review the changed lines and ensure the
+repository baseline does not grow. The baseline is not a claim that existing
+findings are acceptable forever. See `STATIC_ANALYSIS_BASELINE.md` for the
+classification and ratchet policy.
+
+`pre-commit` runs the same baseline command. If it fails, fix the added finding.
+Changing `static-analysis-baseline.json` requires explicit review and must never
+be used to hide a new violation.
 
 ## Commit Messages
 
@@ -111,7 +118,8 @@ subject line concise and explain the *why* in the body when it isn't obvious.
 1. Check for an existing issue, or open one to discuss the change first.
 2. Fork the repo and create a feature branch off `main`.
 3. Make your change with tests and updated docs where relevant.
-4. Ensure `pytest`, `black`, `ruff`, and `mypy` all pass.
+4. Ensure relevant tests pass and `python scripts/check_static_baseline.py`
+   remains at or below its reviewed Ruff/mypy baseline.
 5. Open a pull request and fill out the template.
 
 Keep pull requests focused — one logical change per PR is easier to review and

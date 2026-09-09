@@ -127,10 +127,10 @@ class TestAdminMountingBehavior:
 
 
 class TestAdminMountingWithSettings:
-    """Tests for admin mounting with settings.debug."""
+    """Tests for admin mounting when global and application settings differ."""
     
-    def test_admin_uses_settings_debug(self):
-        """Test that admin respects settings.debug when app debug is not set."""
+    def test_application_debug_overrides_global_debug(self):
+        """An explicit production app must not inherit process-wide debug mode."""
         from aksara import Aksara
         from aksara.conf import settings, configure
         
@@ -145,9 +145,7 @@ class TestAdminMountingWithSettings:
                 auto_discover_views=False,
             )
             
-            # Since app._debug takes precedence, admin should NOT mount
             route_paths = [route.path for route in iter_routes(app)]
-            # Note: The implementation uses self._debug OR settings.debug
-            # so this should actually mount the admin
+            assert "/admin/" not in route_paths
         finally:
             configure(debug=original_debug)

@@ -104,7 +104,7 @@ class TestModelToDictManyToMany:
         tag_id = uuid.uuid4()
         # The serializer stashes cached M2M IDs as `_<field>_ids`; the
         # canonical serializer path must surface them too.
-        setattr(post, "_tags_ids", [tag_id])
+        post._tags_ids = [tag_id]
 
         dumped = model_to_dict(post)
         assert dumped["tags"] == [tag_id]
