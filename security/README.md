@@ -8,6 +8,11 @@ This directory contains public-safe security engineering artifacts.
 It is intentionally minimal and does not publish private project coverage
 details.
 
+`security_matrix.release.yml` is the public-safe matrix used by this
+framework's release-candidate workflow. Its covered entries point to committed
+regression tests, and its unimplemented MCP protocol surface is explicitly
+outside the release guarantee.
+
 ## Private Matrix
 
 `security_matrix.yml` is intentionally git-ignored and should be used only for
@@ -25,6 +30,9 @@ AKSARA_REQUIRE_SECURITY_MATRIX=true
 ```
 
 to make a missing or invalid private matrix a blocking diagnostic condition.
+`aksara doctor production-check --release` always requires a matrix, rejects
+warnings and incomplete scenarios, and can locate an explicit matrix through
+`AKSARA_SECURITY_MATRIX_PATH`.
 
 ## Public Security Docs
 

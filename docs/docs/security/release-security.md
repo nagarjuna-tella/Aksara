@@ -36,12 +36,14 @@ A release candidate should pass:
 - `twine check`
 - Wheel import verification
 - SBOM generation
-- `aksara doctor production-check`
+- `aksara doctor production-check --release`
 
-Public CI sets `AKSARA_REQUIRE_SECURITY_MATRIX=false` so private
-`security/security_matrix.yml` coverage is not required in public workflows.
-Private release environments may opt into strict private matrix enforcement with
-`AKSARA_REQUIRE_SECURITY_MATRIX=true`.
+The release-candidate job sets `AKSARA_SECURITY_MATRIX_PATH` to the public-safe
+framework matrix at `security/security_matrix.release.yml`. The strict command
+requires every diagnostic to pass, rejects planned or partial scenarios, and
+requires covered evidence for each implemented surface. Applications can point
+the same setting at a private project matrix; `security/security_matrix.yml`
+remains ignored by default.
 
 Bandit currently gates high-severity findings. The existing non-security MD5 ID
 generation finding is excluded from the blocking gate; medium and low findings

@@ -1,0 +1,111 @@
+version: 1
+
+metadata:
+  name: aksara-framework-release-security-matrix
+  description: Public release evidence for the Aksara framework's v0.6 gates.
+  owner: Aksara maintainers
+  status: active
+  round: 1
+
+surfaces:
+  - id: generated_rest_mutation
+    name: Generated REST mutation
+    category: rest
+    implemented: true
+    description: Generated create and update endpoints with schema and runtime policy enforcement.
+
+  - id: tenant_rls
+    name: Tenant RLS boundary
+    category: database
+    implemented: true
+    description: TenantModel access through a restricted PostgreSQL application role.
+
+  - id: production_diagnostics
+    name: Production diagnostics
+    category: operations
+    implemented: true
+    description: Doctor deployment and release-candidate policy evaluation.
+
+  - id: mcp_protocol_execution
+    name: MCP protocol execution
+    category: mcp
+    implemented: false
+    description: No MCP protocol execution transport is shipped by this repository.
+
+actors:
+  - id: unauthenticated
+    description: Caller without authenticated identity.
+
+  - id: authenticated_non_writer
+    description: Authenticated caller without mutation permission.
+
+  - id: wrong_tenant
+    description: Authenticated caller whose tenant differs from the target row.
+
+  - id: release_operator
+    description: Operator evaluating a production or release-candidate configuration.
+
+  - id: mcp_client
+    description: Client expecting an MCP protocol execution transport.
+
+risks:
+  - id: unauthorized_mutation
+    severity: critical
+    description: A caller changes persisted state without authorization.
+
+  - id: schema_bypass
+    severity: high
+    description: Invalid or protected input bypasses generated schema or runtime policy checks.
+
+  - id: cross_tenant_access
+    severity: critical
+    description: A tenant reads or changes another tenant's row.
+
+  - id: advisory_release
+    severity: high
+    description: A release is approved despite warnings or incomplete security evidence.
+
+  - id: missing_transport
+    severity: medium
+    description: A catalog endpoint is mistaken for a protocol execution transport.
+
+scenarios:
+  - id: generated_rest_invalid_payload
+    surface: generated_rest_mutation
+    actor: unauthenticated
+    risk: schema_bypass
+    expected: deny
+    status: covered
+    description: tests/security/fuzz/test_openapi_fuzz.py rejects invalid and protected payloads without state changes or 500 responses.
+
+  - id: generated_rest_forbidden_mutation
+    surface: generated_rest_mutation
+    actor: authenticated_non_writer
+    risk: unauthorized_mutation
+    expected: deny
+    status: covered
+    description: tests/security/fuzz/test_openapi_fuzz.py verifies authenticated-but-forbidden writes leave state unchanged.
+
+  - id: restricted_role_cross_tenant_access
+    surface: tenant_rls
+    actor: wrong_tenant
+    risk: cross_tenant_access
+    expected: deny
+    status: covered
+    description: tests/security/test_restricted_role_tenancy.py covers ORM, generated API, pool reuse, and task context with a restricted PostgreSQL role.
+
+  - id: release_candidate_warning
+    surface: production_diagnostics
+    actor: release_operator
+    risk: advisory_release
+    expected: block
+    status: covered
+    description: tests/diagnostics/test_production_check.py verifies release mode requires a complete matrix and fails on every warning.
+
+  - id: mcp_protocol_execution_absent
+    surface: mcp_protocol_execution
+    actor: mcp_client
+    risk: missing_transport
+    expected: warn
+    status: not_applicable
+    description: The supported-surface contract explicitly excludes protocol execution because the repository exposes only an MCP-shaped catalog.

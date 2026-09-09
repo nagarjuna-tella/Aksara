@@ -1,9 +1,9 @@
 """
 Tests for the Aksara security matrix loader and validator.
 
-The public repository ships only security_matrix.example.yml.
-Projects maintain a private security_matrix.yml (git-ignored).
-These tests validate the example file and the validator logic.
+The public repository ships an example matrix and a framework release matrix.
+Projects may maintain a private security_matrix.yml (git-ignored).
+These tests validate matrix discovery, the example file, and validator logic.
 """
 
 from __future__ import annotations
@@ -18,9 +18,10 @@ from aksara.security.matrix import (
     VALID_SEVERITIES,
     VALID_STATUSES,
     MatrixValidationIssue,
+    _find_default_matrix_path,
+    _find_example_matrix_path,
     load_security_matrix,
     validate_security_matrix,
-    _find_example_matrix_path,
 )
 
 # ---------------------------------------------------------------------------
@@ -85,6 +86,13 @@ class TestExampleSecurityMatrix:
         found = _find_example_matrix_path()
         assert found is not None, "_find_example_matrix_path() returned None"
         assert found.exists()
+
+    def test_explicit_matrix_path_takes_precedence(self, tmp_path, monkeypatch):
+        configured = tmp_path / "release-matrix.yml"
+        configured.write_text("version: 1\n", encoding="utf-8")
+        monkeypatch.setenv("AKSARA_SECURITY_MATRIX_PATH", str(configured))
+
+        assert _find_default_matrix_path() == configured
 
     def test_example_matrix_loads_successfully(self):
         matrix = load_security_matrix(EXAMPLE_MATRIX_PATH)

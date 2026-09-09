@@ -17,7 +17,7 @@ workflow and confirm these checks pass:
   checksum verification) against a real PostgreSQL database
 - A migration smoke check: `aksara migrate` and `aksara status` against a
   scratch database, confirming checksum recording and verification
-- `aksara doctor production-check`
+- `AKSARA_SECURITY_MATRIX_PATH=security/security_matrix.release.yml aksara doctor production-check --release`
 - Strict docs build
 - Dependency audit
 - Static analysis
@@ -28,6 +28,11 @@ workflow and confirm these checks pass:
 - SBOM generation
 
 ## PyPI Trusted Publishing
+
+The plain production check is a deployment diagnostic: warnings remain
+advisory. The `--release` form is the release-candidate gate and fails unless
+every diagnostic passes, the matrix contains no planned or partial scenarios,
+and each implemented surface has covered evidence.
 
 Configure PyPI Trusted Publishing in the PyPI project settings:
 

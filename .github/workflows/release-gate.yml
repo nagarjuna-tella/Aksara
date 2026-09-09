@@ -101,7 +101,7 @@ jobs:
       AKSARA_ENV: production
       AKSARA_DEBUG: "false"
       AKSARA_SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
-      AKSARA_REQUIRE_SECURITY_MATRIX: "false"
+      AKSARA_SECURITY_MATRIX_PATH: security/security_matrix.release.yml
       AKSARA_MCP_ENABLED: "false"
       AKSARA_STUDIO_EXPOSE_IN_PRODUCTION: "false"
       AKSARA_STUDIO_REQUIRE_AUTH: "true"
@@ -110,6 +110,7 @@ jobs:
       CORS_ALLOW_ALL_ORIGINS: "false"
       CORS_ALLOW_CREDENTIALS: "false"
       AKSARA_AI_CONSOLE_ENABLED: "false"
+      AKSARA_AI_ENABLED: "false"
     steps:
       - uses: actions/checkout@v6
 
@@ -124,7 +125,7 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Run production-check
-        run: aksara doctor production-check --format json
+        run: aksara doctor production-check --release --format json
 
   package-build:
     name: Package build verification

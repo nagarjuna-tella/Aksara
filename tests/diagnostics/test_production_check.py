@@ -15,7 +15,11 @@ import pytest
 from click.testing import CliRunner
 
 from aksara.cli.main import cli
-from aksara.security.checks import run_security_checks
+from aksara.security.checks import (
+    SecurityCheckReport,
+    SecurityCheckResult,
+    run_security_checks,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -32,6 +36,7 @@ def _make_safe_settings():
         "enable_studio": False,
         "studio_expose_in_production": False,
         "studio_require_auth": True,
+        "ai_enabled": False,
         "mcp_enabled": False,
         "ai_agent_token": None,
         "studio_allowed_origins": [],
@@ -51,6 +56,43 @@ def _patch_safe_env():
         "AKSARA_AI_CONSOLE_ENABLED": "false",
         "AKSARA_REQUIRE_SECURITY_MATRIX": "false",
     }
+
+
+def _write_release_matrix(tmp_path: Path) -> Path:
+    matrix = tmp_path / "security_matrix.yml"
+    matrix.write_text(
+        """\
+version: 1
+metadata:
+  name: release-test
+  description: Complete release policy fixture
+  owner: test
+  status: active
+surfaces:
+  - id: rest_create
+    name: REST Create
+    category: rest
+    implemented: true
+    description: Generated create endpoint
+actors:
+  - id: unauthenticated
+    description: Caller without credentials
+risks:
+  - id: missing_auth
+    severity: critical
+    description: Missing authentication
+scenarios:
+  - id: unauthenticated_rest_create
+    surface: rest_create
+    actor: unauthenticated
+    risk: missing_auth
+    expected: deny
+    status: covered
+    description: The request is denied by a regression test
+""",
+        encoding="utf-8",
+    )
+    return matrix
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +258,60 @@ class TestProductionCheckBlockingConditions:
                 report = run_security_checks(is_production=True)
         assert not report.should_exit_nonzero
 
+    def test_release_candidate_requires_security_matrix(self):
+        with (
+            patch("aksara.security.matrix._find_default_matrix_path", return_value=None),
+            patch(
+                "aksara.security.checks.get_setting",
+                side_effect=lambda n, d=None: _make_safe_settings().get(n, d),
+            ),
+            patch.dict(os.environ, _patch_safe_env(), clear=True),
+        ):
+            report = run_security_checks(release_candidate=True)
+
+        matrix_result = next(r for r in report.results if r.id == "security.matrix")
+        assert report.is_production
+        assert report.release_candidate
+        assert matrix_result.status == "block"
+        assert report.should_exit_nonzero
+
+    def test_release_candidate_fails_on_warning(self, tmp_path):
+        warning_env = {**_patch_safe_env(), "CORS_ALLOW_ALL_ORIGINS": "true"}
+        with (
+            patch(
+                "aksara.security.matrix._find_default_matrix_path",
+                return_value=_write_release_matrix(tmp_path),
+            ),
+            patch(
+                "aksara.security.checks.get_setting",
+                side_effect=lambda n, d=None: _make_safe_settings().get(n, d),
+            ),
+            patch.dict(os.environ, warning_env, clear=True),
+        ):
+            report = run_security_checks(release_candidate=True)
+
+        assert report.overall_status == "warn"
+        assert report.should_exit_nonzero
+
+    def test_release_candidate_fails_on_skipped_check(self):
+        report = SecurityCheckReport(
+            check_name="production-check",
+            is_production=True,
+            release_candidate=True,
+        )
+        report.add(
+            SecurityCheckResult(
+                id="security.required_probe",
+                title="Required probe",
+                severity="high",
+                status="skip",
+                message="Probe was not run.",
+            )
+        )
+
+        assert report.overall_status == "skip"
+        assert report.should_exit_nonzero
+
 
 # ---------------------------------------------------------------------------
 # CLI integration tests
@@ -248,6 +344,8 @@ class TestDoctorProductionCheckCLI:
         assert "status" in data
         assert "summary" in data
         assert "exit_code" in data
+        assert data["policy"] == "deployment"
+        assert data["release_ready"] is None
 
     def test_production_check_json_exit_code_field(self):
         runner = CliRunner()
@@ -364,3 +462,51 @@ class TestDoctorProductionCheckCLI:
             f"Expected exit 0 with safe config but got {result.exit_code}. "
             f"Results: {[r for r in data['results'] if r['status'] in ('block', 'fail')]}"
         )
+
+    def test_release_candidate_cli_passes_only_clean_config_with_matrix(self, tmp_path):
+        runner = CliRunner()
+        with (
+            patch(
+                "aksara.security.matrix._find_default_matrix_path",
+                return_value=_write_release_matrix(tmp_path),
+            ),
+            patch(
+                "aksara.security.checks.get_setting",
+                side_effect=lambda n, d=None: _make_safe_settings().get(n, d),
+            ),
+            patch.dict(os.environ, _patch_safe_env(), clear=True),
+        ):
+            result = runner.invoke(
+                cli,
+                ["doctor", "production-check", "--release", "--format", "json"],
+            )
+
+        data = json.loads(result.output)
+        assert result.exit_code == 0
+        assert data["policy"] == "release-candidate"
+        assert data["release_ready"] is True
+        assert data["status"] == "pass"
+
+    def test_release_candidate_cli_fails_on_warning(self, tmp_path):
+        runner = CliRunner()
+        warning_env = {**_patch_safe_env(), "CORS_ALLOW_ALL_ORIGINS": "true"}
+        with (
+            patch(
+                "aksara.security.matrix._find_default_matrix_path",
+                return_value=_write_release_matrix(tmp_path),
+            ),
+            patch(
+                "aksara.security.checks.get_setting",
+                side_effect=lambda n, d=None: _make_safe_settings().get(n, d),
+            ),
+            patch.dict(os.environ, warning_env, clear=True),
+        ):
+            result = runner.invoke(
+                cli,
+                ["doctor", "production-check", "--release", "--format", "json"],
+            )
+
+        data = json.loads(result.output)
+        assert result.exit_code == 1
+        assert data["release_ready"] is False
+        assert data["status"] == "warn"

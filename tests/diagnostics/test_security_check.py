@@ -203,6 +203,18 @@ class TestCheckSecurityMatrix:
             result = check_security_matrix(is_production=False)
         assert result.status == "pass", f"Expected pass but got {result.status}: {result.message}"
 
+    def test_release_matrix_blocks_planned_and_uncovered_surfaces(self):
+        with patch(
+            "aksara.security.matrix._find_default_matrix_path",
+            return_value=EXAMPLE_MATRIX_PATH,
+        ):
+            result = check_security_matrix(is_production=True, required=True)
+
+        assert result.status == "block"
+        assert result.title == "Security matrix coverage incomplete"
+        assert "incomplete scenario" in result.message
+        assert "without covered scenarios" in result.message
+
     def test_missing_matrix_warns_in_dev(self, tmp_path, monkeypatch):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):
             with patch.dict(os.environ, {"AKSARA_REQUIRE_SECURITY_MATRIX": "false"}):

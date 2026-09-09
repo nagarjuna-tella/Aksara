@@ -22,7 +22,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 ## security
 
 - [x] P1: Replace skipped OpenAPI fuzz placeholders with generated-CRUD invalid-input and forbidden-field mutation invariants; `audit-evidence/v060/generated-api-abuse.md` records the real PostgreSQL run.
-- [ ] P1: Set an explicit release policy for Doctor warnings and security-matrix requirements; test both safe and unsafe cases.
+- [x] P1: Set an explicit release policy for Doctor warnings and security-matrix requirements; `production-check --release` requires every check to pass and rejects incomplete matrix coverage, with safe and unsafe CLI regressions.
 
 ## tenancy
 
@@ -52,7 +52,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## diagnostics
 
-- [ ] Make production warning handling explicit to release operators; check that route inspection accurately reports a running first app.
+- [x] Make production warning handling explicit to release operators; deployment warnings remain advisory, while release-candidate warnings fail. Route inspection accurately reports a running first app at both dependency boundaries.
 
 ## operations
 
@@ -61,7 +61,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## observability
 
-- [ ] Ensure the supported operational contract distinguishes successful command exit from a WARN report; retain structured evidence for failed release checks.
+- [x] Ensure the supported operational contract distinguishes successful deployment-command exit from a WARN report; release mode returns nonzero for WARN and includes `policy`, `release_ready`, and `exit_code` in JSON.
 
 ## packaging
 
