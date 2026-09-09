@@ -41,15 +41,16 @@ from __future__ import annotations
 import inspect
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, get_type_hints
 from uuid import UUID
 
-from pydantic import BaseModel, Field as PydanticField, ValidationError, create_model
+from pydantic import BaseModel, ValidationError, create_model
+from pydantic import Field as PydanticField
 
-from aksara.model.base import Model
-from aksara.i18n import serialize_value
 from aksara import fields as aksara_fields
-
+from aksara.api.field_policy import advanced_input_type
+from aksara.i18n import serialize_value
+from aksara.model.base import Model
 
 if TYPE_CHECKING:
     from aksara.manager import Manager
@@ -339,13 +340,13 @@ class ModelSerializer(metaclass=SerializerMetaclass):
             
             if is_required:
                 field_definitions[actual_field_name] = (
-                    python_type,
+                    advanced_input_type(field, python_type),
                     PydanticField(description=field.ai_description)
                 )
             else:
                 default_value = field.get_default_value() if has_default else None
                 field_definitions[actual_field_name] = (
-                    Optional[python_type],
+                    advanced_input_type(field, Optional[python_type]),
                     PydanticField(default=default_value, description=field.ai_description)
                 )
         

@@ -32,7 +32,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.54"
+from aksara._version import __version__ as CLI_VERSION
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
@@ -469,7 +469,7 @@ def startproject(project_name: str, directory: str, template: str):
         ui.section("What's included")
         ui.bullet("Commented example stubs for models, views, serializers, admin")
         ui.bullet("Admin at /admin")
-        ui.bullet("Studio at /studio/ui")
+        ui.bullet("Studio at /studio/ui (disabled by default; enable explicitly)")
         ui.bullet("AI tools at /ai/tools")
         ui.next_steps(
             [

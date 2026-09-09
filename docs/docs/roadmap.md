@@ -138,6 +138,14 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ---
 
+## v0.5.55 Candidate (Unpublished)
+
+Advanced Array/Vector/JSON/File policy is implemented in the candidate, including
+stricter API inputs and validated defaults. Failed-start connection cleanup and
+supported web route traversal are under the release gate. The independent
+benchmark overhaul is outside this correctness release. See the
+[runtime compatibility contract](reference/runtime-compatibility.md).
+
 ## Future Roadmap
 
 ### Remaining ORM Correctness Work
@@ -146,10 +154,6 @@ Planned ORM correctness work remains:
 
 - Lazy forward FK object loading, if desired.
 - Custom ManyToMany through model support.
-- Advanced Array/vector/file field policy, including array item/nested array
-  handling and vector precision.
-- FileField/ImageField `to_python()` contract.
-- JSON scalar behavior.
 - Relation features not implemented by the current relation manager APIs.
 
 ### v0.5.x - Durable AI Session Store

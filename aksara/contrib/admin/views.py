@@ -940,7 +940,7 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
     import json
     import uuid as _uuid
 
-    from aksara.fields import _coerce_strict_boolean
+    from aksara.fields import _coerce_strict_boolean, _coerce_strict_integer
 
     if raw_value is None:
         return None
@@ -972,9 +972,7 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
             # silently becoming False.
             coerced.append(item if isinstance(item, bool) else _coerce_strict_boolean(item))
         elif item_type is int:
-            if isinstance(item, bool):
-                raise ValueError("Array field (int) does not accept boolean values")
-            coerced.append(int(item))
+            coerced.append(_coerce_strict_integer(item, "Array field (int)"))
         elif item_type is float:
             if isinstance(item, bool):
                 raise ValueError("Array field (float) does not accept boolean values")
@@ -982,8 +980,15 @@ def _coerce_array_form_value(raw_value: Any, field: Any) -> Optional[List[Any]]:
         elif item_type is _uuid.UUID:
             coerced.append(item if isinstance(item, _uuid.UUID) else _uuid.UUID(str(item)))
         else:
-            coerced.append(str(item))
-    return coerced
+            if not isinstance(item, str):
+                raise ValueError(
+                    f"Array field (str) expects strings, got {type(item).__name__}"
+                )
+            coerced.append(item)
+    # Reuse item validation after adapter-level parsing so finite numbers,
+    # bounds, and nested values cannot diverge by write surface. Preserve None
+    # for the caller so the core field reports the canonical null-item error.
+    return [item if item is None else field._validate_item(item) for item in coerced]
 
 
 def _parse_form_data(

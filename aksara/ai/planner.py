@@ -33,6 +33,8 @@ Usage:
 
 from __future__ import annotations
 
+from aksara.routing import iter_routes
+
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -1433,8 +1435,8 @@ async def _handle_run_health_check(
         # Check routes
         try:
             if hasattr(app, 'routes'):
-                checks["routes_configured"] = len(app.routes) > 0
-                checks["route_count"] = len(app.routes)
+                checks["routes_configured"] = len(list(iter_routes(app))) > 0
+                checks["route_count"] = len(list(iter_routes(app)))
         except Exception:
             pass
         

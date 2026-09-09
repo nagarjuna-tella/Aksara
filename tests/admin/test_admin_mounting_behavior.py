@@ -8,6 +8,8 @@ Tests that:
 - Admin raises RuntimeError if enabled without auth
 """
 
+from aksara.routing import iter_routes
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -27,7 +29,7 @@ class TestAdminMountingBehavior:
         )
         
         # Check that /admin/ route exists
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/admin/" in route_paths
     
     def test_admin_does_not_mount_in_production_by_default(self):
@@ -42,7 +44,7 @@ class TestAdminMountingBehavior:
         )
         
         # Check that /admin/ route does NOT exist
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/admin/" not in route_paths
     
     def test_admin_mounts_when_explicitly_enabled(self):
@@ -58,7 +60,7 @@ class TestAdminMountingBehavior:
         )
         
         # Check that /admin/ route exists
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/admin/" in route_paths
     
     def test_admin_does_not_mount_when_explicitly_disabled(self):
@@ -74,7 +76,7 @@ class TestAdminMountingBehavior:
         )
         
         # Check that /admin/ route does NOT exist
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/admin/" not in route_paths
     
     def test_admin_raises_error_without_auth_when_enabled(self):
@@ -108,7 +110,7 @@ class TestAdminMountingBehavior:
             auto_discover_views=False,
         )
         
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         
         # Check for expected routes
         expected_routes = [
@@ -144,7 +146,7 @@ class TestAdminMountingWithSettings:
             )
             
             # Since app._debug takes precedence, admin should NOT mount
-            route_paths = [route.path for route in app.routes]
+            route_paths = [route.path for route in iter_routes(app)]
             # Note: The implementation uses self._debug OR settings.debug
             # so this should actually mount the admin
         finally:

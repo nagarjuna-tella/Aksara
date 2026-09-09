@@ -45,6 +45,7 @@ nav:
   - Getting Started:
       - getting-started/index.md
       - Installation: getting-started/installation.md
+      - Runtime Compatibility: reference/runtime-compatibility.md
       - Your First 10 Minutes: getting-started/ten-minutes.md
       - First Project: getting-started/first-project.md
       - Studio Quickstart: getting-started/studio.md

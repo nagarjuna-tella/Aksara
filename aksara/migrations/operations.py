@@ -339,12 +339,24 @@ def _escape_sql_string(value: str) -> str:
 
 def _format_jsonb_default(value: Any) -> str:
     """Format a Python value as a JSONB default literal."""
-    payload = json.dumps(value)
+    payload = json.dumps(value, allow_nan=False)
     return f"'{_escape_sql_string(payload)}'::jsonb"
 
 
 def _format_array_default(value: Any, sql_type: str) -> str:
     """Format a Python sequence as a PostgreSQL array default literal."""
+    # Canonical ORM arrays must keep the same default/write contract.
+    from uuid import UUID
+
+    from aksara.fields import Array
+
+    canonical_types = {
+        "TEXT[]": str, "INTEGER[]": int, "DOUBLE PRECISION[]": float,
+        "BOOLEAN[]": bool, "UUID[]": UUID,
+    }
+    item_type = canonical_types.get(sql_type.upper())
+    if item_type is not None:
+        value = Array(item_type=item_type).to_db(value)
     if not isinstance(value, (list, tuple)):
         return f"'{_escape_sql_string(str(value))}'"
 
@@ -721,6 +733,9 @@ class VectorField(FieldOp):
         nullable: bool = False,
         default: Optional[Any] = None,
     ):
+        from aksara.fields import validate_vector_dimensions
+
+        validate_vector_dimensions(dimensions)
         self.dimensions = dimensions
         self.nullable = nullable
         self.default = default
@@ -732,17 +747,9 @@ class VectorField(FieldOp):
         if not self.nullable:
             parts.append("NOT NULL")
         if self.default is not None:
-            if isinstance(self.default, (list, tuple)):
-                # Reuse the shared vector policy so migration defaults reject
-                # bool/non-finite/empty values and use high-precision
-                # serialization, matching runtime Vector fields.
-                from aksara.fields import serialize_vector_components
+            from aksara.fields import Vector
 
-                default_literal = serialize_vector_components(
-                    self.default, dimensions=self.dimensions
-                )
-            else:
-                default_literal = str(self.default)
+            default_literal = Vector(dimensions=self.dimensions).to_db(self.default)
             parts.append(f"DEFAULT '{default_literal}'::vector")
 
         return " ".join(parts)

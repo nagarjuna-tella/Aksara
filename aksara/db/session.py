@@ -7,8 +7,9 @@ Context variable based session management for request lifecycle.
 from __future__ import annotations
 
 from contextvars import ContextVar, Token
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from aksara.db.cleanup import release_owned_connection
 from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
 
 if TYPE_CHECKING:
@@ -70,17 +71,35 @@ class session_context:
     async def __aenter__(self) -> "asyncpg.Connection":
         """Acquire connection and set in context."""
         self._connection = await self.db.pool.acquire()
-        self._tenant_applied = await apply_tenant_context(self._connection)
-        self._token = _session_context.set(self._connection)
+        try:
+            # Setup can fail after changing the connection's tenant setting.
+            self._tenant_applied = True
+            self._tenant_applied = await apply_tenant_context(self._connection)
+            self._token = _session_context.set(self._connection)
+        except BaseException as exc:
+            await self.__aexit__(type(exc), exc, exc.__traceback__)
+            raise
         return self._connection
     
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Release connection and clear context."""
+        reset_error = None
         if self._token is not None:
-            _session_context.reset(self._token)
-        if self._connection is not None:
-            if self._tenant_applied:
-                await reset_tenant_context(self._connection)
-            await self.db.pool.release(self._connection)
-            self._connection = None
+            try:
+                reset_session(self._token)
+            except BaseException as cleanup_error:  # noqa: BLE001
+                if exc_val is None:
+                    reset_error = cleanup_error
+                    exc_val = cleanup_error
+                else:
+                    exc_val.add_note(
+                        f"Session context reset also failed: {type(cleanup_error).__name__}"
+                    )
+            self._token = None
+        connection, self._connection = self._connection, None
+        reset = reset_tenant_context if self._tenant_applied else None
         self._tenant_applied = False
+        if connection is not None:
+            await release_owned_connection(self.db.pool, connection, reset, exc_val)
+        if reset_error is not None:
+            raise reset_error

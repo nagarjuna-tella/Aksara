@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from aksara.routing import iter_routes
+
 import importlib
 import sys
 from pathlib import Path
@@ -57,7 +59,7 @@ def test_model_examples_can_import_models(module):
 def test_basic_app_imports_and_registers_routes():
     app_module = importlib.import_module("examples.basic_app.main")
     app = app_module.app
-    paths = {route.path for route in app.routes}
+    paths = {route.path for route in iter_routes(app)}
     assert "/api/users/" in paths
     assert "/api/posts/" in paths
     assert "/studio/ui" in paths
@@ -74,7 +76,7 @@ def test_basic_app_models_are_registered():
 
 def test_first_app_launch_check_smoke():
     report = run_launch_check(ROOT / "examples" / "basic_app", check_database=False)
-    assert report.version == "0.5.54"
+    assert report.version == "0.5.55"
     assert any(check.name == "studio_ui" and check.status == "ok" for check in report.checks)
     assert any(check.name == "mcp_catalog" and check.status == "ok" for check in report.checks)
 

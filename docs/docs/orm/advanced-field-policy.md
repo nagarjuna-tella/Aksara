@@ -368,3 +368,17 @@ Keep these out of v0.5.55:
 - storage backend redesign;
 - multidimensional PostgreSQL arrays;
 - a top-level JSON null sentinel, unless it receives a separate design.
+
+## Candidate review clarifications
+
+Generated CRUD schemas and `ModelSerializer` both apply advanced input validation
+before Pydantic coercion. In particular, `true` is not an integer Array item or a
+Vector component. JSON scalar API values retain their type. Array defaults use
+this same policy: empty strings remain empty strings, quotes and UUIDs survive
+DDL round trips, and invalid defaults fail before DDL. Unknown `item_type` values
+are not silently mapped to `TEXT[]`.
+
+Vector dimensions must be positive integers or `None`; boolean dimensions are
+invalid. File/image stored paths must be strings or supported path objects at
+normalization boundaries, and cannot contain parent traversal or null bytes.
+These stricter checks may reject previously accepted ambiguous inputs.

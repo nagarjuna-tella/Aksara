@@ -33,7 +33,10 @@
 
 Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Studio UI, MCP tools, and system-level AI intelligence. The goal is simple: a new project should have a working API, inspectable data model, AI-facing tool catalog, and launch diagnostics before you start writing glue code.
 
-Current release: **v0.5.54 — ORM Write & Relation Correctness**.
+Current published release documented here: **v0.5.54 — ORM Write & Relation Correctness**.
+
+This checkout prepares **v0.5.55 — Correctness and Hardening**; it is not published.
+See the [supported runtime contract](docs/docs/reference/runtime-compatibility.md).
 
 This release tightens ORM write paths and relation safety. `bulk_create()` now
 prepares rows before insert, applies auto-managed timestamps, runs field
@@ -346,7 +349,7 @@ See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the ful
 
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Current version: **0.5.54**.
+Aksara is **pre-1.0** and actively evolving. Checkout candidate version: **0.5.55**.
 
 **Stable:** ORM primitive field validation, query semantics (NULL filtering, `__isnull`, FK alias filters), write-path timestamp/preparation consistency, relation action validation, migration generation ordering, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB ORM support.
 

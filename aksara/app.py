@@ -7,8 +7,8 @@ Core FastAPI functionality remains untouched.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 # Re-export everything from FastAPI as-is
@@ -30,8 +30,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -42,11 +41,12 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from aksara.db import Database
-from aksara.apps import load_app_models
 from aksara._version import __version__
-
+from aksara.apps import load_app_models
+from aksara.db import Database
+from aksara.routing import iter_routes
 
 # Aksara SVG logo (blue lightning bolt with gradient)
 AKSARA_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366F1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/%3E%3C/svg%3E'''
@@ -302,6 +302,7 @@ class Aksara(FastAPI):
         auth_error = None
         try:
             from aksara.contrib.auth import User  # noqa: F401
+
             # Also verify bcrypt is available
             from aksara.contrib.auth.hashing import hash_password  # noqa: F401
             auth_available = True
@@ -350,7 +351,7 @@ class Aksara(FastAPI):
         if mount_path == "/":
             return
 
-        route_paths = {getattr(route, "path", None) for route in self.routes}
+        route_paths = {getattr(route, "path", None) for route in iter_routes(self)}
         if mount_path in route_paths:
             return
 
@@ -643,8 +644,12 @@ class Aksara(FastAPI):
     
     def _register_orm_exceptions(self) -> None:
         """Register exception handlers for Aksara ORM errors."""
+        from aksara.exceptions import (
+            RestrictedError,
+            UniqueConstraintError,
+            ValidationError,
+        )
         from aksara.manager import DoesNotExist, MultipleObjectsReturned
-        from aksara.exceptions import ValidationError, UniqueConstraintError, RestrictedError
         
         @self.exception_handler(DoesNotExist)
         async def handle_does_not_exist(request: Request, exc: DoesNotExist):
@@ -778,8 +783,8 @@ class Aksara(FastAPI):
         - views_module parameter (if specified)
         - settings.apps (if no views_module specified)
         """
-        from aksara.core.discovery import auto_discover_viewsets
         from aksara.api.router import include_viewset
+        from aksara.core.discovery import auto_discover_viewsets
         
         # Discover all ViewSets
         viewsets = auto_discover_viewsets(views_module=self._views_module)

@@ -5,7 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased — v0.5.55 — Advanced Field Policy
+## Unreleased — v0.5.55 — Correctness and Hardening
+
+### Release-candidate hardening (not published)
+
+- Connection ownership is established before tenant/transaction setup. Setup,
+  reset and cancellation failures return owned connections and restore session
+  context; cleanup failures do not replace the original error.
+- Route metadata traversal supports flat and included-router FastAPI layouts,
+  including nested prefixes, Studio/AI discovery and media mounts.
+- Web dependencies are bounded by tested FastAPI 0.136.1 / Starlette 1.0.1 and
+  FastAPI 0.141.1 / Starlette 1.6.0 pairs. CI exercises both endpoints.
+- Advanced validation runs before API numeric coercion in both schema builders.
+  JSON scalar inputs work in generated CRUD as well as ModelSerializer.
+- Array defaults use write validation, preserve empty strings and quote text/UUID
+  values safely. Unsupported item types now fail explicitly. Canonical migration
+  defaults follow the same policy; non-finite JSON defaults are rejected.
+- Vector dimensions must be positive integers (or unspecified), and migration
+  string defaults are validated rather than interpolated unchecked.
+- Stored file references reject malformed values, parent traversal and null bytes.
+- Generated projects depend on the `aksara-framework` distribution.
+
+The benchmark overhaul is independently reviewable and is not part of this
+correctness candidate. These changes do not declare Production Mode.
+
 
 Tightens correctness for advanced ORM field types. This does not claim that all
 ORM correctness work is complete; lazy forward FK object loading and custom

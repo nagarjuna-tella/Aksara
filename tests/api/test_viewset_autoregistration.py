@@ -8,6 +8,8 @@ Tests that:
 """
 
 import sys
+from aksara.routing import iter_routes
+
 import pytest
 from types import ModuleType
 from unittest.mock import patch, MagicMock
@@ -217,7 +219,7 @@ class TestViewsetAutoRegistrationIntegration:
             include_app_viewsets(app, "widgets")
         
         # Check that routes were created
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         
         assert "/widgets/" in route_paths
         assert "/widgets/{pk}" in route_paths

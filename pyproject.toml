@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.5.54"
+version = "0.5.55"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -31,8 +31,9 @@ classifiers = [
 dependencies = [
     "asyncpg>=0.29.0",
     "aiosmtplib>=3.0.0",
-    "fastapi>=0.136.1",
-    "starlette>=1.0.1",
+    # Bounded by the minimum/latest pairs exercised in release-gate.yml.
+    "fastapi>=0.136.1,<=0.141.1",
+    "starlette>=1.0.1,<=1.6.0",
     "idna>=3.15",
     "pillow>=10.0.0",
     "pydantic>=2.0.0",
