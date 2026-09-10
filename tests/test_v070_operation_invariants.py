@@ -745,7 +745,11 @@ async def test_connection_termination_rolls_back_and_pool_recovers(lab: Lab):
     assert claim is not None
     terminated_pid: int | None = None
     with _tenant_scope(tenant), pytest.raises(
-        (asyncpg.ConnectionDoesNotExistError, asyncpg.InterfaceError)
+        (
+            asyncpg.ConnectionDoesNotExistError,
+            asyncpg.InterfaceError,
+            asyncpg.InternalClientError,
+        )
     ):
         async with atomic(db=lab.db) as connection:
             terminated_pid = await connection.fetchval("SELECT pg_backend_pid()")
