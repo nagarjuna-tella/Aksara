@@ -14,7 +14,6 @@ from aksara.db.durable_guard import durable_database_guard
 from aksara.durable.errors import (
     AmbiguousCommitOutcome,
     AtomicBoundaryViolation,
-    AuthorizationDenied,
     DurableConfigurationError,
     OwnershipLost,
     ResolverNotRegistered,
@@ -92,18 +91,18 @@ class PostgresAtomicExecutor:
         principal = await self._resolve_or_fail(claim)
         if principal is None:
             return await self._read_authoritative(claim)
-        if not await self._authorize(action, principal, claim):
-            await self.service.fail_attempt(
-                claim,
-                code=FailureReason.AUTHORIZATION_DENIED.value,
-                message="current authorization denied the durable action",
-                retryable=False,
-            )
-            return await self._read_authoritative(claim)
 
         finalized_before_commit = False
         guard_state = None
         try:
+            if not await self._authorize(action, principal, claim):
+                await self.service.fail_attempt(
+                    claim,
+                    code=FailureReason.AUTHORIZATION_DENIED.value,
+                    message="current authorization denied the durable action",
+                    retryable=False,
+                )
+                return await self._read_authoritative(claim)
             with _tenant_context(claim.tenant_scope):
                 async with atomic(db=self.service.db) as connection:
                     await self._at_boundary("before_lock")
@@ -219,7 +218,7 @@ class PostgresAtomicExecutor:
                     "commit acknowledgement was ambiguous; authoritative operation "
                     f"state is {authoritative.state.value}"
                 ) from exc
-            if isinstance(exc, (OwnershipLost, AuthorizationDenied)):
+            if isinstance(exc, OwnershipLost):
                 raise
             retryable = action.is_retryable(exc)
             code = (
@@ -480,23 +479,40 @@ class ReadOnlyExecutor:
         principal = await self._identity._resolve_or_fail(claim)
         if principal is None:
             return await self._identity._read_authoritative(claim)
-        if not await self._identity._authorize(action, principal, claim):
-            return await self.service.fail_attempt(
-                claim,
-                code=FailureReason.AUTHORIZATION_DENIED.value,
-                message="current authorization denied the read-only action",
-                retryable=False,
-            )
         try:
+            if not await self._identity._authorize(action, principal, claim):
+                return await self.service.fail_attempt(
+                    claim,
+                    code=FailureReason.AUTHORIZATION_DENIED.value,
+                    message="current authorization denied the read-only action",
+                    retryable=False,
+                )
             with _tenant_context(claim.tenant_scope):
                 async with atomic(db=self.service.db) as connection:
-                    operation = await self.service._lock_owned(connection, claim)
-                    if operation["cancellation_requested_at"] is not None:
-                        return await self._identity._cancel_under_lock(
-                            connection, operation, claim
-                        )
-                async with atomic(db=self.service.db) as connection:
                     await connection.execute("SET TRANSACTION READ ONLY")
+                    executable = await connection.fetchval(
+                        """
+                        SELECT EXISTS (
+                            SELECT 1 FROM aksara_operations
+                            WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
+                              AND current_attempt_id = $3 AND fence = $4
+                              AND worker_id = $5 AND lease_expires_at > clock_timestamp()
+                              AND application_namespace = $6
+                              AND cancellation_requested_at IS NULL
+                              AND (deadline_at IS NULL OR deadline_at > clock_timestamp())
+                        )
+                        """,
+                        claim.operation_id,
+                        claim.tenant_scope,
+                        claim.attempt_id,
+                        claim.fence,
+                        claim.worker_id,
+                        self.service.application_namespace,
+                    )
+                    if not executable:
+                        break_for_lifecycle = True
+                    else:
+                        break_for_lifecycle = False
                     context = PostgresAtomicExecutionContext(
                         database=self.service.db,
                         operation_id=claim.operation_id,
@@ -505,18 +521,41 @@ class ReadOnlyExecutor:
                         tenant_id=claim.tenant_id,
                         fence=claim.fence,
                     )
-                    with durable_database_guard(self.service.db, connection) as guard:
-                        result = action.handler(context, dict(claim.command))
-                        if inspect.isawaitable(result):
-                            result = await result
-                        if guard.invalid_reason is not None:
-                            raise AtomicBoundaryViolation(
-                                f"read_only boundary was invalidated: {guard.invalid_reason}"
+                    if not break_for_lifecycle:
+                        with durable_database_guard(self.service.db, connection) as guard:
+                            result = action.handler(context, dict(claim.command))
+                            if inspect.isawaitable(result):
+                                result = await result
+                            if guard.invalid_reason is not None:
+                                raise AtomicBoundaryViolation(
+                                    "read_only boundary was invalidated: "
+                                    f"{guard.invalid_reason}"
+                                )
+                            normalized = action.normalize_result(result)
+            if break_for_lifecycle:
+                with _tenant_context(claim.tenant_scope):
+                    async with atomic(db=self.service.db) as connection:
+                        operation = await self.service._lock_owned(connection, claim)
+                        if operation["cancellation_requested_at"] is not None:
+                            return await self._identity._cancel_under_lock(
+                                connection, operation, claim
                             )
-                        normalized = action.normalize_result(result)
+                        deadline_valid = await connection.fetchval(
+                            "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
+                            operation["deadline_at"],
+                        )
+                        if not deadline_valid:
+                            return await self._identity._expire_under_lock(
+                                connection, operation, claim
+                            )
+                raise OwnershipLost("read-only attempt is no longer executable")
             from aksara.durable.external import ExternalOperationExecutor
 
-            return await ExternalOperationExecutor(self.service)._complete(claim, normalized)
+            return await ExternalOperationExecutor(self.service)._complete(
+                claim,
+                normalized,
+                respect_lifecycle=True,
+            )
         except Exception as exc:
             if isinstance(exc, OwnershipLost):
                 raise

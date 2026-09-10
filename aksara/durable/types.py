@@ -65,6 +65,8 @@ def stable_hash(value: Any) -> str:
 
 
 def tenant_scope(tenant_id: str | None) -> str:
+    if tenant_id == GLOBAL_TENANT_SCOPE:
+        raise ValueError(f"tenant_id {GLOBAL_TENANT_SCOPE!r} is reserved")
     return str(tenant_id) if tenant_id is not None else GLOBAL_TENANT_SCOPE
 
 

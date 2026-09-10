@@ -23,7 +23,7 @@ from aksara.durable import (
 )
 from aksara.durable.errors import OwnershipLost
 from aksara.durable.service import _tenant_context
-from aksara.durable.types import tenant_scope
+from aksara.durable.types import GLOBAL_TENANT_SCOPE, tenant_scope
 from aksara.security.principal import Principal
 
 
@@ -94,6 +94,11 @@ def test_principal_reference_never_serializes_runtime_authority():
     assert "scopes" not in stored
     assert "metadata" not in stored
     assert "bearer_token" not in str(stored)
+
+
+def test_global_tenant_storage_sentinel_is_reserved():
+    with pytest.raises(ValueError, match="reserved"):
+        tenant_scope(GLOBAL_TENANT_SCOPE)
 
 
 @pytest.mark.asyncio
@@ -173,6 +178,47 @@ async def test_concurrent_identical_admission_creates_one_operation(durable_db):
 
 
 @pytest.mark.asyncio
+async def test_expired_idempotency_key_can_create_a_new_operation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    reference = _reference(tenant)
+    first = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        reference,
+        idempotency_key="reusable-key",
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_idempotency
+            SET expires_at = clock_timestamp() - INTERVAL '1 second'
+            WHERE operation_id = $1
+            """,
+            first.operation.id,
+        )
+
+    second = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        reference,
+        idempotency_key="reusable-key",
+    )
+
+    assert second.created is True
+    assert second.operation.id != first.operation.id
+    with _tenant_context(scope):
+        retained_identity = await durable_db.fetchval(
+            "SELECT idempotency_identity_hash FROM aksara_operations WHERE id = $1",
+            first.operation.id,
+        )
+    assert retained_identity is None
+
+
+@pytest.mark.asyncio
 async def test_idempotency_identity_isolated_by_tenant_and_principal(durable_db):
     tenant_a, tenant_b = str(uuid4()), str(uuid4())
     service = _service(durable_db)
@@ -249,6 +295,38 @@ async def test_claim_heartbeat_reclaim_and_stale_owner_fencing(durable_db):
             message="stale",
             retryable=False,
         )
+
+
+@pytest.mark.asyncio
+async def test_zero_attempt_and_lease_values_are_rejected(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    with pytest.raises(ValueError, match="max_attempts must be positive"):
+        await service.admit(
+            "orders.increment",
+            "1",
+            {"amount": 1},
+            _reference(tenant),
+            max_attempts=0,
+        )
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    with pytest.raises(ValueError, match="lease_seconds must be positive"):
+        await service.claim(
+            tenant_id=tenant,
+            worker_id="worker-a",
+            operation_id=admitted.operation.id,
+            lease_seconds=0,
+        )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    with pytest.raises(ValueError, match="lease_seconds must be positive"):
+        await service.heartbeat(claim, lease_seconds=0)
 
 
 @pytest.mark.asyncio
@@ -347,6 +425,34 @@ async def test_cancellation_and_tenant_filtered_status_history_outbox(durable_db
             tenant_id=other_tenant,
             principal=_principal(other_tenant),
         )
+
+
+@pytest.mark.asyncio
+async def test_anonymous_principal_cannot_read_global_operation_state(durable_db):
+    service = _service(durable_db)
+    reference = PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="test-app",
+        principal_kind="system",
+        subject_id="global-user",
+        tenant_id=None,
+    )
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    anonymous = Principal.anonymous()
+
+    with pytest.raises(AuthorizationDenied, match="authenticated principal"):
+        await service.get(
+            admitted.operation.id, tenant_id=None, principal=anonymous
+        )
+    with pytest.raises(AuthorizationDenied, match="authenticated principal"):
+        await service.history(
+            admitted.operation.id, tenant_id=None, principal=anonymous
+        )
+    with pytest.raises(AuthorizationDenied, match="authenticated principal"):
+        await service.pending_outbox(tenant_id=None, principal=anonymous)
 
 
 @pytest.mark.asyncio
@@ -703,6 +809,67 @@ async def test_unconsumed_approval_expiry_closes_operation(durable_db):
         principal=_principal(tenant),
     )
     assert history[0].event == "approval_expired"
+
+
+@pytest.mark.asyncio
+async def test_operation_deadline_prevents_late_approval(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operations
+            SET deadline_at = created_at + INTERVAL '1 millisecond'
+            WHERE id = $1
+            """,
+            admitted.operation.id,
+        )
+    await asyncio.sleep(0.01)
+
+    expired = await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=_principal(tenant),
+        approver_reference=reference,
+        approve=True,
+    )
+
+    assert expired.state is OperationState.EXPIRED
+    assert expired.error["code"] == "deadline_expired"
+
+
+@pytest.mark.asyncio
+async def test_claim_sweeps_expired_waiting_approval(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    admitted = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        _reference(tenant),
+        approval_expires_at=datetime.now(UTC) + timedelta(milliseconds=10),
+    )
+    await asyncio.sleep(0.03)
+
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+
+    assert claim is None
+    expired = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert expired.state is OperationState.EXPIRED
+    assert expired.error["code"] == "approval_expired"
 
 
 @pytest.mark.asyncio

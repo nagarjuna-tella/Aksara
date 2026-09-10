@@ -276,7 +276,8 @@ async def test_different_database_and_swallowed_savepoint_error_invalidate_bound
 
     async def handler(context, command):
         with pytest.raises(RuntimeError, match="execution context Database"):
-            await other_database.fetchval("SELECT 1")
+            async with atomic(db=other_database):
+                pass
         async with atomic(db=context.database):
             try:
                 await context.database.execute(
@@ -465,6 +466,66 @@ async def test_read_only_executor_rejects_application_writes(durable_db):
     assert completed.state is OperationState.FAILED
     assert completed.error["code"] == "executor_error"
     assert await _counter(durable_db, tenant, counter_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_read_only_cancellation_wins_before_completion(durable_db):
+    tenant = str(uuid4())
+    handler_started = asyncio.Event()
+    allow_handler_completion = asyncio.Event()
+
+    async def handler(_context, _command):
+        handler_started.set()
+        await allow_handler_completion.wait()
+        return {"read": True}
+
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="counter.read-only",
+            version="1",
+            handler=handler,
+            effect_class=EffectClass.READ_ONLY,
+            required_scopes=("counter:write",),
+        )
+    )
+    resolvers = PrincipalResolverRegistry()
+    resolvers.register(
+        "test",
+        "1",
+        lambda _reference: PrincipalResolution.resolved(_principal(tenant)),
+    )
+    service = DurableOperationService(
+        durable_db,
+        application_namespace="atomic-tests",
+        actions=actions,
+        resolvers=resolvers,
+        retention_seconds=60,
+        idempotency_seconds=60,
+    )
+    admitted = await service.admit(
+        "counter.read-only", "1", {}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="read-only-worker",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    execution = asyncio.create_task(ReadOnlyExecutor(service).execute(claim))
+    await handler_started.wait()
+
+    requested = await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=_reference(tenant),
+    )
+    assert requested.state is OperationState.RUNNING
+    allow_handler_completion.set()
+
+    completed = await execution
+    assert completed.state is OperationState.CANCELLED
 
 
 @pytest.mark.asyncio

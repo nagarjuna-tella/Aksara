@@ -166,3 +166,53 @@ async def test_result_body_expires_before_terminal_operation_truth(durable_db):
     )
     assert retained.state is OperationState.SUCCEEDED
     assert retained.result is None
+
+
+@pytest.mark.asyncio
+async def test_pruning_expired_idempotency_releases_retained_operation_key(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    reference = _reference(tenant)
+    first = await service.admit(
+        "retention.read",
+        "1",
+        {},
+        reference,
+        idempotency_key="reusable-after-prune",
+    )
+    await service.request_cancellation(
+        first.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+        requester_reference=reference,
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_idempotency
+            SET expires_at = clock_timestamp() - INTERVAL '1 second'
+            WHERE operation_id = $1
+            """,
+            first.operation.id,
+        )
+
+    pruned = await service.prune(tenant_id=tenant)
+
+    assert pruned["idempotency"] == 1
+    assert pruned["operations"] == 0
+    with _tenant_context(scope):
+        retained_identity = await durable_db.fetchval(
+            "SELECT idempotency_identity_hash FROM aksara_operations WHERE id = $1",
+            first.operation.id,
+        )
+    assert retained_identity is None
+    second = await service.admit(
+        "retention.read",
+        "1",
+        {},
+        reference,
+        idempotency_key="reusable-after-prune",
+    )
+    assert second.created is True
+    assert second.operation.id != first.operation.id

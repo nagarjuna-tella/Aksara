@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+import aksara.tasks as tasks_module
 from aksara.context_state import tenant_id_var
 from aksara.durable import (
     DurableAction,
@@ -164,6 +165,32 @@ async def test_unlinked_task_behavior_is_unchanged_with_durable_schema(durable_d
 
 
 @pytest.mark.asyncio
+async def test_worker_without_durable_service_leaves_linked_task_pending(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(uuid4())},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+
+    assert await TaskWorker(durable_db).poll_once() is None
+    retained = await durable_db.fetchrow(
+        "SELECT status, attempts, locked_at FROM aksara_tasks WHERE id = $1",
+        queued.id,
+    )
+    assert retained["status"] == "pending"
+    assert retained["attempts"] == 0
+    assert retained["locked_at"] is None
+
+
+@pytest.mark.asyncio
 async def test_stale_linked_task_recovery_restores_operation_tenant_scope(durable_db):
     tenant = str(uuid4())
     service = _runtime(durable_db, tenant)
@@ -198,6 +225,51 @@ async def test_stale_linked_task_recovery_restores_operation_tenant_scope(durabl
     )
     assert recovered["status"] == "pending"
     assert recovered["locked_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_stale_linked_task_recovery_processes_bounded_batches(
+    durable_db, monkeypatch
+):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    task_ids = []
+    for _ in range(3):
+        admitted = await service.admit(
+            "counter.task_increment",
+            "1",
+            {"counter_id": str(uuid4())},
+            _reference(tenant),
+        )
+        queued = await enqueue_operation_task(
+            admitted.operation.id,
+            service=service,
+            tenant_id=tenant,
+        )
+        task_ids.append(queued.id)
+    await durable_db.execute(
+        """
+        UPDATE aksara_tasks SET status = 'running',
+            locked_at = clock_timestamp() - INTERVAL '10 seconds'
+        WHERE id = ANY($1::uuid[])
+        """,
+        task_ids,
+    )
+    monkeypatch.setattr(tasks_module, "_STALE_OPERATION_RECOVERY_BATCH_SIZE", 2)
+    worker = TaskWorker(
+        durable_db,
+        durable_service=service,
+        stale_lock_timeout_seconds=1,
+    )
+
+    assert await worker.recover_stale_locks() == 3
+    rows = await durable_db.fetch(
+        "SELECT status, locked_at FROM aksara_tasks WHERE id = ANY($1::uuid[])",
+        task_ids,
+    )
+    assert len(rows) == 3
+    assert all(row["status"] == "pending" for row in rows)
+    assert all(row["locked_at"] is None for row in rows)
 
 
 @pytest.mark.asyncio
@@ -241,3 +313,60 @@ async def test_stale_linked_task_projects_terminal_operation(durable_db):
     )
     assert recovered["status"] == "failed"
     assert recovered["last_error"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_prune_preserves_terminal_operation_until_task_projection(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(uuid4())},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+    await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+        requester_reference=_reference(tenant),
+    )
+    with _tenant(tenant):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operations
+            SET retain_until = clock_timestamp() - INTERVAL '1 second'
+            WHERE id = $1
+            """,
+            admitted.operation.id,
+        )
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_outbox
+            SET exported_at = clock_timestamp()
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+
+    first = await service.prune(tenant_id=tenant)
+    assert first["operations"] == 0
+
+    completed = await TaskWorker(
+        durable_db, durable_service=service, worker_id="projection-worker"
+    ).poll_once()
+    assert completed is not None
+    assert completed.status == "failed"
+
+    second = await service.prune(tenant_id=tenant)
+    assert second["operations"] == 1
+    retained_task = await durable_db.fetchrow(
+        "SELECT status, operation_id FROM aksara_tasks WHERE id = $1", queued.id
+    )
+    assert retained_task["status"] == "failed"
+    assert retained_task["operation_id"] is None

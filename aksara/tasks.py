@@ -51,6 +51,7 @@ TaskStatus = Literal["pending", "running", "completed", "failed"]
 
 TASKS_TABLE = "aksara_tasks"
 DURABLE_OPERATION_TASK_NAME = "aksara.durable.execute"
+_STALE_OPERATION_RECOVERY_BATCH_SIZE = 100
 TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_name VARCHAR(255) NOT NULL,
@@ -631,13 +632,10 @@ class TaskWorker:
         """
         database = _get_db(self._db)
         await ensure_tasks_table(database)
-        operation_filter = (
-            "AND operation_id IS NULL" if self.durable_service is not None else ""
-        )
         result = await database.fetchrow(
             f'''
             WITH recovered AS (
-                UPDATE "{TASKS_TABLE}"
+                UPDATE "{TASKS_TABLE}" AS task
                 SET
                     status = 'pending',
                     locked_at = NULL,
@@ -645,7 +643,7 @@ class TaskWorker:
                     updated_at = CURRENT_TIMESTAMP
                 WHERE
                     status = 'running'
-                    {operation_filter}
+                    AND (to_jsonb(task) ->> 'operation_id') IS NULL
                     AND locked_at < CURRENT_TIMESTAMP - ($1::double precision * INTERVAL '1 second')
                 RETURNING id
             )
@@ -666,78 +664,101 @@ class TaskWorker:
         from aksara.durable.service import _tenant_context
         from aksara.durable.types import tenant_scope
 
-        stale_tasks = await database.fetch(
-            f'''
-            SELECT * FROM "{TASKS_TABLE}"
-            WHERE status = 'running' AND operation_id IS NOT NULL
-              AND locked_at < CURRENT_TIMESTAMP
-                  - ($1::double precision * INTERVAL '1 second')
-            ORDER BY locked_at, id
-            ''',
-            self.stale_lock_timeout_seconds,
-        )
         recovered = 0
         assert self.durable_service is not None
-        for task_row in stale_tasks:
-            task_record = TaskRecord.from_record(task_row)
-            if task_record.operation_id is None:
-                continue
-            scope = tenant_scope(task_record.tenant_id)
-            with _tenant_context(scope):
-                async with atomic(db=database) as connection:
-                    operation = await self.durable_service.repository.get_operation(
-                        connection,
-                        task_record.operation_id,
-                        scope,
-                        self.durable_service.application_namespace,
-                        for_update=True,
-                    )
-                    if operation is None:
-                        continue
-                    state = operation["state"]
-                    terminal = state in {"succeeded", "failed", "cancelled", "expired"}
-                    reclaimable = state in {"waiting_for_approval", "ready"} or (
-                        state == "running"
-                        and operation["lease_expires_at"]
-                        <= await connection.fetchval("SELECT clock_timestamp()")
-                    )
-                    if not terminal and not reclaimable:
-                        continue
-                    status = (
-                        "completed" if state == "succeeded" else "failed"
-                        if terminal
-                        else "pending"
-                    )
-                    result = operation["result"] if state == "succeeded" else None
-                    error = (
-                        None
-                        if state == "succeeded" or not terminal
-                        else (_decode_json_value(operation["error"]) or {}).get(
-                            "message", state
+        cursor_locked_at = None
+        cursor_id = None
+        while True:
+            stale_tasks = await database.fetch(
+                f'''
+                SELECT * FROM "{TASKS_TABLE}"
+                WHERE status = 'running' AND operation_id IS NOT NULL
+                  AND locked_at < CURRENT_TIMESTAMP
+                      - ($1::double precision * INTERVAL '1 second')
+                  AND (
+                      $2::timestamptz IS NULL
+                      OR locked_at > $2
+                      OR (locked_at = $2 AND id > $3)
+                  )
+                ORDER BY locked_at, id
+                LIMIT $4
+                ''',
+                self.stale_lock_timeout_seconds,
+                cursor_locked_at,
+                cursor_id,
+                _STALE_OPERATION_RECOVERY_BATCH_SIZE,
+            )
+            if not stale_tasks:
+                break
+            cursor_locked_at = stale_tasks[-1]["locked_at"]
+            cursor_id = stale_tasks[-1]["id"]
+            for task_row in stale_tasks:
+                task_record = TaskRecord.from_record(task_row)
+                if task_record.operation_id is None:
+                    continue
+                scope = tenant_scope(task_record.tenant_id)
+                with _tenant_context(scope):
+                    async with atomic(db=database) as connection:
+                        operation = await self.durable_service.repository.get_operation(
+                            connection,
+                            task_record.operation_id,
+                            scope,
+                            self.durable_service.application_namespace,
+                            for_update=True,
                         )
-                    )
-                    update_status = await connection.execute(
-                        f'''
-                        UPDATE "{TASKS_TABLE}"
-                        SET status = $2::varchar, result = $3::jsonb,
-                            last_error = $4, locked_at = NULL,
-                            completed_at = CASE WHEN $2::varchar = 'completed'
-                                THEN COALESCE($5, CURRENT_TIMESTAMP) ELSE completed_at END,
-                            available_at = CASE WHEN $2::varchar = 'pending'
-                                THEN CURRENT_TIMESTAMP ELSE available_at END,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE id = $1 AND status = 'running'
-                          AND locked_at < CURRENT_TIMESTAMP
-                              - ($6::double precision * INTERVAL '1 second')
-                        ''',
-                        task_record.id,
-                        status,
-                        json.dumps(_encode_json_value(result)) if result is not None else None,
-                        error,
-                        operation["completed_at"],
-                        self.stale_lock_timeout_seconds,
-                    )
-                    recovered += update_status == "UPDATE 1"
+                        if operation is None:
+                            continue
+                        state = operation["state"]
+                        terminal = state in {
+                            "succeeded",
+                            "failed",
+                            "cancelled",
+                            "expired",
+                        }
+                        reclaimable = state in {"waiting_for_approval", "ready"} or (
+                            state == "running"
+                            and operation["lease_expires_at"]
+                            <= await connection.fetchval("SELECT clock_timestamp()")
+                        )
+                        if not terminal and not reclaimable:
+                            continue
+                        status = (
+                            "completed" if state == "succeeded" else "failed"
+                            if terminal
+                            else "pending"
+                        )
+                        result = operation["result"] if state == "succeeded" else None
+                        error = (
+                            None
+                            if state == "succeeded" or not terminal
+                            else (_decode_json_value(operation["error"]) or {}).get(
+                                "message", state
+                            )
+                        )
+                        update_status = await connection.execute(
+                            f'''
+                            UPDATE "{TASKS_TABLE}"
+                            SET status = $2::varchar, result = $3::jsonb,
+                                last_error = $4, locked_at = NULL,
+                                completed_at = CASE WHEN $2::varchar = 'completed'
+                                    THEN COALESCE($5, CURRENT_TIMESTAMP) ELSE completed_at END,
+                                available_at = CASE WHEN $2::varchar = 'pending'
+                                    THEN CURRENT_TIMESTAMP ELSE available_at END,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = $1 AND status = 'running'
+                              AND locked_at < CURRENT_TIMESTAMP
+                                  - ($6::double precision * INTERVAL '1 second')
+                            ''',
+                            task_record.id,
+                            status,
+                            json.dumps(_encode_json_value(result))
+                            if result is not None
+                            else None,
+                            error,
+                            operation["completed_at"],
+                            self.stale_lock_timeout_seconds,
+                        )
+                        recovered += update_status == "UPDATE 1"
         return recovered
 
     async def purge_old_tasks(
@@ -815,9 +836,10 @@ class TaskWorker:
                 f'''
                 WITH next_task AS (
                     SELECT id
-                    FROM "{TASKS_TABLE}"
+                    FROM "{TASKS_TABLE}" AS task
                     WHERE status = 'pending'
                       AND available_at <= CURRENT_TIMESTAMP
+                      AND (to_jsonb(task) ->> 'operation_id') IS NULL
                       AND queue = ANY($1::text[])
                     ORDER BY available_at ASC, created_at ASC
                     FOR UPDATE SKIP LOCKED
@@ -862,8 +884,9 @@ class TaskWorker:
                 f'''
                 WITH next_task AS (
                     SELECT id
-                    FROM "{TASKS_TABLE}"
+                    FROM "{TASKS_TABLE}" AS task
                     WHERE status = 'pending' AND available_at <= CURRENT_TIMESTAMP
+                      AND (to_jsonb(task) ->> 'operation_id') IS NULL
                     ORDER BY available_at ASC, created_at ASC
                     FOR UPDATE SKIP LOCKED
                     LIMIT 1

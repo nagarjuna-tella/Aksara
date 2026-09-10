@@ -37,9 +37,11 @@ class TransactionManager:
 
     async def __aenter__(self) -> "asyncpg.Connection":
         """Start a transaction, reusing the active session connection when present."""
+        from aksara.db.durable_guard import validate_database_access
         from aksara.db.engine import Database
 
         self._db = self._db or Database.get_instance()
+        validate_database_access(self._db)
         existing_connection = get_session()
         if existing_connection is None:
             self._connection = await self._db.pool.acquire()

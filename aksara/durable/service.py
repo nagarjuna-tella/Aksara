@@ -183,7 +183,9 @@ class DurableOperationService:
         normalized = action.normalize_command(command)
         input_hash = stable_hash(normalized)
         scope = tenant_scope(principal_reference.tenant_id)
-        attempts = max_attempts or self.default_max_attempts
+        attempts = (
+            self.default_max_attempts if max_attempts is None else max_attempts
+        )
         if attempts < 1:
             raise ValueError("max_attempts must be positive")
         if idempotency_key is not None and not idempotency_key:
@@ -223,6 +225,29 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 if identity_hash is not None:
+                    await connection.execute(
+                        """
+                        WITH expired AS (
+                            DELETE FROM aksara_operation_idempotency
+                            WHERE identity_hash = $1 AND tenant_scope = $2
+                              AND application_namespace = $3
+                              AND expires_at <= clock_timestamp()
+                            RETURNING operation_id
+                        )
+                        UPDATE aksara_operations o
+                        SET idempotency_identity_hash = NULL,
+                            idempotency_scope_hash = NULL,
+                            updated_at = clock_timestamp()
+                        FROM expired e
+                        WHERE o.id = e.operation_id
+                          AND o.tenant_scope = $2
+                          AND o.application_namespace = $3
+                          AND o.idempotency_identity_hash = $1
+                        """,
+                        identity_hash,
+                        scope,
+                        self.application_namespace,
+                    )
                     inserted = await connection.fetchval(
                         """
                         INSERT INTO aksara_operation_idempotency (
@@ -370,6 +395,7 @@ class DurableOperationService:
             SELECT * FROM aksara_operation_idempotency
             WHERE identity_hash = $1 AND tenant_scope = $2
               AND application_namespace = $3
+              AND expires_at > clock_timestamp()
             """,
             identity_hash,
             scope,
@@ -413,12 +439,15 @@ class DurableOperationService:
 
         if not worker_id:
             raise ValueError("worker_id is required")
-        lease = lease_seconds or self.default_lease_seconds
+        lease = (
+            self.default_lease_seconds if lease_seconds is None else lease_seconds
+        )
         if lease <= 0:
             raise ValueError("lease_seconds must be positive")
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
+                await self._expire_waiting_for_approval(connection, scope)
                 row = await self.repository.claim_row(
                     connection,
                     scope,
@@ -735,6 +764,68 @@ class DurableOperationService:
             attempt_id=row["current_attempt_id"],
         )
 
+    async def _expire_waiting_for_approval(
+        self,
+        connection: Any,
+        scope: str,
+        *,
+        batch_size: int = 100,
+    ) -> int:
+        """Close bounded waiting rows whose approval or operation deadline elapsed."""
+
+        rows = await connection.fetch(
+            """
+            SELECT o.*,
+                   (o.deadline_at IS NOT NULL
+                       AND o.deadline_at <= clock_timestamp()) AS deadline_expired
+            FROM aksara_operations o
+            JOIN aksara_operation_approval_decisions d
+              ON d.operation_id = o.id AND d.tenant_scope = o.tenant_scope
+             AND d.state = 'pending'
+            WHERE o.tenant_scope = $1 AND o.application_namespace = $2
+              AND o.state = 'waiting_for_approval'
+              AND (
+                  (o.deadline_at IS NOT NULL
+                      AND o.deadline_at <= clock_timestamp())
+                  OR d.expires_at <= clock_timestamp()
+              )
+            ORDER BY LEAST(
+                COALESCE(o.deadline_at, 'infinity'::timestamptz),
+                d.expires_at
+            ), o.id
+            LIMIT $3
+            FOR UPDATE OF o, d SKIP LOCKED
+            """,
+            scope,
+            self.application_namespace,
+            batch_size,
+        )
+        for row in rows:
+            reason = (
+                FailureReason.DEADLINE_EXPIRED
+                if row["deadline_expired"]
+                else FailureReason.APPROVAL_EXPIRED
+            )
+            await connection.execute(
+                """
+                UPDATE aksara_operation_approval_decisions
+                SET state = 'expired', decided_at = clock_timestamp(),
+                    reason = $3
+                WHERE operation_id = $1 AND tenant_scope = $2
+                  AND state = 'pending'
+                """,
+                row["id"],
+                scope,
+                reason.value,
+            )
+            await self._close_unclaimable(
+                connection,
+                row,
+                state=OperationState.EXPIRED,
+                reason=reason,
+            )
+        return len(rows)
+
     async def heartbeat(
         self,
         claim: OperationClaim,
@@ -744,7 +835,9 @@ class DurableOperationService:
     ) -> datetime:
         """Renew a lease only while the complete ownership tuple is current."""
 
-        lease = lease_seconds or self.default_lease_seconds
+        lease = (
+            self.default_lease_seconds if lease_seconds is None else lease_seconds
+        )
         if lease <= 0:
             raise ValueError("lease_seconds must be positive")
         with _tenant_context(claim.tenant_scope):
@@ -1046,12 +1139,24 @@ class DurableOperationService:
                     raise ApprovalConflict(
                         "approval decision does not match the immutable operation binding"
                     )
-                unexpired = await connection.fetchval(
-                    "SELECT $1::timestamptz > clock_timestamp()",
+                validity = await connection.fetchrow(
+                    """
+                    SELECT
+                        $1::timestamptz <= clock_timestamp() AS approval_expired,
+                        ($2::timestamptz IS NOT NULL
+                            AND $2 <= clock_timestamp()) AS deadline_expired
+                    """,
                     decision["expires_at"],
+                    row["deadline_at"],
                 )
+                assert validity is not None
                 version = int(row["state_version"]) + 1
-                if not unexpired:
+                if validity["deadline_expired"]:
+                    decision_state = "expired"
+                    target = OperationState.EXPIRED
+                    event = OperationEvent.DEADLINE_EXPIRED
+                    code = FailureReason.DEADLINE_EXPIRED.value
+                elif validity["approval_expired"]:
                     decision_state = "expired"
                     target = OperationState.EXPIRED
                     event = OperationEvent.APPROVAL_EXPIRED
@@ -1318,6 +1423,11 @@ class DurableOperationService:
                               SELECT 1 FROM aksara_operation_outbox e
                               WHERE e.operation_id = o.id AND e.exported_at IS NULL
                           )
+                          AND NOT EXISTS (
+                              SELECT 1 FROM aksara_tasks t
+                              WHERE t.operation_id = o.id
+                                AND t.status IN ('pending', 'running')
+                          )
                         ORDER BY o.retain_until LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), deleted AS (
@@ -1341,8 +1451,21 @@ class DurableOperationService:
                         DELETE FROM aksara_operation_idempotency i
                         USING candidates c
                         WHERE i.identity_hash = c.identity_hash
-                        RETURNING i.identity_hash
-                    ) SELECT COUNT(*) FROM deleted
+                        RETURNING i.identity_hash, i.operation_id
+                    ), released AS (
+                        UPDATE aksara_operations o
+                        SET idempotency_identity_hash = NULL,
+                            idempotency_scope_hash = NULL,
+                            updated_at = clock_timestamp()
+                        FROM deleted d
+                        WHERE o.id = d.operation_id
+                          AND o.tenant_scope = $1
+                          AND o.application_namespace = $2
+                          AND o.idempotency_identity_hash = d.identity_hash
+                        RETURNING o.id
+                    )
+                    SELECT COUNT(*) FROM deleted
+                    WHERE (SELECT COUNT(*) FROM released) >= 0
                     """,
                     scope,
                     self.application_namespace,
@@ -1359,6 +1482,8 @@ class DurableOperationService:
 
     @staticmethod
     def _authorize_read(principal: Principal, tenant_id: str | None, *, action: str) -> None:
+        if not principal.is_authenticated:
+            raise AuthorizationDenied("an authenticated principal is required")
         if not principal.is_system and principal.tenant_id != tenant_id:
             raise AuthorizationDenied("principal tenant does not match operation tenant")
         decision = default_policy.can(

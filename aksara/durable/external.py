@@ -378,16 +378,16 @@ class ExternalOperationExecutor:
         principal = await self._identity._resolve_or_fail(claim)
         if principal is None:
             return await self._identity._read_authoritative(claim)
-        if not await self._identity._authorize(action, principal, claim):
-            return await self.service.fail_attempt(
-                claim,
-                code=FailureReason.AUTHORIZATION_DENIED.value,
-                message="current authorization denied the durable action",
-                retryable=False,
-            )
 
         context = ExternalEffectContext(self, claim)
         try:
+            if not await self._identity._authorize(action, principal, claim):
+                return await self.service.fail_attempt(
+                    claim,
+                    code=FailureReason.AUTHORIZATION_DENIED.value,
+                    message="current authorization denied the durable action",
+                    retryable=False,
+                )
             result = action.handler(context, dict(claim.command))
             if inspect.isawaitable(result):
                 result = await result
@@ -413,10 +413,29 @@ class ExternalOperationExecutor:
                 retryable=retryable,
             )
 
-    async def _complete(self, claim: OperationClaim, result: Any) -> OperationRecord:
+    async def _complete(
+        self,
+        claim: OperationClaim,
+        result: Any,
+        *,
+        respect_lifecycle: bool = False,
+    ) -> OperationRecord:
         with _tenant_context(claim.tenant_scope):
             async with atomic(db=self.service.db) as connection:
                 operation = await self.service._lock_owned(connection, claim)
+                if respect_lifecycle:
+                    if operation["cancellation_requested_at"] is not None:
+                        return await self._identity._cancel_under_lock(
+                            connection, operation, claim
+                        )
+                    deadline_valid = await connection.fetchval(
+                        "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
+                        operation["deadline_at"],
+                    )
+                    if not deadline_valid:
+                        return await self._identity._expire_under_lock(
+                            connection, operation, claim
+                        )
                 attempt_status = await connection.execute(
                     """
                     UPDATE aksara_operation_attempts

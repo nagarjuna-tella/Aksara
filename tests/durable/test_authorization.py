@@ -12,11 +12,13 @@ from aksara.durable import (
     DurableActionRegistry,
     DurableOperationService,
     EffectClass,
+    ExternalOperationExecutor,
     OperationState,
     PostgresAtomicExecutor,
     PrincipalReference,
     PrincipalResolution,
     PrincipalResolverRegistry,
+    ReadOnlyExecutor,
     ResolutionStatus,
 )
 from aksara.security.principal import Principal
@@ -33,7 +35,13 @@ def _reference(tenant: str) -> PrincipalReference:
     )
 
 
-def _runtime(durable_db, resolver, *, authorizer=None):
+def _runtime(
+    durable_db,
+    resolver,
+    *,
+    authorizer=None,
+    effect_class: EffectClass = EffectClass.POSTGRES_ATOMIC,
+):
     calls: list[dict] = []
 
     async def handler(_context, command):
@@ -46,7 +54,7 @@ def _runtime(durable_db, resolver, *, authorizer=None):
             name="authorization.mutate",
             version="1",
             handler=handler,
-            effect_class=EffectClass.POSTGRES_ATOMIC,
+            effect_class=effect_class,
             required_scopes=("operation:write",),
             authorizer=authorizer,
         )
@@ -62,7 +70,12 @@ def _runtime(durable_db, resolver, *, authorizer=None):
         retention_seconds=60,
         idempotency_seconds=60,
     )
-    return service, PostgresAtomicExecutor(service), calls
+    executor = {
+        EffectClass.POSTGRES_ATOMIC: PostgresAtomicExecutor,
+        EffectClass.READ_ONLY: ReadOnlyExecutor,
+        EffectClass.EXTERNAL_AT_LEAST_ONCE: ExternalOperationExecutor,
+    }[effect_class](service)
+    return service, executor, calls
 
 
 async def _execute(service, executor, tenant: str):
@@ -207,4 +220,40 @@ async def test_current_scope_expiry_and_action_policy_are_rechecked(durable_db, 
 
     assert operation.state is OperationState.FAILED
     assert operation.error["code"] == "authorization_denied"
+    assert calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "effect_class",
+    [
+        EffectClass.POSTGRES_ATOMIC,
+        EffectClass.READ_ONLY,
+        EffectClass.EXTERNAL_AT_LEAST_ONCE,
+    ],
+)
+async def test_authorizer_exception_closes_attempt_before_handler(
+    durable_db, effect_class
+):
+    tenant = str(uuid4())
+
+    def unavailable_authorizer(_principal, _command):
+        raise ConnectionError("authorization service unavailable")
+
+    service, executor, calls = _runtime(
+        durable_db,
+        lambda _reference: PrincipalResolution.resolved(
+            Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("operation:write",)
+            )
+        ),
+        authorizer=unavailable_authorizer,
+        effect_class=effect_class,
+    )
+
+    operation = await _execute(service, executor, tenant)
+
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "executor_error"
+    assert operation.error["message"] == "authorization service unavailable"
     assert calls == []
