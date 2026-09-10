@@ -174,7 +174,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-output",
         type=Path,
-        default=ROOT / "audit-evidence" / "v061" / "installed-package-gate.json",
+        default=ROOT / "audit-evidence" / "v070" / "installed-package-gate.json",
     )
     return parser
 
@@ -257,7 +257,7 @@ class InstalledPackageGate:
     def write_evidence(self, status: str, error: str | None = None) -> None:
         payload = {
             "schema_version": 1,
-            "gate": "v061-installed-package-truth",
+            "gate": "v070-installed-package-truth",
             "status": status,
             "candidate_sha": self.candidate_sha,
             "started_at": self.started_at.isoformat(),

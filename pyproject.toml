@@ -47,7 +47,7 @@ dependencies = [
     "jinja2>=3.0.0",  # Required for admin templates
     "httpx>=0.25.0",  # Required for direct AI provider API calls
     # Official maintained Model Context Protocol SDK. Keep the dependency inside
-    # the minor line exercised by the v0.6 release gate.
+    # the minor line exercised by the v0.7 release gate.
     "mcp>=2.0.0,<2.1.0",
     "uvicorn>=0.24.0",  # Required for aksara dev / aksara run
 ]
