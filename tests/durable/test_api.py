@@ -92,6 +92,7 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
         assert duplicate.json()["created"] is False
         operation = first.json()["operation"]
         assert duplicate.json()["operation"]["id"] == operation["id"]
+        assert first.headers["location"] == first.json()["status_url"]
         assert "fence" not in operation
         assert "worker_id" not in operation
         assert "command_id" not in operation
@@ -118,3 +119,73 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
             json={},
         )
         assert terminal_conflict.status_code == 409
+
+        terminal_duplicate = await client.post(
+            "/durable/operations",
+            headers={"Idempotency-Key": "reserve-1"},
+            json={
+                "action": "orders.reserve",
+                "action_version": "1",
+                "command": {"sku": "A-1", "quantity": 2},
+            },
+        )
+        assert terminal_duplicate.status_code == 200
+        assert terminal_duplicate.json()["operation"]["state"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_dispatch_rejects_forged_principal_reference(durable_db):
+    tenant = str(uuid4())
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="orders.reserve",
+            version="1",
+            handler=_handler,
+            effect_class=EffectClass.POSTGRES_ATOMIC,
+        )
+    )
+    service = DurableOperationService(
+        durable_db,
+        application_namespace="api-tests",
+        actions=actions,
+        retention_seconds=60,
+        idempotency_seconds=60,
+    )
+
+    async def forged_reference(_principal, _request):
+        return PrincipalReference(
+            resolver_key="test",
+            resolver_version="1",
+            identity_namespace="api-tests",
+            principal_kind="user",
+            subject_id="attacker-selected-subject",
+            tenant_id=tenant,
+        )
+
+    app = FastAPI()
+
+    @app.middleware("http")
+    async def trusted_test_identity(request: Request, call_next):
+        request.state.principal = Principal.for_user("user-1", tenant_id=tenant)
+        return await call_next(request)
+
+    app.include_router(
+        create_durable_operations_router(
+            service,
+            principal_reference_factory=forged_reference,
+        )
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/durable/operations",
+            json={
+                "action": "orders.reserve",
+                "action_version": "1",
+                "command": {},
+            },
+        )
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "authorization_denied"

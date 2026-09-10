@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 from aksara.durable.errors import (
@@ -108,6 +108,20 @@ async def _reference(
         value = await value
     if not isinstance(value, PrincipalReference):
         raise TypeError("principal_reference_factory must return PrincipalReference")
+    if not principal.is_system:
+        if value.tenant_id != principal.tenant_id:
+            raise AuthorizationDenied(
+                "principal reference tenant does not match the current principal"
+            )
+        if principal.is_ai_agent:
+            if value.agent_id != principal.agent_id:
+                raise AuthorizationDenied(
+                    "principal reference agent does not match the current principal"
+                )
+        elif value.subject_id != principal.user_id:
+            raise AuthorizationDenied(
+                "principal reference subject does not match the current principal"
+            )
     return value
 
 
@@ -147,16 +161,17 @@ def create_durable_operations_router(
     async def dispatch(
         payload: DurableDispatchRequest,
         request: Request,
+        response: Response,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> DurableDispatchResponse:
         principal = _principal(request)
-        reference = await _reference(principal_reference_factory, principal, request)
         correlation: dict[str, Any] = {}
         for key in ("request_id", "correlation_id"):
             value = getattr(request.state, key, None)
             if value is not None:
                 correlation[key] = str(value)
         try:
+            reference = await _reference(principal_reference_factory, principal, request)
             admission = await service.admit(
                 payload.action,
                 payload.action_version,
@@ -171,10 +186,14 @@ def create_durable_operations_router(
         except Exception as error:
             _raise_http(error)
             raise AssertionError("unreachable")
+        status_url = f"{prefix}/{admission.operation.id}"
+        response.headers["Location"] = status_url
+        if not admission.created and admission.operation.terminal:
+            response.status_code = status.HTTP_200_OK
         return DurableDispatchResponse(
             operation=_response(admission.operation),
             created=admission.created,
-            status_url=f"{prefix}/{admission.operation.id}",
+            status_url=status_url,
         )
 
     @router.get("/{operation_id}", response_model=DurableOperationResponse)
@@ -198,8 +217,8 @@ def create_durable_operations_router(
         request: Request,
     ) -> DurableOperationResponse:
         principal = _principal(request)
-        reference = await _reference(principal_reference_factory, principal, request)
         try:
+            reference = await _reference(principal_reference_factory, principal, request)
             operation = await service.request_cancellation(
                 operation_id,
                 tenant_id=principal.tenant_id,
@@ -219,8 +238,8 @@ def create_durable_operations_router(
         request: Request,
     ) -> DurableOperationResponse:
         principal = _principal(request)
-        reference = await _reference(principal_reference_factory, principal, request)
         try:
+            reference = await _reference(principal_reference_factory, principal, request)
             operation = await service.decide_approval(
                 operation_id,
                 tenant_id=principal.tenant_id,
