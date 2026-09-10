@@ -10,13 +10,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Type, TypeVar, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from aksara.db import quote_identifier
 from aksara.fields import Field, UUID as UUIDField, DateTime, String, Integer, Boolean, JSON, ForeignKey, ManyToMany, ManyToManyManager, FileField, GenericForeignKey, Vector
 from aksara.i18n import serialize_value
 from aksara.registry import ModelRegistry
+
+if TYPE_CHECKING:
+    from aksara.db import Database
+    from aksara.manager import Manager
 
 
 T = TypeVar("T", bound="Model")
@@ -781,10 +785,15 @@ class Model(metaclass=ModelMeta):
 
             # Run field-specific validation
             validator = getattr(field, 'validate', None)
-            if not callable(validator):
-                continue
             try:
-                validator(value)
+                if callable(validator):
+                    validator(value)
+                else:
+                    # Several core fields enforce their constraints while
+                    # preparing a database value. Exercise that pure
+                    # conversion here so persistence failures are reported as
+                    # model validation errors before any SQL is issued.
+                    field.to_db(value)
             except ValueError as e:
                 errors[field_name] = str(e)
 

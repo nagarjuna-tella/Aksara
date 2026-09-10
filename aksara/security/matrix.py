@@ -38,6 +38,13 @@ def _matrix_search_roots() -> list:
 
 def _find_default_matrix_path() -> Optional[Path]:
     """Search for security_matrix.yml relative to the project root."""
+    configured_path = os.environ.get("AKSARA_SECURITY_MATRIX_PATH")
+    if configured_path:
+        candidate = Path(configured_path).expanduser()
+        if candidate.exists():
+            return candidate
+        return None
+
     for root in _matrix_search_roots():
         for subdir in _MATRIX_SEARCH_DIRS:
             candidate = root / subdir / _MATRIX_FILENAME

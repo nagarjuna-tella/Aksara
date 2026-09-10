@@ -8,10 +8,11 @@ This guide covers installing Aksara and its dependencies.
 
 | Dependency | Version | Notes |
 |------------|---------|-------|
-| Python | 3.11+ | Required for modern async features |
-| PostgreSQL | 13+ | Aksara is PostgreSQL-only |
+| Python | 3.11–3.14 | Both endpoints run in the release matrix |
+| PostgreSQL | 16 | Release CI; packaged reference app also runs on PostgreSQL 18.4 |
 | asyncpg | 0.29+ | Async PostgreSQL driver (auto-installed) |
-| FastAPI | 0.104+ | Web framework (auto-installed) |
+| FastAPI | 0.136.1–0.141.1 | Tested with paired Starlette boundaries |
+| Starlette | 1.0.1–1.6.0 | Tested with paired FastAPI boundaries |
 | Pydantic | 2.0+ | Data validation (auto-installed) |
 
 ---
@@ -58,7 +59,7 @@ After installation, verify Aksara is available:
 aksara --version
 ```
 
-Expected output:
+For the current published release, the output remains:
 ```
 aksara, version 0.5.54
 ```
@@ -70,6 +71,10 @@ You can also check the Python package:
 >>> aksara.__version__
 '0.5.54'
 ```
+
+An installed v0.6.0 release candidate reports the PEP 440 form `0.6.0rc2`.
+See [runtime compatibility](../reference/runtime-compatibility.md) before using
+an unpublished checkout or release candidate.
 
 For a project-level readiness check, run this from inside an Aksara project:
 
@@ -114,8 +119,8 @@ Aksara requires PostgreSQL. Here are common setup methods:
 ### macOS (Homebrew)
 
 ```bash
-brew install postgresql@15
-brew services start postgresql@15
+    brew install postgresql@16
+    brew services start postgresql@16
 ```
 
 ### Ubuntu/Debian
@@ -134,7 +139,7 @@ docker run -d \
   -e POSTGRES_PASSWORD=password \
   -e POSTGRES_DB=myapp \
   -p 5432:5432 \
-  postgres:15
+  postgres:16
 ```
 
 ### Connection String Format

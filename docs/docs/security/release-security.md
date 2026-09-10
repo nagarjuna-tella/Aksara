@@ -2,9 +2,10 @@
 
 ## Current Status
 
-Aksara includes security diagnostics, adversarial test coverage, and
-release-trust workflow preparation. This prepares releases for stronger review,
-but it does not constitute an external audit or a production-readiness claim.
+Aksara includes security diagnostics, real generated-API abuse coverage, a
+restricted-role PostgreSQL tenancy gate, and release workflows. The v0.6
+production claim is bounded by the published stability contract. It does not
+constitute an external audit certification.
 
 ## CI Workflows
 
@@ -36,12 +37,20 @@ A release candidate should pass:
 - `twine check`
 - Wheel import verification
 - SBOM generation
-- `aksara doctor production-check`
+- `aksara doctor production-check --release`
 
-Public CI sets `AKSARA_REQUIRE_SECURITY_MATRIX=false` so private
-`security/security_matrix.yml` coverage is not required in public workflows.
-Private release environments may opt into strict private matrix enforcement with
-`AKSARA_REQUIRE_SECURITY_MATRIX=true`.
+The release-candidate job sets `AKSARA_SECURITY_MATRIX_PATH` to the public-safe
+framework matrix at `security/security_matrix.release.yml`. The strict command
+requires every diagnostic to pass, rejects planned or partial scenarios, and
+requires covered evidence for each implemented surface. Applications can point
+the same setting at a private project matrix; `security/security_matrix.yml`
+remains ignored by default.
+
+Ruff and mypy use the reviewed counts in `static-analysis-baseline.json`.
+`scripts/check_static_baseline.py` fails if the total or any rule/error-code
+count grows; it permits counts to fall so cleanup can proceed incrementally.
+The baseline does not disable rule families and does not represent a clean
+type-checking claim.
 
 Bandit currently gates high-severity findings. The existing non-security MD5 ID
 generation finding is excluded from the blocking gate; medium and low findings
@@ -76,8 +85,9 @@ External review prep lives in:
 - `security/external-review-scope.md`
 - `security/hardening-report-template.md`
 
-Before a production-mode claim, the release decision should incorporate external
-review findings, accepted risks, and retest notes.
+The v0.6 release explicitly scopes external review rather than claiming that an
+external audit was completed. Future review findings, accepted risks, and
+retest notes should be added to the release evidence.
 
 ## Production-Mode Claim
 

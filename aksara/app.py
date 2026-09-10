@@ -7,8 +7,9 @@ Core FastAPI functionality remains untouched.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 # Re-export everything from FastAPI as-is
@@ -30,8 +31,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -42,11 +42,14 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from aksara.db import Database
-from aksara.apps import load_app_models
 from aksara._version import __version__
+from aksara.apps import load_app_models
+from aksara.db import Database
+from aksara.routing import iter_routes
 
+logger = logging.getLogger(__name__)
 
 # Aksara SVG logo (blue lightning bolt with gradient)
 AKSARA_LOGO_SVG = '''data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366F1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/%3E%3C/svg%3E'''
@@ -112,6 +115,7 @@ class Aksara(FastAPI):
         views_module: Optional[str] = None,
         # v0.3.13: Aksara middleware configuration
         middlewares: Optional[List[Tuple[Type[BaseHTTPMiddleware], Dict[str, Any]]]] = None,
+        mcp_audit_sink: Any = None,
         # v0.3.15: Admin interface
         enable_admin: Optional[bool] = None,
         # Standard FastAPI args
@@ -148,6 +152,8 @@ class Aksara(FastAPI):
         
         # v0.4.0: AI registry (initialized later)
         self.ai_registry = None
+        self.mcp_runtime: Any | None = None
+        self._mcp_audit_sink = mcp_audit_sink
         self._task_worker = None
         
         # Store docs URLs for custom handlers
@@ -156,10 +162,12 @@ class Aksara(FastAPI):
         self._openapi_url = openapi_url
         self._swagger_ui_oauth2_redirect_url = swagger_ui_oauth2_redirect_url
         
-        # If user provides custom lifespan, wrap it with our DB lifecycle
+        from aksara.conf import settings
+
+        # If user provides custom lifespan, wrap it with Aksara runtime services.
         if lifespan is not None:
             wrapped_lifespan = self._wrap_lifespan(lifespan)
-        elif database_url is not None:
+        elif database_url is not None or settings.mcp_enabled:
             wrapped_lifespan = self._default_lifespan
         else:
             wrapped_lifespan = None
@@ -189,9 +197,8 @@ class Aksara(FastAPI):
         # wraps them like onion layers - last added is first executed
         if middlewares:
             for mw_class, options in reversed(middlewares):
-                self.add_middleware(mw_class, **(options or {}))
+                self.add_middleware(mw_class, **(options or {}))  # type: ignore[arg-type]
 
-        from aksara.conf import settings
         from aksara.middleware.ai_agent import AIAgentMiddleware
 
         # Auto-enable AI agent state when token auth is configured so DenyAI can enforce.
@@ -240,47 +247,92 @@ class Aksara(FastAPI):
         return self._task_worker
 
     async def _startup_runtime(self) -> None:
-        """Start database-backed runtime services."""
-        if not self._database_url:
-            return
+        """Start database-backed services and the MCP session manager."""
+        try:
+            from aksara.conf import settings
+            if self._database_url:
+                self._db = Database(
+                    self._database_url,
+                    min_size=self._min_pool_size,
+                    max_size=self._max_pool_size,
+                )
+                await self._db.connect()
 
-        self._db = Database(
-            self._database_url,
-            min_size=self._min_pool_size,
-            max_size=self._max_pool_size,
-        )
-        await self._db.connect()
+                if "aksara.contrib.auth" in settings.installed_apps:
+                    from aksara.contrib.auth.session import _ensure_sessions_table
+                    await _ensure_sessions_table(self._db)
 
-        from aksara.conf import settings
-        if "aksara.contrib.auth" in settings.installed_apps:
-            from aksara.contrib.auth.session import _ensure_sessions_table
-            await _ensure_sessions_table(self._db)
+                from aksara.model.base import finalize_relations
+                finalize_relations()
 
-        from aksara.model.base import finalize_relations
-        finalize_relations()
+                from aksara.contenttypes import (
+                    clear_content_type_cache,
+                    sync_content_types,
+                )
+                clear_content_type_cache()
+                await sync_content_types(self._db, prune_stale=True)
 
-        from aksara.contenttypes import clear_content_type_cache, sync_content_types
-        clear_content_type_cache()
-        await sync_content_types(self._db, prune_stale=True)
+                if settings.tasks_enabled:
+                    from aksara.tasks import TaskWorker
 
-        if settings.tasks_enabled:
-            from aksara.tasks import TaskWorker
+                    self._task_worker = TaskWorker(self._db)
+                    await self._task_worker.start()
 
-            self._task_worker = TaskWorker(self._db)
-            await self._task_worker.start()
+                self._print_startup()
 
-        self._print_startup()
+            if self.mcp_runtime is not None:
+                await self.mcp_runtime.start()
+        except BaseException:
+            await self._cleanup_runtime_after_error("runtime startup")
+            raise
 
     async def _shutdown_runtime(self) -> None:
         """Stop database-backed runtime services."""
+        first_error: BaseException | None = None
+        if self.mcp_runtime is not None:
+            try:
+                await self.mcp_runtime.stop()
+            except BaseException as exc:  # noqa: BLE001 - shutdown must continue
+                first_error = exc
+
         if self._task_worker is not None:
-            await self._task_worker.stop()
-            self._task_worker = None
+            try:
+                await self._task_worker.stop()
+            except BaseException as exc:  # noqa: BLE001 - shutdown must continue after cancellation
+                if first_error is None:
+                    first_error = exc
+            finally:
+                self._task_worker = None
 
         if self._db is not None:
-            await self._db.disconnect()
-            self._db = None
+            try:
+                await self._db.disconnect()
+            except BaseException as exc:
+                if first_error is None:
+                    first_error = exc
+                else:
+                    logger.exception(
+                        "Database disconnect also failed during runtime shutdown",
+                        exc_info=(type(exc), exc, exc.__traceback__),
+                    )
+            finally:
+                self._db = None
+
+        if first_error is not None:
+            raise first_error
+        if self._database_url:
             self._print_shutdown()
+
+    async def _cleanup_runtime_after_error(self, stage: str) -> None:
+        """Release partial runtime state without replacing the triggering error."""
+        try:
+            await self._shutdown_runtime()
+        except BaseException as exc:
+            logger.exception(
+                "Aksara cleanup failed after %s",
+                stage,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
     
     def _maybe_mount_admin(self) -> None:
         """
@@ -288,20 +340,19 @@ class Aksara(FastAPI):
         
         v0.3.15: Admin mounting rules:
         - enable_admin=None (default):
-          - If settings.debug == True and auth is available → mount /admin
+          - If this application has debug=True and auth is available → mount /admin
           - Else → no admin
         - enable_admin=True:
           - Always mount /admin, requires auth contrib → or RuntimeError
         - enable_admin=False:
           - Never mount admin
         """
-        from aksara.conf import settings
-        
         # Check if auth contrib is available (including bcrypt dependency)
         auth_available = False
         auth_error = None
         try:
             from aksara.contrib.auth import User  # noqa: F401
+
             # Also verify bcrypt is available
             from aksara.contrib.auth.hashing import hash_password  # noqa: F401
             auth_available = True
@@ -325,8 +376,7 @@ class Aksara(FastAPI):
         
         elif self.enable_admin is None:
             # Default: auto-enable in debug mode only if auth is available
-            is_debug = self._debug or getattr(settings, "debug", False)
-            if is_debug and auth_available:
+            if self._debug and auth_available:
                 from aksara.contrib.admin import include_admin
                 include_admin(self)
         
@@ -337,8 +387,7 @@ class Aksara(FastAPI):
         from aksara.conf import settings
         from aksara.storage import FileSystemStorage, get_default_storage
 
-        is_debug = self._debug or getattr(settings, "debug", False)
-        if not is_debug:
+        if not self._debug:
             return
 
         storage = get_default_storage()
@@ -350,7 +399,7 @@ class Aksara(FastAPI):
         if mount_path == "/":
             return
 
-        route_paths = {getattr(route, "path", None) for route in self.routes}
+        route_paths = {getattr(route, "path", None) for route in iter_routes(self)}
         if mount_path in route_paths:
             return
 
@@ -605,12 +654,16 @@ class Aksara(FastAPI):
         @asynccontextmanager
         async def wrapped_lifespan(app: FastAPI):
             await self._startup_runtime()
-            
-            # Run user's lifespan
-            async with user_lifespan(app):
-                yield
-            
-            await self._shutdown_runtime()
+
+            try:
+                # Run user's lifespan
+                async with user_lifespan(app):
+                    yield
+            except BaseException:
+                await self._cleanup_runtime_after_error("application lifespan")
+                raise
+            else:
+                await self._shutdown_runtime()
         
         return wrapped_lifespan
     
@@ -618,10 +671,14 @@ class Aksara(FastAPI):
     async def _default_lifespan(self, app: FastAPI):
         """Default lifespan with DB management."""
         await self._startup_runtime()
-        
-        yield
-        
-        await self._shutdown_runtime()
+
+        try:
+            yield
+        except BaseException:
+            await self._cleanup_runtime_after_error("application lifespan")
+            raise
+        else:
+            await self._shutdown_runtime()
     
     def _print_startup(self) -> None:
         """Print Aksara startup banner."""
@@ -643,8 +700,12 @@ class Aksara(FastAPI):
     
     def _register_orm_exceptions(self) -> None:
         """Register exception handlers for Aksara ORM errors."""
+        from aksara.exceptions import (
+            RestrictedError,
+            UniqueConstraintError,
+            ValidationError,
+        )
         from aksara.manager import DoesNotExist, MultipleObjectsReturned
-        from aksara.exceptions import ValidationError, UniqueConstraintError, RestrictedError
         
         @self.exception_handler(DoesNotExist)
         async def handle_does_not_exist(request: Request, exc: DoesNotExist):
@@ -715,13 +776,19 @@ class Aksara(FastAPI):
         """
         from aksara.ai import AiToolRegistry
         from aksara.ai.fastapi import router as ai_router
-        from aksara.conf import settings
-        
         # Initialize the registry
         self.ai_registry = AiToolRegistry()
         
         # Include AI endpoints (hidden from public OpenAPI docs)
         self.include_router(ai_router, include_in_schema=False)
+
+        from aksara.conf import settings
+        if settings.mcp_enabled:
+            from aksara.mcp import MCPRuntime
+
+            path = "/" + settings.mcp_path.strip("/")
+            self.mcp_runtime = MCPRuntime(self, audit_sink=self._mcp_audit_sink)
+            self.mount(path, self.mcp_runtime.asgi_app, name="mcp")
         
         # v0.5.0: Include Studio endpoints
         if self._should_enable_studio():
@@ -745,8 +812,7 @@ class Aksara(FastAPI):
             return False
         
         # In production, require explicit flag
-        is_debug = self._debug or settings.debug
-        if not is_debug and not settings.studio_expose_in_production:
+        if not self._debug and not settings.studio_expose_in_production:
             return False
         
         return True
@@ -778,8 +844,8 @@ class Aksara(FastAPI):
         - views_module parameter (if specified)
         - settings.apps (if no views_module specified)
         """
-        from aksara.core.discovery import auto_discover_viewsets
         from aksara.api.router import include_viewset
+        from aksara.core.discovery import auto_discover_viewsets
         
         # Discover all ViewSets
         viewsets = auto_discover_viewsets(views_module=self._views_module)

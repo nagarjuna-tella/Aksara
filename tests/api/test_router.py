@@ -8,6 +8,8 @@ Tests:
     - Filter extraction
 """
 
+from aksara.routing import iter_routes
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -89,7 +91,7 @@ class TestIncludeViewSet:
         """include_viewset should create all CRUD routes."""
         include_viewset(app, ItemViewSet)
         
-        routes = [route.path for route in app.routes]
+        routes = [route.path for route in iter_routes(app)]
         
         assert "/items/" in routes
         assert "/items/{pk}" in routes
@@ -100,7 +102,7 @@ class TestIncludeViewSet:
         
         # Collect all methods per path
         route_methods = {}
-        for route in app.routes:
+        for route in iter_routes(app):
             if hasattr(route, 'methods'):
                 path = route.path
                 if path not in route_methods:
@@ -123,7 +125,7 @@ class TestIncludeViewSet:
         include_viewset(router, ItemViewSet)
         app.include_router(router)
         
-        routes = [route.path for route in app.routes]
+        routes = [route.path for route in iter_routes(app)]
         assert "/items/" in routes
 
 
@@ -377,7 +379,7 @@ class TestTagsAndDocs:
         """Routes should have correct tags."""
         include_viewset(app, ItemViewSet)
         
-        for route in app.routes:
+        for route in iter_routes(app):
             if hasattr(route, 'tags') and route.path.startswith("/items"):
                 assert "Items" in route.tags
     
@@ -385,6 +387,6 @@ class TestTagsAndDocs:
         """Routes should have summaries."""
         include_viewset(app, ItemViewSet)
         
-        for route in app.routes:
+        for route in iter_routes(app):
             if hasattr(route, 'summary') and route.path.startswith("/items"):
                 assert route.summary is not None

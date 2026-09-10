@@ -11,18 +11,21 @@ If you change behavior or supported options here, check if migrations also need 
 
 from __future__ import annotations
 
+import copy
 import io
+import ipaddress
 import json
 import math
 import os
-import ipaddress
 import re
 import uuid as uuid_lib
 from abc import ABC, abstractmethod
-from datetime import date, datetime, time as py_time, timedelta
-from decimal import Decimal as PyDecimal, InvalidOperation
+from datetime import date, datetime, timedelta
+from datetime import time as py_time
+from decimal import Decimal as PyDecimal
+from decimal import InvalidOperation
 from enum import Enum as PyEnum
-from typing import Any, Optional, Type, Union, Callable, TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Union
 
 if TYPE_CHECKING:
     from aksara.model.base import Model
@@ -30,8 +33,12 @@ if TYPE_CHECKING:
 
 from aksara.i18n import normalize_datetime_for_storage, normalize_datetime_from_storage
 from aksara.relations import normalize_on_delete
-from aksara.storage import FieldFile, build_upload_name, get_default_storage, read_uploaded_content
-
+from aksara.storage import (
+    FieldFile,
+    build_upload_name,
+    get_default_storage,
+    read_uploaded_content,
+)
 
 # =============================================================================
 # on_delete constants (Django-style API)
@@ -208,6 +215,10 @@ class Field(ABC):
         """Get the default value, calling it if it's callable."""
         if callable(self.default):
             return self.default()
+        # Declarative field objects live on the model class. Returning a
+        # mutable default directly would therefore share it across instances.
+        if isinstance(self.default, (dict, list, set, tuple, bytearray)):
+            return copy.deepcopy(self.default)
         return self.default
     
     def to_python(self, value: Any) -> Any:
@@ -777,30 +788,142 @@ class JSON(Field):
         return "JSONB"
     
     def _format_default(self) -> str:
-        """Format the default value for SQL."""
+        """Format the default value for SQL.
+
+        Invalid JSON defaults (non-serializable objects, NaN/infinity) raise a
+        clear error before DDL generation instead of being silently converted
+        to ``DEFAULT NULL``, which would mask a configuration mistake.
+        """
         if self.default is None:
             return "NULL"
-        if isinstance(self.default, (dict, list)):
-            return f"'{json.dumps(self.default)}'::jsonb"
-        return "NULL"
-    
+        field_label = f" for field '{self.name}'" if self.name else ""
+        try:
+            literal = json.dumps(self.default, allow_nan=False)
+        except ValueError as exc:
+            raise ValueError(
+                f"JSON default{field_label} contains a non-finite number "
+                "(NaN/Infinity); JSON cannot portably represent it"
+            ) from exc
+        except TypeError as exc:
+            raise ValueError(
+                f"JSON default{field_label} is not JSON-serializable: {exc}"
+            ) from exc
+        escaped = literal.replace("'", "''")
+        return f"'{escaped}'::jsonb"
+
     def to_python(self, value: Any) -> Any:
         """JSONB is automatically parsed by asyncpg."""
         if value is None:
             return None
-        # asyncpg returns dict/list directly from JSONB
+        # asyncpg returns the raw JSON text for JSONB columns; objects, arrays,
+        # and top-level scalars are all decoded the same way.
         if isinstance(value, str):
             return json.loads(value)
         return value
-    
+
     def to_db(self, value: Any) -> Any:
-        """Serialize to JSON string for asyncpg."""
+        """Serialize any JSON-compatible value to a JSONB string for asyncpg.
+
+        Top-level ``None`` is preserved as SQL ``NULL``. Every other value —
+        including top-level scalars (str/int/float/bool) — is serialized with
+        ``json.dumps(..., allow_nan=False)`` so JSONB always receives valid
+        JSON and non-finite floats are rejected before SQL execution.
+        """
         if value is None:
+            # Top-level None means SQL NULL, not JSON null.
             return None
-        # asyncpg expects a JSON string for JSONB columns
-        if isinstance(value, (dict, list)):
-            return json.dumps(value)
-        return value
+        try:
+            return json.dumps(value, allow_nan=False)
+        except ValueError as exc:
+            # allow_nan=False raises ValueError for NaN/Infinity/-Infinity.
+            field_label = f" for field '{self.name}'" if self.name else ""
+            raise ValueError(
+                f"JSON value{field_label} contains a non-finite number "
+                "(NaN/Infinity); JSON cannot portably represent it"
+            ) from exc
+        except TypeError as exc:
+            field_label = f" for field '{self.name}'" if self.name else ""
+            raise ValueError(
+                f"JSON value{field_label} is not JSON-serializable: {exc}"
+            ) from exc
+
+
+def validate_vector_dimensions(dimensions: Optional[int]) -> None:
+    """Reject malformed dimension declarations before SQL generation."""
+    if dimensions is not None and (type(dimensions) is not int or dimensions <= 0):
+        raise ValueError("Vector dimensions must be a positive integer or None")
+
+
+def validate_vector_components(
+    value: Any,
+    *,
+    dimensions: Optional[int] = None,
+    field_label: Optional[str] = None,
+) -> list[float]:
+    """Validate vector components and return a list of finite ``float`` values.
+
+    Rejects non-list/tuple inputs, boolean items, non-numeric items,
+    ``NaN``/``Infinity``/``-Infinity``, and empty vectors, and enforces
+    ``dimensions`` when known. This is the single validation policy shared by
+    ``Vector.to_db``, the asyncpg vector codec, vector-distance expression
+    helpers, and migration defaults, so invalid vectors fail before SQL
+    execution regardless of the entry point.
+    """
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("Vector fields require a list or tuple of numbers")
+
+    vector: list[float] = []
+    for item in value:
+        # bool is an int subclass; reject it explicitly so True/False are
+        # never silently stored as 1.0/0.0 embedding components.
+        if isinstance(item, bool):
+            raise ValueError("Vector fields do not accept boolean values")
+        try:
+            number = float(item)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Vector fields require numeric values, got {item!r}"
+            ) from exc
+        if not math.isfinite(number):
+            raise ValueError(
+                "Vector fields only support finite numbers; "
+                "NaN, Infinity, and -Infinity are not allowed"
+            )
+        vector.append(number)
+
+    if not vector:
+        raise ValueError(
+            "Vector fields require at least one dimension; "
+            "empty vectors are not allowed"
+        )
+
+    if dimensions is not None and len(vector) != dimensions:
+        label = f"Vector field '{field_label}'" if field_label else "Vector"
+        raise ValueError(
+            f"{label} requires {dimensions} dimensions, got {len(vector)}"
+        )
+
+    return vector
+
+
+def serialize_vector_components(
+    value: Any,
+    *,
+    dimensions: Optional[int] = None,
+    field_label: Optional[str] = None,
+) -> str:
+    """Validate, then serialize numeric components into pgvector text format.
+
+    Validation (finite/non-bool/non-empty plus optional ``dimensions``) runs
+    before serialization so callers that bypass ``Vector.to_db`` — the asyncpg
+    codec, vector-distance expressions, migration defaults — still reject
+    invalid vectors. Uses ``repr(float(...))`` for the shortest exact
+    round-trippable decimal instead of a lossy six-significant-digit format.
+    """
+    vector = validate_vector_components(
+        value, dimensions=dimensions, field_label=field_label
+    )
+    return "[" + ",".join(repr(item) for item in vector) + "]"
 
 
 class Vector(Field):
@@ -827,6 +950,7 @@ class Vector(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+        validate_vector_dimensions(dimensions)
         self.dimensions = dimensions
 
     @property
@@ -845,20 +969,9 @@ class Vector(Field):
         if isinstance(value, str):
             value = self.to_python(value)
 
-        if not isinstance(value, (list, tuple)):
-            raise ValueError("Vector fields require a list or tuple of numbers")
-
-        vector = [float(item) for item in value]
-        if self.dimensions is not None and len(vector) != self.dimensions:
-            raise ValueError(
-                f"Vector field '{self.name}' requires {self.dimensions} dimensions, got {len(vector)}"
-            )
-
-        for item in vector:
-            if not math.isfinite(item):
-                raise ValueError("Vector fields only support finite numbers")
-
-        return vector
+        return validate_vector_components(
+            value, dimensions=self.dimensions, field_label=self.name
+        )
 
     def to_python(self, value: Any) -> Optional[list[float]]:
         if value is None:
@@ -878,7 +991,7 @@ class Vector(Field):
         if value is None:
             return None
         vector = self.validate(value)
-        return "[" + ",".join(format(item, "g") for item in vector) + "]"
+        return serialize_vector_components(vector)
 
     def get_ai_metadata(self) -> dict:
         base = super().get_ai_metadata()
@@ -916,6 +1029,10 @@ class Array(Field):
         uuid_lib.UUID: "UUID[]",
     }
     
+    NESTED_ARRAY_ERROR = (
+        "Nested Array fields are not supported yet; use JSON for nested lists."
+    )
+
     def __init__(
         self,
         *,
@@ -926,8 +1043,15 @@ class Array(Field):
         ai_sensitive: bool = False,
         ai_agent_writable: bool = True,
     ):
+        # Nested/multidimensional arrays are deferred. Reject list/tuple item
+        # types and Array(item_type=Array(...)) at construction time.
+        if item_type in (list, tuple) or isinstance(item_type, Field):
+            raise ValueError(self.NESTED_ARRAY_ERROR)
+
+        if not isinstance(item_type, type) or item_type not in self.TYPE_MAP:
+            raise ValueError("Array item_type must be str, int, float, bool, or uuid.UUID")
         self.item_type = item_type
-        
+
         super().__init__(
             nullable=nullable,
             default=default,
@@ -935,6 +1059,111 @@ class Array(Field):
             ai_sensitive=ai_sensitive,
             ai_agent_writable=ai_agent_writable,
         )
+
+    def _validate_item(self, item: Any) -> Any:
+        """Validate and normalize a single array element per ``item_type``.
+
+        Nested lists/tuples and ``None`` items are rejected. Numeric/bool/uuid
+        items are checked strictly without parsing arbitrary strings in core
+        ORM validation.
+        """
+        if isinstance(item, (list, tuple)):
+            raise ValueError(self.NESTED_ARRAY_ERROR)
+        if item is None:
+            raise ValueError(
+                f"Array field '{self.name}' does not support null items; "
+                "use JSON if null elements are required."
+            )
+
+        it = self.item_type
+        if it is str:
+            if not isinstance(item, str):
+                raise ValueError(
+                    f"Array field '{self.name}' expects str items, "
+                    f"got {type(item).__name__}"
+                )
+            return item
+
+        if it is bool:
+            # Core ORM accepts real booleans only; string parsing belongs at the
+            # form/adapter boundary.
+            if not isinstance(item, bool):
+                raise ValueError(
+                    f"Array field '{self.name}' expects bool items (True/False); "
+                    f"got {type(item).__name__}. String parsing is not supported "
+                    "in core ORM."
+                )
+            return item
+
+        if it is int:
+            if isinstance(item, bool):
+                raise ValueError(
+                    f"Array field '{self.name}' (int) does not accept boolean values"
+                )
+            if isinstance(item, int):
+                coerced = item
+            elif isinstance(item, float):
+                if not math.isfinite(item) or not item.is_integer():
+                    raise ValueError(
+                        f"Array field '{self.name}' (int) requires integral "
+                        f"values, got {item!r}"
+                    )
+                coerced = int(item)
+            elif isinstance(item, PyDecimal):
+                if item.is_nan() or item.is_infinite() or item != item.to_integral_value():
+                    raise ValueError(
+                        f"Array field '{self.name}' (int) requires integral "
+                        f"values, got {item!r}"
+                    )
+                coerced = int(item)
+            else:
+                raise ValueError(
+                    f"Array field '{self.name}' (int) expects integers, "
+                    f"got {type(item).__name__}"
+                )
+            # INTEGER[] columns are 32-bit; reject out-of-range values here
+            # rather than letting PostgreSQL fail at execution time.
+            _validate_integer_bounds(
+                coerced, INTEGER_MIN, INTEGER_MAX, f"Array field '{self.name}' (INTEGER)"
+            )
+            return coerced
+
+        if it is float:
+            if isinstance(item, bool):
+                raise ValueError(
+                    f"Array field '{self.name}' (float) does not accept boolean values"
+                )
+            if isinstance(item, (int, float, PyDecimal)):
+                number = float(item)
+                if not math.isfinite(number):
+                    raise ValueError(
+                        f"Array field '{self.name}' (float) requires finite "
+                        "values; NaN and infinity are not allowed"
+                    )
+                return number
+            raise ValueError(
+                f"Array field '{self.name}' (float) expects numbers, "
+                f"got {type(item).__name__}"
+            )
+
+        if it is uuid_lib.UUID:
+            if isinstance(item, uuid_lib.UUID):
+                return item
+            if isinstance(item, str):
+                try:
+                    return uuid_lib.UUID(item)
+                except (ValueError, AttributeError) as exc:
+                    raise ValueError(
+                        f"Array field '{self.name}' (uuid) received an invalid "
+                        f"UUID string: {item!r}"
+                    ) from exc
+            raise ValueError(
+                f"Array field '{self.name}' (uuid) expects UUID instances or "
+                f"parseable UUID strings, got {type(item).__name__}"
+            )
+
+        # Unknown/custom item types: pass through unchanged.
+        return item
     
     @property
     def sql_type(self) -> str:
@@ -942,25 +1171,20 @@ class Array(Field):
         return self.TYPE_MAP.get(self.item_type, "TEXT[]")
     
     def _format_default(self) -> str:
-        """Format the default value for SQL."""
+        """Use the write policy for defaults and quote string/UUID literals."""
         if self.default is None:
             return "NULL"
-        if isinstance(self.default, list):
-            # Format as PostgreSQL array literal
-            if not self.default:
-                return "'{}'"
-            
-            # Format items based on type
-            if self.item_type == str:
-                formatted_items = [f"'{item}'" if item else 'NULL' for item in self.default]
-            elif self.item_type == bool:
-                formatted_items = [str(item).upper() for item in self.default]
-            else:
-                formatted_items = [str(item) for item in self.default]
-            
-            return f"ARRAY[{','.join(formatted_items)}]"
-        return "'{}'"
-    
+        values = self.to_db(self.default)
+        if not values:
+            return "'{}'"
+        if self.item_type in (str, uuid_lib.UUID):
+            formatted = ["'" + str(value).replace("'", "''") + "'" for value in values]
+        elif self.item_type is bool:
+            formatted = ["TRUE" if value else "FALSE" for value in values]
+        else:
+            formatted = [str(value) for value in values]
+        return f"ARRAY[{','.join(formatted)}]::{self.sql_type}"
+
     def to_python(self, value: Any) -> Any:
         """Convert database array to Python list."""
         if value is None:
@@ -988,27 +1212,43 @@ class Array(Field):
         return value
     
     def to_db(self, value: Any) -> Any:
-        """Convert Python list to database array."""
+        """Validate and convert a Python list to a database array.
+
+        Core ORM accepts an explicit Python ``list`` (or ``None`` when
+        nullable). Each element is validated against ``item_type``; nested
+        lists/tuples and null items are rejected. Arbitrary string inputs are
+        no longer split into arrays here — convert them at the form/adapter
+        boundary before they reach the ORM.
+        """
         if value is None:
+            if not self.nullable:
+                raise ValueError(
+                    f"Array field '{self.name}' is not nullable; None is not allowed"
+                )
             return None
-        # asyncpg handles Python lists directly for ARRAY columns
+
         if isinstance(value, list):
-            return value
-        # Handle comma-separated strings
+            # asyncpg handles Python lists directly for ARRAY columns; we
+            # validate/normalize each element first.
+            return [self._validate_item(item) for item in value]
+
+        if isinstance(value, tuple):
+            raise ValueError(
+                f"Array field '{self.name}' requires a list, got a tuple. "
+                "Pass an explicit list."
+            )
+
         if isinstance(value, str):
-            if not value.strip():
-                return []
-            # Split by comma and convert types
-            items = [item.strip() for item in value.split(',')]
-            if self.item_type == int:
-                return [int(i) for i in items if i]
-            elif self.item_type == float:
-                return [float(i) for i in items if i]
-            elif self.item_type == bool:
-                return [i.lower() in ('true', '1', 'yes') for i in items if i]
-            else:
-                return items
-        return value
+            raise ValueError(
+                f"Array field '{self.name}' requires a Python list, not a string. "
+                "Assign a list (e.g. ['a', 'b']); convert delimited strings at "
+                "the form/adapter boundary."
+            )
+
+        raise ValueError(
+            f"Array field '{self.name}' requires a list, "
+            f"got {type(value).__name__}"
+        )
 
 
 # Convenience aliases
@@ -1166,7 +1406,13 @@ class FileField(Field):
         return FieldFile(instance=instance, field=self, name=value)
 
     def _normalize_name(self, name: Any) -> str:
-        normalized = str(name or "").strip().replace("\\", "/")
+        if isinstance(name, os.PathLike):
+            name = os.fspath(name)
+        if not isinstance(name, str):
+            raise ValueError("File path must be a string or PathLike")
+        normalized = name.strip().replace("\\", "/")
+        if "\x00" in normalized or ".." in normalized.split("/"):
+            raise ValueError("File path must not contain null bytes or parent traversal")
         normalized = normalized.lstrip("/")
         if not normalized:
             raise ValueError("File name cannot be empty")
@@ -1231,8 +1477,11 @@ class FileField(Field):
             value = value.name
         if not isinstance(value, str):
             raise ValueError(
-                "FileField values must be prepared before database writes; "
-                "use model.save() or assign a stored path string"
+                f"FileField '{self.name}' received an unresolved upload-like value. "
+                "File content must be persisted before database writes; use "
+                "save()/create()/bulk_create() (which run async_prepare), or assign "
+                "an already-stored path string. update()/bulk_update() cannot persist "
+                "file content and only accept stored path strings or FieldFile objects."
             )
         return self._normalize_name(value)
 

@@ -133,7 +133,7 @@ class DateTimeInput(Widget):
                     # Only output if parseable as a datetime — rejects arbitrary strings
                     _dt.datetime.fromisoformat(str(value))
                     value_str = str(value).replace(" ", "T")[:16]
-            except:
+            except (TypeError, ValueError):
                 value_str = ""
         
         required = " required" if not field.nullable else ""

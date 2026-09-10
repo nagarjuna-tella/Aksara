@@ -425,7 +425,7 @@ def _build_migration_context(migration_id: Optional[str] = None, app: Optional[s
         lines.append(f"Name: {name}")
     try:
         from aksara.studio.utils import build_migration_summary
-        mig_summary = build_migration_summary()
+        mig_summary = build_migration_summary()  # type: ignore[call-arg]
         if hasattr(mig_summary, "apps") and mig_summary.apps:
             lines.append(f"\nTotal apps with migrations: {len(mig_summary.apps)}")
             total = sum(getattr(a, "total", 0) for a in mig_summary.apps)

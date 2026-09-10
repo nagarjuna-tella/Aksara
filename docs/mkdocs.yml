@@ -45,6 +45,7 @@ nav:
   - Getting Started:
       - getting-started/index.md
       - Installation: getting-started/installation.md
+      - Runtime Compatibility: reference/runtime-compatibility.md
       - Your First 10 Minutes: getting-started/ten-minutes.md
       - First Project: getting-started/first-project.md
       - Studio Quickstart: getting-started/studio.md
@@ -61,6 +62,7 @@ nav:
       - orm/index.md
       - Models: orm/models.md
       - Fields: orm/fields.md
+      - Advanced Field Policy: orm/advanced-field-policy.md
       - Relations: orm/relations.md
       - Querying: orm/querying.md
       - Expressions & Transactions: orm/expressions-and-transactions.md
@@ -204,7 +206,7 @@ nav:
   - Roadmap:
       - roadmap/index.md
       - Roadmap: roadmap.md
-      - v0.6 Stability Contract: roadmap/v0-6-stability-contract.md
+      - v0.6 Stability and Production Contract: roadmap/v0-6-stability-contract.md
   - Releasing: releasing.md
   - Changelog: changelog.md
   - Glossary: glossary.md

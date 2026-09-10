@@ -4,14 +4,14 @@ Tests for built-in background task processing.
 
 from __future__ import annotations
 
+import asyncio
 import os
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-
-import asyncio
-from datetime import datetime, timedelta
 
 from aksara import Aksara
 from aksara.conf import settings
@@ -26,7 +26,6 @@ from aksara.tasks import (
     get_task_record,
     task,
 )
-
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("DATABASE_URL"),
@@ -253,6 +252,79 @@ class TestTaskWorkerLifespan:
         assert start.await_count == 1
         assert stop.await_count == 1
         assert sync_content_types.await_count == 1
+
+    def test_user_lifespan_startup_failure_cleans_runtime(self, monkeypatch):
+        """A user startup error stops the worker and returns the DB connection."""
+        monkeypatch.setattr(settings, "tasks_enabled", True)
+        monkeypatch.setattr(settings, "installed_apps", [])
+
+        connect = AsyncMock(return_value=None)
+        disconnect = AsyncMock(return_value=None)
+        start = AsyncMock(return_value=None)
+        stop = AsyncMock(return_value=None)
+        sync_content_types = AsyncMock(return_value=[])
+
+        monkeypatch.setattr(Database, "connect", connect)
+        monkeypatch.setattr(Database, "disconnect", disconnect)
+        monkeypatch.setattr("aksara.model.base.finalize_relations", lambda: None)
+        monkeypatch.setattr("aksara.contenttypes.clear_content_type_cache", lambda: None)
+        monkeypatch.setattr("aksara.contenttypes.sync_content_types", sync_content_types)
+        monkeypatch.setattr(TaskWorker, "start", start)
+        monkeypatch.setattr(TaskWorker, "stop", stop)
+
+        @asynccontextmanager
+        async def failing_lifespan(app):
+            raise RuntimeError("unapplied migrations")
+            yield
+
+        app = Aksara(
+            database_url="postgresql://localhost/test",
+            auto_discover_views=False,
+            enable_admin=False,
+            lifespan=failing_lifespan,
+        )
+        app._print_startup = lambda: None
+        app._print_shutdown = lambda: None
+
+        with pytest.raises(RuntimeError, match="unapplied migrations"), TestClient(app):
+            pass
+
+        assert connect.await_count == 1
+        assert start.await_count == 1
+        assert stop.await_count == 1
+        assert disconnect.await_count == 1
+        assert app.task_worker is None
+        assert app.db is None
+
+    def test_partial_runtime_startup_failure_disconnects(self, monkeypatch):
+        """Failure after connect releases the partial runtime state."""
+        monkeypatch.setattr(settings, "tasks_enabled", True)
+        monkeypatch.setattr(settings, "installed_apps", [])
+
+        connect = AsyncMock(return_value=None)
+        disconnect = AsyncMock(return_value=None)
+        sync_content_types = AsyncMock(side_effect=RuntimeError("content sync failed"))
+
+        monkeypatch.setattr(Database, "connect", connect)
+        monkeypatch.setattr(Database, "disconnect", disconnect)
+        monkeypatch.setattr("aksara.model.base.finalize_relations", lambda: None)
+        monkeypatch.setattr("aksara.contenttypes.clear_content_type_cache", lambda: None)
+        monkeypatch.setattr("aksara.contenttypes.sync_content_types", sync_content_types)
+
+        app = Aksara(
+            database_url="postgresql://localhost/test",
+            auto_discover_views=False,
+            enable_admin=False,
+        )
+        app._print_shutdown = lambda: None
+
+        with pytest.raises(RuntimeError, match="content sync failed"), TestClient(app):
+            pass
+
+        assert connect.await_count == 1
+        assert disconnect.await_count == 1
+        assert app.task_worker is None
+        assert app.db is None
 
 
 class TestNamedQueues:

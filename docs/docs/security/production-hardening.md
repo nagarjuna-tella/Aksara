@@ -15,7 +15,19 @@ aksara doctor production-check
 ```
 
 `production-check` exits with code `1` when blocking or failing production
-conditions are detected. Fix blocking conditions before deployment.
+conditions are detected. Warnings remain visible but do not change its exit
+code, so an operator must review them before deployment.
+
+Release candidates use the stricter policy:
+
+```bash
+aksara doctor production-check --release
+```
+
+Release mode exits with code `1` for every warning, failure, block, skipped
+check, or unknown result. It also requires a valid security matrix in which no
+scenario remains `planned` or `partial` and every implemented surface has at
+least one `covered` scenario.
 
 ## Required Production Settings
 
@@ -39,7 +51,8 @@ conditions are detected. Fix blocking conditions before deployment.
 | `AKSARA_MULTI_TENANT` | `true` for multi-tenant deployments |
 | `AKSARA_RLS_ENABLED` | `true` when database-level RLS is required |
 | `AKSARA_ADMIN_RATE_LIMIT_ENABLED` | `true` |
-| `AKSARA_REQUIRE_SECURITY_MATRIX` | Optional strict/private matrix enforcement |
+| `AKSARA_REQUIRE_SECURITY_MATRIX` | Optional strict/private matrix enforcement for deployment checks |
+| `AKSARA_SECURITY_MATRIX_PATH` | Explicit matrix path for a project or release process |
 
 ## Blocking Conditions
 
@@ -68,7 +81,9 @@ Warnings should be reviewed before production deployment:
 - `cookie_secure=False`
 - Admin rate limiting disabled
 - Multi-tenant mode without confirmed RLS
-- AI fields broadly writable by default
+- AI fields broadly writable by default when AI, MCP, or AI Console exposure is
+  enabled and `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` has not been set after
+  a concrete field review
 - Missing private security matrix when strict matrix enforcement is disabled
 - MCP token TTL longer than 3600 seconds
 
@@ -98,6 +113,12 @@ AKSARA_REQUIRE_SECURITY_MATRIX=true
 
 Do not publish private matrices accidentally.
 
+The framework repository uses the public-safe
+`security/security_matrix.release.yml` for its own release-candidate workflow.
+Applications can point `AKSARA_SECURITY_MATRIX_PATH` at a project-specific
+matrix. `--release` makes that matrix mandatory and also requires completed
+coverage entries.
+
 ## Additional Validation
 
 Security and fuzz tests can be run separately during release preparation:
@@ -107,8 +128,8 @@ python -m pytest tests/security/ -q
 python -m pytest tests/security/fuzz/ -q
 ```
 
-OpenAPI fuzzing requires optional tooling and is represented as a placeholder
-unless that tooling is installed.
+The generated CRUD abuse invariants use a real PostgreSQL database and run in
+the required security suite without an unconditional placeholder skip.
 
 ## Release-Trust Gates
 
@@ -123,7 +144,7 @@ release-security workflow:
 - Secret scanning
 - Package build and `twine check`
 - SBOM generation
-- `aksara doctor production-check`
+- `aksara doctor production-check --release`
 
 These checks prepare releases for stronger review. They do not replace external
 security review and do not create a blanket production-readiness claim.

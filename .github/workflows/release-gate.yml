@@ -20,9 +20,14 @@ jobs:
   full-tests:
     name: Full test suite
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14"]
+        web: [minimum, latest-supported]
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -36,18 +41,30 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aksara_test
+      AKSARA_REQUIRE_DATABASE_TESTS: "1"
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python }}
           cache: pip
 
       - name: Install project
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
+
+      - name: Install supported web boundary
+        env:
+          WEB_BOUNDARY: ${{ matrix.web }}
+        run: |
+          if [ "$WEB_BOUNDARY" = minimum ]; then
+            python -m pip install 'fastapi==0.136.1' 'starlette==1.0.1'
+          else
+            python -m pip install 'fastapi==0.141.1' 'starlette==1.6.0'
+          fi
+          python -m pip freeze
 
       - name: Run full suite
         run: python -m pytest --tb=short -q
@@ -84,7 +101,7 @@ jobs:
       AKSARA_ENV: production
       AKSARA_DEBUG: "false"
       AKSARA_SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
-      AKSARA_REQUIRE_SECURITY_MATRIX: "false"
+      AKSARA_SECURITY_MATRIX_PATH: security/security_matrix.release.yml
       AKSARA_MCP_ENABLED: "false"
       AKSARA_STUDIO_EXPOSE_IN_PRODUCTION: "false"
       AKSARA_STUDIO_REQUIRE_AUTH: "true"
@@ -93,6 +110,7 @@ jobs:
       CORS_ALLOW_ALL_ORIGINS: "false"
       CORS_ALLOW_CREDENTIALS: "false"
       AKSARA_AI_CONSOLE_ENABLED: "false"
+      AKSARA_AI_ENABLED: "false"
     steps:
       - uses: actions/checkout@v6
 
@@ -107,7 +125,7 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Run production-check
-        run: aksara doctor production-check --format json
+        run: aksara doctor production-check --release --format json
 
   package-build:
     name: Package build verification
@@ -137,6 +155,50 @@ jobs:
           /tmp/aksara-wheel-test/bin/python -m pip install --upgrade pip
           /tmp/aksara-wheel-test/bin/python -m pip install dist/*.whl
           /tmp/aksara-wheel-test/bin/python -c "import aksara; print(getattr(aksara, '__version__', 'aksara import ok'))"
+
+  production-reference-app:
+    name: Packaged production reference app
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aksara_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aksara_test
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build wheel and install gate dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" build
+          python -m build --wheel
+
+      - name: Run production reference app gate
+        run: python scripts/run_support_desk_gate.py --wheel dist/*.whl
+
+      - name: Upload production reference evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: support-desk-production-gate
+          path: audit-evidence/v060-mcp-ai/support-desk-gate.json
+          if-no-files-found: error
 
   dependency-audit:
     name: Dependency audit
@@ -169,10 +231,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install Bandit
+      - name: Install static-analysis tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install bandit
+          python -m pip install -e ".[dev]" bandit
+
+      - name: Enforce reviewed Ruff and mypy baseline
+        run: python scripts/check_static_baseline.py
 
       - name: Run Bandit
         run: bandit -r aksara -x tests,.venv,docs --severity-level high --skip B324

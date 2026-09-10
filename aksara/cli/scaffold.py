@@ -19,7 +19,7 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application (v0.5.54)
+{project_name} - Aksara Application (v0.6.0-rc2)
 
 A modern async API with Admin, Studio, and AI Mode built-in.
 
@@ -34,7 +34,7 @@ Endpoints:
     Welcome:   http://localhost:8000/
     API Docs:  http://localhost:8000/docs
     Admin:     http://localhost:8000/admin (debug mode)
-    Studio:    http://localhost:8000/studio/ui
+    Studio:    http://localhost:8000/studio/ui (enable explicitly in settings)
     AI Tools:  http://localhost:8000/ai/tools
 """
 
@@ -315,7 +315,7 @@ def get_welcome_html_template(project_name: str) -> str:
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings (v0.5.54)
+{project_name} - Settings (v0.6.0-rc2)
 
 Aksara settings with environment variable support.
 Configure via .env file or environment variables.
@@ -832,7 +832,7 @@ version = "0.1.0"
 description = "AI-native backend — REST API, MCP tools, Studio"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara>=0.5.54",
+    "aksara-framework>=0.6.0rc2",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]

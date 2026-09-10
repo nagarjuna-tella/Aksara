@@ -45,7 +45,7 @@ class AbstractUser(Model):
         ai_description="User's email address for login",
         ai_sensitive=True,
     )
-    hashed_password = fields.String(
+    hashed_password = fields.String(  # type: ignore[call-arg]
         max_length=255,
         nullable=False,
         ai_description="Bcrypt-hashed password (never expose)",
@@ -54,21 +54,21 @@ class AbstractUser(Model):
     )
     
     # Status flags
-    is_active = fields.Boolean(
+    is_active = fields.Boolean(  # type: ignore[call-arg]
         default=True,
         ai_description="Whether the user account is active",
     )
-    is_staff = fields.Boolean(
+    is_staff = fields.Boolean(  # type: ignore[call-arg]
         default=False,
         ai_description="Whether the user has admin/staff access",
     )
-    is_superuser = fields.Boolean(
+    is_superuser = fields.Boolean(  # type: ignore[call-arg]
         default=False,
         ai_description="Whether the user has all permissions",
     )
     
     # Extensible profile data
-    metadata = fields.JSON(
+    metadata = fields.JSON(  # type: ignore[call-arg]
         nullable=True,
         ai_description="Additional user profile data",
     )

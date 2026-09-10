@@ -76,36 +76,34 @@ def test_array_field_to_python_bool():
 
 
 def test_array_field_to_db():
-    """Test Array field conversion to database."""
+    """Test Array field conversion to database (list-only core ORM)."""
     field = Array(item_type=str)
-    
+
     # List to list (asyncpg handles this)
     assert field.to_db(['a', 'b', 'c']) == ['a', 'b', 'c']
-    
-    # None
+
+    # None (nullable by default)
     assert field.to_db(None) is None
-    
-    # Empty list
+
+    # Empty list means an empty array, not NULL
     assert field.to_db([]) == []
-    
-    # Comma-separated string
-    assert field.to_db('a,b,c') == ['a', 'b', 'c']
 
 
 def test_array_field_to_db_int():
     """Test Array field conversion for integers to database."""
     field = Array(item_type=int)
-    
+
     assert field.to_db([1, 2, 3]) == [1, 2, 3]
-    assert field.to_db('1,2,3') == [1, 2, 3]
 
 
-def test_array_field_to_db_empty_string():
-    """Test Array field handles empty strings."""
+def test_array_field_to_db_rejects_strings():
+    """v0.5.55: core ORM no longer parses delimited strings into arrays."""
     field = Array(item_type=str)
-    
-    assert field.to_db('') == []
-    assert field.to_db('   ') == []
+
+    with pytest.raises(ValueError, match="requires a Python list"):
+        field.to_db('a,b,c')
+    with pytest.raises(ValueError, match="requires a Python list"):
+        field.to_db('')
 
 
 def test_array_field_default_list():
@@ -187,34 +185,155 @@ def test_array_field_ai_metadata():
     assert metadata["agent_writable"] is True
 
 
-def test_array_field_handles_whitespace():
-    """Test Array field handles whitespace in strings."""
-    field = Array(item_type=str)
-    
-    # Comma-separated with spaces
-    result = field.to_db('apple, banana, cherry')
-    assert result == ['apple', 'banana', 'cherry']
-
-
 def test_array_field_float_conversion():
-    """Test Array field handles float arrays."""
+    """Test Array field handles float arrays (mixed int/float allowed)."""
     field = Array(item_type=float)
-    
+
     assert field.to_db([1.5, 2.5, 3.5]) == [1.5, 2.5, 3.5]
-    assert field.to_db('1.5,2.5,3.5') == [1.5, 2.5, 3.5]
+    assert field.to_db([1, 2.5]) == [1.0, 2.5]
 
 
-def test_array_field_bool_conversion_variants():
-    """Test Array field handles various boolean string formats."""
+# ---------------------------------------------------------------------------
+# v0.5.55 Advanced Field Policy: item validation
+# ---------------------------------------------------------------------------
+
+
+def test_array_int_rejects_non_integral_float():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="integral"):
+        field.to_db([1.9])
+
+
+def test_array_int_rejects_bool():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="boolean"):
+        field.to_db([True])
+
+
+def test_array_int_accepts_integral_float():
+    field = Array(item_type=int)
+    assert field.to_db([2.0, 3]) == [2, 3]
+
+
+def test_array_int_accepts_32bit_bounds():
+    field = Array(item_type=int)
+    assert field.to_db([2147483647]) == [2147483647]
+    assert field.to_db([-2147483648]) == [-2147483648]
+
+
+def test_array_int_rejects_above_max():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([2147483648])
+
+
+def test_array_int_rejects_below_min():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([-2147483649])
+
+
+def test_array_int_rejects_large_python_int():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([2 ** 40])
+
+
+def test_array_int_rejects_out_of_range_decimal():
+    from decimal import Decimal
+
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="range"):
+        field.to_db([Decimal("2147483648")])
+
+
+def test_array_float_rejects_nan():
+    field = Array(item_type=float)
+    with pytest.raises(ValueError, match="finite"):
+        field.to_db([float("nan")])
+
+
+def test_array_float_rejects_infinity():
+    field = Array(item_type=float)
+    with pytest.raises(ValueError, match="finite"):
+        field.to_db([float("inf")])
+
+
+def test_array_bool_accepts_real_bools():
     field = Array(item_type=bool)
-    
-    # Various true values
-    result = field.to_db('true,1,yes')
-    assert result == [True, True, True]
-    
-    # Various false values
-    result = field.to_db('false,0,no')
-    assert result == [False, False, False]
+    assert field.to_db([True, False]) == [True, False]
+
+
+def test_array_bool_rejects_strings():
+    field = Array(item_type=bool)
+    with pytest.raises(ValueError, match="bool items"):
+        field.to_db(["false"])
+
+
+def test_array_str_accepts_strings():
+    field = Array(item_type=str)
+    assert field.to_db(["a"]) == ["a"]
+
+
+def test_array_str_rejects_non_strings():
+    field = Array(item_type=str)
+    with pytest.raises(ValueError, match="str items"):
+        field.to_db([1])
+
+
+def test_array_uuid_accepts_uuid_strings():
+    field = Array(item_type=uuid_lib.UUID)
+    raw = "12345678-1234-5678-1234-567812345678"
+    result = field.to_db([raw])
+    assert result == [uuid_lib.UUID(raw)]
+
+
+def test_array_uuid_accepts_uuid_instances():
+    field = Array(item_type=uuid_lib.UUID)
+    value = uuid_lib.uuid4()
+    assert field.to_db([value]) == [value]
+
+
+def test_array_uuid_rejects_invalid_string():
+    field = Array(item_type=uuid_lib.UUID)
+    with pytest.raises(ValueError, match="invalid UUID"):
+        field.to_db(["not-a-uuid"])
+
+
+def test_array_rejects_nested_lists():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="Nested Array"):
+        field.to_db([[1, 2]])
+
+
+def test_array_rejects_null_items():
+    field = Array(item_type=str)
+    with pytest.raises(ValueError, match="null items"):
+        field.to_db([None])
+
+
+def test_array_nullable_allows_none():
+    field = Array(item_type=str, nullable=True)
+    assert field.to_db(None) is None
+
+
+def test_array_non_nullable_rejects_none():
+    field = Array(item_type=str, nullable=False)
+    with pytest.raises(ValueError, match="not nullable"):
+        field.to_db(None)
+
+
+def test_array_rejects_nested_item_type():
+    with pytest.raises(ValueError, match="Nested Array"):
+        Array(item_type=list)
+    with pytest.raises(ValueError, match="Nested Array"):
+        Array(item_type=Array(item_type=int))
+
+
+def test_array_rejects_tuple_value():
+    field = Array(item_type=int)
+    with pytest.raises(ValueError, match="requires a list"):
+        field.to_db((1, 2))
 
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ v0.5.45: Adds vector distance expressions for pgvector-backed fields.
 
 from __future__ import annotations
 
-import math
 from typing import Any, ClassVar, TYPE_CHECKING, Sequence
 
 from aksara.db import quote_identifier
@@ -89,14 +88,15 @@ class CombinedExpression(BaseExpression):
 
 
 def _format_vector_literal(value: Sequence[float]) -> str:
-    """Serialize a Python vector into pgvector text format."""
-    parts = []
-    for item in value:
-        number = float(item)
-        if not math.isfinite(number):
-            raise ValueError("Vector values must be finite numbers")
-        parts.append(format(number, "g"))
-    return f"[{','.join(parts)}]"
+    """Serialize a Python vector into pgvector text format.
+
+    Delegates to the shared validating serializer so bool items, non-finite
+    values, and empty vectors are rejected here too — matching Vector field
+    policy regardless of entry point.
+    """
+    from aksara.fields import serialize_vector_components
+
+    return serialize_vector_components(value)
 
 
 class VectorLiteral(BaseExpression):

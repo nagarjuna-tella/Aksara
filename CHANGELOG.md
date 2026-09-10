@@ -5,6 +5,158 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased — v0.6.0-rc2 — Production Contract Candidate
+
+This candidate defines a bounded Production Mode contract for Aksara's stable
+backend surfaces. It is not published.
+
+### Added
+
+- A packaged multi-tenant support desk reference application covering models,
+  relations, migrations, generated APIs, authentication, permissions, forced
+  PostgreSQL RLS, an MCP-shaped tool catalog, catalog-described REST mutation,
+  PostgreSQL-backed tasks, Admin, Doctor, health endpoints, and production
+  configuration.
+- A bounded deployment gate covering invalid configuration, unavailable
+  database, pending migrations, fresh install, existing-schema upgrade,
+  idempotent migration replay, restricted runtime privileges, pool reuse,
+  rollback, concurrent app instances, task retry and process restart, database
+  reconnection, in-flight graceful shutdown, and connection cleanup.
+- Internal runtime-table migration
+  `aksara_core_migrations_0001_runtime_tables` for sessions, content types,
+  tasks, and cron. A current application role can start with DML-only grants.
+- Strict Doctor evidence for the reference production profile. Deployments with
+  AI/MCP mutation surfaces can set
+  `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after explicitly reviewing
+  every exposed field's `ai_agent_writable` policy.
+- A public stability contract that separates stable backend APIs from
+  experimental Studio/AI surfaces and unsupported behavior.
+- An official-SDK MCP Streamable HTTP server at `/mcp/` with protocol
+  negotiation, generated CRUD discovery and invocation, structured errors,
+  lifecycle management, cancellation, and packaged-client evidence.
+- Immutable agent invocation context, execution-time scope/audience/expiry/
+  tenant enforcement, redacted audit events, signed bounded approval grants,
+  and deterministic runtime limits for provider and planner execution.
+
+### Changed
+
+- The supported runtime contract is Python 3.11–3.14, PostgreSQL 16 in release
+  CI, and the paired FastAPI/Starlette boundaries documented in the runtime
+  matrix.
+- `/mcp/` is the protocol endpoint over Streamable HTTP. `/ai/tools/mcp`
+  remains the permission-filtered inspection catalog.
+- Custom lifespan startup failures now release framework database and worker
+  state while preserving the triggering exception.
+- Runtime schema helpers preflight migrated tables and avoid DDL when the
+  schema is current.
+- Static analysis uses a reviewed debt ratchet: new Ruff or mypy findings may
+  not increase the recorded baseline.
+
+### Upgrade notes
+
+1. Upgrade from the v0.5.55 candidate and run `aksara migrate` with a migration
+   role before starting v0.6 application processes.
+2. Grant the application role the required DML privileges on the migrated
+   runtime tables; do not grant it schema-creation privileges.
+3. For tenant data, use a `NOSUPERUSER NOBYPASSRLS` application role and force
+   RLS on tenant tables.
+4. Run `aksara doctor production-check --release` with the deployment's
+   security matrix and resolve every non-pass result.
+5. If exposing AI/MCP-described writes, review every exposed field explicitly
+   before setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
+6. Point MCP clients at `/mcp/`; keep `/ai/tools/mcp` only for inspection or
+   compatibility adapters.
+
+### Experimental and deferred
+
+- Studio internals, investigation sessions, planners, code-generation
+  suggestions, provider-specific live integrations, and autonomous agent
+  workflows remain experimental.
+- Investigation/session state is process-local and has no restart or
+  multi-worker continuity guarantee.
+- Durable autonomous approval/mutation, cross-worker approval replay state,
+  custom many-to-many through models, and object-valued lazy forward foreign
+  keys remain outside the release.
+
+---
+
+## Unreleased — v0.5.55 — Correctness and Hardening
+
+### Release-candidate hardening (not published)
+
+- Connection ownership is established before tenant/transaction setup. Setup,
+  reset and cancellation failures return owned connections and restore session
+  context; cleanup failures do not replace the original error.
+- Route metadata traversal supports flat and included-router FastAPI layouts,
+  including nested prefixes, Studio/AI discovery and media mounts.
+- Web dependencies are bounded by tested FastAPI 0.136.1 / Starlette 1.0.1 and
+  FastAPI 0.141.1 / Starlette 1.6.0 pairs. CI exercises both endpoints.
+- Advanced validation runs before API numeric coercion in both schema builders.
+  JSON scalar inputs work in generated CRUD as well as ModelSerializer.
+- Array defaults use write validation, preserve empty strings and quote text/UUID
+  values safely. Unsupported item types now fail explicitly. Canonical migration
+  defaults follow the same policy; non-finite JSON defaults are rejected.
+- Vector dimensions must be positive integers (or unspecified), and migration
+  string defaults are validated rather than interpolated unchecked.
+- Stored file references reject malformed values, parent traversal and null bytes.
+- Generated projects depend on the `aksara-framework` distribution.
+
+The benchmark overhaul is independently reviewable and is not part of this
+correctness candidate. These changes do not declare Production Mode.
+
+
+Tightens correctness for advanced ORM field types. This does not claim that all
+ORM correctness work is complete; lazy forward FK object loading and custom
+ManyToMany through models remain deferred. Aksara is pre-1.0, so some ambiguous
+behaviors are replaced with explicit validation errors.
+
+### Changed
+
+- `Array` validates each element against `item_type` on every write path and
+  rejects nested lists/tuples, `None` items, `bool` in `int`/`float` arrays,
+  non-integral values in `int` arrays, out-of-range values for the 32-bit
+  `INTEGER[]` type, and `NaN`/infinity in `float` arrays. `item_type` is the
+  canonical constructor option (`str`, `int`, `float`, `bool`, `uuid.UUID`).
+- Core ORM `Array` validation no longer splits delimited strings into arrays;
+  assign explicit Python lists. The admin array form converts its input to a
+  typed list at the form boundary.
+- `Vector` write paths reject `NaN`, `Infinity`, `-Infinity`, boolean items, and
+  empty vectors, and enforce the configured `dimensions` length.
+- `Vector` serialization uses high-precision `repr(float)` instead of a
+  six-significant-digit format, shared by `Vector.to_db`, the asyncpg vector
+  codec, and vector-distance expression helpers.
+- `JSON` consistently supports top-level scalars (`str`, `int`, `float`, `bool`)
+  in addition to objects and arrays, serializing every non-`None` value with
+  `json.dumps(..., allow_nan=False)`. Top-level `None` remains SQL `NULL`.
+- Generated API/Pydantic schemas describe `JSON` fields as any JSON value and
+  expose `Array`/`Vector` fields as typed lists; file/image fields stay
+  string-typed.
+
+### Fixed
+
+- `JSON` now rejects `NaN`/infinity and non-JSON-serializable values before SQL
+  execution instead of emitting invalid JSONB or silently passing scalars.
+  Invalid `JSON` field defaults raise before DDL generation instead of silently
+  becoming `DEFAULT NULL`.
+- The asyncpg vector codec, vector-distance expressions, and migration
+  `VectorField` defaults now share the same vector validation (rejecting
+  boolean/non-finite/empty values) and high-precision serialization as
+  `Vector.to_db`, so invalid vectors fail before SQL execution at every entry
+  point.
+- `update()` and `bulk_update()` reject unresolved upload-like values for
+  `FileField`/`ImageField` with a clear error; use `save()`/`create()`/
+  `bulk_create()` for uploads. `to_python()` returns a normalized path string
+  while model attribute access returns a `FieldFile` wrapper.
+
+### Deferred
+
+- Lazy forward FK object loading remains deferred; forward FK/O2O attributes and
+  `*_id` aliases expose the stored FK id.
+- Custom `ManyToMany(..., through=...)` models remain unsupported and fail
+  clearly.
+
+---
+
 ## v0.5.54 — ORM Write & Relation Correctness
 
 Released 2026-05-30.

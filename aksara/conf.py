@@ -141,6 +141,22 @@ class Settings:
     # v0.4.0: AI features
     ai_enabled: bool = False
     mcp_enabled: bool = False
+    # v0.6.0: protocol-level MCP execution boundary
+    mcp_path: str = "/mcp"
+    mcp_transport_host: str = "127.0.0.1"
+    mcp_allowed_hosts: list[str] = field(default_factory=lambda: [
+        "127.0.0.1:*", "localhost:*", "[::1]:*", "testserver:*", "testserver",
+    ])
+    mcp_allowed_origins: list[str] = field(default_factory=lambda: [
+        "http://127.0.0.1:*", "http://localhost:*", "http://[::1]:*",
+        "http://testserver:*", "http://testserver",
+    ])
+    mcp_max_request_body_size: int = 1_048_576
+    mcp_tool_timeout_seconds: float = 30.0
+    mcp_replay_ttl_seconds: float = 300.0
+    mcp_require_scoped_tokens: bool = True
+    mcp_token_audience: str | None = None
+    mcp_approval_secret: str | None = None
     
     # v0.4.1: AI Debug Assistant
     ai_debug_enabled: bool = True  # Enabled by default in debug mode
@@ -386,6 +402,35 @@ class Settings:
         
         if not self.mcp_enabled:
             self.mcp_enabled = _get_bool_env("AKSARA_MCP_ENABLED", False)
+
+        env_mcp_path = os.environ.get("AKSARA_MCP_PATH")
+        if env_mcp_path:
+            self.mcp_path = env_mcp_path
+        env_mcp_host = os.environ.get("AKSARA_MCP_TRANSPORT_HOST")
+        if env_mcp_host:
+            self.mcp_transport_host = env_mcp_host
+        env_mcp_hosts = os.environ.get("AKSARA_MCP_ALLOWED_HOSTS")
+        if env_mcp_hosts:
+            self.mcp_allowed_hosts = _split_list_env(env_mcp_hosts)
+        env_mcp_origins = os.environ.get("AKSARA_MCP_ALLOWED_ORIGINS")
+        if env_mcp_origins:
+            self.mcp_allowed_origins = _split_list_env(env_mcp_origins)
+        self.mcp_max_request_body_size = _get_int_env(
+            "AKSARA_MCP_MAX_REQUEST_BODY_SIZE", self.mcp_max_request_body_size
+        )
+        self.mcp_tool_timeout_seconds = _get_float_env(
+            "AKSARA_MCP_TOOL_TIMEOUT_SECONDS", self.mcp_tool_timeout_seconds
+        )
+        self.mcp_replay_ttl_seconds = _get_float_env(
+            "AKSARA_MCP_REPLAY_TTL_SECONDS", self.mcp_replay_ttl_seconds
+        )
+        self.mcp_require_scoped_tokens = _get_bool_env(
+            "AKSARA_MCP_REQUIRE_SCOPED_TOKENS", self.mcp_require_scoped_tokens
+        )
+        if self.mcp_token_audience is None:
+            self.mcp_token_audience = os.environ.get("AKSARA_MCP_TOKEN_AUDIENCE")
+        if self.mcp_approval_secret is None:
+            self.mcp_approval_secret = os.environ.get("AKSARA_MCP_APPROVAL_SECRET")
 
         if self.ai_agent_token is None:
             self.ai_agent_token = os.environ.get("AKSARA_AI_AGENT_TOKEN")

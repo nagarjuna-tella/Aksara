@@ -43,7 +43,7 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Type, Union, cast
 
 from fastapi import Request, HTTPException
 
@@ -61,6 +61,7 @@ from aksara.security.exceptions import PolicyDenied
 from aksara.security.context import principal_from_request
 from aksara.security.policy import get_policy_engine
 from aksara.security.principal import Principal
+from aksara.tenancy import is_tenant_model
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -123,6 +124,7 @@ class ModelViewSet:
     # v0.3.10: Permission classes
     permission_classes: List[Type["BasePermission"]] = []
     ai_exposed: bool = True  # Whether exposed to AI agents
+    mcp_approval_required_actions: ClassVar[set[str]] = set()
     stream_enabled: bool = True
     
     # v0.3.2: Serializer classes (optional, takes precedence over schemas)
@@ -473,6 +475,8 @@ class ModelViewSet:
                 detail=policy_denied_to_error_payload(exc),
             )
 
+        server_fields = self._server_controlled_create_fields(request)
+
         serializer = self.get_serializer(
             'create',
             data=data,
@@ -482,11 +486,11 @@ class ModelViewSet:
         if serializer is not None:
             # Use serializer flow
             serializer.is_valid(raise_exception=True)
-            instance = await serializer.save()
+            instance = await serializer.save(**server_fields)
             return self._serialize(instance, action='retrieve', request=request)
         else:
             # Schema flow (original behavior)
-            instance = await self.model.objects.create(**data)
+            instance = await self.model.objects.create(**data, **server_fields)
             return self._serialize(instance, action='retrieve', request=request)
     
     async def update(
@@ -731,6 +735,23 @@ class ModelViewSet:
             return principal_from_request(request)
         except Exception:
             return None
+
+    def _server_controlled_create_fields(self, request: Request) -> Dict[str, Any]:
+        """Return trusted fields injected into generated create operations."""
+        if not is_tenant_model(self.model):
+            return {}
+
+        principal = self._resolve_query_principal(request)
+        tenant_id = principal.tenant_id if principal is not None else None
+        if not tenant_id:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "tenant_context_required",
+                    "message": "Tenant-scoped creates require an authenticated tenant context.",
+                },
+            )
+        return {"tenant_id": tenant_id}
     
     async def _fetch_with_pagination(
         self,
@@ -772,9 +793,24 @@ class ModelViewSet:
         )
         
         if serializer is not None:
-            return serializer.to_representation()
+            result = cast(dict[str, Any], serializer.to_representation())
         else:
-            return model_to_dict(instance)
+            result = model_to_dict(instance)
+
+        # The generated API and MCP share this serialization path. AI-sensitive
+        # fields therefore stay hidden at execution time as well as in schemas.
+        if request is not None:
+            principal = self._resolve_query_principal(request)
+            if principal is not None and principal.is_ai_agent:
+                decision = get_policy_engine().visible_fields(principal, self.model)
+                allowed = set(decision.allowed_fields)
+                from aksara.fields import ForeignKey  # type: ignore[attr-defined]
+
+                for field_name, field in self.model._fields.items():
+                    if field_name in allowed and isinstance(field, ForeignKey):
+                        allowed.add(field.db_column_name)
+                result = {key: value for key, value in result.items() if key in allowed}
+        return result
     
     def get_filter_fields(self) -> List[str]:
         """

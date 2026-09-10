@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.5.54"
+version = "0.6.0rc2"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -31,11 +31,13 @@ classifiers = [
 dependencies = [
     "asyncpg>=0.29.0",
     "aiosmtplib>=3.0.0",
-    "fastapi>=0.136.1",
-    "starlette>=1.0.1",
+    # Bounded by the minimum/latest pairs exercised in release-gate.yml.
+    "fastapi>=0.136.1,<=0.141.1",
+    "starlette>=1.0.1,<=1.6.0",
     "idna>=3.15",
     "pillow>=10.0.0",
     "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",  # Required by Doctor security-matrix validation
     "click>=8.0.0",
     "rich>=13.7.0",
     "python-dotenv>=1.0.0",
@@ -43,6 +45,9 @@ dependencies = [
     "bcrypt>=4.0.0",  # Required for auth & admin
     "jinja2>=3.0.0",  # Required for admin templates
     "httpx>=0.25.0",  # Required for direct AI provider API calls
+    # Official maintained Model Context Protocol SDK. Keep the release-candidate
+    # dependency inside the minor line exercised by the v0.6 release gate.
+    "mcp>=2.0.0,<2.1.0",
     "uvicorn>=0.24.0",  # Required for aksara dev / aksara run
 ]
 
@@ -52,8 +57,9 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "hypothesis>=6.100.0",
     "black>=24.0.0",
-    "ruff>=0.5.0",
-    "mypy>=1.8.0",
+    # Pinned because static-analysis-baseline.json records version-specific counts.
+    "ruff==0.16.6",
+    "mypy==2.3.1",
     "pre-commit>=3.6.0",
 ]
 s3 = [

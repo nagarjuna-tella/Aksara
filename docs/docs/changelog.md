@@ -6,6 +6,188 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.6.0-rc2 — Production Contract Candidate
+
+This candidate defines a bounded Production Mode contract for Aksara's stable
+backend surfaces. It is not published.
+
+### Added
+
+- A packaged multi-tenant support desk reference application covering models,
+  relations, migrations, generated APIs, authentication, permissions, forced
+  PostgreSQL RLS, an MCP-shaped tool catalog, catalog-described REST mutation,
+  PostgreSQL-backed tasks, Admin, Doctor, health endpoints, and production
+  configuration.
+- A bounded deployment gate covering invalid configuration, unavailable
+  database, pending migrations, fresh install, existing-schema upgrade,
+  idempotent migration replay, restricted runtime privileges, pool reuse,
+  rollback, concurrent app instances, task retry and process restart, database
+  reconnection, in-flight graceful shutdown, and connection cleanup.
+- Internal runtime-table migration
+  `aksara_core_migrations_0001_runtime_tables` for sessions, content types,
+  tasks, and cron. A current application role can start with DML-only grants.
+- Strict Doctor evidence for the reference production profile. Deployments with
+  AI/MCP mutation surfaces can set
+  `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after explicitly reviewing
+  every exposed field's `ai_agent_writable` policy.
+- A public stability contract that separates stable backend APIs from
+  experimental Studio/AI surfaces and unsupported behavior.
+- An official-SDK MCP Streamable HTTP server at `/mcp/` with protocol
+  negotiation, generated CRUD discovery and invocation, structured errors,
+  lifecycle management, cancellation, and packaged-client evidence.
+- Immutable agent invocation context, execution-time scope/audience/expiry/
+  tenant enforcement, redacted audit events, signed bounded approval grants,
+  and deterministic runtime limits for provider and planner execution.
+
+### Changed
+
+- The supported runtime contract is Python 3.11–3.14, PostgreSQL 16 in release
+  CI, and the paired FastAPI/Starlette boundaries documented in the runtime
+  matrix.
+- `/mcp/` is the protocol endpoint over Streamable HTTP. `/ai/tools/mcp`
+  remains the permission-filtered inspection catalog.
+- Custom lifespan startup failures now release framework database and worker
+  state while preserving the triggering exception.
+- Runtime schema helpers preflight migrated tables and avoid DDL when the
+  schema is current.
+- Static analysis uses a reviewed debt ratchet: new Ruff or mypy findings may
+  not increase the recorded baseline.
+
+### Upgrade notes
+
+1. Upgrade from the v0.5.55 candidate and run `aksara migrate` with a migration
+   role before starting v0.6 application processes.
+2. Grant the application role the required DML privileges on the migrated
+   runtime tables; do not grant it schema-creation privileges.
+3. For tenant data, use a `NOSUPERUSER NOBYPASSRLS` application role and force
+   RLS on tenant tables.
+4. Run `aksara doctor production-check --release` with the deployment's
+   security matrix and resolve every non-pass result.
+5. If exposing AI/MCP-described writes, review every exposed field explicitly
+   before setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
+6. Point MCP clients at `/mcp/`; keep `/ai/tools/mcp` only for inspection or
+   compatibility adapters.
+
+### Experimental and deferred
+
+- Studio internals, investigation sessions, planners, code-generation
+  suggestions, provider-specific live integrations, and autonomous agent
+  workflows remain experimental.
+- Investigation/session state is process-local and has no restart or
+  multi-worker continuity guarantee.
+- Durable autonomous approval/mutation, cross-worker approval replay state,
+  custom many-to-many through models, and object-valued lazy forward foreign
+  keys remain outside the release.
+
+---
+
+## Unreleased — v0.5.55 — Correctness and Hardening
+
+### Release-candidate hardening (not published)
+
+- Connection ownership is established before tenant/transaction setup. Setup,
+  reset and cancellation failures return owned connections and restore session
+  context; cleanup failures do not replace the original error.
+- Route metadata traversal supports flat and included-router FastAPI layouts,
+  including nested prefixes, Studio/AI discovery and media mounts.
+- Web dependencies are bounded by tested FastAPI 0.136.1 / Starlette 1.0.1 and
+  FastAPI 0.141.1 / Starlette 1.6.0 pairs. CI exercises both endpoints.
+- Advanced validation runs before API numeric coercion in both schema builders.
+  JSON scalar inputs work in generated CRUD as well as ModelSerializer.
+- Array defaults use write validation, preserve empty strings and quote text/UUID
+  values safely. Unsupported item types now fail explicitly. Canonical migration
+  defaults follow the same policy; non-finite JSON defaults are rejected.
+- Vector dimensions must be positive integers (or unspecified), and migration
+  string defaults are validated rather than interpolated unchecked.
+- Stored file references reject malformed values, parent traversal and null bytes.
+- Generated projects depend on the `aksara-framework` distribution.
+
+The benchmark overhaul is independently reviewable and is not part of this
+correctness candidate. These changes do not declare Production Mode.
+
+
+This release tightens correctness for advanced ORM field types. It does not
+claim that all ORM correctness work is complete; relation features below remain
+deferred. Aksara is pre-1.0, so some ambiguous behaviors are replaced with
+explicit validation errors.
+
+### Advanced Field Policy
+
+#### Array
+
+- `Array` is documented as homogeneous and one-dimensional, with `item_type`
+  as the canonical constructor option.
+- Array elements are now validated against `item_type` on every write path:
+  `str` requires strings, `int` excludes `bool`, rejects non-integral
+  floats/Decimals, and enforces the 32-bit PostgreSQL `INTEGER` range, `float`
+  rejects `NaN`/infinity and excludes `bool`, `bool` accepts only real booleans,
+  and `uuid.UUID` accepts UUID instances or parseable UUID strings.
+- Nested lists/tuples now raise a clear "use JSON for nested lists" error, and
+  `Array(item_type=list)` / `Array(item_type=Array(...))` are rejected at
+  construction.
+- Null array items are rejected; use `JSON` if null elements are required.
+- Core ORM `Array` validation no longer splits arbitrary delimited strings into
+  arrays. Assign explicit Python lists; the admin array form converts its input
+  to a typed list at the form boundary.
+
+#### Vector
+
+- `Vector` write paths now reject `NaN`, `Infinity`, `-Infinity`, boolean
+  items, and empty vectors, and enforce the configured `dimensions` length.
+- Vector serialization now uses a high-precision representation
+  (`repr(float)`), replacing the previous six-significant-digit format. The
+  `Vector.to_db` path, the asyncpg vector codec, vector-distance expression
+  helpers, and migration `VectorField` defaults share the same validation
+  (rejecting boolean/non-finite/empty values) and precision policy, so invalid
+  vectors fail before SQL execution at every entry point.
+
+#### JSON
+
+- `JSON` now consistently supports top-level scalar values (`str`, `int`,
+  `float`, `bool`) in addition to objects and arrays. Top-level `None` remains
+  SQL `NULL`.
+- All non-`None` JSON values are serialized with
+  `json.dumps(..., allow_nan=False)`, so `NaN`/infinity and non-JSON-serializable
+  objects fail before SQL execution. Invalid `JSON` field defaults now raise
+  before DDL generation instead of silently becoming `DEFAULT NULL`.
+
+#### File and Image
+
+- The `FileField`/`ImageField` contract is documented: stored state and
+  `to_python()` are normalized path strings, while model attribute access
+  returns a `FieldFile` wrapper.
+- `update()` and `bulk_update()` reject unresolved upload-like objects with a
+  clear error because those paths cannot persist file content; use
+  `save()`/`create()`/`bulk_create()` for uploads.
+
+#### API schemas
+
+- Generated API/Pydantic schemas now describe `JSON` fields as any JSON value
+  (objects, arrays, and scalars) instead of object/array only, and expose
+  `Array`/`Vector` fields as typed lists. File and image fields remain
+  string-typed.
+
+### Compatibility
+
+- Code assigning comma-separated strings directly to `Array` fields must assign
+  lists instead.
+- Code relying on null array elements or undocumented nested arrays now fails
+  clearly; use `JSON` for those shapes.
+- Passing `NaN`, infinities, booleans, or empty vectors to `Vector` fields now
+  fails before SQL execution; stored vector text may show more precision than
+  before. Tests comparing exact vector formatting should compare numeric values.
+- Non-finite or non-serializable `JSON` values now fail earlier.
+
+### Deferred
+
+- Lazy forward FK object loading remains deferred; forward FK/O2O attributes and
+  their `*_id` aliases expose the stored FK id, loaded explicitly or via
+  `select_related()` + `get_related()`.
+- Custom `ManyToMany(..., through=...)` models remain unsupported and continue
+  to fail clearly.
+
+---
+
 ## v0.5.54 — ORM Write & Relation Correctness
 
 Released 2026-05-30.

@@ -29,14 +29,15 @@ Usage:
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar
 
 from aksara.ai.models import (
-    AiRiskLevel,
-    AiUsageKind,
-    AiRouteHint,
     AiHintSet,
+    AiRiskLevel,
+    AiRouteHint,
+    AiUsageKind,
 )
+from aksara.routing import iter_routes
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -211,7 +212,7 @@ def extract_hints_from_app(app: "FastAPI") -> List[AiRouteHint]:
             processed_paths.add(f"/api/{prefix}")
     
     # Then, check direct FastAPI routes
-    for route in app.routes:
+    for route in iter_routes(app):
         path = getattr(route, 'path', '')
         if not path or path in processed_paths:
             continue
@@ -229,7 +230,7 @@ def extract_hints_from_app(app: "FastAPI") -> List[AiRouteHint]:
         if hint_data is None:
             continue
         
-        methods = list(getattr(route, 'methods', [])) or ['GET']
+        methods = list(getattr(route, 'methods', None) or []) or ['GET']
         name = getattr(route, 'name', None) or path.replace('/', '_').strip('_')
         
         hint = AiRouteHint(

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, List, Optional
 
 # ---------------------------------------------------------------------------
@@ -38,6 +37,7 @@ class SecurityCheckReport:
     check_name: str
     results: List[SecurityCheckResult] = field(default_factory=list)
     is_production: bool = False
+    release_candidate: bool = False
 
     def add(self, result: SecurityCheckResult) -> None:
         self.results.append(result)
@@ -62,11 +62,17 @@ class SecurityCheckReport:
             return "fail"
         if self.has_warnings:
             return "warn"
+        if any(result.status == "unknown" for result in self.results):
+            return "unknown"
+        if any(result.status == "skip" for result in self.results):
+            return "skip"
         return "pass"
 
     @property
     def should_exit_nonzero(self) -> bool:
-        """production-check exits non-zero on blocks/failures; security-check on failures."""
+        """Apply the selected deployment or release-candidate exit policy."""
+        if self.release_candidate:
+            return any(result.status != "pass" for result in self.results)
         if self.is_production:
             return self.has_failures or self.has_blocks
         return self.has_blocks
@@ -445,22 +451,40 @@ def check_tenancy_rls(is_production: bool = False) -> SecurityCheckResult:
 
 def check_ai_field_defaults() -> SecurityCheckResult:
     """Warn if AI fields default to broadly writable (ai_agent_writable=True is the current default)."""
-    ai_deny_by_default = is_truthy(get_env("AKSARA_AI_DENY_BY_DEFAULT", False))
-    if not ai_deny_by_default:
+    ai_enabled = bool(get_setting("ai_enabled", False))
+    mcp_enabled = bool(get_setting("mcp_enabled", False))
+    ai_console_enabled = is_truthy(get_env("AKSARA_AI_CONSOLE_ENABLED", False))
+    if ai_enabled or mcp_enabled or ai_console_enabled:
+        if is_truthy(get_env("AKSARA_AI_WRITABLE_FIELDS_REVIEWED", False)):
+            return SecurityCheckResult(
+                id="security.ai_field_defaults",
+                title="AI writable-field policy",
+                severity="info",
+                status="pass",
+                message=(
+                    "The deployment declares that every AI-exposed model field was "
+                    "reviewed and ai_agent_writable is explicit."
+                ),
+                recommendation="",
+            )
         return SecurityCheckResult(
             id="security.ai_field_defaults",
             title="AI fields broadly writable by default",
             severity="medium",
             status="warn",
             message="ai_agent_writable defaults to True. AI agents can write all fields unless explicitly marked ai_agent_writable=False.",
-            recommendation="Mark sensitive fields with ai_agent_writable=False or set AKSARA_AI_DENY_BY_DEFAULT=true when that setting is available.",
+            recommendation=(
+                "Mark every field exposed to AI mutation explicitly, set "
+                "ai_agent_writable=False outside the allowlist, then set "
+                "AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true for the reviewed deployment."
+            ),
         )
     return SecurityCheckResult(
         id="security.ai_field_defaults",
-        title="AI field writability",
+        title="AI mutation exposure",
         severity="info",
         status="pass",
-        message="AI deny-by-default is enabled.",
+        message="AI, MCP, and AI Console mutation surfaces are disabled.",
         recommendation="",
     )
 
@@ -554,11 +578,18 @@ def check_mcp_hardening(is_production: bool = False) -> SecurityCheckResult:
     )
 
 
-def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
+def check_security_matrix(
+    is_production: bool = False,
+    required: Optional[bool] = None,
+) -> SecurityCheckResult:
     """Check that security_matrix.yml exists and validates."""
     from aksara.security.matrix import _find_default_matrix_path, validate_security_matrix, _load_yaml
 
-    require_matrix = is_truthy(get_env("AKSARA_REQUIRE_SECURITY_MATRIX", False))
+    require_matrix = (
+        is_truthy(get_env("AKSARA_REQUIRE_SECURITY_MATRIX", False))
+        if required is None
+        else required
+    )
 
     matrix_path = _find_default_matrix_path()
     if matrix_path is None:
@@ -591,12 +622,52 @@ def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
                 message=f"security_matrix.yml has {len(errors)} validation error(s): {msgs}",
                 recommendation="Fix the validation errors in security/security_matrix.yml.",
             )
+        if require_matrix:
+            scenarios = data.get("scenarios", [])
+            incomplete = [
+                scenario.get("id", "<unnamed>")
+                for scenario in scenarios
+                if scenario.get("status") in {"partial", "planned"}
+            ]
+            implemented_surfaces = {
+                surface.get("id")
+                for surface in data.get("surfaces", [])
+                if surface.get("implemented") is True
+            }
+            covered_surfaces = {
+                scenario.get("surface")
+                for scenario in scenarios
+                if scenario.get("status") == "covered"
+            }
+            uncovered = sorted(implemented_surfaces - covered_surfaces)
+            if incomplete or uncovered:
+                details = []
+                if incomplete:
+                    details.append(
+                        f"{len(incomplete)} incomplete scenario(s): {', '.join(incomplete[:3])}"
+                    )
+                if uncovered:
+                    details.append(
+                        f"{len(uncovered)} implemented surface(s) without covered scenarios: "
+                        f"{', '.join(uncovered[:3])}"
+                    )
+                return SecurityCheckResult(
+                    id="security.matrix",
+                    title="Security matrix coverage incomplete",
+                    severity="critical",
+                    status="block",
+                    message="; ".join(details),
+                    recommendation=(
+                        "Complete or explicitly scope every scenario and add covered "
+                        "evidence for every implemented surface before release."
+                    ),
+                )
     except ImportError:
         return SecurityCheckResult(
             id="security.matrix",
             title="Security matrix: PyYAML not installed",
-            severity="warning",
-            status="warn",
+            severity="critical" if require_matrix else "warning",
+            status="block" if require_matrix else "warn",
             message="Cannot load security_matrix.yml because PyYAML is not installed.",
             recommendation="Install PyYAML: pip install pyyaml",
         )
@@ -625,11 +696,17 @@ def check_security_matrix(is_production: bool = False) -> SecurityCheckResult:
 # Aggregators
 # ---------------------------------------------------------------------------
 
-def run_security_checks(is_production: bool = False) -> SecurityCheckReport:
+def run_security_checks(
+    is_production: bool = False,
+    *,
+    release_candidate: bool = False,
+) -> SecurityCheckReport:
     """Run all security checks and return a report."""
+    is_production = is_production or release_candidate
     report = SecurityCheckReport(
         check_name="production-check" if is_production else "security-check",
         is_production=is_production,
+        release_candidate=release_candidate,
     )
     report.add(check_secret_key())
     report.add(check_debug_mode(is_production=is_production))
@@ -642,5 +719,10 @@ def run_security_checks(is_production: bool = False) -> SecurityCheckReport:
     report.add(check_rate_limits())
     report.add(check_tenancy_rls(is_production=is_production))
     report.add(check_ai_field_defaults())
-    report.add(check_security_matrix(is_production=is_production))
+    report.add(
+        check_security_matrix(
+            is_production=is_production,
+            required=True if release_candidate else None,
+        )
+    )
     return report

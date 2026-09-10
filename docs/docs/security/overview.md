@@ -36,25 +36,27 @@ schemas as the boundary.
 
 ## Current Limitations
 
-- Aksara does not currently make a blanket production-readiness claim.
-- Private security matrix enforcement is optional unless
+- Production support is bounded by the
+  [v0.6 contract](../roadmap/v0-6-stability-contract.md); it is not a blanket
+  claim for Studio or AI/agent features.
+- `production-check --release` always requires a complete matrix. Deployment
+  checks without `--release` keep missing-matrix findings advisory unless
   `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
-- OpenAPI fuzzing is a placeholder unless Schemathesis is installed.
 - Bulk/upsert principal enforcement is helper-level unless integrated by the
   application path.
-- Direct MCP tool-call runtime enforcement is limited where tool calls bypass
-  REST write paths.
-- Supply-chain CI/release gates are planned before a production-mode claim.
-- External security review is planned before a production-mode claim.
+- The MCP endpoint is a catalog, not protocol-level execution. The supported
+  invocation boundary is a catalog-described generated REST route.
+- No external security audit certification is claimed; the review scope and
+  release evidence are published for assessment.
 
 ## Recommended Production Workflow
 
-1. Set secure production configuration.
-2. Run `aksara doctor security-check`.
-3. Run `aksara doctor production-check`.
-4. Review generated surfaces exposed by the application.
-5. Configure private security matrix enforcement if used in your release
-   process.
+1. Apply migrations with a migration role.
+2. Run the application with a restricted role and forced RLS for tenant tables.
+3. Review generated surfaces and AI-writable fields.
+4. Run `aksara doctor production-check --release` with the project's complete
+   security matrix.
+5. Deploy only when every release diagnostic passes.
 
 ## More Detail
 

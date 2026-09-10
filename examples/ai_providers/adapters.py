@@ -34,7 +34,7 @@ logger = logging.getLogger("ai_providers.adapters")
 
 # OpenAI SDK (works for both OpenAI and Azure OpenAI)
 try:
-    import openai
+    import openai  # type: ignore[import-not-found]
     from openai import AsyncOpenAI, AsyncAzureOpenAI
     OPENAI_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -45,7 +45,7 @@ except ImportError:  # pragma: no cover
 
 # Anthropic SDK
 try:
-    import anthropic
+    import anthropic  # type: ignore[import-not-found]
     from anthropic import AsyncAnthropic
     ANTHROPIC_AVAILABLE = True
 except ImportError:  # pragma: no cover

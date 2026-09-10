@@ -175,6 +175,7 @@ class Principal:
         token_id: Optional[str] = None,
         human_owner_id: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        roles: Iterable[str] = (),
         scopes: Iterable[str] = (),
         expires_at: Optional[datetime] = None,
         agent_id: Optional[str] = None,
@@ -183,6 +184,7 @@ class Principal:
         """MCP client/agent identity."""
         return cls(
             tenant_id=tenant_id,
+            roles=tuple(roles),
             scopes=tuple(scopes),
             auth_method="mcp_token",
             is_authenticated=True,

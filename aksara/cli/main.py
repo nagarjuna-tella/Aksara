@@ -32,7 +32,7 @@ except ImportError:
     pass  # python-dotenv not installed
 
 # Version for CLI
-CLI_VERSION = "0.5.54"
+from aksara._version import __version__ as CLI_VERSION
 
 
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
@@ -469,7 +469,7 @@ def startproject(project_name: str, directory: str, template: str):
         ui.section("What's included")
         ui.bullet("Commented example stubs for models, views, serializers, admin")
         ui.bullet("Admin at /admin")
-        ui.bullet("Studio at /studio/ui")
+        ui.bullet("Studio at /studio/ui (disabled by default; enable explicitly)")
         ui.bullet("AI tools at /ai/tools")
         ui.next_steps(
             [
@@ -5949,7 +5949,10 @@ def _render_security_check_text(report, command_name: str = "security-check") ->
     }
 
     click.echo()
-    cmd_label = "Production Check" if report.is_production else "Security Check"
+    if report.release_candidate:
+        cmd_label = "Release Candidate Check"
+    else:
+        cmd_label = "Production Check" if report.is_production else "Security Check"
     click.echo(f"  \033[33m⚡\033[0m \033[1mAksara Doctor — {cmd_label}\033[0m")
     click.echo()
 
@@ -5976,6 +5979,9 @@ def _render_security_check_text(report, command_name: str = "security-check") ->
 
     if report.is_production and report.has_blocks:
         click.echo("  \033[31m⛔  Blocking issues found. Fix these before production deployment.\033[0m")
+        click.echo()
+    elif report.release_candidate and report.should_exit_nonzero:
+        click.echo("  \033[31m⛔  Release candidates require every check to pass.\033[0m")
         click.echo()
 
 
@@ -6030,11 +6036,18 @@ def doctor_security_check(output_format: str):
 
 @doctor.command("production-check")
 @click.option("--format", "-f", "output_format", type=click.Choice(["pretty", "json"]), default="pretty", help="Output format")
-def doctor_production_check(output_format: str):
+@click.option(
+    "--release",
+    "release_candidate",
+    is_flag=True,
+    help="Require a valid security matrix and fail on warnings, skips, or unknown results.",
+)
+def doctor_production_check(output_format: str, release_candidate: bool):
     """Run strict production-readiness security diagnostics.
 
     Checks for unsafe settings that MUST be fixed before production
-    deployment. Exits with code 1 when any blocking issue is found.
+    deployment. Exits with code 1 when any blocking issue is found. With
+    --release, every check must pass and a valid security matrix is required.
 
     Blocking conditions include:
       - DEBUG=True
@@ -6047,15 +6060,20 @@ def doctor_production_check(output_format: str):
     Examples:
         aksara doctor production-check
         aksara doctor production-check --format json
+        aksara doctor production-check --release --format json
     """
     import json as json_mod
     from aksara.security.checks import run_security_checks
 
-    report = run_security_checks(is_production=True)
+    report = run_security_checks(
+        is_production=True,
+        release_candidate=release_candidate,
+    )
 
     if output_format == "json":
         data = {
             "check": "production-check",
+            "policy": "release-candidate" if release_candidate else "deployment",
             "status": report.overall_status,
             "results": [
                 {
@@ -6075,6 +6093,9 @@ def doctor_production_check(output_format: str):
                 "passes": sum(1 for r in report.results if r.status == "pass"),
             },
             "exit_code": 1 if report.should_exit_nonzero else 0,
+            "release_ready": (
+                not report.should_exit_nonzero if release_candidate else None
+            ),
         }
         click.echo(json_mod.dumps(data, indent=2))
     else:

@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 from aksara.ai.investigation import InvestigationSession
 from aksara.ai.plan_builder import (
@@ -32,6 +32,9 @@ from aksara.ai.plan_builder import (
     STEP_PROJECT_GRAPH,
     STEP_SUMMARISE,
 )
+
+if TYPE_CHECKING:
+    from aksara.ai.investigation import InvestigationStep
 
 logger = logging.getLogger("aksara.ai.investigation_runner")
 

@@ -482,3 +482,81 @@ class TestAdmin20Features:
         assert "Home" in response.text
         assert "notes" in response.text
         assert "Note" in response.text
+
+
+class TestCoerceArrayFormValue:
+    """Adapter-boundary coercion for admin Array form input (Issues 3 & 4)."""
+
+    def _field(self, item_type):
+        return fields.Array(item_type=item_type)
+
+    def test_json_list_coerces(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        result = _coerce_array_form_value('["a", "b"]', self._field(str))
+        assert result == ["a", "b"]
+
+    def test_empty_string_is_empty_list(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value("", self._field(str)) == []
+
+    def test_none_items_preserved_not_dropped(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        # Must NOT silently drop None; preserve so core validation can reject.
+        result = _coerce_array_form_value('["a", null, "b"]', self._field(str))
+        assert result == ["a", None, "b"]
+
+        # And core Array validation rejects the null element.
+        with pytest.raises(ValueError, match="null items"):
+            self._field(str).to_db(result)
+
+    def test_bool_tokens_parse_strictly(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value('["true", "false", "0", "1"]', self._field(bool)) == [
+            True,
+            False,
+            False,
+            True,
+        ]
+
+    def test_bool_real_values_pass_through(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value([True, False], self._field(bool)) == [True, False]
+
+    def test_int_array_rejects_json_bool_item(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError, match="boolean"):
+            _coerce_array_form_value([True], self._field(int))
+
+    def test_float_array_rejects_json_bool_item(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError, match="boolean"):
+            _coerce_array_form_value([False], self._field(float))
+
+    def test_int_array_numeric_strings_still_coerce(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value('["1", "2"]', self._field(int)) == [1, 2]
+
+    def test_float_array_numeric_strings_still_coerce(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        assert _coerce_array_form_value('["1.5", "2"]', self._field(float)) == [1.5, 2.0]
+
+    def test_unknown_bool_string_raises(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError):
+            _coerce_array_form_value('["maybe"]', self._field(bool))
+
+    def test_unknown_bool_word_raises(self):
+        from aksara.contrib.admin.views import _coerce_array_form_value
+
+        with pytest.raises(ValueError):
+            _coerce_array_form_value('["enabled"]', self._field(bool))

@@ -2,7 +2,7 @@
 
 Maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
 
-> Updated May 2026
+> Updated September 2026
 
 Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-user success, and production readiness over feature sprawl.
 
@@ -138,6 +138,27 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ---
 
+## v0.5.55 Candidate (Unpublished)
+
+Advanced Array/Vector/JSON/File policy is implemented in the candidate, including
+stricter API inputs and validated defaults. Failed-start connection cleanup and
+supported web route traversal pass the release gate at commit `094169e`. The
+independent benchmark overhaul remains outside this correctness release. See the
+[runtime compatibility contract](reference/runtime-compatibility.md).
+
+## v0.6.0-rc2 Candidate (Unpublished)
+
+The candidate defines the bounded [v0.6 stability and production
+contract](roadmap/v0-6-stability-contract.md) and includes a packaged,
+multi-tenant support desk reference app. Its gate covers migrations, generated
+APIs, authentication, permissions, forced RLS, catalog-described REST mutation,
+PostgreSQL-backed tasks, Admin, Doctor, bounded startup/shutdown failure, and
+recovery.
+
+Studio, AI analysis and provider surfaces, process-local investigation
+sessions, autonomous agent workflows, and protocol-level MCP execution remain
+outside the production contract.
+
 ## Future Roadmap
 
 ### Remaining ORM Correctness Work
@@ -146,58 +167,36 @@ Planned ORM correctness work remains:
 
 - Lazy forward FK object loading, if desired.
 - Custom ManyToMany through model support.
-- Advanced Array/vector/file field policy, including array item/nested array
-  handling and vector precision.
-- FileField/ImageField `to_python()` contract.
-- JSON scalar behavior.
 - Relation features not implemented by the current relation manager APIs.
 
-### v0.5.x - Durable AI Session Store
+### Durable AI Session Store
 
 Persist investigation sessions, AI Console transcripts, and AI review state so multi-step analysis can resume reliably across process restarts.
 
-### v0.5.x - AI Memory Foundation
+### AI Memory Foundation
 
 Introduce a minimal, explicit memory foundation for project-level AI context.
 
-### v0.5.x - AI System Radar
+### AI System Radar
 
 Add system-level monitoring surfaces for AI-assisted project health.
 
-### v0.6.0-alpha.1 - Stability, Auditability, and Reference App
-
-First alpha toward v0.6. Focus is on stability contracts, operational
-auditability, and validating the stack against something that looks like real
-use — not new features.
-
-Planned items:
-
-- **v0.6 stability contract** — published commitment to stable vs. evolving
-  areas, compatibility policy before v1.0, security-fix behavior, generated
-  surface change policy, and migration note expectations. Draft available:
-  [v0.6 Stability Contract](roadmap/v0-6-stability-contract.md).
-- **Multi-tenant support desk reference app** — a deployable Aksara application
-  using multi-tenancy, AI tools, and the security controls stack. Intended to
-  validate the framework against real deployment patterns.
-- **AI/MCP audit logging** — field-level and action-level audit logs for AI
-  agent writes, so tenant administrators can see what AI agents have done.
-- **Production checklist to doctor mapping** — each item on a production
-  readiness checklist corresponds to a specific `aksara doctor` check. Machine-
-  checkable, not just human-readable.
-- **External review package** — bundled scope, threat model, and findings
-  template ready for an external security reviewer.
-- **Benchmark plan** — performance baseline and regression detection before
-  v0.6.0 ships.
-
 ### v0.6.0 - Production Mode
 
-Focus on production safety: connection-pool guidance, read-only Studio posture, deployment checks, stronger security defaults, and operational documentation.
+Promote the rc1 contract after exact-revision replay and any material fixes
+found during the release-candidate period. Publication requires explicit
+maintainer authorization.
+
+Possible later work includes field-level AI mutation audit logs, durable AI
+session storage, and broader external review. None is part of the v0.6 stable
+contract.
 
 ---
 
 ## Long-Term Direction
 
 - Keep the first ten minutes simple and inspectable.
-- Make generated APIs, Studio, MCP, and AI context feel like one system.
+- Keep generated APIs and optional AI-facing catalogs coherent without hiding
+  their different security and stability boundaries.
 - Preserve local-first and provider-optional workflows.
 - Graduate toward stable production contracts before 1.0.

@@ -1,0 +1,491 @@
+{
+  "schema_version": 1,
+  "gate": "support-desk-production-reference",
+  "status": "passed",
+  "started_at": "2026-09-10T03:00:50.326163+00:00",
+  "finished_at": "2026-09-10T03:01:12.629317+00:00",
+  "wheel": "aksara_framework-0.6.0rc2-py3-none-any.whl",
+  "wheel_sha256": "97fef0d66276968944f82756080189dbf07da7572180569fbea8c0386c3b7fcb",
+  "database": "aksara_test",
+  "checks": [
+    {
+      "name": "wheel installed in isolated environment",
+      "status": "pass",
+      "details": {
+        "version": "0.6.0rc2",
+        "import_location": "isolated-venv"
+      }
+    },
+    {
+      "name": "invalid production configuration fails fast",
+      "status": "pass",
+      "details": {
+        "exit_code": 1
+      }
+    },
+    {
+      "name": "database-unavailable startup fails",
+      "status": "pass",
+      "details": {
+        "exit_code": 3
+      }
+    },
+    {
+      "name": "restricted application role",
+      "status": "pass",
+      "details": {
+        "superuser": false,
+        "bypass_rls": false
+      }
+    },
+    {
+      "name": "fresh schema migration",
+      "status": "pass",
+      "details": {
+        "applied": [
+          "aksara_contrib_auth_migrations_0001_initial",
+          "aksara_core_migrations_0001_runtime_tables",
+          "support_desk_0001_initial"
+        ]
+      }
+    },
+    {
+      "name": "unapplied migration fails startup",
+      "status": "pass",
+      "details": {
+        "exit_code": 3
+      }
+    },
+    {
+      "name": "failed startup releases connections",
+      "status": "pass",
+      "details": {
+        "active_connections": 0
+      }
+    },
+    {
+      "name": "existing schema upgrade",
+      "status": "pass",
+      "details": {
+        "applied": [
+          "support_desk_0002_ticket_priority"
+        ]
+      }
+    },
+    {
+      "name": "upgrade preserves existing rows",
+      "status": "pass",
+      "details": {
+        "priority": "normal"
+      }
+    },
+    {
+      "name": "existing schema migration is idempotent",
+      "status": "pass",
+      "details": {
+        "skipped": 4
+      }
+    },
+    {
+      "name": "Doctor release policy accepts production configuration",
+      "status": "pass",
+      "details": {
+        "policy": "release-candidate",
+        "checks": 12
+      }
+    },
+    {
+      "name": "Doctor launch inspection sees packaged app and current schema",
+      "status": "pass",
+      "details": {
+        "readiness": "partial"
+      }
+    },
+    {
+      "name": "tenant tables force PostgreSQL RLS",
+      "status": "pass",
+      "details": {
+        "tables": [
+          "support_agents",
+          "support_delivery_attempts",
+          "support_tickets"
+        ]
+      }
+    },
+    {
+      "name": "pool reuse resets tenant context",
+      "status": "pass",
+      "details": {
+        "backend_count": 1,
+        "switches": 6
+      }
+    },
+    {
+      "name": "transaction failure rolls back",
+      "status": "pass",
+      "details": {
+        "persisted_rows": 0
+      }
+    },
+    {
+      "name": "normal startup health and production surfaces",
+      "status": "pass",
+      "details": {
+        "liveness": 200,
+        "readiness": 200,
+        "admin": 200,
+        "studio": 404
+      }
+    },
+    {
+      "name": "generated API rejects anonymous caller",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "generated related-model API",
+      "status": "pass",
+      "details": {
+        "status": 201
+      }
+    },
+    {
+      "name": "generated CRUD injects authenticated tenants",
+      "status": "pass",
+      "details": {
+        "tenant_a_status": 201,
+        "tenant_b_status": 201
+      }
+    },
+    {
+      "name": "tenant switching and cross-tenant abuse are isolated",
+      "status": "pass",
+      "details": {
+        "forged_status": 422,
+        "cross_tenant_status": 404
+      }
+    },
+    {
+      "name": "MCP tool catalog is available",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "MCP-scoped mutation obeys tenant RLS",
+      "status": "pass",
+      "details": {
+        "own_tenant_status": 200,
+        "cross_tenant_status": 404,
+        "transport": "catalog-described REST operation"
+      }
+    },
+    {
+      "name": "tenant-aware task enqueue",
+      "status": "pass",
+      "details": {
+        "status": 200
+      }
+    },
+    {
+      "name": "task status is tenant-scoped",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "durable task records failed attempt",
+      "status": "pass",
+      "details": {
+        "status": "pending",
+        "attempts": 1
+      }
+    },
+    {
+      "name": "worker process crash simulated",
+      "status": "pass",
+      "details": {
+        "exit_code": -9
+      }
+    },
+    {
+      "name": "task retry survives worker and app restart",
+      "status": "pass",
+      "details": {
+        "task_attempts": 2,
+        "delivered": true
+      }
+    },
+    {
+      "name": "official MCP client negotiates protocol",
+      "status": "pass",
+      "details": {
+        "protocol_version": "2026-07-28",
+        "sdk": "mcp==2.0.0",
+        "transport": "streamable-http"
+      }
+    },
+    {
+      "name": "MCP discovery exposes generated ticket CRUD",
+      "status": "pass",
+      "details": {
+        "tools": [
+          "ticket_create",
+          "ticket_delete",
+          "ticket_list",
+          "ticket_retrieve",
+          "ticket_rollback_probe",
+          "ticket_update"
+        ]
+      }
+    },
+    {
+      "name": "MCP generated schema preserves write contract",
+      "status": "pass",
+      "details": {
+        "required": [
+          "subject",
+          "description"
+        ],
+        "fields": [
+          "assigned_to_id",
+          "description",
+          "priority",
+          "status",
+          "subject"
+        ]
+      }
+    },
+    {
+      "name": "MCP authorized read returns tenant rows",
+      "status": "pass",
+      "details": {
+        "rows": 2
+      }
+    },
+    {
+      "name": "MCP authorized write persists through generated API",
+      "status": "pass",
+      "details": {
+        "error": null
+      }
+    },
+    {
+      "name": "generated REST and MCP enforce one application contract",
+      "status": "pass",
+      "details": {
+        "accepted_fields": [
+          "description",
+          "priority",
+          "status",
+          "subject",
+          "tenant_id"
+        ],
+        "rest_rejected_status": 422,
+        "mcp_rejected_code": "schema_mismatch"
+      }
+    },
+    {
+      "name": "MCP rejects malformed, server-controlled, and undiscovered operations",
+      "status": "pass",
+      "details": {
+        "malformed_code": "schema_mismatch",
+        "server_field_code": "forbidden_field",
+        "undiscovered_code": "missing_scope"
+      }
+    },
+    {
+      "name": "MCP rejects tenant mass assignment",
+      "status": "pass",
+      "details": {
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "forbidden_field",
+            "category": "client",
+            "message": "Tool arguments do not match the published schema.",
+            "retryable": false,
+            "details": {
+              "path": [],
+              "rule": "additionalProperties"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP denies cross-tenant object identifier",
+      "status": "pass",
+      "details": {
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "not_found",
+            "category": "client",
+            "message": "The requested resource does not exist.",
+            "retryable": false
+          },
+          "application_error": {
+            "error": {
+              "status": 404,
+              "message": "Ticket not found",
+              "type": "http_exception"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP rechecks authorization after discovery",
+      "status": "pass",
+      "details": {
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "permission_denied",
+            "category": "authorization",
+            "message": "The operation was denied by application policy.",
+            "retryable": false
+          },
+          "application_error": {
+            "error": {
+              "status": 403,
+              "message": "Support desk access denied.",
+              "type": "http_exception"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP rejects replayed tool-call identifier",
+      "status": "pass",
+      "details": {
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "repeated_tool_request",
+            "category": "client",
+            "message": "This tool-call ID has already been used.",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP approval is required and bound to exact principal tenant and arguments",
+      "status": "pass",
+      "details": {
+        "missing_code": "approval_required",
+        "changed_code": "approval_arguments_mismatch",
+        "approved_by": "support-desk-human-reviewer"
+      }
+    },
+    {
+      "name": "failed MCP mutation returns a structured internal error",
+      "status": "pass",
+      "details": {
+        "error": {
+          "ok": false,
+          "error": {
+            "code": "internal_error",
+            "category": "internal",
+            "message": "The application could not complete the operation.",
+            "retryable": false
+          },
+          "application_error": {
+            "error": {
+              "status": 500,
+              "message": "Internal Server Error",
+              "type": "internal_error"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP database state reflects allow and deny decisions",
+      "status": "pass",
+      "details": {
+        "authorized_persisted": true,
+        "forbidden_persisted": false,
+        "failed_mutation_rolled_back": true
+      }
+    },
+    {
+      "name": "concurrent MCP sessions isolate distinct principals and tenants",
+      "status": "pass",
+      "details": {
+        "tenant_a": [
+          "7784fced-0d8e-4772-a731-2dba439c38a7"
+        ],
+        "tenant_b": [
+          "cfb755fc-8f1b-4332-92d5-60b564ce3a7a"
+        ]
+      }
+    },
+    {
+      "name": "MCP rejects wrong-audience and expired credentials at invocation",
+      "status": "pass",
+      "details": {
+        "wrong_audience": "wrong_audience",
+        "expired": "credential_expired"
+      }
+    },
+    {
+      "name": "MCP transport rejects oversized request bodies",
+      "status": "pass",
+      "details": {
+        "status": 413
+      }
+    },
+    {
+      "name": "MCP emits correlated redacted execution audits",
+      "status": "pass",
+      "details": {
+        "records": 20
+      }
+    },
+    {
+      "name": "database connection recovers after backend termination",
+      "status": "pass",
+      "details": {
+        "terminated_connections": 5
+      }
+    },
+    {
+      "name": "concurrent requests across app instances",
+      "status": "pass",
+      "details": {
+        "requests": 24,
+        "instances": 2
+      }
+    },
+    {
+      "name": "graceful process shutdown",
+      "status": "pass",
+      "details": {
+        "exit_code": 0
+      }
+    },
+    {
+      "name": "MCP invocation is in flight before shutdown",
+      "status": "pass",
+      "details": {}
+    },
+    {
+      "name": "graceful shutdown drains in-flight MCP invocation",
+      "status": "pass",
+      "details": {
+        "response_error": "CancelledError",
+        "exit_code": 0
+      }
+    },
+    {
+      "name": "shutdown releases application connections",
+      "status": "pass",
+      "details": {
+        "active_connections": 0
+      }
+    }
+  ],
+  "error": null
+}

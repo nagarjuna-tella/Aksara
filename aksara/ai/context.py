@@ -29,14 +29,17 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field
 
+from aksara.routing import iter_routes
+
 if TYPE_CHECKING:
     from fastapi import FastAPI
-    from aksara.model.base import Model
+
     from aksara.api.viewsets import ModelViewSet
+    from aksara.model.base import Model
 
 
 # =============================================================================
@@ -600,13 +603,13 @@ def _extract_routes_from_app(app: "FastAPI") -> List[AiRouteInfo]:
     """Extract all routes from FastAPI app."""
     routes: List[AiRouteInfo] = []
     
-    for route in app.routes:
+    for route in iter_routes(app):
         # Skip internal/docs routes
         path = getattr(route, 'path', '')
         if path in ('/', '/docs', '/redoc', '/openapi.json'):
             continue
         
-        methods = list(getattr(route, 'methods', [])) or ['GET']
+        methods = list(getattr(route, 'methods', None) or []) or ['GET']
         name = getattr(route, 'name', None)
         summary = getattr(route, 'summary', '') or ''
         description = getattr(route, 'description', '') or ''

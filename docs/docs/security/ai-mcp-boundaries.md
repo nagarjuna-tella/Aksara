@@ -48,27 +48,42 @@ When MCP is enabled, doctor checks report or block unsafe configuration:
 - MCP token TTL longer than 3600 seconds
 - MCP enabled without audience requirements
 - Multi-tenant MCP enabled without tenant-bound token requirements
+- AI/MCP mutation enabled without an explicit writable-field review assertion
 
-Production diagnostics block critical MCP misconfiguration where applicable.
+Production release diagnostics require every result to pass. Set
+`AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after every field on every
+AI-exposed model has an explicit `ai_agent_writable` decision.
 
 ## Covered Behavior
 
 - MCP disabled by default
-- MCP exposure diagnostics
-- MCP scope, audience, tenant, expiration, and token metadata helper coverage
+- Official-SDK MCP initialization, negotiation, tool discovery and invocation
+  over Streamable HTTP
+- MCP scope, audience, tenant, expiration, role, and token metadata enforcement
+  at invocation time
 - AI-sensitive field exclusion from generated AI/MCP schemas
 - Runtime rejection of forbidden fields in covered REST create/update paths
 - Tenant ID mutation denied in covered write paths
-- Bounded adversarial tests for generated filters, ordering, serializers,
-  runtime field enforcement, migration identifiers/defaults, malformed payloads,
-  and oversized payloads
+- Signed approval grants bound to an exact principal, tenant, tool, arguments,
+  approver, and expiry
+- Deterministic, redacted execution audit events with request/run/tool-call
+  correlation
+- Bounded adversarial tests against an actual generated CRUD application,
+  including invalid relations, malformed and oversized payloads, forbidden and
+  server-controlled fields, and unauthorized mutation
+- A packaged reference-app gate using an actual MCP client that permits an
+  authorized same-tenant mutation and rejects cross-tenant operations
 
 ## Known Limitations
 
-- Replay protection storage is not implemented by core MCP helpers.
-- Field-level MCP audit logs are planned.
-- Direct MCP tool-call runtime enforcement is limited where calls bypass covered
-  REST write paths.
-- OpenAPI fuzzing is a placeholder unless Schemathesis is installed.
-- Supply-chain CI, release gates, and external review are planned before a
-  production-mode claim.
+- MCP sessions and replay IDs are process-local and do not provide durable or
+  cross-worker exactly-once semantics.
+- Approval grants are signed and stateless. Aksara does not provide durable
+  approval workflow storage.
+- Replay protection storage and token issuance are application concerns; core
+  helpers validate claims but do not issue or revoke credentials.
+- The stable execution claim covers generated CRUD and custom actions that use
+  Aksara's registered ViewSet path. Custom execution outside that path must
+  integrate application authorization explicitly.
+- External review is scoped in the release evidence and does not become an
+  implied audit certification.

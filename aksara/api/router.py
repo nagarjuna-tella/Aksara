@@ -27,7 +27,7 @@ Usage:
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -43,10 +43,14 @@ from aksara.api.actions import (
     extract_docstring_description,
 )
 from aksara.exceptions import (
+    ValidationError as AksaraValidationError,
     UniqueConstraintError,
     ForeignKeyConstraintError,
     DatabaseError,
 )
+
+if TYPE_CHECKING:
+    from aksara.app import Aksara
 
 
 # Cache of paginated response wrappers, keyed by the Read schema class so
@@ -496,7 +500,14 @@ def _handle_exception(exc: Exception) -> None:
             status_code=400,
             detail=f"Foreign key constraint violated: {exc.message}",
         )
-    
+
+    if isinstance(exc, AksaraValidationError):
+        detail = exc.errors or {exc.field_name or "body": exc.message}
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "validation_error", "errors": detail},
+        )
+
     if isinstance(exc, DatabaseError):
         raise HTTPException(
             status_code=500,

@@ -1,89 +1,125 @@
-# MCP Integration
+# MCP protocol server
 
-Aksara can expose your models and routes as MCP-compatible tools without a second service or a hand-written tool manifest. When your app is running, the tool catalog is available at `/ai/tools/mcp` and the generic JSON export remains available at `/ai/tools`.
+Aksara v0.6 exposes generated application capabilities through the official
+Model Context Protocol Python SDK. When `mcp_enabled=True`, a Streamable HTTP
+server is mounted at `/mcp/`. The existing JSON catalog remains available at
+`GET /ai/tools/mcp` for inspection and compatibility.
 
----
+The protocol server supports initialization, capability negotiation,
+`tools/list`, `tools/call`, structured results and errors, sessions, request
+cancellation, and clean application lifecycle shutdown. Aksara v0.6 uses
+`mcp>=2.0.0,<2.1.0`; that SDK negotiates the MCP protocol version with the
+client. Streamable HTTP is the supported deployment transport.
 
-## What MCP Gets You
+## Configure the boundary
 
-The MCP export turns the same metadata Aksara uses for Studio and AI flows into a format that MCP-aware clients can consume directly. That means an agent can discover tool names, read descriptions, inspect JSON schemas for inputs, and understand which tools are read-only versus write-capable.
+```python
+from aksara import Aksara, configure
 
-Use the MCP endpoint when you want an external AI client to work against your live Aksara app instead of a copied prompt or static schema dump.
+configure(
+    mcp_enabled=True,
+    mcp_token_audience="billing-service",
+    mcp_approval_secret="load-this-from-a-secret-manager",
+)
 
----
-
-## Quick Start
-
-Start your app:
-
-```bash
-aksara dev
+app = Aksara()
 ```
 
-Open the MCP export in your browser or with `curl`:
+Use authentication middleware to resolve every bearer credential into a
+server-owned `Principal`. An MCP principal should have an agent ID, its human or
+service owner, a tenant, token ID, expiry, audience, roles, and narrow scopes
+such as `mcp:read:invoice` or `mcp:write:invoice`.
 
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
+Relevant settings include:
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `mcp_path` | `/mcp` | ASGI mount path |
+| `mcp_token_audience` | unset | Required credential audience when configured |
+| `mcp_require_scoped_tokens` | `True` | Require generated per-resource read/write scopes |
+| `mcp_max_request_body_size` | `1048576` | Protocol request body limit in bytes |
+| `mcp_tool_timeout_seconds` | `30` | Hard limit for one tool execution |
+| `mcp_replay_ttl_seconds` | `300` | Process-local duplicate tool-call ID window |
+| `mcp_allowed_hosts` | local hosts | DNS rebinding host allowlist |
+| `mcp_allowed_origins` | local origins | DNS rebinding origin allowlist |
+| `mcp_approval_secret` | unset | HMAC key for bounded approval grants |
+
+Production diagnostics also expect MCP authentication, a credential TTL,
+audience enforcement, tenant-bound tokens for multi-tenant deployments, and an
+explicit review of AI-writable fields.
+
+## Generated tools
+
+Registered, AI-exposed `ModelViewSet` classes generate list, retrieve, create,
+update, and delete tools. Tool JSON Schemas carry required and nullable fields,
+enums, JSON, arrays, vectors, relations, descriptions, and representable field
+constraints. They exclude sensitive, read-only, non-writable, tenant-owned, and
+server-controlled fields from mutations. `additionalProperties: false` blocks
+mass assignment.
+
+Discovery is filtered for convenience. Every invocation rechecks the actual
+principal, scope, audience, expiry, tenant, ViewSet permissions, object rules,
+`PolicyEngine` field policy, ORM validation, and PostgreSQL RLS. MCP invokes the
+same generated API route in-process, so it does not maintain a second, weaker
+authorization implementation.
+
+## Human approval
+
+Mark generated CRUD actions on a ViewSet:
+
+```python
+class PaymentViewSet(ModelViewSet):
+    model = Payment
+    mcp_approval_required_actions = {"delete"}
 ```
 
-You will receive a response shaped like this:
+Custom actions can use `@action(..., requires_approval=True)`. After the
+application has obtained a real human decision, issue a short-lived grant:
 
-```json
-{
-  "tools": [
-    {
-      "name": "list_tasks",
-      "description": "List Task records",
-      "inputSchema": {
-        "type": "object",
-        "properties": {}
-      },
-      "metadata": {
-        "method": "GET",
-        "path": "/api/tasks",
-        "usage_kind": "read_only"
-      }
-    }
-  ],
-  "count": 1,
-  "version": "0.4.0"
-}
+```python
+token = app.mcp_runtime.approvals.issue(
+    principal=agent_principal,
+    tool_name="payment_delete",
+    arguments={"pk": payment_id},
+    approved_by=current_user.id,
+    ttl_seconds=300,
+)
 ```
 
----
+Pass the grant as `_approval_token`. Its signature binds the exact tool,
+arguments, principal, tenant, approver, and expiry. Changed arguments, another
+principal or tenant, rejection, expiry, and invalid signatures fail before any
+mutation. Authorization runs again when the approved operation executes.
 
-## How Tools Are Derived
+This is a signed, stateless execution grant. Aksara v0.6 does not claim durable
+approval workflow storage, cross-worker single use, or restart-safe replay
+state. Applications needing those properties should store workflow state in a
+durable system and issue the bounded grant only after that system approves.
 
-Aksara builds MCP tool definitions from the same application surface that powers the REST API and Studio. Models, viewsets, route metadata, permissions, and AI field annotations all affect what an external agent sees.
+## Audit and errors
 
-Specifically, any custom ViewSet method decorated with `@action` (which defaults to `ai_exposed=True`) is automatically parsed into an MCP tool. The AI registry uses the method's docstring for the tool's description and its type hints for the `inputSchema`.
+Each resolved `tools/call` emits one `MCPExecutionAuditEvent` with principal,
+tenant, tool, operation, object ID, safe hashed argument summary, policy and
+approval decisions, outcome, error, timing, and request/run/tool-call IDs.
+Values and approval tokens are not stored. The default sink logs JSON;
+`JsonlMCPAuditSink` and the `MCPAuditSink` protocol support application-owned
+storage or observability systems.
 
-That gives you one source of truth. You define a model once, register a viewset once, and Aksara can expose that capability through HTTP, Studio, and MCP without duplicating configuration.
+Tool errors use stable categories: `client`, `authorization`, `transient`, and
+`internal`. Failed generated mutations run inside a database transaction and
+roll back when the API rejects or fails the request.
 
----
+## Stable and experimental surfaces
 
-## AI Metadata Matters
+The v0.6 stable candidate covers `Principal` propagation, generated MCP CRUD
+tools, protocol discovery and invocation, execution-time authorization,
+tenant and field enforcement, structured errors, audit events, runtime limits,
+and the stateless approval grant described above.
 
-The quality of the MCP export depends on the metadata attached to your fields and routes.
+Planner behavior, investigation quality, provider-specific behavior,
+autonomous loops, persistent conversations, memory, multi-agent workflows,
+durable autonomous workflows, and Studio AI internals remain experimental.
+Investigation and MCP session/replay state is process-local.
 
-Use `ai_description` to make field purpose obvious to external agents. Use `ai_sensitive=True` to keep secrets and internal-only values out of exported context. Use `ai_agent_writable=False` when a field should be visible but never changed by an agent.
-
-For route-level control, pair MCP exposure with Aksara's AI permissions and route hints so tool discovery stays aligned with your application's safety rules.
-
----
-
-## MCP vs Generic Tool Export
-
-Use `/ai/tools` when you want Aksara's generic JSON representation of tool definitions. Use `/ai/tools/mcp` when the consumer expects MCP-shaped tools with `inputSchema` and transport metadata.
-
-Both endpoints are derived from the same underlying tool registry, so the tool count and permissions stay in sync.
-
----
-
-## Related Docs
-
-- [AI Mode](index.md)
-- [Tools](tools.md)
-- [Providers](providers.md)
-- [Fields](../orm/fields.md)
-- [Studio API](../studio/api.md)
+See the [security boundary](../security/ai-mcp-boundaries.md) and
+[v0.6 stability contract](../roadmap/v0-6-stability-contract.md).

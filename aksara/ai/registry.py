@@ -11,7 +11,6 @@ Provides:
 
 from __future__ import annotations
 
-import inspect
 import logging
 from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
 
@@ -24,6 +23,71 @@ if TYPE_CHECKING:
     from aksara.permissions import BasePermission
 
 logger = logging.getLogger("aksara.ai")
+
+
+def _choice_values(choices: Any) -> list[Any]:
+    values: list[Any] = []
+    for choice in choices or ():
+        values.append(choice[0] if isinstance(choice, (list, tuple)) and len(choice) == 2 else choice)
+    return values
+
+
+def _enrich_model_schema(schema: dict[str, Any], model: Any) -> dict[str, Any]:
+    """Add ORM-enforced constraints that Pydantic cannot infer automatically."""
+    from aksara import fields as aksara_fields
+
+    enriched = dict(schema)
+    properties = {name: dict(value) for name, value in schema.get("properties", {}).items()}
+    field_map: dict[str, Any] = {}
+    for name, field in getattr(model, "_fields", {}).items():
+        field_map[name] = field
+        db_column = getattr(field, "db_column_name", None)
+        if db_column:
+            field_map[db_column] = field
+    field_map.update(getattr(model, "_m2m_fields", {}))
+
+    for name, definition in properties.items():
+        field = field_map.get(name)
+        if field is None:
+            continue
+        if isinstance(field, (aksara_fields.String, aksara_fields.Text)):  # type: ignore[attr-defined]
+            min_length = getattr(field, "min_length", None)
+            max_length = getattr(field, "max_length", None)
+            if min_length is not None:
+                definition["minLength"] = min_length
+            if max_length is not None:
+                definition["maxLength"] = max_length
+            choices = _choice_values(getattr(field, "choices", None))
+            if choices:
+                definition["enum"] = choices
+            regex_pattern = getattr(field, "_regex_pattern", None)
+            if regex_pattern:
+                definition["pattern"] = regex_pattern
+        if isinstance(
+            field,
+            (aksara_fields.Integer, aksara_fields.Float, aksara_fields.Decimal),  # type: ignore[attr-defined]
+        ):
+            min_value = getattr(field, "min_value", None)
+            max_value = getattr(field, "max_value", None)
+            if min_value is not None:
+                definition["minimum"] = float(min_value)
+            if max_value is not None:
+                definition["maximum"] = float(max_value)
+            choices = _choice_values(getattr(field, "choices", None))
+            if choices:
+                definition["enum"] = choices
+        if isinstance(field, aksara_fields.Enum):  # type: ignore[attr-defined]
+            definition["enum"] = [member.value for member in field.enum_class]
+        if isinstance(field, aksara_fields.Vector):
+            definition["minItems"] = 1
+            dimensions = getattr(field, "dimensions", None)
+            if dimensions is not None:
+                definition["minItems"] = dimensions
+                definition["maxItems"] = dimensions
+        properties[name] = definition
+
+    enriched["properties"] = properties
+    return enriched
 
 
 class AiToolRegistry:
@@ -258,14 +322,15 @@ def _build_input_schema_for_crud(
     def _sanitize_mutation_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
         """Strip sensitive and non-writable fields from AI mutation schemas."""
         allowed_names = _get_ai_writable_input_names()
-        sanitized_schema = dict(schema)
-        properties = dict(schema.get("properties", {}))
+        sanitized_schema = _enrich_model_schema(schema, viewset.model)
+        properties = dict(sanitized_schema.get("properties", {}))
 
         sanitized_schema["properties"] = {
             name: definition
             for name, definition in properties.items()
             if name in allowed_names
         }
+        sanitized_schema["additionalProperties"] = False
 
         required = [
             name
@@ -282,21 +347,45 @@ def _build_input_schema_for_crud(
     if http_method == "GET":
         # List/retrieve - query parameters
         if action_name == "list":
-            return {
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "default": viewset.default_limit,
-                        "description": "Maximum number of items to return"
-                    },
-                    "offset": {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Number of items to skip"
-                    }
-                }
+            from aksara.registry import get_model_fields
+
+            read_properties = viewset.read_schema.model_json_schema().get("properties", {})
+            safe_filter_names: set[str] = set()
+            for field_meta in get_model_fields(viewset.model, include_sensitive=False):
+                safe_filter_names.add(field_meta["name"])
+                safe_filter_names.add(field_meta["db_column"])
+            properties: dict[str, Any] = {
+                "limit": {
+                    "type": "integer",
+                    "default": viewset.default_limit,
+                    "minimum": 1,
+                    "maximum": viewset.max_limit,
+                    "description": "Maximum number of items to return",
+                },
+                "offset": {
+                    "type": "integer",
+                    "default": 0,
+                    "minimum": 0,
+                    "description": "Number of items to skip",
+                },
             }
+            for field_name in viewset.get_filter_fields():
+                if field_name not in safe_filter_names or field_name == "tenant_id":
+                    continue
+                definition = read_properties.get(field_name)
+                if definition is None:
+                    field = getattr(viewset.model, "_fields", {}).get(field_name)
+                    db_column = getattr(field, "db_column_name", None)
+                    definition = read_properties.get(db_column, {"type": "string"})
+                properties[field_name] = {
+                    **definition,
+                    "description": definition.get("description") or f"Exact {field_name} filter",
+                }
+            return _enrich_model_schema({
+                "type": "object",
+                "properties": properties,
+                "additionalProperties": False,
+            }, viewset.model)
         else:
             # Retrieve by ID
             return {
@@ -307,7 +396,8 @@ def _build_input_schema_for_crud(
                         "description": f"{viewset.model.__name__} ID"
                     }
                 },
-                "required": ["pk"]
+                "required": ["pk"],
+                "additionalProperties": False,
             }
     
     elif http_method == "POST":
@@ -332,6 +422,7 @@ def _build_input_schema_for_crud(
                     "type": "string",
                     "description": f"{viewset.model.__name__} ID"
                 }
+                schema["required"] = list(dict.fromkeys([*schema.get("required", []), "pk"]))
                 return schema
         except Exception:
             pass
@@ -341,7 +432,8 @@ def _build_input_schema_for_crud(
             "properties": {
                 "pk": {"type": "string", "description": "ID of item to update"}
             },
-            "required": ["pk"]
+            "required": ["pk"],
+            "additionalProperties": False,
         }
     
     elif http_method == "DELETE":
@@ -350,10 +442,11 @@ def _build_input_schema_for_crud(
             "properties": {
                 "pk": {"type": "string", "description": "ID of item to delete"}
             },
-            "required": ["pk"]
+            "required": ["pk"],
+            "additionalProperties": False,
         }
     
-    return {"type": "object", "properties": {}}
+    return {"type": "object", "properties": {}, "additionalProperties": False}
 
 
 def discover_tools_from_viewset(
@@ -377,9 +470,9 @@ def discover_tools_from_viewset(
     Returns:
         List of discovered AiTool instances
     """
-    from aksara.api.actions import get_action_metadata, is_action_ai_exposed
+    from aksara.api.actions import get_action_metadata
     
-    tools = []
+    tools: list[AiTool] = []
     
     # Skip if ViewSet is not AI-exposed
     if not getattr(viewset_cls, "ai_exposed", True):
@@ -406,17 +499,40 @@ def discover_tools_from_viewset(
     model_name = model.__name__
     prefix = prefix_override or viewset.prefix.rstrip("/")
     permission_classes = viewset.permission_classes
+    from aksara.tenancy import is_tenant_model
+
+    tenant_scoped = is_tenant_model(model)
+    server_controlled_fields = ["tenant_id"] if tenant_scoped else []
+    approval_actions = set(getattr(viewset_cls, "mcp_approval_required_actions", ()))
+    read_schema = _enrich_model_schema(viewset.read_schema.model_json_schema(), model)
+    from aksara.registry import get_model_fields
+
+    visible_output_names: set[str] = set()
+    for field_meta in get_model_fields(model, include_sensitive=False):
+        visible_output_names.add(field_meta["name"])
+        visible_output_names.add(field_meta["db_column"])
+    read_schema["properties"] = {
+        name: definition
+        for name, definition in read_schema.get("properties", {}).items()
+        if name in visible_output_names
+    }
+    if read_schema.get("required"):
+        read_schema["required"] = [
+            name for name in read_schema["required"] if name in read_schema["properties"]
+        ]
     
     requires_auth = _check_requires_auth(permission_classes)
     requires_admin = _check_requires_admin(permission_classes)
     permission_names = _get_permission_names(permission_classes)
     
     # Base tool kwargs
-    base_kwargs = {
+    base_kwargs: dict[str, Any] = {
         "model": model_name,
         "requires_auth": requires_auth,
         "requires_admin": requires_admin,
         "permissions": permission_names,
+        "tenant_scoped": tenant_scoped,
+        "server_controlled_fields": server_controlled_fields,
         "ai_exposed": True,
         "model_schema_endpoint": f"/ai/schema/{model_name}",
     }
@@ -445,6 +561,22 @@ def discover_tools_from_viewset(
             path=path,
             kind=kind,
             input_schema=_build_input_schema_for_crud(viewset, action_name, http_method),
+            output_schema=(
+                {
+                    "type": "object",
+                    "properties": {
+                        "count": {"type": "integer"},
+                        "limit": {"type": "integer"},
+                        "offset": {"type": "integer"},
+                        "results": {"type": "array", "items": read_schema},
+                    },
+                    "required": ["count", "limit", "offset", "results"],
+                }
+                if action_name == "list"
+                else ({"type": "object", "properties": {"deleted": {"type": "boolean"}, "id": {"type": "string"}}, "required": ["deleted", "id"]}
+                      if action_name == "delete" else read_schema)
+            ),
+            approval_required=action_name in approval_actions,
             ai_tags=ai_tags,
             **base_kwargs,
         )
@@ -512,7 +644,11 @@ def discover_tools_from_viewset(
                 action_tool_name += f"_{http_method.lower()}"
             
             # Build input schema from function signature
-            input_schema = {"type": "object", "properties": {}}
+            input_schema: dict[str, Any] = {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False,
+            }
             if is_detail:
                 input_schema["properties"]["pk"] = {
                     "type": "string",
@@ -528,10 +664,15 @@ def discover_tools_from_viewset(
                 path=full_path,
                 kind=kind,
                 model=model_name,
+                app_label=None,
                 input_schema=input_schema,
+                output_schema=None,
                 requires_auth=action_requires_auth,
                 requires_admin=action_requires_admin,
                 permissions=action_permission_names,
+                tenant_scoped=tenant_scoped,
+                server_controlled_fields=server_controlled_fields,
+                approval_required=bool(meta.get("requires_approval", False)),
                 ai_tags=ai_tags,
                 ai_exposed=True,
                 model_schema_endpoint=f"/ai/schema/{model_name}",

@@ -18,11 +18,9 @@ from aksara.cli.main import cli
 from aksara.security.checks import (
     SecurityCheckReport,
     check_ai_field_defaults,
-    check_cookies,
     check_cors,
     check_debug_mode,
     check_mcp_exposure,
-    check_rate_limits,
     check_secret_key,
     check_security_matrix,
     check_studio_exposure,
@@ -197,11 +195,45 @@ class TestCheckMcpExposure:
         assert result.status == "pass"
 
 
+class TestCheckAIFieldDefaults:
+    def test_enabled_ai_surface_warns_without_field_review(self):
+        with (
+            patch("aksara.security.checks.get_setting", return_value=True),
+            patch.dict(os.environ, {}, clear=True),
+        ):
+            result = check_ai_field_defaults()
+        assert result.status == "warn"
+
+    def test_enabled_ai_surface_passes_with_explicit_field_review(self):
+        with (
+            patch("aksara.security.checks.get_setting", return_value=True),
+            patch.dict(
+                os.environ,
+                {"AKSARA_AI_WRITABLE_FIELDS_REVIEWED": "true"},
+                clear=True,
+            ),
+        ):
+            result = check_ai_field_defaults()
+        assert result.status == "pass"
+
+
 class TestCheckSecurityMatrix:
     def test_valid_matrix_passes(self):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=EXAMPLE_MATRIX_PATH):
             result = check_security_matrix(is_production=False)
         assert result.status == "pass", f"Expected pass but got {result.status}: {result.message}"
+
+    def test_release_matrix_blocks_planned_and_uncovered_surfaces(self):
+        with patch(
+            "aksara.security.matrix._find_default_matrix_path",
+            return_value=EXAMPLE_MATRIX_PATH,
+        ):
+            result = check_security_matrix(is_production=True, required=True)
+
+        assert result.status == "block"
+        assert result.title == "Security matrix coverage incomplete"
+        assert "incomplete scenario" in result.message
+        assert "without covered scenarios" in result.message
 
     def test_missing_matrix_warns_in_dev(self, tmp_path, monkeypatch):
         with patch("aksara.security.matrix._find_default_matrix_path", return_value=None):

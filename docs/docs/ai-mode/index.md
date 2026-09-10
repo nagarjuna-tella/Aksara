@@ -1,6 +1,16 @@
 # AI Mode
 
-AI Mode is the AI layer of an Aksara application. It powers the Studio AI Console and AI Flows, exports your app as MCP-compatible tools, and adds analysis surfaces such as Schema Doctor, AI Debugger, Architecture Review, and Performance Analyzer.
+!!! warning "Experimental in v0.6"
+    AI Console, AI Flows, investigation sessions, analysis engines, planners,
+    provider-specific live calls, and autonomous runtimes are experimental.
+    Session state is process-local: restart persistence and multi-worker
+    continuity are not guaranteed. Keep human approval and application
+    authorization around mutations.
+
+AI Mode is the optional AI layer of an Aksara application. It powers Studio's
+AI features, exposes generated tools through MCP, and adds analysis surfaces
+such as Schema Doctor, AI Debugger, Architecture Review, and Performance
+Analyzer.
 
 ---
 
@@ -11,7 +21,7 @@ Use this section in the same order you would adopt the features in a real projec
 | Goal | Read First | Then Continue With |
 |------|------------|--------------------|
 | Explore your app in Studio | [Interactive Console](console.md) | [AI Flows](flows.md), [AI Debugger](debugger.md), [Architecture Review](architecture-review.md), [Performance Analyzer](performance-analyzer.md) |
-| Connect an external AI agent | [MCP Integration](mcp.md) | [Tools](tools.md), [Providers](providers.md), [AI Connectors](connectors.md) |
+| Adapt an external AI client | [MCP Integration](mcp.md) | [Tools](tools.md), [Providers](providers.md), [AI Connectors](connectors.md) |
 | Automate larger tasks | [Agent Mode](agent.md) | [Agent Workflows](workflows.md), [Planner](planner.md), [Agent Runtime](agent-runtime.md) |
 | Generate or refactor code safely | [CodeGen](codegen.md) | [Patch Engine](patch-engine.md), [Safety](safety.md) |
 | Inspect schema and query health | [Schema Doctor](schema-doctor.md) | [Project Graph](project-graph.md), [Query Engine](query-engine.md) |
@@ -37,7 +47,7 @@ aksara dev
 Then try the three entry points that matter most:
 
 1. Open **http://127.0.0.1:8000/studio/ui** and use the **AI Console**.
-2. Fetch the MCP tool catalog from **http://127.0.0.1:8000/ai/tools/mcp**.
+2. Connect an MCP client to **http://127.0.0.1:8000/mcp/**.
 3. Run `aksara doctor fix-plan` to see the remediation workflow Aksara can generate from live diagnostics.
 
 ---
@@ -48,7 +58,7 @@ Then try the three entry points that matter most:
 |---------|---------------|---------------------|
 | **AI Console** | Natural-language interface inside Studio for asking questions about models, routes, queries, and migrations | [console.md](console.md) |
 | **AI Flows** | Guided actions for model review, route review, query analysis, migration explanation, and diagnostics | [flows.md](flows.md) |
-| **MCP Tools** | Exports your models and routes as MCP-shaped tools at `/ai/tools/mcp` for external agents | [mcp.md](mcp.md) |
+| **MCP server** | Negotiates MCP and discovers/invokes generated tools over Streamable HTTP at `/mcp/` | [mcp.md](mcp.md) |
 | **Schema Doctor** | Finds schema health problems and pairs them with actionable remediation output | [schema-doctor.md](schema-doctor.md) |
 | **AI Debugger** | Explains failures and points at likely root causes | [debugger.md](debugger.md) |
 | **Architecture Review** | Reviews coupling, structure, and design pressure across the codebase | [architecture-review.md](architecture-review.md) |
@@ -70,7 +80,7 @@ AKSARA = {
 !!! warning "API key required"
     AI features that call an external LLM need a provider API key in the environment
     (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). Ollama runs locally and needs no key.
-    If no key is set, Aksara still works — Studio, MCP exports, and prompt packs are
+    If no key is set, Aksara still works — Studio, tool catalogs, and prompt packs are
     fully functional — but the AI Console and AI Flows cannot execute prompts.
     See [Connectors](connectors.md) for the full list of environment variables.
 

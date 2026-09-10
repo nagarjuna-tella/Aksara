@@ -19,42 +19,43 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from aksara.routing import iter_routes
 from aksara.studio.models import (
+    # v0.5.19: Agent Mode models
+    AgentContextSection,
+    # v0.5.20: Agent Playbooks models
+    AgentPlaybook,
+    StudioAgentContext,
+    StudioAgentPlaybookPromptRequest,
+    StudioAgentPromptRequest,
+    StudioAgentPromptResponse,
+    StudioAiContextExport,
+    StudioAiModelSummary,
+    # v0.5.4: AI Integration models
+    StudioAiProjectMeta,
+    StudioAiPrompts,
+    StudioAiPromptTemplate,
+    StudioAiRouteSummary,
+    StudioAiSchemas,
+    StudioAiToolInfo,
+    StudioAppMigrationSummary,
     StudioCapability,
     StudioChecksums,
     StudioContextSummary,
     StudioDatabaseStatus,
     StudioHandshake,
     StudioHealthResponse,
-    StudioModelSummary,
-    StudioProjectInfo,
+    StudioMigrationConflict,
     # v0.5.1: New models
     StudioMigrationStatus,
-    StudioAppMigrationSummary,
-    StudioMigrationConflict,
     StudioMigrationSummary,
+    StudioModelSummary,
+    StudioProjectInfo,
+    StudioRouteInfo,
     # v0.5.2: Runtime models
     StudioRuntimeInfo,
-    StudioRouteInfo,
-    # v0.5.4: AI Integration models
-    StudioAiProjectMeta,
-    StudioAiModelSummary,
-    StudioAiRouteSummary,
-    StudioAiToolInfo,
-    StudioAiContextExport,
-    StudioAiSchemas,
-    StudioAiPromptTemplate,
-    StudioAiPrompts,
-    # v0.5.19: Agent Mode models
-    AgentContextSection,
-    StudioAgentContext,
-    StudioAgentPromptRequest,
-    StudioAgentPromptResponse,
-    # v0.5.20: Agent Playbooks models
-    AgentPlaybook,
-    StudioAgentPlaybookPromptRequest,
 )
 
 if TYPE_CHECKING:
@@ -154,10 +155,10 @@ def compute_routes_checksum(app: "FastAPI") -> str:
         16-character hex checksum
     """
     routes = []
-    for route in app.routes:
+    for route in iter_routes(app):
         route_info = {
             "path": getattr(route, "path", str(route)),
-            "methods": sorted(getattr(route, "methods", [])),
+            "methods": sorted(getattr(route, "methods", None) or []),
         }
         routes.append(route_info)
     
@@ -254,10 +255,10 @@ def _get_capabilities(app: "FastAPI") -> List[StudioCapability]:
 
 def _get_environment() -> str:
     """Determine current environment."""
-    from aksara.conf import settings
-    
     # Check environment variable first
     import os
+
+    from aksara.conf import settings
     env = os.environ.get("AKSARA_ENV") or os.environ.get("ENV")
     if env:
         return env.lower()
@@ -338,9 +339,9 @@ async def build_context_summary(app: "FastAPI") -> StudioContextSummary:
     Returns:
         StudioContextSummary with counts and model list
     """
-    from aksara.registry import ModelRegistry
     from aksara.conf import settings
     from aksara.migrations import discover_all_migrations
+    from aksara.registry import ModelRegistry
     
     # Get models
     model_classes = list(ModelRegistry.all().values())
@@ -372,7 +373,7 @@ async def build_context_summary(app: "FastAPI") -> StudioContextSummary:
     viewset_count = len(list(viewset_registry)) if viewset_registry else 0
     
     # Count routes
-    route_count = len(app.routes)
+    route_count = len(list(iter_routes(app)))
     
     # Count AI tools
     ai_registry = getattr(app, 'ai_registry', None)
@@ -457,9 +458,9 @@ async def build_migration_summary(app: "FastAPI") -> StudioMigrationSummary:
     """
     from aksara.conf import settings
     from aksara.migrations import (
-        discover_all_migrations,
         build_migration_graph,
         check_migration_conflicts,
+        discover_all_migrations,
         get_applied_migrations,
     )
     from aksara.migrations.executor import extract_app_label_from_name
@@ -674,12 +675,12 @@ def build_routes_info(app: Optional["FastAPI"] = None) -> List[StudioRouteInfo]:
 
     routes_info = []
 
-    for route in app.routes:
+    for route in iter_routes(app):
         # Get route path
         path = getattr(route, 'path', str(route))
         
         # Get HTTP methods
-        methods = list(getattr(route, 'methods', []))
+        methods = list(getattr(route, 'methods', None) or [])
         if not methods:
             methods = ["GET"]  # Default for Mount routes
         
@@ -787,9 +788,9 @@ async def build_ai_context_export(app: "FastAPI") -> StudioAiContextExport:
     
     # Build route summaries (stripped down)
     routes = []
-    for route in app.routes:
+    for route in iter_routes(app):
         path = getattr(route, 'path', str(route))
-        methods = list(getattr(route, 'methods', ['GET']))
+        methods = list(getattr(route, 'methods', None) or ['GET'])
         name = getattr(route, 'name', None)
         
         # Skip internal/static routes
@@ -898,7 +899,7 @@ def _get_ai_tools_summary(app: Optional["FastAPI"] = None) -> List[StudioAiToolI
 
     seen: set = set()
     tools: List[StudioAiToolInfo] = []
-    for route in app.routes:
+    for route in iter_routes(app):
         path = getattr(route, "path", "") or ""
         if not (path.startswith("/ai/") or path.startswith("/studio/ai/")):
             continue
@@ -1191,15 +1192,15 @@ def build_query_inspector(
     """
     from aksara.conf import settings
     from aksara.db.tracing import (
-        is_tracing_enabled,
-        get_trace_stats,
         get_recent_traces,
         get_top_slow_queries,
+        get_trace_stats,
+        is_tracing_enabled,
     )
     from aksara.studio.models import (
+        StudioQueryBatch,
         StudioQueryInspector,
         StudioQueryStats,
-        StudioQueryBatch,
         StudioQueryTrace,
     )
     
@@ -1401,15 +1402,15 @@ def build_ai_profile_set_summary(app: "FastAPI") -> "StudioAiProfileSetSummary":
     Returns:
         StudioAiProfileSetSummary with provider and model info
     """
-    from aksara.conf import settings
     from aksara.ai.providers import (
-        get_ai_provider_registry,
         build_default_ai_profile_set,
+        get_ai_provider_registry,
     )
+    from aksara.conf import settings
     from aksara.studio.models import (
+        StudioAiModelProfileSummary,
         StudioAiProfileSetSummary,
         StudioAiProviderSummary,
-        StudioAiModelProfileSummary,
     )
     
     # Check if profiles are enabled
@@ -1492,9 +1493,10 @@ def build_ai_secrets_info() -> "StudioAiSecretsInfo":
         StudioAiSecretsInfo with secret hints
     """
     import os
-    from aksara.conf import settings
+
     from aksara.ai.providers import build_secret_hints_from_settings
-    from aksara.studio.models import StudioAiSecretsInfo, StudioAiSecretHint
+    from aksara.conf import settings
+    from aksara.studio.models import StudioAiSecretHint, StudioAiSecretsInfo
     
     # Get secret hints from settings
     raw_hints = build_secret_hints_from_settings(settings)
@@ -1536,11 +1538,11 @@ def build_ai_profile_health(app: "FastAPI") -> "StudioAiProfileHealth":
     Returns:
         StudioAiProfileHealth with validation results
     """
-    from aksara.conf import settings
     from aksara.ai.providers import (
         build_default_ai_profile_set,
         validate_profile_set,
     )
+    from aksara.conf import settings
     from aksara.studio.models import (
         StudioAiProfileHealth,
         StudioAiProfileIssue,
@@ -1706,9 +1708,9 @@ async def build_agent_context(app: "FastAPI") -> StudioAgentContext:
     Returns:
         StudioAgentContext with all sections populated.
     """
+    import aksara
     from aksara.conf import settings
     from aksara.registry import ModelRegistry
-    import aksara
     aksara_ver = aksara.__version__
 
     sections: List[AgentContextSection] = []
@@ -1940,8 +1942,8 @@ def build_agent_context_summary(app: Optional[Any] = None) -> List[Dict[str, Any
 
     # 1. project_info — same payload as full context (project_info section)
     try:
-        from aksara.conf import settings
         import aksara as _aksara
+        from aksara.conf import settings
         _add("project_info", "Project Info", "Application name, version, environment, and runtime details", {
             "app_title": getattr(settings, "app_title", None) or "Aksara App",
             "app_version": getattr(settings, "app_version", None) or "0.0.0",
@@ -2252,13 +2254,13 @@ def build_model_inspector(model_name: str) -> Optional["StudioModelInspectorSumm
 
     Returns None if the model is not found in the registry.
     """
-    from aksara.registry import ModelRegistry
     from aksara.inspectors.models import inspect_model
+    from aksara.registry import ModelRegistry
     from aksara.studio.models import (
-        StudioModelInspectorSummary,
+        StudioModelInspectorConstraint,
         StudioModelInspectorField,
         StudioModelInspectorRelationship,
-        StudioModelInspectorConstraint,
+        StudioModelInspectorSummary,
     )
 
     try:
@@ -2293,10 +2295,10 @@ def build_all_models_inspector() -> "StudioModelInspectorAll":
 def _convert_inspector_to_studio(result) -> "StudioModelInspectorSummary":
     """Convert an inspectors.ModelInspectorSummary to Studio Pydantic model."""
     from aksara.studio.models import (
-        StudioModelInspectorSummary,
+        StudioModelInspectorConstraint,
         StudioModelInspectorField,
         StudioModelInspectorRelationship,
-        StudioModelInspectorConstraint,
+        StudioModelInspectorSummary,
     )
 
     fields = [
@@ -2461,7 +2463,6 @@ from aksara.ai.workflows import (  # noqa: E402, F401
     workflow_stats,
 )
 
-
 # =============================================================================
 # v0.5.25: AI Hub & Unified Provider System
 # =============================================================================
@@ -2473,8 +2474,8 @@ def build_ai_hub_providers() -> "StudioAiProvidersSummary":
 
     v0.5.25: Detects all providers via env, pings them, returns status.
     """
-    from aksara.studio.models import StudioAiProvidersSummary, StudioAiProviderStatus
     from aksara.ai.providers_unified import detect_all_providers, get_active_provider
+    from aksara.studio.models import StudioAiProvidersSummary, StudioAiProviderStatus
 
     active = get_active_provider()
     detected = detect_all_providers()
@@ -2527,8 +2528,8 @@ def build_ai_hub_provider_save(
 
     v0.5.25: Writes config to disk.
     """
-    from aksara.studio.models import StudioAiProviderSaveResponse
     from aksara.ai.providers_unified import UnifiedAiProvider
+    from aksara.studio.models import StudioAiProviderSaveResponse
 
     try:
         prov = UnifiedAiProvider(
@@ -2567,9 +2568,10 @@ def build_ai_hub_provider_ping(
     v0.5.25: Tests connectivity and returns latency.
     """
     import time
-    from aksara.studio.models import StudioAiProviderPingResponse
+
     from aksara.ai.hub_settings import load_aihub_settings, resolve_defaults
     from aksara.ai.providers_unified import UnifiedAiProvider
+    from aksara.studio.models import StudioAiProviderPingResponse
 
     hub = load_aihub_settings()
     prov: Optional[UnifiedAiProvider] = None
@@ -2636,8 +2638,8 @@ def build_ai_hub_agent_run(
 
     v0.5.25: Uses the unified provider to generate a response.
     """
-    from aksara.studio.models import StudioAiAgentRunResponse
     from aksara.ai.providers_unified import UnifiedAiProvider
+    from aksara.studio.models import StudioAiAgentRunResponse
 
     # Resolve provider and model from AI Hub settings so this endpoint is
     # consistent with the routing table, overview, and provider tests that all
@@ -2790,8 +2792,8 @@ def build_ai_hub_ollama_models(base_url: Optional[str] = None) -> "StudioOllamaM
         StudioOllamaModelsResponse with running status, model list, and the URL
         that was actually queried.
     """
-    from aksara.ai.providers_unified import UnifiedAiProvider
     from aksara.ai.llm_clients.ollama_adapter import OllamaAdapter
+    from aksara.ai.providers_unified import UnifiedAiProvider
     from aksara.studio.models import StudioOllamaModelsResponse
 
     provider = UnifiedAiProvider.from_env(provider="ollama")
@@ -2814,7 +2816,7 @@ def build_ai_hub_ollama_models(base_url: Optional[str] = None) -> "StudioOllamaM
 
 def build_studio_gap_issue(issue: Any) -> "StudioGapIssue":
     """Convert a :class:`~aksara.gapanalysis.GapIssue` to its Studio representation."""
-    from aksara.studio.models import StudioGapIssue, StudioGapFixCommand
+    from aksara.studio.models import StudioGapFixCommand, StudioGapIssue
 
     return StudioGapIssue(
         category=issue.category,
@@ -2914,7 +2916,7 @@ def _resolve_effective_chat_provider(hub: Any) -> Optional[str]:
 
 def build_aihub_status() -> "AiHubStatus":
     """Build the AI Hub status response."""
-    from aksara.studio.models import AiHubStatus, AiHubOnboardingStatus
+    from aksara.studio.models import AiHubOnboardingStatus, AiHubStatus
 
     hub = _get_hub_settings()
     configured = hub.configured_providers()
@@ -3030,8 +3032,8 @@ def build_aihub_models() -> "AiHubModelsResponse":
     hardcoded defaults so the Available Models table reflects what is
     actually running.
     """
-    from aksara.studio.models import AiHubModel, AiHubModelsResponse
     from aksara.ai.hub_settings import _PROVIDER_DEFAULT_MODELS
+    from aksara.studio.models import AiHubModel, AiHubModelsResponse
 
     hub = _get_hub_settings()
     models: List["AiHubModel"] = []
@@ -3044,8 +3046,8 @@ def build_aihub_models() -> "AiHubModelsResponse":
         # config rather than environment state so a non-default host works correctly.
         if p.kind == "ollama":
             try:
-                from aksara.ai.providers_unified import UnifiedAiProvider
                 from aksara.ai.llm_clients.ollama_adapter import OllamaAdapter
+                from aksara.ai.providers_unified import UnifiedAiProvider
 
                 provider = UnifiedAiProvider(
                     provider="ollama",
@@ -3091,12 +3093,12 @@ def build_aihub_configure(
 
     try:
         from aksara.ai.hub_settings import (
-            ProviderConfig,
-            OpenAIConfig,
-            AzureOpenAIConfig,
             AnthropicConfig,
-            OllamaConfig,
+            AzureOpenAIConfig,
             CustomHttpConfig,
+            OllamaConfig,
+            OpenAIConfig,
+            ProviderConfig,
             load_aihub_settings,
             save_aihub_settings,
         )
@@ -3242,8 +3244,9 @@ def build_aihub_defaults(
 
 def build_aihub_test(provider: str) -> "AiHubTestResponse":
     """Test a single provider's connectivity."""
-    from aksara.studio.models import AiHubTestResponse
     import time
+
+    from aksara.studio.models import AiHubTestResponse
 
     hub = _get_hub_settings()
     pc = hub.get_provider(provider)  # type: ignore[arg-type]

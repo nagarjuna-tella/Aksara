@@ -1,6 +1,12 @@
 # Aksara Studio UI
 
-The embedded Studio UI is a zero-build, zero-dependency admin dashboard served directly from your Aksara backend.
+!!! warning "Experimental development surface"
+    Studio UI and its internal endpoints are experimental in v0.6. Keep Studio
+    disabled in production. They are not the stable Admin or application API
+    contract.
+
+The embedded Studio UI is a zero-build development dashboard served from your
+Aksara backend.
 
 ## Overview
 
@@ -189,9 +195,10 @@ aksara studio ai-context
 aksara studio ai-context --format summary
 ```
 
-### For Editor Plugins / External Agents
+### For local editor experiments
 
-The endpoints return pure JSON with no authentication required by default. External tools can fetch context directly:
+Studio endpoints require Studio to be enabled and should be protected by its
+configured authentication. Keep them on a trusted development interface:
 
 ```python
 import httpx

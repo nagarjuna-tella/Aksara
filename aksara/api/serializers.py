@@ -41,15 +41,16 @@ from __future__ import annotations
 import inspect
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, get_type_hints
 from uuid import UUID
 
-from pydantic import BaseModel, Field as PydanticField, ValidationError, create_model
+from pydantic import BaseModel, ValidationError, create_model
+from pydantic import Field as PydanticField
 
-from aksara.model.base import Model
-from aksara.i18n import serialize_value
 from aksara import fields as aksara_fields
-
+from aksara.api.field_policy import advanced_input_type
+from aksara.i18n import serialize_value
+from aksara.model.base import Model
 
 if TYPE_CHECKING:
     from aksara.manager import Manager
@@ -57,6 +58,16 @@ if TYPE_CHECKING:
 
 # Cache for generated Pydantic models per serializer class
 _serializer_model_cache: Dict[str, Dict[str, Type[BaseModel]]] = {}
+
+
+# Map Array item_type to the Python/Pydantic type used in generated schemas.
+_ARRAY_ITEM_TYPES = {
+    str: str,
+    int: int,
+    float: float,
+    bool: bool,
+    UUID: UUID,
+}
 
 
 def _get_python_type(field: aksara_fields.Field) -> type:
@@ -98,9 +109,18 @@ def _get_python_type(field: aksara_fields.Field) -> type:
     elif isinstance(field, aksara_fields.DateTime):
         return datetime
     elif isinstance(field, aksara_fields.JSON):
-        return Union[dict, list, None]
+        # JSON accepts any JSON-compatible value, including top-level scalars,
+        # not just objects/arrays.
+        return Union[dict, list, str, int, float, bool, None]
     elif isinstance(field, aksara_fields.Decimal):
         return Decimal
+    # Vector is checked before Array (it is not an Array subclass, but keep the
+    # numeric contract explicit) and exposes a list of floats.
+    elif isinstance(field, aksara_fields.Vector):
+        return List[float]
+    elif isinstance(field, aksara_fields.Array):
+        item_python = _ARRAY_ITEM_TYPES.get(field.item_type, Any)
+        return List[item_python]
     # Float used to fall through to Any; map to float so validation runs.
     elif isinstance(field, aksara_fields.Float):
         return float
@@ -320,13 +340,13 @@ class ModelSerializer(metaclass=SerializerMetaclass):
             
             if is_required:
                 field_definitions[actual_field_name] = (
-                    python_type,
+                    advanced_input_type(field, python_type),
                     PydanticField(description=field.ai_description)
                 )
             else:
                 default_value = field.get_default_value() if has_default else None
                 field_definitions[actual_field_name] = (
-                    Optional[python_type],
+                    advanced_input_type(field, Optional[python_type]),
                     PydanticField(default=default_value, description=field.ai_description)
                 )
         

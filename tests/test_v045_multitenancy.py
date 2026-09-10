@@ -46,7 +46,7 @@ class TestTenantConnectionContext:
     @pytest.mark.asyncio
     async def test_acquire_applies_and_resets_tenant_setting(self):
         connection = Mock(execute=AsyncMock())
-        pool = Mock(acquire=Mock(return_value=_AcquireContext(connection)))
+        pool = Mock(acquire=AsyncMock(return_value=connection), release=AsyncMock())
         db = _build_database_with_pool(pool)
         token = tenant_id_var.set("acme")
 
@@ -56,6 +56,7 @@ class TestTenantConnectionContext:
         finally:
             tenant_id_var.reset(token)
 
+        pool.release.assert_awaited_once_with(connection)
         assert connection.execute.await_count == 2
         first_call = connection.execute.await_args_list[0]
         second_call = connection.execute.await_args_list[1]

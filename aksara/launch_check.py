@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlsplit, urlunsplit
 
+from aksara.routing import iter_routes
 
 CHECK_STATUSES = {"ok", "warning", "error", "skipped"}
 CATEGORY_ORDER = [
@@ -529,7 +530,7 @@ def _is_migration_file(path: Path) -> bool:
 
 def _route_paths(app: Any | None) -> set[str]:
     paths: set[str] = set()
-    for route in getattr(app, "routes", []) or []:
+    for route in iter_routes(app):
         path = getattr(route, "path", None)
         if path:
             paths.add(path)

@@ -272,7 +272,7 @@ class TestScaffoldV055Structure:
         content = pyproject_path.read_text()
         
         # Should require aksara (version may change)
-        assert '"aksara>=' in content
+        assert '"aksara-framework>=' in content
 
 
 class TestScaffoldV055Importability:

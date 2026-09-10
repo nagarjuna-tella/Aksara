@@ -84,10 +84,11 @@ async def list_ai_tools(request: Request) -> Dict[str, Any]:
 @router.get("/ai/tools/mcp")
 async def list_ai_tools_mcp(request: Request) -> Dict[str, Any]:
     """
-    List AI tools in MCP (Model Context Protocol) format.
-    
-    This endpoint returns tools formatted for MCP-compatible
-    agent frameworks. The format includes:
+    List permission-filtered AI tools as MCP-shaped JSON descriptions.
+
+    This is a catalog endpoint, not an MCP protocol transport or invocation
+    endpoint. An adapter can use the HTTP metadata to invoke covered REST
+    operations under normal application authorization. The format includes:
     - name: Tool identifier
     - description: What the tool does
     - inputSchema: JSON Schema for parameters

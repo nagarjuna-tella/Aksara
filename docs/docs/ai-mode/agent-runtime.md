@@ -1,6 +1,13 @@
 # Agent Runtime
 
-Execute AI agents that can use tools and complete complex tasks.
+!!! warning "Experimental and process-local"
+    Agent runtime and planner interfaces are experimental in v0.6. Investigation
+    and session state does not survive process restart or provide multi-worker
+    continuity. The framework does not guarantee durable approvals, replay,
+    exactly-once tool effects, or authorization revalidation after restart.
+
+Execute bounded AI-agent experiments that can use tools and complete multi-step
+tasks under application-controlled approval and authorization.
 
 ---
 

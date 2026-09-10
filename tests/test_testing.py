@@ -197,7 +197,7 @@ class TestTestDatabase:
         
         # We can't easily test this without a real DB,
         # but we can verify it's a context manager
-        assert hasattr(test_database, "__call__")
+        assert callable(test_database)
         
         # Verify the function signature accepts expected params
         import inspect

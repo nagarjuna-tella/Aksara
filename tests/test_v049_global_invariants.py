@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from packaging.version import Version
 
 
 # =============================================================================
@@ -32,7 +33,7 @@ class TestImportsAndPublicAPI:
         # We can't actually do `from aksara import *` in a function,
         # so we test via exec
         namespace: dict[str, Any] = {}
-        exec("from aksara import *", namespace)
+        exec("from aksara import *", namespace)  # noqa: S102 - exercise star-import semantics
         
         # Should have imported things
         assert "Model" in namespace
@@ -255,7 +256,13 @@ print(f"{end - start:.3f}")
             [sys.executable, "-c", code],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False,
+        )
+        assert result.returncode == 0, (
+            f"Aksara import subprocess failed with exit code {result.returncode}\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}"
         )
         
         import_time = float(result.stdout.strip())
@@ -272,25 +279,21 @@ class TestVersionConsistency:
     """Test that all version strings match."""
     
     def test_init_version_format(self):
-        """aksara.__version__ should be a valid semver string."""
+        """aksara.__version__ should be a valid PEP 440 version."""
         import aksara
         
         version = aksara.__version__
         assert version is not None
         
-        # Should be x.y.z format
-        parts = version.split(".")
-        assert len(parts) == 3, f"Expected x.y.z, got {version}"
-        
-        # All parts should be numeric
-        for part in parts:
-            assert part.isdigit(), f"Non-numeric version part: {part}"
+        parsed = Version(version)
+        assert parsed.public == version
     
-    def test_init_version_is_058(self):
+    def test_init_version_matches_package(self):
         """aksara.__version__ should match current version."""
         import aksara
         
-        assert aksara.__version__ == "0.5.54"
+        from aksara._version import __version__
+        assert aksara.__version__ == __version__
     
     def test_cli_version_matches(self):
         """CLI --version should match aksara.__version__."""

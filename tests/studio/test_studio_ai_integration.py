@@ -10,6 +10,7 @@ Tests:
 """
 
 import json
+from aksara.routing import iter_routes
 import pytest
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
@@ -180,7 +181,7 @@ class TestStudioAiContext:
         tools = response.json().get("tools", [])
         assert tools, "expected at least one tool to be exported"
 
-        live_paths = {getattr(r, "path", "") for r in app.routes}
+        live_paths = {getattr(r, "path", "") for r in iter_routes(app)}
         for tool in tools:
             assert tool["endpoint"] in live_paths, (
                 f"tool {tool['name']!r} advertises {tool['endpoint']!r} "

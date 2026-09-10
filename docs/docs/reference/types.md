@@ -6,7 +6,9 @@ Type definitions for Aksara.
 
 ## Overview
 
-Aksara is fully typed and provides type stubs for IDE support.
+Aksara ships a `py.typed` marker and public annotations for IDE and type-checker
+support. Its own source tree still has reviewed mypy debt, so v0.6 does not
+claim complete or strict typing coverage.
 
 ```python
 # py.typed marker included

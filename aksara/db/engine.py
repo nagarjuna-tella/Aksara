@@ -6,15 +6,17 @@ Async PostgreSQL database engine with connection pooling using asyncpg.
 
 from __future__ import annotations
 
-import asyncpg
-from typing import Any, Optional, Sequence
 from contextlib import asynccontextmanager
+from typing import Any, Optional, Sequence
 
-from aksara.logging import QueryLogger, logger
-from aksara.db.session import get_session
-from aksara.exceptions import map_database_error, ConnectionError as AksaraConnectionError
+import asyncpg
+
 from aksara.db.debug import log_query
+from aksara.db.session import get_session
 from aksara.db.tenant_context import apply_tenant_context, reset_tenant_context
+from aksara.exceptions import ConnectionError as AksaraConnectionError
+from aksara.exceptions import map_database_error
+from aksara.logging import QueryLogger, logger
 
 
 def _decode_vector(value: str) -> list[float]:
@@ -32,7 +34,11 @@ def _encode_vector(value: Any) -> str:
     """Encode Python vectors into pgvector text format."""
     if isinstance(value, str):
         return value
-    return "[" + ",".join(format(float(item), "g") for item in value) + "]"
+    # Reuse the ORM precision policy (repr(float)) so values encoded by the
+    # asyncpg codec match Vector.to_db exactly.
+    from aksara.fields import serialize_vector_components  # type: ignore[attr-defined]
+
+    return serialize_vector_components(value)
 
 
 async def _initialize_connection(connection: asyncpg.Connection) -> None:
@@ -177,13 +183,23 @@ class Database:
             yield current_session
             return
 
-        async with self.pool.acquire() as connection:
+        from aksara.db.cleanup import release_owned_connection
+
+        connection = await self.pool.acquire()
+        tenant_applied = True  # Setup may change connection state before failing.
+        error = None
+        try:
             tenant_applied = await apply_tenant_context(connection)
-            try:
-                yield connection
-            finally:
-                if tenant_applied:
-                    await reset_tenant_context(connection)
+            yield connection
+        except BaseException as exc:
+            error = exc
+            raise
+        finally:
+            await release_owned_connection(
+                self.pool, connection,
+                reset_tenant_context if tenant_applied else None,
+                error,
+            )
     
     async def execute(
         self,

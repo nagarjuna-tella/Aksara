@@ -257,7 +257,7 @@ class Settings(Model):
     preferences = fields.JSON(default=dict)
     
     # PostgreSQL arrays
-    tags = fields.Array(base_type="text", default=list)
+    tags = fields.Array(item_type=str, default=list)
     
     # UUID
     external_id = fields.UUID(nullable=True)
@@ -443,7 +443,7 @@ class Product(Model):
     )
     
     # Metadata
-    tags = fields.Array(base_type="text", default=list)
+    tags = fields.Array(item_type=str, default=list)
     attributes = fields.JSON(default=dict)  # e.g., {"color": "red", "size": "M"}
     
     # Timestamps

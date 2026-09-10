@@ -1,5 +1,11 @@
 # Aksara Studio
 
+!!! warning "Experimental development surface"
+    Studio's UI and internal APIs are experimental in v0.6 and are not the
+    production administration contract. Keep Studio disabled in production.
+    Use generated REST APIs, your application permissions, and the built-in
+    Admin where appropriate for operational workflows.
+
 Aksara Studio is a **built-in web UI** that comes with every Aksara application. It runs inside your app — no external tool, no IDE plugin, no extra installation required.
 
 Start your app with `aksara dev`, then open **http://localhost:8000/studio/ui** in your browser.

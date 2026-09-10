@@ -349,7 +349,7 @@ You should see:
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝              
 
-    AI-native async backend  ·  Dev Server  ·  v0.5.54
+    AI-native async backend  ·  Dev Server  ·  v0.6.0rc2
 
     ● App       http://127.0.0.1:8000/
     ● Admin     http://127.0.0.1:8000/admin/
@@ -456,10 +456,11 @@ In this guide, you:
 6. ✅ Tested the API using curl
 7. ✅ Explored the admin interface
 
-!!! tip "AI Agent / MCP Integration"
-    Every Aksara app automatically exposes an MCP (Model Context Protocol) endpoint at
-    `/ai/tools/mcp`. Any MCP-compatible AI agent can connect to it and read or write
-    your data with no extra setup. See [MCP Integration](../ai-mode/mcp.md).
+!!! info "MCP boundary"
+    When enabled, `/mcp/` exposes permission-filtered generated tools through
+    MCP Streamable HTTP. Every invocation rechecks application credentials,
+    permissions, field policy, and tenancy. `/ai/tools/mcp` remains an
+    inspection catalog. See [MCP Integration](../ai-mode/mcp.md).
 
 !!! tip "When setup fails"
     Run `aksara doctor run` for a live health report across your app, database, and AI

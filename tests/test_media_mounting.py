@@ -4,6 +4,8 @@ Tests for automatic media mounting in Aksara applications.
 
 from __future__ import annotations
 
+from aksara.routing import iter_routes
+
 from aksara import Aksara
 from aksara.conf import settings
 from aksara.storage import clear_storage_cache
@@ -21,17 +23,35 @@ class TestMediaMounting:
 
         app = Aksara(database_url=None, debug=True, enable_admin=False, auto_discover_views=False)
 
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/media" in route_paths
 
     def test_media_does_not_mount_outside_debug(self, monkeypatch, tmp_path):
         monkeypatch.setattr(settings, "media_root", str(tmp_path), raising=False)
         monkeypatch.setattr(settings, "media_url", "/media/", raising=False)
         monkeypatch.setattr(settings, "media_storage", "filesystem", raising=False)
-        monkeypatch.setattr(settings, "debug", False, raising=False)
+        # A process-wide debug setting must not override this production app.
+        monkeypatch.setattr(settings, "debug", True, raising=False)
         clear_storage_cache()
 
         app = Aksara(database_url=None, debug=False, enable_admin=False, auto_discover_views=False)
 
-        route_paths = [route.path for route in app.routes]
+        route_paths = [route.path for route in iter_routes(app)]
         assert "/media" not in route_paths
+
+
+def test_studio_does_not_inherit_process_wide_debug(monkeypatch):
+    """Production Studio exposure follows the application debug boundary."""
+    monkeypatch.setattr(settings, "debug", True, raising=False)
+    monkeypatch.setattr(settings, "enable_studio", True, raising=False)
+    monkeypatch.setattr(settings, "studio_expose_in_production", False, raising=False)
+
+    app = Aksara(
+        database_url=None,
+        debug=False,
+        enable_admin=False,
+        auto_discover_views=False,
+    )
+
+    route_paths = [route.path for route in iter_routes(app)]
+    assert "/studio/ui" not in route_paths

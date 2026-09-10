@@ -483,12 +483,18 @@ class TestHealthCheckHandler:
         app.routes = [MagicMock(), MagicMock()]
         
         step = AiPlanStep(id="s1", type="run_health_check", description="Health check")
-        
-        result = await _handle_run_health_check(app, step, dry_run=False)
+        with patch(
+            "aksara.ai.planner.iter_routes",
+            return_value=iter(app.routes),
+        ) as iter_routes_mock:
+            result = await _handle_run_health_check(app, step, dry_run=False)
         
         assert result.success is True
         assert "checks" in result.output
         assert result.output["checks"]["app_running"] is True
+        assert result.output["checks"]["routes_configured"] is True
+        assert result.output["checks"]["route_count"] == 2
+        iter_routes_mock.assert_called_once_with(app)
 
 
 class TestGenerateTestsHandler:

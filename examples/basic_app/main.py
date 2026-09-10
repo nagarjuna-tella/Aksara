@@ -369,6 +369,7 @@ async def lifespan(app):
 # Uses settings.database_url by default, or pass explicit URL
 app = Aksara(
     database_url=settings.database_url,
+    debug=settings.debug,
     title="Aksara Example App",
     description="Demo application using Aksara async ORM (v0.3.4)",
     version="0.3.4",

@@ -6,8 +6,8 @@ Provides session-based authentication for admin and other cookie-based auth need
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 SESSIONS_TABLE = "aksara_sessions"
@@ -25,6 +25,18 @@ def _parse_affected_rows(result: Any) -> int:
 async def _ensure_sessions_table(db: Any) -> None:
     """Create the session table if it does not already exist."""
     if db is None:
+        return
+
+    ready = await db.fetchval(
+        f"""
+        SELECT COUNT(*) = 4
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = '{SESSIONS_TABLE}'
+          AND column_name IN ('token', 'user_id', 'created_at', 'expires_at')
+        """
+    )
+    if ready:
         return
 
     await db.execute(
@@ -55,8 +67,8 @@ async def authenticate(
     Returns:
         User instance if credentials are valid, None otherwise
     """
+    from aksara.contrib.auth.hashing import _DUMMY_HASH, verify_password
     from aksara.contrib.auth.models import User
-    from aksara.contrib.auth.hashing import verify_password, _DUMMY_HASH
     
     # Try to find user by email (case-insensitive)
     username_lower = username.lower().strip()

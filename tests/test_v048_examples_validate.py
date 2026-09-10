@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 
 from aksara.cli.main import cli
-from aksara.examples_validation import EXAMPLE_SPECS, scan_path_for_secrets, validate_examples
+from aksara.examples_validation import (
+    EXAMPLE_SPECS,
+    scan_path_for_secrets,
+    validate_examples,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,7 +43,10 @@ def _isolate_example_registries():
     _clear_example_import_state()
 
 
-@pytest.mark.parametrize("example", ["basic_app", "blog", "crm", "multitenant", "ai_providers"])
+@pytest.mark.parametrize(
+    "example",
+    ["basic_app", "blog", "crm", "multitenant", "support_desk", "ai_providers"],
+)
 def test_required_examples_exist(example):
     assert (EXAMPLES / example).is_dir()
 
@@ -66,7 +74,7 @@ def test_example_readmes_cover_golden_path(example, fragment):
     assert fragment.lower() in text.lower()
 
 
-@pytest.mark.parametrize("example", ["basic_app", "blog", "crm", "multitenant"])
+@pytest.mark.parametrize("example", ["basic_app", "blog", "crm", "multitenant", "support_desk"])
 def test_model_examples_have_models_and_migrations(example):
     path = EXAMPLES / example
     assert (path / "models.py").is_file()
@@ -86,6 +94,15 @@ def test_validate_examples_ready():
     assert report.status == "ready"
     assert report.summary["errors"] == 0
     assert report.summary["warnings"] == 0
+
+
+def test_validate_examples_preserves_global_settings():
+    from aksara.conf import settings
+
+    before = deepcopy(settings.__dict__)
+    validate_examples(ROOT)
+
+    assert settings.__dict__ == before
 
 
 def test_validate_examples_json_shape():
