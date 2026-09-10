@@ -35,13 +35,13 @@ def _principal(tenant: str) -> Principal:
     return Principal.for_user("user-1", tenant_id=tenant, scopes=("orders:write",))
 
 
-def _reference(tenant: str) -> PrincipalReference:
+def _reference(tenant: str, subject_id: str = "user-1") -> PrincipalReference:
     return PrincipalReference(
         resolver_key="test",
         resolver_version="1",
         identity_namespace="test-app",
         principal_kind="user",
-        subject_id="user-1",
+        subject_id=subject_id,
         tenant_id=tenant,
     )
 
@@ -170,6 +170,43 @@ async def test_concurrent_identical_admission_creates_one_operation(durable_db):
 
     assert len({outcome.operation.id for outcome in outcomes}) == 1
     assert sum(outcome.created for outcome in outcomes) == 1
+
+
+@pytest.mark.asyncio
+async def test_idempotency_identity_isolated_by_tenant_and_principal(durable_db):
+    tenant_a, tenant_b = str(uuid4()), str(uuid4())
+    service = _service(durable_db)
+    command = {"counter_id": "counter-1", "amount": 1}
+
+    first = await service.admit(
+        "orders.increment",
+        "1",
+        command,
+        _reference(tenant_a, "user-1"),
+        idempotency_key="shared-client-key",
+    )
+    other_principal = await service.admit(
+        "orders.increment",
+        "1",
+        command,
+        _reference(tenant_a, "user-2"),
+        idempotency_key="shared-client-key",
+    )
+    other_tenant = await service.admit(
+        "orders.increment",
+        "1",
+        command,
+        _reference(tenant_b, "user-1"),
+        idempotency_key="shared-client-key",
+    )
+
+    assert len(
+        {
+            first.operation.id,
+            other_principal.operation.id,
+            other_tenant.operation.id,
+        }
+    ) == 3
 
 
 @pytest.mark.asyncio

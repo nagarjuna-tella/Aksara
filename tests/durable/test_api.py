@@ -106,6 +106,10 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
             headers={"x-server-tenant": str(uuid4())},
         )
         assert hidden.status_code == 404
+        unknown = await client.get(f"/durable/operations/{uuid4()}")
+        assert hidden.json() == unknown.json() == {
+            "detail": {"code": "operation_not_found"}
+        }
 
         cancelled = await client.post(
             f"{first.json()['status_url']}/cancel",
