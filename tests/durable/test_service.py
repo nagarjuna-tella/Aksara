@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from uuid import uuid4
 
 import pytest
@@ -19,6 +20,8 @@ from aksara.durable import (
     PrincipalReference,
 )
 from aksara.durable.errors import OwnershipLost
+from aksara.durable.service import _tenant_context
+from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
 
 
@@ -298,3 +301,82 @@ async def test_cancellation_and_tenant_filtered_status_history_outbox(durable_db
             tenant_id=other_tenant,
             principal=_principal(other_tenant),
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("column", "value", "expected_code"),
+    [
+        ("principal_reference", {"resolver_key": "attacker"}, "malformed_principal_provenance"),
+        ("effect_class", "external_idempotent", "action_version_unavailable"),
+        ("executor_type", "task", "action_version_unavailable"),
+    ],
+)
+async def test_tampered_authority_and_executor_metadata_fail_closed(
+    durable_db, column, value, expected_code
+):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        if column == "principal_reference":
+            await durable_db.execute(
+                "UPDATE aksara_operations SET principal_reference = $2::jsonb WHERE id = $1",
+                admitted.operation.id,
+                json.dumps(value),
+            )
+        else:
+            await durable_db.execute(
+                f"UPDATE aksara_operations SET {column} = $2 WHERE id = $1",
+                admitted.operation.id,
+                value,
+            )
+
+    assert await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    ) is None
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == expected_code
+
+
+@pytest.mark.asyncio
+async def test_tampered_command_fails_before_attempt_creation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_commands
+            SET payload = '{"amount": 999}'::jsonb
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+
+    assert await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    ) is None
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "invalid_command"
+    assert operation.attempt_count == 0

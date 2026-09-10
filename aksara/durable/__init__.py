@@ -1,6 +1,7 @@
 """Durable authorized operation primitives."""
 
 from aksara.durable.api import create_durable_operations_router
+from aksara.durable.diagnostics import check_durable_operations
 from aksara.durable.errors import (
     ActionNotRegistered,
     ApprovalConflict,
@@ -28,6 +29,7 @@ from aksara.durable.external import (
     ReconciliationResult,
     ReconciliationStatus,
 )
+from aksara.durable.outbox import DurableOutboxExporter
 from aksara.durable.registry import (
     DurableAction,
     DurableActionRegistry,
@@ -51,12 +53,14 @@ __all__ = [
     "AuthorizationDenied",
     "CancellationConflict",
     "create_durable_operations_router",
+    "check_durable_operations",
     "DurableAction",
     "DurableActionRegistry",
     "DurableConfigurationError",
     "DurableOperationError",
     "DurableOperationService",
     "DurableOperationWorker",
+    "DurableOutboxExporter",
     "EffectClass",
     "ExternalEffectAdapter",
     "ExternalEffectContext",

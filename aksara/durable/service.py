@@ -53,6 +53,8 @@ DEFAULT_LEASE_SECONDS = 30.0
 DEFAULT_RETENTION_SECONDS = 7 * 24 * 60 * 60
 DEFAULT_IDEMPOTENCY_SECONDS = 24 * 60 * 60
 DEFAULT_APPROVAL_SECONDS = 24 * 60 * 60
+DEFAULT_RESULT_SECONDS = 24 * 60 * 60
+DEFAULT_ERROR_SECONDS = 7 * 24 * 60 * 60
 MAX_HISTORY_PAGE = 200
 MAX_OUTBOX_PAGE = 500
 
@@ -107,6 +109,8 @@ class DurableOperationService:
         default_lease_seconds: float = DEFAULT_LEASE_SECONDS,
         retention_seconds: float = DEFAULT_RETENTION_SECONDS,
         idempotency_seconds: float = DEFAULT_IDEMPOTENCY_SECONDS,
+        result_retention_seconds: float = DEFAULT_RESULT_SECONDS,
+        error_retention_seconds: float = DEFAULT_ERROR_SECONDS,
     ) -> None:
         if not application_namespace:
             raise ValueError("application_namespace is required")
@@ -114,7 +118,12 @@ class DurableOperationService:
             raise ValueError("default_max_attempts must be positive")
         if default_lease_seconds <= 0:
             raise ValueError("default_lease_seconds must be positive")
-        if retention_seconds <= 0 or idempotency_seconds <= 0:
+        if (
+            retention_seconds <= 0
+            or idempotency_seconds <= 0
+            or result_retention_seconds <= 0
+            or error_retention_seconds <= 0
+        ):
             raise ValueError("retention windows must be positive")
         self.db = db
         self.application_namespace = application_namespace
@@ -125,6 +134,8 @@ class DurableOperationService:
         self.default_lease_seconds = default_lease_seconds
         self.retention_seconds = retention_seconds
         self.idempotency_seconds = idempotency_seconds
+        self.result_retention_seconds = result_retention_seconds
+        self.error_retention_seconds = error_retention_seconds
 
     async def admit(
         self,
@@ -421,6 +432,67 @@ class DurableOperationService:
                     )
                     return None
 
+                action = self.actions.get(*action_key)
+                if (
+                    row["executor_type"] != action.executor_type
+                    or row["effect_class"] != action.effect_class.value
+                ):
+                    await self._close_unclaimable(
+                        connection,
+                        row,
+                        state=OperationState.FAILED,
+                        reason=FailureReason.ACTION_VERSION_UNAVAILABLE,
+                    )
+                    return None
+                try:
+                    stored_reference = row["principal_reference"]
+                    if isinstance(stored_reference, str):
+                        stored_reference = json.loads(stored_reference)
+                    reference = PrincipalReference(**dict(stored_reference))
+                    valid_reference = bool(
+                        reference.integrity_hash == row["principal_reference_hash"]
+                        and reference.resolver_key == row["resolver_key"]
+                        and reference.resolver_version == row["resolver_version"]
+                        and reference.tenant_id == row["tenant_id"]
+                    )
+                except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+                    valid_reference = False
+                if not valid_reference:
+                    await self._close_unclaimable(
+                        connection,
+                        row,
+                        state=OperationState.FAILED,
+                        reason=FailureReason.MALFORMED_PROVENANCE,
+                    )
+                    return None
+                command_record = await self.repository.get_command_record(
+                    connection, row["id"], scope
+                )
+                try:
+                    stored_command = (
+                        command_record["payload"] if command_record is not None else None
+                    )
+                    if isinstance(stored_command, str):
+                        stored_command = json.loads(stored_command)
+                    normalized_command = action.normalize_command(dict(stored_command))
+                    valid_command = bool(
+                        command_record is not None
+                        and stable_hash(normalized_command) == row["canonical_input_hash"]
+                        and command_record["canonical_input_hash"]
+                        == row["canonical_input_hash"]
+                    )
+                except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+                    valid_command = False
+                    normalized_command = {}
+                if not valid_command:
+                    await self._close_unclaimable(
+                        connection,
+                        row,
+                        state=OperationState.FAILED,
+                        reason=FailureReason.INVALID_COMMAND,
+                    )
+                    return None
+
                 old_state = OperationState(row["state"])
                 if old_state is OperationState.RUNNING:
                     await connection.execute(
@@ -543,9 +615,8 @@ class DurableOperationService:
                     attempt_id=attempt_id,
                     metadata={"ordinal": ordinal},
                 )
-                command = await self.repository.get_command(connection, row["id"], scope)
-                assert updated is not None and attempt is not None and command is not None
-                return self.repository.claim(updated, attempt, command)
+                assert updated is not None and attempt is not None
+                return self.repository.claim(updated, attempt, normalized_command)
 
     async def _close_unclaimable(
         self,
@@ -1019,24 +1090,32 @@ class DurableOperationService:
         *,
         tenant_id: str | None,
         history_per_operation: int = 100,
+        batch_size: int = 500,
     ) -> dict[str, int]:
         """Bound exported history and expired terminal detail without active-row loss."""
 
         if history_per_operation < 1:
             raise ValueError("history_per_operation must be positive")
+        if batch_size < 1 or batch_size > 10000:
+            raise ValueError("batch_size must be between 1 and 10000")
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 deleted_outbox = await connection.fetchval(
                     """
-                    WITH deleted AS (
-                        DELETE FROM aksara_operation_outbox
+                    WITH candidates AS (
+                        SELECT id FROM aksara_operation_outbox
                         WHERE tenant_scope = $1 AND exported_at IS NOT NULL
                           AND exported_at < clock_timestamp() - INTERVAL '1 day'
-                        RETURNING id
+                        ORDER BY id LIMIT $2
+                        FOR UPDATE SKIP LOCKED
+                    ), deleted AS (
+                        DELETE FROM aksara_operation_outbox o
+                        USING candidates c WHERE o.id = c.id RETURNING o.id
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    batch_size,
                 )
                 deleted_transitions = await connection.fetchval(
                     """
@@ -1050,20 +1129,62 @@ class DurableOperationService:
                               SELECT 1 FROM aksara_operation_outbox o
                               WHERE o.transition_id = t.id AND o.exported_at IS NULL
                           )
+                    ), candidates AS (
+                        SELECT id FROM ranked WHERE position > $2
+                        ORDER BY id LIMIT $3
                     ), deleted AS (
                         DELETE FROM aksara_operation_transitions t
-                        USING ranked r
-                        WHERE t.id = r.id AND r.position > $2
+                        USING candidates c
+                        WHERE t.id = c.id
                         RETURNING t.id
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
                     history_per_operation,
+                    batch_size,
+                )
+                expired_results = await connection.fetchval(
+                    """
+                    WITH candidates AS (
+                        SELECT id FROM aksara_operations
+                        WHERE tenant_scope = $1 AND result IS NOT NULL
+                          AND state = 'succeeded'
+                          AND completed_at < clock_timestamp()
+                              - ($2::double precision * INTERVAL '1 second')
+                        ORDER BY completed_at LIMIT $3
+                        FOR UPDATE SKIP LOCKED
+                    ), updated AS (
+                        UPDATE aksara_operations o SET result = NULL
+                        FROM candidates c WHERE o.id = c.id RETURNING o.id
+                    ) SELECT COUNT(*) FROM updated
+                    """,
+                    scope,
+                    self.result_retention_seconds,
+                    batch_size,
+                )
+                expired_errors = await connection.fetchval(
+                    """
+                    WITH candidates AS (
+                        SELECT id FROM aksara_operations
+                        WHERE tenant_scope = $1 AND error IS NOT NULL
+                          AND state IN ('failed', 'cancelled', 'expired')
+                          AND completed_at < clock_timestamp()
+                              - ($2::double precision * INTERVAL '1 second')
+                        ORDER BY completed_at LIMIT $3
+                        FOR UPDATE SKIP LOCKED
+                    ), updated AS (
+                        UPDATE aksara_operations o SET error = NULL
+                        FROM candidates c WHERE o.id = c.id RETURNING o.id
+                    ) SELECT COUNT(*) FROM updated
+                    """,
+                    scope,
+                    self.error_retention_seconds,
+                    batch_size,
                 )
                 deleted_operations = await connection.fetchval(
                     """
-                    WITH deleted AS (
-                        DELETE FROM aksara_operations o
+                    WITH candidates AS (
+                        SELECT o.id FROM aksara_operations o
                         WHERE o.tenant_scope = $1
                           AND o.state IN ('succeeded', 'failed', 'cancelled', 'expired')
                           AND o.retain_until <= clock_timestamp()
@@ -1071,24 +1192,38 @@ class DurableOperationService:
                               SELECT 1 FROM aksara_operation_idempotency i
                               WHERE i.operation_id = o.id AND i.expires_at > clock_timestamp()
                           )
-                        RETURNING o.id
+                        ORDER BY o.retain_until LIMIT $2
+                        FOR UPDATE SKIP LOCKED
+                    ), deleted AS (
+                        DELETE FROM aksara_operations o
+                        USING candidates c WHERE o.id = c.id RETURNING o.id
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    batch_size,
                 )
                 deleted_idempotency = await connection.fetchval(
                     """
-                    WITH deleted AS (
-                        DELETE FROM aksara_operation_idempotency
+                    WITH candidates AS (
+                        SELECT identity_hash FROM aksara_operation_idempotency
                         WHERE tenant_scope = $1 AND expires_at <= clock_timestamp()
-                        RETURNING identity_hash
+                        ORDER BY expires_at LIMIT $2
+                        FOR UPDATE SKIP LOCKED
+                    ), deleted AS (
+                        DELETE FROM aksara_operation_idempotency i
+                        USING candidates c
+                        WHERE i.identity_hash = c.identity_hash
+                        RETURNING i.identity_hash
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    batch_size,
                 )
         return {
             "outbox": int(deleted_outbox),
             "transitions": int(deleted_transitions),
+            "results": int(expired_results),
+            "errors": int(expired_errors),
             "operations": int(deleted_operations),
             "idempotency": int(deleted_idempotency),
         }

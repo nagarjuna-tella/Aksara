@@ -96,6 +96,21 @@ class DurableOperationRepository:
         payload = _json(value)
         return dict(payload)
 
+    async def get_command_record(
+        self,
+        connection: asyncpg.Connection,
+        operation_id: UUID,
+        tenant_scope: str,
+    ) -> asyncpg.Record | None:
+        return await connection.fetchrow(
+            """
+            SELECT * FROM aksara_operation_commands
+            WHERE operation_id = $1 AND tenant_scope = $2
+            """,
+            operation_id,
+            tenant_scope,
+        )
+
     async def insert_transition(
         self,
         connection: asyncpg.Connection,
