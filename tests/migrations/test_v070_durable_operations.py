@@ -138,10 +138,22 @@ async def test_v061_runtime_schema_upgrades_once_with_verified_checksum(tmp_path
             verbose=False,
         )
         assert await connection.fetchval(
-            "SELECT to_regclass('aksara_tasks') IS NOT NULL"
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = $1 AND table_name = 'aksara_tasks'
+            )
+            """,
+            schema,
         )
         assert not await connection.fetchval(
-            "SELECT to_regclass('aksara_operations') IS NOT NULL"
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = $1 AND table_name = 'aksara_operations'
+            )
+            """,
+            schema,
         )
 
         upgraded = await apply_migrations(connection, tmp_path, verbose=False)
@@ -149,7 +161,13 @@ async def test_v061_runtime_schema_upgrades_once_with_verified_checksum(tmp_path
         assert durable_name in upgraded["applied"]
         assert runtime_name in upgraded["skipped"]
         assert await connection.fetchval(
-            "SELECT to_regclass('aksara_operations') IS NOT NULL"
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = $1 AND table_name = 'aksara_operations'
+            )
+            """,
+            schema,
         )
         assert await connection.fetchval(
             """
