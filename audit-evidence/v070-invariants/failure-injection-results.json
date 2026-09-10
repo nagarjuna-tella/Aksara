@@ -1,0 +1,32 @@
+{
+  "scenarios": {
+    "cancellation_after_attempt": {
+      "pass": true,
+      "rolled_back": true,
+      "session_cleared": true
+    },
+    "cancellation_after_lock": {
+      "pass": true,
+      "rolled_back": true,
+      "session_cleared": true
+    },
+    "cancellation_after_mutation": {
+      "pass": true,
+      "rolled_back": true,
+      "session_cleared": true
+    },
+    "cancellation_after_operation": {
+      "pass": true,
+      "rolled_back": true,
+      "session_cleared": true
+    },
+    "connection_termination": {
+      "pass": true,
+      "pool_recovered": true,
+      "replacement_backend_pid": 68073,
+      "rolled_back": true,
+      "terminated_backend_pid": 68070
+    }
+  },
+  "schema_version": 1
+}

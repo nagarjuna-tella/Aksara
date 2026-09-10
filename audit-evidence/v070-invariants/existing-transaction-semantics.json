@@ -1,0 +1,53 @@
+{
+  "answers": {
+    "1_nested_orm_reuses_pinned_connection": {
+      "answer": true,
+      "evidence": "Database.acquire yields get_session() and all tested Database/ORM methods route through it; real backend PID was identical."
+    },
+    "2_manager_or_query_silently_acquires_another_connection": {
+      "answer": false,
+      "qualification": "Supported Model.save, Manager.create, QuerySet update, and Database methods reused the pinned connection. Direct pool access and independent asyncpg connections bypass it."
+    },
+    "3_all_nested_orm_writes_see_active_transaction": {
+      "answer": "for supported paths that use the active Database session",
+      "qualification": "The guarantee is conditional and cannot cover raw pool acquisition, independent drivers/connections, subprocesses, or a concurrent child task that misuses the inherited ContextVar connection."
+    },
+    "4_known_bypass_paths": [
+      "Database.pool.acquire()",
+      "independent asyncpg or other database connection",
+      "subprocess or thread without the operation transaction",
+      "external systems and nontransactional resources",
+      "concurrent child tasks inheriting one ContextVar connection"
+    ],
+    "5_cancellation_rolls_back_outer_transaction": {
+      "answer": true,
+      "evidence": "CancelledError at four precommit boundaries rolled back mutation and success state and cleared the session."
+    },
+    "6_caught_nested_exception_can_allow_outer_commit": {
+      "answer": true,
+      "evidence": "The nested asyncpg transaction is a savepoint. The prototype rolled back the inner QuerySet update, caught its exception, and committed outer work."
+    },
+    "7_future_postgres_atomic_must_prohibit": [
+      "independent application commit before operation completion",
+      "direct pool acquisition or raw connection escape",
+      "different PostgreSQL database or nontransactional resource",
+      "external side effect claimed as PostgreSQL atomic",
+      "mutation before ownership is locked and checked",
+      "finalization-only fencing",
+      "concurrent database work sharing the inherited pinned asyncpg connection",
+      "catching an error that should abort the operation transaction"
+    ]
+  },
+  "code_paths_reviewed": [
+    "aksara/db/transaction.py",
+    "aksara/db/session.py",
+    "aksara/db/engine.py",
+    "aksara/db/cleanup.py",
+    "aksara/db/tenant_context.py",
+    "aksara/model/base.py",
+    "aksara/manager.py",
+    "aksara/tasks.py",
+    "aksara/core/migrations/0001_runtime_tables.py"
+  ],
+  "schema_version": 1
+}

@@ -1,0 +1,33 @@
+{
+  "adr_contradictions": [],
+  "core_results": {
+    "atomic_execution_truth": "passed for same-database mutations inside one pinned Aksara transaction",
+    "fenceable_ownership": "passed when ownership is locked and checked inside the mutation transaction",
+    "multiprocess": "exclusive claim, hard worker death, database-time reclaim, and stale credential attack passed",
+    "negative_controls": "both split-commit directions, different connection, finalization-only check, removed fence, missing attempt heartbeat, and nonincrementing fence defects detected",
+    "pool_and_tenant_reuse": "passed with forced RLS and a restricted role"
+  },
+  "next_gate": "eligible for a separately reviewed internal migration and repository milestone; this prototype does not authorize later API or integration milestones",
+  "required_constraints": [
+    "same Aksara Database instance and same PostgreSQL database",
+    "one active pinned connection and outer transaction",
+    "operation row locked before mutation",
+    "current operation, attempt, worker, fence, running state, and lease validated under that lock",
+    "all application writes use the pinned session",
+    "attempt success, operation success, transition, and outbox written before the same commit",
+    "no direct pool acquisition, independent commit, or concurrent use of the pinned connection",
+    "no external effect included in the PostgreSQL atomic guarantee",
+    "ambiguous commit outcomes are re-read from PostgreSQL before retry"
+  ],
+  "test_result": {
+    "full_suite_passed": 8034,
+    "full_suite_skipped": 2,
+    "full_suite_log": "pytest-full.log",
+    "passed": 24,
+    "related_regression_passed": 57,
+    "related_regression_log": "pytest-related.log",
+    "skipped": 0,
+    "targeted_log": "pytest-targeted.log"
+  },
+  "verdict": "PROVEN WITH REQUIRED IMPLEMENTATION CONSTRAINTS"
+}

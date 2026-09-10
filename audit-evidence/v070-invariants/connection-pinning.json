@@ -1,0 +1,24 @@
+{
+  "scenarios": {
+    "escape_audit": {
+      "database_acquire_reused_pinned_connection": true,
+      "database_methods_reused_pinned_connection": true,
+      "direct_pool_acquire_escaped": true,
+      "escaped_backend_pid": 68167,
+      "future_executor_must_prohibit_direct_pool_acquire": true,
+      "pinned_backend_pid": 68166
+    },
+    "nested_savepoint_and_atomic_completion": {
+      "completion_backend_pids": [
+        68026
+      ],
+      "inner_savepoint_rolled_back": true,
+      "manager_create": true,
+      "model_save": true,
+      "nested_connection_identity": true,
+      "outer_backend_pid": 68026,
+      "queryset_update": true
+    }
+  },
+  "schema_version": 1
+}

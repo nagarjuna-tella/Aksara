@@ -1,0 +1,17 @@
+{
+  "scenarios": {
+    "fault_campaign_and_tenant_reuse": {
+      "cancelled_transactions": 4,
+      "no_tenant_reads_no_rows": true,
+      "pass": true,
+      "pool_idle": 1,
+      "pool_size": 1,
+      "session_context_cleared": true,
+      "subsequent_query_succeeded": true,
+      "tenant_a_cannot_read_b": true,
+      "tenant_b_cannot_read_a": true,
+      "tenant_guc_cleared": true
+    }
+  },
+  "schema_version": 1
+}

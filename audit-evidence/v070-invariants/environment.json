@@ -1,0 +1,23 @@
+{
+  "aksara_version": "0.6.1",
+  "asyncpg_version": "0.31.0",
+  "base_sha": "0abd0ada6e8b776d06f2586551e10a461d6d4ea3",
+  "branch": "codex/v07-operation-invariant-prototype",
+  "database": "aksara_test",
+  "database_credentials_recorded": false,
+  "latest_tag_at_start": "v0.5.54",
+  "pool": {
+    "max_size": 4,
+    "min_size": 1,
+    "role": "ephemeral restricted NOSUPERUSER NOBYPASSRLS role",
+    "row_level_security": "enabled and forced on every prototype table"
+  },
+  "postgresql_version": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "prototype_tables": [
+    "aksara_v070_proto_operations",
+    "aksara_v070_proto_attempts",
+    "aksara_v070_proto_counters"
+  ],
+  "python_version": "3.11.5",
+  "schema_lifecycle": "created and dropped by each test fixture; no migration"
+}

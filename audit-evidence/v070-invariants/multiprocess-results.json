@@ -1,0 +1,14 @@
+{
+  "scenarios": {
+    "claim_death_reclaim_stale_attack": {
+      "exclusive_claim": true,
+      "independent_claim_processes": 2,
+      "pass": true,
+      "reclaim_fence": 2,
+      "stale_application_mutation": 0,
+      "stale_process_equivalent_rejected": true,
+      "worker_a_hard_killed": true
+    }
+  },
+  "schema_version": 1
+}
