@@ -18,7 +18,7 @@ released as part of the local validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `a2c95cf3513383bb884c66fe0a7a86794c0d6b64` |
+| Candidate implementation commit | `87ad89755ba80a5132e9a0cc0271ae4877de6f6b` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -63,12 +63,12 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,183 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable, migration, and invariant suites | **PASS:** 173 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,183 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,183 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,183 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,183 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,197 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable, migration, and invariant suites | **PASS:** 184 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
 | Packaged Support Desk | Wheel-only app, restricted role, RLS, REST/MCP/durable operation journeys | **PASS:** 66 checks | [`support-desk-gate.json`](audit-evidence/v070/support-desk-gate.json) |
@@ -84,7 +84,7 @@ The detailed decision audit is in
 | Dependency audit | Candidate dependency graph | **PASS:** no known vulnerabilities | [`pip-audit.log`](audit-evidence/v070/pip-audit.log) |
 | Secret scan | Exact tracked candidate snapshot | **PASS:** no leaks | [`gitleaks.log`](audit-evidence/v070/gitleaks.log), [`gitleaks.sarif`](audit-evidence/v070/gitleaks.sarif) |
 | Package validation | sdist, wheel-from-sdist, Twine 7 | **PASS** | [`package-build.log`](audit-evidence/v070/package-build.log), [`twine.log`](audit-evidence/v070/twine.log) |
-| SBOM | CycloneDX 1.6 | **PASS:** 97 components | [`sbom.json`](audit-evidence/v070/sbom.json) |
+| SBOM | CycloneDX 1.6 | **PASS:** 96 components | [`sbom.json`](audit-evidence/v070/sbom.json) |
 
 The four full matrix cells emitted 25 known deprecation warnings from
 Starlette's AnyIO portal alias and Click's `isolated_filesystem` helper. They
@@ -94,8 +94,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `47e57e620d70d7b29f708ad3af5d70eaeb429d4ae6316c612389e2d897a2c7f6` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `ece1f77d874dc57be48936456e66c5f7253b0eb2d28a8e10f6b146e3bab86f6f` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `34290591e49c2fc1dd70821059d97be14adb53c3efab7abc5c494366949eb0c1` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `9484ec240fcbd58193e94751b4fb6f6536ee008e74799b27f395158b43b727f0` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
@@ -104,8 +104,8 @@ digests are recorded in
 
 ## Performance interpretation
 
-The local campaign admitted 256 Operations in 261.399 ms and executed them in
-368.296 ms. It also proved concurrent same-key deduplication, eight exclusive
+The local campaign admitted 256 Operations in 312.109 ms and executed them in
+551.424 ms. It also proved concurrent same-key deduplication, eight exclusive
 claims, N-to-N+1 fencing, task-backed execution, bounded pruning, indexed claim
 selection under 3,000 terminal rows, exact mutation counts, and a fully idle
 pool. These figures detect obvious local pathology; they are not a capacity or

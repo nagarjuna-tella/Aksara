@@ -5,7 +5,7 @@
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "a2c95cf3513383bb884c66fe0a7a86794c0d6b64",
+  "candidate_implementation_sha": "87ad89755ba80a5132e9a0cc0271ae4877de6f6b",
   "hosted_postgresql_16": "pending",
   "mcp_tasks": {
     "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
@@ -51,11 +51,11 @@
       "warnings": 0
     },
     "durable_targeted": {
-      "passed": 173,
+      "passed": 184,
       "status": "pass"
     },
     "full_suite": {
-      "passed": 8183,
+      "passed": 8197,
       "skipped": 2,
       "status": "pass"
     },
@@ -82,12 +82,12 @@
     },
     "runtime_matrix": {
       "cells": 4,
-      "passed_per_cell": 8183,
+      "passed_per_cell": 8197,
       "skipped_per_cell": 2,
       "status": "pass"
     },
     "sbom": {
-      "components": 97,
+      "components": 96,
       "format": "CycloneDX",
       "spec_version": "1.6",
       "status": "pass"

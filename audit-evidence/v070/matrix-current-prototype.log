@@ -1,12 +1,28 @@
 Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1
 ........................                                                 [100%]
-24 passed in 5.55s
+24 passed in 6.76s
+Using Python 3.11.15 environment at: /private/tmp/aksara-v070-py311
+Resolved 10 packages in 22ms
+Uninstalled 2 packages in 17ms
+Installed 2 packages in 10ms
+ - fastapi==0.136.1
+ + fastapi==0.141.1
+ - starlette==1.0.1
+ + starlette==1.6.0
 Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0
 ........................                                                 [100%]
-24 passed in 5.80s
-Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1
-........................                                                 [100%]
-24 passed in 6.28s
+24 passed in 6.61s
 Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0
 ........................                                                 [100%]
-24 passed in 6.59s
+24 passed in 7.09s
+Using Python 3.14.4 environment at: /private/tmp/aksara-v070-py314
+Resolved 10 packages in 21ms
+Uninstalled 2 packages in 13ms
+Installed 2 packages in 7ms
+ - fastapi==0.141.1
+ + fastapi==0.136.1
+ - starlette==1.6.0
+ + starlette==1.0.1
+Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1
+........................                                                 [100%]
+24 passed in 6.92s
