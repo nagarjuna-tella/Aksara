@@ -1,0 +1,300 @@
+"""Durable admission, identity, approval and ownership invariants."""
+
+from __future__ import annotations
+
+import asyncio
+from uuid import uuid4
+
+import pytest
+
+from aksara.durable import (
+    ApprovalConflict,
+    DurableAction,
+    DurableActionRegistry,
+    DurableOperationService,
+    EffectClass,
+    IdempotencyConflict,
+    OperationNotFound,
+    OperationState,
+    PrincipalReference,
+)
+from aksara.durable.errors import OwnershipLost
+from aksara.security.principal import Principal
+
+
+async def _handler(_context, command):
+    return command
+
+
+def _principal(tenant: str) -> Principal:
+    return Principal.for_user("user-1", tenant_id=tenant, scopes=("orders:write",))
+
+
+def _reference(tenant: str) -> PrincipalReference:
+    return PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="test-app",
+        principal_kind="user",
+        subject_id="user-1",
+        tenant_id=tenant,
+    )
+
+
+def _service(durable_db, *, approval: bool = False):
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="orders.increment",
+            version="1",
+            handler=_handler,
+            effect_class=EffectClass.POSTGRES_ATOMIC,
+            approval_required=approval,
+        )
+    )
+    return DurableOperationService(
+        durable_db,
+        application_namespace="tests",
+        actions=actions,
+        idempotency_seconds=60,
+        retention_seconds=60,
+    )
+
+
+def test_principal_reference_never_serializes_runtime_authority():
+    principal = Principal.for_mcp_agent(
+        token_id="revocation-handle",
+        human_owner_id="owner-1",
+        tenant_id="tenant-1",
+        roles=("admin",),
+        scopes=("*",),
+        agent_id="agent-1",
+        metadata={"bearer_token": "secret", "audience": "mcp"},
+    )
+    reference = PrincipalReference.from_principal(
+        principal,
+        resolver_key="identity-store",
+    )
+
+    stored = reference.to_dict()
+    assert stored["credential_id"] == "revocation-handle"
+    assert "roles" not in stored
+    assert "scopes" not in stored
+    assert "metadata" not in stored
+    assert "bearer_token" not in str(stored)
+
+
+@pytest.mark.asyncio
+async def test_admission_is_scoped_idempotent_and_conflict_sensitive(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    reference = _reference(tenant)
+
+    first = await service.admit(
+        "orders.increment",
+        "1",
+        {"counter_id": "counter-1", "amount": 1},
+        reference,
+        idempotency_key="request-1",
+    )
+    duplicate = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1, "counter_id": "counter-1"},
+        reference,
+        idempotency_key="request-1",
+    )
+
+    assert first.created is True
+    assert duplicate.created is False
+    assert duplicate.operation.id == first.operation.id
+    assert duplicate.operation.attempt_count == 0
+
+    with pytest.raises(IdempotencyConflict):
+        await service.admit(
+            "orders.increment",
+            "1",
+            {"counter_id": "counter-1", "amount": 2},
+            reference,
+            idempotency_key="request-1",
+        )
+
+    service.actions.register(
+        DurableAction(
+            name="orders.increment",
+            version="2",
+            handler=_handler,
+            effect_class=EffectClass.POSTGRES_ATOMIC,
+        )
+    )
+    with pytest.raises(IdempotencyConflict):
+        await service.admit(
+            "orders.increment",
+            "2",
+            {"counter_id": "counter-1", "amount": 1},
+            reference,
+            idempotency_key="request-1",
+        )
+
+
+@pytest.mark.asyncio
+async def test_concurrent_identical_admission_creates_one_operation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    reference = _reference(tenant)
+
+    outcomes = await asyncio.gather(
+        *(
+            service.admit(
+                "orders.increment",
+                "1",
+                {"counter_id": "counter-1", "amount": 1},
+                reference,
+                idempotency_key="concurrent-key",
+            )
+            for _ in range(8)
+        )
+    )
+
+    assert len({outcome.operation.id for outcome in outcomes}) == 1
+    assert sum(outcome.created for outcome in outcomes) == 1
+
+
+@pytest.mark.asyncio
+async def test_claim_heartbeat_reclaim_and_stale_owner_fencing(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment",
+        "1",
+        {"counter_id": "counter-1", "amount": 1},
+        _reference(tenant),
+    )
+    first = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+        lease_seconds=0.05,
+    )
+    assert first is not None
+    renewed = await service.heartbeat(first, lease_seconds=0.05)
+    assert renewed > first.lease_expires_at
+
+    await asyncio.sleep(0.08)
+    second = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+        lease_seconds=1,
+    )
+    assert second is not None
+    assert second.fence == first.fence + 1
+    assert second.ordinal == 2
+
+    with pytest.raises(OwnershipLost):
+        await service.heartbeat(first)
+    with pytest.raises(OwnershipLost):
+        await service.fail_attempt(
+            first,
+            code="late_failure",
+            message="stale",
+            retryable=False,
+        )
+
+
+@pytest.mark.asyncio
+async def test_retryable_failure_returns_operation_to_ready(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+
+    operation = await service.fail_attempt(
+        claim,
+        code="temporary_database_failure",
+        message="retry later",
+        retryable=True,
+    )
+    assert operation.state is OperationState.READY
+    assert operation.error["retryable"] is True
+
+
+@pytest.mark.asyncio
+async def test_durable_approval_then_claim_and_reject_race(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    assert admitted.operation.state is OperationState.WAITING_FOR_APPROVAL
+    assert await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    ) is None
+
+    approved = await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=_principal(tenant),
+        approver_reference=reference,
+        approve=True,
+    )
+    assert approved.state is OperationState.READY
+    with pytest.raises(ApprovalConflict):
+        await service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=reference,
+            approve=False,
+        )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+
+
+@pytest.mark.asyncio
+async def test_cancellation_and_tenant_filtered_status_history_outbox(durable_db):
+    tenant = str(uuid4())
+    other_tenant = str(uuid4())
+    service = _service(durable_db)
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    cancelled = await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=reference,
+        reason="no longer needed",
+    )
+    assert cancelled.state is OperationState.CANCELLED
+    assert len(await service.history(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )) == 2
+    assert len(await service.pending_outbox(
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )) == 2
+
+    with pytest.raises(OperationNotFound):
+        await service.get(
+            admitted.operation.id,
+            tenant_id=other_tenant,
+            principal=_principal(other_tenant),
+        )

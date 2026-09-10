@@ -26,6 +26,7 @@ CREATE TABLE aksara_operations (
     provenance_version INTEGER NOT NULL DEFAULT 1 CHECK (provenance_version > 0),
     principal_reference_hash CHAR(64) NOT NULL,
     canonical_input_hash CHAR(64) NOT NULL,
+    idempotency_identity_hash CHAR(64),
     idempotency_scope_hash CHAR(64),
     state VARCHAR(32) NOT NULL CHECK (
         state IN (
@@ -67,9 +68,9 @@ CREATE TABLE aksara_operations (
     )
 );
 
-CREATE UNIQUE INDEX uq_aksara_operations_idempotency_scope
-ON aksara_operations (idempotency_scope_hash)
-WHERE idempotency_scope_hash IS NOT NULL;
+CREATE UNIQUE INDEX uq_aksara_operations_idempotency_identity
+ON aksara_operations (idempotency_identity_hash)
+WHERE idempotency_identity_hash IS NOT NULL;
 
 CREATE INDEX idx_aksara_operations_claim
 ON aksara_operations (tenant_scope, state, available_at, created_at)
@@ -123,7 +124,8 @@ CREATE INDEX idx_aksara_operation_attempts_operation
 ON aksara_operation_attempts (operation_id, ordinal DESC);
 
 CREATE TABLE aksara_operation_idempotency (
-    scope_hash CHAR(64) PRIMARY KEY,
+    identity_hash CHAR(64) PRIMARY KEY,
+    scope_hash CHAR(64) NOT NULL,
     tenant_scope TEXT NOT NULL,
     operation_id UUID NOT NULL,
     action_name VARCHAR(255) NOT NULL,
@@ -135,6 +137,9 @@ CREATE TABLE aksara_operation_idempotency (
 
 CREATE INDEX idx_aksara_operation_idempotency_expiry
 ON aksara_operation_idempotency (expires_at);
+
+CREATE INDEX idx_aksara_operation_idempotency_scope
+ON aksara_operation_idempotency (scope_hash);
 
 CREATE TABLE aksara_operation_approval_decisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -243,6 +248,15 @@ ALTER TABLE aksara_operation_approval_decisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aksara_operation_transitions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aksara_operation_outbox ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aksara_operation_effects ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE aksara_operations FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_commands FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_attempts FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_idempotency FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_approval_decisions FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_transitions FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_outbox FORCE ROW LEVEL SECURITY;
+ALTER TABLE aksara_operation_effects FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY aksara_operations_tenant_policy ON aksara_operations
 USING (tenant_scope = current_setting('aksara.current_tenant_id', true))
