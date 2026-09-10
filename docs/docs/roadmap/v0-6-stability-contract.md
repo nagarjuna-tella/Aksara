@@ -1,6 +1,6 @@
 # v0.6 Stability and Production Contract
 
-This contract defines the production surface proposed by `v0.6.0-rc2` and the
+This contract defines the production surface provided by `v0.6.0` and the
 compatibility commitment intended for the v0.6.x line. Aksara remains pre-1.0,
 so a stable surface can still change when correctness or security requires it.
 Such changes will be called out with an upgrade path.

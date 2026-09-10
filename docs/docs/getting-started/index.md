@@ -26,7 +26,7 @@ Welcome to Aksara! This guide will help you build your first web API from scratc
 | "I need an API" | **ViewSets** create REST endpoints automatically |
 | "I need to protect data" | **Permissions** control who can access what |
 | "I need an admin panel" | **Admin** gives you a dashboard to manage data |
-| "I want AI agents to use my API" | **MCP Tools** auto-generated from your models at `/ai/tools/mcp` |
+| "I want AI agents to use my API" | **MCP Tools** generated from your models and executed over Streamable HTTP at `/mcp/` |
 | "I need to debug my app" | **Doctor & Fix Plans** diagnose issues and print the remediation path |
 
 ---

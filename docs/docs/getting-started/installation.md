@@ -59,9 +59,9 @@ After installation, verify Aksara is available:
 aksara --version
 ```
 
-For the current published release, the output remains:
+For v0.6.0, the output is:
 ```
-aksara, version 0.5.54
+aksara, version 0.6.0
 ```
 
 You can also check the Python package:
@@ -69,12 +69,12 @@ You can also check the Python package:
 ```python
 >>> import aksara
 >>> aksara.__version__
-'0.5.54'
+'0.6.0'
 ```
 
-An installed v0.6.0 release candidate reports the PEP 440 form `0.6.0rc2`.
-See [runtime compatibility](../reference/runtime-compatibility.md) before using
-an unpublished checkout or release candidate.
+The package and CLI use the same PEP 440 version. See [runtime
+compatibility](../reference/runtime-compatibility.md) for the supported Python,
+PostgreSQL, FastAPI, and Starlette boundaries.
 
 For a project-level readiness check, run this from inside an Aksara project:
 

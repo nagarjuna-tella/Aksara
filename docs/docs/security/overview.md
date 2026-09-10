@@ -44,8 +44,9 @@ schemas as the boundary.
   `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
 - Bulk/upsert principal enforcement is helper-level unless integrated by the
   application path.
-- The MCP endpoint is a catalog, not protocol-level execution. The supported
-  invocation boundary is a catalog-described generated REST route.
+- The Streamable HTTP MCP endpoint at `/mcp/` provides protocol discovery and
+  execution for generated tools. `/ai/tools/mcp` remains an inspection catalog;
+  it is not a second execution boundary.
 - No external security audit certification is claimed; the review scope and
   release evidence are published for assessment.
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.6.0rc2"
+version = "0.6.0"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -22,6 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Database",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -45,8 +46,8 @@ dependencies = [
     "bcrypt>=4.0.0",  # Required for auth & admin
     "jinja2>=3.0.0",  # Required for admin templates
     "httpx>=0.25.0",  # Required for direct AI provider API calls
-    # Official maintained Model Context Protocol SDK. Keep the release-candidate
-    # dependency inside the minor line exercised by the v0.6 release gate.
+    # Official maintained Model Context Protocol SDK. Keep the dependency inside
+    # the minor line exercised by the v0.6 release gate.
     "mcp>=2.0.0,<2.1.0",
     "uvicorn>=0.24.0",  # Required for aksara dev / aksara run
 ]

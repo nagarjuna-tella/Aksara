@@ -111,7 +111,7 @@ roll back when the API rejects or fails the request.
 
 ## Stable and experimental surfaces
 
-The v0.6 stable candidate covers `Principal` propagation, generated MCP CRUD
+The v0.6 stable contract covers `Principal` propagation, generated MCP CRUD
 tools, protocol discovery and invocation, execution-time authorization,
 tenant and field enforcement, structured errors, audit events, runtime limits,
 and the stateless approval grant described above.

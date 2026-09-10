@@ -49,11 +49,18 @@ Keep the `pypi` environment protected so maintainers must approve publishing.
 Publishing is manual. Use the `Publish Package` workflow only after release-gate
 checks pass and the protected `pypi` environment is ready.
 
+Pushing a `v*` tag runs the release-gate workflow; it does not publish a
+package. Creating a GitHub Release also does not trigger publication. Package
+publication requires a separate manual dispatch of `publish.yml` with the
+`confirm` input set to `publish` and the verified release tag selected as the
+workflow ref.
+
 The workflow:
 
-1. Builds wheel and source distributions.
-2. Runs `twine check`.
-3. Publishes through `pypa/gh-action-pypi-publish` using Trusted Publishing.
+1. Checks out the exact ref selected for the manual dispatch.
+2. Builds wheel and source distributions from that ref.
+3. Runs `twine check`.
+4. Publishes through `pypa/gh-action-pypi-publish` using Trusted Publishing.
 
 ## Provenance and Signing
 

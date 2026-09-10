@@ -71,7 +71,11 @@ async def featured(self, request):
 
 Any action decorated with `@action` is automatically discovered by the `AiToolRegistry` and exposed to AI agents, provided `ai_exposed` is true (which is the default). 
 
-This means that if you enable the Model Context Protocol (MCP) in your app, your custom actions are automatically serialized as MCP tools available at `/ai/tools/mcp`. AI agents will read the method's docstring to understand its purpose and read its type hints to construct the JSON `inputSchema`.
+This means that if you enable the Model Context Protocol (MCP) in your app, your
+custom actions are automatically serialized as MCP tools that clients discover
+and invoke over Streamable HTTP at `/mcp/`. The permission-filtered inspection
+catalog remains available at `/ai/tools/mcp`. Tool descriptions and JSON input
+schemas use the action's docstring and type hints.
 
 ```python
 @action(detail=True, methods=["POST"], ai_exposed=True)

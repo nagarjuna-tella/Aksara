@@ -17,8 +17,8 @@ permission-filtered MCP tools from the same codebase.
 
 </div>
 
-!!! info "v0.6.0-rc2 contract"
-    The v0.6 candidate supports production use within its documented backend
+!!! info "v0.6.0 Production Mode contract"
+    The v0.6 release supports production use within its documented backend
     contract. Studio, AI analysis/provider surfaces, process-local
     investigation sessions, and autonomous agents remain experimental. The
     Generated tools are available through an official-SDK MCP Streamable HTTP
@@ -328,7 +328,7 @@ pip install aksara-framework
 
 ---
 
-## v0.6.0-rc2 candidate
+## v0.6.0 Production Mode
 
 - **Production contract** — stable, experimental, and unsupported surfaces are
   explicit.

@@ -15,7 +15,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/release%20candidate-v0.6.0--rc2-f59e0b?style=flat-square" alt="Release candidate v0.6.0-rc2">
+  <img src="https://img.shields.io/badge/release-v0.6.0-22c55e?style=flat-square" alt="Release v0.6.0">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -32,19 +32,18 @@
 
 Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Admin, an experimental Studio UI, generated MCP tools, and launch diagnostics.
 
-Current published release documented here: **v0.5.54 — ORM Write & Relation Correctness**.
+Current release documented here: **v0.6.0 — Production Mode**.
 
-The v0.5.55 correctness candidate is preserved at commit `094169e`. This
-checkout prepares **v0.6.0-rc2 — Production Contract Candidate**; it is not
-published.
+The v0.5.55 correctness candidate and v0.6.0 release-candidate evidence remain
+available as historical validation records.
 See the [supported runtime contract](docs/docs/reference/runtime-compatibility.md).
 
-The candidate adds a bounded Production Mode contract, strict release
+The release provides a bounded Production Mode contract, strict release
 diagnostics, restricted-role tenant and abuse gates, and a packaged support
-desk reference app. RC2 adds official-SDK MCP Streamable HTTP execution with
+desk reference app. It includes official-SDK MCP Streamable HTTP execution with
 the same authorization, tenancy, field-policy, transaction, and RLS boundary as
-generated REST. Studio, process-local investigation sessions, provider
-integrations, and autonomous agent workflows remain experimental.
+generated REST. Studio AI internals, process-local investigation sessions,
+provider-specific behavior, and autonomous agent workflows remain experimental.
 
 ---
 
@@ -76,6 +75,7 @@ class Incident(Model):
 
 class IncidentViewSet(ModelViewSet):
     model = Incident
+    prefix = "/incidents"
 
     @action(detail=True, methods=["POST"], ai_exposed=True)
     async def escalate(self, pk: str, request):
@@ -89,7 +89,7 @@ class IncidentViewSet(ModelViewSet):
         return {"status": "escalated"}
 
 app = Aksara(database_url="postgresql://localhost/myapp")
-app.include_viewset(IncidentViewSet, prefix="/incidents")
+app.register_viewsets([IncidentViewSet])
 ```
 
 **From this single definition, you get:**
@@ -274,7 +274,7 @@ process observable, not just the code. See the
 [Release Security guide](https://nagarjuna-tella.github.io/Aksara/security/release-security/)
 for the gate criteria.
 
-The v0.6 candidate supports real production backends only within the documented
+The v0.6 release supports real production backends only within the documented
 [stability and production contract](docs/docs/roadmap/v0-6-stability-contract.md).
 See the [Security Overview](https://nagarjuna-tella.github.io/Aksara/security/overview/)
 for the current posture and known limitations.
@@ -340,15 +340,14 @@ aksara examples validate --format json
 
 ## Roadmap
 
-Current published release: **v0.5.54 — ORM Write & Relation Correctness**.
+Current release: **v0.6.0 — Production Mode**.
 
-Next planned milestones:
+Release milestones:
 
 | Version | Focus |
 | ------- | ----- |
-| v0.5.55 | Unpublished correctness/hardening candidate |
-| v0.6.0-rc2 | Production contract and packaged reference-app candidate |
-| v0.6.0 | Final Production Mode release after RC evidence and explicit publication authorization |
+| v0.5.55 | Historical unpublished correctness/hardening candidate |
+| v0.6.0 | Production Mode within the documented stable contract |
 
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the full release path.
 
@@ -356,22 +355,27 @@ See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the ful
 
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Checkout candidate version:
-**0.6.0rc2** (`v0.6.0-rc2` release label).
+Aksara is **pre-1.0** and actively evolving. Current version: **0.6.0**
+(`v0.6.0` release label).
 
 **Stable in the v0.6 contract:** the documented ORM and migration core,
-generated REST and serializers, configuration, Principal/permissions/policy,
-restricted-role tenancy, catalog-described REST execution, background tasks,
-CLI core, and Doctor release diagnostics.
+generated REST APIs and serializers, authentication, Principal propagation,
+permissions and PolicyEngine enforcement, restricted-role tenant isolation,
+CLI and Doctor production surfaces, generated MCP discovery and execution over
+Streamable HTTP, execution-time authorization, field-write enforcement, bounded
+approval grants, deterministic audit events, structured tool errors, and
+runtime execution limits.
 
-**Experimental or unsupported:** Studio internals, AI analysis and provider
-surfaces, process-local investigation sessions, autonomous agent workflows,
-protocol-level MCP execution, lazy relation-object loading, and custom through
-models. See the [full contract](docs/docs/roadmap/v0-6-stability-contract.md).
+**Experimental or unsupported:** planner behavior, Studio AI internals, AI
+analysis and provider-specific behavior, process-local investigation sessions,
+persistent AI conversations, agent memory, multi-agent and durable autonomous
+workflows, lazy relation-object loading, and custom through models. See the
+[full contract](docs/docs/roadmap/v0-6-stability-contract.md).
 
-**Release trust:** Security and release-gate workflows prepare dependency audit,
+**Release trust:** Security and release-gate workflows cover dependency audit,
 static analysis, secret scanning, SBOM generation, package verification, and
-Trusted Publishing. They do not constitute a production-readiness claim.
+Trusted Publishing. This evidence does not represent external security review
+or certification.
 
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for what's next.
 
