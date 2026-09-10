@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.5.55"
+version = "0.6.0rc1"
 description = "⚡ Aksara - AI-native async backend framework for Python"
 readme = "README.md"
 license = "MIT"
@@ -37,6 +37,7 @@ dependencies = [
     "idna>=3.15",
     "pillow>=10.0.0",
     "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",  # Required by Doctor security-matrix validation
     "click>=8.0.0",
     "rich>=13.7.0",
     "python-dotenv>=1.0.0",

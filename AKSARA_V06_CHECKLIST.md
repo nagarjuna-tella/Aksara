@@ -35,8 +35,8 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 
 ## Agent/AI
 
-- [ ] State that investigation sessions are process-local unless durable storage is implemented and restart/multi-worker behavior tested.
-- [ ] Keep autonomous durable mutation/approval guarantees out of the production contract until replay/retry/authorization-at-execution is demonstrated.
+- [x] State that investigation sessions are process-local unless durable storage is implemented and restart/multi-worker behavior tested; the v0.6 contract and AI docs make this limitation prominent.
+- [x] Keep autonomous durable mutation/approval guarantees out of the production contract until replay/retry/authorization-at-execution is demonstrated; these guarantees are explicitly experimental/deferred.
 
 ## Admin
 
@@ -72,7 +72,7 @@ Evidence: [current-state audit](AKSARA_CURRENT_STATE.md) and [saved results](aud
 ## docs
 
 - [x] Update the advanced-policy roadmap for the unpublished candidate without rewriting historical release claims.
-- [ ] P1: Publish tested stable surfaces and explicit experimental/unverified limitations.
+- [x] P1: Publish tested stable surfaces and explicit experimental/unverified limitations in the v0.6 stability and production contract, with matching MCP, Studio, AI, security, runtime, and upgrade documentation.
 - [x] Align CONTRIBUTING lint/type requirements with enforced, reviewed gates; CI and pre-commit run the same pinned Ruff/mypy debt ratchet.
 
 ## performance

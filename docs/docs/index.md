@@ -1,10 +1,12 @@
 # Aksara Framework
 
-## Async Python Backend — ORM, Auto-REST, AI Console, and MCP Tools in One Framework
+## Async Python Backend — ORM, Auto-REST, Admin, Diagnostics, and AI Tool Catalog
 
 <div class="hero-section" markdown>
 
-**Aksara** is a Python backend framework that ships with everything you need to go from an empty directory to a running, AI-ready API. Define your models, get a full REST API, an admin interface, a visual Studio dashboard, an interactive AI Console, and auto-generated MCP tools — all from the same codebase.
+**Aksara** is a Python backend framework for PostgreSQL applications. Define
+your models and get migrations, generated REST APIs, Admin, diagnostics, and a
+permission-filtered AI tool catalog from the same codebase.
 
 [Get Started →](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/nagarjuna-tella/Aksara){ .md-button }
@@ -14,6 +16,13 @@
 </p>
 
 </div>
+
+!!! info "v0.6.0-rc1 contract"
+    The v0.6 candidate supports production use within its documented backend
+    contract. Studio, AI analysis/provider surfaces, process-local
+    investigation sessions, and autonomous agents remain experimental. The
+    `/ai/tools/mcp` endpoint is an MCP-shaped JSON catalog, not an MCP protocol
+    server. Read the [stability and production contract](roadmap/v0-6-stability-contract.md).
 
 ---
 
@@ -30,7 +39,7 @@
 | **Studio UI** | Visual dashboard at `/studio/ui` — inspect models, routes, queries, and migrations |
 | **AI Console** | Natural-language interface inside Studio — ask questions about your data, routes, and schema in plain English |
 | **AI Review Tools** | Run AI Debugger, Architecture Review, and Performance Analyzer against the same live project context |
-| **MCP Tools** | Your models become MCP tools automatically — connect any MCP-compatible AI agent |
+| **MCP-shaped catalog** | Permission-filtered operation descriptions; protocol clients require an adapter |
 | **Doctor & Fix Plans** | `aksara doctor` checks app health and `aksara doctor fix-plan` prints the remediation path |
 | **Migration System** | Schema changes tracked and applied with `aksara migrate` |
 | **TypeScript SDKs** | `aksara generate sdk --language typescript` emits a fetch-ready frontend client |
@@ -45,7 +54,7 @@
 - ✅ Want a complete backend stack, not just a web framework
 - ✅ Need async PostgreSQL without writing raw SQL
 - ✅ Like Django's ergonomics but want FastAPI's async performance
-- ✅ Want their data instantly accessible to AI agents via MCP
+- ✅ Want a generated, permission-filtered operation catalog for AI adapters
 - ✅ Value built-in tooling (Studio, AI Console, Doctor) over plugin sprawl
 
 **You don't need:**
@@ -138,7 +147,9 @@ curl -X POST http://localhost:8000/tasks/ \
 curl http://localhost:8000/tasks/
 ```
 
-Once running, open **http://localhost:8000/studio/ui** to explore your models and queries in the built-in Studio dashboard. The `ai_description` metadata you wrote above flows through to the AI Console and to the MCP tool catalog at `/ai/tools/mcp` — no second schema required.
+Once running, open **http://localhost:8000/studio/ui** for local development
+inspection. The `ai_description` metadata also flows to the MCP-shaped catalog
+at `/ai/tools/mcp`. Studio and AI Console remain experimental in v0.6.
 
 ---
 
@@ -221,7 +232,7 @@ class ArticleViewSet(ModelViewSet):
 
 ---
 
-### 🤖 AI Agent Integration
+### 🤖 AI integration experiments
 
 Make your application accessible to AI assistants like ChatGPT.
 
@@ -232,9 +243,12 @@ from aksara.ai import build_full_ai_context
 context = await build_full_ai_context(app)
 ```
 
-**What this means:** AI agents can understand and interact with your data.
+**What this means:** application code can build structured context for a
+human-controlled AI integration. The context schema is not an authorization
+control.
 
-The same AI layer also powers the built-in Studio AI Console, the Architecture Review, and the Performance Analyzer, so you do not have to maintain separate schemas for internal tooling and external agents.
+The same experimental AI layer powers Studio AI Console, Architecture Review,
+and Performance Analyzer.
 
 👉 [Learn about AI Mode](ai-mode/index.md)
 
@@ -265,10 +279,10 @@ pip install aksara-framework
 
 **Requirements:**
 
-| Tool | Minimum Version | What It's For |
-|------|-----------------|---------------|
-| Python | 3.11 | Running Aksara |
-| PostgreSQL | 13 | Storing your data |
+| Tool | Supported Version | What It's For |
+|------|-------------------|---------------|
+| Python | 3.11–3.14 | Both endpoints run in the release matrix |
+| PostgreSQL | 16 in release CI; 18.4 in the packaged-app gate | Storing your data |
 
 👉 [Full Installation Guide](getting-started/installation.md)
 
@@ -314,24 +328,17 @@ pip install aksara-framework
 
 ---
 
-## What's New in v0.5.54
+## v0.6.0-rc1 candidate
 
-- **Bulk write preparation** — `bulk_create()` now prepares rows before insert,
-    applies auto-managed timestamps, runs field preparation hooks such as
-    `Slug(auto_from=...)`, and preserves mixed implicit/explicit
-    `auto_now_add` values.
-- **Explicit update timestamp policy** — `QuerySet.update()` now refreshes
-    `auto_now` fields such as `updated_at` when regular fields change, while
-    respecting explicit `updated_at` values.
-- **Vector bulk updates** — `bulk_update()` now casts Vector CASE branch values
-    with `CAST($n AS vector)`.
-- **Relation action safety** — `ForeignKey` and `OneToOne` now normalize and
-    validate `on_delete` actions before DDL generation.
-- **SET_NULL compatibility note** — `SET_NULL` / `SET NULL` now requires
-    `nullable=True`.
-- **Relation contracts** — custom through models fail clearly while unsupported,
-    and forward FK/O2O attributes are documented as stored id access; use
-    explicit queries or `select_related()` plus `get_related()` for objects.
+- **Production contract** — stable, experimental, and unsupported surfaces are
+  explicit.
+- **Production reference app** — the packaged support desk example exercises
+  migrations, generated APIs, auth, permissions, forced-RLS tenancy, scoped
+  catalog-described mutation, tasks, Admin, Doctor, failure, and recovery.
+- **Release diagnostics** — `production-check --release` fails on any non-pass
+  result and requires a complete security matrix.
+- **Compatibility matrix** — Python 3.11/3.14 and both FastAPI/Starlette
+  dependency boundaries run the full suite.
 
 [Full changelog →](changelog.md)
 

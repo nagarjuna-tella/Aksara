@@ -243,11 +243,12 @@ class Gate:
         schema = f"aksara_support_{suffix}"
         role = f"aksara_support_{suffix}"
         role_password = secrets.token_urlsafe(30)
+        secret_key = secrets.token_urlsafe(48)
         app_name = f"aksara-support-gate-{suffix}"
         tenant_a = str(uuid4())
         tenant_b = str(uuid4())
         tokens = [secrets.token_urlsafe(32) for _ in range(3)]
-        self._sensitive.extend([role_password, *tokens, self.database_url])
+        self._sensitive.extend([role_password, secret_key, *tokens, self.database_url])
 
         admin = await asyncpg.connect(self.database_url)
         temp_root = Path(tempfile.mkdtemp(prefix="aksara-support-gate-"))
@@ -256,6 +257,8 @@ class Gate:
         runtime_helper = temp_root / "runtime_helper.py"
         migration_helper.write_text(MIGRATION_HELPER, encoding="utf-8")
         runtime_helper.write_text(RUNTIME_HELPER, encoding="utf-8")
+        security_matrix = temp_root / "security_matrix.yml"
+        shutil.copy(ROOT / "security" / "security_matrix.release.yml", security_matrix)
         servers: list[asyncio.subprocess.Process] = []
 
         app_dsn = _dsn_for_identity(
@@ -272,6 +275,8 @@ class Gate:
             tenant_a=tenant_a,
             tenant_b=tenant_b,
             tokens=tokens,
+            secret_key=secret_key,
+            security_matrix=security_matrix,
         )
 
         try:
@@ -376,6 +381,7 @@ class Gate:
                 skipped=len(existing["skipped"]),
             )
             await self._grant_application_access(admin, schema, role)
+            await self._doctor_checks(python, temp_root, app_env)
             rls_rows = await admin.fetch(
                 """
                 SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity
@@ -536,6 +542,8 @@ class Gate:
         tenant_a: str,
         tenant_b: str,
         tokens: list[str],
+        secret_key: str,
+        security_matrix: Path,
     ) -> dict[str, str]:
         env = {
             key: value
@@ -545,7 +553,28 @@ class Gate:
         env.update(
             {
                 "AKSARA_ENV": "production",
+                "AKSARA_DEBUG": "false",
+                "AKSARA_SECRET_KEY": secret_key,
                 "AKSARA_SUPPRESS_BRAND": "1",
+                "AKSARA_MCP_ENABLED": "true",
+                "AKSARA_AI_AGENT_TOKEN": tokens[2],
+                "AKSARA_MCP_REQUIRE_AUTH": "true",
+                "AKSARA_MCP_REQUIRE_SCOPED_TOKENS": "true",
+                "AKSARA_MCP_TOKEN_TTL_SECONDS": "900",
+                "AKSARA_MCP_REQUIRE_AUDIENCE": "true",
+                "AKSARA_MCP_TOKEN_AUDIENCE": "support-desk",
+                "AKSARA_MCP_REQUIRE_TENANT_BOUND_TOKENS": "true",
+                "AKSARA_MULTI_TENANT": "true",
+                "AKSARA_RLS_ENABLED": "true",
+                "AKSARA_AI_WRITABLE_FIELDS_REVIEWED": "true",
+                "AKSARA_AI_CONSOLE_ENABLED": "false",
+                "AKSARA_STUDIO_EXPOSE_IN_PRODUCTION": "false",
+                "AKSARA_STUDIO_REQUIRE_AUTH": "true",
+                "AKSARA_COOKIE_SECURE": "true",
+                "AKSARA_ADMIN_RATE_LIMIT_ENABLED": "true",
+                "AKSARA_SECURITY_MATRIX_PATH": str(security_matrix),
+                "CORS_ALLOW_ALL_ORIGINS": "false",
+                "CORS_ALLOW_CREDENTIALS": "false",
                 "AKSARA_TASK_POLL_INTERVAL": "0.05",
                 "AKSARA_TASK_RETRY_DELAY": "2.0",
                 "DATABASE_URL": app_dsn,
@@ -554,6 +583,10 @@ class Gate:
                 "SUPPORT_DESK_TENANT_A_TOKEN": tokens[0],
                 "SUPPORT_DESK_TENANT_B_TOKEN": tokens[1],
                 "SUPPORT_DESK_MCP_TOKEN": tokens[2],
+                "SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT": str(
+                    int(datetime.now(UTC).timestamp()) + 900
+                ),
+                "SUPPORT_DESK_MCP_AUDIENCE": "support-desk",
             }
         )
         return env
@@ -561,7 +594,7 @@ class Gate:
     async def _install_wheel(self, python: Path, temp_root: Path) -> None:
         await asyncio.to_thread(
             subprocess.run,
-            [sys.executable, "-m", "venv", "--system-site-packages", str(python.parent.parent)],
+            [sys.executable, "-m", "venv", str(python.parent.parent)],
             check=True,
             cwd=temp_root,
             capture_output=True,
@@ -575,7 +608,6 @@ class Gate:
                 "pip",
                 "install",
                 "--quiet",
-                "--no-deps",
                 "--force-reinstall",
                 str(self.wheel),
             ],
@@ -603,6 +635,65 @@ class Gate:
             str(temp_root / "venv") in installed["path"],
             version=installed["version"],
             import_location="isolated-venv",
+        )
+
+    async def _doctor_checks(
+        self,
+        python: Path,
+        temp_root: Path,
+        app_env: dict[str, str],
+    ) -> None:
+        command = python.parent / "aksara"
+        production = await asyncio.to_thread(
+            subprocess.run,
+            [str(command), "doctor", "production-check", "--release", "--format", "json"],
+            cwd=temp_root,
+            env=app_env,
+            capture_output=True,
+            text=True,
+        )
+        if production.returncode != 0:
+            raise RuntimeError(self.redact(production.stderr or production.stdout))
+        report = json.loads(production.stdout)
+        self.check(
+            "Doctor release policy accepts production configuration",
+            report["status"] == "pass"
+            and report["release_ready"] is True
+            and all(item["status"] == "pass" for item in report["results"]),
+            policy=report["policy"],
+            checks=len(report["results"]),
+        )
+
+        launch = await asyncio.to_thread(
+            subprocess.run,
+            [
+                str(python),
+                "-I",
+                "-c",
+                (
+                    "import aksara._examples.support_desk as e; "
+                    "from pathlib import Path; "
+                    "from aksara.launch_check import run_launch_check; "
+                    "print(run_launch_check(Path(e.__file__).resolve().parent).to_json())"
+                ),
+            ],
+            cwd=temp_root,
+            env=app_env,
+            capture_output=True,
+            text=True,
+        )
+        if launch.returncode != 0:
+            raise RuntimeError(self.redact(launch.stderr or launch.stdout))
+        launch_report = json.loads(launch.stdout)
+        checks = {item["name"]: item for item in launch_report["checks"]}
+        self.check(
+            "Doctor launch inspection sees packaged app and current schema",
+            not any(item["status"] == "error" for item in launch_report["checks"])
+            and checks["project_detected"]["status"] == "ok"
+            and checks["connection"]["status"] == "ok"
+            and checks["migrations"]["status"] == "ok"
+            and checks["mcp_catalog"]["status"] == "ok",
+            readiness=launch_report["status"],
         )
 
     async def _configuration_checks(

@@ -206,7 +206,7 @@ nav:
   - Roadmap:
       - roadmap/index.md
       - Roadmap: roadmap.md
-      - v0.6 Stability Contract: roadmap/v0-6-stability-contract.md
+      - v0.6 Stability and Production Contract: roadmap/v0-6-stability-contract.md
   - Releasing: releasing.md
   - Changelog: changelog.md
   - Glossary: glossary.md

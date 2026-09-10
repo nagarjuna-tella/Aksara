@@ -2,9 +2,10 @@
 
 ## Current Status
 
-Aksara includes security diagnostics, adversarial test coverage, and
-release-trust workflow preparation. This prepares releases for stronger review,
-but it does not constitute an external audit or a production-readiness claim.
+Aksara includes security diagnostics, real generated-API abuse coverage, a
+restricted-role PostgreSQL tenancy gate, and release workflows. The v0.6
+production claim is bounded by the published stability contract. It does not
+constitute an external audit certification.
 
 ## CI Workflows
 
@@ -84,8 +85,9 @@ External review prep lives in:
 - `security/external-review-scope.md`
 - `security/hardening-report-template.md`
 
-Before a production-mode claim, the release decision should incorporate external
-review findings, accepted risks, and retest notes.
+The v0.6 release explicitly scopes external review rather than claiming that an
+external audit was completed. Future review findings, accepted risks, and
+retest notes should be added to the release evidence.
 
 ## Production-Mode Claim
 

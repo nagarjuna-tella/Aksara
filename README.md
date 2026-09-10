@@ -9,14 +9,13 @@
 </p>
 
 <p align="center">
-  Define your model once and generate REST APIs, migrations, Studio/admin surfaces, diagnostics, and safe MCP tools for AI agents — with runtime field enforcement, tenant-aware policies, and release-trust security controls.
+  Define your model once and generate REST APIs, migrations, Studio/admin surfaces, diagnostics, and a permission-filtered AI tool catalog — with runtime field enforcement, tenant-aware policies, and release-trust security controls.
 </p>
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/tests-7741%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/version-0.5.54-3b82f6?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/release%20candidate-v0.6.0--rc1-f59e0b?style=flat-square" alt="Release candidate v0.6.0-rc1">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/async-asyncpg-6366f1?style=flat-square" alt="Async">
 </p>
@@ -31,22 +30,19 @@
 
 ## What is Aksara?
 
-Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Studio UI, MCP tools, and system-level AI intelligence. The goal is simple: a new project should have a working API, inspectable data model, AI-facing tool catalog, and launch diagnostics before you start writing glue code.
+Aksara is an AI-native backend framework for building PostgreSQL-powered APIs with automatic REST endpoints, migrations, Admin, an experimental Studio UI, an AI-facing tool catalog, and launch diagnostics.
 
 Current published release documented here: **v0.5.54 — ORM Write & Relation Correctness**.
 
-This checkout prepares **v0.5.55 — Correctness and Hardening**; it is not published.
+The v0.5.55 correctness candidate is preserved at commit `094169e`. This
+checkout prepares **v0.6.0-rc1 — Production Contract Candidate**; it is not
+published.
 See the [supported runtime contract](docs/docs/reference/runtime-compatibility.md).
 
-This release tightens ORM write paths and relation safety. `bulk_create()` now
-prepares rows before insert, applies auto-managed timestamps, runs field
-preparation hooks such as `Slug(auto_from=...)`, and preserves mixed
-implicit/explicit `auto_now_add` values. `QuerySet.update()` now has an
-explicit `auto_now`/`updated_at` policy, `bulk_update()` casts Vector CASE
-values, relation `on_delete` actions are validated before DDL generation,
-`SET_NULL` requires `nullable=True`, custom through models fail clearly while
-unsupported, and the forward FK id-access contract is documented. The package
-remains pre-1.0 and additional ORM correctness work is planned.
+The candidate adds a bounded Production Mode contract, strict release
+diagnostics, restricted-role tenant and abuse gates, and a packaged support
+desk reference app. Studio, process-local investigation sessions, provider
+integrations, and autonomous agent workflows remain experimental.
 
 ---
 
@@ -83,7 +79,7 @@ class IncidentViewSet(ModelViewSet):
     async def escalate(self, pk: str, request):
         """
         Escalate incident to critical.
-        This custom action is automatically exported as an MCP tool!
+        This custom action is automatically described in the MCP-shaped catalog.
         """
         incident = await self.model.objects.get(id=pk)
         incident.severity = "critical"
@@ -100,13 +96,15 @@ app.include_viewset(IncidentViewSet, prefix="/incidents")
 | ---------------- | ----------------------------------------------------------------------------------- |
 | REST API         | `GET/POST/PATCH/DELETE /incidents/`                                                 |
 | Real-time stream | `GET /incidents/stream` — subscribe to insert/update/delete events via SSE          |
-| MCP tool catalog | `/ai/tools/mcp` — any MCP-compatible agent (Claude, Cursor, etc.) can call your API |
+| MCP-shaped catalog | `/ai/tools/mcp` — an adapter can discover a permitted REST operation and invoke its HTTP method/path |
 | AI Console       | `/studio/ui` → natural-language queries against your live backend                   |
 | Studio dashboard | `/studio/ui` — models, routes, queries, migrations, diagnostics                     |
 | Admin UI         | `/admin/`                                                                           |
 | Database table   | `aksara migrate`                                                                    |
 
-The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata you wrote on those fields flows through to the AI Console context and the MCP tool catalog automatically. No second schema. No adapter layer. Write it once.
+The `ai_description`, `ai_sensitive`, and `ai_agent_writable` metadata flows
+into AI context and the tool catalog automatically. A protocol-level MCP client
+still needs an adapter to fetch the catalog and call the described REST route.
 
 ---
 
@@ -136,7 +134,7 @@ Now open three things:
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | **API docs**            | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) — inspect generated OpenAPI                 |
 | **Studio + AI Console** | [http://127.0.0.1:8000/studio/ui](http://127.0.0.1:8000/studio/ui) — ask "explain the Incident model" |
-| **MCP tool catalog**    | [http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp) — point any MCP client here |
+| **MCP-shaped catalog** | [http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp) — inspect permitted REST operation descriptions |
 | **Launch check**        | `aksara doctor launch-check` — verify project, DB, Studio, MCP, AI, examples, and dev-mode readiness |
 | **Fix plan**            | `aksara doctor fix-plan` — diagnose and print the remediation path                                    |
 
@@ -172,9 +170,14 @@ ollama serve
 ollama pull llama3
 ```
 
-### Use MCP
+### Use the MCP-shaped catalog
 
-Aksara exposes generated MCP-compatible tools at [http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp). ViewSets, model fields, custom `@action` endpoints, and AI metadata flow into the catalog so external agents can inspect and call your backend without a hand-written adapter.
+Aksara exposes permission-filtered operation descriptions at
+[http://127.0.0.1:8000/ai/tools/mcp](http://127.0.0.1:8000/ai/tools/mcp).
+ViewSets, model fields, custom `@action` endpoints, and AI metadata flow into
+the catalog. Aksara v0.6 does not ship an MCP protocol transport or tool-call
+endpoint; an MCP client needs an adapter that invokes the described REST route
+with application credentials.
 
 ---
 
@@ -182,7 +185,7 @@ Aksara exposes generated MCP-compatible tools at [http://127.0.0.1:8000/ai/tools
 
 |     | Feature                  | What it does                                                                                      |
 | --- | ------------------------ | ------------------------------------------------------------------------------------------------- |
-| 🔌  | **MCP tool export**      | Auto-generated tool catalog at `/ai/tools/mcp` from your model definitions                        |
+| 🔌  | **MCP-shaped catalog**   | Permission-filtered REST operation descriptions at `/ai/tools/mcp`                                |
 | 💬  | **AI Console**           | Natural-language queries against your live backend in Studio                                      |
 | 🩺  | **Doctor & Fix Plans**   | `aksara doctor fix-plan` diagnoses DB, migrations, AI config, security — prints the fix sequence  |
 | 🐛  | **AI Debugger**          | Root-cause analysis: issue clustering, heuristic patterns, confidence-ranked causes               |
@@ -209,7 +212,7 @@ Aksara exposes generated MCP-compatible tools at [http://127.0.0.1:8000/ai/tools
 
 ## Why Aksara?
 
-Because the first ten minutes of a backend project should prove the system works, not force you to assemble the same stack again. Aksara gives you the database layer, API layer, Studio, AI context, MCP surface, diagnostics, and example paths together, while keeping the model definition as the source of truth.
+Because the first ten minutes of a backend project should prove the system works, not force you to assemble the same stack again. Aksara gives you the database layer, API layer, Studio, AI context, tool catalog, diagnostics, and example paths together, while keeping the model definition as the source of truth.
 
 ---
 
@@ -220,13 +223,14 @@ Most frameworks stop at the database and the HTTP layer. You define a model, you
 The same `ai_description="Short summary of the incident"` you put on a field:
 
 1. **Describes the column** for any developer reading the code
-2. **Appears in the MCP tool catalog** at `/ai/tools/mcp` so Claude, Cursor, or any MCP-compatible agent knows what that field means before calling your API. (Note: Custom ViewSet endpoints using the `@action` decorator are also automatically exported as tools).
+2. **Appears in the MCP-shaped catalog** at `/ai/tools/mcp` so an adapter can describe the permitted REST operation to its client. Custom ViewSet endpoints using `@action` can also appear in the catalog.
 3. **Populates the AI Console context** so you can type "show me all critical unresolved incidents" in Studio and the AI knows which fields to query
 4. **Drives the Schema Doctor** which checks that your AI metadata is complete and consistent
 
 `ai_agent_writable=False` on `resolved` means the MCP catalog marks that field read-only — an AI agent can see it but can't change it. `ai_sensitive=True` on `notes` excludes it from AI context entirely.
 
-You write this metadata once, next to the field definition, and it propagates everywhere. No second schema, no separate MCP adapter, no context-building glue code.
+You write this metadata once, next to the field definition, and it propagates
+to the generated surfaces. Protocol-level MCP use still requires an adapter.
 
 ---
 
@@ -237,10 +241,10 @@ tool catalog, a Studio admin view — these all face external callers, and they
 all multiply exposure. Aksara's approach is to keep the security boundary
 server-side rather than trusting the generated schema to stop bad input.
 
-**Principal model.** Every request resolves to a `Principal`: User, AIAgent,
-Anonymous, or System. The `PolicyEngine` makes authorization decisions per
-principal — what actions are allowed, which fields are readable, which fields
-are writable, and which rows are visible.
+**Principal model.** Covered request paths resolve to an immutable `Principal`
+representing an anonymous caller, human user, AI/MCP agent, or trusted system
+operation. The `PolicyEngine` makes authorization decisions per principal:
+which actions, fields, and rows are allowed.
 
 **Runtime field enforcement.** Generated write paths enforce field policy at
 runtime before the database write. A field marked `ai_agent_writable=False` is
@@ -268,8 +272,9 @@ process observable, not just the code. See the
 [Release Security guide](https://nagarjuna-tella.github.io/Aksara/security/release-security/)
 for the gate criteria.
 
-Aksara is pre-1.0 and does not claim production readiness. See the
-[Security Overview](https://nagarjuna-tella.github.io/Aksara/security/overview/)
+The v0.6 candidate supports real production backends only within the documented
+[stability and production contract](docs/docs/roadmap/v0-6-stability-contract.md).
+See the [Security Overview](https://nagarjuna-tella.github.io/Aksara/security/overview/)
 for the current posture and known limitations.
 
 ---
@@ -301,6 +306,7 @@ The bundled examples are the golden paths for learning and launch validation:
 | **CRM**          | Customers, deals, pipeline stages; business data model and reporting patterns | `aksara startproject mycrm --template crm` |
 | **Multitenant**  | Tenant-aware SaaS apps and tenant-aware app structure | `aksara startproject saas --template multitenant` |
 | **AI Providers** | BYO LLM wiring examples; local and remote AI setup with no secrets | `examples/ai_providers/` |
+| **Support Desk** | Packaged production profile: auth, forced-RLS tenancy, tasks, Doctor, recovery | `examples/support_desk/` |
 
 Browse: [`examples/`](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/) | Docs: [Patterns](https://nagarjuna-tella.github.io/Aksara/patterns/)
 
@@ -332,16 +338,15 @@ aksara examples validate --format json
 
 ## Roadmap
 
-Current stable: **v0.5.54 — ORM Write & Relation Correctness**.
+Current published release: **v0.5.54 — ORM Write & Relation Correctness**.
 
 Next planned milestones:
 
 | Version | Focus |
 | ------- | ----- |
-| v0.5.x | Remaining ORM correctness: advanced field policy |
-| v0.5.x | Remaining ORM correctness: lazy relation-object loading / custom through support |
-| v0.5.x | Durable AI Session Store |
-| v0.6.0  | Production Mode |
+| v0.5.55 | Unpublished correctness/hardening candidate |
+| v0.6.0-rc1 | Production contract and packaged reference-app candidate |
+| v0.6.0 | Final Production Mode release after RC evidence and explicit publication authorization |
 
 See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the full release path.
 
@@ -349,11 +354,18 @@ See the [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/) for the ful
 
 ## Status
 
-Aksara is **pre-1.0** and actively evolving. Checkout candidate version: **0.5.55**.
+Aksara is **pre-1.0** and actively evolving. Checkout candidate version:
+**0.6.0rc1** (`v0.6.0-rc1` release label).
 
-**Stable:** ORM primitive field validation, query semantics (NULL filtering, `__isnull`, FK alias filters), write-path timestamp/preparation consistency, relation action validation, migration generation ordering, ViewSets, serializers, permissions, Admin, Studio, CLI, MCP export, AI Console, Doctor, media/email, i18n/timezones, generic relations, background tasks, and JSONB ORM support.
+**Stable in the v0.6 contract:** the documented ORM and migration core,
+generated REST and serializers, configuration, Principal/permissions/policy,
+restricted-role tenancy, catalog-described REST execution, background tasks,
+CLI core, and Doctor release diagnostics.
 
-**Evolving:** advanced Array/vector/file field policy, lazy relation-object loading, custom through model support, AI Debugger, Architecture Review, Performance Analyzer, and long-running AI session surfaces.
+**Experimental or unsupported:** Studio internals, AI analysis and provider
+surfaces, process-local investigation sessions, autonomous agent workflows,
+protocol-level MCP execution, lazy relation-object loading, and custom through
+models. See the [full contract](docs/docs/roadmap/v0-6-stability-contract.md).
 
 **Release trust:** Security and release-gate workflows prepare dependency audit,
 static analysis, secret scanning, SBOM generation, package verification, and

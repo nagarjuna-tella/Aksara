@@ -76,7 +76,7 @@ def test_basic_app_models_are_registered():
 
 def test_first_app_launch_check_smoke():
     report = run_launch_check(ROOT / "examples" / "basic_app", check_database=False)
-    assert report.version == "0.5.55"
+    assert report.version == "0.6.0rc1"
     assert any(check.name == "studio_ui" and check.status == "ok" for check in report.checks)
     assert any(check.name == "mcp_catalog" and check.status == "ok" for check in report.checks)
 
@@ -89,5 +89,6 @@ def test_examples_validation_smoke():
         "blog",
         "crm",
         "multitenant",
+        "support_desk",
         "ai_providers",
     }

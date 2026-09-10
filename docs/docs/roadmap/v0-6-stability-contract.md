@@ -1,225 +1,206 @@
-# v0.6 Stability Contract (Draft)
+# v0.6 Stability and Production Contract
 
-*Draft — May 2026. This document will be finalized before v0.6.0 ships.*
+This contract defines the production surface proposed by `v0.6.0-rc1` and the
+compatibility commitment intended for the v0.6.x line. Aksara remains pre-1.0,
+so a stable surface can still change when correctness or security requires it.
+Such changes will be called out with an upgrade path.
 
----
+Production Mode means that the declared stable backend surfaces are tested in
+a production-shaped PostgreSQL deployment. It does not make Studio, the AI
+analysis suite, or autonomous agents production-stable.
 
-Aksara is pre-1.0 and actively evolving. Before v1.0, API surfaces may change.
-This document defines which areas are stable and intended to be preserved,
-which are still evolving, how breaking changes are communicated, and what
-migration support looks like in practice. It is a commitment to predictable
-change, not a promise of no change.
+## Required production profile
 
----
+The v0.6 production claim applies when all of these conditions hold:
 
-## Stable / Intended to Preserve
+- Python, FastAPI, Starlette, PostgreSQL, and pgvector use the documented
+  [runtime compatibility matrix](../reference/runtime-compatibility.md).
+- Schema changes run as a separate deployment step. Application startup does
+  not create or alter tables.
+- The application login is `NOSUPERUSER NOBYPASSRLS`, has only the required
+  runtime privileges, and tenant tables use forced PostgreSQL row-level
+  security.
+- Authentication resolves a server-owned `Principal`; a client cannot select
+  its tenant through a request field or header.
+- `aksara doctor production-check --release` passes with a complete security
+  matrix. Release mode treats every warning, skip, unknown, failure, or block
+  as a nonzero result.
+- Operators use normal process supervision, database backups, TLS, secret
+  rotation, and service monitoring appropriate to their deployment.
 
-These areas have been in use across multiple releases, have documented
-behavior, and are intended to remain compatible across v0.6.x. Breaking
-changes in these areas are not expected without a strong reason and clear
-migration guidance.
+The packaged support desk app under `examples/support_desk` is the executable
+example for this profile.
 
-### ORM Core
+## Stable public surfaces for v0.6.x
 
-- `Model`, `TenantModel`, and `fields.*` field types
-- `Model.objects` queryset interface: `get()`, `filter()`, `all()`, `create()`,
-  `update()`, `delete()`, `bulk_create()`, `bulk_update()`, and `upsert()`
-- `Q()`, `F()`, and aggregation expression objects
-- Transaction context managers
-- `ForeignKey`, `ManyToManyField`, `GenericForeignKey`, and relation traversal
-- `signals.pre_save`, `signals.post_save`, `signals.pre_delete`,
-  `signals.post_delete`
-- `Model.Meta` options: `table_name`, `ordering`, `indexes`, `constraints`,
-  `tenant_field`, `soft_delete_field`
+These are the interfaces Aksara intends to preserve through compatible v0.6.x
+releases.
 
-### Migration System
+### ORM and relations
 
-- `aksara makemigrations` and `aksara migrate` commands
-- Migration file format and migration dependency tracking
-- Existing generated migrations are not re-generated or altered by framework
-  upgrades
+- `Model`, `TenantModel`, and the documented `fields.*` types
+- The documented `Model.objects` query and write methods, including `get()`,
+  `filter()`, `all()`, `create()`, `update()`, `delete()`, `bulk_create()`,
+  `bulk_update()`, and `upsert()`
+- `Q()`, `F()`, aggregations, and transaction context managers
+- `ForeignKey`, `OneToOne`, `ManyToManyField`, `GenericForeignKey`, documented
+  relation traversal, and supported `on_delete` behavior
+- Model lifecycle signals and documented `Model.Meta` options
 
-### ViewSets and API
+The stored ID is the forward foreign-key value. Load an object explicitly or
+use the documented relation helpers. Custom many-to-many through models and
+object-valued lazy forward foreign keys are unsupported in v0.6.
 
-- `ModelViewSet` class interface and standard action methods
-- `@action` decorator and action registration
-- Standard serializer behavior for model fields
-- Filtering, ordering, and pagination query parameter conventions
-- Permission class protocol: `has_permission()` and `has_object_permission()`
-- Authentication class protocol: `authenticate()`
+### Migrations
 
-### CLI
+- `aksara makemigrations` and `aksara migrate`
+- File-based migration dependencies, checksums, advisory locking, transaction
+  behavior, and existing migration-file compatibility
+- Fresh bootstrap, upgrade from a supported existing schema, and idempotent
+  replay
 
-- `aksara dev`, `aksara migrate`, `aksara makemigrations`, `aksara shell`
-- `aksara doctor launch-check`, `aksara doctor security-check`,
-  `aksara doctor production-check`, `aksara doctor fix-plan`
-- `aksara examples validate`
+The columns of the internal `aksara_migrations` tracking table are not a public
+API. Runtime tables used by sessions, content types, tasks, and cron are
+provisioned by migrations; a current application process needs DML access and
+does not need DDL access.
 
-### Security Policy Model
+### Generated REST API and serializers
 
-- `Principal` class and its four types: `User`, `AIAgent`, `Anonymous`,
-  `System`
-- `PolicyEngine` method signatures: `can()`, `visible_fields()`,
-  `writable_fields()`, `query_filter()`, `validate_payload()`
-- `enforce_payload_policy()` and `enforce_request_payload_policy()` helpers
-- `PolicyDenied` exception and `policy_denied_to_error_payload()` helper
-- Field annotations: `ai_sensitive`, `ai_agent_writable`, and their runtime
-  enforcement semantics
+- `ModelViewSet`, standard CRUD actions, `@action`, and registered prefixes
+- `ModelSerializer` model-field validation and serialization
+- Documented filtering, ordering, pagination, relations, and structured client
+  errors
+- Runtime enforcement of read-only, tenant-owned, system-owned,
+  `ai_sensitive`, and `ai_agent_writable` field policy on covered generated
+  create and update paths
 
-### MCP/AI Credential Helpers
+Applications still own their authentication and permission policy. Generated
+routes do not make an unauthenticated model safe by themselves.
 
-- `MCPCredentialClaims` structure
-- `principal_from_mcp_claims()` and the scope/audience/tenant helper family
-- MCP credential validation semantics (scopes, audience, tenant binding,
-  expiration)
+### Configuration, identity, and authorization
 
-### Settings Protocol
+- `aksara.conf.Settings`, the `settings` object, `configure()`, and documented
+  `AKSARA_*` environment variables
+- `Principal` and its `anonymous()`, `for_user()`, `for_ai_agent()`,
+  `for_mcp_agent()`, and `system()` constructors
+- `BasePermission.has_permission()` and `has_object_permission()`
+- `PolicyEngine.can()`, `visible_fields()`, `writable_fields()`,
+  `query_filter()`, and `validate_payload()`
+- The documented payload-policy enforcement helpers, `PolicyDenied`, and
+  structured denied-field results
 
-- `AksaraSettings` key names and types for all settings documented in the
-  Settings Reference
-- Environment variable naming convention: `AKSARA_*`
+Authorization is evaluated on the server. Schemas, hidden UI controls, prompt
+instructions, and client-supplied tenant values are never authorization
+controls.
 
----
+### Tenancy
 
-## Still Evolving
+- Request and task tenant context propagation for covered framework paths
+- Tenant filtering in the ORM and generated API
+- PostgreSQL session context reset on pool reuse
+- Forced PostgreSQL RLS as the database boundary for the production profile
 
-These areas are functional and usable, but their interfaces may change in
-minor or patch releases before v1.0. Plan for possible migration when using
-them.
+Application filtering is useful defense in depth. The production isolation
+claim depends on the restricted database role and forced RLS as well.
 
-### AI Debugger, Architecture Review, Performance Analyzer
+### MCP catalog and execution boundary
 
-The analysis engines and Studio APIs for these features are operational but
-their output schemas, API paths, and scoring models are not frozen. Do not
-build automation that depends on specific output formats from these tools.
+- Permission-filtered tool discovery at `GET /ai/tools/mcp`
+- The catalog fields `name`, `description`, `inputSchema`, optional
+  `outputSchema`, and HTTP method/path metadata for registered generated
+  operations
+- `MCPCredentialClaims`, `principal_from_mcp_claims()`, scope helpers,
+  `require_mcp_audience()`, `require_mcp_tenant()`, and expiry enforcement by
+  `PolicyEngine`
+- Invoking a catalog-described REST operation through the application's normal
+  authentication, permission, field-policy, and tenancy checks
 
-### Migration Tracking Metadata
+`/ai/tools/mcp` is an MCP-shaped JSON catalog. Aksara v0.6 does not implement an
+MCP protocol server, transport negotiation, tool-call endpoint, or client
+session protocol. An MCP client needs an adapter that fetches the catalog and
+calls the described HTTP operation.
 
-The migration *commands*, the migration *file* format, and existing generated
-migrations are stable (see above). The internal `aksara_migrations` tracking
-table is not. Its columns may evolve in a future release — for example, metadata
-schema versioning or an app-label / name identity split — so do not build
-automation against the tracking table's column layout. Migration execution
-safety, integrity (checksums), and the SQL-generation guardrails are intended to
-remain in place; the metadata-schema redesign that would change the tracking
-table is deferred future work.
+### Background tasks
 
-### Long-Running AI Session State
+- `@task`, enqueue, PostgreSQL-backed task records, bounded retry, and worker
+  restart recovery
+- Principal and tenant propagation on covered enqueue and worker paths
+- Task status access constrained by the application authorization policy
 
-Durable AI session storage and AI Console transcript persistence are planned
-but not finalized. Current in-memory session state is not a stable API.
+Task functions must be idempotent where retries can repeat external effects.
+The framework does not supply exactly-once delivery for external systems.
 
-### Agent Mode Internals
+### CLI and diagnostics
 
-`AgentRuntime`, `AgentPlanner`, and the context engine interfaces are
-considered internal. They may change significantly between minor versions as
-agent workflows mature.
+- Core commands: `dev`, `run`, `migrate`, `makemigrations`, `shell`, and
+  `examples validate`
+- Doctor commands: `launch-check`, `security-check`, `production-check`, and
+  `fix-plan`
+- Exit-code policy for Doctor commands
+- For `production-check --format json`, the top-level `check`, `policy`,
+  `status`, `results`, `summary`, `exit_code`, and `release_ready` fields, plus
+  each result's `id`, `severity`, `status`, `message`, and `recommendation`
 
-### Studio API Internals
+Pretty terminal text, ordering of diagnostic results, and additional JSON
+fields may change. Automation should use the JSON keys and exit code.
 
-Studio serves a built-in frontend and its REST API paths are not a public
-contract. External automation that calls Studio API endpoints directly may
-break on minor version bumps.
+## Experimental surfaces
 
-### Example Templates
+Experimental features are usable, but their APIs, storage, and behavior may
+change during v0.6.x without the compatibility guarantees above.
 
-`aksara startproject --template` templates are intended to evolve as framework
-conventions improve. Generated project layouts may change between minor
-versions. If you have customized a generated project, review the changelog
-before upgrading.
+- Studio UI layout and Studio's internal HTTP APIs
+- AI Console, AI Flows, AI Debugger, Architecture Review, Performance
+  Analyzer, Schema Doctor analysis output, and provider-specific live calls
+- Investigation sessions and transcript state
+- `AgentRuntime`, planners, autonomous loops, code-generation suggestions,
+  patch execution, and approval callback internals
+- Generic, OpenAI, and third-party tool export adapters other than the MCP
+  catalog contract stated above
+- Generated project template layout
 
-### Diagnostics Output Format
+Investigation/session state is held in process memory. It does not survive
+restart and does not provide continuity between workers. Use it for interactive
+inspection, not durable case tracking.
 
-`aksara doctor` command output format is human-readable and not guaranteed
-stable for machine parsing. Use exit codes (0 = pass, non-zero = fail) for
-automation rather than parsing stdout.
+Aksara v0.6 makes no production guarantee for autonomous mutation or durable
+approval workflows. The repository has not demonstrated durable approval
+state, replay semantics, authorization at execution time after restart,
+idempotency for arbitrary tools, or multi-worker race handling as one complete
+workflow. Keep a human-controlled application boundary around these features.
 
----
+## Explicitly unsupported or deferred
 
-## Compatibility Policy Before v1.0
+- Custom many-to-many through models
+- Object-valued lazy forward foreign-key attributes
+- Protocol-level MCP execution or MCP client-session compatibility
+- Durable investigation sessions, AI memory, and cross-worker AI continuity
+- Production-safe autonomous approval and mutation orchestration
+- Exactly-once external side effects from retried background tasks
+- Studio as a production administration contract
+- A general application cache API or a Redis requirement
+- Certification of provider integrations that are not continuously exercised
+  by the release gate
 
-**Minor versions (v0.5 → v0.6):** Breaking changes to stable areas will be
-documented in the changelog with a migration path. Changes to evolving areas
-may occur without a migration path. Deprecations in stable areas will be
-announced one minor version before removal where possible.
+## Compatibility and change policy
 
-**Patch versions (for example, v0.5.52 → v0.5.53):** No intentional breaking changes to
-stable areas. Bug fixes and additive changes only. If a patch inadvertently
-breaks stable behavior, that is a bug and will be fixed in a follow-on patch.
+Patch releases in v0.6.x should be additive or restore documented behavior.
+An intentional breaking change to a stable surface requires a changelog entry
+and a migration path. Deprecation will normally precede removal when a security
+or correctness fix does not require an immediate change.
 
-**Before v1.0:** No API stability guarantee equivalent to semantic versioning
-post-1.0 is made. The intent is to make breaking changes predictable and
-migration-guided, not to make them impossible. If you are building on Aksara
-pre-1.0, subscribe to the changelog and pin your minor version in production.
+Experimental surfaces may change in a patch or minor release. Their changelog
+entries will describe material behavior changes, but a compatibility adapter is
+not guaranteed.
 
----
+Security fixes may tighten defaults or require new configuration without a
+deprecation window. The changelog will identify the affected setting or API
+and the operator action required.
 
-## Security-Fix Behavior
+Existing generated migration files are never rewritten by an upgrade.
+Generated OpenAPI and tool catalogs may add metadata or descriptions. Removal
+or reinterpretation of a documented stable field requires release notes.
 
-Security fixes are not bound by the compatibility policy. A security fix may
-change default behavior, disable an insecure option, or require configuration
-changes without a deprecation window.
-
-When a security fix changes defaults or removes an option:
-
-- The changelog entry will clearly label it as a security fix.
-- The nature of the change and the affected configuration will be described.
-- A migration path will be provided where one exists without compromising the
-  fix.
-
-Security fixes will be applied to the current stable minor version. Backports
-to prior minor versions are at maintainer discretion based on severity and
-deployment complexity.
-
----
-
-## Generated Surface Change Policy
-
-Aksara generates REST routes, OpenAPI schemas, MCP tool descriptions, Studio
-admin surfaces, migration DDL, AI prompt context, and serializer behavior from
-model definitions.
-
-For generated surfaces:
-
-- **Generated migration DDL** is treated as stable output. Framework upgrades
-  will not retroactively alter existing generated migrations. New model changes
-  will produce new migration files in the same format.
-- **Generated OpenAPI schemas** may gain new fields, additional response
-  properties, or improved descriptions between versions. Removal of fields
-  requires a deprecation notice.
-- **Generated MCP tool descriptions** may improve in clarity or add new
-  metadata between versions. Tool names and input schemas for standard CRUD
-  actions on a ViewSet are considered stable once the ViewSet is registered.
-- **Generated Studio admin surfaces** are not a public contract. They will
-  improve between versions and their visual layout and API paths may change.
-- **Runtime enforcement semantics** (what is denied, what returns `denied_fields`,
-  which paths are covered) are part of the stable security policy model. Changes
-  to enforcement coverage will be documented.
-
----
-
-## Migration Note Expectations
-
-For each minor version:
-
-- A changelog section describes what changed and what the migration path is.
-- For breaking changes to stable areas: a before/after code example is
-  provided where the change affects user code.
-- For changes to generated surfaces: a description of what will look different
-  after upgrading.
-- For security-fix changes: a clear description of what changed, why, and what
-  to do.
-
-Migration notes will not be provided for:
-
-- Changes to internal implementation details not in the stable API list.
-- Improvements to generated output that do not break stable behavior.
-- Bugfixes that restore documented behavior (the old behavior was wrong).
-
-If a changelog entry is unclear or missing a migration path you need, open an
-issue. That feedback improves the release process directly.
-
----
-
-*This is a draft. It will be updated before v0.6.0 ships. The intent is to
-publish a finalized version alongside the v0.6.0 release announcement.*
+Pin the v0.6 minor line in production, read the changelog before upgrading,
+apply migrations before starting new application instances, and replay the
+release diagnostics against the deployment configuration.

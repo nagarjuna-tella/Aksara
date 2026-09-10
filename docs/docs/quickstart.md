@@ -11,9 +11,11 @@ A small **Ops Playbook API** that shows what Aksara generates from one model def
 - Create and list operational playbooks over REST
 - Inspect the same model in Studio at `/studio/ui`
 - Ask the AI Console to explain the model and endpoints
-- Export the generated tools at `/ai/tools/mcp` for MCP-compatible agents
+- Inspect generated REST operation descriptions at `/ai/tools/mcp`
 
-The point of the demo is not the data itself. The point is that one Aksara model becomes a database table, a REST API, a Studio surface, and an MCP tool catalog without separate schemas.
+The point of the demo is that one Aksara model becomes a database table, a
+REST API, a Studio surface, and an MCP-shaped catalog without separate schemas.
+The catalog is not an MCP protocol server.
 
 ---
 
@@ -23,13 +25,15 @@ Before you start, make sure you have:
 
 | Tool | How to Check | What It's For |
 |------|--------------|---------------|
-| Python 3.11+ | `python --version` | Running Aksara |
-| PostgreSQL | `psql --version` | Storing your data |
+| Python 3.11–3.14 | `python --version` | Running Aksara |
+| PostgreSQL 16 | `psql --version` | Release CI; the packaged app also runs on 18.4 |
 | pip | `pip --version` | Installing packages |
 
 **PostgreSQL is strictly required.** Unlike Django, Aksara uses advanced Postgres-native features (JSONB, pgvector, Listen/Notify) and does not fall back to SQLite. Ensure you have a running PostgreSQL instance (either native, via Docker, or cloud-hosted) before proceeding.
 
-**AI Configuration:** To use the AI features (Console, MCP, Debugger), you will need an API key from an AI provider.
+**AI Configuration:** To use features that call a model provider, such as AI
+Console or AI Debugger, configure that provider. Catalog export itself does not
+call a model.
 *   **Anthropic:** `ANTHROPIC_API_KEY="<ANTHROPIC_API_KEY>"`
 *   **OpenAI:** `OPENAI_API_KEY="<OPENAI_API_KEY>"`
 *   *(Ollama is also supported for local models)*
@@ -50,7 +54,8 @@ Verify it worked:
 
 ```bash
 aksara --version
-# Output: aksara, version 0.5.54
+# Published release: aksara, version 0.5.54
+# v0.6 candidate: aksara, version 0.6.0rc1
 ```
 
 ---
@@ -90,7 +95,7 @@ opsdesk/
 | Admin | `/admin` | Admin interface (debug mode) |
 | Studio | `/studio/ui` | Visual dashboard with the built-in AI Console |
 | AI Tools | `/ai/tools` | Generic AI tool discovery |
-| MCP Tools | `/ai/tools/mcp` | MCP-compatible tool export for external agents |
+| MCP-shaped catalog | `/ai/tools/mcp` | Permission-filtered REST operation descriptions; protocol clients need an adapter |
 | Example API | `/api/posts` | Scaffolded example you can replace |
 
 ---
@@ -114,7 +119,7 @@ This will:
 After the prompts, a successful run ends with output like this:
 
 ```
-  ⚡ Aksara v0.5.54
+  ⚡ Aksara v0.6.0rc1
   Database Setup
 
   ✓ found (localhost:5432)
@@ -282,7 +287,7 @@ aksara dev main:app
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
 
-    AI-native async backend  ·  Dev Server  ·  v0.5.54
+    AI-native async backend  ·  Dev Server  ·  v0.6.0rc1
 
   ● App       http://127.0.0.1:8000/
   ● Admin     http://127.0.0.1:8000/admin/
@@ -395,7 +400,7 @@ Congratulations! You created one model and got all of this from it:
 ✅ **Studio dashboard** at `/studio/ui`  
 ✅ **AI Console** inside Studio  
 ✅ **AI tools** at `/ai/tools`  
-✅ **MCP tool export** at `/ai/tools/mcp`  
+✅ **MCP-shaped tool catalog** at `/ai/tools/mcp`
 
 **Without maintaining separate API, Studio, and AI schemas.**
 
@@ -409,12 +414,13 @@ Now that your server is running, try these URLs:
 | http://localhost:8000/admin | Admin panel to manage playbooks |
 | http://localhost:8000/studio/ui | Studio dashboard with schema info and the AI Console |
 | http://localhost:8000/ai/tools | Generic AI tools generated from your model and ViewSet |
-| http://localhost:8000/ai/tools/mcp | MCP-compatible tool catalog for external agents |
+| http://localhost:8000/ai/tools/mcp | MCP-shaped, permission-filtered REST operation catalog |
 
-!!! tip "AI Agent / MCP Integration"
-    Aksara auto-generates an MCP (Model Context Protocol) endpoint at `/ai/tools/mcp`.
-    Point any MCP-compatible AI agent at that URL and it can read and write your data
-    directly — no extra setup required. See [MCP Integration](ai-mode/mcp.md) for details.
+!!! info "AI adapter boundary"
+    `/ai/tools/mcp` returns catalog JSON; it does not implement MCP protocol
+    transport or tool invocation. An external client needs an adapter that
+    fetches permitted entries and calls their REST method/path with application
+    credentials. See [MCP Integration](ai-mode/mcp.md).
 
 !!! tip "When the app does not start cleanly"
   Run `aksara doctor run` for a live health report. If Aksara detects issues it can

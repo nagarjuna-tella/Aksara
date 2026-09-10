@@ -12,6 +12,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from aksara.context_state import tenant_id_var, user_id_var
+from aksara.security.context import principal_from_mcp_claims
 from aksara.security.principal import Principal
 
 
@@ -81,17 +82,29 @@ class SupportDeskAuthMiddleware(BaseHTTPMiddleware):
                 is_superuser=False,
             )
         elif identity.mcp:
-            principal = Principal.for_mcp_agent(
-                token_id="support-desk-mcp",
-                human_owner_id=identity.user_id,
-                agent_id="support-desk-reference-agent",
-                tenant_id=identity.tenant_id,
-                scopes=("mcp:read:ticket", "mcp:write:ticket"),
+            expires_at = float(
+                os.getenv("SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT", "0")
             )
+            principal = principal_from_mcp_claims(
+                {
+                    "jti": "support-desk-mcp",
+                    "sub": identity.user_id,
+                    "agent_id": "support-desk-reference-agent",
+                    "tenant_id": identity.tenant_id,
+                    "scopes": ("mcp:read:ticket", "mcp:write:ticket"),
+                    "aud": os.getenv(
+                        "SUPPORT_DESK_MCP_AUDIENCE",
+                        "support-desk",
+                    ),
+                    "exp": expires_at,
+                }
+            )
+            if principal.is_expired:
+                principal = Principal.anonymous()
             user = SimpleNamespace(
-                id=identity.user_id,
-                role=identity.role,
-                is_authenticated=True,
+                id=None if principal.is_anonymous else identity.user_id,
+                role=None if principal.is_anonymous else identity.role,
+                is_authenticated=not principal.is_anonymous,
                 is_staff=False,
                 is_superuser=False,
             )

@@ -81,7 +81,9 @@ Warnings should be reviewed before production deployment:
 - `cookie_secure=False`
 - Admin rate limiting disabled
 - Multi-tenant mode without confirmed RLS
-- AI fields broadly writable by default when AI, MCP, or AI Console exposure is enabled
+- AI fields broadly writable by default when AI, MCP, or AI Console exposure is
+  enabled and `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` has not been set after
+  a concrete field review
 - Missing private security matrix when strict matrix enforcement is disabled
 - MCP token TTL longer than 3600 seconds
 

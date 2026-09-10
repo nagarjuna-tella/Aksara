@@ -1,9 +1,10 @@
 # Runtime compatibility
 
-The unpublished v0.5.55 candidate supports Python 3.11–3.14. Release CI uses
-Python 3.11 and 3.14 with PostgreSQL 16 plus pgvector. Local verification also
-uses PostgreSQL 18.4. This is the validation matrix, not certification of every
-operating system or PostgreSQL extension.
+The v0.6.0-rc1 candidate supports Python 3.11–3.14. The release matrix runs
+Python 3.11 and 3.14 with PostgreSQL 16 plus pgvector at both supported web
+dependency boundaries. The packaged reference gate also runs against local
+PostgreSQL 18.4. This is the tested matrix, not certification of every operating
+system, intermediate dependency combination, or PostgreSQL extension.
 
 | Web boundary | FastAPI | Starlette |
 | --- | --- | --- |
@@ -39,7 +40,12 @@ session context and return owned pool capacity. Cleanup errors are attached to
 an existing error rather than replacing it. Real-pool regressions exercise
 repeated failures with a one-connection pool.
 
-This is a correctness release, not a v0.6 Production Mode announcement. Studio,
-process-local investigation state and autonomous AI durability are outside a
-production stability guarantee. Investigation state does not survive restart or
-provide multi-worker continuity.
+The v0.6 production profile also requires migrations as a separate deployment
+step, a non-superuser/non-BYPASSRLS application role, forced RLS for tenant
+tables, and a clean `aksara doctor production-check --release`. Studio,
+process-local investigation state, and autonomous AI durability remain outside
+the production stability guarantee. Investigation state does not survive
+restart or provide multi-worker continuity.
+
+See the [v0.6 stability and production contract](../roadmap/v0-6-stability-contract.md)
+for the complete boundary.

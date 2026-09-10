@@ -26,6 +26,12 @@ surfaces:
     implemented: true
     description: Doctor deployment and release-candidate policy evaluation.
 
+  - id: mcp_catalog_rest_mutation
+    name: MCP catalog described REST mutation
+    category: mcp
+    implemented: true
+    description: Permission-filtered tool discovery followed by an authenticated REST mutation under the same generated API policy and tenant boundary.
+
   - id: mcp_protocol_execution
     name: MCP protocol execution
     category: mcp
@@ -109,3 +115,11 @@ scenarios:
     expected: warn
     status: not_applicable
     description: The supported-surface contract explicitly excludes protocol execution because the repository exposes only an MCP-shaped catalog.
+
+  - id: mcp_catalog_rest_tenant_isolation
+    surface: mcp_catalog_rest_mutation
+    actor: wrong_tenant
+    risk: cross_tenant_access
+    expected: deny
+    status: covered
+    description: scripts/run_support_desk_gate.py uses the packaged reference app to permit a same-tenant catalog-described REST mutation and deny the corresponding cross-tenant mutation under forced RLS.

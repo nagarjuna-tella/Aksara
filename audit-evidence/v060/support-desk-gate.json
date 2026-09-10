@@ -2,17 +2,17 @@
   "schema_version": 1,
   "gate": "support-desk-production-reference",
   "status": "passed",
-  "started_at": "2026-09-09T23:45:42.564674+00:00",
-  "finished_at": "2026-09-09T23:45:50.543789+00:00",
-  "wheel": "aksara_framework-0.5.55-py3-none-any.whl",
-  "wheel_sha256": "e3fa703033041d85d3bfab4df315a2fdaeb3fa0a9e237022ace38aa98e74b6d9",
+  "started_at": "2026-09-10T00:25:57.344247+00:00",
+  "finished_at": "2026-09-10T00:26:11.514755+00:00",
+  "wheel": "aksara_framework-0.6.0rc1-py3-none-any.whl",
+  "wheel_sha256": "49f8a4b64c1145da372ce6a8812386b7fd4024256129b0d40b84a96f376650ec",
   "database": "aksara_test",
   "checks": [
     {
       "name": "wheel installed in isolated environment",
       "status": "pass",
       "details": {
-        "version": "0.5.55",
+        "version": "0.6.0rc1",
         "import_location": "isolated-venv"
       }
     },
@@ -84,6 +84,21 @@
       "status": "pass",
       "details": {
         "skipped": 4
+      }
+    },
+    {
+      "name": "Doctor release policy accepts production configuration",
+      "status": "pass",
+      "details": {
+        "policy": "release-candidate",
+        "checks": 12
+      }
+    },
+    {
+      "name": "Doctor launch inspection sees packaged app and current schema",
+      "status": "pass",
+      "details": {
+        "readiness": "partial"
       }
     },
     {

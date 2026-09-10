@@ -70,7 +70,10 @@ def test_console_script_points_to_cli():
     assert _pyproject()["project"]["scripts"]["aksara"] == "aksara.cli:main"
 
 
-@pytest.mark.parametrize("dependency", ["fastapi", "asyncpg", "click", "uvicorn", "python-dotenv"])
+@pytest.mark.parametrize(
+    "dependency",
+    ["fastapi", "asyncpg", "click", "uvicorn", "python-dotenv", "pyyaml"],
+)
 def test_runtime_dependencies_include_launch_path_needs(dependency):
     deps = "\n".join(_pyproject()["project"]["dependencies"])
     assert dependency in deps
@@ -96,7 +99,7 @@ def test_template_module_documents_bundled_examples(fragment):
     assert fragment in text
 
 
-@pytest.mark.parametrize("fragment", ["v0.5.55", "aksara-framework>=0.5.55"])
+@pytest.mark.parametrize("fragment", ["v0.6.0-rc1", "aksara-framework>=0.6.0rc1"])
 def test_scaffold_template_version_is_current(fragment):
     text = (ROOT / "aksara" / "cli" / "scaffold.py").read_text(encoding="utf-8")
     assert fragment in text

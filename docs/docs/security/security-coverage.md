@@ -51,8 +51,8 @@ diagnostic condition.
 
 ## Limitations
 
-- OpenAPI fuzzing requires optional tooling.
-- Private matrix enforcement is optional unless
-  `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
-- Release gates prepare release trust but do not replace external review.
-- External security review is planned before a production-mode claim.
+- Release mode requires a complete matrix; the normal deployment check keeps a
+  missing matrix advisory unless `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
+- Generated-API abuse tests are bounded property tests, not exhaustive proof.
+- Release gates provide reproducible evidence but do not replace external
+  review or constitute audit certification.

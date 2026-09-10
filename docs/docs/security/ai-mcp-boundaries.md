@@ -48,8 +48,11 @@ When MCP is enabled, doctor checks report or block unsafe configuration:
 - MCP token TTL longer than 3600 seconds
 - MCP enabled without audience requirements
 - Multi-tenant MCP enabled without tenant-bound token requirements
+- AI/MCP mutation enabled without an explicit writable-field review assertion
 
-Production diagnostics block critical MCP misconfiguration where applicable.
+Production release diagnostics require every result to pass. Set
+`AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after every field on every
+AI-exposed model has an explicit `ai_agent_writable` decision.
 
 ## Covered Behavior
 
@@ -59,16 +62,21 @@ Production diagnostics block critical MCP misconfiguration where applicable.
 - AI-sensitive field exclusion from generated AI/MCP schemas
 - Runtime rejection of forbidden fields in covered REST create/update paths
 - Tenant ID mutation denied in covered write paths
-- Bounded adversarial tests for generated filters, ordering, serializers,
-  runtime field enforcement, migration identifiers/defaults, malformed payloads,
-  and oversized payloads
+- Bounded adversarial tests against an actual generated CRUD application,
+  including invalid relations, malformed and oversized payloads, forbidden and
+  server-controlled fields, and unauthorized mutation
+- A packaged reference-app gate that permits an authorized same-tenant
+  catalog-described REST mutation and rejects the cross-tenant equivalent
 
 ## Known Limitations
 
 - Replay protection storage is not implemented by core MCP helpers.
 - Field-level MCP audit logs are planned.
-- Direct MCP tool-call runtime enforcement is limited where calls bypass covered
-  REST write paths.
-- OpenAPI fuzzing is a placeholder unless Schemathesis is installed.
-- Supply-chain CI, release gates, and external review are planned before a
-  production-mode claim.
+- Aksara v0.6 provides an MCP-shaped catalog, not protocol transport or a
+  protocol tool-call endpoint.
+- Replay protection storage and token issuance are application concerns; core
+  helpers validate claims but do not issue or revoke credentials.
+- The stable execution claim covers catalog-described generated REST paths.
+  Custom execution paths must integrate application authorization explicitly.
+- External review is scoped in the release evidence and does not become an
+  implied audit certification.

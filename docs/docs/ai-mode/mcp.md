@@ -1,89 +1,91 @@
-# MCP Integration
+# MCP catalog and REST execution
 
-Aksara can expose your models and routes as MCP-compatible tools without a second service or a hand-written tool manifest. When your app is running, the tool catalog is available at `/ai/tools/mcp` and the generic JSON export remains available at `/ai/tools`.
+Aksara exposes a permission-filtered, MCP-shaped tool catalog at
+`GET /ai/tools/mcp`. The generic Aksara representation remains available at
+`GET /ai/tools`.
 
----
+## Protocol boundary
 
-## What MCP Gets You
+The catalog is JSON shaped like an MCP tool description. It is not an MCP
+protocol server. Aksara v0.6 does not implement MCP transport negotiation,
+client sessions, protocol tool invocation, or protocol conformance testing.
 
-The MCP export turns the same metadata Aksara uses for Studio and AI flows into a format that MCP-aware clients can consume directly. That means an agent can discover tool names, read descriptions, inspect JSON schemas for inputs, and understand which tools are read-only versus write-capable.
+An external MCP client needs an adapter with two responsibilities:
 
-Use the MCP endpoint when you want an external AI client to work against your live Aksara app instead of a copied prompt or static schema dump.
+1. Fetch and translate the catalog into the client's tool-registration API.
+2. Invoke each catalog entry's HTTP method and path as an authenticated REST
+   request.
 
----
+The REST request then passes through the same application permissions, payload
+policy, tenant context, and PostgreSQL RLS as any other generated API request.
 
-## Quick Start
-
-Start your app:
+## Catalog shape
 
 ```bash
-aksara dev
+curl -H "Authorization: Bearer $APP_TOKEN" \
+  http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-Open the MCP export in your browser or with `curl`:
-
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
-
-You will receive a response shaped like this:
+A catalog response has this shape:
 
 ```json
 {
   "tools": [
     {
-      "name": "list_tasks",
-      "description": "List Task records",
+      "name": "ticket_update",
+      "description": "Update a support ticket",
       "inputSchema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "status": {"type": "string"}
+        },
+        "required": []
       },
       "metadata": {
-        "method": "GET",
-        "path": "/api/tasks",
-        "usage_kind": "read_only"
+        "http_method": "PATCH",
+        "path": "/api/tickets/{pk}",
+        "kind": "update",
+        "requires_auth": true
       }
     }
   ],
   "count": 1,
-  "version": "0.4.0"
+  "version": "0.6.0rc1"
 }
 ```
 
----
+Registered models, ViewSets, custom `@action` methods, route metadata,
+permissions, and AI field annotations determine which entries a caller sees.
+The method's docstring and type hints contribute to custom-action schemas.
 
-## How Tools Are Derived
+## Credential and authorization requirements
 
-Aksara builds MCP tool definitions from the same application surface that powers the REST API and Studio. Models, viewsets, route metadata, permissions, and AI field annotations all affect what an external agent sees.
+Catalog schemas are descriptive and are never an authorization control. Resolve
+credentials into a server-owned `Principal`, then enforce:
 
-Specifically, any custom ViewSet method decorated with `@action` (which defaults to `ai_exposed=True`) is automatically parsed into an MCP tool. The AI registry uses the method's docstring for the tool's description and its type hints for the `inputSchema`.
+- explicit per-operation scopes
+- a service audience
+- a tenant claim for multi-tenant operations
+- an expiry
+- field policy at execution time
+- database isolation with a restricted role and forced RLS
 
-That gives you one source of truth. You define a model once, register a viewset once, and Aksara can expose that capability through HTTP, Studio, and MCP without duplicating configuration.
+Relevant framework helpers include `MCPCredentialClaims`,
+`principal_from_mcp_claims()`, `require_scope()`,
+`require_mcp_audience()`, and `require_mcp_tenant()`.
 
----
+`ai_sensitive=True` removes a field from generated AI context.
+`ai_agent_writable=False` rejects an AI/MCP principal's attempt to write that
+field on covered generated paths. Review every exposed field explicitly before
+setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` for release diagnostics.
 
-## AI Metadata Matters
+The packaged `examples/support_desk` app demonstrates a same-tenant
+catalog-described mutation, denial of the same operation across tenants,
+scoped and expiring claims, and Doctor release configuration.
 
-The quality of the MCP export depends on the metadata attached to your fields and routes.
+## Stable and experimental pieces
 
-Use `ai_description` to make field purpose obvious to external agents. Use `ai_sensitive=True` to keep secrets and internal-only values out of exported context. Use `ai_agent_writable=False` when a field should be visible but never changed by an agent.
-
-For route-level control, pair MCP exposure with Aksara's AI permissions and route hints so tool discovery stays aligned with your application's safety rules.
-
----
-
-## MCP vs Generic Tool Export
-
-Use `/ai/tools` when you want Aksara's generic JSON representation of tool definitions. Use `/ai/tools/mcp` when the consumer expects MCP-shaped tools with `inputSchema` and transport metadata.
-
-Both endpoints are derived from the same underlying tool registry, so the tool count and permissions stay in sync.
-
----
-
-## Related Docs
-
-- [AI Mode](index.md)
-- [Tools](tools.md)
-- [Providers](providers.md)
-- [Fields](../orm/fields.md)
-- [Studio API](../studio/api.md)
+The catalog fields and catalog-described generated REST execution boundary are
+part of the v0.6 production contract. Generic/OpenAI/third-party adapters and
+autonomous agent orchestration remain experimental. See the
+[stability and production contract](../roadmap/v0-6-stability-contract.md).

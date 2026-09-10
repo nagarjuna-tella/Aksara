@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -28,6 +29,8 @@ def _require_production_configuration() -> None:
             "SUPPORT_DESK_TENANT_A_TOKEN",
             "SUPPORT_DESK_TENANT_B_TOKEN",
             "SUPPORT_DESK_MCP_TOKEN",
+            "SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT",
+            "SUPPORT_DESK_MCP_AUDIENCE",
         )
         if not os.getenv(name)
     ]
@@ -58,6 +61,19 @@ def _require_production_configuration() -> None:
         raise RuntimeError("Support desk bearer tokens must be at least 24 characters")
     if len(set(secrets)) != len(secrets):
         raise RuntimeError("Support desk bearer tokens must be distinct")
+
+    try:
+        mcp_expires_at = float(os.environ["SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT"])
+    except (KeyError, ValueError) as exc:
+        raise RuntimeError(
+            "SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT must be a Unix timestamp"
+        ) from exc
+    remaining_seconds = mcp_expires_at - time.time()
+    if remaining_seconds <= 0 or remaining_seconds > 3600:
+        raise RuntimeError(
+            "SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT must be within the next 3600 seconds"
+        )
+
 
 
 _require_production_configuration()

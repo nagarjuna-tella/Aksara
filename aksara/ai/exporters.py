@@ -3,9 +3,9 @@ Aksara AI Exporters
 
 Convert AiTool instances to various agent framework formats.
 
-Supported formats:
+Descriptor formats:
 - Generic: Simple JSON structure any framework can adapt
-- MCP: Model Context Protocol compatible format
+- MCP-shaped: fields resembling an MCP tool description; no protocol transport
 - Future: OpenAI function calling, LangChain tools
 """
 
@@ -48,10 +48,10 @@ def export_tools_as_generic(tools: List[AiTool]) -> List[Dict[str, Any]]:
 
 def export_tools_as_mcp(tools: List[AiTool]) -> List[Dict[str, Any]]:
     """
-    Export tools in MCP (Model Context Protocol) compatible format.
+    Export tools as MCP-shaped JSON descriptions.
     
-    MCP tools have a specific schema structure that LLMs can use
-    to understand how to invoke HTTP endpoints.
+    These descriptions let an adapter map tools to HTTP endpoints. This
+    function does not provide an MCP protocol transport or invocation server.
     
     The format closely matches the MCP tool schema:
     - name: Tool identifier

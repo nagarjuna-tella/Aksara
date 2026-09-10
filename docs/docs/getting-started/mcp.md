@@ -1,53 +1,43 @@
-# MCP Quickstart
+# MCP-shaped tool catalog
 
-Aksara exports your model and ViewSet surface as MCP-compatible tools.
+Aksara can describe registered model and ViewSet operations as an MCP-shaped
+JSON catalog.
 
-## Where the Catalog Lives
+## Supported boundary
 
 ```text
-http://127.0.0.1:8000/ai/tools/mcp
+GET http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-Inspect it locally:
+The response contains permission-filtered tool names, descriptions, JSON input
+schemas, and HTTP method/path metadata. Aksara v0.6 does not provide an MCP
+protocol server, transport negotiation, or a protocol tool-call endpoint. An
+MCP client therefore needs an adapter that reads this catalog and invokes the
+described REST route.
 
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
+## Inspect the catalog
 
-## How Tools Are Generated
-
-Aksara reads:
-
-- Registered models
-- ViewSets
-- Custom `@action` methods
-- Field metadata such as `ai_description`
-- Safety metadata such as `ai_sensitive` and `ai_agent_writable`
-
-The result is a tool catalog that external MCP clients can inspect before calling your API.
-
-## Inspect MCP Output
-
-Start the app:
+Start the app, authenticate as required by your application, and fetch the
+catalog:
 
 ```bash
 aksara dev
+curl -H "Authorization: Bearer $APP_TOKEN" \
+  http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-Then run:
+Aksara derives entries from registered ViewSets and custom `@action` methods.
+Field metadata such as `ai_description`, `ai_sensitive`, and
+`ai_agent_writable` affects generated schemas and runtime write policy.
 
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
+Before enabling the catalog in production:
 
-Confirm sensitive fields are omitted and read-only fields are marked correctly.
+1. Resolve the credential to a server-owned `Principal`.
+2. Require explicit scopes, audience, tenant binding, and expiry.
+3. Review every AI-exposed model field and set `ai_agent_writable` explicitly.
+4. Execute the described REST operation through normal authentication,
+   permission, field-policy, and RLS checks.
+5. Run `aksara doctor production-check --release`.
 
-## Connect an External MCP Client Later
-
-Use the catalog URL from your running Aksara app:
-
-```text
-http://127.0.0.1:8000/ai/tools/mcp
-```
-
-For production deployments, add authentication and review which actions should be exposed before connecting external clients.
+See the [MCP integration boundary](../ai-mode/mcp.md) and the
+[production contract](../roadmap/v0-6-stability-contract.md).

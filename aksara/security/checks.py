@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, List, Optional
 
 # ---------------------------------------------------------------------------
@@ -456,13 +455,29 @@ def check_ai_field_defaults() -> SecurityCheckResult:
     mcp_enabled = bool(get_setting("mcp_enabled", False))
     ai_console_enabled = is_truthy(get_env("AKSARA_AI_CONSOLE_ENABLED", False))
     if ai_enabled or mcp_enabled or ai_console_enabled:
+        if is_truthy(get_env("AKSARA_AI_WRITABLE_FIELDS_REVIEWED", False)):
+            return SecurityCheckResult(
+                id="security.ai_field_defaults",
+                title="AI writable-field policy",
+                severity="info",
+                status="pass",
+                message=(
+                    "The deployment declares that every AI-exposed model field was "
+                    "reviewed and ai_agent_writable is explicit."
+                ),
+                recommendation="",
+            )
         return SecurityCheckResult(
             id="security.ai_field_defaults",
             title="AI fields broadly writable by default",
             severity="medium",
             status="warn",
             message="ai_agent_writable defaults to True. AI agents can write all fields unless explicitly marked ai_agent_writable=False.",
-            recommendation="Mark every field exposed to AI mutation explicitly and set ai_agent_writable=False for fields outside that allowlist.",
+            recommendation=(
+                "Mark every field exposed to AI mutation explicitly, set "
+                "ai_agent_writable=False outside the allowlist, then set "
+                "AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true for the reviewed deployment."
+            ),
         )
     return SecurityCheckResult(
         id="security.ai_field_defaults",

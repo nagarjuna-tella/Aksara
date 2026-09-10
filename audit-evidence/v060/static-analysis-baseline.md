@@ -20,10 +20,10 @@ Enforced command:
 PYTHONPYCACHEPREFIX=/tmp/aksara-v060-pycache /tmp/aksara-v055-py311/bin/python scripts/check_static_baseline.py
 ```
 
-The production reference-app phase then removed eight more Ruff findings without
+The production reference-app phase removed twelve more Ruff findings without
 adding mypy debt and tightened the committed baseline accordingly.
 
-Result: exit **0**; Ruff **7,222 / 7,222**, mypy **501 / 501**.
+Result: exit **0**; Ruff **7,218 / 7,218**, mypy **501 / 501**.
 
 The same command using a deliberately lower temporary baseline exited **1**
 and reported total and per-code overages for both tools. This proves the gate

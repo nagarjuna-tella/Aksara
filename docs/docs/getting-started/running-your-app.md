@@ -30,7 +30,7 @@ Representative output:
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
 
-    AI-native async backend  ·  Dev Server  ·  v0.5.54
+    AI-native async backend  ·  Dev Server  ·  v0.6.0rc1
 
     ● App       http://127.0.0.1:8000/
     ● Admin     http://127.0.0.1:8000/admin/

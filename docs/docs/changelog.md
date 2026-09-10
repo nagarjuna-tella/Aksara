@@ -6,6 +6,75 @@ All notable changes to Aksara.
 
 ---
 
+## Unreleased — v0.6.0-rc1 — Production Contract Candidate
+
+This candidate defines a bounded Production Mode contract for Aksara's stable
+backend surfaces. It is not published.
+
+### Added
+
+- A packaged multi-tenant support desk reference application covering models,
+  relations, migrations, generated APIs, authentication, permissions, forced
+  PostgreSQL RLS, an MCP-shaped tool catalog, catalog-described REST mutation,
+  PostgreSQL-backed tasks, Admin, Doctor, health endpoints, and production
+  configuration.
+- A bounded deployment gate covering invalid configuration, unavailable
+  database, pending migrations, fresh install, existing-schema upgrade,
+  idempotent migration replay, restricted runtime privileges, pool reuse,
+  rollback, concurrent app instances, task retry and process restart, database
+  reconnection, in-flight graceful shutdown, and connection cleanup.
+- Internal runtime-table migration
+  `aksara_core_migrations_0001_runtime_tables` for sessions, content types,
+  tasks, and cron. A current application role can start with DML-only grants.
+- Strict Doctor evidence for the reference production profile. Deployments with
+  AI/MCP mutation surfaces can set
+  `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after explicitly reviewing
+  every exposed field's `ai_agent_writable` policy.
+- A public stability contract that separates stable backend APIs from
+  experimental Studio/AI surfaces and unsupported behavior.
+
+### Changed
+
+- The supported runtime contract is Python 3.11–3.14, PostgreSQL 16 in release
+  CI, and the paired FastAPI/Starlette boundaries documented in the runtime
+  matrix.
+- `/ai/tools/mcp` is documented as an MCP-shaped JSON catalog. Protocol-level
+  MCP transport, sessions, and tool invocation are outside the v0.6 contract.
+- Custom lifespan startup failures now release framework database and worker
+  state while preserving the triggering exception.
+- Runtime schema helpers preflight migrated tables and avoid DDL when the
+  schema is current.
+- Static analysis uses a reviewed debt ratchet: new Ruff or mypy findings may
+  not increase the recorded baseline.
+
+### Upgrade notes
+
+1. Upgrade from the v0.5.55 candidate and run `aksara migrate` with a migration
+   role before starting v0.6 application processes.
+2. Grant the application role the required DML privileges on the migrated
+   runtime tables; do not grant it schema-creation privileges.
+3. For tenant data, use a `NOSUPERUSER NOBYPASSRLS` application role and force
+   RLS on tenant tables.
+4. Run `aksara doctor production-check --release` with the deployment's
+   security matrix and resolve every non-pass result.
+5. If exposing AI/MCP-described writes, review every exposed field explicitly
+   before setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
+6. Add an adapter for MCP protocol clients; the catalog URL itself is not an MCP
+   server endpoint.
+
+### Experimental and deferred
+
+- Studio internals, investigation sessions, planners, code-generation
+  suggestions, provider-specific live integrations, and autonomous agent
+  workflows remain experimental.
+- Investigation/session state is process-local and has no restart or
+  multi-worker continuity guarantee.
+- Durable autonomous approval/mutation, custom many-to-many through models,
+  object-valued lazy forward foreign keys, and protocol-level MCP execution
+  remain outside the release.
+
+---
+
 ## Unreleased — v0.5.55 — Correctness and Hardening
 
 ### Release-candidate hardening (not published)

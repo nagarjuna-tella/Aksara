@@ -16,7 +16,8 @@ DATABASE_URL=<local-admin-url> python scripts/run_support_desk_gate.py \
   --wheel <candidate-wheel>
 ```
 
-Result: **PASS**, 31/31 assertions. The machine-readable result and candidate
+Result: **PASS**, 33/33 assertions using the `0.6.0rc1` wheel. The
+machine-readable result and candidate
 wheel SHA-256 are in `support-desk-gate.json`.
 
 Covered behavior:
@@ -30,9 +31,12 @@ Covered behavior:
 - same-pool tenant switching and context reset plus transaction rollback;
 - liveness, readiness, generated APIs, model relations, Admin, and disabled
   Studio production exposure;
+- strict Doctor release diagnostics plus packaged-app launch inspection against
+  the current schema;
 - anonymous, forged-tenant, and cross-tenant request denial;
-- MCP catalog discovery, same-tenant scoped mutation, and denied cross-tenant
-  mutation through the catalog-described REST operation;
+- MCP catalog discovery, expiring/audience/tenant-bound claims, same-tenant
+  scoped mutation, and denied cross-tenant mutation through the
+  catalog-described REST operation;
 - tenant-aware task enqueue, task-status isolation, failed attempt, process
   crash, retry after worker/app restart, and durable delivery state;
 - database pool recovery after backend termination;
