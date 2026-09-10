@@ -140,6 +140,7 @@ class ExternalEffectContext:
             request_hash,
             downstream_key,
         )
+        await self._executor._reach_boundary("after_effect_intent")
         state = effect["state"]
         if state == "confirmed":
             response = effect["response"]
@@ -150,10 +151,12 @@ class ExternalEffectContext:
         is_recovery = int(effect["execution_count"]) > 0
         if is_recovery and not adapter.supports_idempotency:
             if adapter.supports_reconciliation:
+                await self._executor._reach_boundary("before_reconciliation")
                 reconciliation = await adapter.reconcile(
                     idempotency_key=downstream_key,
                     provider_reference=effect["provider_reference"],
                 )
+                await self._executor._reach_boundary("after_reconciliation")
                 if reconciliation.status is ReconciliationStatus.CONFIRMED:
                     assert reconciliation.result is not None
                     await self._confirm(
@@ -177,6 +180,7 @@ class ExternalEffectContext:
                 )
 
         await self._mark_execution_started(effect["id"])
+        await self._executor._reach_boundary("before_external_send")
         try:
             result = adapter.perform(
                 normalized_request,
@@ -193,7 +197,9 @@ class ExternalEffectContext:
                     "external provider failed without a safe recovery mechanism"
                 ) from exc
             raise
+        await self._executor._reach_boundary("after_external_send")
         await self._confirm(effect["id"], result)
+        await self._executor._reach_boundary("after_effect_confirmation")
         return normalize_json(result.value)
 
     async def _record_or_load_intent(
@@ -337,9 +343,24 @@ class ExternalEffectContext:
 class ExternalOperationExecutor:
     """Execute actions whose effects cannot share PostgreSQL's transaction."""
 
-    def __init__(self, service: DurableOperationService) -> None:
+    def __init__(
+        self,
+        service: DurableOperationService,
+        *,
+        _boundary_hook: Any | None = None,
+    ) -> None:
         self.service = service
         self._identity = PostgresAtomicExecutor(service)
+        self._boundary_hook = _boundary_hook
+
+    async def _reach_boundary(self, name: str) -> None:
+        """Invoke the private deterministic crash-test seam when configured."""
+
+        if self._boundary_hook is None:
+            return
+        result = self._boundary_hook(name)
+        if inspect.isawaitable(result):
+            await result
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
         action = self.service.actions.get(claim.action_name, claim.action_version)

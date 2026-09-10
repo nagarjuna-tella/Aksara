@@ -10,6 +10,9 @@ import asyncpg
 import pytest
 
 from aksara.migrations.executor import (
+    _compute_file_checksum,
+    apply_migration,
+    apply_migrations,
     build_migration_graph,
     discover_internal_migrations,
     load_migration_module,
@@ -110,6 +113,55 @@ async def test_durable_schema_bootstraps_and_reverses_transactionally():
             """,
             schema,
         ) == 0
+    finally:
+        await transaction.rollback()
+        await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_v061_runtime_schema_upgrades_once_with_verified_checksum(tmp_path):
+    connection = await asyncpg.connect(os.environ["DATABASE_URL"])
+    schema = f"aksara_v070_upgrade_{uuid4().hex[:12]}"
+    transaction = connection.transaction()
+    await transaction.start()
+    try:
+        await connection.execute(f'CREATE SCHEMA "{schema}"')
+        await connection.execute(f'SET LOCAL search_path TO "{schema}", public')
+
+        discovered = dict(discover_internal_migrations())
+        runtime_name = "aksara_core_migrations_0001_runtime_tables"
+        durable_name = "aksara_core_migrations_0002_durable_operations"
+        await apply_migration(
+            connection,
+            runtime_name,
+            discovered[runtime_name],
+            verbose=False,
+        )
+        assert await connection.fetchval(
+            "SELECT to_regclass('aksara_tasks') IS NOT NULL"
+        )
+        assert not await connection.fetchval(
+            "SELECT to_regclass('aksara_operations') IS NOT NULL"
+        )
+
+        upgraded = await apply_migrations(connection, tmp_path, verbose=False)
+        assert upgraded["errors"] == []
+        assert durable_name in upgraded["applied"]
+        assert runtime_name in upgraded["skipped"]
+        assert await connection.fetchval(
+            "SELECT to_regclass('aksara_operations') IS NOT NULL"
+        )
+        assert await connection.fetchval(
+            """
+            SELECT checksum FROM aksara_migrations WHERE name = $1
+            """,
+            durable_name,
+        ) == _compute_file_checksum(discovered[durable_name])
+
+        replayed = await apply_migrations(connection, tmp_path, verbose=False)
+        assert replayed["errors"] == []
+        assert replayed["applied"] == []
+        assert durable_name in replayed["skipped"]
     finally:
         await transaction.rollback()
         await connection.close()
