@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -532,5 +533,42 @@ async def test_cancellation_intent_wins_before_atomic_mutation(durable_db):
     completed = await executor.execute(claim)
 
     assert completed.state is OperationState.CANCELLED
+    assert called is False
+    assert await _counter(durable_db, tenant, counter_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_deadline_after_claim_blocks_mutation_and_retains_expiry_metadata(
+    durable_db,
+):
+    tenant, counter_id = str(uuid4()), uuid4()
+    called = False
+
+    async def handler(_context, _command):
+        nonlocal called
+        called = True
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted = await service.admit(
+        "counter.increment",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+        deadline_at=datetime.now(timezone.utc) + timedelta(milliseconds=30),
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    await asyncio.sleep(0.05)
+
+    expired = await executor.execute(claim)
+
+    assert expired.state is OperationState.EXPIRED
+    assert expired.error["code"] == "deadline_expired"
+    assert expired.error_expires_at is not None
     assert called is False
     assert await _counter(durable_db, tenant, counter_id) == 0

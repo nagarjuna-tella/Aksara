@@ -397,6 +397,8 @@ class PostgresAtomicExecutor:
             """
             UPDATE aksara_operations
             SET state = 'expired', state_version = $6, error = $7::jsonb,
+                error_expires_at = clock_timestamp()
+                    + ($9::double precision * INTERVAL '1 second'),
                 worker_id = NULL, lease_expires_at = NULL,
                 completed_at = clock_timestamp(), updated_at = clock_timestamp()
             WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
@@ -412,6 +414,7 @@ class PostgresAtomicExecutor:
             version,
             json.dumps(error),
             self.service.application_namespace,
+            self.service.error_retention_seconds,
         )
         if updated is None:
             raise OwnershipLost("deadline expiration lost ownership")

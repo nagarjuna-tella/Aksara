@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -573,3 +574,143 @@ async def test_approval_authorizer_uses_current_approver(durable_db):
         approve=True,
     )
     assert approved.state is OperationState.READY
+
+
+@pytest.mark.asyncio
+async def test_consumed_approval_survives_attempt_reclaim_without_second_decision(
+    durable_db,
+):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=_principal(tenant),
+        approver_reference=reference,
+        approve=True,
+    )
+    first = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+        lease_seconds=0.03,
+    )
+    assert first is not None
+    await asyncio.sleep(0.05)
+
+    replacement = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+    )
+
+    assert replacement is not None
+    assert replacement.ordinal == 2
+    assert replacement.fence == first.fence + 1
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        decision = await durable_db.fetchrow(
+            """
+            SELECT state, consumed_at
+            FROM aksara_operation_approval_decisions
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert decision["state"] == "approved"
+    assert decision["consumed_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_unconsumed_approval_expiry_closes_operation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        reference,
+        approval_expires_at=datetime.now(timezone.utc) + timedelta(milliseconds=30),
+    )
+    await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=_principal(tenant),
+        approver_reference=reference,
+        approve=True,
+    )
+    await asyncio.sleep(0.05)
+
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+
+    assert claim is None
+    expired = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert expired.state is OperationState.EXPIRED
+    assert expired.error["code"] == "approval_expired"
+    history = await service.history(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert history[0].event == "approval_expired"
+
+
+@pytest.mark.asyncio
+async def test_attempt_budget_survives_retry_and_closes_at_limit(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        _reference(tenant),
+        max_attempts=2,
+    )
+    first = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert first is not None
+    retry = await service.fail_attempt(
+        first,
+        code="temporary_failure",
+        message="retry",
+        retryable=True,
+    )
+    assert retry.state is OperationState.READY
+    second = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+    )
+    assert second is not None
+
+    terminal = await service.fail_attempt(
+        second,
+        code="temporary_failure",
+        message="retry",
+        retryable=True,
+    )
+
+    assert terminal.state is OperationState.FAILED
+    assert terminal.attempt_count == 2
+    assert terminal.error["retryable"] is False
+    assert await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-c",
+        operation_id=admitted.operation.id,
+    ) is None

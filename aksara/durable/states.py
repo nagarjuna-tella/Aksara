@@ -38,6 +38,7 @@ class OperationEvent(str, Enum):
     ADMITTED = "admitted"
     APPROVED = "approved"
     REJECTED = "rejected"
+    APPROVAL_EXPIRED = "approval_expired"
     CLAIMED = "claimed"
     HEARTBEAT = "heartbeat"
     LEASE_RECLAIMED = "lease_reclaimed"
@@ -205,6 +206,12 @@ TRANSITION_RULES = (
         OperationEvent.DEADLINE_EXPIRED,
         OperationState.EXPIRED,
         "database time is past deadline",
+    ),
+    _rule(
+        OperationState.READY,
+        OperationEvent.APPROVAL_EXPIRED,
+        OperationState.EXPIRED,
+        "unconsumed approval expired before the first attempt",
     ),
     _rule(
         OperationState.RUNNING,

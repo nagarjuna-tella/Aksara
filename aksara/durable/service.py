@@ -714,6 +714,8 @@ class DurableOperationService:
             if state is OperationState.CANCELLED and row["state"] == "running"
             else OperationEvent.CANCELLATION_REQUESTED
             if state is OperationState.CANCELLED
+            else OperationEvent.APPROVAL_EXPIRED
+            if reason is FailureReason.APPROVAL_EXPIRED
             else OperationEvent.DEADLINE_EXPIRED
             if state is OperationState.EXPIRED
             else OperationEvent.TERMINAL_FAILURE
@@ -1049,7 +1051,7 @@ class DurableOperationService:
                 if not unexpired:
                     decision_state = "expired"
                     target = OperationState.EXPIRED
-                    event = OperationEvent.DEADLINE_EXPIRED
+                    event = OperationEvent.APPROVAL_EXPIRED
                     code = FailureReason.APPROVAL_EXPIRED.value
                 elif approve:
                     decision_state = "approved"
