@@ -138,7 +138,7 @@ Dispatch a command with an application-chosen idempotency key:
 
 ```http
 POST /durable/operations
-Idempotency-Key: resolve-ticket-018f
+Idempotency-Key: example
 Content-Type: application/json
 
 {
