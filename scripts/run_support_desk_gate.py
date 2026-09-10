@@ -1473,11 +1473,14 @@ print(ApprovalManager(data['secret']).issue(
                     await transaction.rollback()
                     try:
                         response = await request
-                    except ExceptionGroup as exc:
+                    except asyncio.CancelledError:
+                        call_error = "CancelledError"
+                    except BaseExceptionGroup as exc:
                         call_error = type(exc).__name__
-            except ExceptionGroup:
+            except BaseExceptionGroup:
                 # After the in-flight call completes, the SDK client attempts a
-                # session DELETE. Uvicorn may already have closed its listener.
+                # session DELETE, or reports cancellation as a grouped error.
+                # Uvicorn may already have closed its listener.
                 if response is None and call_error is None:
                     raise
             code = await asyncio.wait_for(process.wait(), timeout=15)
