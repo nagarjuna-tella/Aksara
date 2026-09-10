@@ -1,7 +1,7 @@
 # Agent runtime
 
 !!! warning "Experimental"
-    Aksara 0.6.1 does not expose an `AgentRuntime` class. Planner quality,
+    Aksara 0.7.0rc1 does not expose an `AgentRuntime` class. Planner quality,
     autonomous loops, persistent sessions, memory, and provider-specific
     behavior are outside the stable v0.6 contract.
 
@@ -45,7 +45,7 @@ else:
 ```
 
 This example uses real exported modules. It still needs a configured provider
-connector; Aksara does not certify live-provider quality in v0.6.1.
+connector; Aksara does not certify live-provider quality in v0.7.0-rc1.
 
 ## Agent request models
 

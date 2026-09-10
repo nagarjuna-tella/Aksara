@@ -55,10 +55,10 @@ def test_readme_mentions_launch_path(fragment):
     [
         "# Roadmap",
         "Where Aksara is now",
-        "Direction to v0.7",
+        "v0.7 release candidate",
         "v0.6.1 — installed-package truth",
-        "Toward v0.7",
-        "v0.7",
+        "Delivered in v0.7",
+        "Stable v0.7 additions",
         "durable authorized operations",
         "Experimental / deferred",
         "Principles",
@@ -116,7 +116,7 @@ def test_first_project_doc_includes_first_run_flow(fragment):
         "aksara ai-hub configure",
         "ollama serve",
         "ollama pull llama3",
-        "Experimental in v0.6.1",
+        "Experimental in v0.7.0-rc1",
         "MCP generated-tool execution is a",
     ],
 )

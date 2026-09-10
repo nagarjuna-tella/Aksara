@@ -6,6 +6,84 @@ All notable changes to Aksara.
 
 ---
 
+## v0.7.0-rc1 — Durable Authorized Operations
+
+Prepared 2026-09-10.
+
+This candidate adds an opt-in PostgreSQL execution substrate for authorized
+application work that must outlive its request, process, or worker.
+
+### Durable execution truth
+
+- Added one authoritative logical Operation with separate physical Attempts,
+  database-time leases, monotonic fences, bounded results/errors, and retained
+  status after restart.
+- Added a guarded `postgres_atomic` executor that commits supported
+  same-database application mutation, Attempt success, Operation success,
+  result, transition, and outbox intent in one Aksara-pinned transaction.
+- Preserved deterministic lost-response recovery: an ambiguous acknowledgement
+  causes an authoritative PostgreSQL reread, and the same idempotency identity
+  resolves the existing Operation.
+
+### Safe retries and current authority
+
+- Added tenant, principal, application, action-version, and canonical-input
+  scoped idempotency with deterministic conflict and concurrency behavior.
+- Added claims, heartbeats, reclaim, retry eligibility, deadlines, Attempt
+  limits, and stale-owner fencing across process replacement.
+- Added versioned non-secret `PrincipalReference` provenance and code-registered
+  resolvers. Delayed effects resolve a current `Principal` and recheck scopes,
+  tenant, action policy, and `PolicyEngine`; approval never restores revoked
+  permission.
+
+### Decisions, tasks, and external systems
+
+- Added durable approval decisions bound to the exact Operation, input,
+  action/version, requester, approver, tenant, and expiry, plus durable
+  cancellation intent with deterministic same-database completion races.
+- Added optional task-backed execution while keeping Operation Attempt/fence
+  authority and all existing unlinked task behavior.
+- Added explicit external idempotent, reconcilable at-least-once,
+  nonretryable, and read-only classifications. Unreconcilable ambiguity becomes
+  `external_outcome_unknown`; Aksara does not claim exactly-once provider
+  effects.
+
+### Operational surface and compatibility
+
+- Added explicit Python and REST dispatch/status/cancel/decision surfaces,
+  bounded transition history, retryable outbox export, pruning/tombstones, and
+  machine-readable deployment diagnostics.
+- Added production fault injection, multi-process kill/restart, restricted-role
+  forced-RLS, security-abuse, contention, migration, and installed-wheel Support
+  Desk gates.
+- Kept generated REST and MCP synchronous by default. Existing signed MCP
+  approval grants, `Principal`, generated authorization, RLS, task IDs/APIs,
+  CLI behavior, and applications that never adopt durability remain compatible.
+- Kept PostgreSQL as the only required durable service.
+
+### MCP status
+
+Existing official-client Streamable HTTP MCP behavior at `/mcp/` remains in
+the release gate. Protocol-level durable MCP Tasks are deferred because the
+current official Python SDK does not implement the current
+`io.modelcontextprotocol/tasks` extension. Aksara does not add a competing
+wire protocol.
+
+### Stable boundary and limits
+
+The stable additions are the documented Operation semantics, scoped
+idempotency, Attempts/leases/fencing, current reauthorization, approval and
+cancellation binding, same-database atomic executor, external-effect recovery
+classes, task adapter, bounded history/export/retention, and deployment
+diagnostics. Internal tables, repositories, raw commands/provenance, worker and
+fence values, and transition storage remain internal.
+
+Planner quality, persistent AI sessions or memory, multi-agent/autonomous
+workflows, provider quality, Studio AI internals, generic DAG composition,
+application approval UX, and durable compliance retention remain experimental,
+application-owned, or deferred. `DurableStep` remains available but does not
+gain the v0.7 Operation guarantees.
+
 ## v0.6.1 — Installed-Package Truth
 
 Prepared 2026-09-10.

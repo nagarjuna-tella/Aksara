@@ -185,6 +185,7 @@ nav:
       - Media and Email: advanced/media-and-email.md
       - Internationalization and Timezones: advanced/internationalization-and-timezones.md
       - Generic Relations and Durable Workflows: advanced/generic-relations-and-durable-workflows.md
+      - Durable Authorized Operations: advanced/durable-operations.md
       - Background Tasks: advanced/background-tasks.md
       - Caching: advanced/caching.md
       - Performance: advanced/performance.md
@@ -207,6 +208,7 @@ nav:
       - roadmap/index.md
       - Roadmap: roadmap.md
       - v0.6 Stability and Production Contract: roadmap/v0-6-stability-contract.md
+      - v0.7 Durable Operations Stability Contract: roadmap/v0-7-stability-contract.md
   - Releasing: releasing.md
   - Changelog: changelog.md
   - Glossary: glossary.md

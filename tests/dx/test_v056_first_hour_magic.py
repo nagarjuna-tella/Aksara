@@ -243,21 +243,21 @@ class TestScaffoldVersionUpdates:
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert 'v0.6.1' in content
+        assert 'v0.7.0-rc1' in content
     
     def test_settings_py_says_current_version(self):
         """settings.py should reference current version."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        assert 'v0.6.1' in content
+        assert 'v0.7.0-rc1' in content
     
     def test_pyproject_requires_current_version(self):
-        """pyproject.toml should require aksara-framework>=0.6.1."""
+        """pyproject.toml should require aksara-framework>=0.7.0rc1."""
         pyproject_path = self.project_path / "pyproject.toml"
         content = pyproject_path.read_text()
         
-        assert 'aksara-framework>=0.6.1' in content
+        assert 'aksara-framework>=0.7.0rc1' in content
     
     def test_main_py_uses_aksara_dev(self):
         """main.py docstring should mention aksara dev command."""

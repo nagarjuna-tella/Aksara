@@ -9,11 +9,11 @@ through generated REST routes and MCP tools.
 [Build your first project →](getting-started/first-project.md){ .md-button .md-button--primary }
 [Follow the MCP journey](getting-started/mcp.md){ .md-button }
 
-!!! info "v0.6.1 installed-package truth"
-    v0.6.1 is an adoption and trust patch. It aligns public examples,
-    scaffolding, configuration, and package metadata with the bounded v0.6
-    production contract. It does not add the durable-operation architecture
-    planned for v0.7.
+!!! info "v0.7.0-rc1 durable authorized operations"
+    The candidate adds opt-in PostgreSQL Operations and fenced Attempts,
+    scoped idempotency, current reauthorization, durable approval and
+    cancellation intent, task-backed execution, and honest external-effect
+    recovery while preserving the v0.6 synchronous surfaces.
 
 ## The core idea
 
@@ -40,7 +40,7 @@ Aksara requires PostgreSQL.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.6.1"
+pip install "aksara-framework==0.7.0rc1"
 aksara startproject opsdesk
 cd opsdesk
 aksara dbsetup

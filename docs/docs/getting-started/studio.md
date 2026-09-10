@@ -1,6 +1,6 @@
 # Studio quickstart
 
-!!! warning "Experimental in v0.6.1"
+!!! warning "Experimental in v0.7.0-rc1"
     Studio is optional and disabled in new projects. It is not required for the
     stable ORM, REST, security, task, or MCP paths.
 

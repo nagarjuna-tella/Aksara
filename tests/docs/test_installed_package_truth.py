@@ -197,7 +197,8 @@ def test_version_authorities_and_scaffold_agree() -> None:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     scaffold = create_project_scaffold("version_probe", ROOT / ".never-written")
     assert f'version = "{__version__}"' in pyproject
-    assert f"v{__version__}" in scaffold[ROOT / ".never-written/version_probe/main.py"]
+    display_version = f"v{__version__.replace('rc', '-rc')}"
+    assert display_version in scaffold[ROOT / ".never-written/version_probe/main.py"]
     assert (
         f'"aksara-framework>={__version__}"'
         in scaffold[ROOT / ".never-written/version_probe/pyproject.toml"]
