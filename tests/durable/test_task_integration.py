@@ -370,3 +370,45 @@ async def test_prune_preserves_terminal_operation_until_task_projection(durable_
     )
     assert retained_task["status"] == "failed"
     assert retained_task["operation_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_stale_task_projection_cannot_overwrite_new_task_claim(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(uuid4())},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+    worker = TaskWorker(durable_db, durable_service=service)
+    stale_claim = await worker._claim_task()
+    assert stale_claim is not None
+    await durable_db.execute(
+        """
+        UPDATE aksara_tasks
+        SET status = 'pending', locked_at = NULL, available_at = clock_timestamp()
+        WHERE id = $1
+        """,
+        queued.id,
+    )
+    current_claim = await worker._claim_task()
+    assert current_claim is not None
+    assert current_claim.id == queued.id
+    assert current_claim.attempts == stale_claim.attempts + 1
+
+    await worker._project_operation_task(stale_claim, admitted.operation)
+
+    retained = await durable_db.fetchrow(
+        "SELECT status, attempts, locked_at FROM aksara_tasks WHERE id = $1",
+        queued.id,
+    )
+    assert retained["status"] == "running"
+    assert retained["attempts"] == current_claim.attempts
+    assert retained["locked_at"] == current_claim.locked_at

@@ -901,6 +901,11 @@ class DurableOperationService:
         with _tenant_context(claim.tenant_scope):
             async with atomic(db=self.db) as connection:
                 row = await self._lock_owned(connection, claim)
+                if (
+                    row["cancellation_requested_at"] is not None
+                    and code != FailureReason.EXTERNAL_OUTCOME_UNKNOWN.value
+                ):
+                    return await self._cancel_owned_under_lock(connection, row, claim)
                 has_budget = int(row["attempt_count"]) < int(row["max_attempts"])
                 before_deadline = bool(
                     await connection.fetchval(
@@ -979,6 +984,66 @@ class DurableOperationService:
                     attempt_id=claim.attempt_id,
                 )
                 return self.repository.public_operation(updated)
+
+    async def _cancel_owned_under_lock(
+        self,
+        connection: Any,
+        operation: Mapping[str, Any],
+        claim: OperationClaim,
+    ) -> OperationRecord:
+        """Finalize cancellation for the current owned attempt."""
+
+        version = int(operation["state_version"]) + 1
+        attempt_status = await connection.execute(
+            """
+            UPDATE aksara_operation_attempts
+            SET state = 'cancelled', completed_at = clock_timestamp(), retryable = FALSE,
+                error_code = 'cancelled'
+            WHERE id = $1 AND operation_id = $2 AND tenant_scope = $3
+              AND fence = $4 AND worker_id = $5 AND state = 'running'
+            """,
+            claim.attempt_id,
+            claim.operation_id,
+            claim.tenant_scope,
+            claim.fence,
+            claim.worker_id,
+        )
+        if attempt_status != "UPDATE 1":
+            raise OwnershipLost("cancellation observation lost attempt ownership")
+        updated = await connection.fetchrow(
+            """
+            UPDATE aksara_operations
+            SET state = 'cancelled', state_version = $6,
+                worker_id = NULL, lease_expires_at = NULL,
+                completed_at = clock_timestamp(), updated_at = clock_timestamp()
+            WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
+              AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+              AND application_namespace = $7
+              AND cancellation_requested_at IS NOT NULL
+            RETURNING *
+            """,
+            claim.operation_id,
+            claim.tenant_scope,
+            claim.attempt_id,
+            claim.fence,
+            claim.worker_id,
+            version,
+            self.application_namespace,
+        )
+        if updated is None:
+            raise OwnershipLost("cancellation observation lost ownership")
+        await self.repository.insert_transition(
+            connection,
+            operation_id=claim.operation_id,
+            tenant_scope=claim.tenant_scope,
+            state_version=version,
+            from_state=OperationState.RUNNING.value,
+            event=OperationEvent.CANCELLATION_OBSERVED.value,
+            to_state=OperationState.CANCELLED.value,
+            reason_code=FailureReason.CANCELLED.value,
+            attempt_id=claim.attempt_id,
+        )
+        return self.repository.public_operation(updated)
 
     async def _lock_owned(self, connection: Any, claim: OperationClaim) -> Any:
         row = await connection.fetchrow(
@@ -1065,6 +1130,23 @@ class DurableOperationService:
                 )
                 if updated is None:
                     raise CancellationConflict("operation state changed during cancellation")
+                if state is OperationState.WAITING_FOR_APPROVAL:
+                    decision_status = await connection.execute(
+                        """
+                        UPDATE aksara_operation_approval_decisions
+                        SET state = 'superseded', decided_at = clock_timestamp(),
+                            reason = $3
+                        WHERE operation_id = $1 AND tenant_scope = $2
+                          AND state = 'pending'
+                        """,
+                        operation_id,
+                        scope,
+                        (reason or "operation cancelled")[:1000],
+                    )
+                    if decision_status != "UPDATE 1":
+                        raise CancellationConflict(
+                            "active approval decision is missing during cancellation"
+                        )
                 await self.repository.insert_transition(
                     connection,
                     operation_id=operation_id,

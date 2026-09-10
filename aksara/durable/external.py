@@ -269,26 +269,49 @@ class ExternalEffectContext:
                 )
 
     async def _mark_execution_started(self, effect_id: UUID) -> None:
+        closed_reason: str | None = None
         with _tenant_context(self.claim.tenant_scope):
             async with atomic(db=self._executor.service.db) as connection:
-                await self._executor.service._lock_owned(connection, self.claim)
-                status = await connection.execute(
-                    """
-                    UPDATE aksara_operation_effects
-                    SET execution_count = execution_count + 1,
-                        last_attempt_id = $2, last_fence = $3,
-                        updated_at = clock_timestamp()
-                    WHERE id = $1 AND operation_id = $4 AND tenant_scope = $5
-                      AND state = 'intent_recorded'
-                    """,
-                    effect_id,
-                    self.claim.attempt_id,
-                    self.claim.fence,
-                    self.claim.operation_id,
-                    self.claim.tenant_scope,
+                operation = await self._executor.service._lock_owned(
+                    connection, self.claim
                 )
-                if status != "UPDATE 1":
-                    raise OwnershipLost("external effect intent is no longer executable")
+                if operation["cancellation_requested_at"] is not None:
+                    await self._executor._identity._cancel_under_lock(
+                        connection, operation, self.claim
+                    )
+                    closed_reason = "cancellation won before the external effect"
+                else:
+                    deadline_valid = await connection.fetchval(
+                        "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
+                        operation["deadline_at"],
+                    )
+                    if not deadline_valid:
+                        await self._executor._identity._expire_under_lock(
+                            connection, operation, self.claim
+                        )
+                        closed_reason = "deadline expired before the external effect"
+                if closed_reason is None:
+                    status = await connection.execute(
+                        """
+                        UPDATE aksara_operation_effects
+                        SET execution_count = execution_count + 1,
+                            last_attempt_id = $2, last_fence = $3,
+                            updated_at = clock_timestamp()
+                        WHERE id = $1 AND operation_id = $4 AND tenant_scope = $5
+                          AND state = 'intent_recorded'
+                        """,
+                        effect_id,
+                        self.claim.attempt_id,
+                        self.claim.fence,
+                        self.claim.operation_id,
+                        self.claim.tenant_scope,
+                    )
+                    if status != "UPDATE 1":
+                        raise OwnershipLost(
+                            "external effect intent is no longer executable"
+                        )
+        if closed_reason is not None:
+            raise _OperationClosed(closed_reason)
 
     async def _confirm(self, effect_id: UUID, result: ExternalEffectResult) -> None:
         normalized = normalize_json(result.value)
@@ -465,6 +488,7 @@ class ExternalOperationExecutor:
                     WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
                       AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
                       AND application_namespace = $8
+                      AND lease_expires_at > clock_timestamp()
                     RETURNING *
                     """,
                     claim.operation_id,

@@ -63,6 +63,7 @@ def _runtime(
     *,
     current_principal: Principal | None = None,
     retry_classifier=None,
+    authorizer=None,
 ):
     actions = DurableActionRegistry()
     actions.register(
@@ -73,6 +74,7 @@ def _runtime(
             effect_class=EffectClass.POSTGRES_ATOMIC,
             required_scopes=("counter:write",),
             retry_classifier=retry_classifier,
+            authorizer=authorizer,
         )
     )
     resolvers = PrincipalResolverRegistry()
@@ -372,6 +374,88 @@ async def test_current_authorization_is_required_before_mutation(durable_db):
     assert completed.error["code"] == "authorization_denied"
     assert called is False
     assert await _counter(durable_db, tenant, counter_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_authorization_is_rechecked_after_operation_lock(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+    authorized = True
+    called = False
+
+    async def authorize(_principal, _command):
+        return authorized
+
+    async def handler(_context, _command):
+        nonlocal called
+        called = True
+
+    async def revoke_after_lock(name: str):
+        nonlocal authorized
+        if name == "after_lock":
+            authorized = False
+
+    service, _ = _runtime(
+        durable_db,
+        tenant,
+        handler,
+        authorizer=authorize,
+    )
+    executor = PostgresAtomicExecutor(service, _boundary_hook=revoke_after_lock)
+    await _insert_counter(durable_db, tenant, counter_id)
+    _, claim = await _admit_claim(service, tenant, counter_id)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "authorization_denied"
+    assert called is False
+
+
+@pytest.mark.asyncio
+async def test_atomic_success_cannot_commit_after_lease_expires(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+
+    async def handler(context, command):
+        await context.database.execute(
+            """
+            UPDATE durable_test_counters
+            SET mutation_counter = mutation_counter + 1
+            WHERE id = $1
+            """,
+            UUID(command["counter_id"]),
+        )
+        await asyncio.sleep(0.05)
+        return {"counter": 1}
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted = await service.admit(
+        "counter.increment",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+    )
+    first = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+        lease_seconds=0.03,
+    )
+    assert first is not None
+
+    with pytest.raises(OwnershipLost):
+        await executor.execute(first)
+    assert await _counter(durable_db, tenant, counter_id) == 0
+
+    replacement = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+    )
+    assert replacement is not None
+    completed = await executor.execute(replacement)
+    assert completed.state is OperationState.SUCCEEDED
+    assert await _counter(durable_db, tenant, counter_id) == 1
 
 
 @pytest.mark.asyncio

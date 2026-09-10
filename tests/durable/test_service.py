@@ -354,6 +354,68 @@ async def test_retryable_failure_returns_operation_to_ready(durable_db):
 
 
 @pytest.mark.asyncio
+async def test_failure_observes_committed_cancellation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    requested = await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=_reference(tenant),
+    )
+    assert requested.state is OperationState.RUNNING
+
+    completed = await service.fail_attempt(
+        claim,
+        code="temporary_failure",
+        message="retry",
+        retryable=True,
+    )
+
+    assert completed.state is OperationState.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_unknown_external_outcome_overrides_committed_cancellation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=_reference(tenant),
+    )
+
+    completed = await service.fail_attempt(
+        claim,
+        code="external_outcome_unknown",
+        message="provider result is ambiguous",
+        retryable=False,
+    )
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "external_outcome_unknown"
+
+
+@pytest.mark.asyncio
 async def test_durable_approval_then_claim_and_reject_race(durable_db):
     tenant = str(uuid4())
     service = _service(durable_db, approval=True)
@@ -425,6 +487,37 @@ async def test_cancellation_and_tenant_filtered_status_history_outbox(durable_db
             tenant_id=other_tenant,
             principal=_principal(other_tenant),
         )
+
+
+@pytest.mark.asyncio
+async def test_cancelling_waiting_operation_supersedes_pending_approval(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+
+    cancelled = await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=_reference(tenant),
+        reason="request withdrawn",
+    )
+
+    assert cancelled.state is OperationState.CANCELLED
+    with _tenant_context(tenant_scope(tenant)):
+        decision = await durable_db.fetchrow(
+            """
+            SELECT state, reason, decided_at
+            FROM aksara_operation_approval_decisions
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert decision["state"] == "superseded"
+    assert decision["reason"] == "request withdrawn"
+    assert decision["decided_at"] is not None
 
 
 @pytest.mark.asyncio

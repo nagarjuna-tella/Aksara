@@ -95,14 +95,6 @@ class PostgresAtomicExecutor:
         finalized_before_commit = False
         guard_state = None
         try:
-            if not await self._authorize(action, principal, claim):
-                await self.service.fail_attempt(
-                    claim,
-                    code=FailureReason.AUTHORIZATION_DENIED.value,
-                    message="current authorization denied the durable action",
-                    retryable=False,
-                )
-                return await self._read_authoritative(claim)
             with _tenant_context(claim.tenant_scope):
                 async with atomic(db=self.service.db) as connection:
                     await self._at_boundary("before_lock")
@@ -119,6 +111,13 @@ class PostgresAtomicExecutor:
                     if operation["approval_required"] and operation["approval_consumed_at"] is None:
                         raise AtomicBoundaryViolation(
                             "required durable approval was not consumed by claim"
+                        )
+                    if not await self._authorize(action, principal, claim):
+                        return await self.service.fail_attempt(
+                            claim,
+                            code=FailureReason.AUTHORIZATION_DENIED.value,
+                            message="current authorization denied the durable action",
+                            retryable=False,
                         )
 
                     context = PostgresAtomicExecutionContext(
@@ -177,6 +176,7 @@ class PostgresAtomicExecutor:
                           AND application_namespace = $8
                           AND cancellation_requested_at IS NULL
                           AND (deadline_at IS NULL OR deadline_at > clock_timestamp())
+                          AND lease_expires_at > clock_timestamp()
                         RETURNING *
                         """,
                         claim.operation_id,
@@ -317,54 +317,9 @@ class PostgresAtomicExecutor:
         operation: Mapping[str, Any],
         claim: OperationClaim,
     ) -> OperationRecord:
-        version = int(operation["state_version"]) + 1
-        await connection.execute(
-            """
-            UPDATE aksara_operation_attempts
-            SET state = 'cancelled', completed_at = clock_timestamp(), retryable = FALSE,
-                error_code = 'cancelled'
-            WHERE id = $1 AND operation_id = $2 AND fence = $3
-              AND worker_id = $4 AND state = 'running'
-            """,
-            claim.attempt_id,
-            claim.operation_id,
-            claim.fence,
-            claim.worker_id,
+        return await self.service._cancel_owned_under_lock(
+            connection, operation, claim
         )
-        updated = await connection.fetchrow(
-            """
-            UPDATE aksara_operations
-            SET state = 'cancelled', state_version = $6,
-                worker_id = NULL, lease_expires_at = NULL,
-                completed_at = clock_timestamp(), updated_at = clock_timestamp()
-            WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
-              AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
-              AND application_namespace = $7
-              AND cancellation_requested_at IS NOT NULL
-            RETURNING *
-            """,
-            claim.operation_id,
-            claim.tenant_scope,
-            claim.attempt_id,
-            claim.fence,
-            claim.worker_id,
-            version,
-            self.service.application_namespace,
-        )
-        if updated is None:
-            raise OwnershipLost("cancellation observation lost ownership")
-        await self.service.repository.insert_transition(
-            connection,
-            operation_id=claim.operation_id,
-            tenant_scope=claim.tenant_scope,
-            state_version=version,
-            from_state=OperationState.RUNNING.value,
-            event=OperationEvent.CANCELLATION_OBSERVED.value,
-            to_state=OperationState.CANCELLED.value,
-            reason_code=FailureReason.CANCELLED.value,
-            attempt_id=claim.attempt_id,
-        )
-        return self.service.repository.public_operation(updated)
 
     async def _expire_under_lock(
         self,

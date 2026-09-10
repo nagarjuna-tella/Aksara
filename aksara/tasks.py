@@ -1145,7 +1145,8 @@ class TaskWorker:
                     THEN CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second')
                     ELSE available_at END,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1 AND operation_id = $6
+            WHERE id = $1 AND operation_id = $6 AND status = 'running'
+              AND attempts = $7 AND locked_at = $8
             ''',
             task_record.id,
             status,
@@ -1153,6 +1154,8 @@ class TaskWorker:
             error,
             delay,
             task_record.operation_id,
+            task_record.attempts,
+            task_record.locked_at,
         )
 
     async def _execute_callable(

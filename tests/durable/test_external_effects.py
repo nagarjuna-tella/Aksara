@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -22,6 +23,7 @@ from aksara.durable import (
     ReconciliationResult,
     ReconciliationStatus,
 )
+from aksara.durable.errors import OwnershipLost
 from aksara.durable.service import _tenant_context
 from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
@@ -434,3 +436,109 @@ async def test_idempotent_provider_retry_uses_same_key_after_transient_failure(d
     assert completed.state is OperationState.SUCCEEDED
     assert len(provider.calls) == 2
     assert provider.calls[0] == provider.calls[1]
+
+
+@pytest.mark.asyncio
+async def test_cancellation_after_intent_prevents_external_send(durable_db):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service: DurableOperationService
+
+    async def cancel_after_intent(name: str):
+        if name == "after_effect_intent":
+            await service.request_cancellation(
+                admitted.operation.id,
+                tenant_id=tenant,
+                principal=Principal.for_user("user-1", tenant_id=tenant),
+                requester_reference=_reference(tenant),
+            )
+
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        boundary_hook=cancel_after_intent,
+    )
+    admitted, claim = await _claim(service, tenant, {"amount": 25}, lease=1)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.CANCELLED
+    assert provider.calls == []
+    with _tenant_context(tenant_scope(tenant)):
+        execution_count = await durable_db.fetchval(
+            """
+            SELECT execution_count FROM aksara_operation_effects
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert execution_count == 0
+
+
+@pytest.mark.asyncio
+async def test_deadline_after_intent_prevents_external_send(durable_db):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+
+    async def pass_deadline_after_intent(name: str):
+        if name == "after_effect_intent":
+            await asyncio.sleep(0.05)
+
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        boundary_hook=pass_deadline_after_intent,
+    )
+    admitted = await service.admit(
+        "external.perform",
+        "1",
+        {"amount": 25},
+        _reference(tenant),
+        deadline_at=datetime.now(UTC) + timedelta(milliseconds=30),
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+        lease_seconds=1,
+    )
+    assert claim is not None
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.EXPIRED
+    assert provider.calls == []
+
+
+@pytest.mark.asyncio
+async def test_external_completion_cannot_commit_after_lease_expires(
+    durable_db, monkeypatch
+):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service, executor = _runtime(
+        durable_db, tenant, provider, EffectClass.EXTERNAL_IDEMPOTENT
+    )
+    admitted, claim = await _claim(service, tenant, {"amount": 25}, lease=0.03)
+    original_lock_owned = service._lock_owned
+
+    async def delay_after_lock(connection, owned_claim):
+        operation = await original_lock_owned(connection, owned_claim)
+        await connection.execute("SELECT pg_sleep(0.05)")
+        return operation
+
+    monkeypatch.setattr(service, "_lock_owned", delay_after_lock)
+
+    with pytest.raises(OwnershipLost, match="success lost ownership"):
+        await executor._complete(claim, {"charged": 25})
+
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    assert operation.state is OperationState.RUNNING
