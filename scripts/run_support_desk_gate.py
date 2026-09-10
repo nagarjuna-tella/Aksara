@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 from datetime import UTC, datetime
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
@@ -1052,7 +1053,7 @@ class Gate:
                     "official MCP client negotiates protocol",
                     bool(client.protocol_version),
                     protocol_version=client.protocol_version,
-                    sdk="mcp==2.0.0",
+                    sdk=f"mcp=={distribution_version('mcp')}",
                     transport="streamable-http",
                 )
                 listed = await client.list_tools()
