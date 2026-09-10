@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "release": "0.6.0-rc2",
+  "evidence_generated_at": "2026-09-10T03:15:31Z",
+  "candidate": {
+    "commit": "ff30ad3a5f1c4a25a257ab0b11ac69be10cf2342",
+    "base_commit": "b7c8f5a900815b42785c506eb550c3d33c973396",
+    "branch": "codex/v060-rc2-mcp-ai",
+    "tracked_tree_clean_before_validation": true
+  },
+  "database": {
+    "engine": "PostgreSQL",
+    "name": "aksara_test",
+    "required_database_tests": true,
+    "credentials_recorded": false
+  },
+  "mcp": {
+    "dependency_constraint": "mcp>=2.0.0,<2.1.0",
+    "protocol_version": "2026-07-28",
+    "transport": "streamable-http",
+    "endpoint": "/mcp/",
+    "packaged_client_sdk": "mcp==2.0.0",
+    "matrix_sdk": "mcp==2.0.1"
+  },
+  "packages": {
+    "wheel": {
+      "name": "aksara_framework-0.6.0rc2-py3-none-any.whl",
+      "sha256": "97fef0d66276968944f82756080189dbf07da7572180569fbea8c0386c3b7fcb"
+    },
+    "sdist": {
+      "name": "aksara_framework-0.6.0rc2.tar.gz",
+      "sha256": "ce131eff348b0964ca1ce2a276376fb7db8f8311e3a30edc006c946d43d10949"
+    },
+    "twine_check": "pass",
+    "isolated_import": "pass"
+  },
+  "gates": {
+    "source_full_suite": {
+      "status": "pass",
+      "python": "3.11.5",
+      "passed": 7995,
+      "skipped": 2,
+      "database": "aksara_test",
+      "artifact": "pytest-full.log"
+    },
+    "targeted_mcp_ai_suite": {
+      "status": "pass",
+      "passed": 97,
+      "artifact": "pytest-targeted.log"
+    },
+    "runtime_matrix": [
+      {
+        "status": "pass",
+        "python": "3.11.15",
+        "fastapi": "0.136.1",
+        "starlette": "1.0.1",
+        "mcp": "2.0.1",
+        "passed": 7995,
+        "skipped": 2,
+        "warnings": 25,
+        "artifact": "matrix-py311-min.log"
+      },
+      {
+        "status": "pass",
+        "python": "3.11.15",
+        "fastapi": "0.141.1",
+        "starlette": "1.6.0",
+        "mcp": "2.0.1",
+        "passed": 7995,
+        "skipped": 2,
+        "warnings": 25,
+        "artifact": "matrix-py311-latest.log"
+      },
+      {
+        "status": "pass",
+        "python": "3.14.4",
+        "fastapi": "0.136.1",
+        "starlette": "1.0.1",
+        "mcp": "2.0.1",
+        "passed": 7995,
+        "skipped": 2,
+        "warnings": 25,
+        "artifact": "matrix-py314-min.log"
+      },
+      {
+        "status": "pass",
+        "python": "3.14.4",
+        "fastapi": "0.141.1",
+        "starlette": "1.6.0",
+        "mcp": "2.0.1",
+        "passed": 7995,
+        "skipped": 2,
+        "warnings": 25,
+        "artifact": "matrix-py314-latest.log"
+      }
+    ],
+    "packaged_support_desk": {
+      "status": "pass",
+      "checks": 51,
+      "failures": 0,
+      "database": "aksara_test",
+      "real_mcp_client": true,
+      "artifact": "support-desk-gate.json"
+    },
+    "security": {
+      "status": "pass",
+      "security_passed": 428,
+      "fuzz_passed": 162,
+      "fuzz_skipped": 3,
+      "diagnostics_passed": 314,
+      "artifact": "security-diagnostics.log"
+    },
+    "static_analysis_ratchet": {
+      "status": "pass",
+      "ruff_diagnostics": 7212,
+      "ruff_allowed": 7218,
+      "mypy_diagnostics": 496,
+      "mypy_allowed": 501,
+      "artifact": "static-analysis.log"
+    },
+    "docs_strict": {
+      "status": "pass",
+      "artifact": "docs-strict.log"
+    },
+    "bandit": {
+      "status": "pass",
+      "high_severity": 0,
+      "artifact": "bandit.log"
+    },
+    "dependency_audit": {
+      "status": "pass",
+      "known_vulnerabilities": 0,
+      "artifact": "dependency-audit.log"
+    },
+    "secret_scan": {
+      "status": "pass",
+      "scope": "exact candidate Git archive",
+      "leaks": 0,
+      "artifact": "gitleaks.log"
+    },
+    "doctor_release": {
+      "status": "pass",
+      "checks": 12,
+      "warnings": 0,
+      "failures": 0,
+      "blocks": 0,
+      "release_ready": true,
+      "artifact": "doctor-release.json"
+    },
+    "sbom": {
+      "status": "pass",
+      "format": "CycloneDX 1.6",
+      "components": 190,
+      "artifact": "sbom.json"
+    }
+  },
+  "packaged_reference_invariants": {
+    "crud_discovery_and_schema": "pass",
+    "authorized_read_and_persisted_write": "pass",
+    "rest_mcp_contract_equivalence": "pass",
+    "execution_time_authorization_and_live_revocation": "pass",
+    "tenant_and_field_enforcement": "pass",
+    "approval_argument_principal_tenant_binding": "pass",
+    "denied_and_failed_mutation_database_state": "pass",
+    "replay_rejection": "pass",
+    "credential_audience_and_expiry": "pass",
+    "oversized_request_rejection": "pass",
+    "concurrent_context_isolation": "pass",
+    "correlated_redacted_audit": "pass",
+    "shutdown_cancellation_and_connection_release": "pass"
+  },
+  "known_limitations": [
+    "Approval grants are signed stateless exact-operation grants, not a durable approval workflow; the same grant can authorize the same operation again within its validity window when a new tool-call ID is used.",
+    "MCP session and replay state is process-local and does not provide cross-worker or restart-safe idempotency.",
+    "The default audit sink writes structured logs; durable retention and external storage are application responsibilities.",
+    "Streamable HTTP at /mcp/ is the supported MCP transport for v0.6; stdio is not exposed by the framework.",
+    "Token and cost budgets depend on provider-reported accounting, and no live cloud provider certification was performed.",
+    "Planner behavior, investigation/session state, persistent conversations, agent memory, multi-agent workflows, durable autonomous workflows, code patching, provider-specific quality, and Studio AI internals remain experimental."
+  ],
+  "recommendation": {
+    "option": 1,
+    "label": "READY FOR v0.6.0",
+    "published": false
+  }
+}

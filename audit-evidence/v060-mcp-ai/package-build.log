@@ -1,0 +1,32 @@
+ff30ad3a5f1c4a25a257ab0b11ac69be10cf2342
+tracked tree clean at HEAD
+* Creating isolated environment: virtualenv+pip...
+* Installing packages in isolated environment:
+  - hatchling
+* Getting build dependencies for sdist...
+* Installed build dependency versions:
+  - hatchling==1.32.0
+* Building sdist...
+Successfully built aksara_framework-0.6.0rc2.tar.gz
+Processing /tmp/aksara-rc2-final.gOvTnI/source-dist/aksara_framework-0.6.0rc2.tar.gz
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: aksara-framework
+  Building wheel for aksara-framework (pyproject.toml): started
+  Building wheel for aksara-framework (pyproject.toml): finished with status 'done'
+  Created wheel for aksara-framework: filename=aksara_framework-0.6.0rc2-py3-none-any.whl size=930420 sha256=97fef0d66276968944f82756080189dbf07da7572180569fbea8c0386c3b7fcb
+  Stored in directory: /Users/nagarjunatella/Library/Caches/pip/wheels/1d/cf/37/34d349278b67a97692c43d29b8006ea34818781b6b750387cb
+Successfully built aksara-framework
+Checking
+/tmp/aksara-rc2-final.gOvTnI/dist/aksara_framework-0.6.0rc2-py3-none-any.whl: PASSED
+Checking /tmp/aksara-rc2-final.gOvTnI/dist/aksara_framework-0.6.0rc2.tar.gz: PASSED
+
+[notice] A new release of pip is available: 23.2.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip
+0.6.0rc2 MCPRuntime
+97fef0d66276968944f82756080189dbf07da7572180569fbea8c0386c3b7fcb  /tmp/aksara-rc2-final.gOvTnI/dist/aksara_framework-0.6.0rc2-py3-none-any.whl
+ce131eff348b0964ca1ce2a276376fb7db8f8311e3a30edc006c946d43d10949  /tmp/aksara-rc2-final.gOvTnI/dist/aksara_framework-0.6.0rc2.tar.gz
