@@ -41,24 +41,29 @@ class DurableOutboxExporter:
                 record = await connection.fetchrow(
                     """
                     WITH candidate AS (
-                        SELECT id FROM aksara_operation_outbox
-                        WHERE tenant_scope = $1 AND exported_at IS NULL
-                          AND next_attempt_at <= clock_timestamp()
-                          AND (claim_expires_at IS NULL OR claim_expires_at <= clock_timestamp())
-                        ORDER BY id
+                        SELECT o.id FROM aksara_operation_outbox o
+                        JOIN aksara_operations p ON p.id = o.operation_id
+                        WHERE o.tenant_scope = $1
+                          AND p.application_namespace = $2
+                          AND o.exported_at IS NULL
+                          AND o.next_attempt_at <= clock_timestamp()
+                          AND (o.claim_expires_at IS NULL
+                               OR o.claim_expires_at <= clock_timestamp())
+                        ORDER BY o.id
                         FOR UPDATE SKIP LOCKED
                         LIMIT 1
                     )
                     UPDATE aksara_operation_outbox o
-                    SET claimed_by = $2,
+                    SET claimed_by = $3,
                         claim_expires_at = clock_timestamp()
-                            + ($3::double precision * INTERVAL '1 second'),
+                            + ($4::double precision * INTERVAL '1 second'),
                         export_attempts = export_attempts + 1
                     FROM candidate
                     WHERE o.id = candidate.id
                     RETURNING o.*
                     """,
                     scope,
+                    self.service.application_namespace,
                     self.worker_id,
                     self.claim_seconds,
                 )

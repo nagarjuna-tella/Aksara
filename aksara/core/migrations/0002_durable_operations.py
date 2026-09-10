@@ -73,11 +73,13 @@ ON aksara_operations (idempotency_identity_hash)
 WHERE idempotency_identity_hash IS NOT NULL;
 
 CREATE INDEX idx_aksara_operations_claim
-ON aksara_operations (tenant_scope, state, available_at, created_at)
+ON aksara_operations (
+    application_namespace, tenant_scope, state, available_at, created_at
+)
 WHERE state IN ('ready', 'running');
 
 CREATE INDEX idx_aksara_operations_retention
-ON aksara_operations (state, retain_until)
+ON aksara_operations (application_namespace, tenant_scope, state, retain_until)
 WHERE state IN ('succeeded', 'failed', 'cancelled', 'expired');
 
 CREATE TABLE aksara_operation_commands (
@@ -126,6 +128,7 @@ ON aksara_operation_attempts (operation_id, ordinal DESC);
 CREATE TABLE aksara_operation_idempotency (
     identity_hash CHAR(64) PRIMARY KEY,
     scope_hash CHAR(64) NOT NULL,
+    application_namespace VARCHAR(255) NOT NULL,
     tenant_scope TEXT NOT NULL,
     operation_id UUID NOT NULL,
     action_name VARCHAR(255) NOT NULL,
@@ -139,7 +142,7 @@ CREATE INDEX idx_aksara_operation_idempotency_expiry
 ON aksara_operation_idempotency (expires_at);
 
 CREATE INDEX idx_aksara_operation_idempotency_scope
-ON aksara_operation_idempotency (scope_hash);
+ON aksara_operation_idempotency (application_namespace, scope_hash);
 
 CREATE TABLE aksara_operation_approval_decisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

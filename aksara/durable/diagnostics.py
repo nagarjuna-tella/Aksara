@@ -120,9 +120,11 @@ async def check_durable_operations(
                 SELECT DISTINCT action_name, action_version
                 FROM aksara_operations
                 WHERE tenant_scope = $1
+                  AND application_namespace = $2
                   AND state IN ('waiting_for_approval', 'ready', 'running')
                 """,
                 scope,
+                service.application_namespace,
             )
             required_actions = {
                 (row["action_name"], row["action_version"]) for row in action_rows
@@ -146,9 +148,11 @@ async def check_durable_operations(
                 SELECT DISTINCT resolver_key, resolver_version
                 FROM aksara_operations
                 WHERE tenant_scope = $1
+                  AND application_namespace = $2
                   AND state IN ('waiting_for_approval', 'ready', 'running')
                 """,
                 scope,
+                service.application_namespace,
             )
             required_resolvers = {
                 (row["resolver_key"], row["resolver_version"])
@@ -179,9 +183,11 @@ async def check_durable_operations(
                         WHERE state = 'running' AND lease_expires_at <= clock_timestamp()
                     ) AS expired_leases,
                     COUNT(*) FILTER (WHERE state = 'running') AS running
-                FROM aksara_operations WHERE tenant_scope = $1
+                FROM aksara_operations
+                WHERE tenant_scope = $1 AND application_namespace = $2
                 """,
                 scope,
+                service.application_namespace,
             )
             expired_leases = int(backlog["expired_leases"])
             results.append(
@@ -200,10 +206,14 @@ async def check_durable_operations(
             pending_outbox = int(
                 await connection.fetchval(
                     """
-                    SELECT COUNT(*) FROM aksara_operation_outbox
-                    WHERE tenant_scope = $1 AND exported_at IS NULL
+                    SELECT COUNT(*) FROM aksara_operation_outbox o
+                    JOIN aksara_operations p ON p.id = o.operation_id
+                    WHERE o.tenant_scope = $1
+                      AND p.application_namespace = $2
+                      AND o.exported_at IS NULL
                     """,
                     scope,
+                    service.application_namespace,
                 )
             )
             results.append(

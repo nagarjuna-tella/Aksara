@@ -58,14 +58,17 @@ class DurableOperationRepository:
         connection: asyncpg.Connection,
         operation_id: UUID,
         tenant_scope: str,
+        application_namespace: str,
         *,
         for_update: bool = False,
     ) -> asyncpg.Record | None:
         lock = " FOR UPDATE" if for_update else ""
         return await connection.fetchrow(
-            f"SELECT * FROM aksara_operations WHERE id = $1 AND tenant_scope = $2{lock}",
+            f"""SELECT * FROM aksara_operations
+            WHERE id = $1 AND tenant_scope = $2 AND application_namespace = $3{lock}""",
             operation_id,
             tenant_scope,
+            application_namespace,
         )
 
     async def get_public_operation(
@@ -73,8 +76,11 @@ class DurableOperationRepository:
         connection: asyncpg.Connection,
         operation_id: UUID,
         tenant_scope: str,
+        application_namespace: str,
     ) -> OperationRecord | None:
-        row = await self.get_operation(connection, operation_id, tenant_scope)
+        row = await self.get_operation(
+            connection, operation_id, tenant_scope, application_namespace
+        )
         return _operation(row) if row is not None else None
 
     async def get_command(
@@ -241,17 +247,20 @@ class DurableOperationRepository:
         self,
         connection: asyncpg.Connection,
         tenant_scope: str,
+        application_namespace: str,
         *,
         limit: int,
     ) -> list[OutboxRecord]:
         rows = await connection.fetch(
             """
-            SELECT * FROM aksara_operation_outbox
-            WHERE tenant_scope = $1 AND exported_at IS NULL
-              AND next_attempt_at <= clock_timestamp()
-            ORDER BY id LIMIT $2
+            SELECT o.* FROM aksara_operation_outbox o
+            JOIN aksara_operations p ON p.id = o.operation_id
+            WHERE o.tenant_scope = $1 AND p.application_namespace = $2
+              AND o.exported_at IS NULL AND o.next_attempt_at <= clock_timestamp()
+            ORDER BY o.id LIMIT $3
             """,
             tenant_scope,
+            application_namespace,
             limit,
         )
         return [
@@ -271,14 +280,15 @@ class DurableOperationRepository:
         self,
         connection: asyncpg.Connection,
         tenant_scope: str,
+        application_namespace: str,
         *,
         operation_id: UUID | None = None,
     ) -> asyncpg.Record | None:
         return await connection.fetchrow(
             """
             SELECT * FROM aksara_operations
-            WHERE tenant_scope = $1
-              AND ($2::uuid IS NULL OR id = $2)
+            WHERE tenant_scope = $1 AND application_namespace = $2
+              AND ($3::uuid IS NULL OR id = $3)
               AND (
                   (state = 'ready' AND available_at <= clock_timestamp())
                   OR
@@ -289,19 +299,23 @@ class DurableOperationRepository:
             LIMIT 1
             """,
             tenant_scope,
+            application_namespace,
             operation_id,
         )
 
     async def nonterminal_action_versions(
         self,
         connection: asyncpg.Connection,
+        application_namespace: str,
     ) -> set[tuple[str, str]]:
         rows: Sequence[asyncpg.Record] = await connection.fetch(
             """
             SELECT DISTINCT action_name, action_version
             FROM aksara_operations
-            WHERE state IN ('waiting_for_approval', 'ready', 'running')
-            """
+            WHERE application_namespace = $1
+              AND state IN ('waiting_for_approval', 'ready', 'running')
+            """,
+            application_namespace,
         )
         return {(row["action_name"], row["action_version"]) for row in rows}
 

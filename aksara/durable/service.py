@@ -200,17 +200,19 @@ class DurableOperationService:
                     inserted = await connection.fetchval(
                         """
                         INSERT INTO aksara_operation_idempotency (
-                            identity_hash, scope_hash, tenant_scope, operation_id,
+                            identity_hash, scope_hash, application_namespace,
+                            tenant_scope, operation_id,
                             action_name, action_version, canonical_input_hash, expires_at
                         ) VALUES (
-                            $1, $2, $3, $4, $5, $6, $7,
-                            clock_timestamp() + ($8::double precision * INTERVAL '1 second')
+                            $1, $2, $3, $4, $5, $6, $7, $8,
+                            clock_timestamp() + ($9::double precision * INTERVAL '1 second')
                         )
                         ON CONFLICT (identity_hash) DO NOTHING
                         RETURNING operation_id
                         """,
                         identity_hash,
                         semantic_scope_hash,
+                        self.application_namespace,
                         scope,
                         operation_id,
                         action.name,
@@ -318,7 +320,7 @@ class DurableOperationService:
                     correlation=correlation,
                 )
                 row = await self.repository.get_operation(
-                    connection, operation_id, scope
+                    connection, operation_id, scope, self.application_namespace
                 )
                 assert row is not None
                 return OperationAdmission(
@@ -340,9 +342,11 @@ class DurableOperationService:
             """
             SELECT * FROM aksara_operation_idempotency
             WHERE identity_hash = $1 AND tenant_scope = $2
+              AND application_namespace = $3
             """,
             identity_hash,
             scope,
+            self.application_namespace,
         )
         if identity is None:
             raise IdempotencyConflict("idempotency identity was not visible in tenant scope")
@@ -356,7 +360,10 @@ class DurableOperationService:
                 "idempotency key is already bound to different semantic input or action version"
             )
         row = await self.repository.get_operation(
-            connection, identity["operation_id"], scope
+            connection,
+            identity["operation_id"],
+            scope,
+            self.application_namespace,
         )
         if row is None:
             raise IdempotencyIdentityExpired(
@@ -386,7 +393,10 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 row = await self.repository.claim_row(
-                    connection, scope, operation_id=operation_id
+                    connection,
+                    scope,
+                    self.application_namespace,
+                    operation_id=operation_id,
                 )
                 if row is None:
                     return None
@@ -588,6 +598,7 @@ class DurableOperationService:
                             THEN clock_timestamp() ELSE approval_consumed_at END,
                         updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $8
+                      AND application_namespace = $9
                     RETURNING *
                     """,
                     row["id"],
@@ -598,6 +609,7 @@ class DurableOperationService:
                     attempt["lease_expires_at"],
                     ordinal,
                     scope,
+                    self.application_namespace,
                 )
                 event = (
                     OperationEvent.LEASE_RECLAIMED
@@ -698,6 +710,7 @@ class DurableOperationService:
                         SELECT id
                         FROM aksara_operations
                         WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
+                          AND application_namespace = $8
                           AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
                           AND lease_expires_at > clock_timestamp()
                           AND cancellation_requested_at IS NULL
@@ -727,6 +740,7 @@ class DurableOperationService:
                     claim.worker_id,
                     lease,
                     json.dumps(dict(usage_summary)) if usage_summary is not None else None,
+                    self.application_namespace,
                 )
                 if renewed is None:
                     raise OwnershipLost("attempt no longer owns an unexpired operation lease")
@@ -791,6 +805,7 @@ class DurableOperationService:
                         updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
                       AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+                      AND application_namespace = $11
                     RETURNING *
                     """,
                     claim.operation_id,
@@ -803,6 +818,7 @@ class DurableOperationService:
                     json.dumps(error),
                     will_retry,
                     retry_delay_seconds,
+                    self.application_namespace,
                 )
                 if updated is None:
                     raise OwnershipLost("failure finalization lost ownership")
@@ -830,6 +846,7 @@ class DurableOperationService:
             WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
               AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
               AND lease_expires_at > clock_timestamp()
+              AND application_namespace = $6
             FOR UPDATE
             """,
             claim.operation_id,
@@ -837,6 +854,7 @@ class DurableOperationService:
             claim.attempt_id,
             claim.fence,
             claim.worker_id,
+            self.application_namespace,
         )
         if row is None:
             raise OwnershipLost("attempt does not own the current unexpired lease")
@@ -858,7 +876,11 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 row = await self.repository.get_operation(
-                    connection, operation_id, scope, for_update=True
+                    connection,
+                    operation_id,
+                    scope,
+                    self.application_namespace,
+                    for_update=True,
                 )
                 if row is None:
                     raise OperationNotFound("operation was not found")
@@ -926,7 +948,11 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 row = await self.repository.get_operation(
-                    connection, operation_id, scope, for_update=True
+                    connection,
+                    operation_id,
+                    scope,
+                    self.application_namespace,
+                    for_update=True,
                 )
                 if row is None:
                     raise OperationNotFound("operation was not found")
@@ -1033,7 +1059,10 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
                 row = await self.repository.get_public_operation(
-                    connection, operation_id, scope
+                    connection,
+                    operation_id,
+                    scope,
+                    self.application_namespace,
                 )
         if row is None:
             raise OperationNotFound("operation was not found")
@@ -1053,7 +1082,12 @@ class DurableOperationService:
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
-                if await self.repository.get_operation(connection, operation_id, scope) is None:
+                if await self.repository.get_operation(
+                    connection,
+                    operation_id,
+                    scope,
+                    self.application_namespace,
+                ) is None:
                     raise OperationNotFound("operation was not found")
                 return await self.repository.history(
                     connection, operation_id, scope, limit=limit
@@ -1073,7 +1107,10 @@ class DurableOperationService:
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
                 return await self.repository.pending_outbox(
-                    connection, scope, limit=limit
+                    connection,
+                    scope,
+                    self.application_namespace,
+                    limit=limit,
                 )
 
     async def check_deployment(self, *, tenant_id: str | None) -> set[tuple[str, str]]:
@@ -1082,7 +1119,9 @@ class DurableOperationService:
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
-                deployed = await self.repository.nonterminal_action_versions(connection)
+                deployed = await self.repository.nonterminal_action_versions(
+                    connection, self.application_namespace
+                )
         return deployed - self.actions.versions()
 
     async def prune(
@@ -1104,10 +1143,13 @@ class DurableOperationService:
                 deleted_outbox = await connection.fetchval(
                     """
                     WITH candidates AS (
-                        SELECT id FROM aksara_operation_outbox
-                        WHERE tenant_scope = $1 AND exported_at IS NOT NULL
-                          AND exported_at < clock_timestamp() - INTERVAL '1 day'
-                        ORDER BY id LIMIT $2
+                        SELECT e.id FROM aksara_operation_outbox e
+                        JOIN aksara_operations o ON o.id = e.operation_id
+                        WHERE e.tenant_scope = $1
+                          AND o.application_namespace = $2
+                          AND e.exported_at IS NOT NULL
+                          AND e.exported_at < clock_timestamp() - INTERVAL '1 day'
+                        ORDER BY e.id LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), deleted AS (
                         DELETE FROM aksara_operation_outbox o
@@ -1115,6 +1157,7 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    self.application_namespace,
                     batch_size,
                 )
                 deleted_transitions = await connection.fetchval(
@@ -1124,14 +1167,16 @@ class DurableOperationService:
                             PARTITION BY t.operation_id ORDER BY t.id DESC
                         ) AS position
                         FROM aksara_operation_transitions t
+                        JOIN aksara_operations p ON p.id = t.operation_id
                         WHERE t.tenant_scope = $1
+                          AND p.application_namespace = $2
                           AND NOT EXISTS (
                               SELECT 1 FROM aksara_operation_outbox o
                               WHERE o.transition_id = t.id AND o.exported_at IS NULL
                           )
                     ), candidates AS (
-                        SELECT id FROM ranked WHERE position > $2
-                        ORDER BY id LIMIT $3
+                        SELECT id FROM ranked WHERE position > $3
+                        ORDER BY id LIMIT $4
                     ), deleted AS (
                         DELETE FROM aksara_operation_transitions t
                         USING candidates c
@@ -1140,6 +1185,7 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    self.application_namespace,
                     history_per_operation,
                     batch_size,
                 )
@@ -1148,10 +1194,11 @@ class DurableOperationService:
                     WITH candidates AS (
                         SELECT id FROM aksara_operations
                         WHERE tenant_scope = $1 AND result IS NOT NULL
+                          AND application_namespace = $2
                           AND state = 'succeeded'
                           AND completed_at < clock_timestamp()
-                              - ($2::double precision * INTERVAL '1 second')
-                        ORDER BY completed_at LIMIT $3
+                              - ($3::double precision * INTERVAL '1 second')
+                        ORDER BY completed_at LIMIT $4
                         FOR UPDATE SKIP LOCKED
                     ), updated AS (
                         UPDATE aksara_operations o SET result = NULL
@@ -1159,6 +1206,7 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM updated
                     """,
                     scope,
+                    self.application_namespace,
                     self.result_retention_seconds,
                     batch_size,
                 )
@@ -1167,10 +1215,11 @@ class DurableOperationService:
                     WITH candidates AS (
                         SELECT id FROM aksara_operations
                         WHERE tenant_scope = $1 AND error IS NOT NULL
+                          AND application_namespace = $2
                           AND state IN ('failed', 'cancelled', 'expired')
                           AND completed_at < clock_timestamp()
-                              - ($2::double precision * INTERVAL '1 second')
-                        ORDER BY completed_at LIMIT $3
+                              - ($3::double precision * INTERVAL '1 second')
+                        ORDER BY completed_at LIMIT $4
                         FOR UPDATE SKIP LOCKED
                     ), updated AS (
                         UPDATE aksara_operations o SET error = NULL
@@ -1178,6 +1227,7 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM updated
                     """,
                     scope,
+                    self.application_namespace,
                     self.error_retention_seconds,
                     batch_size,
                 )
@@ -1186,13 +1236,18 @@ class DurableOperationService:
                     WITH candidates AS (
                         SELECT o.id FROM aksara_operations o
                         WHERE o.tenant_scope = $1
+                          AND o.application_namespace = $2
                           AND o.state IN ('succeeded', 'failed', 'cancelled', 'expired')
                           AND o.retain_until <= clock_timestamp()
                           AND NOT EXISTS (
                               SELECT 1 FROM aksara_operation_idempotency i
                               WHERE i.operation_id = o.id AND i.expires_at > clock_timestamp()
                           )
-                        ORDER BY o.retain_until LIMIT $2
+                          AND NOT EXISTS (
+                              SELECT 1 FROM aksara_operation_outbox e
+                              WHERE e.operation_id = o.id AND e.exported_at IS NULL
+                          )
+                        ORDER BY o.retain_until LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), deleted AS (
                         DELETE FROM aksara_operations o
@@ -1200,14 +1255,16 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    self.application_namespace,
                     batch_size,
                 )
                 deleted_idempotency = await connection.fetchval(
                     """
                     WITH candidates AS (
                         SELECT identity_hash FROM aksara_operation_idempotency
-                        WHERE tenant_scope = $1 AND expires_at <= clock_timestamp()
-                        ORDER BY expires_at LIMIT $2
+                        WHERE tenant_scope = $1 AND application_namespace = $2
+                          AND expires_at <= clock_timestamp()
+                        ORDER BY expires_at LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), deleted AS (
                         DELETE FROM aksara_operation_idempotency i
@@ -1217,6 +1274,7 @@ class DurableOperationService:
                     ) SELECT COUNT(*) FROM deleted
                     """,
                     scope,
+                    self.application_namespace,
                     batch_size,
                 )
         return {

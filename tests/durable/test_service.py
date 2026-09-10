@@ -44,7 +44,7 @@ def _reference(tenant: str) -> PrincipalReference:
     )
 
 
-def _service(durable_db, *, approval: bool = False):
+def _service(durable_db, *, approval: bool = False, namespace: str = "tests"):
     actions = DurableActionRegistry()
     actions.register(
         DurableAction(
@@ -57,7 +57,7 @@ def _service(durable_db, *, approval: bool = False):
     )
     return DurableOperationService(
         durable_db,
-        application_namespace="tests",
+        application_namespace=namespace,
         actions=actions,
         idempotency_seconds=60,
         retention_seconds=60,
@@ -380,3 +380,51 @@ async def test_tampered_command_fails_before_attempt_creation(durable_db):
     assert operation.state is OperationState.FAILED
     assert operation.error["code"] == "invalid_command"
     assert operation.attempt_count == 0
+
+
+@pytest.mark.asyncio
+async def test_application_namespace_is_an_operation_authority_boundary(durable_db):
+    tenant = str(uuid4())
+    reference = _reference(tenant)
+    owner = _service(durable_db, namespace="application-a")
+    outsider = _service(durable_db, namespace="application-b")
+    admitted = await owner.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        reference,
+        idempotency_key="shared-client-key",
+    )
+
+    with pytest.raises(OperationNotFound):
+        await outsider.get(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=_principal(tenant),
+        )
+    with pytest.raises(OperationNotFound):
+        await outsider.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=_principal(tenant),
+            requester_reference=reference,
+        )
+    assert await outsider.claim(
+        tenant_id=tenant,
+        worker_id="wrong-application",
+        operation_id=admitted.operation.id,
+    ) is None
+    assert await outsider.pending_outbox(
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    ) == []
+    assert await outsider.check_deployment(tenant_id=tenant) == set()
+
+    independent = await outsider.admit(
+        "orders.increment",
+        "1",
+        {"amount": 1},
+        reference,
+        idempotency_key="shared-client-key",
+    )
+    assert independent.operation.id != admitted.operation.id

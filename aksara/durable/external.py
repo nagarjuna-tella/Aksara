@@ -418,6 +418,7 @@ class ExternalOperationExecutor:
                         completed_at = clock_timestamp(), updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
                       AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+                      AND application_namespace = $8
                     RETURNING *
                     """,
                     claim.operation_id,
@@ -427,6 +428,7 @@ class ExternalOperationExecutor:
                     claim.worker_id,
                     version,
                     json.dumps(result),
+                    self.service.application_namespace,
                 )
                 if updated is None:
                     raise OwnershipLost("external operation success lost ownership")

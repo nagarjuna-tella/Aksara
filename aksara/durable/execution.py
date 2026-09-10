@@ -148,6 +148,7 @@ class PostgresAtomicExecutor:
                             completed_at = clock_timestamp(), updated_at = clock_timestamp()
                         WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
                           AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+                          AND application_namespace = $8
                           AND cancellation_requested_at IS NULL
                           AND (deadline_at IS NULL OR deadline_at > clock_timestamp())
                         RETURNING *
@@ -159,6 +160,7 @@ class PostgresAtomicExecutor:
                         claim.worker_id,
                         version,
                         json.dumps(normalized_result),
+                        self.service.application_namespace,
                     )
                     if updated is None:
                         raise OwnershipLost("operation success lost ownership")
@@ -322,6 +324,7 @@ class PostgresAtomicExecutor:
                 completed_at = clock_timestamp(), updated_at = clock_timestamp()
             WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
               AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+              AND application_namespace = $7
               AND cancellation_requested_at IS NOT NULL
             RETURNING *
             """,
@@ -331,6 +334,7 @@ class PostgresAtomicExecutor:
             claim.fence,
             claim.worker_id,
             version,
+            self.service.application_namespace,
         )
         if updated is None:
             raise OwnershipLost("cancellation observation lost ownership")
@@ -381,6 +385,7 @@ class PostgresAtomicExecutor:
                 completed_at = clock_timestamp(), updated_at = clock_timestamp()
             WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
               AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
+              AND application_namespace = $8
             RETURNING *
             """,
             claim.operation_id,
@@ -390,6 +395,7 @@ class PostgresAtomicExecutor:
             claim.worker_id,
             version,
             json.dumps(error),
+            self.service.application_namespace,
         )
         if updated is None:
             raise OwnershipLost("deadline expiration lost ownership")
@@ -432,6 +438,7 @@ class PostgresAtomicExecutor:
                     connection,
                     claim.operation_id,
                     claim.tenant_scope,
+                    self.service.application_namespace,
                 )
         if operation is None:
             raise OwnershipLost("authoritative operation row is no longer available")

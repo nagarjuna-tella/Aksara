@@ -112,6 +112,14 @@ async def test_pruning_keeps_active_and_unexpired_idempotency_truth(durable_db):
             """,
             terminal.operation.id,
         )
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_outbox
+            SET exported_at = clock_timestamp()
+            WHERE operation_id = $1
+            """,
+            terminal.operation.id,
+        )
     second = await service.prune(tenant_id=tenant, batch_size=10)
     assert second["operations"] == 1
     assert second["idempotency"] == 1

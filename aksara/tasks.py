@@ -428,7 +428,7 @@ async def enqueue_operation_task(
     with _tenant_context(scope):
         async with database.acquire() as connection:
             operation = await service.repository.get_operation(
-                connection, operation_id, scope
+                connection, operation_id, scope, service.application_namespace
             )
             if operation is None:
                 raise OperationNotFound("operation was not found in the active tenant")
@@ -673,6 +673,7 @@ class TaskWorker:
                         connection,
                         task_record.operation_id,
                         scope,
+                        self.durable_service.application_namespace,
                         for_update=True,
                     )
                     if operation is None:
@@ -1043,7 +1044,10 @@ class TaskWorker:
             with _tenant_context(scope):
                 async with service.db.acquire() as connection:
                     operation = await service.repository.get_public_operation(
-                        connection, task_record.operation_id, scope
+                        connection,
+                        task_record.operation_id,
+                        scope,
+                        service.application_namespace,
                     )
             await self._project_operation_task(task_record, operation)
             return
