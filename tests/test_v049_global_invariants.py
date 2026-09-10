@@ -259,6 +259,11 @@ print(f"{end - start:.3f}")
             timeout=10,
             check=False,
         )
+        assert result.returncode == 0, (
+            f"Aksara import subprocess failed with exit code {result.returncode}\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}"
+        )
         
         import_time = float(result.stdout.strip())
         

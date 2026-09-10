@@ -1434,8 +1434,9 @@ async def _handle_run_health_check(
         # Check routes
         try:
             if hasattr(app, 'routes'):
-                checks["routes_configured"] = len(list(iter_routes(app))) > 0
-                checks["route_count"] = len(list(iter_routes(app)))
+                routes = list(iter_routes(app))
+                checks["routes_configured"] = bool(routes)
+                checks["route_count"] = len(routes)
         except Exception:
             pass
         
