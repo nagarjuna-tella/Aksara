@@ -36,7 +36,7 @@ import time
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Literal, Optional
 from uuid import UUID, uuid4
 from weakref import WeakSet
 
@@ -508,6 +508,9 @@ class TaskWorker:
         queues: Optional[list[str]] = None,
         durable_service: Optional["DurableOperationService"] = None,
         worker_id: Optional[str] = None,
+        _boundary_hook: Optional[
+            Callable[[str], None | Awaitable[None]]
+        ] = None,
     ):
         from aksara.conf import settings
 
@@ -562,6 +565,7 @@ class TaskWorker:
         self.queues: Optional[list[str]] = queues
         self.durable_service = durable_service
         self.worker_id = worker_id or f"task-worker-{uuid4()}"
+        self._boundary_hook = _boundary_hook
 
         self._last_recovery: float = 0.0
         self._last_cleanup: float = 0.0
@@ -598,13 +602,24 @@ class TaskWorker:
         database = _get_db(self._db)
         await ensure_tasks_table(database)
 
+        await self._at_boundary("before_task_claim")
         task_record = await self._claim_task()
         if task_record is None:
             return None
+        await self._at_boundary("after_task_claim")
 
         await self._process_task(task_record)
         refreshed = await get_task_record(task_record.id, db=database)
         return refreshed or task_record
+
+    async def _at_boundary(self, name: str) -> None:
+        """Invoke the private process-failure campaign seam, when configured."""
+
+        if self._boundary_hook is None:
+            return
+        result = self._boundary_hook(name)
+        if inspect.isawaitable(result):
+            await result
 
     async def recover_stale_locks(self) -> int:
         """Reset tasks stuck in 'running' state back to 'pending'.
@@ -1034,6 +1049,7 @@ class TaskWorker:
         from aksara.durable.types import EffectClass, tenant_scope
 
         scope = tenant_scope(task_record.tenant_id)
+        await self._at_boundary("before_operation_claim")
         claim = await service.claim(
             tenant_id=task_record.tenant_id,
             worker_id=f"{self.worker_id}:{task_record.id}",
@@ -1051,9 +1067,13 @@ class TaskWorker:
                     )
             await self._project_operation_task(task_record, operation)
             return
+        await self._at_boundary("after_operation_claim")
 
         if claim.effect_class is EffectClass.POSTGRES_ATOMIC:
-            operation = await PostgresAtomicExecutor(service).execute(claim)
+            operation = await PostgresAtomicExecutor(
+                service,
+                _boundary_hook=self._at_boundary,
+            ).execute(claim)
         elif claim.effect_class is EffectClass.READ_ONLY:
             operation = await ReadOnlyExecutor(service).execute(claim)
         elif claim.effect_class in {
@@ -1069,6 +1089,8 @@ class TaskWorker:
                 message="task adapter does not execute this effect class",
                 retryable=False,
             )
+        await self._at_boundary("after_operation_commit")
+        await self._at_boundary("before_task_projection")
         await self._project_operation_task(task_record, operation)
 
     async def _project_operation_task(self, task_record: TaskRecord, operation: Any) -> None:

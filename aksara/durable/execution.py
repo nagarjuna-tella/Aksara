@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -59,8 +59,23 @@ _PERMANENT_RESOLUTION_CODES = {
 class PostgresAtomicExecutor:
     """Execute one claimed same-database action and finalize in one commit."""
 
-    def __init__(self, service: DurableOperationService) -> None:
+    def __init__(
+        self,
+        service: DurableOperationService,
+        *,
+        _boundary_hook: Callable[[str], None | Awaitable[None]] | None = None,
+    ) -> None:
         self.service = service
+        self._boundary_hook = _boundary_hook
+
+    async def _at_boundary(self, name: str) -> None:
+        """Invoke the private failure-campaign seam, when configured."""
+
+        if self._boundary_hook is None:
+            return
+        result = self._boundary_hook(name)
+        if inspect.isawaitable(result):
+            await result
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
         action = self.service.actions.get(claim.action_name, claim.action_version)
@@ -87,7 +102,9 @@ class PostgresAtomicExecutor:
         try:
             with _tenant_context(claim.tenant_scope):
                 async with atomic(db=self.service.db) as connection:
+                    await self._at_boundary("before_lock")
                     operation = await self.service._lock_owned(connection, claim)
+                    await self._at_boundary("after_lock")
                     if operation["cancellation_requested_at"] is not None:
                         return await self._cancel_under_lock(connection, operation, claim)
                     deadline_valid = await connection.fetchval(
@@ -109,6 +126,7 @@ class PostgresAtomicExecutor:
                         tenant_id=claim.tenant_id,
                         fence=claim.fence,
                     )
+                    await self._at_boundary("before_mutation")
                     with durable_database_guard(self.service.db, connection) as guard:
                         guard_state = guard
                         result = action.handler(context, dict(claim.command))
@@ -120,6 +138,7 @@ class PostgresAtomicExecutor:
                                 f"{guard.invalid_reason}"
                             )
                         normalized_result = action.normalize_result(result)
+                    await self._at_boundary("after_mutation")
 
                     attempt_status = await connection.execute(
                         """
@@ -137,6 +156,7 @@ class PostgresAtomicExecutor:
                     )
                     if attempt_status != "UPDATE 1":
                         raise OwnershipLost("attempt success lost ownership")
+                    await self._at_boundary("after_attempt_success")
 
                     version = int(operation["state_version"]) + 1
                     updated = await connection.fetchrow(
@@ -164,6 +184,7 @@ class PostgresAtomicExecutor:
                     )
                     if updated is None:
                         raise OwnershipLost("operation success lost ownership")
+                    await self._at_boundary("after_operation_success")
                     await self.service.repository.insert_transition(
                         connection,
                         operation_id=claim.operation_id,
@@ -174,6 +195,7 @@ class PostgresAtomicExecutor:
                         to_state=OperationState.SUCCEEDED.value,
                         attempt_id=claim.attempt_id,
                     )
+                    await self._at_boundary("before_commit")
                     finalized_before_commit = True
                     result_record = self.service.repository.public_operation(updated)
             return result_record

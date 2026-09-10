@@ -23,6 +23,7 @@ from aksara.durable import (
     PrincipalReference,
     PrincipalResolution,
     PrincipalResolverRegistry,
+    ReadOnlyExecutor,
 )
 from aksara.durable.errors import OwnershipLost
 from aksara.security.principal import Principal
@@ -148,6 +149,49 @@ async def test_mutation_attempt_success_and_operation_success_share_commit(durab
     assert completed.state is OperationState.SUCCEEDED
     assert completed.result == {"counter": 1}
     assert await _counter(durable_db, tenant, counter_id) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "boundary",
+    [
+        "before_lock",
+        "after_lock",
+        "before_mutation",
+        "after_mutation",
+        "after_attempt_success",
+        "after_operation_success",
+        "before_commit",
+    ],
+)
+async def test_every_precommit_boundary_rolls_back_as_one_unit(durable_db, boundary):
+    tenant, counter_id = str(uuid4()), uuid4()
+
+    async def handler(context, command):
+        await context.database.execute(
+            """
+            UPDATE durable_test_counters
+            SET mutation_counter = mutation_counter + 1
+            WHERE id = $1
+            """,
+            UUID(command["counter_id"]),
+        )
+        return {"counter": 1}
+
+    async def inject(name: str):
+        if name == boundary:
+            raise RuntimeError(f"injected at {name}")
+
+    service, _ = _runtime(durable_db, tenant, handler)
+    executor = PostgresAtomicExecutor(service, _boundary_hook=inject)
+    await _insert_counter(durable_db, tenant, counter_id)
+    _, claim = await _admit_claim(service, tenant, counter_id)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "executor_error"
+    assert await _counter(durable_db, tenant, counter_id) == 0
 
 
 @pytest.mark.asyncio
@@ -358,3 +402,63 @@ async def test_lost_commit_acknowledgement_rereads_authoritative_success(
 
     assert completed.state is OperationState.SUCCEEDED
     assert await _counter(durable_db, tenant, counter_id) == 1
+
+
+@pytest.mark.asyncio
+async def test_read_only_executor_rejects_application_writes(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+
+    async def handler(context, command):
+        await context.database.execute(
+            """
+            UPDATE durable_test_counters
+            SET mutation_counter = mutation_counter + 1
+            WHERE id = $1
+            """,
+            UUID(command["counter_id"]),
+        )
+        return {"unsafe": True}
+
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="counter.read-only",
+            version="1",
+            handler=handler,
+            effect_class=EffectClass.READ_ONLY,
+            required_scopes=("counter:write",),
+        )
+    )
+    resolvers = PrincipalResolverRegistry()
+    resolvers.register(
+        "test",
+        "1",
+        lambda _reference: PrincipalResolution.resolved(_principal(tenant)),
+    )
+    service = DurableOperationService(
+        durable_db,
+        application_namespace="atomic-tests",
+        actions=actions,
+        resolvers=resolvers,
+        retention_seconds=60,
+        idempotency_seconds=60,
+    )
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted = await service.admit(
+        "counter.read-only",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="read-only-worker",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+
+    completed = await ReadOnlyExecutor(service).execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "executor_error"
+    assert await _counter(durable_db, tenant, counter_id) == 0
