@@ -1,0 +1,36 @@
+{
+  "scenarios": {
+    "local_integration_sample": {
+      "pass": true,
+      "purpose": "pathology detection only; not a benchmark claim",
+      "results": {
+        "claim_ms": {
+          "max_ms": 19.194,
+          "median_ms": 17.95,
+          "min_ms": 16.275,
+          "samples": 8
+        },
+        "fence_validation_and_completion_ms": {
+          "max_ms": 4.614,
+          "median_ms": 3.264,
+          "min_ms": 3.16,
+          "samples": 8
+        },
+        "heartbeat_ms": {
+          "max_ms": 17.642,
+          "median_ms": 17.232,
+          "min_ms": 16.327,
+          "samples": 8
+        },
+        "reclaim_ms": {
+          "max_ms": 25.709,
+          "median_ms": 25.709,
+          "min_ms": 25.709,
+          "samples": 1
+        }
+      },
+      "transactions_hold_no application work across claims": true
+    }
+  },
+  "schema_version": 1
+}

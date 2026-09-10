@@ -1,0 +1,76 @@
+{
+  "scenarios": {
+    "after_attempt": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "after_lock": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "after_mutation": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "after_operation": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "before_begin": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "commit_acknowledgement_lost": {
+      "actual_network_ack_loss_injected": false,
+      "application_mutation": 1,
+      "attempt_state": "succeeded",
+      "operation_state": "succeeded",
+      "pass": true,
+      "recovery_rule": "reconnect and read operation before retry",
+      "simulation": "client discards known successful commit response"
+    },
+    "during_database_mutation": {
+      "application_mutation": 0,
+      "attempt_state": "running",
+      "fresh_connection_verified": true,
+      "operation_state": "running",
+      "pass": true
+    },
+    "negative_controls": {
+      "different_connection": {
+        "application_mutation": 1,
+        "attempt_state": "running",
+        "defect_detected": true,
+        "operation_state": "running"
+      },
+      "split_commits": {
+        "application_mutation": 1,
+        "attempt_state": "running",
+        "defect_detected": true,
+        "operation_state": "running"
+      },
+      "success_without_mutation": {
+        "application_mutation": 0,
+        "attempt_state": "succeeded",
+        "defect_detected": true,
+        "operation_state": "succeeded"
+      }
+    }
+  },
+  "schema_version": 1
+}

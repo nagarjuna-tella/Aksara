@@ -1,0 +1,65 @@
+{
+  "scenarios": {
+    "lease_expiry_while_locked": {
+      "commit": {
+        "application_mutation": 1,
+        "b_blocked_while_a_held_row_lock": true,
+        "b_reclaimed": false,
+        "operation_state": "succeeded",
+        "pass": true
+      },
+      "rollback": {
+        "application_mutation": 0,
+        "b_blocked_while_a_held_row_lock": true,
+        "b_reclaimed": true,
+        "operation_state": "running",
+        "pass": true
+      }
+    },
+    "n_to_n_plus_one": {
+      "attempt_a_state": "abandoned",
+      "attempt_b_state": "succeeded",
+      "fence_n": 1,
+      "fence_n_plus_one": 2,
+      "operation_state": "succeeded",
+      "pass": true,
+      "stale_application_mutation": 0,
+      "stale_heartbeat_rows": 0,
+      "stale_progress_rows": 0,
+      "stale_terminal_write_rows": 0,
+      "valid_b_application_mutation": 1
+    },
+    "negative_controls": {
+      "finalization_only": {
+        "defect_detected": true,
+        "finalization_rows": 0,
+        "stale_mutation_committed": 1
+      },
+      "heartbeat_without_attempt_identity": {
+        "defect_detected": true,
+        "extended_current_owner_from_stale_request": true,
+        "rows": 1
+      },
+      "recovery_without_increment": {
+        "broken_candidate_fence": 1,
+        "defect_detected": true,
+        "monotonicity_check": false,
+        "old_fence": 1
+      },
+      "removed_fence_condition": {
+        "current_fence": 2,
+        "defect_detected": true,
+        "stale_fence": 1,
+        "stale_mutation_committed": 1
+      }
+    },
+    "two_connection_claim_race": {
+      "exclusive_winner_every_iteration": true,
+      "iterations": 15,
+      "pass": true,
+      "worker_a_wins": 9,
+      "worker_b_wins": 6
+    }
+  },
+  "schema_version": 1
+}
