@@ -67,7 +67,10 @@ context for tenant-scoped work.
 - Replay protection storage is not implemented by the core credential helpers.
 - Scoped and audience-bound token issuance is not a complete core issuance
   system; applications should issue and rotate credentials carefully.
-- The v0.6 production contract covers claims used on the generated REST path.
-  Applications remain responsible for issuing, rotating, and revoking tokens.
-- The `/ai/tools/mcp` endpoint is a catalog; protocol-level MCP authentication
-  and sessions are not implemented.
+- The v0.6 production contract covers claims enforced on generated REST and MCP
+  execution paths. Applications remain responsible for issuing, rotating, and
+  revoking tokens.
+- The `/mcp/` endpoint authenticates and authorizes protocol requests at
+  execution time. Its session and replay state is process-local and does not
+  provide durable or cross-worker continuity. `/ai/tools/mcp` remains an
+  inspection catalog.

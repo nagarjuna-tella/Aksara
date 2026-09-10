@@ -10,6 +10,29 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
 
 ## Current Stable Version
 
+### v0.6.0 - Production Mode
+
+- Defines a bounded stable contract for the async PostgreSQL ORM, migrations,
+  generated REST APIs, authentication, Principal propagation, permissions,
+  PolicyEngine, tenant isolation, CLI, and Doctor production surfaces.
+- Provides generated MCP discovery and execution over Streamable HTTP at
+  `/mcp/`, with execution-time authorization, tenant and field-write
+  enforcement, bounded approval grants, audit events, structured errors, and
+  runtime limits.
+- Validates the contract through the supported Python and web-dependency matrix,
+  hosted PostgreSQL 16, security/fuzz/diagnostics gates, and a packaged support
+  desk application.
+- Keeps planner behavior, process-local investigation/session state, persistent
+  AI conversations, memory, multi-agent and durable autonomous workflows,
+  provider-specific quality, and Studio AI internals experimental.
+- See the complete [v0.6 stability and production
+  contract](roadmap/v0-6-stability-contract.md) and [release
+  notes](changelog.md).
+
+---
+
+## Recent Releases
+
 ### v0.5.54 - ORM Write & Relation Correctness
 
 - `bulk_create()` now prepares rows before insert, applies auto-managed
@@ -27,11 +50,6 @@ Aksara is public and pre-1.0. The near-term roadmap prioritizes trust, first-use
   expose the stored FK id; load related objects explicitly or with
   `select_related()` plus `get_related()`.
 - This release focuses on ORM write-path consistency and relation safety.
-  It does not claim production readiness or external security review.
-
----
-
-## Recent Releases
 
 ### v0.5.53 - ORM Query Semantics & Migration Generation Correctness
 
@@ -146,18 +164,12 @@ supported web route traversal pass the release gate at commit `094169e`. The
 independent benchmark overhaul remains outside this correctness release. See the
 [runtime compatibility contract](reference/runtime-compatibility.md).
 
-## v0.6.0-rc2 Candidate (Unpublished)
+## v0.6.0 Release Candidate (Historical)
 
-The candidate defines the bounded [v0.6 stability and production
-contract](roadmap/v0-6-stability-contract.md) and includes a packaged,
-multi-tenant support desk reference app. Its gate covers migrations, generated
-APIs, authentication, permissions, forced RLS, catalog-described REST mutation,
-PostgreSQL-backed tasks, Admin, Doctor, bounded startup/shutdown failure, and
-recovery.
-
-Studio, AI analysis and provider surfaces, process-local investigation
-sessions, autonomous agent workflows, and protocol-level MCP execution remain
-outside the production contract.
+The v0.6.0-rc2 candidate established the bounded [v0.6 stability and production
+contract](roadmap/v0-6-stability-contract.md) and the packaged, multi-tenant
+support desk reference gate. Its validated MCP execution boundary was promoted
+into v0.6.0; its release evidence remains a historical record.
 
 ## Future Roadmap
 
@@ -180,16 +192,6 @@ Introduce a minimal, explicit memory foundation for project-level AI context.
 ### AI System Radar
 
 Add system-level monitoring surfaces for AI-assisted project health.
-
-### v0.6.0 - Production Mode
-
-Promote the rc1 contract after exact-revision replay and any material fixes
-found during the release-candidate period. Publication requires explicit
-maintainer authorization.
-
-Possible later work includes field-level AI mutation audit logs, durable AI
-session storage, and broader external review. None is part of the v0.6 stable
-contract.
 
 ---
 

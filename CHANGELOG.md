@@ -5,78 +5,87 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased — v0.6.0-rc2 — Production Contract Candidate
+## v0.6.0 — Production Mode
 
-This candidate defines a bounded Production Mode contract for Aksara's stable
-backend surfaces. It is not published.
+Released 2026-09-10.
 
-### Added
+Aksara v0.6.0 is the first Production Mode release within a bounded, documented
+stable contract. Aksara remains pre-1.0; AI planning, durable agent state,
+provider quality, and Studio AI surfaces remain experimental.
 
-- A packaged multi-tenant support desk reference application covering models,
-  relations, migrations, generated APIs, authentication, permissions, forced
-  PostgreSQL RLS, an MCP-shaped tool catalog, catalog-described REST mutation,
-  PostgreSQL-backed tasks, Admin, Doctor, health endpoints, and production
-  configuration.
-- A bounded deployment gate covering invalid configuration, unavailable
-  database, pending migrations, fresh install, existing-schema upgrade,
-  idempotent migration replay, restricted runtime privileges, pool reuse,
-  rollback, concurrent app instances, task retry and process restart, database
-  reconnection, in-flight graceful shutdown, and connection cleanup.
-- Internal runtime-table migration
-  `aksara_core_migrations_0001_runtime_tables` for sessions, content types,
-  tasks, and cron. A current application role can start with DML-only grants.
-- Strict Doctor evidence for the reference production profile. Deployments with
-  AI/MCP mutation surfaces can set
-  `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true` only after explicitly reviewing
-  every exposed field's `ai_agent_writable` policy.
-- A public stability contract that separates stable backend APIs from
-  experimental Studio/AI surfaces and unsupported behavior.
-- An official-SDK MCP Streamable HTTP server at `/mcp/` with protocol
-  negotiation, generated CRUD discovery and invocation, structured errors,
-  lifecycle management, cancellation, and packaged-client evidence.
-- Immutable agent invocation context, execution-time scope/audience/expiry/
-  tenant enforcement, redacted audit events, signed bounded approval grants,
-  and deterministic runtime limits for provider and planner execution.
+### Production foundation
 
-### Changed
+- Hardened Array, Vector, JSON, file/image, primitive, relation, query, and bulk
+  write contracts across ORM, API, migration, and database codec paths.
+- Made session and transaction acquisition exception-safe, including cleanup
+  after setup failure, cancellation, startup failure, and connection reuse.
+- Strengthened migration ordering, checksum validation, advisory locking,
+  runtime-table bootstrapping, and the separate migration-role deployment path.
+- Defined the supported Python 3.11–3.14 and FastAPI/Starlette compatibility
+  matrix and exercised its minimum and latest boundaries.
+- Validated restricted PostgreSQL roles, forced RLS tenant isolation, generated
+  API abuse invariants, and packaged support desk startup, shutdown, recovery,
+  concurrency, migration, task, and pool-reuse behavior.
+- Added strict `aksara doctor production-check --release` diagnostics for the
+  documented Production Mode configuration.
 
-- The supported runtime contract is Python 3.11–3.14, PostgreSQL 16 in release
-  CI, and the paired FastAPI/Starlette boundaries documented in the runtime
-  matrix.
-- `/mcp/` is the protocol endpoint over Streamable HTTP. `/ai/tools/mcp`
-  remains the permission-filtered inspection catalog.
-- Custom lifespan startup failures now release framework database and worker
-  state while preserving the triggering exception.
-- Runtime schema helpers preflight migrated tables and avoid DDL when the
-  schema is current.
-- Static analysis uses a reviewed debt ratchet: new Ruff or mypy findings may
-  not increase the recorded baseline.
+### AI-native execution
 
-### Upgrade notes
+- Integrated the official MCP Python SDK and mounted Streamable HTTP at
+  `/mcp/`; `/ai/tools/mcp` remains the permission-filtered inspection catalog.
+- Generated executable CRUD and custom action tools from registered,
+  AI-exposed ViewSets.
+- Propagated immutable AgentPrincipal and invocation identity into tool
+  execution and correlated audit events.
+- Rechecked scopes, audience, expiry, permissions, PolicyEngine decisions,
+  tenant ownership, field-write rules, ORM validation, and PostgreSQL RLS when
+  each MCP tool executes.
+- Added signed, short-lived approval grants bound to the exact principal,
+  tenant, tool, arguments, approver, and expiry.
+- Added deterministic audit events, transactional rollback, cancellation,
+  structured tool failure categories, and runtime/tool/provider budgets.
 
-1. Upgrade from the v0.5.55 candidate and run `aksara migrate` with a migration
-   role before starting v0.6 application processes.
-2. Grant the application role the required DML privileges on the migrated
-   runtime tables; do not grant it schema-creation privileges.
+### Release trust
+
+- Exercised the supported runtime matrix against hosted PostgreSQL 16 and a real
+  official SDK MCP client, including packaged wheel integration.
+- Added security, fuzz, diagnostics, migration, packaged reference, and strict
+  Doctor release gates.
+- Added dependency audit, CodeQL, secret scanning, SBOM generation, package and
+  Twine verification, isolated-wheel checks, and Ruff/mypy debt ratchets.
+- Kept PyPI publication in a separately authorized Trusted Publishing workflow
+  using GitHub OIDC.
+
+### Known limitations
+
+- Planner behavior, investigation quality and session state, persistent AI
+  conversations, agent memory, multi-agent workflows, durable autonomous
+  workflows, provider-specific model quality, and Studio AI internals remain
+  experimental.
+- Investigation and MCP session/replay state is process-local; restart-safe or
+  cross-worker replay/idempotency is outside the stable contract.
+- Applications remain responsible for durable approval workflow state, durable
+  audit retention, and exactly-once handling of external side effects.
+- Custom many-to-many through models and object-valued lazy forward foreign-key
+  attributes remain unsupported.
+- The release evidence does not claim external security certification,
+  penetration testing, soak testing, or provider certification.
+
+### Upgrade
+
+1. Install the final release with
+   `python -m pip install --upgrade "aksara-framework==0.6.0"`.
+2. Run `aksara migrate` with a migration role before starting v0.6 application
+   processes, then grant the application role the required DML privileges on
+   migrated runtime tables.
 3. For tenant data, use a `NOSUPERUSER NOBYPASSRLS` application role and force
    RLS on tenant tables.
 4. Run `aksara doctor production-check --release` with the deployment's
    security matrix and resolve every non-pass result.
-5. If exposing AI/MCP-described writes, review every exposed field explicitly
-   before setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
-6. Point MCP clients at `/mcp/`; keep `/ai/tools/mcp` only for inspection or
+5. Review every AI/MCP-exposed writable field before setting
+   `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
+6. Point MCP clients at `/mcp/`; use `/ai/tools/mcp` only for inspection or
    compatibility adapters.
-
-### Experimental and deferred
-
-- Studio internals, investigation sessions, planners, code-generation
-  suggestions, provider-specific live integrations, and autonomous agent
-  workflows remain experimental.
-- Investigation/session state is process-local and has no restart or
-  multi-worker continuity guarantee.
-- Durable autonomous approval/mutation, cross-worker approval replay state,
-  custom many-to-many through models, and object-valued lazy forward foreign
-  keys remain outside the release.
 
 ---
 

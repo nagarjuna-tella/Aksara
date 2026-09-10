@@ -61,7 +61,7 @@ def test_readme_mentions_launch_path(fragment):
         "v0.5.54 - ORM Write & Relation Correctness",
         "v0.5.53 - ORM Query Semantics & Migration Generation Correctness",
         "Remaining ORM Correctness Work",
-        "v0.6.0-rc2 Candidate (Unpublished)",
+        "v0.6.0 Release Candidate (Historical)",
         "Durable AI Session Store",
         "AI Memory Foundation",
         "AI System Radar",
