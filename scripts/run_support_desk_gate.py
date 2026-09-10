@@ -134,7 +134,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-output",
         type=Path,
-        default=ROOT / "audit-evidence" / "v060-mcp-ai" / "support-desk-gate.json",
+        default=ROOT / "audit-evidence" / "v070" / "support-desk-gate.json",
     )
     return parser
 
@@ -221,7 +221,7 @@ class Gate:
     def write_evidence(self, *, status: str, error: str | None = None) -> None:
         payload = {
             "schema_version": 1,
-            "gate": "support-desk-production-reference",
+            "gate": "support-desk-v070-production-reference",
             "status": status,
             "started_at": self.started_at.isoformat(),
             "finished_at": datetime.now(UTC).isoformat(),
@@ -424,6 +424,20 @@ class Gate:
                 runtime["rollback_rows"] == 0,
                 persisted_rows=runtime["rollback_rows"],
             )
+
+            durable = await self._durable_probe(
+                python,
+                app_dsn,
+                tenant_a,
+                tenant_b,
+                temp_root,
+                app_env,
+            )
+            for name, passed in durable["checks"].items():
+                self.check(
+                    f"v0.7 durable {name.replace('_', ' ')}",
+                    passed,
+                )
 
             port = _unused_port()
             first_log = temp_root / "server-first.log"
@@ -801,6 +815,36 @@ class Gate:
         if process.returncode != 0:
             raise RuntimeError(self.redact(stderr.decode(errors="replace")))
         return json.loads(stdout)
+
+    async def _durable_probe(
+        self,
+        python: Path,
+        dsn: str,
+        tenant_a: str,
+        tenant_b: str,
+        cwd: Path,
+        env: dict[str, str],
+    ) -> dict[str, Any]:
+        process = await asyncio.create_subprocess_exec(
+            str(python),
+            "-I",
+            str(ROOT / "scripts" / "v070_support_desk_probe.py"),
+            dsn,
+            tenant_a,
+            tenant_b,
+            cwd=cwd,
+            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            raise RuntimeError(self.redact(stderr.decode(errors="replace")))
+        result = json.loads(stdout)
+        if not result["passed"]:
+            failed = [name for name, passed in result["checks"].items() if not passed]
+            raise AssertionError(f"v0.7 installed-wheel durable probe failed: {failed}")
+        return result
 
     async def _grant_application_access(self, admin: asyncpg.Connection, schema: str, role: str) -> None:
         await admin.execute(f'GRANT USAGE ON SCHEMA "{schema}" TO "{role}"')

@@ -197,7 +197,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: support-desk-production-gate
-          path: audit-evidence/v060-mcp-ai/support-desk-gate.json
+          path: audit-evidence/v070/support-desk-gate.json
           if-no-files-found: error
 
   installed-package-truth:
