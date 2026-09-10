@@ -1,156 +1,36 @@
-# AI Execution Runtime
+# AI execution runtime
 
-The execution runtime sits between AI Flow prompt packs and AI connectors.
-It resolves the provider, model, and credentials, then executes the prompt
-pack through the appropriate connector.
+!!! warning "Experimental"
+    Prompt-pack execution and provider connectors are functional but evolving.
+    They are separate from the stable MCP execution boundary.
 
----
-
-## Overview
-
-```
-Prompt Pack  ──►  Runtime  ──►  Connector  ──►  LLM Provider
-                                                     │
-                                                     ▼
-                  Normalised Result  ◄──────────  API Response
-```
-
-| Component        | Responsibility |
-|------------------|----------------|
-| **Prompt Pack**  | Deterministic system + user prompt (from AI Flows) |
-| **Runtime**      | Provider/model resolution, connector dispatch, error handling |
-| **Connector**    | HTTP transport to the LLM API |
-
----
-
-## Core API
-
-### `run_prompt_pack()`
+`run_prompt_pack()` resolves an experimental provider connector, sends one
+system/user prompt pair, and returns a normalized dictionary.
 
 ```python
+from aksara.ai.limits import AgentRuntimeLimits
 from aksara.ai.runtime import run_prompt_pack
 
 result = await run_prompt_pack(
-    pack=prompt_pack_dict,
-    provider_override="anthropic",     # optional
-    model_override="claude-3-5-sonnet-20241022",  # optional
+    {
+        "system_prompt": "Answer concisely.",
+        "user_prompt": "Explain this migration plan.",
+        "provider": "ollama",
+        "model": "llama3",
+        "max_tokens": 500,
+    },
+    limits=AgentRuntimeLimits(
+        run_timeout_seconds=30,
+        provider_timeout_seconds=20,
+        token_budget=2_000,
+    ),
 )
 ```
 
-**Parameters:**
+The result contains `ok`, `provider`, `model`, `response`, `tokens`,
+`elapsed_ms`, and `error`. Provider and model resolution uses explicit function
+overrides, prompt-pack values, AI Hub configuration, then provider defaults.
 
-| Param              | Type   | Description |
-|--------------------|--------|-------------|
-| `pack`             | dict   | A prompt pack (from `StudioAiFlowResponse.model_dump()`) |
-| `provider_override`| str?   | Override auto-detected provider |
-| `model_override`   | str?   | Override auto-detected model |
-
-**Returns:**
-
-```json
-{
-    "ok": true,
-    "provider": "configured-provider",
-    "model": "configured-model",
-    "response": "The User model has 5 fields...",
-    "tokens": {"prompt": 20, "completion": 50, "total": 70},
-    "elapsed_ms": 150.0,
-    "error": null
-}
-```
-
----
-
-## Resolution Order
-
-The runtime resolves provider and model in this order:
-
-1. **Explicit overrides** — `provider_override` / `model_override` args
-2. **Pack metadata** — `pack["provider"]` / `pack["model"]`
-3. **AI Hub defaults** — loaded from `aihub.json` settings
-4. **Fallback defaults** — the connector's provider-specific default model
-
----
-
-## Flow Execution
-
-The runtime powers the `execute_flow()` family of functions in
-`aksara/studio/ai_flows.py`:
-
-```python
-from aksara.studio.ai_flows import execute_model_flow
-
-result = await execute_model_flow("User", "explain_model")
-# result = {"ok": True, "prompt_pack": {...}, "execution": {...}}
-```
-
-### Available Functions
-
-| Function                    | Description |
-|-----------------------------|-------------|
-| `execute_flow()`            | Generic dispatcher for any flow type |
-| `execute_model_flow()`      | Execute a model action |
-| `execute_route_flow()`      | Execute a route action |
-| `execute_query_flow()`      | Execute a query action |
-| `execute_migration_flow()`  | Execute a migration action |
-| `execute_diagnostic_flow()` | Execute a diagnostic action |
-
----
-
-## API Endpoint
-
-```
-POST /studio/ai/flows/run
-```
-
-**Request body:**
-
-```json
-{
-    "flow_type": "model",
-    "action_key": "explain_model",
-    "context": {"model_name": "User"},
-    "provider_override": null,
-    "model_override": null
-}
-```
-
-**Response:**
-
-```json
-{
-    "ok": true,
-    "prompt_pack": { "...": "..." },
-    "execution": {
-        "ok": true,
-        "provider": "configured-provider",
-        "model": "configured-model",
-        "response": "...",
-        "tokens": {"prompt": 20, "completion": 50, "total": 70},
-        "elapsed_ms": 150.0
-    }
-}
-```
-
----
-
-## CLI
-
-```bash
-# Execute a model action
-aksara ai run model User --action explain_model
-
-# With provider/model overrides
-aksara ai run model User --action explain_model --provider anthropic --model claude-3-5-sonnet-20241022
-
-# JSON output
-aksara ai run query --sql "SELECT 1" --action explain_plan --format json
-```
-
----
-
-## Safety
-
-The runtime **never modifies code automatically**.  It only returns analysis,
-suggestions, and explanations.  If code changes are suggested, they are presented
-as CLI commands or snippets for the developer to review and apply manually.
+The runtime does not define an `AgentRuntime` class, persist sessions, resume
+calls, or make provider quality stable. See [Agent runtime](agent-runtime.md)
+for the exact boundary and [AI providers](providers.md) for configuration.

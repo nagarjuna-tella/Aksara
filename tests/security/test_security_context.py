@@ -23,7 +23,6 @@ from aksara.security.context import (
 )
 from aksara.security.principal import Principal
 
-
 # ---------------------------------------------------------------------------
 # Fake helpers
 # ---------------------------------------------------------------------------
@@ -165,6 +164,26 @@ class TestPrincipalFromRequest:
         request = FakeRequest()
         p = principal_from_request(request)
         assert p.is_anonymous
+
+    def test_starlette_request_without_authentication_middleware_is_anonymous(self):
+        from starlette.requests import Request
+
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "path": "/mcp/",
+                "headers": [],
+                "query_string": b"",
+                "server": ("testserver", 80),
+                "client": ("testclient", 50000),
+                "scheme": "http",
+            }
+        )
+        with pytest.raises(AssertionError):
+            _ = request.user
+
+        assert principal_from_request(request).is_anonymous
 
     def test_ai_agent_in_state(self):
         state = FakeState(

@@ -145,7 +145,8 @@ aksara studio url --host api.myapp.com --port 443 --https
   AI Endpoints (full context):
     Full Context:    http://localhost:8000/ai/context/full
     Tools:           http://localhost:8000/ai/tools
-    MCP Tools:       http://localhost:8000/ai/tools/mcp
+    Tool Catalog:    http://localhost:8000/ai/tools/mcp
+    MCP Protocol:    http://localhost:8000/mcp/ (when enabled)
 
   Tip: Use --https for production URLs
 ```

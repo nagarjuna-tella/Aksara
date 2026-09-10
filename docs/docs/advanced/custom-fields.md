@@ -404,7 +404,9 @@ class Article(Model):
 
 ### Custom Serialization
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.fields import Field
 from aksara.api.serializers import SerializerField
 

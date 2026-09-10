@@ -198,6 +198,7 @@ class TestMigrateCommand:
     def test_requires_database_url(self, monkeypatch) -> None:
         from aksara.conf import settings
 
+        monkeypatch.delenv("AKSARA_DATABASE_URL", raising=False)
         monkeypatch.delenv("DATABASE_URL", raising=False)
         monkeypatch.setattr(settings, "database_url", None, raising=False)
 

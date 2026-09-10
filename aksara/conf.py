@@ -187,7 +187,8 @@ class Settings:
     
     # v0.5.11: AI Profiles & Provider Contracts
     # DEPRECATED(v0.5.28): Use AI Hub 2.0 (aksara.ai.hub_settings) instead.
-    # These fields are kept for backward compatibility but will be removed in v0.6.
+    # These fields remain for v0.6 compatibility. New provider setup should use
+    # AI Hub (aksara.ai.hub_settings); removal requires a later deprecation cycle.
     ai_profiles_enabled: bool = True  # Enable AI profile discovery
     ai_default_provider: Optional[str] = None  # Default AI provider name
     ai_providers: Optional[List[dict]] = None  # List of AiProviderProfile dicts (no secrets)

@@ -33,7 +33,7 @@ app = Aksara(debug=True)
 
 Each stack frame shows local variables:
 
-```python
+```text
 # At the error point:
 user_id = "abc-123"
 post = <Post: My Post>
@@ -178,7 +178,9 @@ app = Aksara(
 
 Override default error handling:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import HTTPException
 
 @app.exception_handler(HTTPException)

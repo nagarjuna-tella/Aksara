@@ -6,9 +6,11 @@
     Use generated REST APIs, your application permissions, and the built-in
     Admin where appropriate for operational workflows.
 
-Aksara Studio is a **built-in web UI** that comes with every Aksara application. It runs inside your app — no external tool, no IDE plugin, no extra installation required.
+Aksara Studio is an optional built-in web UI distributed with Aksara. It runs
+inside an application only after Studio is explicitly enabled.
 
-Start your app with `aksara dev`, then open **http://localhost:8000/studio/ui** in your browser.
+Enable it with the settings below, start the app with `aksara dev`, then open
+**http://localhost:8000/studio/ui**.
 
 ## What is Aksara Studio?
 
@@ -29,17 +31,15 @@ Studio is a visual dashboard embedded in your Aksara application. It gives you a
 
 ## Quick Start
 
-### 1. Enable Studio (On By Default)
+### 1. Enable Studio explicitly
 
-Studio is enabled automatically in debug mode. No configuration needed.
+Studio defaults to disabled, including in debug mode. Set a local secret before
+constructing the app:
 
-```python
-from aksara import Aksara
-
-app = Aksara(
-    database_url="postgresql://...",
-    debug=True,  # Studio UI is on at /studio/ui
-)
+```dotenv
+AKSARA_ENABLE_STUDIO=true
+AKSARA_STUDIO_SECRET_TOKEN=replace-with-a-random-local-secret
+AKSARA_STUDIO_REQUIRE_AUTH=false
 ```
 
 ### 2. Start Your App
@@ -109,26 +109,25 @@ aksara studio url
 
 ## Security
 
-By default, Studio endpoints are **only enabled in debug mode**. In production:
+By default, Studio endpoints are disabled in every environment. In production:
 
-1. Set `enable_studio=False` to disable completely
-2. Or set `studio_expose_in_production=True` to explicitly enable
+1. Leave `enable_studio=False` to keep Studio unmounted.
+2. To expose it deliberately, set both `enable_studio=True` and
+   `studio_expose_in_production=True`, require authentication, and restrict
+   origins and network access.
 
 ```python
-# Disable Studio entirely
-app = Aksara(
-    database_url="...",
-    debug=False,
-)
-
 # Enable in production (requires explicit flag)
-from aksara.conf import configure, Settings
+from aksara.conf import configure
 
-configure(Settings(
+configure(
     enable_studio=True,
+    studio_secret_token="replace-with-a-random-secret",
     studio_expose_in_production=True,
+    studio_require_auth=True,
+    studio_auth_token="replace-with-a-separate-bearer-secret",
     studio_allowed_origins=["https://studio.mycompany.com"],
-))
+)
 ```
 
 ## Next Steps

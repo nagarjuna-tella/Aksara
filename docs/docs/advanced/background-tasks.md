@@ -315,6 +315,7 @@ assert record.status in {"pending", "running", "completed", "failed"}
 record.id
 record.task_name
 record.queue
+record.tenant_id        # tenant captured when the task was enqueued
 record.status
 record.attempts
 record.max_attempts
@@ -326,6 +327,19 @@ record.completed_at
 record.created_at
 record.updated_at
 ```
+
+## Identity boundary
+
+When `enqueue_task()` runs inside a tenant context, Aksara persists that
+`tenant_id` on the task record. The worker restores the tenant context while it
+executes the task and resets the context afterward.
+
+A task record does not persist the complete request `Principal`, roles, scopes,
+credential, or authorization decision. Applications must authorize who may
+enqueue work and who may inspect task status. Task code that performs a delayed
+side effect must apply the application's current authorization rule itself.
+Durable Principal provenance and framework-managed reauthorization are planned
+for v0.7 rather than implied by the v0.6 task contract.
 
 ---
 

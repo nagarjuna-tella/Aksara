@@ -1,989 +1,146 @@
-# Settings Reference
+# Settings reference
 
-Complete reference for all Aksara configuration options.
+Aksara has one runtime configuration object: the global
+`aksara.conf.settings`, an instance of the `Settings` dataclass.
 
----
+## Recommended path
 
-## Configuration
-
-The current Aksara configuration surface is the `Settings` dataclass in
-`aksara.conf`.
-
-```python
-from aksara.conf import Settings, configure
-
-configure(Settings(
-    database_url="postgresql://user:pass@localhost:5432/myapp",
-    debug=True,
-))
-```
-
-Or load from environment:
+Use environment variables for deploy-time values and call `configure()` once,
+before constructing `Aksara`, for explicit Python overrides:
 
 ```python
-export DATABASE_URL=postgresql://user:pass@localhost:5432/myapp
-export AKSARA_DEBUG=true
-export AKSARA_MEDIA_ROOT=media
-export AKSARA_EMAIL_BACKEND=console
-export AKSARA_TASKS_ENABLED=true
+from aksara import Aksara, configure
+
+configure(
+    installed_apps=["aksara.contrib.auth", "aksara.contrib.admin", "app"],
+)
+app = Aksara()
 ```
 
----
-
-## Core Settings
-
-### DEBUG
-
-Type: `bool`
-Default: `False`
-
-Enable debug mode. Shows detailed error pages and enables debug toolbar.
-
-```python
-"DEBUG": True
+```dotenv
+DATABASE_URL=postgresql://user:password@localhost:5432/myapp
+AKSARA_DEBUG=false
+AKSARA_LOG_LEVEL=INFO
 ```
 
-!!! warning
-    Never enable DEBUG in production.
+Do not create an `AKSARA = {...}` dictionary or a subclass with class-level
+values. Neither pattern configures the global dataclass instance.
 
-### SECRET_KEY
+## Precedence
 
-Type: `str`
-Required in production
+From highest to lowest:
 
-Secret key for cryptographic signing.
+1. explicit values passed to `configure(Settings(...))` or `configure(...)`;
+2. `AKSARA_*` environment variables loaded when `Settings` is created;
+3. documented compatibility environment aliases;
+4. dataclass defaults.
 
-```python
-"SECRET_KEY": "your-secret-key-at-least-50-characters-long"
+For the database, `AKSARA_DATABASE_URL` takes precedence over `DATABASE_URL`.
+The scaffold emits `DATABASE_URL`; both settings and database CLI commands honor
+the same ordering.
+
+Calling `configure()` mutates the existing global object in place so modules
+that already imported `settings` observe the updated values.
+
+## Configuration truth map
+
+| Surface | Role | Status |
+| --- | --- | --- |
+| `aksara.conf.Settings` fields | Canonical typed configuration | current |
+| `aksara.conf.settings` | Single global runtime object | current |
+| `configure(...)` | Explicit programmatic override | current |
+| `AKSARA_*` variables | Deployment configuration | current |
+| `DATABASE_URL` | Common database alias used by the scaffold | supported compatibility alias |
+| uppercase properties such as `settings.DATABASE_URL` | Read compatibility | compatibility-only; use lowercase fields in new Python code |
+| `AKSARA = {...}` dictionaries | Historical documentation pattern | unsupported |
+| `Settings.ai_default_provider`, `ai_providers`, `ai_secret_hints` | Old profile metadata configuration | deprecated compatibility fields |
+| AI Hub files and provider variables | Provider-backed AI configuration | current experimental provider path |
+
+## Core settings
+
+| Python field | Environment variable | Default |
+| --- | --- | --- |
+| `database_url` | `AKSARA_DATABASE_URL`, then `DATABASE_URL` | `None` |
+| `pool_min_size` | `AKSARA_POOL_MIN_SIZE` | `5` |
+| `pool_max_size` | `AKSARA_POOL_SIZE` or `AKSARA_POOL_MAX_SIZE` | `20` |
+| `debug` | `AKSARA_DEBUG` | `False` |
+| `log_level` | `AKSARA_LOG_LEVEL` | `INFO` |
+| `log_requests` | disabled by `AKSARA_LOG_REQUESTS_DISABLED` | `True` |
+| `log_json` | `AKSARA_LOG_JSON` | `False` |
+| `app_title` | `AKSARA_APP_TITLE` | `None` |
+| `app_version` | `AKSARA_APP_VERSION` | `None` |
+| `migrations_dir` | `AKSARA_MIGRATIONS_DIR` | `migrations` |
+| `installed_apps` | explicit `configure()` value | auth, admin, app |
+
+Aksara supports PostgreSQL. A database URL is required for migrations and
+normal ORM use.
+
+## Stable MCP settings
+
+| Python field | Environment variable | Default |
+| --- | --- | --- |
+| `mcp_enabled` | `AKSARA_MCP_ENABLED` | `False` |
+| `mcp_path` | `AKSARA_MCP_PATH` | `/mcp` |
+| `mcp_transport_host` | `AKSARA_MCP_TRANSPORT_HOST` | `127.0.0.1` |
+| `mcp_allowed_hosts` | `AKSARA_MCP_ALLOWED_HOSTS` | local/test hosts |
+| `mcp_allowed_origins` | `AKSARA_MCP_ALLOWED_ORIGINS` | local/test origins |
+| `mcp_max_request_body_size` | `AKSARA_MCP_MAX_REQUEST_BODY_SIZE` | `1048576` |
+| `mcp_tool_timeout_seconds` | `AKSARA_MCP_TOOL_TIMEOUT_SECONDS` | `30` |
+| `mcp_replay_ttl_seconds` | `AKSARA_MCP_REPLAY_TTL_SECONDS` | `300` |
+| `mcp_require_scoped_tokens` | `AKSARA_MCP_REQUIRE_SCOPED_TOKENS` | `True` |
+| `mcp_token_audience` | `AKSARA_MCP_TOKEN_AUDIENCE` | `None` |
+| `mcp_approval_secret` | `AKSARA_MCP_APPROVAL_SECRET` | `None` |
+
+`/mcp/` is the protocol endpoint. `/ai/tools/mcp` is an HTTP inspection catalog.
+Authentication middleware must resolve credentials to a server-owned
+`Principal`; these settings do not verify tokens by themselves.
+
+## Background task settings
+
+| Python field | Environment variable | Default |
+| --- | --- | --- |
+| `tasks_enabled` | `AKSARA_TASKS_ENABLED` | `True` |
+| `task_poll_interval_seconds` | `AKSARA_TASK_POLL_INTERVAL` | `1.0` |
+| `task_retry_delay_seconds` | `AKSARA_TASK_RETRY_DELAY` | `5.0` |
+| `task_max_attempts` | `AKSARA_TASK_MAX_ATTEMPTS` | `3` |
+| `task_concurrency` | `AKSARA_TASK_CONCURRENCY` | `1` |
+| `task_stale_lock_timeout_seconds` | `AKSARA_TASK_STALE_LOCK_TIMEOUT` | `300` |
+| `task_lock_recovery_interval_seconds` | `AKSARA_TASK_LOCK_RECOVERY_INTERVAL` | `60` |
+| `task_retry_backoff_base` | `AKSARA_TASK_RETRY_BACKOFF_BASE` | `2.0` |
+| `task_retry_max_delay_seconds` | `AKSARA_TASK_RETRY_MAX_DELAY` | `3600` |
+| `task_result_ttl_seconds` | `AKSARA_TASK_RESULT_TTL_SECONDS` | `None` |
+
+See [Background Tasks](../advanced/background-tasks.md) for retry and identity
+semantics.
+
+## Optional and evolving features
+
+Media, email, locale, timezone, Studio, query tracing, and semantic-search
+settings are typed fields on `Settings`. Inspect the installed
+`aksara.conf.Settings` dataclass for the exact list supported by your package.
+Use lowercase field names with `configure()` and the documented `AKSARA_*`
+environment names.
+
+Provider-backed AI and Studio are opt-in:
+
+```dotenv
+AKSARA_AI_ENABLED=false
+AKSARA_ENABLE_STUDIO=false
 ```
 
-Generate a secure key:
-
-```python
-import secrets
-print(secrets.token_urlsafe(50))
-```
-
-### ALLOWED_HOSTS
-
-Type: `list[str]`
-Default: `["*"]` in debug, `[]` in production
-
-Allowed host headers.
-
-```python
-"ALLOWED_HOSTS": ["example.com", "www.example.com"]
-```
-
-### ROOT_URLCONF
-
-Type: `str`
-Default: Auto-detected
-
-Module containing URL configuration.
-
-```python
-"ROOT_URLCONF": "myapp.urls"
-```
-
----
-
-## Database Settings
-
-### DATABASE_URL
-
-Type: `str`
-Required
-
-Database connection URL.
-
-```python
-# PostgreSQL
-"DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
-```
-
-!!! note
-    Aksara is PostgreSQL-only. SQLite and other database engines are not
-    supported as of now. New engines will be added when we find time. 😅
-
-### DATABASE_POOL
-
-Type: `dict`
-Default: `{}`
-
-Connection pool configuration.
-
-```python
-"DATABASE_POOL": {
-    "min_size": 5,
-    "max_size": 20,
-    "max_queries": 50000,
-    "max_inactive_connection_lifetime": 300,
-}
-```
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `min_size` | int | 5 | Minimum connections |
-| `max_size` | int | 20 | Maximum connections |
-| `max_queries` | int | 50000 | Max queries per connection |
-| `max_inactive_connection_lifetime` | int | 300 | Idle timeout (seconds) |
-
----
-
-## Media Storage Settings
-
-### MEDIA_ROOT
-
-Type: `str`
-Default: `"media"`
-
-Local directory used by `FileSystemStorage`.
-
-### MEDIA_URL
-
-Type: `str`
-Default: `"/media/"`
-
-Public URL prefix for locally served media. In debug mode, `Aksara` mounts this
-path automatically when filesystem storage is active.
-
-### MEDIA_STORAGE
-
-Type: `str`
-Default: `"filesystem"`
-
-Storage backend selector.
-
-Supported values:
-
-- `filesystem`
-- `s3`
-- Dotted import path to a custom storage backend class
-
-### Filesystem Example
-
-```python
-from aksara.conf import Settings, configure
-
-configure(Settings(
-    media_root="media",
-    media_url="/media/",
-    media_storage="filesystem",
-))
-```
-
-### S3 Settings
-
-These settings are used when `media_storage="s3"`:
-
-| Setting | Type | Description |
-|--------|------|-------------|
-| `media_s3_bucket` | `str` | Bucket name |
-| `media_s3_region` | `str` | AWS region |
-| `media_s3_endpoint_url` | `str` | Optional S3-compatible endpoint |
-| `media_s3_access_key` | `str` | Access key |
-| `media_s3_secret_key` | `str` | Secret key |
-| `media_public_base_url` | `str` | Optional public CDN/base URL |
-
-```python
-configure(Settings(
-    media_storage="s3",
-    media_s3_bucket="my-app-media",
-    media_s3_region="us-east-1",
-    media_public_base_url="https://cdn.example.com/media",
-))
-```
-
----
-
-## Email Settings
-
-### EMAIL_BACKEND
-
-Type: `str`
-Default: `"console"`
-
-Supported values:
-
-- `console`
-- `locmem`
-- `smtp`
-- Dotted import path to a custom backend class
-
-### DEFAULT_FROM_EMAIL
-
-Type: `str`
-Default: `"webmaster@localhost"`
-
-Sender address used when `send_mail()` is called without `from_email`.
-
-### SMTP Settings
-
-| Setting | Type | Default |
-|--------|------|---------|
-| `email_host` | `str` | `localhost` |
-| `email_port` | `int` | `25` |
-| `email_host_user` | `str \| None` | `None` |
-| `email_host_password` | `str \| None` | `None` |
-| `email_use_tls` | `bool` | `False` |
-| `email_use_ssl` | `bool` | `False` |
-| `email_timeout` | `float` | `10.0` |
-
-```python
-configure(Settings(
-    email_backend="smtp",
-    default_from_email="noreply@example.com",
-    email_host="smtp.example.com",
-    email_port=587,
-    email_host_user="mailer",
-    email_host_password="super-secret",
-    email_use_tls=True,
-))
-```
-
-See [Advanced Media & Email](../advanced/media-and-email.md) for usage examples.
-
----
-
-## Internationalization and Timezone Settings
-
-### SUPPORTED_LOCALES
-
-Type: `list[str]`
-Default: `["en"]`
-
-Locales matched by `LocaleMiddleware` against the incoming
-`Accept-Language` header.
-
-### DEFAULT_LOCALE
-
-Type: `str`
-Default: `"en"`
-
-Fallback locale used when no supported locale can be resolved.
-
-### LOCALE_PATHS
-
-Type: `list[str]`
-Default: `["locale"]`
-
-Filesystem paths searched for gettext catalogs.
-
-### USE_TZ
-
-Type: `bool`
-Default: `True`
-
-When enabled, `DateTime` fields normalize incoming datetimes to UTC on write
-and serialize them in the active request timezone on read/export.
-
-### TIME_ZONE
-
-Type: `str`
-Default: `"UTC"`
-
-Fallback timezone used when a request does not provide `X-Timezone`.
-
-```python
-configure(Settings(
-    supported_locales=["en", "fr", "de"],
-    default_locale="en",
-    locale_paths=["locale"],
-    use_tz=True,
-    time_zone="UTC",
-))
-```
-
-Environment variables:
-
-```python
-export AKSARA_SUPPORTED_LOCALES=en,fr,de
-export AKSARA_DEFAULT_LOCALE=en
-export AKSARA_LOCALE_PATHS=locale
-export AKSARA_USE_TZ=true
-export AKSARA_TIME_ZONE=UTC
-```
-
-See [Internationalization and Timezones](../advanced/internationalization-and-timezones.md)
-for request middleware examples.
-
----
-
-## Background Task Settings
-
-### TASKS_ENABLED
-
-Type: `bool`
-Default: `True`
-
-Start the built-in `TaskWorker` automatically when `Aksara(database_url=...)`
-manages the application lifespan.
-
-### TASK_POLL_INTERVAL_SECONDS
-
-Type: `float`
-Default: `1.0`
-
-How often the built-in worker wakes up to poll for pending rows in
-`aksara_tasks` when no work is immediately available.
-
-### TASK_MAX_ATTEMPTS
-
-Type: `int`
-Default: `3`
-
-Default retry budget for tasks that do not override `max_attempts` when they
-are enqueued.
-
-### TASK_RETRY_DELAY_SECONDS
-
-Type: `float`
-Default: `5.0`
-
-Base delay (in seconds) before a failed task is re-queued. Acts as the
-multiplier for exponential backoff.
-
-### TASK_RETRY_BACKOFF_BASE
-
-Type: `float`
-Default: `2.0`
-
-Exponential backoff multiplier applied to the retry delay on each successive
-failure:
-
-```
-delay = TASK_RETRY_DELAY_SECONDS × TASK_RETRY_BACKOFF_BASE ^ (attempt − 1)
-```
-
-Set to `1.0` for a flat constant delay (no growth).
-
-### TASK_RETRY_MAX_DELAY_SECONDS
-
-Type: `float`
-Default: `3600.0`
-
-Upper bound (in seconds) for the computed retry delay. Prevents the backoff
-from growing unbounded on tasks with a high `max_attempts`.
-
-### TASK_CONCURRENCY
-
-Type: `int`
-Default: `1`
-
-Number of tasks a single `TaskWorker` processes simultaneously. Each slot runs
-as an independent asyncio task. Set higher on workers where tasks spend most
-of their time waiting on I/O.
-
-### TASK_STALE_LOCK_TIMEOUT_SECONDS
-
-Type: `float`
-Default: `300.0`
-
-Age threshold (in seconds) after which a `status='running'` task whose
-`locked_at` has not been updated is considered crashed. The stale-lock recovery
-sweep resets such tasks to `pending` so another worker can retry them.
-
-### TASK_LOCK_RECOVERY_INTERVAL_SECONDS
-
-Type: `float`
-Default: `60.0`
-
-How often (in seconds) the worker runs the stale-lock recovery sweep.
-
-### TASK_RESULT_TTL_SECONDS
-
-Type: `float | None`
-Default: `None` (disabled)
-
-When set, the worker automatically deletes `completed` task rows whose
-`updated_at` is older than this value. Set to `None` (or leave unset) to keep
-completed rows indefinitely.
+Studio requires additional authentication and production exposure settings.
+Provider configuration belongs to [AI Providers](../ai-mode/providers.md), and
+its quality/selection contract remains experimental.
+
+## Doctor
+
+`aksara doctor launch-check` inspects the active project, database, migrations,
+Studio, MCP/tool catalog, AI provider state, and examples. The stricter release
+profile is:
 
 ```bash
-export AKSARA_TASK_RESULT_TTL_SECONDS=604800   # 7 days
+aksara doctor production-check --release
 ```
 
-### TASK_CLEANUP_INTERVAL_SECONDS
-
-Type: `float`
-Default: `3600.0`
-
-How often (in seconds) the worker runs the TTL cleanup sweep. Only active when
-`TASK_RESULT_TTL_SECONDS` is set.
-
-### TASK_CRON_CHECK_INTERVAL_SECONDS
-
-Type: `float`
-Default: `30.0`
-
-How often (in seconds) the worker checks for recurring tasks (registered with
-`every=`) that are due to be enqueued.
-
----
-
-### Example Configuration
-
-```python
-configure(Settings(
-    tasks_enabled=True,
-    task_poll_interval_seconds=0.5,
-    task_max_attempts=4,
-    task_retry_delay_seconds=5.0,
-    task_retry_backoff_base=2.0,
-    task_retry_max_delay_seconds=3600.0,
-    task_concurrency=4,
-    task_stale_lock_timeout_seconds=300.0,
-    task_lock_recovery_interval_seconds=60.0,
-    task_result_ttl_seconds=7 * 86400,   # 7 days
-    task_cleanup_interval_seconds=3600.0,
-    task_cron_check_interval_seconds=30.0,
-))
-```
-
-```bash
-export AKSARA_TASKS_ENABLED=true
-export AKSARA_TASK_POLL_INTERVAL_SECONDS=0.5
-export AKSARA_TASK_MAX_ATTEMPTS=4
-export AKSARA_TASK_RETRY_DELAY_SECONDS=5.0
-export AKSARA_TASK_RETRY_BACKOFF_BASE=2.0
-export AKSARA_TASK_RETRY_MAX_DELAY_SECONDS=3600
-export AKSARA_TASK_CONCURRENCY=4
-export AKSARA_TASK_STALE_LOCK_TIMEOUT_SECONDS=300
-export AKSARA_TASK_LOCK_RECOVERY_INTERVAL_SECONDS=60
-export AKSARA_TASK_RESULT_TTL_SECONDS=604800
-export AKSARA_TASK_CLEANUP_INTERVAL_SECONDS=3600
-export AKSARA_TASK_CRON_CHECK_INTERVAL_SECONDS=30
-```
-
-See [Background Tasks](../advanced/background-tasks.md) for usage examples.
-
----
-
-## Application Settings
-
-### INSTALLED_APPS
-
-Type: `list[str]`
-Default: `[]`
-
-List of installed applications.
-
-```python
-"INSTALLED_APPS": [
-    "users",
-    "posts",
-    "aksara.contrib.admin",
-]
-```
-
-### MIDDLEWARE
-
-Type: `list[str]`
-Default: `[]`
-
-Middleware classes.
-
-```python
-"MIDDLEWARE": [
-    "aksara.middleware.RequestIDMiddleware",
-    "aksara.middleware.LoggingMiddleware",
-    "myapp.middleware.CustomMiddleware",
-]
-```
-
----
-
-## API Settings
-
-### DEFAULT_PERMISSION_CLASSES
-
-Type: `list[str]`
-Default: `["aksara.api.permissions.AllowAny"]`
-
-Default permissions for all ViewSets.
-
-```python
-"DEFAULT_PERMISSION_CLASSES": [
-    "aksara.api.permissions.IsAuthenticated",
-]
-```
-
-### DEFAULT_AUTHENTICATION_CLASSES
-
-Type: `list[str]`
-Default: `[]`
-
-Authentication backends.
-
-```python
-"DEFAULT_AUTHENTICATION_CLASSES": [
-    "aksara.api.authentication.TokenAuthentication",
-    "aksara.api.authentication.SessionAuthentication",
-]
-```
-
-### DEFAULT_PAGINATION_CLASS
-
-Type: `str`
-Default: `None`
-
-Default pagination class.
-
-```python
-"DEFAULT_PAGINATION_CLASS": "aksara.api.pagination.PageNumberPagination"
-```
-
-### PAGE_SIZE
-
-Type: `int`
-Default: `20`
-
-Default page size for pagination.
-
-```python
-"PAGE_SIZE": 50
-```
-
-### MAX_PAGE_SIZE
-
-Type: `int`
-Default: `100`
-
-Maximum allowed page size.
-
-```python
-"MAX_PAGE_SIZE": 200
-```
-
----
-
-## Authentication Settings
-
-### AUTH_TOKEN_EXPIRY
-
-Type: `int`
-Default: `86400` (24 hours)
-
-Token expiration time in seconds.
-
-```python
-"AUTH_TOKEN_EXPIRY": 3600  # 1 hour
-```
-
-### AUTH_REFRESH_TOKEN_EXPIRY
-
-Type: `int`
-Default: `604800` (7 days)
-
-Refresh token expiration.
-
-```python
-"AUTH_REFRESH_TOKEN_EXPIRY": 2592000  # 30 days
-```
-
-### AUTH_ALGORITHM
-
-Type: `str`
-Default: `"HS256"`
-
-JWT signing algorithm.
-
-```python
-"AUTH_ALGORITHM": "RS256"
-```
-
----
-
-## CORS Settings
-
-### CORS_ORIGINS
-
-Type: `list[str]`
-Default: `[]`
-
-Allowed origins.
-
-```python
-"CORS_ORIGINS": [
-    "https://example.com",
-    "https://app.example.com",
-]
-```
-
-### CORS_ALLOW_CREDENTIALS
-
-Type: `bool`
-Default: `False`
-
-Allow credentials (cookies, auth headers).
-
-```python
-"CORS_ALLOW_CREDENTIALS": True
-```
-
-### CORS_ALLOW_METHODS
-
-Type: `list[str]`
-Default: `["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]`
-
-Allowed HTTP methods.
-
-### CORS_ALLOW_HEADERS
-
-Type: `list[str]`
-Default: `["*"]`
-
-Allowed request headers.
-
----
-
-## Cache Settings
-
-### CACHE
-
-Type: `dict`
-Default: `{}`
-
-Cache configuration.
-
-```python
-"CACHE": {
-    "default": {
-        "backend": "redis",
-        "url": "redis://localhost:6379/0",
-        "ttl": 300,
-        "key_prefix": "myapp:",
-    }
-}
-```
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `backend` | str | `"memory"`, `"redis"`, or custom class |
-| `url` | str | Connection URL (Redis) |
-| `ttl` | int | Default TTL in seconds |
-| `key_prefix` | str | Prefix for all keys |
-| `max_size` | int | Max entries (memory backend) |
-
----
-
-## Logging Settings
-
-### LOGGING
-
-Type: `dict`
-Default: `{}`
-
-Logging configuration.
-
-```python
-"LOGGING": {
-    "level": "INFO",
-    "format": "json",
-    "handlers": ["console"],
-    "file_path": "/var/log/myapp/app.log",
-}
-```
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `level` | str | `"INFO"` | Log level |
-| `format` | str | `"text"` | `"text"` or `"json"` |
-| `handlers` | list | `["console"]` | Output handlers |
-| `file_path` | str | None | Log file path |
-
-### LOG_QUERIES
-
-Type: `bool`
-Default: `False`
-
-Log all database queries.
-
-```python
-"LOG_QUERIES": True
-```
-
----
-
-## AI Mode Settings
-
-### AI_MODE
-
-Type: `bool`
-Default: `False`
-
-Enable AI features.
-
-```python
-"AI_MODE": True
-```
-
-### AI_PROVIDER
-
-Type: `str`
-Default: `"openai"`
-
-AI provider: `"openai"` or `"anthropic"`.
-
-```python
-"AI_PROVIDER": "anthropic"
-```
-
-### AI_API_KEY
-
-Type: `str`
-Default: `None`
-
-API key for AI provider.
-
-```python
-"AI_API_KEY": os.environ["OPENAI_API_KEY"]
-```
-
-### AI_MODEL
-
-Type: `str`
-Default: Provider-specific
-
-AI model to use.
-
-```python
-"AI_MODEL": "gpt-4"
-# or
-"AI_MODEL": "claude-3-opus-20240229"
-```
-
-### AI_SAFETY
-
-Type: `dict`
-Default: `{}`
-
-AI safety configuration.
-
-```python
-"AI_SAFETY": {
-    "read_only_mode": True,
-    "require_confirmation": True,
-    "audit_log": True,
-    "audit_log_file": "logs/ai_audit.log",
-    "rate_limit_requests": 100,
-    "rate_limit_window": 3600,
-    "max_tokens": 4000,
-}
-```
-
----
-
-## Multi-Tenant Settings
-
-### MULTI_TENANT
-
-Type: `bool`
-Default: `False`
-
-Enable multi-tenancy.
-
-```python
-"MULTI_TENANT": True
-```
-
-### TENANT_MODEL
-
-Type: `str`
-Default: `None`
-
-Tenant model path.
-
-```python
-"TENANT_MODEL": "tenants.Tenant"
-```
-
-### TENANT_HEADER
-
-Type: `str`
-Default: `"X-Tenant-ID"`
-
-Header for tenant identification.
-
-```python
-"TENANT_HEADER": "X-Organization-ID"
-```
-
-### TENANT_SUBDOMAIN
-
-Type: `bool`
-Default: `False`
-
-Use subdomain for tenant identification.
-
-```python
-"TENANT_SUBDOMAIN": True
-```
-
----
-
-## Security Settings
-
-### SECURITY
-
-Type: `dict`
-Default: `{}`
-
-Security configuration.
-
-```python
-"SECURITY": {
-    "SECURE_SSL_REDIRECT": True,
-    "SECURE_HSTS_SECONDS": 31536000,
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS": True,
-    "SECURE_CONTENT_TYPE_NOSNIFF": True,
-    "SECURE_BROWSER_XSS_FILTER": True,
-    "X_FRAME_OPTIONS": "DENY",
-}
-```
-
----
-
-## Admin Settings
-
-### ADMIN_SITE_TITLE
-
-Type: `str`
-Default: `"Admin"`
-
-Admin site title.
-
-```python
-"ADMIN_SITE_TITLE": "My App Admin"
-```
-
-### ADMIN_SITE_HEADER
-
-Type: `str`
-Default: `"Administration"`
-
-Admin header text.
-
-### ADMIN_URL_PREFIX
-
-Type: `str`
-Default: `"/admin"`
-
-Admin URL prefix.
-
-```python
-"ADMIN_URL_PREFIX": "/dashboard"
-```
-
----
-
-## Static Files
-
-### STATIC_URL
-
-Type: `str`
-Default: `"/static/"`
-
-URL prefix for static files.
-
-### STATIC_ROOT
-
-Type: `str`
-Default: `None`
-
-Directory for collected static files.
-
-```python
-"STATIC_ROOT": "/var/www/myapp/static"
-```
-
----
-
-## Complete Example
-
-```python
-# settings.py
-import os
-
-AKSARA = {
-    # Core
-    "DEBUG": os.getenv("DEBUG", "false").lower() == "true",
-    "SECRET_KEY": os.environ["SECRET_KEY"],
-    "ALLOWED_HOSTS": os.getenv("ALLOWED_HOSTS", "").split(","),
-    
-    # Database
-    "DATABASE_URL": os.environ["DATABASE_URL"],
-    "DATABASE_POOL": {
-        "min_size": 5,
-        "max_size": 20,
-    },
-    
-    # Apps
-    "INSTALLED_APPS": [
-        "users",
-        "posts",
-        "aksara.contrib.admin",
-    ],
-    
-    # API
-    "DEFAULT_PERMISSION_CLASSES": [
-        "aksara.api.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "aksara.api.authentication.TokenAuthentication",
-    ],
-    "PAGE_SIZE": 20,
-    
-    # CORS
-    "CORS_ORIGINS": os.getenv("CORS_ORIGINS", "").split(","),
-    "CORS_ALLOW_CREDENTIALS": True,
-    
-    # Cache
-    "CACHE": {
-        "default": {
-            "backend": "redis",
-            "url": os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
-            "ttl": 300,
-        }
-    },
-    
-    # Logging
-    "LOGGING": {
-        "level": "INFO",
-        "format": "json",
-    },
-    
-    # AI
-    "AI_MODE": os.getenv("AI_MODE", "false").lower() == "true",
-    "AI_API_KEY": os.getenv("AI_API_KEY"),
-    "AI_SAFETY": {
-        "read_only_mode": True,
-        "audit_log": True,
-    },
-}
-```
-
----
-
-## Environment Variables
-
-Common environment variables:
-
-| Variable | Description |
-|----------|-------------|
-| `DEBUG` | Enable debug mode |
-| `SECRET_KEY` | Application secret key |
-| `DATABASE_URL` | Database connection URL |
-| `REDIS_URL` | Redis connection URL |
-| `ALLOWED_HOSTS` | Comma-separated allowed hosts |
-| `CORS_ORIGINS` | Comma-separated CORS origins |
-| `AI_API_KEY` | AI provider API key |
-
----
-
-## Related Documentation
-
-- [Getting Started](../getting-started/settings.md)
-- [Database Setup](../getting-started/database-setup.md)
-- [Middleware](../middleware/index.md)
+Doctor reads the same effective environment and settings surfaces. It does not
+turn an unsupported `AKSARA` dictionary into runtime configuration.

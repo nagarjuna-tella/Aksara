@@ -1,5 +1,5 @@
 site_name: Aksara Framework
-site_description: AI-Native Async Backend Framework for Python
+site_description: Async PostgreSQL framework with generated REST APIs and authorized MCP tools
 site_url: https://nagarjuna-tella.github.io/Aksara/
 repo_url: https://github.com/nagarjuna-tella/Aksara
 repo_name: nagarjuna-tella/Aksara

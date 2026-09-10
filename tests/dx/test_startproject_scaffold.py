@@ -65,12 +65,11 @@ class TestScaffoldTemplates:
         assert "load_installed_apps" in content
     
     def test_settings_py_template(self):
-        """Settings.py should extend AksaraSettings."""
+        """Settings.py should configure Aksara's global settings object."""
         content = get_settings_py_template("testproject")
         
-        assert "from aksara.conf import Settings as AksaraSettings" in content
-        assert "class Settings(AksaraSettings):" in content
-        assert "settings = Settings()" in content
+        assert "from aksara.conf import configure, settings" in content
+        assert "configure(installed_apps=INSTALLED_APPS)" in content
     
     def test_settings_has_installed_apps(self):
         """Settings.py should have Django-style INSTALLED_APPS."""

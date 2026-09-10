@@ -176,7 +176,7 @@ Interactive Python shell with models loaded:
 aksara shell
 ```
 
-```python
+```pycon
 >>> from blog.models import Post
 >>> posts = await Post.objects.all()
 >>> len(posts)
@@ -297,7 +297,7 @@ Output:
 ```
 Aksara Project Information
 ==========================
-Version: 0.6.0
+Version: 0.6.1
 Python: 3.11.0
 Database: postgresql://localhost/mydb
 

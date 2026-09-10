@@ -1,343 +1,75 @@
-# AI Profiles & Provider Contracts
+# AI providers
 
-Aksara's AI Profiles system provides a **vendor-agnostic, pluggable description layer** for AI providers and models. This enables external agents and tools to discover your AI configuration without Aksara depending on any vendor SDKs.
+!!! warning "Experimental"
+    Provider selection, connector behavior, model quality, and live-provider
+    accounting are not part of the stable v0.6 contract.
 
-## Overview
+Aksara contains two provider layers because newer execution configuration was
+added without deleting the older discovery contract.
 
-AI Profiles answers the question: "What AI capabilities does this Aksara application have?"
+| Layer | Use | Status |
+| --- | --- | --- |
+| AI Hub (`aksara.ai.hub_settings`, `aksara ai-hub ...`) | Current configuration for provider-backed Studio and prompt-pack execution | experimental, recommended for new provider setup |
+| `UnifiedAiProvider` and connectors | Runtime adapter used beneath AI Hub and by compatibility callers | experimental compatibility bridge |
+| `AiProviderProfile` / `AiProviderRegistry` | Provider and model metadata discovery without making completions | compatibility-only metadata API |
+| `Settings.ai_default_provider`, `ai_providers`, `ai_secret_hints` | Older profile configuration fields | deprecated compatibility fields |
 
-Key principles:
+## Recommended setup
 
-- **No Vendor Dependencies**: Aksara doesn't import OpenAI, Anthropic, or any AI SDK
-- **No Network Calls**: This is purely a configuration/metadata layer
-- **No Actual Completions**: External agents handle actual AI operations
-- **Discovery-First**: Studio and CLI can inspect and export your AI configuration
-
-## Core Concepts
-
-### Model Profile
-
-An `AiModelProfile` describes a single AI model:
-
-```python
-from aksara.ai.providers import AiModelProfile
-
-gpt4 = AiModelProfile(
-    name="gpt-4o",
-    display_name="GPT-4 Omni",
-    kind="chat",
-    max_input_tokens=128000,
-    max_output_tokens=4096,
-    supports_tools=True,
-    supports_streaming=True,
-    tags=["fast", "multimodal"],
-)
-```
-
-Model kinds include: `chat`, `completion`, `embedding`, `tool-calling`, `rerank`, `vision`, `audio`, `code`.
-
-### Provider Profile
-
-An `AiProviderProfile` groups models under a provider:
-
-```python
-from aksara.ai.providers import AiProviderProfile, AiModelProfile
-
-openai = AiProviderProfile(
-    name="openai",
-    display_name="OpenAI",
-    kind="openai",
-    default_model="gpt-4o",
-    models=[
-        AiModelProfile(name="gpt-4o", ...),
-        AiModelProfile(name="gpt-4o-mini", ...),
-    ],
-)
-```
-
-Provider kinds include: `openai`, `azure_openai`, `anthropic`, `google`, `cohere`, `local`, `other`.
-
-### Profile Set
-
-An `AiProfileSet` is a collection of providers:
-
-```python
-from aksara.ai.providers import AiProfileSet
-
-profile_set = AiProfileSet(
-    providers=[openai, anthropic, local],
-    default_provider="openai",
-    environment="production",
-    version="1.0.0",
-)
-```
-
-## Configuration
-
-### Via Settings
-
-Configure providers in your settings:
-
-```python
-# settings.py or environment variables
-
-# Enable/disable AI profiles (default: True)
-ai_profiles_enabled = True
-# or AKSARA_AI_PROFILES_ENABLED=true
-
-# Set default provider
-ai_default_provider = "openai"
-# or AKSARA_AI_DEFAULT_PROVIDER=openai
-
-# Explicit provider configurations (JSON)
-ai_providers = [
-    {
-        "name": "openai",
-        "display_name": "OpenAI",
-        "kind": "openai",
-        "default_model": "gpt-4o",
-        "models": [
-            {
-                "name": "gpt-4o",
-                "display_name": "GPT-4 Omni",
-                "kind": "chat",
-                "max_input_tokens": 128000,
-                "supports_tools": True,
-            }
-        ]
-    }
-]
-# or AKSARA_AI_PROVIDERS='[{"name": "openai", ...}]'
-```
-
-### Via Registry
-
-Programmatically register providers:
-
-```python
-from aksara.ai.providers import (
-    AiProviderRegistry,
-    AiProviderProfile,
-    AiModelProfile,
-    get_ai_provider_registry,
-)
-
-# Get or create registry
-registry = get_ai_provider_registry(app)
-
-# Create a provider profile
-my_provider = AiProviderProfile(
-    name="my_custom_provider",
-    display_name="My Custom AI",
-    kind="local",
-    models=[
-        AiModelProfile(
-            name="local-llama",
-            display_name="Local Llama 3",
-            kind="chat",
-        )
-    ],
-)
-
-# Register it
-registry.register_provider(my_provider)
-
-# Set as default
-registry.set_default_provider("my_custom_provider")
-```
-
-## Secret Hints
-
-AI Profiles includes a safe way to indicate which secrets are needed:
-
-```python
-from aksara.ai.providers import AiProviderSecretHint
-
-hints = [
-    AiProviderSecretHint(
-        provider_name="openai",
-        env_var="OPENAI_API_KEY",
-        required=True,
-        description="OpenAI API key for GPT models",
-    ),
-    AiProviderSecretHint(
-        provider_name="anthropic",
-        env_var="ANTHROPIC_API_KEY",
-        required=True,
-        description="Anthropic API key for Claude models",
-    ),
-]
-```
-
-!!! warning "Security"
-    Secret hints **only** expose environment variable names and whether they are configured.
-    Actual secret values are **never** exposed via Studio, CLI, or any API.
-
-## Studio Integration
-
-### Profiles Endpoint
+Use the AI Hub CLI, which writes the current AI Hub configuration model:
 
 ```bash
-GET /studio/ai/profiles
+aksara ai-hub status
+aksara ai-hub configure
+aksara ai-hub doctor
 ```
 
-Returns:
+Environment credentials remain provider-specific:
 
-```json
-{
-  "enabled": true,
-  "providers": [
-    {
-      "name": "openai",
-      "display_name": "OpenAI",
-      "kind": "openai",
-      "model_count": 3,
-      "default_model": "gpt-4o",
-      "is_example": false,
-      "models": [
-        {
-          "name": "gpt-4o",
-          "display_name": "GPT-4 Omni",
-          "kind": "chat",
-          "supports_tools": true,
-          "supports_streaming": true,
-          "max_input_tokens": 128000,
-          "max_output_tokens": 4096
-        }
-      ]
-    }
-  ],
-  "default_provider": "openai",
-  "total_models": 6,
-  "environment": "production"
-}
-```
+| Provider | Main variables |
+| --- | --- |
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL` |
+| Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL` |
+| Azure OpenAI | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
+| Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` |
+| Custom HTTP | `CUSTOM_LLM_API_KEY`, `CUSTOM_LLM_BASE_URL`, `CUSTOM_LLM_MODEL` |
 
-### Secrets Endpoint
+For example, a local Ollama setup is:
 
 ```bash
-GET /studio/ai/secrets
+ollama serve
+ollama pull llama3
+export OLLAMA_BASE_URL=http://localhost:11434
+export OLLAMA_MODEL=llama3
+aksara ai-hub status
 ```
 
-Returns:
+## Programmatic inspection
 
-```json
-{
-  "secrets": [
-    {
-      "provider_name": "openai",
-      "env_var": "OPENAI_API_KEY",
-      "required": true,
-      "description": "OpenAI API key",
-      "is_configured": true
-    },
-    {
-      "provider_name": "anthropic",
-      "env_var": "ANTHROPIC_API_KEY",
-      "required": true,
-      "description": "Anthropic API key",
-      "is_configured": false
-    }
-  ],
-  "configured_count": 1,
-  "total_count": 2
-}
-```
-
-### Studio UI
-
-The Studio UI includes an "AI Profiles" panel showing:
-
-- Provider cards with model lists
-- Capability badges (tools, streaming, vision)
-- Token limit information
-- Secret configuration status
-- Export button for JSON configuration
-
-## CLI Commands
-
-### List Providers
-
-```bash
-aksara ai providers
-aksara ai providers --format json
-```
-
-### List Models
-
-```bash
-aksara ai models
-aksara ai models --provider openai
-aksara ai models --format json
-```
-
-### Check Secrets
-
-```bash
-aksara ai secrets
-aksara ai secrets --format json
-```
-
-## Example Profiles
-
-When no explicit configuration is provided, Aksara includes example profiles for testing:
-
-- `example_openai_like` - Demo OpenAI-style provider
-- `example_anthropic_like` - Demo Anthropic-style provider
-- `example_local` - Demo local/Ollama-style provider
-
-These are marked with `is_example: true` and should be replaced in production.
-
-## Integration with External Agents
-
-External AI agents (like GitHub Copilot, Cursor, or custom tools) can:
-
-1. Fetch `/studio/ai/profiles` to discover available providers
-2. Fetch `/studio/ai/secrets` to check which credentials are configured
-3. Use this information to make appropriate AI calls
-4. Respect `default_provider` and `default_model` preferences
-
-This enables a clean separation:
-
-- **Aksara**: Declares "these are my AI capabilities"
-- **External Agent**: Handles actual API calls and completions
-
-## Best Practices
-
-1. **Always set a default provider** for consistent behavior
-2. **Use meaningful display names** for UI clarity
-3. **Tag models appropriately** (fast, flagship, cheap, etc.)
-4. **Document token limits** for proper request sizing
-5. **Set `supports_tools: true`** only for models that actually support it
-6. **Use `environment`** to distinguish dev/staging/prod profiles
-
-
----
-
-## Unified AI Provider System
-
-Aksara provides a **UnifiedAiProvider** class that replaces ad-hoc
-environment variable handling with a single configuration object. See [AI Hub](hub.md)
-for the full documentation.
-
-### Quick Example
+New code that needs to inspect the current AI Hub model can load it directly:
 
 ```python
-from aksara.ai.providers_unified import UnifiedAiProvider, get_active_provider
+from aksara.ai.hub_settings import load_aihub_settings
 
-# Auto-detect from environment
-provider = get_active_provider()
-if provider and provider.is_configured():
-    client = provider.get_llm_client()
-    response = client.generate("Hello!")
+hub = load_aihub_settings().resolve_defaults()
+print(hub.active_provider)
+print(hub.provider_status_summary())
 ```
 
-### Supported Providers
+`UnifiedAiProvider` remains usable when an integration needs the runtime
+adapter explicitly:
 
-| Provider | Env Var | Zero-Dependency |
-|----------|---------|-----------------|
-| OpenAI | `OPENAI_API_KEY` | Yes (urllib) |
-| Anthropic | `ANTHROPIC_API_KEY` | Yes (urllib) |
-| Azure OpenAI | `AZURE_OPENAI_API_KEY` | Yes (urllib) |
-| Ollama | `OLLAMA_HOST` | Yes (urllib) |
-| Custom HTTP | `AKSARA_CUSTOM_LLM_URL` | Yes (urllib) |
+```python
+from aksara.ai.providers_unified import UnifiedAiProvider
+
+provider = UnifiedAiProvider.from_env("ollama")
+assert provider.provider == "ollama"
+```
+
+Do not put API keys in `AiProviderProfile`. That older API describes capability
+metadata and secret *names*; it is not the recommended execution configuration.
+Existing profile imports remain available for compatibility.
+
+A provider being configured or reachable does not certify output quality,
+tool-call accuracy, cost accounting, or production suitability. Test those
+properties in the application using the selected model.

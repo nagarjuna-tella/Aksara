@@ -36,12 +36,12 @@ Query database records using filters.
 ```
 
 **Returns:**
-```python
+```json
 {
     "count": 10,
     "records": [
-        {"id": "uuid-1", "email": "user1@example.com", ...},
-        {"id": "uuid-2", "email": "user2@example.com", ...},
+        {"id": "uuid-1", "email": "user1@example.com"},
+        {"id": "uuid-2", "email": "user2@example.com"}
     ]
 }
 ```
@@ -64,10 +64,10 @@ Create a new database record.
 ```
 
 **Returns:**
-```python
+```json
 {
-    "success": True,
-    "record": {"id": "uuid-new", "email": "new@example.com", ...}
+    "success": true,
+    "record": {"id": "uuid-new", "email": "new@example.com"}
 }
 ```
 
@@ -392,7 +392,9 @@ Get application settings.
 
 ### OpenAI Function Calling
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai.tools import get_openai_tools
 
 tools = get_openai_tools()
@@ -407,7 +409,9 @@ response = await openai.chat.completions.create(
 
 ### Anthropic Tool Use
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai.tools import get_anthropic_tools
 
 tools = get_anthropic_tools()
@@ -422,7 +426,9 @@ response = await anthropic.messages.create(
 
 ### Executing Tool Calls
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai.tools import execute_tool
 
 # Parse tool call from LLM response
@@ -441,7 +447,9 @@ result = await execute_tool(
 
 ### Register Custom Tools
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai.tools import register_tool, Tool
 
 @register_tool
@@ -490,7 +498,9 @@ class DeleteAllDataTool(Tool):
 
 ## Tool Configuration
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "AI_TOOLS": {

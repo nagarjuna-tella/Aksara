@@ -99,7 +99,7 @@ def test_template_module_documents_bundled_examples(fragment):
     assert fragment in text
 
 
-@pytest.mark.parametrize("fragment", ["v0.6.0", "aksara-framework>=0.6.0"])
+@pytest.mark.parametrize("fragment", ["v0.6.1", "aksara-framework>=0.6.1"])
 def test_scaffold_template_version_is_current(fragment):
     text = (ROOT / "aksara" / "cli" / "scaffold.py").read_text(encoding="utf-8")
     assert fragment in text

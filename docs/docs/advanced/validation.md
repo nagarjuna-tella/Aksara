@@ -19,7 +19,9 @@ Aksara provides multiple layers of validation:
 
 ### Built-in Validators
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara import Model, fields
 from aksara.validation import (
     MinLength, MaxLength, MinValue, MaxValue,
@@ -46,7 +48,9 @@ class User(Model):
 
 ### Custom Validators
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.validation import Validator, ValidationError
 
 class NoSpaces(Validator):
@@ -144,7 +148,9 @@ class Subscription(Model):
 
 ### Field Validators
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ModelSerializer
 from aksara.validation import ValidationError
 
@@ -222,7 +228,9 @@ class UserSerializer(ModelSerializer):
 
 ### Validator Classes
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.validation import Validator, ValidationError
 
 class PasswordStrength(Validator):
@@ -263,7 +271,9 @@ class UserSerializer(ModelSerializer):
 
 ### Validator Functions
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.validation import validator
 
 @validator
@@ -351,7 +361,9 @@ class OrderSerializer(ModelSerializer):
 
 ### Error Format
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.validation import ValidationError
 
 # Single field error
@@ -384,7 +396,9 @@ class User(Model):
 
 ### Handling Validation Errors
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ViewSet, action
 from aksara.validation import ValidationError
 
@@ -422,7 +436,9 @@ class User(Model):
 
 ### Multiple Fields
 
-```python
+**Conceptual application-level validation (not an installed model hook):**
+
+```text title="Conceptual application validation"
 class Membership(Model):
     user = fields.ForeignKey(User, on_delete=fields.CASCADE)
     organization = fields.ForeignKey(Organization, on_delete=fields.CASCADE)

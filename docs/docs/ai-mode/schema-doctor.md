@@ -53,7 +53,9 @@ aksara ai doctor --fix
 
 ### Python API
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai import SchemaDoctor
 
 doctor = SchemaDoctor()
@@ -300,7 +302,9 @@ for issue in report.issues:
 
 ### Define Custom Rule
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai.doctor import Rule, register_rule
 
 @register_rule
@@ -329,7 +333,9 @@ class RequireUUIDPrimaryKey(Rule):
 
 ### Disable Rules
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "AI_DOCTOR": {
@@ -343,7 +349,9 @@ AKSARA = {
 
 ### Rule Configuration
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 AKSARA = {
     "AI_DOCTOR": {
         "rules": {
@@ -398,7 +406,9 @@ repos:
 
 ### Python Test
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 import pytest
 from aksara.ai import SchemaDoctor
 
@@ -472,7 +482,9 @@ post = fields.ForeignKey("Post", on_delete=fields.CASCADE)
 
 ## Configuration
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "AI_DOCTOR": {

@@ -35,12 +35,13 @@ This is a **reference guide**, not a tutorial. Use it when you need to look up:
 
 ```python
 # settings.py
-AKSARA = {
-    "DEBUG": True,                                    # Enable debug mode
-    "DATABASE_URL": "postgresql://localhost/myapp",   # Database connection
-    "SECRET_KEY": "your-secret-key",                 # For encryption
-    "INSTALLED_APPS": ["myapp"],                      # Your apps
-}
+from aksara import configure
+
+configure(
+    database_url="postgresql://localhost/myapp",
+    debug=True,
+    installed_apps=["myapp"],
+)
 ```
 
 👉 [Full Settings Reference](settings-reference.md)
@@ -99,11 +100,11 @@ aksara dev
 
 ## Version Information
 
-Current version: **0.6.0** (`v0.6.0` release label)
+Current version: **0.6.1**
 
 ```python
 import aksara
-print(aksara.__version__)  # 0.6.0
+print(aksara.__version__)  # 0.6.1
 ```
 
 Check your installed version:
@@ -128,7 +129,7 @@ aksara --version
 
 Each reference page uses this format:
 
-```python
+```text
 # Class or Function Name
 description of what it does
 

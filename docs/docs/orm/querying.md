@@ -548,7 +548,9 @@ for post in posts:
 
 When you need full SQL control:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # Execute raw SQL
 posts = await Post.objects.raw(
     "SELECT * FROM posts WHERE title ILIKE %s",

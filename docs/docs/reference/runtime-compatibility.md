@@ -1,6 +1,6 @@
 # Runtime compatibility
 
-The v0.6.0 release supports Python 3.11–3.14. The release matrix runs
+The v0.6 release line supports Python 3.11–3.14. The release matrix runs
 Python 3.11 and 3.14 with PostgreSQL 16 plus pgvector at both supported web
 dependency boundaries. The packaged reference gate also runs against local
 PostgreSQL 18.4. This is the tested matrix, not certification of every operating

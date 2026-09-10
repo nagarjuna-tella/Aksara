@@ -52,7 +52,9 @@ export ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>
 
 ### 4. Use in Your Views
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from your_project.ai_adapters import get_llm_client_from_settings, build_prompt_for_route
 from aksara.ai import ai_route_hint, get_ai_route_hint
 from aksara.api import AksaraViewSet, action
@@ -209,7 +211,9 @@ The `build_prompt_for_route()` function creates structured prompts that include:
 
 ## Settings Configuration
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # settings.py
 from aksara.conf import AksaraSettings
 
@@ -314,7 +318,7 @@ def mock_llm_client():
 3. **Validate credentials at startup** - Fail fast with clear messages
 4. **Mask keys in logs** - Settings helpers mask sensitive values
 
-```python
+```dotenv
 # .env (add to .gitignore!)
 OPENAI_API_KEY=<OPENAI_API_KEY>
 ANTHROPIC_API_KEY=<ANTHROPIC_API_KEY>

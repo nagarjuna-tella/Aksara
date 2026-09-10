@@ -295,7 +295,7 @@ aksara info [OPTIONS]
 ```
 Aksara Project Information
 ==========================
-Version: 0.6.0
+Version: 0.6.1
 Python: 3.11.0
 Settings: myproject.settings
 
@@ -773,7 +773,9 @@ aksara tasks purge --status completed --status failed -d 1 --yes
 
 ### Creating Commands
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # myapp/management/commands/mycommand.py
 from aksara.cli import Command, argument, option
 

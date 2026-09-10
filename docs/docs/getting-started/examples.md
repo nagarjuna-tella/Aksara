@@ -35,7 +35,7 @@ Open:
 
 * API docs: http://127.0.0.1:8000/docs
 * Studio: http://127.0.0.1:8000/studio/ui
-* MCP: http://127.0.0.1:8000/ai/tools/mcp
+* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
 
 ## AI Provider Note
 

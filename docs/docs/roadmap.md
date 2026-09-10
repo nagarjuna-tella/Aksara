@@ -44,20 +44,20 @@ cancellation, and investigation state currently stop at request or process
 lifetime. v0.7 should connect these boundaries through a small shared operation
 model rather than add a generic workflow engine.
 
-## Next
+## Current adoption patch
 
-### v0.6.1 — installed-package truth, when ready
+### v0.6.1 — installed-package truth
 
-The next patch should be driven by verified adoption and compatibility defects:
+This patch is driven by verified adoption and compatibility defects. It:
 
-- make public AI examples use APIs the wheel actually exports;
-- consistently identify `/mcp/` as the protocol endpoint and
+- makes public AI examples use APIs the wheel actually exports;
+- consistently identifies `/mcp/` as the protocol endpoint and
   `/ai/tools/mcp` as an inspection catalog;
-- reconcile the documented background-task Principal claim with the persisted
+- reconciles the documented background-task Principal claim with the persisted
   tenant-only task context;
-- align provider/configuration guidance, generated-project guidance, package
+- aligns provider/configuration guidance, generated-project guidance, package
   metadata, and final release evidence with v0.6.0; and
-- execute important documentation imports and the clean-wheel quickstart in CI.
+- executes important documentation imports and the clean-wheel quickstart in CI.
 
 The strengthened guarantee is documentation and packaging fidelity: a user can
 follow the supported path from install to PostgreSQL, REST, Principal, and a

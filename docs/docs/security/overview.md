@@ -1,6 +1,6 @@
 # Security Overview
 
-Aksara is an AI-native application framework that generates multiple surfaces
+Aksara is an async PostgreSQL application framework that generates multiple surfaces
 from model definitions, including APIs, schemas, Studio/admin surfaces, AI/MCP
 tooling, and migration behavior. Because generated surfaces multiply security
 exposure, Aksara treats authorization, tenant isolation, and AI/MCP boundaries

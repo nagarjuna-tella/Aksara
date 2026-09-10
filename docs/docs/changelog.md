@@ -6,6 +6,54 @@ All notable changes to Aksara.
 
 ---
 
+## v0.6.1 — Installed-Package Truth
+
+Prepared 2026-09-10.
+
+This adoption and trust patch aligns Aksara's public documentation, generated
+project, configuration guidance, and package metadata with the behavior shipped
+in the v0.6 stable contract.
+
+### Changed
+
+- Replaced stale importable-looking `AgentRuntime`, `Planner`, provider,
+  code-generation, patch, query, and cache examples with real exported APIs or
+  clearly labeled conceptual and experimental material.
+- Defined `/mcp/` as the official-client Streamable HTTP protocol endpoint and
+  `/ai/tools/mcp` as the HTTP JSON tool inspection catalog throughout public
+  docs, examples, CLI output, and generated projects.
+- Narrowed background-task identity wording to the persisted `tenant_id`
+  contract; complete Principal provenance and delayed reauthorization remain
+  deferred to v0.7.
+- Made environment variables plus the global `aksara.conf.settings` object the
+  canonical configuration path, while documenting compatibility aliases and
+  the separate experimental provider configuration.
+- Updated the basic scaffold to use the global settings object, keep MCP,
+  provider-backed AI, and Studio opt-in, and point developers to the canonical
+  authenticated MCP journey.
+- Refreshed the project description and public README for the v0.6.1 package.
+
+### Fixed
+
+- Made database CLI options honor `AKSARA_DATABASE_URL` ahead of the compatible
+  `DATABASE_URL` alias, matching runtime settings precedence.
+- Allowed Principal resolution to return anonymous safely when a Starlette
+  application has no `AuthenticationMiddleware`, so MCP discovery follows the
+  normal authorization path rather than raising a framework assertion.
+
+### Release trust
+
+- Added factually scoped final v0.6.0 release evidence and a classified audit
+  of public Python examples.
+- Added semantic documentation tests and an isolated installed-wheel gate that
+  scaffolds an application, migrates PostgreSQL, exercises REST and an official
+  MCP client, runs Doctor, and verifies clean shutdown.
+
+This release does not add durable operations, a stable planner or agent
+runtime, persistent agent state, provider integrations, or new infrastructure.
+
+---
+
 ## v0.6.0 — Production Mode
 
 Released 2026-09-10.

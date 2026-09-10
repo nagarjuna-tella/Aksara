@@ -86,7 +86,9 @@ except ConnectionError as e:
 
 Raised when database integrity constraints are violated.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import IntegrityError
 
 try:
@@ -99,7 +101,9 @@ except IntegrityError as e:
 
 Raised for operational database errors.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import OperationalError
 
 try:
@@ -116,7 +120,9 @@ except OperationalError as e:
 
 Raised when a query expects a single object but finds none.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import DoesNotExist
 
 # Model-specific exception
@@ -137,7 +143,9 @@ except DoesNotExist:
 
 Raised when a query expects a single object but finds multiple.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import MultipleObjectsReturned
 
 try:
@@ -207,7 +215,9 @@ except ValidationError as e:
 
 Base exception for API errors.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import APIException
 
 raise APIException(
@@ -228,7 +238,9 @@ raise APIException(
 
 Raised when a resource is not found (404).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import NotFound
 
 raise NotFound("User not found")
@@ -239,7 +251,9 @@ raise NotFound(detail="Post not found")
 
 Raised when user lacks permission (403).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import PermissionDenied
 
 raise PermissionDenied("You do not have permission to edit this post")
@@ -249,7 +263,9 @@ raise PermissionDenied("You do not have permission to edit this post")
 
 Raised when authentication is required (401).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import NotAuthenticated
 
 raise NotAuthenticated("Authentication required")
@@ -259,7 +275,9 @@ raise NotAuthenticated("Authentication required")
 
 Raised when HTTP method is not allowed (405).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import MethodNotAllowed
 
 raise MethodNotAllowed("GET")
@@ -269,7 +287,9 @@ raise MethodNotAllowed("GET")
 
 Raised when rate limit is exceeded (429).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import Throttled
 
 raise Throttled(wait=60)  # Retry after 60 seconds
@@ -289,7 +309,9 @@ raise Throttled(wait=60)  # Retry after 60 seconds
 
 Raised for migration errors.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import MigrationError
 
 raise MigrationError("Migration failed")
@@ -299,7 +321,9 @@ raise MigrationError("Migration failed")
 
 Raised when migrations conflict.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import ConflictingMigrations
 
 raise ConflictingMigrations(["0002_add_email", "0002_add_name"])
@@ -309,7 +333,9 @@ raise ConflictingMigrations(["0002_add_email", "0002_add_name"])
 
 Raised when migration is not found.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import MigrationNotFound
 
 raise MigrationNotFound("0003_update_users")
@@ -321,7 +347,9 @@ raise MigrationNotFound("0003_update_users")
 
 ### Creating Custom Exceptions
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import APIException
 
 class PaymentError(APIException):
@@ -340,7 +368,9 @@ raise PaymentError("Card declined")
 
 ### Exception Handler
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.exceptions import exception_handler
 
 @app.exception_handler(PaymentError)

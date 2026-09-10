@@ -77,7 +77,9 @@ aksara startapp core
 
 ### Configure Settings
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # saas_app/settings.py
 import os
 
@@ -203,7 +205,9 @@ class User(Model):
 
 This is the key to multi-tenancy: a base model that automatically filters by tenant.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # core/models.py (continued)
 from aksara.middleware import get_current_tenant
 
@@ -315,7 +319,9 @@ class Task(TenantModel):
 
 Middleware identifies the current tenant from each request.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # tenants/middleware.py
 from aksara.middleware import BaseMiddleware, set_current_tenant
 from tenants.models import Tenant
@@ -382,7 +388,9 @@ app.add_middleware(TenantMiddleware)
 
 ### Tenant Management
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # tenants/views.py
 from aksara.api import ModelViewSet, ViewSet, action
 from aksara.permissions import IsAuthenticated, IsAdminUser
@@ -604,7 +612,9 @@ curl http://localhost:8000/api/projects/ \
 
 ### Feature Flags Based on Plan
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # core/views.py
 from aksara.middleware import get_current_tenant
 
@@ -639,7 +649,9 @@ feature_enabled = tenant.settings.get("feature_x_enabled", False)
 
 ## Testing Multi-Tenancy
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # tests/test_multi_tenant.py
 import pytest
 from aksara.testing import AksaraTestCase

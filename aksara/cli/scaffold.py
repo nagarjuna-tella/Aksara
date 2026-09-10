@@ -19,9 +19,9 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application (v0.6.0)
+{project_name} - Aksara Application (v0.6.1)
 
-A modern async API with Admin, Studio, and AI Mode built-in.
+An async PostgreSQL API with generated REST and optional MCP.
 
 Quick Start:
     aksara dbsetup                       # Configure PostgreSQL
@@ -35,7 +35,8 @@ Endpoints:
     API Docs:  http://localhost:8000/docs
     Admin:     http://localhost:8000/admin (debug mode)
     Studio:    http://localhost:8000/studio/ui (enable explicitly in settings)
-    AI Tools:  http://localhost:8000/ai/tools
+    Tool catalog: http://localhost:8000/ai/tools/mcp
+    MCP protocol: http://localhost:8000/mcp/ (when enabled)
 """
 
 import importlib
@@ -84,10 +85,9 @@ from app.urls import register_routes
 app = Aksara(
     database_url=settings.database_url,
     title=settings.app_title or "{project_name}",
-    description="AI-native backend — REST API, MCP tools, Studio",
+    description="Async PostgreSQL API with generated REST and optional MCP",
     version="0.1.0",
     debug=settings.debug,
-    enable_admin=settings.enable_admin,
     # Middlewares (request ID, logging)
     middlewares=[
         (RequestIDMiddleware, {{}}),
@@ -124,9 +124,10 @@ async def health_check():
         return {{
             "status": "healthy",
             "database": "connected",
-            "studio": "/studio/ui",
             "admin": "/admin",
-            "ai_tools": "/ai/tools",
+            "tool_catalog": "/ai/tools/mcp",
+            "mcp": "/mcp/" if settings.mcp_enabled else "disabled",
+            "studio": "/studio/ui" if settings.enable_studio else "disabled",
         }}
     return {{"status": "unhealthy", "database": "not configured"}}
 '''
@@ -298,10 +299,9 @@ def get_welcome_html_template(project_name: str) -> str:
         <p class="success">Your project is running</p>
         <div class="links">
             <a href="/admin/">Admin Panel <span>/admin/</span></a>
-            <a href="/studio/ui">Studio <span>/studio/ui</span></a>
-            <a href="/api/posts/">API <span>/api/posts/</span></a>
-            <a href="/docs">API Docs <span>/docs</span></a>
-            <a href="/ai/tools">AI Tools <span>/ai/tools</span></a>
+            <a href="/docs">REST API docs <span>/docs</span></a>
+            <a href="/ai/tools/mcp">Tool inspection catalog <span>/ai/tools/mcp</span></a>
+            <a href="/redoc">REST API reference <span>/redoc</span></a>
         </div>
         <p class="note">
             Edit <code>static/welcome.html</code> to customize this page.
@@ -315,111 +315,29 @@ def get_welcome_html_template(project_name: str) -> str:
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings (v0.6.0)
+{project_name} - Settings (v0.6.1)
 
-Aksara settings with environment variable support.
-Configure via .env file or environment variables.
+Environment variables configure Aksara. Use ``configure()`` only for explicit
+Python overrides such as the installed-app list below.
 """
 
-import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
-from aksara.conf import Settings as AksaraSettings
+from aksara.conf import configure, settings
 
-
-# =============================================================================
-# AKSARA Configuration
-# =============================================================================
-# Central configuration dict for Aksara features.
-# These settings control Admin, Studio, AI Mode, and more.
-
-AKSARA = {{
-    "APP_NAME": "{project_name}",
-    
-    # Admin Interface
-    "ENABLE_ADMIN": True,  # Mount /admin (requires auth contrib)
-    
-    # Studio Integration (v0.5.0+)
-    # NOTE: Set AKSARA_STUDIO_SECRET_TOKEN in .env before enabling
-    "ENABLE_STUDIO": False,  # Mount /studio/* endpoints (requires AKSARA_STUDIO_SECRET_TOKEN)
-    "STUDIO_UI_ENABLED": True,  # Enable /studio/ui dashboard
-    "STUDIO_ALLOWED_ORIGINS": [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    
-    # Security (v0.5.38+)
-    "COOKIE_SECURE": True,         # Secure flag on session cookies
-    "ADMIN_CSRF_ENABLED": True,    # CSRF protection for admin forms
-    "ADMIN_RATE_LIMIT_ENABLED": True,  # Rate limiting on admin login
-    
-    # AI Mode (v0.4.0+)
-    "AI_MODE_ENABLED": True,  # Enable /ai/* endpoints
-    "AI_DEBUG_ENABLED": True,  # AI debug assistant in debug mode
-}}
-
-
-# =============================================================================
-# Installed Apps
-# =============================================================================
-# List of app modules to load. Each app can contain:
-#   - models.py: Database models
-#   - views.py: ViewSets and API endpoints
-#   - admin.py: Admin interface registrations
 
 INSTALLED_APPS = [
-    # Aksara built-in apps
-    "aksara.contrib.auth",      # User authentication & sessions
-    "aksara.contrib.admin",     # Admin interface
-    
-    # Your apps
-    "app",                      # Default app created by startproject
+    "aksara.contrib.auth",
+    "aksara.contrib.admin",
+    "app",
 ]
 
-
-# =============================================================================
-# Settings Class
-# =============================================================================
-
-class Settings(AksaraSettings):
-    """
-    Project settings for {project_name}.
-
-    Inherits from AksaraSettings which loads from environment:
-      - DATABASE_URL: PostgreSQL connection string
-      - AKSARA_DEBUG: Enable debug mode (default: false)
-      - AKSARA_LOG_LEVEL: Logging level (default: INFO)
-      - AKSARA_APP_TITLE: Application title
-      - AKSARA_MIGRATIONS_DIR: Migrations directory (default: migrations)
-    
-    Add custom settings here as needed.
-    """
-    
-    # Reference to installed apps
-    installed_apps: list = INSTALLED_APPS
-    
-    # Admin & Studio (from AKSARA dict)
-    enable_admin: bool = AKSARA.get("ENABLE_ADMIN", True)
-    enable_studio: bool = AKSARA.get("ENABLE_STUDIO", False)
-    studio_ui_enabled: bool = AKSARA.get("STUDIO_UI_ENABLED", True)
-    studio_allowed_origins: list = AKSARA.get("STUDIO_ALLOWED_ORIGINS", [])
-    # v0.5.38+: Studio requires a secret token when enabled
-    # Set AKSARA_STUDIO_SECRET_TOKEN in .env or provide via AKSARA dict
-    studio_secret_token: str | None = AKSARA.get("STUDIO_SECRET_TOKEN", None)
-    
-    # Security (v0.5.38+)
-    cookie_secure: bool = AKSARA.get("COOKIE_SECURE", True)
-    admin_csrf_enabled: bool = AKSARA.get("ADMIN_CSRF_ENABLED", True)
-    admin_rate_limit_enabled: bool = AKSARA.get("ADMIN_RATE_LIMIT_ENABLED", True)
-    
-    # AI Mode
-    ai_enabled: bool = AKSARA.get("AI_MODE_ENABLED", True)
-    ai_debug_enabled: bool = AKSARA.get("AI_DEBUG_ENABLED", True)
-
-
-# Global settings instance
-settings = Settings()
+# Aksara's global settings object is the single runtime configuration source.
+# Precedence is: explicit configure() values, AKSARA_* environment variables,
+# compatibility environment aliases such as DATABASE_URL, then defaults.
+configure(installed_apps=INSTALLED_APPS)
 '''
 
 
@@ -446,7 +364,12 @@ AKSARA_APP_TITLE={project_name}
 # Migrations directory
 AKSARA_MIGRATIONS_DIR=migrations
 
-# Studio (disabled by default — set to true and configure a secret token to enable)
+# Stable MCP protocol server (opt in after adding server-side authentication)
+AKSARA_MCP_ENABLED=false
+AKSARA_MCP_TOKEN_AUDIENCE={project_name}
+
+# Experimental provider-backed AI and Studio are opt in
+AKSARA_AI_ENABLED=false
 AKSARA_ENABLE_STUDIO=false
 AKSARA_STUDIO_SECRET_TOKEN={studio_token}
 # Disable studio auth requirement in development (set to true in production)
@@ -482,7 +405,12 @@ AKSARA_APP_TITLE={project_name}
 # Migrations directory
 AKSARA_MIGRATIONS_DIR=migrations
 
-# Studio (disabled by default — set to true and configure a secret token to enable)
+# Stable MCP protocol server (opt in after adding server-side authentication)
+AKSARA_MCP_ENABLED=false
+AKSARA_MCP_TOKEN_AUDIENCE={project_name}
+
+# Experimental provider-backed AI and Studio are opt in
+AKSARA_AI_ENABLED=false
 AKSARA_ENABLE_STUDIO=false
 AKSARA_STUDIO_SECRET_TOKEN=your-secret-token-here
 # Disable studio auth requirement in development (set to true in production)
@@ -596,7 +524,8 @@ def get_views_template(project_name: str) -> str:
 {project_name} - Views
 
 Define your ViewSets and custom actions here.
-ViewSets are auto-discovered and exposed as AI tools at /ai/tools.
+Registered AI-exposed ViewSets appear in the /ai/tools/mcp inspection catalog
+and, when MCP is enabled, as protocol tools at /mcp/.
 """
 
 # Define your ViewSets here.
@@ -678,139 +607,67 @@ def get_readme_template(project_name: str) -> str:
     """Generate README.md content."""
     return f'''# {project_name}
 
-A modern Aksara-powered async API with Admin, Studio, and AI Mode built-in.
+An Aksara async PostgreSQL API scaffold. Stable core features are ready to
+configure; provider-backed AI and Studio stay disabled until you opt in.
 
-## Quick Start
+## Quick start
 
 ```bash
-# 1. Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
-
-# 2. Install dependencies
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -e ".[dev]"
-
-# 3. Configure environment (edit .env with your database URL)
-cp .env.example .env
-
-# 4. Create database
-createdb {project_name}
-
-# 5. Define your models in app/models.py, then run migrations
+# Edit DATABASE_URL in .env, or run the interactive helper:
+aksara dbsetup
+# Define a model and ViewSet from the stubs in app/, then:
 aksara makemigrations --app app.models
 aksara migrate
-
-# 6. Create admin user (optional)
-aksara createsuperuser
-
-# 7. Start the server
+aksara doctor launch-check
 aksara dev
 ```
 
-> **Tip:** If you get "uvicorn not installed" errors, run `python -m aksara dev` instead of `aksara dev` to ensure you're using your virtual environment's Python.
+The runtime reads one global `aksara.conf.settings` object. Environment values
+are loaded first; explicit `configure(...)` calls take precedence. The generated
+`settings.py` uses `configure()` only to register installed apps.
 
-## URLs
+## Surfaces
 
-| URL | Description |
-|-----|-------------|
-| http://localhost:8000/docs | API Documentation (Swagger UI) |
-| http://localhost:8000/redoc | API Documentation (ReDoc) |
-| http://localhost:8000/admin | Admin Interface (debug mode) |
-| http://localhost:8000/studio/ui | Studio Dashboard (disabled by default — see below) |
-| http://localhost:8000/api/posts | Posts API |
-| http://localhost:8000/ai/tools | AI Tools Discovery |
-| http://localhost:8000/health | Health Check |
+| Surface | Purpose | Default |
+| --- | --- | --- |
+| `/docs` | Generated REST OpenAPI | enabled |
+| `/admin/` | Admin interface in debug mode | enabled for local development |
+| `/ai/tools/mcp` | HTTP JSON inspection catalog for generated tool metadata | enabled |
+| `/mcp/` | MCP Streamable HTTP protocol endpoint for official clients | disabled |
+| `/studio/ui` | Experimental Studio UI | disabled |
 
-## What's Included
+`/ai/tools/mcp` is not an MCP transport. Before enabling `/mcp/`, add trusted
+server-side authentication that resolves each bearer credential to a
+`Principal`, then set `AKSARA_MCP_ENABLED=true`. Follow the canonical
+[MCP quickstart](https://nagarjuna-tella.github.io/Aksara/getting-started/mcp/).
 
-This project comes pre-configured with:
+Provider-backed AI and Studio are experimental. Enable them only after reading
+their configuration and security guidance:
 
-- **Post model stub** - Commented example in `app/models.py` (uncomment to activate)
-- **PostViewSet stub** - Commented example in `app/views.py` with `@action` examples
-- **Admin stub** - Commented example in `app/admin.py`
-- **Studio** - Dashboard at /studio/ui (disabled by default — see below)
-- **AI Mode** - ViewSets exposed as AI tools at /ai/tools
-- **Middleware** - Request ID & logging
-- **Pre-commit** - Code formatting hooks
-
-## Project Structure
-
+```dotenv
+AKSARA_AI_ENABLED=true
+AKSARA_ENABLE_STUDIO=true
 ```
+
+Studio also requires a secret token and production exposure policy. See `.env`
+for the generated local token and current defaults.
+
+## Project structure
+
+```text
 {project_name}/
-├── app/
-│   ├── models.py        # Define your models here (Post example in comments)
-│   ├── views.py         # Define your ViewSets here (PostViewSet example in comments)
-│   ├── serializers.py   # Define your serializers here (PostSerializer example in comments)
-│   ├── urls.py          # Route registration
-│   └── admin.py         # Admin registrations (Post example in comments)
-├── migrations/          # Database migrations
-├── settings.py          # Configuration (AKSARA dict)
-├── main.py              # App entry point
-├── .env                 # Environment variables
-└── .pre-commit-config.yaml  # Pre-commit hooks
+├── app/                 # model, serializer, ViewSet, route, and admin stubs
+├── migrations/          # generated migration files
+├── settings.py          # global Settings/configure path
+├── main.py              # application entry point
+├── .env                 # local environment values; do not commit
+└── .env.example         # documented environment names
 ```
 
-## CLI Commands
-
-```bash
-# Development
-aksara dev                     # Start dev server (uses main:app by default)
-aksara shell                   # Interactive Python shell
-
-# Database
-aksara makemigrations --app app.models
-aksara migrate
-aksara createsuperuser
-
-# Code Quality
-aksara format                  # Format with black
-aksara lint                    # Lint with ruff
-
-# Studio
-aksara studio open             # Open Studio UI in browser
-aksara studio ai-context       # Export AI context (JSON)
-```
-
-## Enabling Studio
-
-Studio is disabled by default to avoid accidental exposure. A secret token was
-already generated for you when you ran `aksara startproject` — it's in your `.env`:
-
-```
-AKSARA_STUDIO_SECRET_TOKEN=<already set>
-```
-
-To turn Studio on, open `settings.py` and change:
-
-```python
-"ENABLE_STUDIO": True,   # was False
-```
-
-Then restart the server. Studio will be available at http://localhost:8000/studio/ui.
-
-Need a fresh token? Generate one with:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Paste the output into `.env` as `AKSARA_STUDIO_SECRET_TOKEN=<value>`.
-
-## Configuration
-
-Edit `settings.py` to customize:
-
-```python
-AKSARA = {{
-    "ENABLE_ADMIN": True,       # /admin
-    "ENABLE_STUDIO": False,     # /studio/* (see Enabling Studio above)
-    "AI_MODE_ENABLED": True,    # /ai/*
-}}
-```
-
-## Built with ⚡ Aksara
-
-https://github.com/nagarjuna-tella/Aksara
+Built with [Aksara](https://github.com/nagarjuna-tella/Aksara).
 '''
 
 
@@ -829,10 +686,10 @@ def get_pyproject_template(project_name: str) -> str:
     return f'''[project]
 name = "{project_name}"
 version = "0.1.0"
-description = "AI-native backend — REST API, MCP tools, Studio"
+description = "Async PostgreSQL API with generated REST and optional MCP"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara-framework>=0.6.0",
+    "aksara-framework>=0.6.1",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]

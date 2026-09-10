@@ -84,7 +84,9 @@ class TestUserModel(AksaraTestCase):
 
 ### Function-Based Tests
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 import pytest
 from aksara.testing import async_test, db_session
 from myapp.models import User
@@ -190,7 +192,9 @@ async def test_post_detail(self):
 
 ### Basic Factory
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # tests/factories.py
 from aksara.testing import Factory, Faker
 from myapp.models import User, Post
@@ -297,7 +301,9 @@ class TestDatabase(AksaraTestCase):
 
 ### Shared Fixtures
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 import pytest
 from aksara.testing import db_session
 
@@ -341,7 +347,9 @@ class TestPayment(AksaraTestCase):
 
 ### Mock AI Services
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import mock_ai
 
 class TestAIFeatures(AksaraTestCase):
@@ -393,7 +401,9 @@ class TestAsync(AksaraTestCase):
 
 ### Testing Background Tasks
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import capture_tasks
 
 class TestBackgroundTasks(AksaraTestCase):
@@ -463,7 +473,9 @@ class TestPermissions(AksaraTestCase):
 
 ## Testing Migrations
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import MigrationTestCase
 
 class TestMigrations(MigrationTestCase):
@@ -488,7 +500,9 @@ class TestMigrations(MigrationTestCase):
 
 ### Test Settings
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # tests/conftest.py
 import pytest
 from aksara.testing import setup_test_database
@@ -581,7 +595,7 @@ open htmlcov/index.html
 
 ### Naming Conventions
 
-```python
+```text
 # Good: descriptive, action-focused
 async def test_create_user_with_valid_data():
 async def test_create_user_fails_with_invalid_email():

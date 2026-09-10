@@ -1,60 +1,39 @@
-# AI Quickstart
+# Experimental AI quickstart
 
-Aksara's AI surfaces are built in, but paid providers are optional for first launch.
+!!! warning "Experimental in v0.6.1"
+    Provider-backed prompts, planners, investigations, and Studio AI internals
+    are outside the stable v0.6 contract. MCP generated-tool execution is a
+    separate stable surface and does not require a model provider.
 
-## Check AI Hub
+Inspect the current AI Hub configuration:
 
 ```bash
 aksara ai-hub status
 aksara ai-hub doctor
-```
-
-## Configure a Provider
-
-```bash
 aksara ai-hub configure
 ```
 
-Use environment variables for secrets. Do not commit keys.
+Provider credentials belong in environment variables or the provider's secret
+store. Do not commit them. For example:
 
-```bash
-export OPENAI_API_KEY=<OPENAI_API_KEY>
-export ANTHROPIC_API_KEY=your-key-here
-export AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
+```dotenv
+OPENAI_API_KEY=replace-with-your-key
+ANTHROPIC_API_KEY=replace-with-your-key
+OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```
 
-## Local-First With Ollama
+Ollama can be used for local experiments:
 
 ```bash
 ollama serve
 ollama pull llama3
-export OLLAMA_BASE_URL=http://127.0.0.1:11434
 aksara ai-hub configure
 ```
 
-Tests and examples do not require this model to exist. This path is for developers who want local AI without a paid provider.
+Aksara v0.6.1 does not export a stable `AgentRuntime` or `Planner` class. Use the
+real primitives documented under [AI Mode](../ai-mode/index.md), expect their
+contracts to evolve, and keep human approval and application authorization
+around mutations.
 
-## Try AI Console
-
-Open:
-
-```text
-http://127.0.0.1:8000/studio/ui
-```
-
-Ask:
-
-```text
-Explain my models
-Review this architecture
-Investigate this project
-```
-
-## Try Investigations
-
-```bash
-aksara ai investigate "Find the riskiest parts of this project"
-aksara ai briefing
-```
-
-Daily Briefing and deeper investigations work best after a provider is configured, but the rest of Studio remains useful without one.
+For the stable official-client path, follow the [MCP quickstart](mcp.md) and
+connect to `/mcp/`.
