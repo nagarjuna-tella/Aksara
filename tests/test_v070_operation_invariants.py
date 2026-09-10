@@ -225,7 +225,15 @@ async def lab() -> AsyncIterator[Lab]:
     finally:
         Database._instance = previous_database
         if application_db is not None:
-            await application_db.disconnect()
+            try:
+                await asyncio.wait_for(application_db.disconnect(), timeout=5)
+            except TimeoutError:
+                # A deliberately terminated backend can leave asyncpg waiting
+                # during fixture cleanup. Force-close only the disposable test
+                # pool so a failed assertion is still reported deterministically.
+                if application_db._pool is not None:
+                    application_db._pool.terminate()
+                    application_db._pool = None
         if previous_process_dsn is None:
             os.environ.pop("AKSARA_V070_ROLE_DSN", None)
         else:
