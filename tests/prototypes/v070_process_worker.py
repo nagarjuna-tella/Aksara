@@ -204,15 +204,23 @@ async def _run(args: argparse.Namespace) -> int:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("claim", "claim-hold", "stale-complete"))
-    parser.add_argument("--operation-id", required=True)
-    parser.add_argument("--tenant-id", required=True)
-    parser.add_argument("--worker-id", required=True)
-    parser.add_argument("--lease-seconds", type=float, default=1.0)
-    parser.add_argument("--hold-seconds", type=float, default=30.0)
-    parser.add_argument("--attempt-id")
-    parser.add_argument("--counter-id")
-    parser.add_argument("--fence", type=int, default=0)
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--operation-id", required=True)
+    common.add_argument("--tenant-id", required=True)
+    common.add_argument("--worker-id", required=True)
+
+    actions = parser.add_subparsers(dest="action", required=True)
+    claim = actions.add_parser("claim", parents=[common])
+    claim.add_argument("--lease-seconds", type=float, default=1.0)
+
+    claim_hold = actions.add_parser("claim-hold", parents=[common])
+    claim_hold.add_argument("--lease-seconds", type=float, default=1.0)
+    claim_hold.add_argument("--hold-seconds", type=float, default=30.0)
+
+    stale_complete = actions.add_parser("stale-complete", parents=[common])
+    stale_complete.add_argument("--attempt-id", required=True)
+    stale_complete.add_argument("--counter-id", required=True)
+    stale_complete.add_argument("--fence", type=int, default=0)
     return parser
 
 

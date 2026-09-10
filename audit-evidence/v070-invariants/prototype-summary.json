@@ -20,11 +20,11 @@
     "ambiguous commit outcomes are re-read from PostgreSQL before retry"
   ],
   "test_result": {
-    "full_suite_passed": 8032,
+    "full_suite_passed": 8034,
     "full_suite_skipped": 2,
     "full_suite_log": "pytest-full.log",
-    "passed": 22,
-    "related_regression_passed": 55,
+    "passed": 24,
+    "related_regression_passed": 57,
     "related_regression_log": "pytest-related.log",
     "skipped": 0,
     "targeted_log": "pytest-targeted.log"

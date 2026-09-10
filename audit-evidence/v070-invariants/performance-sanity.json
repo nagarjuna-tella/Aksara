@@ -5,31 +5,31 @@
       "purpose": "pathology detection only; not a benchmark claim",
       "results": {
         "claim_ms": {
-          "max_ms": 19.194,
-          "median_ms": 17.95,
-          "min_ms": 16.275,
+          "max_ms": 21.477,
+          "median_ms": 18.003,
+          "min_ms": 16.941,
           "samples": 8
         },
         "fence_validation_and_completion_ms": {
-          "max_ms": 4.614,
-          "median_ms": 3.264,
-          "min_ms": 3.16,
+          "max_ms": 4.903,
+          "median_ms": 3.098,
+          "min_ms": 2.851,
           "samples": 8
         },
         "heartbeat_ms": {
-          "max_ms": 17.642,
-          "median_ms": 17.232,
-          "min_ms": 16.327,
+          "max_ms": 18.391,
+          "median_ms": 17.902,
+          "min_ms": 17.333,
           "samples": 8
         },
         "reclaim_ms": {
-          "max_ms": 25.709,
-          "median_ms": 25.709,
-          "min_ms": 25.709,
+          "max_ms": 24.184,
+          "median_ms": 24.184,
+          "min_ms": 24.184,
           "samples": 1
         }
       },
-      "transactions_hold_no application work across claims": true
+      "transactions_hold_no_application_work_across_claims": true
     }
   },
   "schema_version": 1

@@ -40,9 +40,9 @@ three tables and restricted role were created and removed by test fixtures.
 | Application role | ephemeral restricted role; `NOSUPERUSER`, `NOBYPASSRLS` |
 | Pool | min 1, max 4 |
 | RLS | enabled and forced on all prototype tables |
-| Focused result | 22 passed in 6.01 seconds |
-| Related regression result | 55 passed in 6.50 seconds |
-| Full suite result | 8,032 passed, 2 expected skips in 53.39 seconds |
+| Focused result | 24 passed in 6.40 seconds |
+| Related regression result | 57 passed in 6.73 seconds |
+| Full suite result | 8,034 passed, 2 expected skips in 52.97 seconds |
 
 Credentials are absent from the evidence. See
 `audit-evidence/v070-invariants/environment.json`.

@@ -444,7 +444,7 @@ async def _atomic_complete(
             fail("after_lock")
 
             if inject == "during_database_mutation":
-                await lab.db.execute(
+                await connection.execute(
                     f'UPDATE "{COUNTERS}" SET mutation_counter = -1 WHERE id = $1',
                     counter_id,
                 )
@@ -688,7 +688,11 @@ async def test_atomic_completion_rolls_back_every_precommit_failure(lab: Lab, st
     tenant, operation_id, counter_id = await _new_scenario(lab)
     claim = await _claim(lab, operation_id, tenant, f"worker-{stage}")
     assert claim is not None
-    expected = Exception if stage == "during_database_mutation" else InjectedFailure
+    expected = (
+        asyncpg.CheckViolationError
+        if stage == "during_database_mutation"
+        else InjectedFailure
+    )
     with pytest.raises(expected):
         await _atomic_complete(lab, claim, counter_id, inject=stage)
     snapshot = await _snapshot(lab, tenant, operation_id, counter_id)
@@ -1197,6 +1201,34 @@ async def _run_process(*arguments: str) -> tuple[int, str, str]:
     return process.returncode or 0, stdout.decode().strip(), stderr.decode().strip()
 
 
+@pytest.mark.parametrize(
+    ("provided_flag", "missing_flag"),
+    [
+        ("--attempt-id", "--counter-id"),
+        ("--counter-id", "--attempt-id"),
+    ],
+)
+async def test_stale_complete_cli_requires_identifiers(
+    provided_flag: str, missing_flag: str
+):
+    identifier = str(uuid4())
+    code, stdout, stderr = await _run_process(
+        "stale-complete",
+        "--operation-id",
+        identifier,
+        "--tenant-id",
+        identifier,
+        "--worker-id",
+        "validation-worker",
+        provided_flag,
+        identifier,
+    )
+    assert code == 2
+    assert stdout == ""
+    assert f"the following arguments are required: {missing_flag}" in stderr
+    assert "Traceback" not in stderr
+
+
 async def test_multiprocess_claim_death_reclaim_and_stale_attack(lab: Lab):
     tenant, operation_id, _ = await _new_scenario(lab)
     base = ("--operation-id", str(operation_id), "--tenant-id", str(tenant))
@@ -1405,7 +1437,7 @@ async def test_performance_sanity_uses_short_transactions(lab: Lab):
         "local_integration_sample",
         {
             "purpose": "pathology detection only; not a benchmark claim",
-            "transactions_hold_no application work across claims": True,
+            "transactions_hold_no_application_work_across_claims": True,
             "results": summary,
             "pass": True,
         },
