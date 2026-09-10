@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 from uuid import UUID, uuid4
 from weakref import WeakSet
 
-from aksara.db import Database
+from aksara.db import Database, atomic
 from aksara.logging import logger
 
 if TYPE_CHECKING:
@@ -641,48 +641,87 @@ class TaskWorker:
         )
         count = int(result["count"]) if result else 0
         if self.durable_service is not None:
-            linked = await database.fetchrow(
-                f'''
-                WITH projected_terminal AS (
-                    UPDATE "{TASKS_TABLE}" t
-                    SET status = CASE WHEN o.state = 'succeeded' THEN 'completed' ELSE 'failed' END,
-                        result = CASE WHEN o.state = 'succeeded' THEN o.result ELSE t.result END,
-                        last_error = CASE WHEN o.state = 'succeeded' THEN NULL
-                            ELSE COALESCE(o.error->>'message', o.state) END,
-                        locked_at = NULL,
-                        completed_at = CASE WHEN o.state = 'succeeded'
-                            THEN COALESCE(o.completed_at, CURRENT_TIMESTAMP) ELSE t.completed_at END,
-                        updated_at = CURRENT_TIMESTAMP
-                    FROM aksara_operations o
-                    WHERE t.operation_id = o.id AND t.status = 'running'
-                      AND t.locked_at < CURRENT_TIMESTAMP
-                          - ($1::double precision * INTERVAL '1 second')
-                      AND o.state IN ('succeeded', 'failed', 'cancelled', 'expired')
-                    RETURNING t.id
-                ), recovered AS (
-                    UPDATE "{TASKS_TABLE}" t
-                    SET status = 'pending', locked_at = NULL,
-                        available_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    FROM aksara_operations o
-                    WHERE t.operation_id = o.id AND t.status = 'running'
-                      AND t.locked_at < CURRENT_TIMESTAMP
-                          - ($1::double precision * INTERVAL '1 second')
-                      AND (
-                          o.state IN ('waiting_for_approval', 'ready')
-                          OR (o.state = 'running' AND o.lease_expires_at <= clock_timestamp())
-                      )
-                    RETURNING t.id
-                )
-                SELECT
-                    (SELECT COUNT(*) FROM projected_terminal)
-                    + (SELECT COUNT(*) FROM recovered) AS count
-                ''',
-                self.stale_lock_timeout_seconds,
-            )
-            count += int(linked["count"]) if linked else 0
+            count += await self._recover_stale_operation_tasks(database)
         if count > 0:
             logger.warning("Recovered %d stale task(s) stuck in 'running' state", count)
         return count
+
+    async def _recover_stale_operation_tasks(self, database: Database) -> int:
+        """Project stale linked tasks under each Operation's tenant scope."""
+
+        from aksara.durable.service import _tenant_context
+        from aksara.durable.types import tenant_scope
+
+        stale_tasks = await database.fetch(
+            f'''
+            SELECT * FROM "{TASKS_TABLE}"
+            WHERE status = 'running' AND operation_id IS NOT NULL
+              AND locked_at < CURRENT_TIMESTAMP
+                  - ($1::double precision * INTERVAL '1 second')
+            ORDER BY locked_at, id
+            ''',
+            self.stale_lock_timeout_seconds,
+        )
+        recovered = 0
+        assert self.durable_service is not None
+        for task_row in stale_tasks:
+            task_record = TaskRecord.from_record(task_row)
+            scope = tenant_scope(task_record.tenant_id)
+            with _tenant_context(scope):
+                async with atomic(db=database) as connection:
+                    operation = await self.durable_service.repository.get_operation(
+                        connection,
+                        task_record.operation_id,
+                        scope,
+                        for_update=True,
+                    )
+                    if operation is None:
+                        continue
+                    state = operation["state"]
+                    terminal = state in {"succeeded", "failed", "cancelled", "expired"}
+                    reclaimable = state in {"waiting_for_approval", "ready"} or (
+                        state == "running"
+                        and operation["lease_expires_at"]
+                        <= await connection.fetchval("SELECT clock_timestamp()")
+                    )
+                    if not terminal and not reclaimable:
+                        continue
+                    status = (
+                        "completed" if state == "succeeded" else "failed"
+                        if terminal
+                        else "pending"
+                    )
+                    result = operation["result"] if state == "succeeded" else None
+                    error = (
+                        None
+                        if state == "succeeded" or not terminal
+                        else (_decode_json_value(operation["error"]) or {}).get(
+                            "message", state
+                        )
+                    )
+                    update_status = await connection.execute(
+                        f'''
+                        UPDATE "{TASKS_TABLE}"
+                        SET status = $2::varchar, result = $3::jsonb,
+                            last_error = $4, locked_at = NULL,
+                            completed_at = CASE WHEN $2::varchar = 'completed'
+                                THEN COALESCE($5, CURRENT_TIMESTAMP) ELSE completed_at END,
+                            available_at = CASE WHEN $2::varchar = 'pending'
+                                THEN CURRENT_TIMESTAMP ELSE available_at END,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = $1 AND status = 'running'
+                          AND locked_at < CURRENT_TIMESTAMP
+                              - ($6::double precision * INTERVAL '1 second')
+                        ''',
+                        task_record.id,
+                        status,
+                        json.dumps(_encode_json_value(result)) if result is not None else None,
+                        error,
+                        operation["completed_at"],
+                        self.stale_lock_timeout_seconds,
+                    )
+                    recovered += update_status == "UPDATE 1"
+        return recovered
 
     async def purge_old_tasks(
         self,
