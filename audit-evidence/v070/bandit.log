@@ -1,0 +1,28 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: B324
+[main]	INFO	running on Python 3.14.4
+Working... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:02
+Run started:2026-09-10 21:31:20.580350+00:00
+
+Test results:
+	No issues identified.
+
+Code scanned:
+	Total lines of code: 72815
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 122
+		Medium: 85
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 60
+		Medium: 17
+		High: 130
+Files skipped (0):
