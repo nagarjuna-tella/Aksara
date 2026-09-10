@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from packaging.version import Version
 
 
 # =============================================================================
@@ -273,19 +274,14 @@ class TestVersionConsistency:
     """Test that all version strings match."""
     
     def test_init_version_format(self):
-        """aksara.__version__ should be a valid semver string."""
+        """aksara.__version__ should be a valid PEP 440 version."""
         import aksara
         
         version = aksara.__version__
         assert version is not None
         
-        # Should be x.y.z format
-        parts = version.split(".")
-        assert len(parts) == 3, f"Expected x.y.z, got {version}"
-        
-        # All parts should be numeric
-        for part in parts:
-            assert part.isdigit(), f"Non-numeric version part: {part}"
+        parsed = Version(version)
+        assert parsed.public == version
     
     def test_init_version_matches_package(self):
         """aksara.__version__ should match current version."""
