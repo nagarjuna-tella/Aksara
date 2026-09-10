@@ -43,10 +43,13 @@ def _operation(record: Mapping[str, Any]) -> OperationRecord:
         deadline_at=record["deadline_at"],
         cancellation_requested_at=record["cancellation_requested_at"],
         result=_json(record["result"]),
+        result_expires_at=record["result_expires_at"],
         error=_json(record["error"]),
+        error_expires_at=record["error_expires_at"],
         created_at=record["created_at"],
         updated_at=record["updated_at"],
         completed_at=record["completed_at"],
+        retain_until=record["retain_until"],
     )
 
 

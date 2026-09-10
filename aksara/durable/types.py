@@ -156,10 +156,13 @@ class OperationRecord:
     deadline_at: datetime | None
     cancellation_requested_at: datetime | None
     result: Any
+    result_expires_at: datetime | None
     error: Any
+    error_expires_at: datetime | None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None
+    retain_until: datetime
 
     @property
     def terminal(self) -> bool:

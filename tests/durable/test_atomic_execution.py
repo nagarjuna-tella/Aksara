@@ -14,6 +14,7 @@ from aksara.context_state import tenant_id_var
 from aksara.db import Database
 from aksara.db.transaction import TransactionManager, atomic
 from aksara.durable import (
+    CancellationConflict,
     DurableAction,
     DurableActionRegistry,
     DurableOperationService,
@@ -461,4 +462,75 @@ async def test_read_only_executor_rejects_application_writes(durable_db):
 
     assert completed.state is OperationState.FAILED
     assert completed.error["code"] == "executor_error"
+    assert await _counter(durable_db, tenant, counter_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_success_and_cancellation_race_has_one_database_winner(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+    mutation_started = asyncio.Event()
+    allow_completion = asyncio.Event()
+
+    async def handler(context, command):
+        await context.database.execute(
+            """
+            UPDATE durable_test_counters
+            SET mutation_counter = mutation_counter + 1
+            WHERE id = $1
+            """,
+            UUID(command["counter_id"]),
+        )
+        mutation_started.set()
+        await allow_completion.wait()
+        return {"counter": 1}
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted, claim = await _admit_claim(service, tenant, counter_id)
+    execution = asyncio.create_task(executor.execute(claim))
+    await mutation_started.wait()
+    cancellation = asyncio.create_task(
+        service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=_principal(tenant),
+            requester_reference=_reference(tenant),
+        )
+    )
+    await asyncio.sleep(0)
+    allow_completion.set()
+
+    completed, cancel_outcome = await asyncio.gather(
+        execution, cancellation, return_exceptions=True
+    )
+
+    assert completed.state is OperationState.SUCCEEDED
+    assert isinstance(cancel_outcome, CancellationConflict)
+    assert await _counter(durable_db, tenant, counter_id) == 1
+
+
+@pytest.mark.asyncio
+async def test_cancellation_intent_wins_before_atomic_mutation(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+    called = False
+
+    async def handler(_context, _command):
+        nonlocal called
+        called = True
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted, claim = await _admit_claim(service, tenant, counter_id)
+    requested = await service.request_cancellation(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+        requester_reference=_reference(tenant),
+    )
+    assert requested.state is OperationState.RUNNING
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.CANCELLED
+    assert called is False
     assert await _counter(durable_db, tenant, counter_id) == 0

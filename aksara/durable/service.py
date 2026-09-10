@@ -94,6 +94,32 @@ def _error_envelope(code: str, detail: str, *, retryable: bool) -> dict[str, Any
     }
 
 
+def _principal_matches_reference(
+    principal: Principal,
+    reference: PrincipalReference,
+) -> bool:
+    """Verify that recorded decision provenance identifies the current actor."""
+
+    if not principal.is_authenticated:
+        return False
+    if principal.is_system:
+        return True
+    if principal.tenant_id != reference.tenant_id:
+        return False
+    if reference.subject_id is not None and principal.user_id != reference.subject_id:
+        return False
+    if reference.agent_id is not None and principal.agent_id != reference.agent_id:
+        return False
+    if (
+        reference.human_owner_id is not None
+        and principal.human_owner_id != reference.human_owner_id
+    ):
+        return False
+    if reference.credential_id is not None and principal.token_id != reference.credential_id:
+        return False
+    return True
+
+
 class DurableOperationService:
     """Application-facing semantic service for durable operations."""
 
@@ -543,6 +569,9 @@ class DurableOperationService:
                         and approval["canonical_input_hash"] == row["canonical_input_hash"]
                         and approval["action_name"] == row["action_name"]
                         and approval["action_version"] == row["action_version"]
+                        and approval["requester_reference_hash"]
+                        == row["principal_reference_hash"]
+                        and approval["consumed_at"] is None
                         and await connection.fetchval(
                             "SELECT $1::timestamptz > clock_timestamp()",
                             approval["expires_at"],
@@ -556,7 +585,7 @@ class DurableOperationService:
                             reason=FailureReason.APPROVAL_EXPIRED,
                         )
                         return None
-                    await connection.execute(
+                    consumption = await connection.execute(
                         """
                         UPDATE aksara_operation_approval_decisions
                         SET consumed_at = clock_timestamp()
@@ -564,6 +593,14 @@ class DurableOperationService:
                         """,
                         approval["id"],
                     )
+                    if consumption != "UPDATE 1":
+                        await self._close_unclaimable(
+                            connection,
+                            row,
+                            state=OperationState.FAILED,
+                            reason=FailureReason.APPROVAL_REQUIRED,
+                        )
+                        return None
 
                 attempt_id = uuid4()
                 fence = int(row["fence"]) + 1
@@ -660,6 +697,8 @@ class DurableOperationService:
             """
             UPDATE aksara_operations
             SET state = $2, state_version = $3, error = $4::jsonb,
+                error_expires_at = clock_timestamp()
+                    + ($5::double precision * INTERVAL '1 second'),
                 worker_id = NULL, lease_expires_at = NULL,
                 completed_at = clock_timestamp(), updated_at = clock_timestamp()
             WHERE id = $1
@@ -668,6 +707,7 @@ class DurableOperationService:
             state.value,
             version,
             json.dumps(error),
+            self.error_retention_seconds,
         )
         event = (
             OperationEvent.CANCELLATION_OBSERVED
@@ -797,6 +837,8 @@ class DurableOperationService:
                     """
                     UPDATE aksara_operations
                     SET state = $6, state_version = $7, error = $8::jsonb,
+                        error_expires_at = clock_timestamp()
+                            + ($12::double precision * INTERVAL '1 second'),
                         available_at = CASE WHEN $9 THEN clock_timestamp()
                             + ($10::double precision * INTERVAL '1 second')
                             ELSE available_at END,
@@ -819,6 +861,7 @@ class DurableOperationService:
                     will_retry,
                     retry_delay_seconds,
                     self.application_namespace,
+                    self.error_retention_seconds,
                 )
                 if updated is None:
                     raise OwnershipLost("failure finalization lost ownership")
@@ -873,6 +916,10 @@ class DurableOperationService:
 
         scope = tenant_scope(tenant_id)
         self._authorize_read(principal, tenant_id, action="cancel")
+        if not _principal_matches_reference(principal, requester_reference):
+            raise AuthorizationDenied(
+                "cancellation provenance does not match the current principal"
+            )
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
                 row = await self.repository.get_operation(
@@ -906,6 +953,7 @@ class DurableOperationService:
                             THEN clock_timestamp() ELSE completed_at END,
                         updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $6 AND state = $7
+                      AND application_namespace = $8
                     RETURNING *
                     """,
                     operation_id,
@@ -915,6 +963,7 @@ class DurableOperationService:
                     version,
                     scope,
                     state.value,
+                    self.application_namespace,
                 )
                 if updated is None:
                     raise CancellationConflict("operation state changed during cancellation")
@@ -962,6 +1011,10 @@ class DurableOperationService:
                 command = await self.repository.get_command(connection, operation_id, scope)
                 assert command is not None
                 self._authorize_read(approver, tenant_id, action="approve")
+                if not _principal_matches_reference(approver, approver_reference):
+                    raise AuthorizationDenied(
+                        "approval provenance does not match the current principal"
+                    )
                 if action.approval_authorizer is not None and not await _call_authorizer(
                     action.approval_authorizer, approver, command
                 ):
@@ -977,6 +1030,17 @@ class DurableOperationService:
                 )
                 if decision is None:
                     raise ApprovalConflict("active approval decision is missing")
+                if (
+                    decision["action_name"] != row["action_name"]
+                    or decision["action_version"] != row["action_version"]
+                    or decision["canonical_input_hash"]
+                    != row["canonical_input_hash"]
+                    or decision["requester_reference_hash"]
+                    != row["principal_reference_hash"]
+                ):
+                    raise ApprovalConflict(
+                        "approval decision does not match the immutable operation binding"
+                    )
                 unexpired = await connection.fetchval(
                     "SELECT $1::timestamptz > clock_timestamp()",
                     decision["expires_at"],
@@ -1016,11 +1080,15 @@ class DurableOperationService:
                     UPDATE aksara_operations
                     SET state = $2::varchar, state_version = $3,
                         error = CASE WHEN $4::text IS NULL THEN NULL ELSE $5::jsonb END,
+                        error_expires_at = CASE WHEN $4::text IS NULL THEN NULL
+                            ELSE clock_timestamp()
+                                + ($8::double precision * INTERVAL '1 second') END,
                         completed_at = CASE WHEN $2::varchar IN ('cancelled', 'expired')
                             THEN clock_timestamp() ELSE NULL END,
                         updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $6
                       AND state = 'waiting_for_approval'
+                      AND application_namespace = $7
                     RETURNING *
                     """,
                     operation_id,
@@ -1031,6 +1099,8 @@ class DurableOperationService:
                     if code is not None
                     else None,
                     scope,
+                    self.application_namespace,
+                    self.error_retention_seconds,
                 )
                 if updated is None:
                     raise ApprovalConflict("approval decision lost its state race")
@@ -1196,9 +1266,8 @@ class DurableOperationService:
                         WHERE tenant_scope = $1 AND result IS NOT NULL
                           AND application_namespace = $2
                           AND state = 'succeeded'
-                          AND completed_at < clock_timestamp()
-                              - ($3::double precision * INTERVAL '1 second')
-                        ORDER BY completed_at LIMIT $4
+                          AND result_expires_at <= clock_timestamp()
+                        ORDER BY completed_at LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), updated AS (
                         UPDATE aksara_operations o SET result = NULL
@@ -1207,7 +1276,6 @@ class DurableOperationService:
                     """,
                     scope,
                     self.application_namespace,
-                    self.result_retention_seconds,
                     batch_size,
                 )
                 expired_errors = await connection.fetchval(
@@ -1217,9 +1285,8 @@ class DurableOperationService:
                         WHERE tenant_scope = $1 AND error IS NOT NULL
                           AND application_namespace = $2
                           AND state IN ('failed', 'cancelled', 'expired')
-                          AND completed_at < clock_timestamp()
-                              - ($3::double precision * INTERVAL '1 second')
-                        ORDER BY completed_at LIMIT $4
+                          AND error_expires_at <= clock_timestamp()
+                        ORDER BY completed_at LIMIT $3
                         FOR UPDATE SKIP LOCKED
                     ), updated AS (
                         UPDATE aksara_operations o SET error = NULL
@@ -1228,7 +1295,6 @@ class DurableOperationService:
                     """,
                     scope,
                     self.application_namespace,
-                    self.error_retention_seconds,
                     batch_size,
                 )
                 deleted_operations = await connection.fetchval(

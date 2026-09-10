@@ -23,7 +23,11 @@ from aksara.durable.registry import (
     DurableAction,
     ResolutionStatus,
 )
-from aksara.durable.service import DurableOperationService, _tenant_context
+from aksara.durable.service import (
+    DurableOperationService,
+    _principal_matches_reference,
+    _tenant_context,
+)
 from aksara.durable.states import FailureReason, OperationEvent, OperationState
 from aksara.durable.types import EffectClass, OperationClaim, OperationRecord
 from aksara.security.policy import default_policy
@@ -163,7 +167,10 @@ class PostgresAtomicExecutor:
                         """
                         UPDATE aksara_operations
                         SET state = 'succeeded', state_version = $6,
-                            result = $7::jsonb, error = NULL,
+                            result = $7::jsonb,
+                            result_expires_at = clock_timestamp()
+                                + ($9::double precision * INTERVAL '1 second'),
+                            error = NULL, error_expires_at = NULL,
                             worker_id = NULL, lease_expires_at = NULL,
                             completed_at = clock_timestamp(), updated_at = clock_timestamp()
                         WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
@@ -181,6 +188,7 @@ class PostgresAtomicExecutor:
                         version,
                         json.dumps(normalized_result),
                         self.service.application_namespace,
+                        self.service.result_retention_seconds,
                     )
                     if updated is None:
                         raise OwnershipLost("operation success lost ownership")
@@ -281,21 +289,7 @@ class PostgresAtomicExecutor:
 
     @staticmethod
     def _matches_reference(principal: Principal, claim: OperationClaim) -> bool:
-        reference = claim.principal_reference
-        if not principal.is_system and principal.tenant_id != reference.tenant_id:
-            return False
-        if reference.subject_id is not None and principal.user_id != reference.subject_id:
-            return False
-        if reference.agent_id is not None and principal.agent_id != reference.agent_id:
-            return False
-        if (
-            reference.human_owner_id is not None
-            and principal.human_owner_id != reference.human_owner_id
-        ):
-            return False
-        if reference.credential_id is not None and principal.token_id != reference.credential_id:
-            return False
-        return principal.is_authenticated
+        return _principal_matches_reference(principal, claim.principal_reference)
 
     async def _authorize(
         self,

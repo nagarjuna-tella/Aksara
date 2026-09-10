@@ -63,10 +63,13 @@ class DurableOperationResponse(BaseModel):
     deadline_at: datetime | None
     cancellation_requested_at: datetime | None
     result: Any = None
+    result_expires_at: datetime | None = None
     error: Any = None
+    error_expires_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None
+    retain_until: datetime
 
 
 class DurableDispatchResponse(BaseModel):
@@ -91,10 +94,13 @@ def _response(operation: OperationRecord) -> DurableOperationResponse:
         deadline_at=operation.deadline_at,
         cancellation_requested_at=operation.cancellation_requested_at,
         result=operation.result,
+        result_expires_at=operation.result_expires_at,
         error=operation.error,
+        error_expires_at=operation.error_expires_at,
         created_at=operation.created_at,
         updated_at=operation.updated_at,
         completed_at=operation.completed_at,
+        retain_until=operation.retain_until,
     )
 
 

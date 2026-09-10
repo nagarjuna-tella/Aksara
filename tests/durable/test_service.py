@@ -10,6 +10,7 @@ import pytest
 
 from aksara.durable import (
     ApprovalConflict,
+    AuthorizationDenied,
     DurableAction,
     DurableActionRegistry,
     DurableOperationService,
@@ -44,7 +45,13 @@ def _reference(tenant: str) -> PrincipalReference:
     )
 
 
-def _service(durable_db, *, approval: bool = False, namespace: str = "tests"):
+def _service(
+    durable_db,
+    *,
+    approval: bool = False,
+    namespace: str = "tests",
+    approval_authorizer=None,
+):
     actions = DurableActionRegistry()
     actions.register(
         DurableAction(
@@ -53,6 +60,7 @@ def _service(durable_db, *, approval: bool = False, namespace: str = "tests"):
             handler=_handler,
             effect_class=EffectClass.POSTGRES_ATOMIC,
             approval_required=approval,
+            approval_authorizer=approval_authorizer,
         )
     )
     return DurableOperationService(
@@ -428,3 +436,140 @@ async def test_application_namespace_is_an_operation_authority_boundary(durable_
         idempotency_key="shared-client-key",
     )
     assert independent.operation.id != admitted.operation.id
+
+
+@pytest.mark.asyncio
+async def test_decision_and_cancellation_provenance_must_match_current_actor(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    forged = PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="test-app",
+        principal_kind="user",
+        subject_id="different-user",
+        tenant_id=tenant,
+    )
+
+    with pytest.raises(AuthorizationDenied):
+        await service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=forged,
+            approve=True,
+        )
+    with pytest.raises(AuthorizationDenied):
+        await service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=_principal(tenant),
+            requester_reference=forged,
+        )
+
+
+@pytest.mark.asyncio
+async def test_approval_binding_tamper_fails_closed(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_approval_decisions
+            SET canonical_input_hash = repeat('0', 64)
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+
+    with pytest.raises(ApprovalConflict, match="immutable operation binding"):
+        await service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=_reference(tenant),
+            approve=True,
+        )
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert operation.state is OperationState.WAITING_FOR_APPROVAL
+
+
+@pytest.mark.asyncio
+async def test_concurrent_approval_decisions_have_one_winner(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db, approval=True)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+
+    outcomes = await asyncio.gather(
+        service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=_reference(tenant),
+            approve=True,
+        ),
+        service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=_reference(tenant),
+            approve=False,
+        ),
+        return_exceptions=True,
+    )
+
+    assert sum(isinstance(outcome, ApprovalConflict) for outcome in outcomes) == 1
+    winners = [outcome for outcome in outcomes if not isinstance(outcome, Exception)]
+    assert len(winners) == 1
+    assert winners[0].state in {OperationState.READY, OperationState.CANCELLED}
+
+
+@pytest.mark.asyncio
+async def test_approval_authorizer_uses_current_approver(durable_db):
+    tenant = str(uuid4())
+    service = _service(
+        durable_db,
+        approval=True,
+        approval_authorizer=lambda principal, _command: principal.user_id == "approver-1",
+    )
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+
+    with pytest.raises(AuthorizationDenied):
+        await service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=_principal(tenant),
+            approver_reference=_reference(tenant),
+            approve=True,
+        )
+    approver_reference = PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="test-app",
+        principal_kind="user",
+        subject_id="approver-1",
+        tenant_id=tenant,
+    )
+    approved = await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=Principal.for_user("approver-1", tenant_id=tenant),
+        approver_reference=approver_reference,
+        approve=True,
+    )
+    assert approved.state is OperationState.READY

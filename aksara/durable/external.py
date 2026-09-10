@@ -414,7 +414,10 @@ class ExternalOperationExecutor:
                     """
                     UPDATE aksara_operations
                     SET state = 'succeeded', state_version = $6, result = $7::jsonb,
-                        error = NULL, worker_id = NULL, lease_expires_at = NULL,
+                        result_expires_at = clock_timestamp()
+                            + ($9::double precision * INTERVAL '1 second'),
+                        error = NULL, error_expires_at = NULL,
+                        worker_id = NULL, lease_expires_at = NULL,
                         completed_at = clock_timestamp(), updated_at = clock_timestamp()
                     WHERE id = $1 AND tenant_scope = $2 AND state = 'running'
                       AND current_attempt_id = $3 AND fence = $4 AND worker_id = $5
@@ -429,6 +432,7 @@ class ExternalOperationExecutor:
                     version,
                     json.dumps(result),
                     self.service.application_namespace,
+                    self.service.result_retention_seconds,
                 )
                 if updated is None:
                     raise OwnershipLost("external operation success lost ownership")

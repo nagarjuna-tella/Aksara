@@ -149,7 +149,8 @@ async def test_result_body_expires_before_terminal_operation_truth(durable_db):
         await durable_db.execute(
             """
             UPDATE aksara_operations
-            SET completed_at = clock_timestamp() - INTERVAL '2 seconds'
+            SET completed_at = clock_timestamp() - INTERVAL '2 seconds',
+                result_expires_at = clock_timestamp() - INTERVAL '1 second'
             WHERE id = $1
             """,
             admitted.operation.id,
