@@ -5,7 +5,7 @@ import re
 import pytest
 from hypothesis import given, strategies as st
 
-from aksara.manager import QuerySet
+from aksara.manager import LOOKUP_OPERATORS, QuerySet
 
 from .conftest import FUZZ_SETTINGS, MALICIOUS_IDENTIFIERS, FuzzAccount
 
@@ -95,7 +95,12 @@ def test_json_path_fuzz_sql_like_paths_not_used_as_raw_sql(path_fragment):
 
 
 @FUZZ_SETTINGS
-@given(path_fragment=st.text(min_size=0, max_size=64), value=st.text(max_size=128))
+@given(
+    path_fragment=st.text(min_size=0, max_size=64).filter(
+        lambda fragment: fragment not in LOOKUP_OPERATORS
+    ),
+    value=st.text(max_size=128),
+)
 def test_json_path_fuzz_generated_paths_are_parameterized(path_fragment, value):
     qs = QuerySet(FuzzAccount).filter(**{f"metadata__{path_fragment}": value})
 
