@@ -31,6 +31,9 @@ for the exact boundary.
 
 The proposed v0.7 milestone is **durable authorized operations**.
 
+The accepted architecture is recorded in
+[ADR 0001 — Durable Authorized Operations](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/adr/0001-durable-authorized-operations.md).
+
 The intended change in guarantee is precise: framework-managed work that opts
 into durable execution should remain identifiable, queryable, bounded,
 recoverable, reauthorized, and auditable after a response, process, or worker
@@ -136,12 +139,14 @@ authorization revocation and cross-tenant denial; migration upgrade/replay;
 restricted application roles; packaged-wheel validation; a real MCP client;
 and strict Doctor/release gates.
 
-The contract covers framework-owned database effects. External calls remain
-at-least-once unless the application and external system provide an idempotency
-contract. v0.7 will not implement arbitrary workflow graphs, exactly-once
-external side effects, persistent conversations, semantic memory, planner or
-provider quality guarantees, multi-agent autonomy, a production Studio
-contract, or a new mandatory runtime service.
+The contract covers framework-owned database effects. External calls follow the
+executor/provider idempotency and reconciliation contract. When their outcome
+cannot be established safely, v0.7 reports `external_outcome_unknown` rather
+than blindly retrying or claiming provider success or failure. v0.7 will not
+implement arbitrary workflow graphs, exactly-once external side effects,
+persistent conversations, semantic memory, planner or provider quality
+guarantees, multi-agent autonomy, a production Studio contract, or a new
+mandatory runtime service.
 
 ## Experimental / deferred
 
