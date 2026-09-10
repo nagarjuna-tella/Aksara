@@ -1,5 +1,6 @@
 """Durable authorized operation primitives."""
 
+from aksara.durable.api import create_durable_operations_router
 from aksara.durable.errors import (
     ActionNotRegistered,
     ApprovalConflict,
@@ -16,6 +17,16 @@ from aksara.durable.errors import (
 from aksara.durable.execution import (
     PostgresAtomicExecutionContext,
     PostgresAtomicExecutor,
+    ReadOnlyExecutor,
+)
+from aksara.durable.external import (
+    ExternalEffectAdapter,
+    ExternalEffectContext,
+    ExternalEffectResult,
+    ExternalOperationExecutor,
+    ExternalOutcomeUnknown,
+    ReconciliationResult,
+    ReconciliationStatus,
 )
 from aksara.durable.registry import (
     DurableAction,
@@ -32,18 +43,26 @@ from aksara.durable.types import (
     OperationRecord,
     PrincipalReference,
 )
+from aksara.durable.worker import DurableOperationWorker
 
 __all__ = [
     "ActionNotRegistered",
     "ApprovalConflict",
     "AuthorizationDenied",
     "CancellationConflict",
+    "create_durable_operations_router",
     "DurableAction",
     "DurableActionRegistry",
     "DurableConfigurationError",
     "DurableOperationError",
     "DurableOperationService",
+    "DurableOperationWorker",
     "EffectClass",
+    "ExternalEffectAdapter",
+    "ExternalEffectContext",
+    "ExternalEffectResult",
+    "ExternalOperationExecutor",
+    "ExternalOutcomeUnknown",
     "IdempotencyConflict",
     "IdempotencyIdentityExpired",
     "InvalidDurableCommand",
@@ -54,8 +73,11 @@ __all__ = [
     "OperationTerminal",
     "PostgresAtomicExecutionContext",
     "PostgresAtomicExecutor",
+    "ReadOnlyExecutor",
     "PrincipalReference",
     "PrincipalResolution",
     "PrincipalResolverRegistry",
+    "ReconciliationResult",
+    "ReconciliationStatus",
     "ResolutionStatus",
 ]

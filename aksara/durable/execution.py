@@ -438,4 +438,72 @@ class PostgresAtomicExecutor:
         return operation
 
 
-__all__ = ["PostgresAtomicExecutionContext", "PostgresAtomicExecutor"]
+class ReadOnlyExecutor:
+    """Execute an allowlisted action inside a PostgreSQL read-only transaction."""
+
+    def __init__(self, service: DurableOperationService) -> None:
+        self.service = service
+        self._identity = PostgresAtomicExecutor(service)
+
+    async def execute(self, claim: OperationClaim) -> OperationRecord:
+        action = self.service.actions.get(claim.action_name, claim.action_version)
+        if action.effect_class is not EffectClass.READ_ONLY:
+            raise DurableConfigurationError(
+                f"{action.name}@{action.version} is not a read_only action"
+            )
+        principal = await self._identity._resolve_or_fail(claim)
+        if principal is None:
+            return await self._identity._read_authoritative(claim)
+        if not await self._identity._authorize(action, principal, claim):
+            return await self.service.fail_attempt(
+                claim,
+                code=FailureReason.AUTHORIZATION_DENIED.value,
+                message="current authorization denied the read-only action",
+                retryable=False,
+            )
+        try:
+            with _tenant_context(claim.tenant_scope):
+                async with atomic(db=self.service.db) as connection:
+                    operation = await self.service._lock_owned(connection, claim)
+                    if operation["cancellation_requested_at"] is not None:
+                        return await self._identity._cancel_under_lock(
+                            connection, operation, claim
+                        )
+                async with atomic(db=self.service.db) as connection:
+                    await connection.execute("SET TRANSACTION READ ONLY")
+                    context = PostgresAtomicExecutionContext(
+                        database=self.service.db,
+                        operation_id=claim.operation_id,
+                        attempt_id=claim.attempt_id,
+                        principal=principal,
+                        tenant_id=claim.tenant_id,
+                        fence=claim.fence,
+                    )
+                    with durable_database_guard(self.service.db, connection) as guard:
+                        result = action.handler(context, dict(claim.command))
+                        if inspect.isawaitable(result):
+                            result = await result
+                        if guard.invalid_reason is not None:
+                            raise AtomicBoundaryViolation(
+                                f"read_only boundary was invalidated: {guard.invalid_reason}"
+                            )
+                        normalized = action.normalize_result(result)
+            from aksara.durable.external import ExternalOperationExecutor
+
+            return await ExternalOperationExecutor(self.service)._complete(claim, normalized)
+        except Exception as exc:
+            if isinstance(exc, OwnershipLost):
+                raise
+            return await self.service.fail_attempt(
+                claim,
+                code=FailureReason.EXECUTOR_ERROR.value,
+                message=str(exc) or type(exc).__name__,
+                retryable=action.is_retryable(exc),
+            )
+
+
+__all__ = [
+    "PostgresAtomicExecutionContext",
+    "PostgresAtomicExecutor",
+    "ReadOnlyExecutor",
+]

@@ -36,16 +36,20 @@ import time
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from functools import update_wrapper
-from typing import Any, Callable, Literal, Optional
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from uuid import UUID, uuid4
 from weakref import WeakSet
 
 from aksara.db import Database
 from aksara.logging import logger
 
+if TYPE_CHECKING:
+    from aksara.durable.service import DurableOperationService
+
 TaskStatus = Literal["pending", "running", "completed", "failed"]
 
 TASKS_TABLE = "aksara_tasks"
+DURABLE_OPERATION_TASK_NAME = "aksara.durable.execute"
 TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_name VARCHAR(255) NOT NULL,
@@ -108,6 +112,7 @@ class TaskRecord:
     # callable. Nullable because tasks may be enqueued outside any
     # tenant scope (e.g. internal jobs).
     tenant_id: Optional[str] = None
+    operation_id: Optional[UUID] = None
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -124,6 +129,7 @@ class TaskRecord:
             task_name=record["task_name"],
             queue=record.get("queue", "default") or "default",
             tenant_id=record.get("tenant_id"),
+            operation_id=record.get("operation_id"),
             payload=_decode_json_value(record["payload"]) or {},
             status=record["status"],
             attempts=record["attempts"],
@@ -399,6 +405,61 @@ async def enqueue_task(
     return TaskRecord.from_record(record)
 
 
+async def enqueue_operation_task(
+    operation_id: UUID,
+    *,
+    service: "DurableOperationService",
+    tenant_id: str | None,
+    queue: str = "default",
+    delay_seconds: float = 0.0,
+) -> TaskRecord:
+    """Create the optional task projection for a task-backed Operation.
+
+    The Operation remains authoritative. Repeated calls return the one task
+    already linked to the logical operation.
+    """
+
+    from aksara.durable.errors import OperationNotFound
+    from aksara.durable.service import _tenant_context
+    from aksara.durable.types import tenant_scope
+
+    database = service.db
+    scope = tenant_scope(tenant_id)
+    with _tenant_context(scope):
+        async with database.acquire() as connection:
+            operation = await service.repository.get_operation(
+                connection, operation_id, scope
+            )
+            if operation is None:
+                raise OperationNotFound("operation was not found in the active tenant")
+            if operation["executor_type"] != "task":
+                raise ValueError("only actions registered with executor_type='task' may be linked")
+            record = await connection.fetchrow(
+                f'''
+                INSERT INTO "{TASKS_TABLE}" (
+                    task_name, queue, tenant_id, payload, max_attempts,
+                    available_at, operation_id
+                ) VALUES (
+                    $1, $2, $3, '{{}}'::jsonb, $4,
+                    CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second'),
+                    $6
+                )
+                ON CONFLICT (operation_id) WHERE operation_id IS NOT NULL
+                DO UPDATE SET operation_id = EXCLUDED.operation_id
+                RETURNING *
+                ''',
+                DURABLE_OPERATION_TASK_NAME,
+                queue,
+                operation["tenant_id"],
+                operation["max_attempts"],
+                delay_seconds,
+                operation_id,
+            )
+    if record is None:
+        raise RuntimeError("failed to enqueue operation-backed task")
+    return TaskRecord.from_record(record)
+
+
 async def get_task_record(
     task_id: UUID,
     db: Optional[Database] = None,
@@ -445,6 +506,8 @@ class TaskWorker:
         cleanup_interval_seconds: Optional[float] = None,
         cron_check_interval_seconds: Optional[float] = None,
         queues: Optional[list[str]] = None,
+        durable_service: Optional["DurableOperationService"] = None,
+        worker_id: Optional[str] = None,
     ):
         from aksara.conf import settings
 
@@ -497,6 +560,8 @@ class TaskWorker:
         )
         # None → all queues; list → only those queues
         self.queues: Optional[list[str]] = queues
+        self.durable_service = durable_service
+        self.worker_id = worker_id or f"task-worker-{uuid4()}"
 
         self._last_recovery: float = 0.0
         self._last_cleanup: float = 0.0
@@ -552,6 +617,9 @@ class TaskWorker:
         """
         database = _get_db(self._db)
         await ensure_tasks_table(database)
+        operation_filter = (
+            "AND operation_id IS NULL" if self.durable_service is not None else ""
+        )
         result = await database.fetchrow(
             f'''
             WITH recovered AS (
@@ -563,6 +631,7 @@ class TaskWorker:
                     updated_at = CURRENT_TIMESTAMP
                 WHERE
                     status = 'running'
+                    {operation_filter}
                     AND locked_at < CURRENT_TIMESTAMP - ($1::double precision * INTERVAL '1 second')
                 RETURNING id
             )
@@ -571,6 +640,46 @@ class TaskWorker:
             self.stale_lock_timeout_seconds,
         )
         count = int(result["count"]) if result else 0
+        if self.durable_service is not None:
+            linked = await database.fetchrow(
+                f'''
+                WITH projected_terminal AS (
+                    UPDATE "{TASKS_TABLE}" t
+                    SET status = CASE WHEN o.state = 'succeeded' THEN 'completed' ELSE 'failed' END,
+                        result = CASE WHEN o.state = 'succeeded' THEN o.result ELSE t.result END,
+                        last_error = CASE WHEN o.state = 'succeeded' THEN NULL
+                            ELSE COALESCE(o.error->>'message', o.state) END,
+                        locked_at = NULL,
+                        completed_at = CASE WHEN o.state = 'succeeded'
+                            THEN COALESCE(o.completed_at, CURRENT_TIMESTAMP) ELSE t.completed_at END,
+                        updated_at = CURRENT_TIMESTAMP
+                    FROM aksara_operations o
+                    WHERE t.operation_id = o.id AND t.status = 'running'
+                      AND t.locked_at < CURRENT_TIMESTAMP
+                          - ($1::double precision * INTERVAL '1 second')
+                      AND o.state IN ('succeeded', 'failed', 'cancelled', 'expired')
+                    RETURNING t.id
+                ), recovered AS (
+                    UPDATE "{TASKS_TABLE}" t
+                    SET status = 'pending', locked_at = NULL,
+                        available_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                    FROM aksara_operations o
+                    WHERE t.operation_id = o.id AND t.status = 'running'
+                      AND t.locked_at < CURRENT_TIMESTAMP
+                          - ($1::double precision * INTERVAL '1 second')
+                      AND (
+                          o.state IN ('waiting_for_approval', 'ready')
+                          OR (o.state = 'running' AND o.lease_expires_at <= clock_timestamp())
+                      )
+                    RETURNING t.id
+                )
+                SELECT
+                    (SELECT COUNT(*) FROM projected_terminal)
+                    + (SELECT COUNT(*) FROM recovered) AS count
+                ''',
+                self.stale_lock_timeout_seconds,
+            )
+            count += int(linked["count"]) if linked else 0
         if count > 0:
             logger.warning("Recovered %d stale task(s) stuck in 'running' state", count)
         return count
@@ -619,7 +728,33 @@ class TaskWorker:
         database = _get_db(self._db)
         await ensure_tasks_table(database)
 
-        if self.queues is not None:
+        if self.queues is not None and self.durable_service is not None:
+            record = await database.fetchrow(
+                f'''
+                WITH next_task AS (
+                    SELECT id
+                    FROM "{TASKS_TABLE}"
+                    WHERE status = 'pending'
+                      AND available_at <= CURRENT_TIMESTAMP
+                      AND ($2::boolean OR operation_id IS NULL)
+                      AND queue = ANY($1::text[])
+                    ORDER BY available_at ASC, created_at ASC
+                    FOR UPDATE SKIP LOCKED
+                    LIMIT 1
+                )
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'running',
+                    attempts = attempts + 1,
+                    locked_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (SELECT id FROM next_task)
+                RETURNING *
+                ''',
+                self.queues,
+                self.durable_service is not None,
+            )
+        elif self.queues is not None:
             record = await database.fetchrow(
                 f'''
                 WITH next_task AS (
@@ -642,6 +777,29 @@ class TaskWorker:
                 RETURNING *
                 ''',
                 self.queues,
+            )
+        elif self.durable_service is not None:
+            record = await database.fetchrow(
+                f'''
+                WITH next_task AS (
+                    SELECT id
+                    FROM "{TASKS_TABLE}"
+                    WHERE status = 'pending' AND available_at <= CURRENT_TIMESTAMP
+                      AND ($1::boolean OR operation_id IS NULL)
+                    ORDER BY available_at ASC, created_at ASC
+                    FOR UPDATE SKIP LOCKED
+                    LIMIT 1
+                )
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'running',
+                    attempts = attempts + 1,
+                    locked_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (SELECT id FROM next_task)
+                RETURNING *
+                ''',
+                self.durable_service is not None,
             )
         else:
             record = await database.fetchrow(
@@ -787,6 +945,10 @@ class TaskWorker:
 
         database = _get_db(self._db)
 
+        if task_record.operation_id is not None:
+            await self._process_operation_task(task_record)
+            return
+
         # Restore the tenant context captured at enqueue time so the
         # callable observes the same tenant scope it was scheduled
         # under. Without this, tenant-aware ORM operations inside the
@@ -818,6 +980,90 @@ class TaskWorker:
             ''',
             json.dumps(encoded_result),
             task_record.id,
+        )
+
+    async def _process_operation_task(self, task_record: TaskRecord) -> None:
+        """Delegate a linked task to Operation claim/fence authority."""
+
+        service = self.durable_service
+        if service is None or task_record.operation_id is None:
+            return
+        from aksara.durable.external import ExternalOperationExecutor
+        from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
+        from aksara.durable.service import _tenant_context
+        from aksara.durable.types import EffectClass, tenant_scope
+
+        scope = tenant_scope(task_record.tenant_id)
+        claim = await service.claim(
+            tenant_id=task_record.tenant_id,
+            worker_id=f"{self.worker_id}:{task_record.id}",
+            operation_id=task_record.operation_id,
+            lease_seconds=self.stale_lock_timeout_seconds,
+        )
+        if claim is None:
+            with _tenant_context(scope):
+                async with service.db.acquire() as connection:
+                    operation = await service.repository.get_public_operation(
+                        connection, task_record.operation_id, scope
+                    )
+            await self._project_operation_task(task_record, operation)
+            return
+
+        if claim.effect_class is EffectClass.POSTGRES_ATOMIC:
+            operation = await PostgresAtomicExecutor(service).execute(claim)
+        elif claim.effect_class is EffectClass.READ_ONLY:
+            operation = await ReadOnlyExecutor(service).execute(claim)
+        elif claim.effect_class in {
+            EffectClass.EXTERNAL_IDEMPOTENT,
+            EffectClass.EXTERNAL_AT_LEAST_ONCE,
+            EffectClass.EXTERNAL_NONRETRYABLE,
+        }:
+            operation = await ExternalOperationExecutor(service).execute(claim)
+        else:
+            operation = await service.fail_attempt(
+                claim,
+                code="unsupported_task_effect_class",
+                message="task adapter does not execute this effect class",
+                retryable=False,
+            )
+        await self._project_operation_task(task_record, operation)
+
+    async def _project_operation_task(self, task_record: TaskRecord, operation: Any) -> None:
+        """Update the compatibility task row from authoritative Operation state."""
+
+        database = _get_db(self._db)
+        if operation is None:
+            status, result, error, delay = "failed", None, "operation missing", 0.0
+        elif operation.state.value == "succeeded":
+            status, result, error, delay = "completed", operation.result, None, 0.0
+        elif operation.state.value in {"failed", "cancelled", "expired"}:
+            message = (
+                operation.error.get("message", operation.state.value)
+                if isinstance(operation.error, dict)
+                else operation.state.value
+            )
+            status, result, error, delay = "failed", None, message, 0.0
+        else:
+            status, result, error, delay = "pending", None, None, self.poll_interval
+        await database.execute(
+            f'''
+            UPDATE "{TASKS_TABLE}"
+            SET status = $2::varchar, result = $3::jsonb, last_error = $4,
+                locked_at = NULL,
+                completed_at = CASE WHEN $2::varchar = 'completed'
+                    THEN CURRENT_TIMESTAMP ELSE NULL END,
+                available_at = CASE WHEN $2::varchar = 'pending'
+                    THEN CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second')
+                    ELSE available_at END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1 AND operation_id = $6
+            ''',
+            task_record.id,
+            status,
+            json.dumps(_encode_json_value(result)) if result is not None else None,
+            error,
+            delay,
+            task_record.operation_id,
         )
 
     async def _execute_callable(
@@ -889,11 +1135,13 @@ class TaskWorker:
 
 __all__ = [
     "CRON_STATE_TABLE",
+    "DURABLE_OPERATION_TASK_NAME",
     "TASKS_TABLE",
     "TaskRecord",
     "TaskWorker",
     "clear_task_registry",
     "enqueue_task",
+    "enqueue_operation_task",
     "ensure_cron_state_table",
     "ensure_tasks_table",
     "get_registered_task",
