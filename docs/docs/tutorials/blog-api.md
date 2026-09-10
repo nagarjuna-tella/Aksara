@@ -286,7 +286,9 @@ Serializers convert Python objects to JSON and validate incoming data.
 
 Create `blog/serializers.py`:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # blog/serializers.py
 from aksara.api import ModelSerializer, SerializerMethodField
 from .models import User, Post, Comment, Tag
@@ -382,7 +384,9 @@ ViewSets handle API requests. Each ViewSet creates multiple endpoints.
 
 Create `blog/views.py`:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # blog/views.py
 from datetime import datetime
 from aksara.api import ModelViewSet, ViewSet, action
@@ -746,7 +750,9 @@ Open http://localhost:8000/docs in your browser to see and test all endpoints.
 
 Create `blog/tests/test_api.py`:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # blog/tests/test_api.py
 import pytest
 from aksara.testing import AksaraTestCase

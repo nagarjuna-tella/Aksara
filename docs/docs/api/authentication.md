@@ -13,7 +13,9 @@ Aksara supports multiple authentication methods:
 - **JWT authentication** — JSON Web Tokens
 - **Custom authentication** — Build your own
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara import Aksara
 from aksara.middleware import AuthenticationMiddleware
 
@@ -80,7 +82,9 @@ Cookie-based authentication for web apps:
 
 ### Setup
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara import Aksara
 from aksara.middleware import SessionMiddleware, AuthenticationMiddleware
 
@@ -96,7 +100,9 @@ app.add_middleware(AuthenticationMiddleware)
 
 ### Login Endpoint
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import authenticate, login
 
 @app.post("/auth/login")
@@ -123,7 +129,9 @@ async def login_view(request):
 
 ### Logout Endpoint
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import logout
 
 @app.post("/auth/logout")
@@ -154,7 +162,9 @@ Bearer token authentication for APIs:
 
 ### Setup
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.tokens import TokenAuthentication
 
 app.add_middleware(TokenAuthentication)
@@ -162,7 +172,9 @@ app.add_middleware(TokenAuthentication)
 
 ### Token Model
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.tokens import Token
 
 # Create token for user
@@ -174,7 +186,9 @@ print(token.key)  # "abc123..."
 
 ### Login with Token
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import authenticate
 from aksara.contrib.auth.tokens import Token
 
@@ -226,7 +240,9 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION = 3600  # 1 hour
 ```
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.jwt import JWTAuthentication
 
 app.add_middleware(JWTAuthentication)
@@ -234,7 +250,9 @@ app.add_middleware(JWTAuthentication)
 
 ### Generate JWT
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.jwt import create_access_token, create_refresh_token
 
 @app.post("/auth/token")
@@ -258,7 +276,9 @@ async def get_jwt(request):
 
 ### Refresh Token
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.jwt import verify_refresh_token, create_access_token
 
 @app.post("/auth/refresh")
@@ -304,7 +324,9 @@ def create_access_token(user):
 
 Create your own authentication backend:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import BaseAuthentication
 
 class APIKeyAuthentication(BaseAuthentication):
@@ -337,7 +359,9 @@ app.add_middleware(APIKeyAuthentication)
 
 ### Multiple Authentication Methods
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import MultiAuthentication
 
 app.add_middleware(
@@ -357,7 +381,9 @@ app.add_middleware(
 
 ### Hashing
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth import hash_password, check_password
 
 # Hash a password
@@ -369,7 +395,9 @@ is_valid = check_password("mypassword123", hashed)
 
 ### Password Reset
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.tokens import PasswordResetToken
 
 @app.post("/auth/forgot-password")
@@ -456,7 +484,9 @@ async def register(request):
 
 ## Email Verification
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.contrib.auth.tokens import EmailVerificationToken
 
 @app.post("/auth/send-verification")
@@ -499,7 +529,9 @@ async def verify_email(request):
 
 ## Complete Example
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # auth/routes.py
 from fastapi import APIRouter
 from aksara.contrib.auth import (

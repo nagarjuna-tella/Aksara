@@ -821,12 +821,12 @@ class TestVersion:
     def test_version_is_0_5_39(self):
         from aksara._version import __version__
 
-        assert __version__ == "0.6.0"
+        assert __version__ == "0.6.1"
 
     def test_cli_version_is_0_5_39(self):
         from aksara.cli.main import CLI_VERSION
 
-        assert CLI_VERSION == "0.6.0"
+        assert CLI_VERSION == "0.6.1"
 
 
 # =============================================================================

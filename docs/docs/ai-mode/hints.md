@@ -16,7 +16,9 @@ Route hints are pure metadata—they don't affect request handling but provide:
 
 ### Basic Decorator Usage
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.ai import ai_route_hint
 from aksara.api import AksaraViewSet
 
@@ -253,8 +255,7 @@ class AiHintSet(AksaraModel):
 from aksara.ai import (
     ai_route_hint,          # Decorator
     set_view_default_hint,  # Set class defaults
-    get_ai_route_hint,      # Get hint from function
-    extract_hints_from_viewset,  # Extract from viewset class
+    get_hint_from_callable,      # Get a hint from a decorated callable
     extract_hints_from_app,      # Extract from app module
     build_ai_hint_set,           # Build complete hint set
 )

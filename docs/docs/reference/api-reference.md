@@ -64,7 +64,9 @@ class UserViewSet(ModelViewSet):
 
 Base ViewSet without default actions.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ViewSet, action
 
 class CustomViewSet(ViewSet):
@@ -81,7 +83,9 @@ class CustomViewSet(ViewSet):
 
 Read-only ViewSet (list and retrieve only).
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ReadOnlyModelViewSet
 
 class PostViewSet(ReadOnlyModelViewSet):
@@ -222,7 +226,9 @@ class PostSerializer(ModelSerializer):
 
 ### Built-in Permissions
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -240,7 +246,9 @@ from aksara.api.permissions import (
 
 ### Custom Permission
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.permissions import BasePermission
 
 class IsOwner(BasePermission):
@@ -265,7 +273,9 @@ class HasSubscription(BasePermission):
 
 ### Token Authentication
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.authentication import TokenAuthentication
 
 # In settings
@@ -276,7 +286,9 @@ from aksara.api.authentication import TokenAuthentication
 
 ### Custom Authentication
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.authentication import BaseAuthentication
 
 class APIKeyAuthentication(BaseAuthentication):
@@ -343,7 +355,9 @@ class CustomPagination(CursorPagination):
 
 ### FilterSet
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.filters import FilterSet, Filter
 
 class PostFilterSet(FilterSet):
@@ -453,7 +467,9 @@ async def my_view(request):
 
 ### Response Formats
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import Response
 
 # JSON response (default)
@@ -476,7 +492,9 @@ return Response(
 
 ### Built-in Throttles
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.throttling import AnonRateThrottle, UserRateThrottle
 
 class PostViewSet(ModelViewSet):
@@ -485,7 +503,9 @@ class PostViewSet(ModelViewSet):
 
 ### Custom Throttle
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api.throttling import BaseThrottle
 
 class BurstThrottle(BaseThrottle):

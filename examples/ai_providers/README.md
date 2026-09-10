@@ -32,7 +32,7 @@ No seed command is required. This example focuses on provider configuration and 
 
 * API docs: http://127.0.0.1:8000/docs
 * Studio: http://127.0.0.1:8000/studio/ui
-* MCP: http://127.0.0.1:8000/ai/tools/mcp
+* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
 
 ## Test API
 
@@ -42,11 +42,13 @@ curl http://127.0.0.1:8000/ai/status
 curl http://127.0.0.1:8000/ai/providers
 ```
 
-## Test MCP
+## Inspect generated tool metadata
 
 ```bash
 curl http://127.0.0.1:8000/ai/tools/mcp
 ```
+
+This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
 
 Confirm demo ViewSet actions appear without committing provider secrets.
 

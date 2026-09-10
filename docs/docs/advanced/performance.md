@@ -93,7 +93,9 @@ class PostViewSet(ModelViewSet):
 
 ### Enable Query Logging
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "DEBUG": True,
@@ -103,7 +105,9 @@ AKSARA = {
 
 ### Profile Decorator
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import profile_queries
 
 @profile_queries
@@ -121,7 +125,9 @@ async def get_posts():
 
 ### Query Capture
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import capture_queries
 
 async with capture_queries() as queries:
@@ -136,7 +142,9 @@ for q in queries:
 
 ### N+1 Detection
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import detect_n_plus_one
 
 @detect_n_plus_one
@@ -291,7 +299,9 @@ await User.objects.filter(
 
 ### Cache Expensive Queries
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cache import cached
 
 @cached(ttl=300)
@@ -319,7 +329,9 @@ class Post(Model):
 
 ### Response Caching
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cache import cache_response
 
 class PostViewSet(ModelViewSet):
@@ -336,7 +348,9 @@ See [Caching Guide](caching.md) for more.
 
 ### Database Pool
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "DATABASE_URL": "postgresql://localhost/myapp",
@@ -351,7 +365,9 @@ AKSARA = {
 
 ### Redis Pool
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 AKSARA = {
     "CACHE": {
         "default": {
@@ -369,7 +385,9 @@ AKSARA = {
 
 ### Compression
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.middleware import GZipMiddleware
 
 app.add_middleware(GZipMiddleware, minimum_size=500)

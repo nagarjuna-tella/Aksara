@@ -76,7 +76,9 @@ class PhoneField(Field):
 
 Complex validation patterns:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.validation import validator, ValidationError
 
 class Order(Model):
@@ -93,7 +95,9 @@ class Order(Model):
 
 Speed up your application:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cache import cached, cache
 
 # Cache query results
@@ -108,7 +112,9 @@ async def get_popular_posts():
 
 Comprehensive testing:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import AksaraTestCase, factory
 
 class UserFactory(factory.Factory):
@@ -125,7 +131,9 @@ class UserFactory(factory.Factory):
 
 Optimize your application:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # N+1 prevention
 posts = await Post.objects.select_related("author").prefetch_related("comments").all()
 

@@ -110,7 +110,9 @@ class Post(Model):
 
 ### Request Types
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from typing import Any, Dict, Optional
 from aksara.api.request import Request
 

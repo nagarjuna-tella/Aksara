@@ -61,7 +61,9 @@ class AdminViewSet(ModelViewSet):
 
 Authenticated for writes, anyone can read:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.permissions import IsAuthenticatedOrReadOnly
 
 class PostViewSet(ModelViewSet):
@@ -302,7 +304,9 @@ class ComplexPermission(BasePermission):
 
 ### Custom Messages
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.permissions import BasePermission, PermissionDenied
 
 class IsOwner(BasePermission):
@@ -352,7 +356,9 @@ class PostViewSet(ModelViewSet):
 
 ### Using Permission Class
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.permissions import IsOwner
 
 class PostViewSet(ModelViewSet):
@@ -401,7 +407,9 @@ class CustomPermission(BasePermission):
 
 ## Complete Example
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # permissions.py
 from aksara.permissions import BasePermission, PermissionDenied
 

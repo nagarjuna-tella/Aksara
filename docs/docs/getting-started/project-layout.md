@@ -316,7 +316,9 @@ myproject/
 
 Example `conftest.py`:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 import pytest
 from aksara.testing import TestClient, setup_test_database
 

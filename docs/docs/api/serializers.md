@@ -222,7 +222,9 @@ class TaskSerializer(ModelSerializer):
 
 Add fields that don't exist on the model.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ModelSerializer, SerializerMethodField
 
 class TaskSerializer(ModelSerializer):
@@ -267,7 +269,9 @@ class TaskSerializer(ModelSerializer):
 
 Expose a field with a different name.
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.api import ModelSerializer, Field
 
 class TaskSerializer(ModelSerializer):
@@ -517,7 +521,9 @@ class TaskSerializer(ModelSerializer):
 
 ## Complete Example
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from datetime import datetime
 from aksara.api import ModelSerializer, SerializerMethodField
 from aksara.api.validators import ValidationError

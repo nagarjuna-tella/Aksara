@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.6.0"
-description = "⚡ Aksara - AI-native async backend framework for Python"
+version = "0.6.1"
+description = "Async PostgreSQL framework with generated REST APIs and authorized MCP tools"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

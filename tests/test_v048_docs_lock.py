@@ -39,7 +39,7 @@ def test_getting_started_docs_exist(path):
         "Core Features",
         "Roadmap",
         "Contributing",
-        "http://127.0.0.1:8000/studio/ui",
+        "/studio/ui",
         "http://127.0.0.1:8000/mcp/",
         "aksara doctor launch-check",
         "aksara examples validate",
@@ -56,7 +56,7 @@ def test_readme_mentions_launch_path(fragment):
         "# Roadmap",
         "Where Aksara is now",
         "Direction to v0.7",
-        "v0.6.1 — installed-package truth, when ready",
+        "v0.6.1 — installed-package truth",
         "Toward v0.7",
         "v0.7",
         "durable authorized operations",
@@ -94,8 +94,10 @@ def test_changelog_mentions_v048_items(fragment):
 @pytest.mark.parametrize(
     "fragment",
     [
-        "Studio: http://127.0.0.1:8000/studio/ui",
-        "MCP tools: http://127.0.0.1:8000/ai/tools/mcp",
+        "REST OpenAPI: http://127.0.0.1:8000/docs",
+        "generated Task API: http://127.0.0.1:8000/api/tasks/",
+        "tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp",
+        "MCP clients use Streamable HTTP",
         "aksara doctor launch-check",
         "aksara dbsetup",
         "aksara migrate",
@@ -114,8 +116,8 @@ def test_first_project_doc_includes_first_run_flow(fragment):
         "aksara ai-hub configure",
         "ollama serve",
         "ollama pull llama3",
-        "Daily Briefing",
-        "Investigate this project",
+        "Experimental in v0.6.1",
+        "MCP generated-tool execution is a",
     ],
 )
 def test_ai_quickstart_local_first_path(fragment):
@@ -128,9 +130,9 @@ def test_ai_quickstart_local_first_path(fragment):
     [
         "http://127.0.0.1:8000/mcp/",
         "MCP quickstart",
-        "Enable the server",
+        "Resolve credentials on the server",
         "Streamable HTTP",
-        "same generated API",
+        "same application path",
         "ai_sensitive",
         "ai_agent_writable",
     ],

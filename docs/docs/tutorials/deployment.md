@@ -52,7 +52,9 @@ Before deploying, verify:
 
 Create `settings/production.py`:
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings/production.py
 import os
 
@@ -389,7 +391,9 @@ async def health_check():
 
 Configure structured logging:
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings/production.py
 AKSARA = {
     # ... other settings ...

@@ -1420,14 +1420,14 @@ class TestVersionBump:
     def test_library_version(self):
         from aksara._version import __version__
 
-        assert __version__ == "0.6.0"
+        assert __version__ == "0.6.1"
 
     def test_aksara_package_version(self):
         import aksara
 
-        assert aksara.__version__ == "0.6.0"
+        assert aksara.__version__ == "0.6.1"
 
     def test_cli_version(self):
         from aksara.cli.main import CLI_VERSION
 
-        assert CLI_VERSION == "0.6.0"
+        assert CLI_VERSION == "0.6.1"

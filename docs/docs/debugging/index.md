@@ -80,7 +80,9 @@ View complete request and response data:
 
 Track database queries:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import query_profiler
 
 @app.get("/api/posts")
@@ -122,7 +124,9 @@ async def list_posts(request):
 
 ### Print Debugging
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import debug_print
 
 @app.get("/api/data")

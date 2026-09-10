@@ -6,7 +6,7 @@ Tests that a newly scaffolded project includes:
 - Working PostViewSet (not commented)
 - Working PostSerializer (not commented)
 - Post registered in admin
-- AKSARA configuration dict in settings
+- Global Aksara settings configuration
 - Middleware imports in main.py
 """
 
@@ -169,29 +169,22 @@ class TestScaffoldV055Structure:
     # Settings Tests
     # =========================================================================
     
-    def test_settings_has_aksara_dict(self):
-        """Settings should have AKSARA configuration dict."""
+    def test_settings_uses_global_configuration(self):
+        """Settings should use Aksara's global runtime configuration."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        # Should have AKSARA dict
-        assert "AKSARA = {" in content
-        
-        # Should have key settings
-        assert '"ENABLE_ADMIN"' in content
-        assert '"ENABLE_STUDIO"' in content
-        assert '"STUDIO_UI_ENABLED"' in content
-        assert '"AI_MODE_ENABLED"' in content
-    
-    def test_settings_class_uses_aksara_dict(self):
-        """Settings class should read from AKSARA dict."""
+        assert "from aksara.conf import configure, settings" in content
+        assert "configure(installed_apps=INSTALLED_APPS)" in content
+
+    def test_settings_documents_precedence(self):
+        """Settings should document the supported configuration precedence."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        # Should reference AKSARA dict
-        assert 'AKSARA.get("ENABLE_ADMIN"' in content
-        assert 'AKSARA.get("ENABLE_STUDIO"' in content
-        assert 'AKSARA.get("AI_MODE_ENABLED"' in content
+        assert "explicit configure() values" in content
+        assert "AKSARA_* environment variables" in content
+        assert "compatibility environment aliases" in content
     
     # =========================================================================
     # Main.py Tests
@@ -214,12 +207,13 @@ class TestScaffoldV055Structure:
         assert "(RequestIDMiddleware, {})" in content
         assert "(LoggingMiddleware," in content
     
-    def test_main_enables_admin(self):
-        """Main should pass enable_admin to Aksara."""
+    def test_main_uses_global_settings(self):
+        """Main should pass supported global settings to Aksara."""
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert "enable_admin=settings.enable_admin" in content
+        assert "database_url=settings.database_url" in content
+        assert "debug=settings.debug" in content
     
     def test_main_mentions_studio_and_ai(self):
         """Main docstring should mention Studio and AI endpoints."""
@@ -237,7 +231,8 @@ class TestScaffoldV055Structure:
         
         assert '"studio": "/studio/ui"' in content
         assert '"admin": "/admin"' in content
-        assert '"ai_tools": "/ai/tools"' in content
+        assert '"tool_catalog": "/ai/tools/mcp"' in content
+        assert '"mcp": "/mcp/" if settings.mcp_enabled else "disabled"' in content
     
     # =========================================================================
     # README Tests
@@ -251,16 +246,17 @@ class TestScaffoldV055Structure:
         assert "/admin" in content
         assert "/studio/ui" in content
         assert "/ai/tools" in content
-        assert "/api/posts" in content
+        assert "/docs" in content
+        assert "/mcp/" in content
     
     def test_readme_has_whats_included_section(self):
         """README should have What's Included section."""
         readme_path = self.project_path / "README.md"
         content = readme_path.read_text()
         
-        assert "What's Included" in content
-        assert "Post model" in content
-        assert "PostViewSet" in content
+        assert "Project structure" in content
+        assert "model, serializer, ViewSet" in content
+        assert "provider-backed AI and Studio" in content
     
     # =========================================================================
     # pyproject.toml Tests

@@ -18,7 +18,9 @@ Extend Aksara's CLI with custom commands:
 
 ### Create a Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # myapp/commands/greet.py
 from aksara.cli import Command, argument, option
 
@@ -38,7 +40,9 @@ class GreetCommand(Command):
 
 ### Register Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # myapp/__init__.py
 from aksara.cli import register_command
 from .commands.greet import GreetCommand
@@ -59,7 +63,9 @@ aksara greet World --excited
 
 ### Basic Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command
 
 class MyCommand(Command):
@@ -74,7 +80,9 @@ class MyCommand(Command):
 
 ### With Arguments
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, argument
 
 class ProcessCommand(Command):
@@ -88,7 +96,9 @@ class ProcessCommand(Command):
 
 ### With Options
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, option
 
 class ExportCommand(Command):
@@ -104,7 +114,9 @@ class ExportCommand(Command):
 
 ### Combined
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, argument, option
 
 class MigrateDataCommand(Command):
@@ -313,7 +325,9 @@ class MyCommand(Command):
 
 ### Create a Group
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import CommandGroup
 
 class DataCommands(CommandGroup):
@@ -348,7 +362,9 @@ aksara data import
 
 ### Test Command Output
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import CommandTestCase
 
 class TestGreetCommand(CommandTestCase):
@@ -386,7 +402,7 @@ class TestExportCommand(CommandTestCase):
 
 ### Package Commands
 
-```python
+```toml
 # setup.py or pyproject.toml
 [project.entry-points."aksara.commands"]
 mycommand = "mypackage.commands:MyCommand"
@@ -411,7 +427,9 @@ myapp/
 
 ### Data Export Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, option
 from myapp.models import User
 import json
@@ -444,7 +462,9 @@ class ExportUsersCommand(Command):
 
 ### Database Cleanup Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, option
 from datetime import datetime, timedelta
 from myapp.models import Session
@@ -475,7 +495,9 @@ class CleanupSessionsCommand(Command):
 
 ### Sync Command
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.cli import Command, option
 
 class SyncProductsCommand(Command):

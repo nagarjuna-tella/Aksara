@@ -35,6 +35,12 @@ except ImportError:
 from aksara._version import __version__ as CLI_VERSION
 
 
+# Keep command-line database discovery aligned with ``aksara.conf.Settings``.
+# The names are ordered by precedence; DATABASE_URL remains supported for
+# compatibility and is the value emitted by ``startproject``.
+_DATABASE_ENVVARS = ["AKSARA_DATABASE_URL", "DATABASE_URL"]
+
+
 def discover_models(app_path: Optional[str] = None, *, silent: bool = False) -> None:
     """
     Discover and import model modules to populate the registry.
@@ -378,7 +384,7 @@ def startproject(project_name: str, directory: str, template: str):
     
     Creates a complete project structure with:
     - main.py (Aksara app entry point)
-    - settings.py (AksaraSettings configuration)
+    - settings.py (global Aksara settings configuration)
     - app/ (models, views, serializers)
     - migrations/ (database migrations)
     - .env (environment configuration)
@@ -452,7 +458,7 @@ def startproject(project_name: str, directory: str, template: str):
         ui.section("Project structure")
         ui.text(f"  {project_name}/")
         ui.text("  ├── main.py              # App entry point")
-        ui.text("  ├── settings.py          # AKSARA configuration")
+        ui.text("  ├── settings.py          # Global settings configuration")
         ui.text("  ├── pyproject.toml")
         ui.text("  ├── .env")
         ui.text("  ├── README.md")
@@ -470,7 +476,8 @@ def startproject(project_name: str, directory: str, template: str):
         ui.bullet("Commented example stubs for models, views, serializers, admin")
         ui.bullet("Admin at /admin")
         ui.bullet("Studio at /studio/ui (disabled by default; enable explicitly)")
-        ui.bullet("AI tools at /ai/tools")
+        ui.bullet("Tool inspection catalog at /ai/tools/mcp")
+        ui.bullet("Optional MCP protocol endpoint at /mcp/")
         ui.next_steps(
             [
                 f"cd {project_name}",
@@ -1243,8 +1250,8 @@ def _display_pending_skipped(ui, pending_skipped: list[str]) -> None:
 
 @cli.command()
 @click.option("--app", "-a", help="Path to application models module")
-@click.option("--database-url", "-d", envvar="DATABASE_URL",
-              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--database-url", "-d", envvar=_DATABASE_ENVVARS,
+              help="PostgreSQL connection URL (or set AKSARA_DATABASE_URL / DATABASE_URL)")
 @click.option("--migrations-dir", "-m", help="Migrations directory (default: ./migrations)")
 @click.option("--dry-run", is_flag=True, help="Print operations without executing")
 @click.option("--fake", is_flag=True, help="Mark migrations as applied without running")
@@ -1458,8 +1465,8 @@ def migrate(
 
 
 @cli.command()
-@click.option("--database-url", "-d", envvar="DATABASE_URL",
-              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--database-url", "-d", envvar=_DATABASE_ENVVARS,
+              help="PostgreSQL connection URL (or set AKSARA_DATABASE_URL / DATABASE_URL)")
 def status(database_url: Optional[str]):
     """Show migration status."""
     from aksara.db import Database
@@ -1526,8 +1533,8 @@ def status(database_url: Optional[str]):
 
 
 @cli.command()
-@click.option("--database-url", "-d", envvar="DATABASE_URL",
-              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--database-url", "-d", envvar=_DATABASE_ENVVARS,
+              help="PostgreSQL connection URL (or set AKSARA_DATABASE_URL / DATABASE_URL)")
 @click.option("--no-ipython", is_flag=True, help="Disable IPython even if available")
 def shell(database_url: Optional[str], no_ipython: bool):
     """
@@ -1554,8 +1561,8 @@ def shell(database_url: Optional[str], no_ipython: bool):
 
 
 @cli.command()
-@click.option("--database-url", "-d", envvar="DATABASE_URL",
-              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--database-url", "-d", envvar=_DATABASE_ENVVARS,
+              help="PostgreSQL connection URL (or set AKSARA_DATABASE_URL / DATABASE_URL)")
 @click.option("--email", "-e", prompt="Email", help="Admin user email address")
 @click.option("--password", "-p", prompt=True, hide_input=True, 
               confirmation_prompt=True, help="Admin user password")
@@ -1666,8 +1673,8 @@ def createsuperuser(database_url: Optional[str], email: str, password: str):
 
 
 @cli.command()
-@click.option("--database-url", "-d", envvar="DATABASE_URL",
-              help="PostgreSQL connection URL (or set DATABASE_URL env var)")
+@click.option("--database-url", "-d", envvar=_DATABASE_ENVVARS,
+              help="PostgreSQL connection URL (or set AKSARA_DATABASE_URL / DATABASE_URL)")
 def info(database_url: Optional[str]):
     """
     Show Aksara environment information.
@@ -2062,7 +2069,7 @@ def run(app_path: str, host: str, port: int, reload: bool, workers: int):
     # Print Aksara banner
     click.echo()
     click.echo(f"  \033[33m⚡\033[0m \033[1mAksara\033[0m v{CLI_VERSION}")
-    click.echo("  \033[90mAI-native backend — REST API, MCP tools, Studio\033[0m")
+    click.echo("  \033[90mAsync PostgreSQL backend — REST APIs and optional MCP\033[0m")
     click.echo()
     click.echo(f"  \033[36m→\033[0m Running: {app_path}")
     click.echo(f"  \033[36m→\033[0m Server:  http://{host}:{port}")
@@ -3596,7 +3603,7 @@ async def _connect_db_for_cli(database_url: Optional[str] = None):
 @click.option("--stdin", "use_stdin", is_flag=True, help="Read intent from stdin")
 @click.option("--format", "-f", "output_format", type=click.Choice(["json", "summary"]),
               default="summary", help="Output format (default: summary)")
-@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+@click.option("--database-url", envvar=_DATABASE_ENVVARS, help="Database URL")
 def ai_context(
     intent: Optional[str],
     mode: str,
@@ -3694,7 +3701,7 @@ def ai_context(
 @ai.command("schema-health")
 @click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]),
               default="table", help="Output format (default: table)")
-@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+@click.option("--database-url", envvar=_DATABASE_ENVVARS, help="Database URL")
 def ai_schema_health(output_format: str, database_url: Optional[str]):
     """
     Check schema health (models vs database drift).
@@ -3774,7 +3781,7 @@ def ai_schema_health(output_format: str, database_url: Optional[str]):
 @click.option("--app-label", "-a", help="Filter by app label")
 @click.option("--format", "-f", "output_format", type=click.Choice(["table", "json"]),
               default="table", help="Output format (default: table)")
-@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+@click.option("--database-url", envvar=_DATABASE_ENVVARS, help="Database URL")
 def ai_schema_issues(
     severity: Optional[str],
     kind: Optional[str],
@@ -3904,7 +3911,7 @@ def plan():
 @click.argument("path", required=False)
 @click.option("--format", "-f", "output_format", type=click.Choice(["summary", "json"]),
               default="summary", help="Output format (default: summary)")
-@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+@click.option("--database-url", envvar=_DATABASE_ENVVARS, help="Database URL")
 def plan_preview(path: Optional[str], output_format: str, database_url: Optional[str]):
     """
     Preview a plan file (dry run).
@@ -4039,7 +4046,7 @@ def plan_preview(path: Optional[str], output_format: str, database_url: Optional
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 @click.option("--format", "-f", "output_format", type=click.Choice(["summary", "json"]),
               default="summary", help="Output format (default: summary)")
-@click.option("--database-url", envvar="DATABASE_URL", help="Database URL")
+@click.option("--database-url", envvar=_DATABASE_ENVVARS, help="Database URL")
 def plan_apply(path: Optional[str], yes: bool, output_format: str, database_url: Optional[str]):
     """
     Apply a plan file to the codebase.
@@ -4354,7 +4361,8 @@ def studio_url(host: str, port: int, https: bool, section: str):
     click.echo("  \033[1mAI Endpoints (full context):\033[0m")
     click.echo(f"    Full Context:    {base_url}/ai/context/full")
     click.echo(f"    Tools:           {base_url}/ai/tools")
-    click.echo(f"    MCP Tools:       {base_url}/ai/tools/mcp")
+    click.echo(f"    Tool Catalog:    {base_url}/ai/tools/mcp")
+    click.echo(f"    MCP Protocol:    {base_url}/mcp/ (when enabled)")
     click.echo()
     click.echo("  \033[90mTip: Use --https for production URLs\033[0m")
     click.echo()
@@ -7828,11 +7836,11 @@ def gaps_fix_plan(output_format: str, only_blocking: bool):
 # =============================================================================
 
 def _tasks_db():
-    """Open a database connection from the project .env or DATABASE_URL env."""
+    """Open a database connection using the documented environment precedence."""
     import os
     from aksara.db import Database
 
-    url = os.getenv("DATABASE_URL")
+    url = os.getenv("AKSARA_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not url:
         env_path = Path.cwd() / ".env"
         url = _read_env_database_url(env_path)

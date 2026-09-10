@@ -145,19 +145,20 @@ class TestScaffoldWelcomePage:
         
         assert '/admin/' in content
     
-    def test_welcome_html_has_studio_link(self):
-        """static/welcome.html should have link to studio."""
+    def test_welcome_html_omits_disabled_studio_link(self):
+        """The neutral welcome page should not link to disabled Studio."""
         html_path = self.project_path / "static" / "welcome.html"
         content = html_path.read_text()
         
-        assert '/studio/ui' in content
+        assert '/studio/ui' not in content
     
-    def test_welcome_html_has_api_link(self):
-        """static/welcome.html should have link to API."""
+    def test_welcome_html_does_not_claim_a_generated_post_api(self):
+        """The neutral scaffold should not link to a model that is only a stub."""
         html_path = self.project_path / "static" / "welcome.html"
         content = html_path.read_text()
         
-        assert '/api/posts/' in content
+        assert '/api/posts/' not in content
+        assert '/docs' in content
     
     def test_welcome_html_has_docs_link(self):
         """static/welcome.html should have link to docs."""
@@ -242,21 +243,21 @@ class TestScaffoldVersionUpdates:
         main_path = self.project_path / "main.py"
         content = main_path.read_text()
         
-        assert 'v0.6.0' in content
+        assert 'v0.6.1' in content
     
     def test_settings_py_says_current_version(self):
         """settings.py should reference current version."""
         settings_path = self.project_path / "settings.py"
         content = settings_path.read_text()
         
-        assert 'v0.6.0' in content
+        assert 'v0.6.1' in content
     
     def test_pyproject_requires_current_version(self):
-        """pyproject.toml should require aksara-framework>=0.6.0."""
+        """pyproject.toml should require aksara-framework>=0.6.1."""
         pyproject_path = self.project_path / "pyproject.toml"
         content = pyproject_path.read_text()
         
-        assert 'aksara-framework>=0.6.0' in content
+        assert 'aksara-framework>=0.6.1' in content
     
     def test_main_py_uses_aksara_dev(self):
         """main.py docstring should mention aksara dev command."""

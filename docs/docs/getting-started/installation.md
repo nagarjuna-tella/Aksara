@@ -59,17 +59,17 @@ After installation, verify Aksara is available:
 aksara --version
 ```
 
-For v0.6.0, the output is:
+For v0.6.1, the output is:
 ```
-aksara, version 0.6.0
+aksara, version 0.6.1
 ```
 
 You can also check the Python package:
 
-```python
+```pycon
 >>> import aksara
 >>> aksara.__version__
-'0.6.0'
+'0.6.1'
 ```
 
 The package and CLI use the same PEP 440 version. See [runtime

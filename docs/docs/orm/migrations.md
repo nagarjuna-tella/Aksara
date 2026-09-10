@@ -216,7 +216,9 @@ RemoveField(
 
 Modify field properties:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.migrations.operations import AlterField
 
 # Change max_length
@@ -329,7 +331,9 @@ Migrations can include data changes alongside schema changes.
 
 Execute Python code during migration:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.migrations import Migration
 from aksara.migrations.operations import RunPython
 
@@ -430,7 +434,7 @@ class Migration(Migration):
 
 ### Keep Migrations Small
 
-```python
+```text
 # Good: One logical change per migration
 AddField(model_name="User", name="avatar_url", ...)
 

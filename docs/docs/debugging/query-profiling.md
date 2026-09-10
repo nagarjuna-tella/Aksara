@@ -29,7 +29,9 @@ app = Aksara(debug=True)
 
 For selective profiling in production:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import QueryProfiler
 
 @app.get("/api/posts")
@@ -70,7 +72,9 @@ Click any query to see:
 
 Track total queries per request:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import get_query_log
 
 @app.middleware("http")
@@ -91,7 +95,9 @@ async def log_queries(request, call_next):
 
 Identify queries over a threshold:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import get_query_log
 
 query_log = get_query_log()
@@ -105,7 +111,9 @@ for query in slow_queries:
 
 Automatic detection of N+1 patterns:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import get_query_log
 
 query_log = get_query_log()
@@ -174,7 +182,9 @@ Suggestion: Use .select_related('author') on the Post query
 
 ### View Query Plans
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import explain_query
 
 # Get EXPLAIN output
@@ -215,7 +225,9 @@ Suggested: CREATE INDEX idx_posts_created_at ON posts(created_at);
 
 ### Basic Usage
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import QueryProfiler
 
 async with QueryProfiler() as profiler:
@@ -255,7 +267,9 @@ for query in profiler.queries:
 
 ### Query Logging Middleware
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.middleware import QueryLoggingMiddleware
 
 app.add_middleware(
@@ -281,7 +295,9 @@ WARNING: Slow query (150ms): SELECT * FROM posts WHERE ...
 
 ### Assert Query Count
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import QueryCounter
 
 async def test_list_posts_efficient():
@@ -293,7 +309,9 @@ async def test_list_posts_efficient():
 
 ### Capture Queries in Tests
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.testing import capture_queries
 
 async def test_select_related_works():
@@ -313,7 +331,9 @@ async def test_select_related_works():
 
 ### Settings
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "DEBUG": True,
@@ -330,7 +350,9 @@ AKSARA = {
 
 ### Per-Request Control
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.debug import enable_profiling, disable_profiling
 
 @app.get("/api/debug/posts")
@@ -382,7 +404,9 @@ async def enforce_query_limits(request):
 
 ### 3. Monitor in Production
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # Metrics integration
 from aksara.debug import get_query_log
 
@@ -414,7 +438,9 @@ enable_profiling()
 
 ### Missing Stack Traces
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # Enable detailed stack traces
 AKSARA = {
     "QUERY_PROFILING": True,
@@ -424,7 +450,9 @@ AKSARA = {
 
 ### High Memory Usage
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # Limit query log size
 AKSARA = {
     "MAX_LOGGED_QUERIES": 100,  # Keep last 100 queries

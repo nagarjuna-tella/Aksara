@@ -293,7 +293,7 @@ aksara shell --no-ipython
 
 Opens an interactive Python shell with the project context pre-loaded (database, models, `arun()` helper). Uses IPython if installed, falls back to standard Python REPL.
 
-```python
+```pycon
 >>> users = arun(User.objects.filter(active=True).all())
 >>> for u in users[:5]:
 ...     print(u.email)
@@ -379,7 +379,9 @@ aksara --force-color dev
 
 Enable detailed SQL logging by setting DEBUG=True in settings:
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "DEBUG": True,
@@ -499,7 +501,9 @@ class Migration:
 
 ### Dev Tools Settings
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "DEV_TOOLS": {

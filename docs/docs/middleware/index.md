@@ -55,7 +55,9 @@ Aksara includes these middleware out of the box:
 
 Add middleware to your app configuration:
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "MIDDLEWARE": [
@@ -149,7 +151,9 @@ Enables multi-tenant applications where one codebase serves multiple customers.
 
 Create your own middleware for custom logic:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.middleware import BaseMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -191,7 +195,9 @@ class MyMiddleware(BaseMiddleware):
 
 ### Example: API Key Authentication
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.middleware import BaseMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -231,7 +237,9 @@ class APIKeyMiddleware(BaseMiddleware):
 
 ### Example: Response Time Header
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 import time
 from aksara.middleware import BaseMiddleware
 
@@ -328,7 +336,9 @@ async def dashboard(request: Request):
 
 Some middleware accepts configuration:
 
-```python
+**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+
+```text title="Conceptual legacy configuration"
 # settings.py
 AKSARA = {
     "MIDDLEWARE": [

@@ -272,7 +272,9 @@ async def update_timestamps(sender, instance, **kwargs):
 
 ### Cache Invalidation
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.signals import post_save, post_delete
 from aksara.cache import cache
 
@@ -352,7 +354,9 @@ async def safe_handler(sender, instance, **kwargs):
 
 ### Disable Signals Temporarily
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 from aksara.signals import SignalContext
 
 # Disable all signals for a model

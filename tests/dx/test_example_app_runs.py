@@ -83,9 +83,9 @@ class TestGeneratedAppImports:
         # Verify syntax is valid
         compile(content, str(settings_path), "exec")
         
-        # Verify structure
-        assert "class Settings" in content
-        assert "settings = Settings()" in content
+        # Verify the generated project uses Aksara's global settings authority.
+        assert "from aksara.conf import configure, settings" in content
+        assert "configure(installed_apps=INSTALLED_APPS)" in content
 
 
 class TestGeneratedAppStructure:
@@ -215,16 +215,16 @@ class TestSettingsConfiguration:
         """Clean up temporary directory."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_settings_extends_aksara_settings(self):
-        """Settings should extend AksaraSettings."""
+    def test_settings_uses_global_aksara_settings(self):
+        """Settings should configure Aksara's global settings object."""
         files = create_project_scaffold("testapp", self.base_path)
         write_scaffold_files(files)
         
         settings_path = self.base_path / "testapp" / "settings.py"
         content = settings_path.read_text()
         
-        assert "from aksara.conf import Settings as AksaraSettings" in content
-        assert "class Settings(AksaraSettings):" in content
+        assert "from aksara.conf import configure, settings" in content
+        assert "configure(installed_apps=INSTALLED_APPS)" in content
     
     def test_env_has_required_vars(self):
         """Env file should have all required variables."""
@@ -316,7 +316,7 @@ class TestProjectDocumentation:
         readme_path = self.base_path / "testapp" / "README.md"
         content = readme_path.read_text()
         
-        assert "Quick Start" in content
+        assert "Quick start" in content
         assert "pip install" in content
         assert "aksara dev" in content
     

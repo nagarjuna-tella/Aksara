@@ -259,7 +259,13 @@ def _extract_user(request: Any, state: Any) -> Any:
         user = getattr(state, "user", None)
         if user is not None:
             return user
-    return getattr(request, "user", None)
+    # Starlette's ``Request.user`` property raises when an application has no
+    # AuthenticationMiddleware. Principal resolution must still degrade to an
+    # anonymous caller so MCP can return its normal authorization result.
+    try:
+        return getattr(request, "user", None)
+    except AssertionError:
+        return None
 
 
 def _extract_tenant_id(request: Any, state: Any) -> Optional[str]:

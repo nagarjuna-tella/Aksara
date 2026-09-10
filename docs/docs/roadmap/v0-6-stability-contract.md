@@ -126,11 +126,16 @@ durability or cross-worker exactly-once semantics.
 
 - `@task`, enqueue, PostgreSQL-backed task records, bounded retry, and worker
   restart recovery
-- Principal and tenant propagation on covered enqueue and worker paths
+- `TaskRecord.tenant_id` persistence on enqueue and tenant-context restoration
+  on covered worker paths
 - Task status access constrained by the application authorization policy
 
 Task functions must be idempotent where retries can repeat external effects.
 The framework does not supply exactly-once delivery for external systems.
+Task records do not serialize or restore the complete `Principal`; applications
+must authorize task status and enqueue access, and delayed Principal provenance
+and reauthorization remain deferred to the durable-operation work planned for
+v0.7.
 
 ### CLI and diagnostics
 

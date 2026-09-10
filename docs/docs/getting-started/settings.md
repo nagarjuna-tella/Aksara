@@ -16,6 +16,8 @@ Aksara provides a flexible configuration system that supports:
 
 ## Configuration Methods
 
+All methods update or feed the same global `aksara.conf.settings` object. An `AKSARA = {...}` dictionary is not a supported configuration source.
+
 ### Method 1: Environment Variables
 
 The simplest approach for production:
@@ -28,7 +30,7 @@ AKSARA_LOG_LEVEL=INFO
 AKSARA_POOL_MAX_SIZE=20
 ```
 
-Aksara automatically loads from environment variables prefixed with `AKSARA_`.
+Aksara loads documented `AKSARA_*` variables. `DATABASE_URL` is the supported common alias for `AKSARA_DATABASE_URL`.
 
 ### Method 2: Explicit Configuration
 
@@ -164,10 +166,10 @@ Default `installed_apps`:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `ai_enabled` | `bool` | `False` | Enable AI endpoints |
-| `mcp_enabled` | `bool` | `False` | Enable generated MCP tools over Streamable HTTP at `/mcp/` and the inspection catalog |
+| `mcp_enabled` | `bool` | `False` | Mount generated MCP tools over Streamable HTTP at `/mcp/` |
 | `ai_debug_enabled` | `bool` | `True` | Enable AI debug suggestions |
 
-> *`mcp_enabled` and `ai_enabled` default to `False` for explicit opt-in. In practice, enabling `ai_enabled=True` is sufficient — MCP tool generation activates automatically. Set both to `True` if you need granular control.*
+> `mcp_enabled` and `ai_enabled` are independent opt-ins. `mcp_enabled=True` mounts the protocol server at `/mcp/`; the JSON inspection catalog at `/ai/tools/mcp` is a different HTTP surface. Provider-backed AI does not need to be enabled for MCP protocol execution.
 
 ```python
 configure(
@@ -222,7 +224,8 @@ Settings are resolved in this order (highest priority first):
 
 1. **Explicit `configure()` call** — Programmatic settings
 2. **Environment variables** — `AKSARA_*` prefixed
-3. **Built-in defaults** — Sensible fallbacks
+3. **Supported compatibility aliases** — for example `DATABASE_URL`
+4. **Built-in defaults** — Sensible fallbacks
 
 Example:
 

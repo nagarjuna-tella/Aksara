@@ -65,7 +65,9 @@ Actionable fixes ranked by likelihood:
 
 Each suggestion includes working code:
 
-```python
+**Conceptual or legacy pseudocode (not an installed-package API):**
+
+```text title="Conceptual or legacy pseudocode"
 # Suggestion 1: Use get_or_404
 from aksara.shortcuts import get_object_or_404
 
