@@ -3,11 +3,11 @@
 import pytest
 
 from aksara.durable.states import (
+    TERMINAL_OPERATION_STATES,
     TRANSITION_RULES,
     InvalidOperationTransition,
     OperationEvent,
     OperationState,
-    TERMINAL_OPERATION_STATES,
     transition_rule,
 )
 

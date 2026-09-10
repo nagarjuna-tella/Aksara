@@ -22,9 +22,9 @@ from aksara.durable import (
     ReconciliationResult,
     ReconciliationStatus,
 )
-from aksara.security.principal import Principal
 from aksara.durable.service import _tenant_context
 from aksara.durable.types import tenant_scope
+from aksara.security.principal import Principal
 
 
 class WorkerKilled(BaseException):

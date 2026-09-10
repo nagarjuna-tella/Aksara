@@ -249,7 +249,7 @@ class PostgresAtomicExecutor:
                 retryable=False,
             )
             return None
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - resolver failures are operation data
             await self.service.fail_attempt(
                 claim,
                 code=FailureReason.RESOLVER_UNAVAILABLE.value,
@@ -440,7 +440,7 @@ class PostgresAtomicExecutor:
                     message="executor coroutine was cancelled before commit",
                     retryable=True,
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001,S110 - best-effort recovery record
                 # Ownership recovery remains authoritative if interruption also
                 # prevents this best-effort attempt update.
                 pass

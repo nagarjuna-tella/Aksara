@@ -79,7 +79,7 @@ class DurableOutboxExporter:
             result = self.sink(dict(payload))
             if inspect.isawaitable(result):
                 await result
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - sink failures are retryable export state
             with _tenant_context(scope):
                 async with atomic(db=self.service.db) as connection:
                     await connection.execute(

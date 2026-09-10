@@ -266,7 +266,7 @@ async def _run(args: argparse.Namespace) -> int:
         operation = await executor.execute(claim)
         _emit("executed", state=operation.state.value, result=operation.result)
         return 0
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - subprocess protocol reports all failures
         _emit("error", type=type(exc).__name__, message=str(exc))
         return 0
     finally:

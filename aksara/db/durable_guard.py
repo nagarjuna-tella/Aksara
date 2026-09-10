@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import asyncpg
+    import asyncpg  # type: ignore[import-untyped]
 
     from aksara.db.engine import Database
 

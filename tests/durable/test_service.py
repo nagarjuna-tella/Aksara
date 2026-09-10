@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -672,7 +672,7 @@ async def test_unconsumed_approval_expiry_closes_operation(durable_db):
         "1",
         {"amount": 1},
         reference,
-        approval_expires_at=datetime.now(timezone.utc) + timedelta(milliseconds=30),
+        approval_expires_at=datetime.now(UTC) + timedelta(milliseconds=30),
     )
     await service.decide_approval(
         admitted.operation.id,

@@ -5,11 +5,12 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+from asyncpg import CheckViolationError
 
 from aksara.context_state import tenant_id_var
 from aksara.db import Database
@@ -227,7 +228,7 @@ async def test_swallowed_database_error_invalidates_outer_boundary(durable_db):
                 "UPDATE durable_test_counters SET mutation_counter = -1 WHERE id = $1",
                 UUID(command["counter_id"]),
             )
-        except Exception:
+        except CheckViolationError:
             pass
         return {"unsafe": True}
 
@@ -248,7 +249,7 @@ async def test_direct_pool_and_child_task_access_invalidate_boundary(durable_db)
 
     async def handler(context, _command):
         with pytest.raises(RuntimeError, match="direct pool access"):
-            context.database.pool
+            _ = context.database.pool
 
         child = asyncio.create_task(context.database.fetchval("SELECT 1"))
         with pytest.raises(RuntimeError, match="owning asyncio task"):
@@ -282,7 +283,7 @@ async def test_different_database_and_swallowed_savepoint_error_invalidate_bound
                     "UPDATE durable_test_counters SET mutation_counter = -1 WHERE id = $1",
                     UUID(command["counter_id"]),
                 )
-            except Exception:
+            except CheckViolationError:
                 pass
         return {"unsafe": True}
 
@@ -555,7 +556,7 @@ async def test_deadline_after_claim_blocks_mutation_and_retains_expiry_metadata(
         "1",
         {"counter_id": str(counter_id)},
         _reference(tenant),
-        deadline_at=datetime.now(timezone.utc) + timedelta(milliseconds=30),
+        deadline_at=datetime.now(UTC) + timedelta(milliseconds=30),
     )
     claim = await service.claim(
         tenant_id=tenant,

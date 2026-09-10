@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Mapping
+from typing import Any, cast
 from uuid import UUID
 
 from aksara.durable.states import AttemptState, OperationState
 from aksara.security.principal import Principal
-
 
 GLOBAL_TENANT_SCOPE = "__aksara_global__"
 PRINCIPAL_REFERENCE_VERSION = 1
@@ -34,7 +34,7 @@ def _json_default(value: Any) -> Any:
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value):
-        return asdict(value)
+        return asdict(cast(Any, value))
     if hasattr(value, "model_dump"):
         return value.model_dump(mode="json")
     if hasattr(value, "to_dict") and callable(value.to_dict):
@@ -108,7 +108,7 @@ class PrincipalReference:
         resolver_version: str = "1",
         identity_namespace: str = "application",
         credential_id: str | None = None,
-    ) -> "PrincipalReference":
+    ) -> PrincipalReference:
         """Create a locator without persisting roles, scopes, tokens or metadata."""
 
         subject = principal.user_id
@@ -237,14 +237,14 @@ class OutboxRecord:
 
 
 __all__ = [
+    "GLOBAL_TENANT_SCOPE",
+    "PRINCIPAL_REFERENCE_VERSION",
     "AttemptRecord",
     "EffectClass",
-    "GLOBAL_TENANT_SCOPE",
     "OperationAdmission",
     "OperationClaim",
     "OperationRecord",
     "OutboxRecord",
-    "PRINCIPAL_REFERENCE_VERSION",
     "PrincipalReference",
     "TransitionRecord",
     "canonical_json",

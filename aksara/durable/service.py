@@ -29,10 +29,10 @@ from aksara.durable.registry import (
 )
 from aksara.durable.repository import DurableOperationRepository
 from aksara.durable.states import (
+    TERMINAL_OPERATION_STATES,
     FailureReason,
     OperationEvent,
     OperationState,
-    TERMINAL_OPERATION_STATES,
 )
 from aksara.durable.types import (
     OperationAdmission,
@@ -46,7 +46,6 @@ from aksara.durable.types import (
 )
 from aksara.security.policy import default_policy
 from aksara.security.principal import Principal
-
 
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_LEASE_SECONDS = 30.0
@@ -115,9 +114,10 @@ def _principal_matches_reference(
         and principal.human_owner_id != reference.human_owner_id
     ):
         return False
-    if reference.credential_id is not None and principal.token_id != reference.credential_id:
-        return False
-    return True
+    return not (
+        reference.credential_id is not None
+        and principal.token_id != reference.credential_id
+    )
 
 
 class DurableOperationService:
@@ -247,6 +247,7 @@ class DurableOperationService:
                         self.idempotency_seconds,
                     )
                     if inserted is None:
+                        assert semantic_scope_hash is not None
                         return await self._resolve_duplicate(
                             connection,
                             identity_hash=identity_hash,
@@ -510,6 +511,8 @@ class DurableOperationService:
                     )
                     if isinstance(stored_command, str):
                         stored_command = json.loads(stored_command)
+                    if not isinstance(stored_command, Mapping):
+                        raise TypeError("stored command payload must be an object")
                     normalized_command = action.normalize_command(dict(stored_command))
                     valid_command = bool(
                         command_record is not None

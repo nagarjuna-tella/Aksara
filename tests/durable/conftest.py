@@ -14,7 +14,10 @@ import pytest
 import pytest_asyncio
 
 from aksara.db import Database
-from aksara.migrations.executor import discover_internal_migrations, load_migration_module
+from aksara.migrations.executor import (
+    discover_internal_migrations,
+    load_migration_module,
+)
 
 
 def _role_dsn(database_url: str, role: str, password: str) -> str:

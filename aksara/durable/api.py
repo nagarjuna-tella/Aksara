@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Awaitable, Callable
 from datetime import datetime
+from enum import Enum
 from typing import Any
 from uuid import UUID
 
@@ -161,7 +162,8 @@ def create_durable_operations_router(
 ) -> APIRouter:
     """Build an explicitly mounted durable dispatch/status/cancel router."""
 
-    router = APIRouter(prefix=prefix, tags=tags or ["Durable Operations"])
+    router_tags: list[str | Enum] = list(tags) if tags else ["Durable Operations"]
+    router = APIRouter(prefix=prefix, tags=router_tags)
 
     @router.post("", response_model=DurableDispatchResponse, status_code=202)
     async def dispatch(
@@ -189,7 +191,7 @@ def create_durable_operations_router(
                 max_attempts=payload.max_attempts,
                 correlation=correlation,
             )
-        except Exception as error:
+        except DurableOperationError as error:
             _raise_http(error)
             raise AssertionError("unreachable")
         status_url = f"{prefix}/{admission.operation.id}"
@@ -211,7 +213,7 @@ def create_durable_operations_router(
                 tenant_id=principal.tenant_id,
                 principal=principal,
             )
-        except Exception as error:
+        except DurableOperationError as error:
             _raise_http(error)
             raise AssertionError("unreachable")
         return _response(operation)
@@ -232,7 +234,7 @@ def create_durable_operations_router(
                 requester_reference=reference,
                 reason=payload.reason,
             )
-        except Exception as error:
+        except DurableOperationError as error:
             _raise_http(error)
             raise AssertionError("unreachable")
         return _response(operation)
@@ -254,7 +256,7 @@ def create_durable_operations_router(
                 approve=payload.approve,
                 reason=payload.reason,
             )
-        except Exception as error:
+        except DurableOperationError as error:
             _raise_http(error)
             raise AssertionError("unreachable")
         return _response(operation)

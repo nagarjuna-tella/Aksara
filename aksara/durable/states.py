@@ -318,14 +318,14 @@ def transition_rule(
 
 
 __all__ = [
+    "TERMINAL_ATTEMPT_STATES",
+    "TERMINAL_OPERATION_STATES",
+    "TRANSITION_RULES",
     "AttemptState",
     "FailureReason",
     "InvalidOperationTransition",
     "OperationEvent",
     "OperationState",
-    "TERMINAL_ATTEMPT_STATES",
-    "TERMINAL_OPERATION_STATES",
-    "TRANSITION_RULES",
     "TransactionSemantics",
     "TransitionRule",
     "transition_rule",

@@ -199,7 +199,7 @@ async def check_durable_operations(
                         if expired_leases
                         else "No expired operation leases are waiting for reclaim."
                     ),
-                    details={key: int(backlog[key]) for key in backlog.keys()},
+                    details={key: int(backlog[key]) for key in backlog},
                 )
             )
 

@@ -3,7 +3,6 @@
 from aksara.migrations import Migration as BaseMigration
 from aksara.migrations import operations as op
 
-
 FORWARD_SQL = """
 CREATE TABLE aksara_operations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

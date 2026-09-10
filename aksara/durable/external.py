@@ -84,7 +84,7 @@ class ExternalEffectContext:
 
     def __init__(
         self,
-        executor: "ExternalOperationExecutor",
+        executor: ExternalOperationExecutor,
         claim: OperationClaim,
     ) -> None:
         self._executor = executor
@@ -182,14 +182,17 @@ class ExternalEffectContext:
         await self._mark_execution_started(effect["id"])
         await self._executor._reach_boundary("before_external_send")
         try:
-            result = adapter.perform(
+            performed: Any = adapter.perform(
                 normalized_request,
                 idempotency_key=downstream_key,
             )
-            if inspect.isawaitable(result):
-                result = await result
-            if not isinstance(result, ExternalEffectResult):
-                result = ExternalEffectResult(result)
+            if inspect.isawaitable(performed):
+                performed = await performed
+            result = (
+                performed
+                if isinstance(performed, ExternalEffectResult)
+                else ExternalEffectResult(performed)
+            )
         except Exception as exc:
             if not adapter.supports_idempotency and not adapter.supports_reconciliation:
                 await self._mark_unknown(effect["id"], str(exc) or type(exc).__name__)
@@ -399,7 +402,7 @@ class ExternalOperationExecutor:
                 message=str(exc),
                 retryable=False,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - handlers define application failures
             retryable = action.is_retryable(exc)
             if action.effect_class is EffectClass.EXTERNAL_IDEMPOTENT:
                 retryable = True

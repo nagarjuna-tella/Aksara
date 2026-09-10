@@ -427,7 +427,7 @@ async def main() -> None:
         await database.disconnect()
 
     try:
-        database.pool
+        _ = database.pool
     except RuntimeError:
         checks["clean_pool_shutdown"] = True
     else:

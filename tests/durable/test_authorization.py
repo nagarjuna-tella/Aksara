@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -183,7 +183,7 @@ async def test_current_scope_expiry_and_action_policy_are_rechecked(durable_db, 
     tenant = str(uuid4())
     scopes = () if denial == "scope" else ("operation:write",)
     expires_at = (
-        datetime.now(timezone.utc) - timedelta(seconds=1)
+        datetime.now(UTC) - timedelta(seconds=1)
         if denial == "expiry"
         else None
     )

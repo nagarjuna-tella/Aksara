@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 
 from aksara.durable.states import AttemptState, OperationState
 from aksara.durable.types import (

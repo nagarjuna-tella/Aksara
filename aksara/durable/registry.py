@@ -47,7 +47,7 @@ class PrincipalResolution:
             raise ValueError("unresolved principal outcome cannot carry a Principal")
 
     @classmethod
-    def resolved(cls, principal: Principal) -> "PrincipalResolution":
+    def resolved(cls, principal: Principal) -> PrincipalResolution:
         return cls(ResolutionStatus.RESOLVED, principal=principal)
 
 

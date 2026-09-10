@@ -33,10 +33,11 @@ import asyncio
 import inspect
 import json
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timedelta
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 from uuid import UUID, uuid4
 from weakref import WeakSet
 
@@ -112,7 +113,7 @@ class TaskRecord:
     # callable. Nullable because tasks may be enqueued outside any
     # tenant scope (e.g. internal jobs).
     tenant_id: Optional[str] = None
-    operation_id: Optional[UUID] = None
+    operation_id: UUID | None = None
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -160,7 +161,7 @@ def _default_serializer(value: Any) -> Any:
     if hasattr(value, "model_dump"):
         return value.model_dump(mode="json")
     if is_dataclass(value):
-        return asdict(value)
+        return asdict(cast(Any, value))
     if hasattr(value, "to_dict") and callable(value.to_dict):
         return value.to_dict()
     if isinstance(value, UUID):
@@ -408,7 +409,7 @@ async def enqueue_task(
 async def enqueue_operation_task(
     operation_id: UUID,
     *,
-    service: "DurableOperationService",
+    service: DurableOperationService,
     tenant_id: str | None,
     queue: str = "default",
     delay_seconds: float = 0.0,
@@ -506,11 +507,9 @@ class TaskWorker:
         cleanup_interval_seconds: Optional[float] = None,
         cron_check_interval_seconds: Optional[float] = None,
         queues: Optional[list[str]] = None,
-        durable_service: Optional["DurableOperationService"] = None,
-        worker_id: Optional[str] = None,
-        _boundary_hook: Optional[
-            Callable[[str], None | Awaitable[None]]
-        ] = None,
+        durable_service: DurableOperationService | None = None,
+        worker_id: str | None = None,
+        _boundary_hook: Callable[[str], None | Awaitable[None]] | None = None,
     ):
         from aksara.conf import settings
 
@@ -681,6 +680,8 @@ class TaskWorker:
         assert self.durable_service is not None
         for task_row in stale_tasks:
             task_record = TaskRecord.from_record(task_row)
+            if task_record.operation_id is None:
+                continue
             scope = tenant_scope(task_record.tenant_id)
             with _tenant_context(scope):
                 async with atomic(db=database) as connection:
@@ -1043,8 +1044,8 @@ class TaskWorker:
         service = self.durable_service
         if service is None or task_record.operation_id is None:
             return
-        from aksara.durable.external import ExternalOperationExecutor
         from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
+        from aksara.durable.external import ExternalOperationExecutor
         from aksara.durable.service import _tenant_context
         from aksara.durable.types import EffectClass, tenant_scope
 
@@ -1205,8 +1206,8 @@ __all__ = [
     "TaskRecord",
     "TaskWorker",
     "clear_task_registry",
-    "enqueue_task",
     "enqueue_operation_task",
+    "enqueue_task",
     "ensure_cron_state_table",
     "ensure_tasks_table",
     "get_registered_task",

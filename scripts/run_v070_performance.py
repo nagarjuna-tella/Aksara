@@ -20,12 +20,12 @@ from uuid import UUID, uuid4
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import asyncpg  # noqa: E402
+import asyncpg
 
-import aksara  # noqa: E402
-from aksara.context_state import tenant_id_var  # noqa: E402
-from aksara.db import Database  # noqa: E402
-from aksara.durable import (  # noqa: E402
+import aksara
+from aksara.context_state import tenant_id_var
+from aksara.db import Database
+from aksara.durable import (
     DurableAction,
     DurableActionRegistry,
     DurableOperationService,
@@ -36,12 +36,12 @@ from aksara.durable import (  # noqa: E402
     PrincipalResolution,
     PrincipalResolverRegistry,
 )
-from aksara.migrations.executor import (  # noqa: E402
+from aksara.migrations.executor import (
     discover_internal_migrations,
     load_migration_module,
 )
-from aksara.security.principal import Principal  # noqa: E402
-from aksara.tasks import TaskWorker, enqueue_operation_task  # noqa: E402
+from aksara.security.principal import Principal
+from aksara.tasks import TaskWorker, enqueue_operation_task
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -658,7 +658,7 @@ async def _main() -> int:
     args = _parser().parse_args()
     try:
         evidence = await _run(args)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI reports any campaign failure
         print(f"FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
