@@ -1,6 +1,6 @@
 # v0.6 Stability and Production Contract
 
-This contract defines the production surface proposed by `v0.6.0-rc1` and the
+This contract defines the production surface proposed by `v0.6.0-rc2` and the
 compatibility commitment intended for the v0.6.x line. Aksara remains pre-1.0,
 so a stable surface can still change when correctness or security requires it.
 Such changes will be called out with an upgrade path.
@@ -103,22 +103,24 @@ controls.
 Application filtering is useful defense in depth. The production isolation
 claim depends on the restricted database role and forced RLS as well.
 
-### MCP catalog and execution boundary
+### MCP protocol and execution boundary
 
-- Permission-filtered tool discovery at `GET /ai/tools/mcp`
-- The catalog fields `name`, `description`, `inputSchema`, optional
-  `outputSchema`, and HTTP method/path metadata for registered generated
-  operations
-- `MCPCredentialClaims`, `principal_from_mcp_claims()`, scope helpers,
-  `require_mcp_audience()`, `require_mcp_tenant()`, and expiry enforcement by
-  `PolicyEngine`
-- Invoking a catalog-described REST operation through the application's normal
-  authentication, permission, field-policy, and tenancy checks
+- Official-SDK MCP initialization, capability negotiation, `tools/list`, and
+  `tools/call` over Streamable HTTP at `/mcp/`
+- Generated list, retrieve, create, update, and delete tools with JSON input and
+  output schemas derived from registered ViewSets and model policy
+- `MCPCredentialClaims`, `Principal`, immutable invocation context, scope,
+  audience, tenant, expiry, role, permission, object, and field enforcement at
+  actual invocation time
+- Execution through the same generated API, `PolicyEngine`, ORM validation,
+  transaction, tenancy, and RLS path used by REST
+- Stable categorized tool errors and deterministic redacted audit events
+- Signed stateless approval grants for operations explicitly marked as
+  approval-required
 
-`/ai/tools/mcp` is an MCP-shaped JSON catalog. Aksara v0.6 does not implement an
-MCP protocol server, transport negotiation, tool-call endpoint, or client
-session protocol. An MCP client needs an adapter that fetches the catalog and
-calls the described HTTP operation.
+`/ai/tools/mcp` remains a permission-filtered inspection catalog. It is not the
+protocol endpoint. MCP sessions, replay IDs, and approval grants do not claim
+durability or cross-worker exactly-once semantics.
 
 ### Background tasks
 
@@ -155,8 +157,8 @@ change during v0.6.x without the compatibility guarantees above.
 - Investigation sessions and transcript state
 - `AgentRuntime`, planners, autonomous loops, code-generation suggestions,
   patch execution, and approval callback internals
-- Generic, OpenAI, and third-party tool export adapters other than the MCP
-  catalog contract stated above
+- Generic, OpenAI, and third-party tool export adapters outside the MCP
+  protocol contract stated above
 - Generated project template layout
 
 Investigation/session state is held in process memory. It does not survive
@@ -164,16 +166,16 @@ restart and does not provide continuity between workers. Use it for interactive
 inspection, not durable case tracking.
 
 Aksara v0.6 makes no production guarantee for autonomous mutation or durable
-approval workflows. The repository has not demonstrated durable approval
-state, replay semantics, authorization at execution time after restart,
-idempotency for arbitrary tools, or multi-worker race handling as one complete
-workflow. Keep a human-controlled application boundary around these features.
+approval workflows. The bounded approval grant is safe only after an
+application-owned human decision. Durable approval state, cross-worker replay,
+idempotency for arbitrary tools, and multi-worker workflow races remain outside
+the stable contract.
 
 ## Explicitly unsupported or deferred
 
 - Custom many-to-many through models
 - Object-valued lazy forward foreign-key attributes
-- Protocol-level MCP execution or MCP client-session compatibility
+- Durable or cross-worker MCP session and replay continuity
 - Durable investigation sessions, AI memory, and cross-worker AI continuity
 - Production-safe autonomous approval and mutation orchestration
 - Exactly-once external side effects from retried background tasks

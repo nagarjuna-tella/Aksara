@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased — v0.6.0-rc1 — Production Contract Candidate
+## Unreleased — v0.6.0-rc2 — Production Contract Candidate
 
 This candidate defines a bounded Production Mode contract for Aksara's stable
 backend surfaces. It is not published.
@@ -31,14 +31,20 @@ backend surfaces. It is not published.
   every exposed field's `ai_agent_writable` policy.
 - A public stability contract that separates stable backend APIs from
   experimental Studio/AI surfaces and unsupported behavior.
+- An official-SDK MCP Streamable HTTP server at `/mcp/` with protocol
+  negotiation, generated CRUD discovery and invocation, structured errors,
+  lifecycle management, cancellation, and packaged-client evidence.
+- Immutable agent invocation context, execution-time scope/audience/expiry/
+  tenant enforcement, redacted audit events, signed bounded approval grants,
+  and deterministic runtime limits for provider and planner execution.
 
 ### Changed
 
 - The supported runtime contract is Python 3.11–3.14, PostgreSQL 16 in release
   CI, and the paired FastAPI/Starlette boundaries documented in the runtime
   matrix.
-- `/ai/tools/mcp` is documented as an MCP-shaped JSON catalog. Protocol-level
-  MCP transport, sessions, and tool invocation are outside the v0.6 contract.
+- `/mcp/` is the protocol endpoint over Streamable HTTP. `/ai/tools/mcp`
+  remains the permission-filtered inspection catalog.
 - Custom lifespan startup failures now release framework database and worker
   state while preserving the triggering exception.
 - Runtime schema helpers preflight migrated tables and avoid DDL when the
@@ -58,8 +64,8 @@ backend surfaces. It is not published.
    security matrix and resolve every non-pass result.
 5. If exposing AI/MCP-described writes, review every exposed field explicitly
    before setting `AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true`.
-6. Add an adapter for MCP protocol clients; the catalog URL itself is not an MCP
-   server endpoint.
+6. Point MCP clients at `/mcp/`; keep `/ai/tools/mcp` only for inspection or
+   compatibility adapters.
 
 ### Experimental and deferred
 
@@ -68,9 +74,9 @@ backend surfaces. It is not published.
   workflows remain experimental.
 - Investigation/session state is process-local and has no restart or
   multi-worker continuity guarantee.
-- Durable autonomous approval/mutation, custom many-to-many through models,
-  object-valued lazy forward foreign keys, and protocol-level MCP execution
-  remain outside the release.
+- Durable autonomous approval/mutation, cross-worker approval replay state,
+  custom many-to-many through models, and object-valued lazy forward foreign
+  keys remain outside the release.
 
 ---
 

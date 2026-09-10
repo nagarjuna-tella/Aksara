@@ -57,26 +57,33 @@ AI-exposed model has an explicit `ai_agent_writable` decision.
 ## Covered Behavior
 
 - MCP disabled by default
-- MCP exposure diagnostics
-- MCP scope, audience, tenant, expiration, and token metadata helper coverage
+- Official-SDK MCP initialization, negotiation, tool discovery and invocation
+  over Streamable HTTP
+- MCP scope, audience, tenant, expiration, role, and token metadata enforcement
+  at invocation time
 - AI-sensitive field exclusion from generated AI/MCP schemas
 - Runtime rejection of forbidden fields in covered REST create/update paths
 - Tenant ID mutation denied in covered write paths
+- Signed approval grants bound to an exact principal, tenant, tool, arguments,
+  approver, and expiry
+- Deterministic, redacted execution audit events with request/run/tool-call
+  correlation
 - Bounded adversarial tests against an actual generated CRUD application,
   including invalid relations, malformed and oversized payloads, forbidden and
   server-controlled fields, and unauthorized mutation
-- A packaged reference-app gate that permits an authorized same-tenant
-  catalog-described REST mutation and rejects the cross-tenant equivalent
+- A packaged reference-app gate using an actual MCP client that permits an
+  authorized same-tenant mutation and rejects cross-tenant operations
 
 ## Known Limitations
 
-- Replay protection storage is not implemented by core MCP helpers.
-- Field-level MCP audit logs are planned.
-- Aksara v0.6 provides an MCP-shaped catalog, not protocol transport or a
-  protocol tool-call endpoint.
+- MCP sessions and replay IDs are process-local and do not provide durable or
+  cross-worker exactly-once semantics.
+- Approval grants are signed and stateless. Aksara does not provide durable
+  approval workflow storage.
 - Replay protection storage and token issuance are application concerns; core
   helpers validate claims but do not issue or revoke credentials.
-- The stable execution claim covers catalog-described generated REST paths.
-  Custom execution paths must integrate application authorization explicitly.
+- The stable execution claim covers generated CRUD and custom actions that use
+  Aksara's registered ViewSet path. Custom execution outside that path must
+  integrate application authorization explicitly.
 - External review is scoped in the release evidence and does not become an
   implied audit certification.

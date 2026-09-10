@@ -43,7 +43,7 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Type, Union, cast
 
 from fastapi import Request, HTTPException
 
@@ -124,6 +124,7 @@ class ModelViewSet:
     # v0.3.10: Permission classes
     permission_classes: List[Type["BasePermission"]] = []
     ai_exposed: bool = True  # Whether exposed to AI agents
+    mcp_approval_required_actions: ClassVar[set[str]] = set()
     stream_enabled: bool = True
     
     # v0.3.2: Serializer classes (optional, takes precedence over schemas)
@@ -792,9 +793,24 @@ class ModelViewSet:
         )
         
         if serializer is not None:
-            return serializer.to_representation()
+            result = cast(dict[str, Any], serializer.to_representation())
         else:
-            return model_to_dict(instance)
+            result = model_to_dict(instance)
+
+        # The generated API and MCP share this serialization path. AI-sensitive
+        # fields therefore stay hidden at execution time as well as in schemas.
+        if request is not None:
+            principal = self._resolve_query_principal(request)
+            if principal is not None and principal.is_ai_agent:
+                decision = get_policy_engine().visible_fields(principal, self.model)
+                allowed = set(decision.allowed_fields)
+                from aksara.fields import ForeignKey  # type: ignore[attr-defined]
+
+                for field_name, field in self.model._fields.items():
+                    if field_name in allowed and isinstance(field, ForeignKey):
+                        allowed.add(field.db_column_name)
+                result = {key: value for key, value in result.items() if key in allowed}
+        return result
     
     def get_filter_fields(self) -> List[str]:
         """

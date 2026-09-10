@@ -11,11 +11,10 @@ A small **Ops Playbook API** that shows what Aksara generates from one model def
 - Create and list operational playbooks over REST
 - Inspect the same model in Studio at `/studio/ui`
 - Ask the AI Console to explain the model and endpoints
-- Inspect generated REST operation descriptions at `/ai/tools/mcp`
+- Connect an MCP client and inspect generated tools at `/mcp/`
 
 The point of the demo is that one Aksara model becomes a database table, a
-REST API, a Studio surface, and an MCP-shaped catalog without separate schemas.
-The catalog is not an MCP protocol server.
+REST API, a Studio surface, and executable MCP tools without separate schemas.
 
 ---
 
@@ -55,7 +54,7 @@ Verify it worked:
 ```bash
 aksara --version
 # Published release: aksara, version 0.5.54
-# v0.6 candidate: aksara, version 0.6.0rc1
+# v0.6 candidate: aksara, version 0.6.0rc2
 ```
 
 ---
@@ -95,7 +94,7 @@ opsdesk/
 | Admin | `/admin` | Admin interface (debug mode) |
 | Studio | `/studio/ui` | Visual dashboard with the built-in AI Console |
 | AI Tools | `/ai/tools` | Generic AI tool discovery |
-| MCP-shaped catalog | `/ai/tools/mcp` | Permission-filtered REST operation descriptions; protocol clients need an adapter |
+| MCP server | `/mcp/` | Permission-filtered generated tools over Streamable HTTP |
 | Example API | `/api/posts` | Scaffolded example you can replace |
 
 ---
@@ -119,7 +118,7 @@ This will:
 After the prompts, a successful run ends with output like this:
 
 ```
-  ⚡ Aksara v0.6.0rc1
+  ⚡ Aksara v0.6.0rc2
   Database Setup
 
   ✓ found (localhost:5432)
@@ -287,7 +286,7 @@ aksara dev main:app
      ████╔╝     ██║  ██║ ██║    ██╗ ███████║ ██║  ██║ ██║  ██║ ██║  ██║
      ╚═══╝      ╚═╝  ╚═╝ ╚═╝    ╚═╝ ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
 
-    AI-native async backend  ·  Dev Server  ·  v0.6.0rc1
+    AI-native async backend  ·  Dev Server  ·  v0.6.0rc2
 
   ● App       http://127.0.0.1:8000/
   ● Admin     http://127.0.0.1:8000/admin/
@@ -349,7 +348,7 @@ curl -X POST http://localhost:8000/api/playbooks/ \
 curl http://localhost:8000/api/playbooks/
 ```
 
-**Inspect the MCP tool catalog:**
+**Inspect the compatibility catalog:**
 
 ```bash
 curl http://localhost:8000/ai/tools/mcp
@@ -400,7 +399,7 @@ Congratulations! You created one model and got all of this from it:
 ✅ **Studio dashboard** at `/studio/ui`  
 ✅ **AI Console** inside Studio  
 ✅ **AI tools** at `/ai/tools`  
-✅ **MCP-shaped tool catalog** at `/ai/tools/mcp`
+✅ **MCP protocol tools** at `/mcp/`
 
 **Without maintaining separate API, Studio, and AI schemas.**
 
@@ -414,13 +413,14 @@ Now that your server is running, try these URLs:
 | http://localhost:8000/admin | Admin panel to manage playbooks |
 | http://localhost:8000/studio/ui | Studio dashboard with schema info and the AI Console |
 | http://localhost:8000/ai/tools | Generic AI tools generated from your model and ViewSet |
-| http://localhost:8000/ai/tools/mcp | MCP-shaped, permission-filtered REST operation catalog |
+| http://localhost:8000/mcp/ | MCP Streamable HTTP server for generated tools |
+| http://localhost:8000/ai/tools/mcp | Permission-filtered inspection catalog |
 
-!!! info "AI adapter boundary"
-    `/ai/tools/mcp` returns catalog JSON; it does not implement MCP protocol
-    transport or tool invocation. An external client needs an adapter that
-    fetches permitted entries and calls their REST method/path with application
-    credentials. See [MCP Integration](ai-mode/mcp.md).
+!!! info "MCP execution boundary"
+    `/mcp/` negotiates MCP and invokes generated tools through the same
+    authentication, permission, policy, transaction, and tenant path as REST.
+    `/ai/tools/mcp` remains available for inspection. See
+    [MCP Integration](ai-mode/mcp.md).
 
 !!! tip "When the app does not start cleanly"
   Run `aksara doctor run` for a live health report. If Aksara detects issues it can

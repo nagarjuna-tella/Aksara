@@ -846,11 +846,11 @@ async def analyze_schema_health(app: "FastAPI") -> AiSchemaHealth:
         db = Database.get_instance()
     except RuntimeError:
         # No database configured
-        return AiSchemaHealth(
+        return AiSchemaHealth(  # type: ignore[call-arg]
             status="danger",
             issue_counts={"info": 0, "warning": 0, "danger": 1},
             issues=[
-                AiSchemaIssue(
+                AiSchemaIssue(  # type: ignore[call-arg]
                     id="system.database.not_configured",
                     kind="missing_table",  # Using as proxy for missing DB
                     severity="danger",

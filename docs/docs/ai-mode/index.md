@@ -8,7 +8,7 @@
     authorization around mutations.
 
 AI Mode is the optional AI layer of an Aksara application. It powers Studio's
-AI features, exposes an MCP-shaped tool catalog, and adds analysis surfaces
+AI features, exposes generated tools through MCP, and adds analysis surfaces
 such as Schema Doctor, AI Debugger, Architecture Review, and Performance
 Analyzer.
 
@@ -47,7 +47,7 @@ aksara dev
 Then try the three entry points that matter most:
 
 1. Open **http://127.0.0.1:8000/studio/ui** and use the **AI Console**.
-2. Fetch the MCP tool catalog from **http://127.0.0.1:8000/ai/tools/mcp**.
+2. Connect an MCP client to **http://127.0.0.1:8000/mcp/**.
 3. Run `aksara doctor fix-plan` to see the remediation workflow Aksara can generate from live diagnostics.
 
 ---
@@ -58,7 +58,7 @@ Then try the three entry points that matter most:
 |---------|---------------|---------------------|
 | **AI Console** | Natural-language interface inside Studio for asking questions about models, routes, queries, and migrations | [console.md](console.md) |
 | **AI Flows** | Guided actions for model review, route review, query analysis, migration explanation, and diagnostics | [flows.md](flows.md) |
-| **MCP catalog** | Describes generated REST operations in MCP-shaped JSON at `/ai/tools/mcp`; protocol transport requires an adapter | [mcp.md](mcp.md) |
+| **MCP server** | Negotiates MCP and discovers/invokes generated tools over Streamable HTTP at `/mcp/` | [mcp.md](mcp.md) |
 | **Schema Doctor** | Finds schema health problems and pairs them with actionable remediation output | [schema-doctor.md](schema-doctor.md) |
 | **AI Debugger** | Explains failures and points at likely root causes | [debugger.md](debugger.md) |
 | **Architecture Review** | Reviews coupling, structure, and design pressure across the codebase | [architecture-review.md](architecture-review.md) |

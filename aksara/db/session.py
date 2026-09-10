@@ -66,7 +66,7 @@ class session_context:
     def __init__(self, db: "Database"):
         self.db = db
         self._connection: Optional["asyncpg.Connection"] = None
-        self._token = None
+        self._token: Token[asyncpg.Connection | None] | None = None
         self._tenant_applied = False
     
     async def __aenter__(self) -> "asyncpg.Connection":

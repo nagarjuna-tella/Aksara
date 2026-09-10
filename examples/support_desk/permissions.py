@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from aksara.permissions import BasePermission
@@ -19,6 +20,18 @@ class SupportDeskPermission(BasePermission):
         if not isinstance(principal, Principal) or not principal.is_authenticated:
             return False
         if principal.is_ai_agent:
+            revocation_file = os.getenv("SUPPORT_DESK_MCP_REVOCATION_FILE")
+            if revocation_file:
+                try:
+                    revoked = {
+                        line.strip()
+                        for line in Path(revocation_file).read_text(encoding="utf-8").splitlines()
+                        if line.strip()
+                    }
+                except FileNotFoundError:
+                    revoked = set()
+                if principal.token_id in revoked:
+                    return False
             expected_audience = os.getenv(
                 "SUPPORT_DESK_MCP_AUDIENCE",
                 "support-desk",

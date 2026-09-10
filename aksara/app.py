@@ -115,6 +115,7 @@ class Aksara(FastAPI):
         views_module: Optional[str] = None,
         # v0.3.13: Aksara middleware configuration
         middlewares: Optional[List[Tuple[Type[BaseHTTPMiddleware], Dict[str, Any]]]] = None,
+        mcp_audit_sink: Any = None,
         # v0.3.15: Admin interface
         enable_admin: Optional[bool] = None,
         # Standard FastAPI args
@@ -151,6 +152,8 @@ class Aksara(FastAPI):
         
         # v0.4.0: AI registry (initialized later)
         self.ai_registry = None
+        self.mcp_runtime: Any | None = None
+        self._mcp_audit_sink = mcp_audit_sink
         self._task_worker = None
         
         # Store docs URLs for custom handlers
@@ -159,10 +162,12 @@ class Aksara(FastAPI):
         self._openapi_url = openapi_url
         self._swagger_ui_oauth2_redirect_url = swagger_ui_oauth2_redirect_url
         
-        # If user provides custom lifespan, wrap it with our DB lifecycle
+        from aksara.conf import settings
+
+        # If user provides custom lifespan, wrap it with Aksara runtime services.
         if lifespan is not None:
             wrapped_lifespan = self._wrap_lifespan(lifespan)
-        elif database_url is not None:
+        elif database_url is not None or settings.mcp_enabled:
             wrapped_lifespan = self._default_lifespan
         else:
             wrapped_lifespan = None
@@ -192,9 +197,8 @@ class Aksara(FastAPI):
         # wraps them like onion layers - last added is first executed
         if middlewares:
             for mw_class, options in reversed(middlewares):
-                self.add_middleware(mw_class, **(options or {}))
+                self.add_middleware(mw_class, **(options or {}))  # type: ignore[arg-type]
 
-        from aksara.conf import settings
         from aksara.middleware.ai_agent import AIAgentMiddleware
 
         # Auto-enable AI agent state when token auth is configured so DenyAI can enforce.
@@ -243,37 +247,41 @@ class Aksara(FastAPI):
         return self._task_worker
 
     async def _startup_runtime(self) -> None:
-        """Start database-backed runtime services."""
-        if not self._database_url:
-            return
-
+        """Start database-backed services and the MCP session manager."""
         try:
-            self._db = Database(
-                self._database_url,
-                min_size=self._min_pool_size,
-                max_size=self._max_pool_size,
-            )
-            await self._db.connect()
-
             from aksara.conf import settings
-            if "aksara.contrib.auth" in settings.installed_apps:
-                from aksara.contrib.auth.session import _ensure_sessions_table
-                await _ensure_sessions_table(self._db)
+            if self._database_url:
+                self._db = Database(
+                    self._database_url,
+                    min_size=self._min_pool_size,
+                    max_size=self._max_pool_size,
+                )
+                await self._db.connect()
 
-            from aksara.model.base import finalize_relations
-            finalize_relations()
+                if "aksara.contrib.auth" in settings.installed_apps:
+                    from aksara.contrib.auth.session import _ensure_sessions_table
+                    await _ensure_sessions_table(self._db)
 
-            from aksara.contenttypes import clear_content_type_cache, sync_content_types
-            clear_content_type_cache()
-            await sync_content_types(self._db, prune_stale=True)
+                from aksara.model.base import finalize_relations
+                finalize_relations()
 
-            if settings.tasks_enabled:
-                from aksara.tasks import TaskWorker
+                from aksara.contenttypes import (
+                    clear_content_type_cache,
+                    sync_content_types,
+                )
+                clear_content_type_cache()
+                await sync_content_types(self._db, prune_stale=True)
 
-                self._task_worker = TaskWorker(self._db)
-                await self._task_worker.start()
+                if settings.tasks_enabled:
+                    from aksara.tasks import TaskWorker
 
-            self._print_startup()
+                    self._task_worker = TaskWorker(self._db)
+                    await self._task_worker.start()
+
+                self._print_startup()
+
+            if self.mcp_runtime is not None:
+                await self.mcp_runtime.start()
         except BaseException:
             await self._cleanup_runtime_after_error("runtime startup")
             raise
@@ -281,11 +289,18 @@ class Aksara(FastAPI):
     async def _shutdown_runtime(self) -> None:
         """Stop database-backed runtime services."""
         first_error: BaseException | None = None
+        if self.mcp_runtime is not None:
+            try:
+                await self.mcp_runtime.stop()
+            except BaseException as exc:  # noqa: BLE001 - shutdown must continue
+                first_error = exc
+
         if self._task_worker is not None:
             try:
                 await self._task_worker.stop()
             except BaseException as exc:  # noqa: BLE001 - shutdown must continue after cancellation
-                first_error = exc
+                if first_error is None:
+                    first_error = exc
             finally:
                 self._task_worker = None
 
@@ -305,7 +320,8 @@ class Aksara(FastAPI):
 
         if first_error is not None:
             raise first_error
-        self._print_shutdown()
+        if self._database_url:
+            self._print_shutdown()
 
     async def _cleanup_runtime_after_error(self, stage: str) -> None:
         """Release partial runtime state without replacing the triggering error."""
@@ -765,6 +781,14 @@ class Aksara(FastAPI):
         
         # Include AI endpoints (hidden from public OpenAPI docs)
         self.include_router(ai_router, include_in_schema=False)
+
+        from aksara.conf import settings
+        if settings.mcp_enabled:
+            from aksara.mcp import MCPRuntime
+
+            path = "/" + settings.mcp_path.strip("/")
+            self.mcp_runtime = MCPRuntime(self, audit_sink=self._mcp_audit_sink)
+            self.mount(path, self.mcp_runtime.asgi_app, name="mcp")
         
         # v0.5.0: Include Studio endpoints
         if self._should_enable_studio():

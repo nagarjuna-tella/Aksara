@@ -95,6 +95,8 @@ configure(
     studio_expose_in_production=False,
     ai_enabled=False,
     mcp_enabled=True,
+    mcp_token_audience=os.getenv("SUPPORT_DESK_MCP_AUDIENCE", "support-desk"),
+    mcp_approval_secret=os.getenv("SUPPORT_DESK_MCP_APPROVAL_SECRET"),
     tasks_enabled=True,
     task_poll_interval_seconds=float(os.getenv("AKSARA_TASK_POLL_INTERVAL", "0.1")),
     task_retry_delay_seconds=float(os.getenv("AKSARA_TASK_RETRY_DELAY", "0.1")),

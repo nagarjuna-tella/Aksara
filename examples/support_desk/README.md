@@ -94,19 +94,27 @@ tenant-scoped `DeliveryAttempt` records the recovery.
 
 ## MCP boundary
 
-`GET /ai/tools/mcp` returns the catalog of generated, AI-exposed operations.
-The MCP token is bound to tenant A, an audience, explicit read/write scopes,
-and an expiry no more than one hour in the future. The app builds its principal
-from those server-owned claims and rejects expired, wrong-audience, or
-tenantless MCP principals. That principal can call catalog-described REST
-operations within tenant A. Aksara v0.6 does not ship a protocol-level MCP
-transport, so this example does not claim one.
+The official MCP server is available over Streamable HTTP at `/mcp/`.
+`GET /ai/tools/mcp` remains an inspection catalog. The MCP token is bound to
+tenant A, an audience, explicit read/write scopes, an agent and owner identity,
+and a short expiry. Every protocol invocation rechecks those claims, ViewSet
+permissions, field policy, tenant context, and forced PostgreSQL RLS through the
+same generated route used by REST.
+
+Ticket deletion is approval-required. The application must obtain a human
+decision and issue a signed `app.mcp_runtime.approvals` grant bound to the exact
+principal, tenant, tool, arguments, approver, and expiry. This grant is
+stateless; the example does not claim durable workflow or cross-worker replay
+storage. Set `SUPPORT_DESK_MCP_AUDIT_PATH` to append redacted, correlated MCP
+execution events as JSONL.
 
 ## Migration and operations gate
 
 The repository gate runs the packaged wheel against a restricted PostgreSQL
 role and covers fresh install, existing schema, upgrade, unapplied migration
 failure, concurrent requests, pool reuse, rollback, tenant switching, task
-retry and worker restart, MCP-authorized mutation, graceful shutdown, requests
-during shutdown, connection cleanup, database reconnection, app restart, and
-both Doctor release and launch inspection.
+retry and worker restart, an official MCP client against the packaged wheel,
+REST/MCP equivalence, scope and credential abuse, approval binding, concurrent
+tenant isolation, redacted audit events, graceful shutdown, connection cleanup,
+database reconnection, app restart, and both Doctor release and launch
+inspection.

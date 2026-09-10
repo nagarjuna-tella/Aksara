@@ -164,17 +164,17 @@ def get_model_fields(
             - ai_sensitive: Whether the field contains sensitive data
             - ai_agent_writable: Whether AI agents can write to this field
     """
-    from aksara.fields import ForeignKey
+    from aksara.fields import ForeignKey  # type: ignore[attr-defined]
     
     fields_meta = []
     
     for name, field in model._fields.items():
         # Skip sensitive fields unless requested
-        if field.ai_sensitive and not include_sensitive:
+        if getattr(field, "ai_sensitive", False) and not include_sensitive:
             continue
             
         # Skip non-writable fields if only writable requested
-        if writable_only and not field.ai_agent_writable:
+        if writable_only and not getattr(field, "ai_agent_writable", True):
             continue
         
         # Determine the database column name
@@ -189,9 +189,9 @@ def get_model_fields(
             'type': field.__class__.__name__,
             'nullable': field.nullable,
             'primary_key': field.primary_key,
-            'ai_description': field.ai_description or '',
-            'ai_sensitive': field.ai_sensitive,
-            'ai_agent_writable': field.ai_agent_writable,
+            'ai_description': getattr(field, "ai_description", None) or '',
+            'ai_sensitive': getattr(field, "ai_sensitive", False),
+            'ai_agent_writable': getattr(field, "ai_agent_writable", True),
         }
         
         # Add FK-specific metadata

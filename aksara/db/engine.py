@@ -36,7 +36,7 @@ def _encode_vector(value: Any) -> str:
         return value
     # Reuse the ORM precision policy (repr(float)) so values encoded by the
     # asyncpg codec match Vector.to_db exactly.
-    from aksara.fields import serialize_vector_components
+    from aksara.fields import serialize_vector_components  # type: ignore[attr-defined]
 
     return serialize_vector_components(value)
 

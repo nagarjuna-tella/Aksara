@@ -133,7 +133,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-output",
         type=Path,
-        default=ROOT / "audit-evidence" / "v060" / "support-desk-gate.json",
+        default=ROOT / "audit-evidence" / "v060-mcp-ai" / "support-desk-gate.json",
     )
     return parser
 
@@ -247,7 +247,7 @@ class Gate:
         app_name = f"aksara-support-gate-{suffix}"
         tenant_a = str(uuid4())
         tenant_b = str(uuid4())
-        tokens = [secrets.token_urlsafe(32) for _ in range(3)]
+        tokens = [secrets.token_urlsafe(32) for _ in range(6)]
         self._sensitive.extend([role_password, secret_key, *tokens, self.database_url])
 
         admin = await asyncpg.connect(self.database_url)
@@ -474,6 +474,17 @@ class Gate:
                 task_attempts=completed["attempts"],
                 delivered=bool(delivery["delivered"]),
             )
+            await self._exercise_mcp(
+                python,
+                port,
+                tokens,
+                ids,
+                tenant_a,
+                tenant_b,
+                secret_key,
+                Path(app_env["SUPPORT_DESK_MCP_AUDIT_PATH"]),
+                Path(app_env["SUPPORT_DESK_MCP_REVOCATION_FILE"]),
+            )
 
             terminated = await admin.fetchval(
                 """
@@ -513,7 +524,7 @@ class Gate:
                 schema,
                 server,
                 port,
-                tokens[0],
+                tokens[2],
             )
             servers.remove(server)
             self.check(
@@ -583,10 +594,17 @@ class Gate:
                 "SUPPORT_DESK_TENANT_A_TOKEN": tokens[0],
                 "SUPPORT_DESK_TENANT_B_TOKEN": tokens[1],
                 "SUPPORT_DESK_MCP_TOKEN": tokens[2],
+                "SUPPORT_DESK_MCP_TENANT_B_TOKEN": tokens[3],
+                "SUPPORT_DESK_MCP_WRONG_AUDIENCE_TOKEN": tokens[4],
+                "SUPPORT_DESK_MCP_EXPIRED_TOKEN": tokens[5],
                 "SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT": str(
                     int(datetime.now(UTC).timestamp()) + 900
                 ),
                 "SUPPORT_DESK_MCP_AUDIENCE": "support-desk",
+                "SUPPORT_DESK_MCP_APPROVAL_SECRET": secret_key,
+                "SUPPORT_DESK_MCP_AUDIT_PATH": str(security_matrix.parent / "mcp-audit.jsonl"),
+                "SUPPORT_DESK_MCP_REVOCATION_FILE": str(security_matrix.parent / "mcp-revoked.txt"),
+                "SUPPORT_DESK_ENABLE_FAILURE_PROBES": "true",
             }
         )
         return env
@@ -1002,6 +1020,387 @@ class Gate:
                 await asyncio.sleep(0.03)
         raise TimeoutError(f"task {task_id} did not reach expected state")
 
+    async def _exercise_mcp(
+        self,
+        python: Path,
+        port: int,
+        tokens: list[str],
+        ids: dict[str, str],
+        tenant_a: str,
+        tenant_b: str,
+        approval_secret: str,
+        audit_path: Path,
+        revocation_path: Path,
+    ) -> None:
+        """Use the official MCP client against the wheel-installed running app."""
+        import httpx2
+        from mcp import Client
+        from mcp.client.streamable_http import streamable_http_client
+
+        url = f"http://127.0.0.1:{port}/mcp/"
+        token = tokens[2]
+        http_client = httpx2.AsyncClient(
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        forbidden_subject = "MCP forged tenant must not persist"
+        created_subject = f"MCP persisted {uuid4().hex}"
+        async with http_client, Client(
+            streamable_http_client(url, http_client=http_client),
+            read_timeout_seconds=10,
+        ) as client:
+                self.check(
+                    "official MCP client negotiates protocol",
+                    bool(client.protocol_version),
+                    protocol_version=client.protocol_version,
+                    sdk="mcp==2.0.0",
+                    transport="streamable-http",
+                )
+                listed = await client.list_tools()
+                tools = {tool.name: tool for tool in listed.tools}
+                expected = {
+                    "ticket_list", "ticket_retrieve", "ticket_create",
+                    "ticket_update", "ticket_delete",
+                }
+                self.check(
+                    "MCP discovery exposes generated ticket CRUD",
+                    expected.issubset(tools) and not any(name.startswith("supportagent_") for name in tools),
+                    tools=sorted(tools),
+                )
+                create_schema = tools["ticket_create"].input_schema
+                self.check(
+                    "MCP generated schema preserves write contract",
+                    set(create_schema.get("required", ())) == {"subject", "description"}
+                    and "tenant_id" not in create_schema.get("properties", {})
+                    and "created_at" not in create_schema.get("properties", {})
+                    and create_schema.get("additionalProperties") is False,
+                    required=create_schema.get("required", []),
+                    fields=sorted(create_schema.get("properties", {})),
+                )
+
+                listed_rows = await client.call_tool("ticket_list", {"limit": 100})
+                self.check(
+                    "MCP authorized read returns tenant rows",
+                    not listed_rows.is_error
+                    and all(
+                        row["tenant_id"] != "" for row in listed_rows.structured_content["results"]
+                    )
+                    and not any(
+                        row["id"] == ids["ticket_b"]
+                        for row in listed_rows.structured_content["results"]
+                    ),
+                    rows=len(listed_rows.structured_content.get("results", [])),
+                )
+                created = await client.call_tool(
+                    "ticket_create",
+                    {
+                        "subject": created_subject,
+                        "description": "Created through protocol MCP",
+                        "priority": "high",
+                    },
+                    meta={"aksara.run_id": "packaged-reference", "aksara.tool_call_id": "create-one"},
+                )
+                self.check(
+                    "MCP authorized write persists through generated API",
+                    not created.is_error and created.structured_content["subject"] == created_subject,
+                    error=created.structured_content if created.is_error else None,
+                )
+
+                equivalent_subject = f"REST equivalent {uuid4().hex}"
+                equivalent_arguments = {
+                    "subject": equivalent_subject,
+                    "description": "Same generated contract",
+                    "priority": "high",
+                }
+                async with httpx.AsyncClient(timeout=5) as api_client:
+                    api_created = await api_client.post(
+                        f"http://127.0.0.1:{port}/api/tickets/",
+                        headers={"Authorization": f"Bearer {token}"},
+                        json=equivalent_arguments,
+                    )
+                    api_invalid = await api_client.post(
+                        f"http://127.0.0.1:{port}/api/tickets/",
+                        headers={"Authorization": f"Bearer {token}"},
+                        json={"subject": "invalid-without-description"},
+                    )
+                mcp_equivalent = await client.call_tool("ticket_create", equivalent_arguments)
+                mcp_invalid = await client.call_tool(
+                    "ticket_create", {"subject": "invalid-without-description"}
+                )
+                comparable = {"subject", "description", "priority", "status", "tenant_id"}
+                self.check(
+                    "generated REST and MCP enforce one application contract",
+                    api_created.status_code == 201
+                    and not mcp_equivalent.is_error
+                    and {
+                        key: api_created.json()[key] for key in comparable
+                    } == {
+                        key: mcp_equivalent.structured_content[key] for key in comparable
+                    }
+                    and api_invalid.status_code == 422
+                    and mcp_invalid.is_error
+                    and mcp_invalid.structured_content["error"]["code"] == "schema_mismatch",
+                    accepted_fields=sorted(comparable),
+                    rest_rejected_status=api_invalid.status_code,
+                    mcp_rejected_code=mcp_invalid.structured_content.get("error", {}).get("code"),
+                )
+
+                malformed_nested = await client.call_tool(
+                    "ticket_create",
+                    {"subject": "bad nested", "description": {"unexpected": [1, 2]}},
+                )
+                server_field = await client.call_tool(
+                    "ticket_create",
+                    {
+                        "subject": "bad server field",
+                        "description": "must fail",
+                        "created_at": "2026-01-01T00:00:00Z",
+                    },
+                )
+                undiscovered = await client.call_tool("supportagent_list", {})
+                self.check(
+                    "MCP rejects malformed, server-controlled, and undiscovered operations",
+                    malformed_nested.is_error
+                    and malformed_nested.structured_content["error"]["code"] == "schema_mismatch"
+                    and server_field.is_error
+                    and server_field.structured_content["error"]["code"] == "forbidden_field"
+                    and undiscovered.is_error
+                    and undiscovered.structured_content["error"]["code"] == "missing_scope",
+                    malformed_code=malformed_nested.structured_content.get("error", {}).get("code"),
+                    server_field_code=server_field.structured_content.get("error", {}).get("code"),
+                    undiscovered_code=undiscovered.structured_content.get("error", {}).get("code"),
+                )
+
+                forged = await client.call_tool(
+                    "ticket_create",
+                    {
+                        "subject": forbidden_subject,
+                        "description": "Attempted tenant override",
+                        "tenant_id": "00000000-0000-0000-0000-000000000002",
+                    },
+                )
+                self.check(
+                    "MCP rejects tenant mass assignment",
+                    forged.is_error
+                    and forged.structured_content["error"]["code"] == "forbidden_field",
+                    error=forged.structured_content,
+                )
+                cross = await client.call_tool("ticket_retrieve", {"pk": ids["ticket_b"]})
+                self.check(
+                    "MCP denies cross-tenant object identifier",
+                    cross.is_error and cross.structured_content["error"]["code"] == "not_found",
+                    error=cross.structured_content,
+                )
+
+                revocation_path.write_text("support-desk-mcp\n", encoding="utf-8")
+                try:
+                    revoked = await client.call_tool(
+                        "ticket_update", {"pk": ids["ticket_a"], "status": "resolved"}
+                    )
+                finally:
+                    revocation_path.write_text("", encoding="utf-8")
+                self.check(
+                    "MCP rechecks authorization after discovery",
+                    revoked.is_error
+                    and revoked.structured_content["error"]["category"] == "authorization",
+                    error=revoked.structured_content,
+                )
+
+                replay = await client.call_tool(
+                    "ticket_create",
+                    {
+                        "subject": created_subject,
+                        "description": "Created through protocol MCP",
+                        "priority": "high",
+                    },
+                    meta={"aksara.tool_call_id": "create-one"},
+                )
+                self.check(
+                    "MCP rejects replayed tool-call identifier",
+                    replay.is_error
+                    and replay.structured_content["error"]["code"] == "repeated_tool_request",
+                    error=replay.structured_content,
+                )
+
+                approval_target = await client.call_tool(
+                    "ticket_create",
+                    {
+                        "subject": f"Approval target {uuid4().hex}",
+                        "description": "Removed only after exact approval",
+                    },
+                )
+                delete_id = str(approval_target.structured_content["id"])
+                delete_arguments = {"pk": delete_id}
+                approval = await self._issue_packaged_approval(
+                    python,
+                    approval_secret,
+                    tenant_a,
+                    delete_arguments,
+                )
+                unapproved = await client.call_tool("ticket_delete", delete_arguments)
+                changed = await client.call_tool(
+                    "ticket_delete", {"pk": ids["ticket_a"], "_approval_token": approval}
+                )
+                approved = await client.call_tool(
+                    "ticket_delete", {**delete_arguments, "_approval_token": approval}
+                )
+                self.check(
+                    "MCP approval is required and bound to exact principal tenant and arguments",
+                    unapproved.is_error
+                    and unapproved.structured_content["error"]["code"] == "approval_required"
+                    and changed.is_error
+                    and changed.structured_content["error"]["code"] == "approval_arguments_mismatch"
+                    and not approved.is_error,
+                    missing_code=unapproved.structured_content.get("error", {}).get("code"),
+                    changed_code=changed.structured_content.get("error", {}).get("code"),
+                    approved_by="support-desk-human-reviewer",
+                )
+
+                rollback = await client.call_tool("ticket_rollback_probe", {})
+                self.check(
+                    "failed MCP mutation returns a structured internal error",
+                    rollback.is_error
+                    and rollback.structured_content["error"]["code"] == "internal_error"
+                    and rollback.structured_content["error"]["category"] == "internal",
+                    error=rollback.structured_content,
+                )
+
+        async with httpx.AsyncClient(timeout=5) as client:
+            persisted = await client.get(
+                f"http://127.0.0.1:{port}/api/tickets/",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        subjects = {row["subject"] for row in persisted.json()["results"]}
+        self.check(
+            "MCP database state reflects allow and deny decisions",
+            created_subject in subjects
+            and forbidden_subject not in subjects
+            and "MCP rollback probe must not persist" not in subjects,
+            authorized_persisted=created_subject in subjects,
+            forbidden_persisted=forbidden_subject in subjects,
+            failed_mutation_rolled_back="MCP rollback probe must not persist" not in subjects,
+        )
+
+        async def _tenant_rows(auth_token: str) -> tuple[bool, set[str]]:
+            client_http = httpx2.AsyncClient(headers={"Authorization": f"Bearer {auth_token}"})
+            async with client_http, Client(
+                streamable_http_client(url, http_client=client_http),
+                read_timeout_seconds=10,
+            ) as concurrent_client:
+                    result = await concurrent_client.call_tool("ticket_list", {"limit": 100})
+                    return result.is_error, {
+                        row["tenant_id"] for row in (result.structured_content or {}).get("results", [])
+                    }
+
+        tenant_a_result, tenant_b_result = await asyncio.gather(
+            _tenant_rows(tokens[2]), _tenant_rows(tokens[3])
+        )
+        self.check(
+            "concurrent MCP sessions isolate distinct principals and tenants",
+            tenant_a_result == (False, {tenant_a})
+            and tenant_b_result == (False, {tenant_b}),
+            tenant_a=sorted(tenant_a_result[1]),
+            tenant_b=sorted(tenant_b_result[1]),
+        )
+
+        wrong_audience, expired = await asyncio.gather(
+            self._single_mcp_error(url, tokens[4], "ticket_list", {}),
+            self._single_mcp_error(url, tokens[5], "ticket_list", {}),
+        )
+        self.check(
+            "MCP rejects wrong-audience and expired credentials at invocation",
+            wrong_audience == "wrong_audience" and expired == "credential_expired",
+            wrong_audience=wrong_audience,
+            expired=expired,
+        )
+
+        async with httpx.AsyncClient(timeout=5) as client:
+            oversized = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+                content=b'{' + b'"padding":"' + (b"x" * 1_048_576) + b'"}',
+            )
+        self.check(
+            "MCP transport rejects oversized request bodies",
+            oversized.status_code == 413,
+            status=oversized.status_code,
+        )
+
+        records = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
+        rendered = audit_path.read_text(encoding="utf-8")
+        self.check(
+            "MCP emits correlated redacted execution audits",
+            len(records) >= 6
+            and any(record["run_id"] == "packaged-reference" for record in records)
+            and any(record["outcome"] == "success" for record in records)
+            and any(record["error_code"] == "forbidden_field" for record in records)
+            and created_subject not in rendered
+            and forbidden_subject not in rendered,
+            records=len(records),
+        )
+
+    async def _single_mcp_error(
+        self,
+        url: str,
+        token: str,
+        tool_name: str,
+        arguments: dict[str, object],
+    ) -> str | None:
+        import httpx2
+        from mcp import Client
+        from mcp.client.streamable_http import streamable_http_client
+
+        http_client = httpx2.AsyncClient(headers={"Authorization": f"Bearer {token}"})
+        async with http_client, Client(
+            streamable_http_client(url, http_client=http_client),
+            read_timeout_seconds=10,
+        ) as client:
+            result = await client.call_tool(tool_name, arguments)
+            return (result.structured_content or {}).get("error", {}).get("code")
+
+    async def _issue_packaged_approval(
+        self,
+        python: Path,
+        secret: str,
+        tenant_id: str,
+        arguments: dict[str, object],
+    ) -> str:
+        payload = json.dumps(
+            {"secret": secret, "tenant_id": tenant_id, "arguments": arguments}
+        )
+        code = """
+import json, sys
+from aksara.mcp import ApprovalManager
+from aksara.security.principal import Principal
+data = json.load(sys.stdin)
+principal = Principal.for_mcp_agent(
+    token_id='support-desk-mcp',
+    human_owner_id='support-mcp-owner',
+    agent_id='support-desk-reference-agent',
+    tenant_id=data['tenant_id'],
+    roles=('mcp',),
+    scopes=('mcp:read:ticket', 'mcp:write:ticket'),
+    metadata={'audience': 'support-desk'},
+)
+print(ApprovalManager(data['secret']).issue(
+    principal=principal,
+    tool_name='ticket_delete',
+    arguments=data['arguments'],
+    approved_by='support-desk-human-reviewer',
+))
+"""
+        result = await asyncio.to_thread(
+            subprocess.run,
+            [str(python), "-I", "-c", code],
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.strip()
+
     async def _concurrent_requests(
         self,
         first_port: int,
@@ -1039,30 +1438,53 @@ class Gate:
         port: int,
         token: str,
     ) -> None:
+        import httpx2
+        from mcp import Client
+        from mcp.client.streamable_http import streamable_http_client
+
         lock_conn = await asyncpg.connect(self.database_url)
         transaction = lock_conn.transaction()
         await transaction.start()
         try:
             await lock_conn.execute(f'SET LOCAL search_path TO "{schema}"')
             await lock_conn.execute("LOCK TABLE support_tickets IN ACCESS EXCLUSIVE MODE")
-            async with httpx.AsyncClient(timeout=12) as client:
-                request = asyncio.create_task(
-                    client.get(
-                        f"http://127.0.0.1:{port}/api/tickets/",
-                        headers={"Authorization": f"Bearer {token}"},
+            http_client = httpx2.AsyncClient(
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            response = None
+            call_error = None
+            try:
+                async with http_client, Client(
+                    streamable_http_client(
+                        f"http://127.0.0.1:{port}/mcp/", http_client=http_client
+                    ),
+                    read_timeout_seconds=12,
+                ) as client:
+                    request = asyncio.create_task(
+                        client.call_tool("ticket_list", {"limit": 100})
                     )
-                )
-                await asyncio.sleep(0.2)
-                self.check("request is in flight before shutdown", not request.done())
-                process.send_signal(signal.SIGINT)
-                await asyncio.sleep(0.2)
-                await transaction.rollback()
-                response = await request
+                    await asyncio.sleep(0.2)
+                    self.check(
+                        "MCP invocation is in flight before shutdown",
+                        not request.done(),
+                    )
+                    process.send_signal(signal.SIGINT)
+                    await asyncio.sleep(0.2)
+                    await transaction.rollback()
+                    try:
+                        response = await request
+                    except ExceptionGroup as exc:
+                        call_error = type(exc).__name__
+            except ExceptionGroup:
+                # After the in-flight call completes, the SDK client attempts a
+                # session DELETE. Uvicorn may already have closed its listener.
+                if response is None and call_error is None:
+                    raise
             code = await asyncio.wait_for(process.wait(), timeout=15)
             self.check(
-                "graceful shutdown drains in-flight request",
-                response.status_code == 200 and code == 0,
-                response_status=response.status_code,
+                "graceful shutdown drains in-flight MCP invocation",
+                (response is not None or call_error is not None) and code == 0,
+                response_error=response.is_error if response is not None else call_error,
                 exit_code=code,
             )
         finally:

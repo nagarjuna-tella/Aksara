@@ -1,12 +1,12 @@
 # Aksara Framework
 
-## Async Python Backend — ORM, Auto-REST, Admin, Diagnostics, and AI Tool Catalog
+## Async Python Backend — ORM, Auto-REST, Admin, Diagnostics, and MCP
 
 <div class="hero-section" markdown>
 
 **Aksara** is a Python backend framework for PostgreSQL applications. Define
 your models and get migrations, generated REST APIs, Admin, diagnostics, and a
-permission-filtered AI tool catalog from the same codebase.
+permission-filtered MCP tools from the same codebase.
 
 [Get Started →](quickstart.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/nagarjuna-tella/Aksara){ .md-button }
@@ -17,12 +17,12 @@ permission-filtered AI tool catalog from the same codebase.
 
 </div>
 
-!!! info "v0.6.0-rc1 contract"
+!!! info "v0.6.0-rc2 contract"
     The v0.6 candidate supports production use within its documented backend
     contract. Studio, AI analysis/provider surfaces, process-local
     investigation sessions, and autonomous agents remain experimental. The
-    `/ai/tools/mcp` endpoint is an MCP-shaped JSON catalog, not an MCP protocol
-    server. Read the [stability and production contract](roadmap/v0-6-stability-contract.md).
+    Generated tools are available through an official-SDK MCP Streamable HTTP
+    server at `/mcp/`. Read the [stability and production contract](roadmap/v0-6-stability-contract.md).
 
 ---
 
@@ -39,7 +39,7 @@ permission-filtered AI tool catalog from the same codebase.
 | **Studio UI** | Visual dashboard at `/studio/ui` — inspect models, routes, queries, and migrations |
 | **AI Console** | Natural-language interface inside Studio — ask questions about your data, routes, and schema in plain English |
 | **AI Review Tools** | Run AI Debugger, Architecture Review, and Performance Analyzer against the same live project context |
-| **MCP-shaped catalog** | Permission-filtered operation descriptions; protocol clients require an adapter |
+| **MCP server** | Permission-filtered generated tools over Streamable HTTP at `/mcp/` |
 | **Doctor & Fix Plans** | `aksara doctor` checks app health and `aksara doctor fix-plan` prints the remediation path |
 | **Migration System** | Schema changes tracked and applied with `aksara migrate` |
 | **TypeScript SDKs** | `aksara generate sdk --language typescript` emits a fetch-ready frontend client |
@@ -148,8 +148,8 @@ curl http://localhost:8000/tasks/
 ```
 
 Once running, open **http://localhost:8000/studio/ui** for local development
-inspection. The `ai_description` metadata also flows to the MCP-shaped catalog
-at `/ai/tools/mcp`. Studio and AI Console remain experimental in v0.6.
+inspection. The `ai_description` metadata also flows to generated MCP tools at
+`/mcp/`. Studio and AI Console remain experimental in v0.6.
 
 ---
 
@@ -328,7 +328,7 @@ pip install aksara-framework
 
 ---
 
-## v0.6.0-rc1 candidate
+## v0.6.0-rc2 candidate
 
 - **Production contract** — stable, experimental, and unsupported surfaces are
   explicit.

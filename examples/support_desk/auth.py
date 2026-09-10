@@ -23,6 +23,8 @@ class _TokenIdentity:
     user_id: str
     role: str
     mcp: bool = False
+    audience: str | None = None
+    expires_at: float | None = None
 
 
 def _configured_identities() -> tuple[_TokenIdentity, ...]:
@@ -47,6 +49,29 @@ def _configured_identities() -> tuple[_TokenIdentity, ...]:
             "support-mcp-owner",
             "mcp",
             mcp=True,
+        ),
+        _TokenIdentity(
+            os.getenv("SUPPORT_DESK_MCP_TENANT_B_TOKEN", "development-mcp-tenant-b-token"),
+            tenant_b,
+            "support-mcp-owner-b",
+            "mcp",
+            mcp=True,
+        ),
+        _TokenIdentity(
+            os.getenv("SUPPORT_DESK_MCP_WRONG_AUDIENCE_TOKEN", "development-mcp-wrong-audience"),
+            tenant_a,
+            "support-mcp-owner",
+            "mcp",
+            mcp=True,
+            audience="wrong-service",
+        ),
+        _TokenIdentity(
+            os.getenv("SUPPORT_DESK_MCP_EXPIRED_TOKEN", "development-mcp-expired-token"),
+            tenant_a,
+            "support-mcp-owner",
+            "mcp",
+            mcp=True,
+            expires_at=1.0,
         ),
     )
 
@@ -82,29 +107,27 @@ class SupportDeskAuthMiddleware(BaseHTTPMiddleware):
                 is_superuser=False,
             )
         elif identity.mcp:
-            expires_at = float(
-                os.getenv("SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT", "0")
-            )
+            expires_at = identity.expires_at
+            if expires_at is None:
+                expires_at = float(os.getenv("SUPPORT_DESK_MCP_TOKEN_EXPIRES_AT", "0"))
             principal = principal_from_mcp_claims(
                 {
                     "jti": "support-desk-mcp",
                     "sub": identity.user_id,
                     "agent_id": "support-desk-reference-agent",
                     "tenant_id": identity.tenant_id,
+                    "roles": (identity.role,),
                     "scopes": ("mcp:read:ticket", "mcp:write:ticket"),
-                    "aud": os.getenv(
-                        "SUPPORT_DESK_MCP_AUDIENCE",
-                        "support-desk",
+                    "aud": identity.audience or os.getenv(
+                        "SUPPORT_DESK_MCP_AUDIENCE", "support-desk"
                     ),
                     "exp": expires_at,
                 }
             )
-            if principal.is_expired:
-                principal = Principal.anonymous()
             user = SimpleNamespace(
-                id=None if principal.is_anonymous else identity.user_id,
-                role=None if principal.is_anonymous else identity.role,
-                is_authenticated=not principal.is_anonymous,
+                id=identity.user_id,
+                role=identity.role,
+                is_authenticated=True,
                 is_staff=False,
                 is_superuser=False,
             )

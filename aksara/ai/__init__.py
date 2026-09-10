@@ -112,6 +112,10 @@ _LAZY_AI_ATTRS = {
     "AiUsageKind": ("aksara.ai.models", "AiUsageKind"),
     "AiRouteHint": ("aksara.ai.models", "AiRouteHint"),
     "AiHintSet": ("aksara.ai.models", "AiHintSet"),
+    # aksara.ai.limits
+    "AgentRuntimeBudget": ("aksara.ai.limits", "AgentRuntimeBudget"),
+    "AgentRuntimeLimits": ("aksara.ai.limits", "AgentRuntimeLimits"),
+    "RuntimeLimitExceeded": ("aksara.ai.limits", "RuntimeLimitExceeded"),
     # aksara.ai.registry
     "AiToolRegistry": ("aksara.ai.registry", "AiToolRegistry"),
     "discover_tools_from_viewset": ("aksara.ai.registry", "discover_tools_from_viewset"),
@@ -344,6 +348,9 @@ __all__ = [
     "AiTool",
     "AiToolParam",
     "ToolKind",
+    "AgentRuntimeBudget",
+    "AgentRuntimeLimits",
+    "RuntimeLimitExceeded",
     # Registry
     "AiToolRegistry",
     "discover_tools_from_viewset",

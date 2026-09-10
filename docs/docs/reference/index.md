@@ -99,11 +99,11 @@ aksara dev
 
 ## Version Information
 
-Candidate version: **0.6.0rc1** (`v0.6.0-rc1` release label)
+Candidate version: **0.6.0rc2** (`v0.6.0-rc2` release label)
 
 ```python
 import aksara
-print(aksara.__version__)  # 0.6.0rc1
+print(aksara.__version__)  # 0.6.0rc2
 ```
 
 Check your installed version:

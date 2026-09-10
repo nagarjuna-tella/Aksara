@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import HTTPException, Request
 
 from aksara import Aksara
 from aksara.manager import DoesNotExist
+from aksara.mcp import JsonlMCPAuditSink
 from aksara.migrations.executor import discover_migrations
 from aksara.permissions import check_permissions
 from aksara.security.principal import Principal
@@ -38,15 +40,18 @@ async def lifespan(app: Aksara):
     yield
 
 
+_audit_path = os.getenv("SUPPORT_DESK_MCP_AUDIT_PATH")
+
 app = Aksara(
     database_url=DATABASE_URL,
     title="Aksara Support Desk",
     description="Production-shaped multi-tenant support desk reference application",
-    version="0.6.0-rc1",
+    version="0.6.0-rc2",
     debug=False,
     enable_admin=True,
     auto_discover_views=False,
     lifespan=lifespan,
+    mcp_audit_sink=JsonlMCPAuditSink(_audit_path) if _audit_path else None,
 )
 app.add_middleware(SupportDeskAuthMiddleware)
 app.register_viewsets(VIEWSETS)

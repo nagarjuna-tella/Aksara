@@ -72,7 +72,7 @@ You can also check the Python package:
 '0.5.54'
 ```
 
-An installed v0.6.0 release candidate reports the PEP 440 form `0.6.0rc1`.
+An installed v0.6.0 release candidate reports the PEP 440 form `0.6.0rc2`.
 See [runtime compatibility](../reference/runtime-compatibility.md) before using
 an unpublished checkout or release candidate.
 

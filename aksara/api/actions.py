@@ -55,6 +55,7 @@ def action(
     description: Optional[str] = None,
     permission_classes: Optional[List[Type["BasePermission"]]] = None,
     ai_exposed: bool = True,
+    requires_approval: bool = False,
 ) -> Callable[[F], F]:
     """
     Decorator to mark a ModelViewSet method as a custom action endpoint.
@@ -75,6 +76,8 @@ def action(
                            If None, uses the ViewSet's permission_classes.
         ai_exposed: Whether this action is exposed to AI agents.
                    Defaults to True. Set to False to hide from AI.
+        requires_approval: Require an application-issued signed approval grant
+                           before MCP can invoke this action.
     
     Returns:
         Decorated function with _aksara_action metadata attached.
@@ -127,6 +130,7 @@ def action(
             "description": description,
             "permission_classes": permission_classes,
             "ai_exposed": ai_exposed,
+            "requires_approval": requires_approval,
         }
         
         return func

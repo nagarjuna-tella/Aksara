@@ -107,6 +107,12 @@ class AiTool(BaseModel):
         default_factory=list,
         description="Permission class names"
     )
+    tenant_scoped: bool = Field(False, description="Whether the resource is tenant-bound")
+    approval_required: bool = Field(False, description="Whether invocation requires a signed approval grant")
+    server_controlled_fields: list[str] = Field(
+        default_factory=list,
+        description="Fields assigned by the server and forbidden as tool input",
+    )
     
     # AI metadata
     ai_tags: List[str] = Field(

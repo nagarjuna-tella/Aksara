@@ -146,7 +146,7 @@ supported web route traversal pass the release gate at commit `094169e`. The
 independent benchmark overhaul remains outside this correctness release. See the
 [runtime compatibility contract](reference/runtime-compatibility.md).
 
-## v0.6.0-rc1 Candidate (Unpublished)
+## v0.6.0-rc2 Candidate (Unpublished)
 
 The candidate defines the bounded [v0.6 stability and production
 contract](roadmap/v0-6-stability-contract.md) and includes a packaged,

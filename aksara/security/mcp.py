@@ -35,6 +35,7 @@ class MCPCredentialClaims:
     human_owner_id: Optional[str] = None
     agent_id: Optional[str] = None
     tenant_id: Optional[str] = None
+    roles: tuple[str, ...] = ()
     scopes: tuple[str, ...] = ()
     audience: Optional[str] = None
     token_id: Optional[str] = None
@@ -61,6 +62,10 @@ class MCPCredentialClaims:
         if isinstance(scopes_raw, str):
             scopes_raw = scopes_raw.split()
         scopes = tuple(scopes_raw)
+        roles_raw = claims.get("roles") or claims.get("role") or []
+        if isinstance(roles_raw, str):
+            roles_raw = roles_raw.split()
+        roles = tuple(roles_raw)
 
         expires_at: Optional[datetime] = None
         exp = claims.get("exp")
@@ -80,7 +85,8 @@ class MCPCredentialClaims:
 
         known_keys = frozenset({
             "sub", "user_id", "human_owner_id", "agent_id", "tenant_id",
-            "token_id", "jti", "aud", "audience", "scopes", "scope", "exp", "iat",
+            "token_id", "jti", "aud", "audience", "roles", "role",
+            "scopes", "scope", "exp", "iat",
         })
         metadata = {k: v for k, v in claims.items() if k not in known_keys}
 
@@ -89,6 +95,7 @@ class MCPCredentialClaims:
             human_owner_id=str(human_owner_id) if human_owner_id else None,
             agent_id=str(agent_id) if agent_id else None,
             tenant_id=str(tenant_id) if tenant_id else None,
+            roles=roles,
             scopes=scopes,
             audience=str(audience) if audience else None,
             token_id=str(token_id) if token_id else None,

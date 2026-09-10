@@ -93,10 +93,11 @@ def principal_from_request(request: Any) -> Principal:
     Resolve a Principal from a Starlette/FastAPI request.
 
     Resolution order:
-    1. If request.state.is_ai_agent == True → AI agent principal
-    2. If request.state.user is set → user principal
-    3. If request.user is set → user principal (Django-style compat)
-    4. Otherwise → anonymous
+    1. A canonical Principal already resolved by trusted middleware
+    2. If request.state.is_ai_agent == True → AI agent principal
+    3. If request.state.user is set → user principal
+    4. If request.user is set → user principal (Django-style compat)
+    5. Otherwise → anonymous
 
     Tenant resolution (server-side only):
     - request.state.tenant_id (set by TenantMiddleware — TRUSTED)
@@ -109,6 +110,13 @@ def principal_from_request(request: Any) -> Principal:
     - Otherwise "session" for user, "ai_agent" for AI agents
     """
     state = getattr(request, "state", None)
+
+    # Authentication middleware owns this value. Reuse it instead of rebuilding
+    # a lower-fidelity identity from legacy state flags and losing token claims.
+    if state is not None:
+        resolved = getattr(state, "principal", None)
+        if isinstance(resolved, Principal):
+            return resolved
 
     # AI agent identity (set server-side by AIAgentMiddleware)
     if state is not None and getattr(state, "is_ai_agent", False) is True:
@@ -166,6 +174,10 @@ def principal_from_mcp_claims(claims: Mapping[str, Any]) -> Principal:
     if isinstance(scopes_raw, str):
         scopes_raw = scopes_raw.split()
     scopes = list(scopes_raw)
+    roles_raw = claims.get("roles") or claims.get("role") or []
+    if isinstance(roles_raw, str):
+        roles_raw = roles_raw.split()
+    roles = list(roles_raw)
 
     expires_at: Optional[datetime] = None
     exp = claims.get("exp")
@@ -177,8 +189,9 @@ def principal_from_mcp_claims(claims: Mapping[str, Any]) -> Principal:
 
     audience = claims.get("aud") or claims.get("audience")
     metadata = {k: v for k, v in claims.items()
-                if k not in ("sub", "user_id", "tenant_id", "agent_id",
-                             "token_id", "jti", "scopes", "exp", "iat", "aud", "audience")}
+                if k not in ("sub", "user_id", "human_owner_id", "tenant_id", "agent_id",
+                             "token_id", "jti", "roles", "role", "scopes", "scope",
+                             "exp", "iat", "aud", "audience")}
     if audience:
         metadata["audience"] = audience
 
@@ -187,6 +200,7 @@ def principal_from_mcp_claims(claims: Mapping[str, Any]) -> Principal:
         human_owner_id=str(human_owner) if human_owner else None,
         tenant_id=str(tenant_id) if tenant_id else None,
         agent_id=str(agent_id) if agent_id else None,
+        roles=roles,
         scopes=scopes,
         expires_at=expires_at,
         metadata=metadata,

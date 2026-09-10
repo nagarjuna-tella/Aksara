@@ -1,43 +1,41 @@
-# MCP-shaped tool catalog
+# MCP quickstart
 
-Aksara can describe registered model and ViewSet operations as an MCP-shaped
-JSON catalog.
+Aksara turns registered, AI-exposed ViewSets into real MCP tools over
+Streamable HTTP.
 
-## Supported boundary
+## Enable the server
 
-```text
-GET http://127.0.0.1:8000/ai/tools/mcp
+```python
+from aksara import Aksara, configure
+
+configure(mcp_enabled=True, mcp_token_audience="my-app")
+app = Aksara()
 ```
 
-The response contains permission-filtered tool names, descriptions, JSON input
-schemas, and HTTP method/path metadata. Aksara v0.6 does not provide an MCP
-protocol server, transport negotiation, or a protocol tool-call endpoint. An
-MCP client therefore needs an adapter that reads this catalog and invokes the
-described REST route.
+Start the app and connect an MCP client to:
 
-## Inspect the catalog
+```text
+http://127.0.0.1:8000/mcp/
+```
 
-Start the app, authenticate as required by your application, and fetch the
-catalog:
+Authentication middleware must resolve the bearer credential into an MCP
+`Principal` with a tenant, expiry, audience, token ID, agent and owner identity,
+and explicit scopes. A model named `Ticket` uses `mcp:read:ticket` for GET tools
+and `mcp:write:ticket` for mutations.
+
+The server negotiates the protocol, lists generated CRUD tools and schemas,
+and executes calls through the same generated API, permissions, `PolicyEngine`,
+ORM validation, transaction, tenancy, and RLS path used by REST.
+
+The inspection catalog remains available at:
 
 ```bash
-aksara dev
 curl -H "Authorization: Bearer $APP_TOKEN" \
   http://127.0.0.1:8000/ai/tools/mcp
 ```
 
-Aksara derives entries from registered ViewSets and custom `@action` methods.
-Field metadata such as `ai_description`, `ai_sensitive`, and
-`ai_agent_writable` affects generated schemas and runtime write policy.
+Before production use, review `ai_sensitive` and `ai_agent_writable` on every
+exposed field and run `aksara doctor production-check --release`.
 
-Before enabling the catalog in production:
-
-1. Resolve the credential to a server-owned `Principal`.
-2. Require explicit scopes, audience, tenant binding, and expiry.
-3. Review every AI-exposed model field and set `ai_agent_writable` explicitly.
-4. Execute the described REST operation through normal authentication,
-   permission, field-policy, and RLS checks.
-5. Run `aksara doctor production-check --release`.
-
-See the [MCP integration boundary](../ai-mode/mcp.md) and the
-[production contract](../roadmap/v0-6-stability-contract.md).
+See [MCP protocol server](../ai-mode/mcp.md) for approval, audit, errors,
+transport settings, and stability limits.

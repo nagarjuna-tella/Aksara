@@ -23,9 +23,13 @@ Safety:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from aksara.ai.limits import AgentRuntimeBudget, AgentRuntimeLimits
 
 logger = logging.getLogger("aksara.ai.runtime")
 
@@ -35,6 +39,8 @@ async def run_prompt_pack(
     *,
     provider_override: Optional[str] = None,
     model_override: Optional[str] = None,
+    limits: AgentRuntimeLimits | None = None,
+    budget: AgentRuntimeBudget | None = None,
 ) -> Dict[str, Any]:
     """Execute an AI flow prompt pack through a connector.
 
@@ -63,6 +69,14 @@ async def run_prompt_pack(
                 "error": None
             }
     """
+    from aksara.ai.limits import (
+        AgentRuntimeBudget,
+        AgentRuntimeLimits,
+        RuntimeLimitExceeded,
+    )
+
+    active_limits = limits or AgentRuntimeLimits()
+    active_budget = budget or AgentRuntimeBudget(active_limits)
     try:
         # 1. Resolve provider + model
         provider = provider_override or pack.get("provider", "")
@@ -91,13 +105,32 @@ async def run_prompt_pack(
 
         # 4. Execute
         t0 = time.monotonic()
-        result = await connector.chat(
-            messages=messages,
-            model=model,
-            temperature=pack.get("temperature", 0.2),
-            max_tokens=pack.get("max_tokens", 1024),
-        )
+        requested_tokens = int(pack.get("max_tokens", 1024))
+        if active_limits.token_budget is not None:
+            requested_tokens = min(requested_tokens, active_limits.token_budget - active_budget.tokens)
+            if requested_tokens <= 0:
+                raise RuntimeLimitExceeded("token_budget_exceeded", "Provider token budget exhausted.")
+        try:
+            async with asyncio.timeout(
+                min(active_limits.run_timeout_seconds, active_limits.provider_timeout_seconds)
+            ):
+                result = await connector.chat(
+                    messages=messages,
+                    model=model,
+                    temperature=pack.get("temperature", 0.2),
+                    max_tokens=requested_tokens,
+                )
+        except asyncio.CancelledError:
+            raise
+        except TimeoutError:
+            return _error_response("AI provider call timed out.", "PROVIDER_TIMEOUT")
+        except Exception as exc:
+            logger.exception("AI provider call failed")
+            return _error_response(str(exc), "PROVIDER_ERROR")
         elapsed = (time.monotonic() - t0) * 1000
+
+        if not isinstance(result, dict) or not isinstance(result.get("ok"), bool):
+            return _error_response("AI provider returned a malformed response.", "MALFORMED_PROVIDER_RESPONSE")
 
         if not result.get("ok"):
             # v0.5.32: Emit provider_unreachable event
@@ -123,17 +156,42 @@ async def run_prompt_pack(
                 "raw": result.get("raw", {}),
             }
 
+        response_text = result.get("text", "")
+        if not isinstance(response_text, str):
+            return _error_response("AI provider returned a malformed text response.", "MALFORMED_PROVIDER_RESPONSE")
+        tokens = result.get("tokens", {})
+        if not isinstance(tokens, dict):
+            return _error_response("AI provider returned malformed usage data.", "MALFORMED_PROVIDER_RESPONSE")
+        total_tokens = tokens.get("total", 0)
+        cost_usd = result.get("cost_usd", result.get("raw", {}).get("cost_usd", 0) if isinstance(result.get("raw"), dict) else 0)
+        active_budget.consume_usage(tokens=int(total_tokens or 0), cost_usd=float(cost_usd or 0))
+        tool_calls = result.get("tool_calls")
+        if tool_calls is None and isinstance(result.get("raw"), dict):
+            tool_calls = result["raw"].get("tool_calls", [])
+        if tool_calls is not None:
+            if not isinstance(tool_calls, list):
+                return _error_response("AI provider returned malformed tool calls.", "MALFORMED_PROVIDER_RESPONSE")
+            for index, tool_call in enumerate(tool_calls):
+                call_id = tool_call.get("id") if isinstance(tool_call, dict) else str(index)
+                active_budget.consume_tool_call(str(call_id) if call_id is not None else None)
+
         return {
             "ok": True,
             "provider": provider,
             "model": model,
-            "response": result.get("text", ""),
-            "tokens": result.get("tokens", {}),
+            "response": response_text,
+            "structured_response": result.get("structured"),
+            "tool_calls": tool_calls or [],
+            "tokens": tokens,
             "elapsed_ms": elapsed,
             "error": None,
             "raw": result.get("raw", {}),
         }
 
+    except RuntimeLimitExceeded as exc:
+        return _error_response(str(exc), exc.code.upper())
+    except asyncio.CancelledError:
+        raise
     except Exception as exc:
         logger.exception("Runtime execution error")
         return _error_response(str(exc), "RUNTIME_ERROR")

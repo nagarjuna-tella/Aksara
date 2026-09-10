@@ -37,13 +37,13 @@ from aksara.routing import iter_routes
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Literal, Optional, Set, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
+    from aksara.ai.limits import AgentRuntimeLimits
 
 
 # =============================================================================
@@ -1374,7 +1374,7 @@ async def _handle_run_query_check(
             )
         
         # Execute the query
-        result = await execute_ai_query_plan(query_plan, app)
+        result = await execute_ai_query_plan(query_plan, app)  # type: ignore[call-arg]
         
         return AiPlanStepResult(
             id=step.id,
@@ -1416,7 +1416,6 @@ async def _handle_run_health_check(
         
         # Check database
         try:
-            from aksara.db import Database
             from aksara.conf import settings
             if settings.database_url:
                 checks["database_configured"] = True
@@ -1491,7 +1490,9 @@ STEP_HANDLERS: Dict[str, Callable] = {
 async def execute_plan(
     app: "FastAPI",
     plan: AiPlan,
-    dry_run: bool = False
+    dry_run: bool = False,
+    *,
+    limits: AgentRuntimeLimits | None = None,
 ) -> AiPlanExecutionResult:
     """
     Execute an AI plan.
@@ -1512,6 +1513,17 @@ async def execute_plan(
     """
     notes: List[str] = []
     step_results: List[AiPlanStepResult] = []
+    from aksara.ai.limits import AgentRuntimeLimits
+
+    active_limits = limits or AgentRuntimeLimits()
+    if len(plan.steps) > active_limits.max_steps:
+        return AiPlanExecutionResult(
+            success=False,
+            steps=[],
+            notes=["Runtime limit exceeded: maximum planning/execution steps."],
+            dry_run=dry_run,
+        )
+    deadline = asyncio.get_running_loop().time() + active_limits.run_timeout_seconds
     
     notes.append(f"Executing plan: {plan.intent}")
     notes.append(f"Total steps: {len(plan.steps)}")
@@ -1548,7 +1560,11 @@ async def execute_plan(
         
         try:
             # Execute the handler
-            result = await handler(app, step, dry_run)
+            remaining = deadline - asyncio.get_running_loop().time()
+            if remaining <= 0:
+                raise TimeoutError("overall plan timeout")
+            async with asyncio.timeout(min(remaining, active_limits.tool_timeout_seconds)):
+                result = await handler(app, step, dry_run)
             step_results.append(result)
             
             # Store output for dependent steps
@@ -1566,6 +1582,20 @@ async def execute_plan(
                     notes=notes,
                     dry_run=dry_run
                 )
+        except asyncio.CancelledError:
+            raise
+        except TimeoutError:
+            result = AiPlanStepResult(
+                id=step.id,
+                type=step.type,
+                success=False,
+                error="Runtime limit exceeded: step or overall plan timeout",
+            )
+            step_results.append(result)
+            notes.append(f"Step {step.id}: runtime timeout")
+            return AiPlanExecutionResult(
+                success=False, steps=step_results, notes=notes, dry_run=dry_run
+            )
         except Exception as e:
             result = AiPlanStepResult(
                 id=step.id,
