@@ -115,20 +115,24 @@ async def _reference(
         value = await value
     if not isinstance(value, PrincipalReference):
         raise TypeError("principal_reference_factory must return PrincipalReference")
-    if not principal.is_system:
-        if value.tenant_id != principal.tenant_id:
-            raise AuthorizationDenied(
-                "principal reference tenant does not match the current principal"
-            )
-        if principal.is_ai_agent:
-            if value.agent_id != principal.agent_id:
-                raise AuthorizationDenied(
-                    "principal reference agent does not match the current principal"
-                )
-        elif value.subject_id != principal.user_id:
-            raise AuthorizationDenied(
-                "principal reference subject does not match the current principal"
-            )
+    expected_kind = (
+        "system"
+        if principal.is_system
+        else ("agent" if principal.is_ai_agent else "user")
+    )
+    if value.principal_kind != expected_kind or value.tenant_id != principal.tenant_id:
+        raise AuthorizationDenied(
+            "principal reference identity does not match the current principal"
+        )
+    if not principal.is_system and (
+        value.subject_id != principal.user_id
+        or value.human_owner_id != principal.human_owner_id
+        or value.agent_id != principal.agent_id
+        or value.credential_id != principal.token_id
+    ):
+        raise AuthorizationDenied(
+            "principal reference identity does not match the current principal"
+        )
     return value
 
 

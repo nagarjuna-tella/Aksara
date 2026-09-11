@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from uuid import uuid4
 
 import httpx
@@ -16,11 +17,49 @@ from aksara.durable import (
     PrincipalReference,
     create_durable_operations_router,
 )
+from aksara.durable.api import _reference
+from aksara.durable.errors import AuthorizationDenied
 from aksara.security.principal import Principal
 
 
 async def _handler(_context, command):
     return command
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("field", "forged_value"),
+    [
+        ("principal_kind", "user"),
+        ("subject_id", "forged-subject"),
+        ("tenant_id", "forged-tenant"),
+        ("human_owner_id", "forged-owner"),
+        ("agent_id", "forged-agent"),
+        ("credential_id", "forged-token"),
+    ],
+)
+async def test_principal_reference_rejects_each_forged_stable_identity_field(
+    field,
+    forged_value,
+):
+    principal = Principal.for_ai_agent(
+        agent_id="agent-1",
+        human_owner_id="owner-1",
+        tenant_id="tenant-1",
+        token_id="token-1",
+    )
+    valid = PrincipalReference.from_principal(
+        principal,
+        resolver_key="test",
+        identity_namespace="api-tests",
+    )
+
+    async def forged_reference(_principal, _request):
+        return replace(valid, **{field: forged_value})
+
+    request = Request({"type": "http", "method": "POST", "path": "/"})
+    with pytest.raises(AuthorizationDenied):
+        await _reference(forged_reference, principal, request)
 
 
 @pytest.mark.asyncio

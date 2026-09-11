@@ -74,7 +74,11 @@ def validate_database_access(database: Database) -> None:
         raise RuntimeError(
             "postgres_atomic handlers may use only their execution context Database"
         )
-    if asyncio.current_task() is not guard.owner_task:
+    try:
+        current_task = asyncio.current_task()
+    except RuntimeError:
+        current_task = None
+    if current_task is not guard.owner_task:
         guard.invalidate("a child task or thread used the inherited pinned connection")
         raise RuntimeError(
             "postgres_atomic database work must stay in the owning asyncio task"

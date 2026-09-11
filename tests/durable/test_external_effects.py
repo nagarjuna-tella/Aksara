@@ -480,6 +480,39 @@ async def test_cancellation_after_intent_prevents_external_send(durable_db):
 
 
 @pytest.mark.asyncio
+async def test_authorization_revoked_after_intent_prevents_external_send(durable_db):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service: DurableOperationService
+
+    async def revoke_after_intent(name: str):
+        if name == "after_effect_intent":
+            service.resolvers.register(
+                "test",
+                "1",
+                lambda _reference: PrincipalResolution.resolved(
+                    Principal.for_user("user-1", tenant_id=tenant)
+                ),
+                replace=True,
+            )
+
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        boundary_hook=revoke_after_intent,
+    )
+    _, claim = await _claim(service, tenant, {"amount": 25}, lease=1)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "authorization_denied"
+    assert provider.calls == []
+
+
+@pytest.mark.asyncio
 async def test_deadline_after_intent_prevents_external_send(durable_db):
     tenant = str(uuid4())
     provider = RecordingIdempotentProvider()

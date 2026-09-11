@@ -37,7 +37,7 @@ def _tenant(tenant_id: str):
         tenant_id_var.reset(token)
 
 
-def _runtime(durable_db, tenant: str):
+def _runtime(durable_db, tenant: str, *, namespace: str = "task-tests"):
     async def handler(context, command):
         await context.database.execute(
             """
@@ -72,7 +72,7 @@ def _runtime(durable_db, tenant: str):
     )
     return DurableOperationService(
         durable_db,
-        application_namespace="task-tests",
+        application_namespace=namespace,
         actions=actions,
         resolvers=resolvers,
         retention_seconds=60,
@@ -119,6 +119,7 @@ async def test_task_backed_operation_uses_operation_attempt_as_authority(durable
     )
     assert duplicate.id == queued.id
     assert queued.operation_id == admitted.operation.id
+    assert queued.operation_application_namespace == service.application_namespace
 
     worker = TaskWorker(
         durable_db,
@@ -190,6 +191,44 @@ async def test_worker_without_durable_service_leaves_linked_task_pending(durable
     assert retained["status"] == "pending"
     assert retained["attempts"] == 0
     assert retained["locked_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_worker_leaves_another_application_namespace_task_pending(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+    owner = _runtime(durable_db, tenant, namespace="application-b")
+    other = _runtime(durable_db, tenant, namespace="application-a")
+    with _tenant(tenant):
+        await durable_db.execute(
+            "INSERT INTO durable_test_counters (id, tenant_scope) VALUES ($1, $2)",
+            counter_id,
+            tenant,
+        )
+    admitted = await owner.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=owner,
+        tenant_id=tenant,
+    )
+
+    assert await TaskWorker(durable_db, durable_service=other).poll_once() is None
+    retained = await durable_db.fetchrow(
+        "SELECT status, attempts, locked_at FROM aksara_tasks WHERE id = $1",
+        queued.id,
+    )
+    assert retained["status"] == "pending"
+    assert retained["attempts"] == 0
+    assert retained["locked_at"] is None
+
+    completed = await TaskWorker(durable_db, durable_service=owner).poll_once()
+    assert completed is not None
+    assert completed.id == queued.id
+    assert completed.status == "completed"
 
 
 @pytest.mark.asyncio

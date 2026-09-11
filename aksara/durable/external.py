@@ -152,6 +152,7 @@ class ExternalEffectContext:
         if is_recovery and not adapter.supports_idempotency:
             if adapter.supports_reconciliation:
                 await self._executor._reach_boundary("before_reconciliation")
+                await self._reauthorize(action)
                 reconciliation = await adapter.reconcile(
                     idempotency_key=downstream_key,
                     provider_reference=effect["provider_reference"],
@@ -181,6 +182,7 @@ class ExternalEffectContext:
 
         await self._mark_execution_started(effect["id"])
         await self._executor._reach_boundary("before_external_send")
+        await self._reauthorize(action)
         try:
             performed: Any = adapter.perform(
                 normalized_request,
@@ -204,6 +206,19 @@ class ExternalEffectContext:
         await self._confirm(effect["id"], result)
         await self._executor._reach_boundary("after_effect_confirmation")
         return normalize_json(result.value)
+
+    async def _reauthorize(self, action: Any) -> None:
+        principal = await self._executor._identity._resolve_or_fail(self.claim)
+        if principal is None:
+            raise _OperationClosed("current principal could not be established")
+        if not await self._executor._identity._authorize(action, principal, self.claim):
+            await self._executor.service.fail_attempt(
+                self.claim,
+                code=FailureReason.AUTHORIZATION_DENIED.value,
+                message="current authorization denied the external effect",
+                retryable=False,
+            )
+            raise _OperationClosed("current authorization denied the external effect")
 
     async def _record_or_load_intent(
         self,

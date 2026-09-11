@@ -242,7 +242,8 @@ CREATE TABLE aksara_operation_effects (
 );
 
 ALTER TABLE aksara_tasks
-ADD COLUMN operation_id UUID REFERENCES aksara_operations(id) ON DELETE SET NULL;
+ADD COLUMN operation_id UUID REFERENCES aksara_operations(id) ON DELETE SET NULL,
+ADD COLUMN operation_application_namespace VARCHAR(255);
 
 CREATE UNIQUE INDEX uq_aksara_tasks_operation_id
 ON aksara_tasks (operation_id)
@@ -295,6 +296,7 @@ WITH CHECK (tenant_scope = current_setting('aksara.current_tenant_id', true));
 
 REVERSE_SQL = """
 DROP INDEX IF EXISTS uq_aksara_tasks_operation_id;
+ALTER TABLE aksara_tasks DROP COLUMN IF EXISTS operation_application_namespace;
 ALTER TABLE aksara_tasks DROP COLUMN IF EXISTS operation_id;
 DROP TABLE IF EXISTS aksara_operation_effects;
 DROP TABLE IF EXISTS aksara_operation_outbox;

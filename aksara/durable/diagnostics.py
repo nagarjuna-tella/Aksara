@@ -85,16 +85,24 @@ async def check_durable_operations(
                 )
             }
             missing_tables = sorted(set(_REQUIRED_TABLES) - present)
-            task_link = await connection.fetchval(
+            task_link_rows = await connection.fetch(
                 """
-                SELECT EXISTS (
-                    SELECT 1 FROM information_schema.columns
-                    WHERE table_schema = current_schema()
-                      AND table_name = 'aksara_tasks' AND column_name = 'operation_id'
-                )
-                """
+                SELECT column_name FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'aksara_tasks'
+                  AND column_name = ANY($1::text[])
+                """,
+                ["operation_id", "operation_application_namespace"],
             )
-            if missing_tables or not task_link:
+            task_link_columns = {row["column_name"] for row in task_link_rows}
+            required_task_link_columns = {
+                "operation_id",
+                "operation_application_namespace",
+            }
+            missing_task_link_columns = sorted(
+                required_task_link_columns - task_link_columns
+            )
+            if missing_tables or missing_task_link_columns:
                 results.append(
                     DurableDiagnosticResult(
                         id="durable.schema",
@@ -102,7 +110,7 @@ async def check_durable_operations(
                         message="Durable operation internal migrations are not current.",
                         details={
                             "missing_tables": missing_tables,
-                            "task_link_column": bool(task_link),
+                            "missing_task_link_columns": missing_task_link_columns,
                         },
                     )
                 )

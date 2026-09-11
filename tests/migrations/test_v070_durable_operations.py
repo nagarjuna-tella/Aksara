@@ -90,6 +90,7 @@ async def test_durable_schema_bootstraps_and_reverses_transactionally():
             )
         }
         assert "operation_id" in task_columns
+        assert "operation_application_namespace" in task_columns
 
         rls_tables = {
             row["tablename"]

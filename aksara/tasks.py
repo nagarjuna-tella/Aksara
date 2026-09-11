@@ -115,6 +115,7 @@ class TaskRecord:
     # tenant scope (e.g. internal jobs).
     tenant_id: Optional[str] = None
     operation_id: UUID | None = None
+    operation_application_namespace: str | None = None
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -132,6 +133,9 @@ class TaskRecord:
             queue=record.get("queue", "default") or "default",
             tenant_id=record.get("tenant_id"),
             operation_id=record.get("operation_id"),
+            operation_application_namespace=record.get(
+                "operation_application_namespace"
+            ),
             payload=_decode_json_value(record["payload"]) or {},
             status=record["status"],
             attempts=record["attempts"],
@@ -440,14 +444,16 @@ async def enqueue_operation_task(
                 f'''
                 INSERT INTO "{TASKS_TABLE}" (
                     task_name, queue, tenant_id, payload, max_attempts,
-                    available_at, operation_id
+                    available_at, operation_id, operation_application_namespace
                 ) VALUES (
                     $1, $2, $3, '{{}}'::jsonb, $4,
                     CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second'),
-                    $6
+                    $6, $7
                 )
                 ON CONFLICT (operation_id) WHERE operation_id IS NOT NULL
-                DO UPDATE SET operation_id = EXCLUDED.operation_id
+                DO UPDATE SET
+                    operation_id = EXCLUDED.operation_id,
+                    operation_application_namespace = EXCLUDED.operation_application_namespace
                 RETURNING *
                 ''',
                 DURABLE_OPERATION_TASK_NAME,
@@ -456,6 +462,7 @@ async def enqueue_operation_task(
                 operation["max_attempts"],
                 delay_seconds,
                 operation_id,
+                service.application_namespace,
             )
     if record is None:
         raise RuntimeError("failed to enqueue operation-backed task")
@@ -673,6 +680,7 @@ class TaskWorker:
                 f'''
                 SELECT * FROM "{TASKS_TABLE}"
                 WHERE status = 'running' AND operation_id IS NOT NULL
+                  AND operation_application_namespace = $5
                   AND locked_at < CURRENT_TIMESTAMP
                       - ($1::double precision * INTERVAL '1 second')
                   AND (
@@ -687,6 +695,7 @@ class TaskWorker:
                 cursor_locked_at,
                 cursor_id,
                 _STALE_OPERATION_RECOVERY_BATCH_SIZE,
+                self.durable_service.application_namespace,
             )
             if not stale_tasks:
                 break
@@ -746,6 +755,7 @@ class TaskWorker:
                                     THEN CURRENT_TIMESTAMP ELSE available_at END,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = $1 AND status = 'running'
+                              AND operation_application_namespace = $7
                               AND locked_at < CURRENT_TIMESTAMP
                                   - ($6::double precision * INTERVAL '1 second')
                             ''',
@@ -757,6 +767,7 @@ class TaskWorker:
                             error,
                             operation["completed_at"],
                             self.stale_lock_timeout_seconds,
+                            self.durable_service.application_namespace,
                         )
                         recovered += update_status == "UPDATE 1"
         return recovered
@@ -813,7 +824,10 @@ class TaskWorker:
                     FROM "{TASKS_TABLE}"
                     WHERE status = 'pending'
                       AND available_at <= CURRENT_TIMESTAMP
-                      AND ($2::boolean OR operation_id IS NULL)
+                      AND (
+                          operation_id IS NULL
+                          OR operation_application_namespace = $2
+                      )
                       AND queue = ANY($1::text[])
                     ORDER BY available_at ASC, created_at ASC
                     FOR UPDATE SKIP LOCKED
@@ -829,7 +843,7 @@ class TaskWorker:
                 RETURNING *
                 ''',
                 self.queues,
-                self.durable_service is not None,
+                self.durable_service.application_namespace,
             )
         elif self.queues is not None:
             record = await database.fetchrow(
@@ -863,7 +877,10 @@ class TaskWorker:
                     SELECT id
                     FROM "{TASKS_TABLE}"
                     WHERE status = 'pending' AND available_at <= CURRENT_TIMESTAMP
-                      AND ($1::boolean OR operation_id IS NULL)
+                      AND (
+                          operation_id IS NULL
+                          OR operation_application_namespace = $1
+                      )
                     ORDER BY available_at ASC, created_at ASC
                     FOR UPDATE SKIP LOCKED
                     LIMIT 1
@@ -877,7 +894,7 @@ class TaskWorker:
                 WHERE id IN (SELECT id FROM next_task)
                 RETURNING *
                 ''',
-                self.durable_service is not None,
+                self.durable_service.application_namespace,
             )
         else:
             record = await database.fetchrow(
@@ -1067,6 +1084,8 @@ class TaskWorker:
         service = self.durable_service
         if service is None or task_record.operation_id is None:
             return
+        if task_record.operation_application_namespace != service.application_namespace:
+            return
         from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
         from aksara.durable.external import ExternalOperationExecutor
         from aksara.durable.service import _tenant_context
@@ -1146,6 +1165,7 @@ class TaskWorker:
                     ELSE available_at END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $1 AND operation_id = $6 AND status = 'running'
+              AND operation_application_namespace = $9
               AND attempts = $7 AND locked_at = $8
             ''',
             task_record.id,
@@ -1156,6 +1176,7 @@ class TaskWorker:
             task_record.operation_id,
             task_record.attempts,
             task_record.locked_at,
+            task_record.operation_application_namespace,
         )
 
     async def _execute_callable(

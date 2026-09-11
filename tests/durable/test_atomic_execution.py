@@ -269,6 +269,30 @@ async def test_direct_pool_and_child_task_access_invalidate_boundary(durable_db)
 
 
 @pytest.mark.asyncio
+async def test_worker_thread_access_invalidates_boundary_when_error_is_swallowed(
+    durable_db,
+):
+    tenant, counter_id = str(uuid4()), uuid4()
+
+    async def handler(context, _command):
+        def escape_to_thread():
+            with pytest.raises(RuntimeError, match="owning asyncio task"):
+                _ = context.database.pool
+
+        await asyncio.to_thread(escape_to_thread)
+        return {"unsafe": True}
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    _, claim = await _admit_claim(service, tenant, counter_id)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "internal_error"
+
+
+@pytest.mark.asyncio
 async def test_different_database_and_swallowed_savepoint_error_invalidate_boundary(
     durable_db,
 ):
