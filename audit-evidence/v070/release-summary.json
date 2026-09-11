@@ -5,7 +5,7 @@
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "c8bb2063fd8dfb5936490927bca174e1c13de81a",
+  "candidate_implementation_sha": "be95d189d84b912d0ab247c59b9e7523fb432f9b",
   "hosted_postgresql_16": "pass",
   "mcp_tasks": {
     "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
