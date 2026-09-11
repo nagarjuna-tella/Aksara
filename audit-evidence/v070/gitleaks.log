@@ -5,5 +5,5 @@
     ○ ░
     ░    gitleaks
 
-[90m1:10AM[0m [32mINF[0m [1mscanned ~10760226 bytes (10.76 MB) in 1.1s[0m
-[90m1:10AM[0m [32mINF[0m [1mno leaks found[0m
+[90m2:12AM[0m [32mINF[0m [1mscanned ~10778661 bytes (10.78 MB) in 1.07s[0m
+[90m2:12AM[0m [32mINF[0m [1mno leaks found[0m

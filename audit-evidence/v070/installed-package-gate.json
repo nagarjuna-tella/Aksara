@@ -1,9 +1,9 @@
 {
   "artifact": {
     "filename": "aksara_framework-0.7.0rc1-py3-none-any.whl",
-    "sha256": "1c5a421817d3d74e8c9db543990753ca2c16044da82383baf2d4fee3b2f88f61"
+    "sha256": "2eb9d7e1dfded5f46726768d7ddcb0cd8616773f9a9fccfe2f8a4df7735ab6f9"
   },
-  "candidate_sha": "9bf0f5a4ad36a0be6ee836e3d2cbb0057d83e1c5",
+  "candidate_sha": "b59b751927abf40ed5b376dfd01733fbfce27be4",
   "checks": [
     {
       "details": {
@@ -135,7 +135,7 @@
     "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)"
   },
   "error": null,
-  "finished_at": "2026-09-11T01:08:01.950825+00:00",
+  "finished_at": "2026-09-11T02:06:52.385730+00:00",
   "gate": "v070-installed-package-truth",
   "package_version": "0.7.0rc1",
   "results": {
@@ -189,6 +189,6 @@
     }
   },
   "schema_version": 1,
-  "started_at": "2026-09-11T01:07:48.683188+00:00",
+  "started_at": "2026-09-11T02:06:36.057185+00:00",
   "status": "pass"
 }
