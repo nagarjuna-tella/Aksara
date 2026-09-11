@@ -127,7 +127,7 @@ async def test_cross_tenant_read_cancel_history_outbox_and_write_are_hidden(dura
         )
     assert await service.pending_outbox(
         tenant_id=tenant_b,
-        principal=_principal(tenant_b),
+        principal=Principal.system(tenant_id=tenant_b),
     ) == []
     with _tenant_context(tenant_b):
         status = await durable_db.execute(
@@ -166,5 +166,5 @@ async def test_transition_or_outbox_tampering_cannot_rewrite_operation_truth(dur
     assert operation.state is OperationState.READY
     assert await service.pending_outbox(
         tenant_id=tenant,
-        principal=_principal(tenant),
+        principal=Principal.system(tenant_id=tenant),
     ) == []

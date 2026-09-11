@@ -52,6 +52,8 @@ def _service(
     approval: bool = False,
     namespace: str = "tests",
     approval_authorizer=None,
+    required_scopes: tuple[str, ...] = (),
+    authorizer=None,
 ):
     actions = DurableActionRegistry()
     actions.register(
@@ -60,6 +62,8 @@ def _service(
             version="1",
             handler=_handler,
             effect_class=EffectClass.POSTGRES_ATOMIC,
+            required_scopes=required_scopes,
+            authorizer=authorizer,
             approval_required=approval,
             approval_authorizer=approval_authorizer,
         )
@@ -478,7 +482,7 @@ async def test_cancellation_and_tenant_filtered_status_history_outbox(durable_db
     )) == 2
     assert len(await service.pending_outbox(
         tenant_id=tenant,
-        principal=_principal(tenant),
+        principal=Principal.system(tenant_id=tenant),
     )) == 2
 
     with pytest.raises(OperationNotFound):
@@ -546,6 +550,84 @@ async def test_anonymous_principal_cannot_read_global_operation_state(durable_db
         )
     with pytest.raises(AuthorizationDenied, match="authenticated principal"):
         await service.pending_outbox(tenant_id=None, principal=anonymous)
+
+
+@pytest.mark.asyncio
+async def test_direct_status_history_and_cancellation_recheck_current_action_authority(
+    durable_db,
+):
+    tenant = str(uuid4())
+
+    def current_authorizer(principal, _command):
+        return principal.has_scope("orders:write")
+
+    service = _service(
+        durable_db,
+        required_scopes=("orders:write",),
+        authorizer=current_authorizer,
+    )
+    reference = _reference(tenant)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, reference
+    )
+    denied = Principal.for_user("user-1", tenant_id=tenant, scopes=())
+
+    with pytest.raises(AuthorizationDenied, match="Missing required scopes"):
+        await service.get(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=denied,
+        )
+    with pytest.raises(AuthorizationDenied, match="Missing required scopes"):
+        await service.history(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=denied,
+        )
+    with pytest.raises(AuthorizationDenied, match="Missing required scopes"):
+        await service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=denied,
+            requester_reference=reference,
+        )
+
+
+@pytest.mark.asyncio
+async def test_pending_outbox_requires_system_principal(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+
+    with pytest.raises(AuthorizationDenied, match="system principal"):
+        await service.pending_outbox(
+            tenant_id=tenant,
+            principal=_principal(tenant),
+        )
+
+
+@pytest.mark.asyncio
+async def test_direct_approval_rechecks_current_approver_authority(durable_db):
+    tenant = str(uuid4())
+    service = _service(
+        durable_db,
+        approval=True,
+        required_scopes=("orders:write",),
+    )
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+
+    with pytest.raises(AuthorizationDenied, match="Missing required scopes"):
+        await service.decide_approval(
+            admitted.operation.id,
+            tenant_id=tenant,
+            approver=Principal.for_user("user-1", tenant_id=tenant, scopes=()),
+            approver_reference=_reference(tenant),
+            approve=True,
+        )
 
 
 @pytest.mark.asyncio
@@ -661,7 +743,7 @@ async def test_application_namespace_is_an_operation_authority_boundary(durable_
     ) is None
     assert await outsider.pending_outbox(
         tenant_id=tenant,
-        principal=_principal(tenant),
+        principal=Principal.system(tenant_id=tenant),
     ) == []
     assert await outsider.check_deployment(tenant_id=tenant) == set()
 
@@ -805,7 +887,11 @@ async def test_approval_authorizer_uses_current_approver(durable_db):
     approved = await service.decide_approval(
         admitted.operation.id,
         tenant_id=tenant,
-        approver=Principal.for_user("approver-1", tenant_id=tenant),
+        approver=Principal.for_user(
+            "approver-1",
+            tenant_id=tenant,
+            scopes=("orders:write",),
+        ),
         approver_reference=approver_reference,
         approve=True,
     )

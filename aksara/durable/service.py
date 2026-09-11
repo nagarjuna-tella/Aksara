@@ -1078,7 +1078,6 @@ class DurableOperationService:
         """Persist cancellation intent; terminal success always wins."""
 
         scope = tenant_scope(tenant_id)
-        self._authorize_read(principal, tenant_id, action="cancel")
         if not _principal_matches_reference(principal, requester_reference):
             raise AuthorizationDenied(
                 "cancellation provenance does not match the current principal"
@@ -1094,6 +1093,14 @@ class DurableOperationService:
                 )
                 if row is None:
                     raise OperationNotFound("operation was not found")
+                command = await self.repository.get_command(connection, operation_id, scope)
+                assert command is not None
+                await self._authorize_operation(
+                    principal,
+                    tenant_id,
+                    row,
+                    command=command,
+                )
                 state = OperationState(row["state"])
                 if state in TERMINAL_OPERATION_STATES:
                     raise CancellationConflict(
@@ -1185,20 +1192,21 @@ class DurableOperationService:
                 )
                 if row is None:
                     raise OperationNotFound("operation was not found")
-                if row["state"] != OperationState.WAITING_FOR_APPROVAL.value:
-                    raise ApprovalConflict("operation is not waiting for approval")
-                action = self.actions.get(row["action_name"], row["action_version"])
                 command = await self.repository.get_command(connection, operation_id, scope)
                 assert command is not None
-                self._authorize_read(approver, tenant_id, action="approve")
+                await self._authorize_operation(
+                    approver,
+                    tenant_id,
+                    row,
+                    command=command,
+                    approval=True,
+                )
+                if row["state"] != OperationState.WAITING_FOR_APPROVAL.value:
+                    raise ApprovalConflict("operation is not waiting for approval")
                 if not _principal_matches_reference(approver, approver_reference):
                     raise AuthorizationDenied(
                         "approval provenance does not match the current principal"
                     )
-                if action.approval_authorizer is not None and not await _call_authorizer(
-                    action.approval_authorizer, approver, command
-                ):
-                    raise AuthorizationDenied("approver is not currently authorized")
                 decision = await connection.fetchrow(
                     """
                     SELECT * FROM aksara_operation_approval_decisions
@@ -1316,19 +1324,26 @@ class DurableOperationService:
         tenant_id: str | None,
         principal: Principal,
     ) -> OperationRecord:
-        self._authorize_read(principal, tenant_id, action="read")
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
-                row = await self.repository.get_public_operation(
+                row = await self.repository.get_operation(
                     connection,
                     operation_id,
                     scope,
                     self.application_namespace,
                 )
-        if row is None:
-            raise OperationNotFound("operation was not found")
-        return row
+                if row is None:
+                    raise OperationNotFound("operation was not found")
+                command = await self.repository.get_command(connection, operation_id, scope)
+                assert command is not None
+                await self._authorize_operation(
+                    principal,
+                    tenant_id,
+                    row,
+                    command=command,
+                )
+        return self.repository.public_operation(row)
 
     async def history(
         self,
@@ -1338,19 +1353,27 @@ class DurableOperationService:
         principal: Principal,
         limit: int = 50,
     ) -> list[TransitionRecord]:
-        self._authorize_read(principal, tenant_id, action="read")
         if limit < 1 or limit > MAX_HISTORY_PAGE:
             raise ValueError(f"limit must be between 1 and {MAX_HISTORY_PAGE}")
         scope = tenant_scope(tenant_id)
         with _tenant_context(scope):
             async with self.db.acquire() as connection:
-                if await self.repository.get_operation(
+                row = await self.repository.get_operation(
                     connection,
                     operation_id,
                     scope,
                     self.application_namespace,
-                ) is None:
+                )
+                if row is None:
                     raise OperationNotFound("operation was not found")
+                command = await self.repository.get_command(connection, operation_id, scope)
+                assert command is not None
+                await self._authorize_operation(
+                    principal,
+                    tenant_id,
+                    row,
+                    command=command,
+                )
                 return await self.repository.history(
                     connection, operation_id, scope, limit=limit
                 )
@@ -1362,7 +1385,7 @@ class DurableOperationService:
         principal: Principal,
         limit: int = 100,
     ) -> list[OutboxRecord]:
-        self._authorize_read(principal, tenant_id, action="read")
+        self._authorize_pending_outbox(principal, tenant_id)
         if limit < 1 or limit > MAX_OUTBOX_PAGE:
             raise ValueError(f"limit must be between 1 and {MAX_OUTBOX_PAGE}")
         scope = tenant_scope(tenant_id)
@@ -1563,19 +1586,49 @@ class DurableOperationService:
         }
 
     @staticmethod
-    def _authorize_read(principal: Principal, tenant_id: str | None, *, action: str) -> None:
+    def _authorize_principal(principal: Principal, tenant_id: str | None) -> None:
         if not principal.is_authenticated:
             raise AuthorizationDenied("an authenticated principal is required")
         if not principal.is_system and principal.tenant_id != tenant_id:
             raise AuthorizationDenied("principal tenant does not match operation tenant")
+
+    async def _authorize_operation(
+        self,
+        principal: Principal,
+        tenant_id: str | None,
+        operation: Mapping[str, Any],
+        *,
+        command: Mapping[str, Any],
+        approval: bool = False,
+    ) -> DurableAction:
+        self._authorize_principal(principal, tenant_id)
+        action = self.actions.get(operation["action_name"], operation["action_version"])
         decision = default_policy.can(
             principal,
-            action,
+            action.name,
             tenant_id=tenant_id,
             tenant_required=tenant_id is not None,
+            required_scopes=action.required_scopes,
         )
         if decision.denied:
             raise AuthorizationDenied(decision.reason)
+        if approval:
+            if action.approval_authorizer is not None and not await _call_authorizer(
+                action.approval_authorizer, principal, command
+            ):
+                raise AuthorizationDenied("approver is not currently authorized")
+        elif action.authorizer is not None and not await _call_authorizer(
+            action.authorizer, principal, command
+        ):
+            raise AuthorizationDenied("current authorization denied the durable action")
+        return action
+
+    def _authorize_pending_outbox(
+        self, principal: Principal, tenant_id: str | None
+    ) -> None:
+        self._authorize_principal(principal, tenant_id)
+        if not principal.is_system:
+            raise AuthorizationDenied("a system principal is required for pending outbox access")
 
 
 __all__ = ["DurableOperationService"]

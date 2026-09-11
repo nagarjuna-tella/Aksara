@@ -477,6 +477,14 @@ class ReadOnlyExecutor:
                         fence=claim.fence,
                     )
                     if not break_for_lifecycle:
+                        await self._identity._at_boundary("after_lock")
+                        if not await self._identity._authorize(action, principal, claim):
+                            return await self.service.fail_attempt(
+                                claim,
+                                code=FailureReason.AUTHORIZATION_DENIED.value,
+                                message="current authorization denied the read-only action",
+                                retryable=False,
+                            )
                         with durable_database_guard(self.service.db, connection) as guard:
                             result = action.handler(context, dict(claim.command))
                             if inspect.isawaitable(result):

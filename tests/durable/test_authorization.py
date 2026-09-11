@@ -257,3 +257,33 @@ async def test_authorizer_exception_closes_attempt_before_handler(
     assert operation.error["code"] == "executor_error"
     assert operation.error["message"] == "authorization service unavailable"
     assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_read_only_authorization_is_rechecked_after_lifecycle_boundary(durable_db):
+    tenant = str(uuid4())
+    authorized = True
+    service, _executor, calls = _runtime(
+        durable_db,
+        lambda _reference: PrincipalResolution.resolved(
+            Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("operation:write",)
+            )
+        ),
+        authorizer=lambda _principal, _command: authorized,
+        effect_class=EffectClass.READ_ONLY,
+    )
+    executor = ReadOnlyExecutor(service)
+
+    async def revoke_after_boundary(name: str):
+        nonlocal authorized
+        if name == "after_lock":
+            authorized = False
+
+    executor._identity._boundary_hook = revoke_after_boundary
+
+    operation = await _execute(service, executor, tenant)
+
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "authorization_denied"
+    assert calls == []
