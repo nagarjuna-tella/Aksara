@@ -235,6 +235,7 @@ async def main() -> None:
             tenant_id=tenant_a,
             worker_id="installed-worker-replacement",
             operation_id=reclaim_admission.operation.id,
+            lease_seconds=1.0,
         )
         assert replacement is not None
         try:
