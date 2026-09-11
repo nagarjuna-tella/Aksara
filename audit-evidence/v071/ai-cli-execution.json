@@ -1,0 +1,62 @@
+{
+  "package_version": "0.7.0",
+  "results": [
+    {
+      "command": "aksara agent --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai flows --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai flows chat \"hello\" --format json",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai flows chat --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai plan --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai plan apply --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai plan preview --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai plan template --intent \"Describe the ticket model\" --mode read",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai run --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai-hub --help",
+      "exit_code": 0
+    },
+    {
+      "command": "aksara ai-provider --help",
+      "exit_code": 0
+    }
+  ],
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "scope": "Help, local greeting, and plan template only; socket connections forbidden",
+  "page_sha256": {
+    "docs/docs/cli/ai-commands.md": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
+    "docs/docs/ai-mode/console.md": "a5c29bcd9118c40574e7368316d7f9bfc42346f47bdcefafc94a2584f21dd06f"
+  },
+  "runner_sha256": "f00a81372ceb9bc879c621400771446b6ca42ace3fc5b75ddc0610e441e05e09"
+}

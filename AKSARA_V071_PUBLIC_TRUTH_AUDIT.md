@@ -224,7 +224,13 @@ verified by `generate_public_cli_reference.py --check`. This is syntax/default
 evidence, not execution of all commands. Rewrote CLI overview, workflow and
 development-tool pages; removed nonexistent routes, dbshell, fixture, and
 natural-language generator commands and corrected pytest flag guidance.
-Other public pages still contain stale CLI examples and remain under audit.
+The AI command and console guides also now use actual `ai flows chat` and
+file-oriented `ai plan` subcommands. Twelve extracted provider-free commands
+passed in the isolated public wheel with socket connections forbidden: help,
+the local greeting response, and a read-mode plan template. This does not prove
+provider-backed execution or plan application. Evidence is
+`audit-evidence/v071/ai-cli-execution.json`. Other public pages still contain
+stale CLI examples and remain under audit.
 
 **PT-015 / P1:** duplicate CLI references advertised unsupported commands and
 flags (`makemigrations --check/--empty`, `shell -c`, `routes`, and others).
