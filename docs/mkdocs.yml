@@ -58,6 +58,15 @@ nav:
       - First App: getting-started/first-app.md
       - Database Setup: getting-started/database-setup.md
       - Running Your App: getting-started/running-your-app.md
+  - Concepts:
+      - Application Boundaries: concepts/application-boundaries.md
+      - Stability Labels: concepts/stability.md
+      - Durable Operations: advanced/durable-operations.md
+      - Background Tasks: advanced/background-tasks.md
+  - Operations:
+      - Production Deployment: tutorials/deployment.md
+      - Production Hardening: security/production-hardening.md
+      - Diagnostics: diagnostics.md
   - ORM:
       - orm/index.md
       - Models: orm/models.md

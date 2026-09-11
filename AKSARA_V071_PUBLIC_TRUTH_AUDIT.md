@@ -76,7 +76,7 @@ lead the beginner journey. Navigation implementation is pending.
 
 | ID | Severity | Evidence | Required disposition | Status |
 | --- | --- | --- | --- | --- |
-| PT-001 | P1 | `tutorials/deployment.md` Step 1 leads with an unsupported `AKSARA` dictionary, labeled conceptual | Replace the operational instructions with the real configuration and migration-role path | Open |
+| PT-001 | P1 | `tutorials/deployment.md` Step 1 leads with an unsupported `AKSARA` dictionary, labeled conceptual | Replaced operational instructions with real configuration, role separation, workers and recovery guidance; clean-room execution still pending | Docs fixed |
 | PT-002 | P2 | `roadmap.md` calls v0.6.1 the current adoption patch after v0.7.0 | Replace with evidence-derived current/next horizons | Open |
 | PT-003 | P2 | `examples/README.md` omits support_desk from its catalog | Describe minimal, application-pattern, production, durable, and experimental purposes accurately | Open |
 | PT-004 | P2 | `docs/mkdocs.yml` gives experimental AI a large top-level section; durability is under Advanced | Provide an application learning path and prominent production/durability entry points | Open |
@@ -173,7 +173,12 @@ Expand gates around complete public examples and record each coverage limit.
 ## Changes Made
 
 Created the v0.7.1 branch, baseline inventory, scaffold comparison snapshot, and
-this audit. Public documentation and runtime source are unchanged at this stage.
+this audit. Rewrote `tutorials/deployment.md` around real configuration, migration roles,
+restricted application roles, RLS, diagnostics, worker supervision and recovery.
+Added `concepts/application-boundaries.md` and `concepts/stability.md`, and
+Concepts/Operations navigation. Strict MkDocs and the eight semantic docs tests
+pass after these edits. End-to-end journey proof remains pending. Runtime source
+is unchanged.
 
 ## Remaining Documentation Debt
 

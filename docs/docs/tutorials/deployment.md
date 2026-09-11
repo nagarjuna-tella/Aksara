@@ -1,529 +1,161 @@
-# Tutorial: Deploying to Production
+# Deploy an Aksara application
 
-Deploy your Aksara application so anyone can use it.
+**Stable within the documented production profile.** Start with a working
+application from the [first-project guide](../getting-started/first-project.md).
+Deployment adds an explicit migration step, restricted database credentials,
+process supervision, and operational checks.
 
----
+Aksara provides application and execution boundaries. You provide PostgreSQL,
+TLS termination, secrets, backups, process supervision, monitoring, and any
+external identity provider. Durability does not require Redis or a separate
+workflow service.
 
-## What You'll Learn
+## 1. Configure the application
 
-- How to prepare your app for production
-- How to configure environment variables
-- How to use Docker for deployment
-- How to run database migrations safely
-- How to set up monitoring
+Use deployment environment variables and the global `aksara.conf.settings`
+object. An `AKSARA` dictionary or a new settings subclass does not configure
+that object. See the authoritative [settings reference](../reference/settings-reference.md)
+for defaults and precedence.
 
-**Time:** ~20 minutes
+Configure these values in your deployment's secret/configuration store:
 
-**Difficulty:** Beginner
-
----
-
-## What is Deployment?
-
-**Development** = Running on your computer for testing  
-**Production** = Running on a server for real users
-
-When you deploy, you need to:
-
-1. **Turn off debug mode** — Hide error details from users
-2. **Secure your secrets** — Keep passwords out of code
-3. **Configure the database** — Use a production database
-4. **Set up HTTPS** — Encrypt all traffic
-
----
-
-## Pre-Deployment Checklist
-
-Before deploying, verify:
-
-| Item | Why It Matters |
-|------|----------------|
-| ☐ `DEBUG = False` | Debug mode shows sensitive info |
-| ☐ Secret key is random | Predictable keys can be hacked |
-| ☐ Database URL is set | Don't hardcode credentials |
-| ☐ Allowed hosts configured | Prevents host header attacks |
-| ☐ HTTPS enabled | Encrypts all traffic |
-
----
-
-## Step 1: Create Production Settings
-
-### Separate Settings File
-
-Create `settings/production.py`:
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-# settings/production.py
-import os
-
-AKSARA = {
-    # NEVER set DEBUG = True in production
-    "DEBUG": False,
-    
-    # Get secret key from environment (not hardcoded!)
-    "SECRET_KEY": os.environ["SECRET_KEY"],
-    
-    # Database URL from environment
-    "DATABASE_URL": os.environ["DATABASE_URL"],
-    
-    # Which domains can access your API
-    "ALLOWED_HOSTS": os.environ.get("ALLOWED_HOSTS", "").split(","),
-    
-    # Which origins can make browser requests
-    "CORS_ORIGINS": os.environ.get("CORS_ORIGINS", "").split(","),
-    
-    # Your apps
-    "INSTALLED_APPS": ["myapp"],
-}
+```dotenv
+AKSARA_ENV=production
+AKSARA_DEBUG=false
+AKSARA_COOKIE_SECURE=true
+AKSARA_ADMIN_RATE_LIMIT_ENABLED=true
+AKSARA_MCP_ENABLED=false
+AKSARA_AI_ENABLED=false
+AKSARA_ENABLE_STUDIO=false
+CORS_ALLOW_ALL_ORIGINS=false
+CORS_ALLOW_CREDENTIALS=false
 ```
 
-**Why environment variables?**
+Also provide `AKSARA_SECRET_KEY` with a unique, securely generated value and
+`AKSARA_DATABASE_URL` with your restricted application-role connection URL.
+Do not commit their values. `AKSARA_DATABASE_URL` takes precedence over
+`DATABASE_URL`; configure one source consistently so an old alias cannot send
+migrations or application traffic to the wrong database.
 
-Environment variables keep secrets out of your code:
+Keep the generated project's settings import, including its explicit
+`configure(installed_apps=...)`, before constructing the application. Environment
+configuration does not discover your application's model modules automatically.
+
+## 2. Separate migrations from application credentials
+
+Create a migration role allowed to own and change the application schema, and
+an application login with `NOSUPERUSER NOBYPASSRLS`. The application role should
+have only the schema access, table DML, and sequence privileges its work needs.
+Provision these roles through your PostgreSQL administrator; do not run the
+web application as the migration owner or a database superuser.
+
+In the deployment migration job, set `AKSARA_DATABASE_URL` to the migration
+role's URL. From the project directory, apply the versioned migration files:
 
 ```bash
-# ❌ BAD: Secret in code (gets committed to git!)
-SECRET_KEY = "my-super-secret-key"
-
-# ✅ GOOD: Secret from environment
-SECRET_KEY = os.environ["SECRET_KEY"]
-```
-
-### Generate a Secret Key
-
-```bash
-# Generate a secure random key
-python -c "import secrets; print(secrets.token_urlsafe(50))"
-```
-
----
-
-## Step 2: Create Environment File
-
-Create `.env.example` (commit this to git as a template):
-
-```bash
-# .env.example - Copy to .env and fill in values
-# NEVER commit .env to git!
-
-# Required
-SECRET_KEY=generate-a-random-key-here
-DATABASE_URL=postgresql://user:password@host:5432/dbname
-
-# Security
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-CORS_ORIGINS=https://yourdomain.com
-
-# Optional: AI features
-AI_MODE=false
-AI_API_KEY=
-```
-
-Create actual `.env` file (don't commit this!):
-
-```bash
-# .env
-SECRET_KEY=your-actual-secret-key-here
-DATABASE_URL=postgresql://prod_user:prod_password@db.example.com:5432/myapp_prod
-ALLOWED_HOSTS=myapp.com,www.myapp.com
-CORS_ORIGINS=https://myapp.com
-```
-
-Add to `.gitignore`:
-
-```bash
-# .gitignore
-.env
-*.env
-.env.local
-```
-
----
-
-## Step 3: Docker Configuration
-
-Docker packages your app so it runs the same everywhere.
-
-### Create Dockerfile
-
-```dockerfile
-# Dockerfile
-
-# Use official Python image
-FROM python:3.11-slim
-
-# Don't write .pyc files
-ENV PYTHONDONTWRITEBYTECODE=1
-# Don't buffer output (see logs immediately)
-ENV PYTHONUNBUFFERED=1
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-# Create non-root user for security
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Expose port
-EXPOSE 8000
-
-# Start the server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-**What this does:**
-
-| Step | Purpose |
-|------|---------|
-| `FROM python:3.11-slim` | Use a small Python image |
-| `WORKDIR /app` | Set where our code lives |
-| `COPY requirements.txt` | Install dependencies first (caching) |
-| `COPY . .` | Copy our application |
-| `USER appuser` | Don't run as root (security) |
-| `CMD [...]` | Start the server |
-
-### Create docker-compose.yml
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-
-services:
-  # Your application
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/myapp
-      - ALLOWED_HOSTS=localhost,127.0.0.1
-    depends_on:
-      db:
-        condition: service_healthy
-    command: >
-      sh -c "aksara migrate && 
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
-  # PostgreSQL database
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=myapp
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-```
-
-### Run with Docker
-
-```bash
-# Build the image
-docker-compose build
-
-# Start the services
-docker-compose up
-
-# Or run in background
-docker-compose up -d
-
-# View logs
-docker-compose logs -f web
-
-# Stop everything
-docker-compose down
-```
-
----
-
-## Step 4: Database Migrations
-
-### Run Migrations Safely
-
-**Never** run migrations and the server at the same time on first deploy.
-
-```bash
-# Option 1: Separate command
-docker-compose run --rm web aksara migrate
-
-# Option 2: In the startup command (shown in docker-compose.yml)
-# aksara migrate && uvicorn ...
-```
-
-### Backup Before Migrating
-
-```bash
-# Backup production database
-pg_dump -h db.example.com -U prod_user myapp_prod > backup_$(date +%Y%m%d).sql
-
-# Then run migrations
 aksara migrate
 ```
 
----
+Run this before starting the new application version. Grant the restricted
+role access to newly migrated application and internal runtime tables and
+sequences. Review default privileges for future migrations under the actual
+migration owner. Successful migration under an administrator login does not
+prove the application role can operate the resulting schema.
 
-## Step 5: Production Server
+Switch the application processes back to their restricted-role URL. Avoid
+running migrations independently in each web or worker process. Durable
+Operations require their internal migrations before execution; they do not
+create their schema as a startup convenience.
 
-### Use Gunicorn + Uvicorn
+## 3. Establish tenant isolation
 
-For production, use Gunicorn with Uvicorn workers:
+If the application is multi-tenant, resolve its tenant from authenticated,
+server-owned identity. A user-supplied header or JSON tenant ID is not evidence
+of membership. Apply and force PostgreSQL RLS on tenant tables and test with
+the restricted application role.
 
-```bash
-# Install gunicorn
-pip install gunicorn
+`AKSARA_MULTI_TENANT=true` and `AKSARA_RLS_ENABLED=true` declare the deployment
+posture to diagnostics. They do not create policies, verify credentials, or
+turn an unrestricted database login into an isolated role. Follow
+[multi-tenancy](../security/multi-tenancy.md) and exercise cross-tenant denial
+before serving traffic.
 
-# Run with multiple workers
-gunicorn app.main:app \
-    --workers 4 \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000
-```
+## 4. Run diagnostics and serve
 
-Update your Dockerfile:
-
-```dockerfile
-# Production CMD
-CMD ["gunicorn", "app.main:app", \
-     "--workers", "4", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--bind", "0.0.0.0:8000"]
-```
-
-**How many workers?**
-
-Rule of thumb: `(2 × CPU cores) + 1`
-
-| CPU Cores | Workers |
-|-----------|---------|
-| 1 | 3 |
-| 2 | 5 |
-| 4 | 9 |
-
----
-
-## Step 6: HTTPS Setup
-
-### Using a Reverse Proxy (Recommended)
-
-Put nginx or Caddy in front of your app:
-
-```nginx
-# nginx.conf
-server {
-    listen 80;
-    server_name myapp.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name myapp.com;
-    
-    ssl_certificate /etc/ssl/certs/myapp.crt;
-    ssl_certificate_key /etc/ssl/private/myapp.key;
-    
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-### Using Caddy (Automatic HTTPS)
-
-```
-# Caddyfile
-myapp.com {
-    reverse_proxy localhost:8000
-}
-```
-
-Caddy automatically gets and renews SSL certificates!
-
----
-
-## Step 7: Monitoring
-
-### Health Check Endpoint
-
-Add a health check to your app:
-
-```python
-# app/main.py
-from aksara import Aksara
-
-app = Aksara(...)
-
-@app.get("/health")
-async def health_check():
-    """Health check for load balancers."""
-    return {"status": "healthy"}
-```
-
-### Logging
-
-Configure structured logging:
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-# settings/production.py
-AKSARA = {
-    # ... other settings ...
-    
-    "LOGGING": {
-        "level": "INFO",
-        "format": "json",  # Structured logs for log aggregators
-    }
-}
-```
-
----
-
-## Deployment Options
-
-### Platform as a Service (Easy)
-
-| Platform | Pros | Cons |
-|----------|------|------|
-| **Railway** | Easy, free tier | Less control |
-| **Render** | Easy, auto-deploys | Limited free tier |
-| **Fly.io** | Fast, global | Learning curve |
-| **Heroku** | Established, add-ons | Expensive |
-
-### Virtual Private Server (More Control)
-
-| Provider | Pros | Cons |
-|----------|------|------|
-| **DigitalOcean** | Simple, good docs | Manual setup |
-| **Linode** | Affordable | Manual setup |
-| **AWS EC2** | Powerful, scalable | Complex |
-
-### Kubernetes (Scale)
-
-For large applications that need to scale:
-
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: myapp
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: myapp
-  template:
-    metadata:
-      labels:
-        app: myapp
-    spec:
-      containers:
-      - name: web
-        image: myapp:latest
-        ports:
-        - containerPort: 8000
-        envFrom:
-        - secretRef:
-            name: myapp-secrets
-```
-
----
-
-## Quick Deployment Checklist
+Provide `AKSARA_SECURITY_MATRIX_PATH` pointing to your reviewed deployment
+security matrix. The repository's example describes the format; its assertions
+are not proof that your own application has passed the listed scenarios.
 
 ```bash
-# 1. Set environment variables
-export SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(50))")
-export DATABASE_URL=postgresql://...
-export ALLOWED_HOSTS=myapp.com
-
-# 2. Build and push Docker image
-docker build -t myapp:latest .
-docker push myregistry.com/myapp:latest
-
-# 3. Run migrations
-aksara migrate
-
-# 4. Start the server
-docker-compose up -d
-
-# 5. Verify it's running
-curl https://myapp.com/health
+aksara doctor production-check --release
+aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
----
+`main:app` is the generated application's import path. Substitute your actual
+module when it differs. Put the server behind your TLS proxy and supervise it
+with the deployment's process manager. Select bind address and worker count
+for that environment; do not enable development reload in production.
 
-## Troubleshooting
+Release-mode Doctor fails on warnings, failures, blocks, skipped checks, and
+unknown results. Investigate them rather than suppressing the gate. Doctor
+checks configuration and declared security coverage; it is not a penetration
+test or a substitute for a real request through your restricted database role.
 
-### "Connection refused" to database
+The separate `aksara doctor launch-check` helps diagnose project layout and
+local startup. It may recommend optional development surfaces that you have
+intentionally disabled in production.
 
-**Problem:** App can't connect to PostgreSQL.
+## 5. Start background execution explicitly
 
-**Solution:** Check `DATABASE_URL` and ensure PostgreSQL is running and accessible.
+Ordinary tasks need a task worker with the application's task registrations
+loaded. Follow [background tasks](../advanced/background-tasks.md). Persisted
+tenant identity in an ordinary task is not a stored Principal or automatic
+current authorization for arbitrary task code.
 
-### Static files not loading
+For [Durable Operations](../advanced/durable-operations.md), deploy an explicit
+worker entry point which constructs the same service configuration, registers
+all needed actions and principal resolvers, connects its database, and runs
+`DurableOperationWorker` for the intended tenant. Supervise that process
+separately from web workers. Aksara does not enumerate tenants or start a fleet
+of durable workers for you.
 
-**Problem:** CSS/JS files return 404.
+Before enabling claims, call `check_durable_operations()` for each deployed
+application namespace and tenant profile. Keep old action/resolver versions
+registered while nonterminal Operations reference them. Verify cancellation,
+revocation, and worker restart behavior with your actual business handlers.
 
-**Solution:** Collect static files and configure your web server to serve them:
+## 6. Operate retention and external effects
 
-```bash
-aksara collectstatic
-```
+Run an application-owned outbox exporter and bounded pruning schedule if you
+adopt durability. Set retention and idempotency windows to match the promises
+your API makes. Exported history is operational evidence, not a tamper-resistant
+compliance ledger. Preserve any longer-lived records in your own retention
+system.
 
-### "Not allowed host" error
+Monitor stuck or expired leases, retry exhaustion, authorization failures,
+outbox backlog, database pool pressure, and `external_outcome_unknown` results.
+An unknown provider outcome needs the application's reconciliation process;
+blindly resubmitting the effect can duplicate it. Cancellation does not undo
+an already committed database mutation or an issued provider request.
 
-**Problem:** Request blocked by ALLOWED_HOSTS.
+Back up PostgreSQL and test restoration. Include uploaded media and retained
+audit exports in the application's recovery plan. Define readiness checks that
+exercise the deployed schema and required services; framework configuration
+checks alone do not establish service health.
 
-**Solution:** Add your domain to ALLOWED_HOSTS:
+## 7. Upgrade deliberately
 
-```bash
-ALLOWED_HOSTS=myapp.com,www.myapp.com
-```
+Apply migrations before new processes start. Review compatibility with old
+processes during a rolling deployment, retain referenced action/resolver
+versions, and test the upgrade against a restored database before production.
+Do not assume downgrading the wheel reverses schema or external effects.
 
----
+See the [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) for
+migration and operational prerequisites, and the
+[v0.6 production contract](../roadmap/v0-6-stability-contract.md) for the
+foundation that remains in force.
 
-## Next Steps
-
-- Set up CI/CD for automatic deployments
-- Configure monitoring and alerts
-- Set up database backups
-- Add rate limiting
-- Configure caching
-
----
-
-## Related Documentation
-
-- [Settings](../getting-started/settings.md) — All configuration options
-- [Middleware](../middleware/index.md) — Request processing
-- [Authentication](../api/authentication.md) — User auth and access control
+The [Support Desk reference](https://github.com/nagarjuna-tella/Aksara/tree/main/examples/support_desk)
+shows server-owned identities, restricted roles, forced RLS, readiness, tasks,
+and synchronous MCP. Its environment-backed identities are an example adapter;
+replace them with your real credential verification and membership source.
