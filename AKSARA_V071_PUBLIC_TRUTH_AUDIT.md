@@ -110,6 +110,7 @@ Full page-by-page usability review is still pending.
 | PT-018 | P1 | ViewSet guide advertised ignored DRF-style attributes, unsupported handler helpers, PUT routes, and action-removal switches | Replaced with actual registration, PATCH/detail paths, per-operation serializers, synchronous list query hook and explicit permission boundaries | Docs fixed; installed route/default checks |
 | PT-020 | P1 | API overview and duplicate API reference repeated unsupported DRF attributes, routes, serializer hooks, and custom HTTP authorization claims | Consolidated entry pages around checked references and clarified the registered HTTP action limitation in security/stability guidance | Docs fixed; public import, CLI, and rendered-link gates |
 | PT-021 | P1 | Routing reference passed dotted strings to module discovery, invented prefix/name options and PUT/detail paths, and assumed nested parent filtering | Replaced with actual module discovery, in-place registration and explicit nested-resource/security boundaries | Docs fixed; installed registration/discovery checks |
+| PT-022 | P2 | Throttling page calls all rate limiting future work and shows an incomplete third-party decorator example | Documented existing Admin POST limits, process-local counters, proxy assumptions, and application-owned API limits | Docs fixed; existing Admin HTTP regression |
 
 ## Runtime Defects Exposed by the Documentation Audit
 

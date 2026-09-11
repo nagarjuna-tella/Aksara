@@ -4,7 +4,7 @@
   "html_pages": 158,
   "local_links_checked": 48354,
   "errors": [],
-  "external_links_not_fetched": 18,
+  "external_links_not_fetched": 17,
   "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
   "source_sha256": {
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -61,7 +61,7 @@
     "docs/docs/api/permissions.md": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5",
     "docs/docs/api/routing.md": "9ea30c5840d8948ac90d18c332731d1b197b86f40f60b4c941331dc073f979fb",
     "docs/docs/api/serializers.md": "98a7d8144900010044fef0219584bac52f8a63539e07f123397352bc50c9eb4a",
-    "docs/docs/api/throttling.md": "8a9fac1abd75ee0952e1753fbe99d783a5a9677fc3bfb81fe3be48dcae79ba0c",
+    "docs/docs/api/throttling.md": "5474e92f6bacd1de21d44bf5ec1f1b9059c2f0f8d42c4a6e7a252c4b04c88561",
     "docs/docs/api/viewsets.md": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306",
     "docs/docs/assets/aksara-demo.gif": "67cea9e2fd4f9544213bc12b84752f2e26eb61175e85c56471e86151db70bfa0",
     "docs/docs/assets/aksara-logo.svg": "533e03ae14d573e9ee63fa79df2e0acdc6074690b48cd51d136f5078d7f0dd5b",

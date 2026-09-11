@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 698,
+  "python_blocks": 697,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -57,7 +57,7 @@
     "docs/docs/api/permissions.md": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5",
     "docs/docs/api/routing.md": "9ea30c5840d8948ac90d18c332731d1b197b86f40f60b4c941331dc073f979fb",
     "docs/docs/api/serializers.md": "98a7d8144900010044fef0219584bac52f8a63539e07f123397352bc50c9eb4a",
-    "docs/docs/api/throttling.md": "8a9fac1abd75ee0952e1753fbe99d783a5a9677fc3bfb81fe3be48dcae79ba0c",
+    "docs/docs/api/throttling.md": "5474e92f6bacd1de21d44bf5ec1f1b9059c2f0f8d42c4a6e7a252c4b04c88561",
     "docs/docs/api/viewsets.md": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306",
     "docs/docs/cli/ai-commands.md": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
     "docs/docs/cli/commands.md": "4cbcf3d5a998a0b52d5927dea39e3623f2e33c4ddf4d205429dd1f98e8032ade",
