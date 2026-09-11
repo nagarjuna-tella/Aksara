@@ -32,6 +32,7 @@ GUIDES = [
     (ROOT / "docs/docs/tutorials/ticket-desk.md", 5),
     (ROOT / "docs/docs/tutorials/ticket-desk-tenancy.md", 12),
     (ROOT / "docs/docs/tutorials/ticket-desk-reports.md", 16),
+    (ROOT / "docs/docs/tutorials/ticket-desk-durable.md", 22),
 ]
 FILES = re.compile(r'^```python title="([^\"]+)"\n(.*?)^```', re.MULTILINE | re.DOTALL)
 
@@ -145,15 +146,20 @@ async def run(args: argparse.Namespace) -> dict:
                      "migration operations (replace)"}
                     if expected_tests == 12 else
                     {"app/tasks.py", "app/reports.py", "main.py (append)", "tests/test_reports.py"}
+                    if expected_tests == 16 else
+                    {"app/identities.py", "seed_memberships.py", "app/auth.py", "app/operations.py",
+                     "main.py", "worker.py", "tests/test_durable.py"}
                 )
                 if set(files) != expected:
                     raise RuntimeError("Tutorial file contract changed; update the journey deliberately")
+                if expected_tests == 22:
+                    await command([python, "seed_memberships.py"], project)
                 environment["AKSARA_DATABASE_URL"] = admin_dsn
                 checks.append("documented files copied without source substitutions")
                 migration_args = [cli, "makemigrations", "--app", "app.models"]
                 if migration_operations is not None:
                     migration_args.extend(["--name", "tenant_boundary"])
-                if expected_tests != 16:
+                if expected_tests < 16:
                     await command(migration_args, project)
                 if migration_operations is not None:
                     candidates = list((project / "migrations").glob("*_tenant_boundary.py"))
@@ -168,7 +174,7 @@ async def run(args: argparse.Namespace) -> dict:
                     lines[assignment.lineno - 1:assignment.end_lineno] = [textwrap.indent(migration_operations, "    ")]
                     migration.write_text("".join(lines))
                     checks.append("replaced only generated operations block as documented; preserved dependencies")
-                if expected_tests != 16:
+                if expected_tests < 16:
                     await command([cli, "migrate"], project)
                 exists = await admin.fetchval("SELECT to_regclass($1) IS NOT NULL", f"{schema}.tutorial_tickets")
                 if not exists:
@@ -275,7 +281,7 @@ async def run(args: argparse.Namespace) -> dict:
                 "package_version": installed["version"], "source_checkout_imports": False,
                 "checks": checks, "api_tests_passed": sum(stage["api_tests_passed"] for stage in stages),
                 "database_role": "NOSUPERUSER NOBYPASSRLS, DML-only application role",
-                "scope": "First-project, relationships, tenant-isolation and queued-report chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary task success and protected CSV export are covered; no durable action, provider or production-upgrade claim.",
+                "scope": "First-project, relationships, tenant-isolation, queued-report and durable-action chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization are covered. No external provider, full crash campaign or production-upgrade claim.",
                 "pass": True,
             }
     finally:

@@ -264,6 +264,11 @@ small dedicated tutorial database, no other clients mutating it, and an empty
 customer B after each test cleans up. They verify asynchronous completion,
 tenant provenance, guarded status access and an authorized CSV download.
 
+## Continue with durable actions
+
+Continue with [durable ticket resolution](ticket-desk-durable.md) to reauthorize
+a delayed mutation and commit it with its Operation success.
+
 ## Operation and retention responsibilities
 
 Ordinary tasks may retry. This read-only report has no non-idempotent external

@@ -51,6 +51,7 @@ nav:
       - Grow the Ticket Desk: tutorials/ticket-desk.md
       - Ticket Desk Tenant Isolation: tutorials/ticket-desk-tenancy.md
       - Ticket Desk Reports: tutorials/ticket-desk-reports.md
+      - Ticket Desk Durable Actions: tutorials/ticket-desk-durable.md
       - Studio Quickstart: getting-started/studio.md
       - AI Quickstart: getting-started/ai-quickstart.md
       - MCP Quickstart: getting-started/mcp.md

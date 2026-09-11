@@ -12,6 +12,13 @@ wait for the result and request loss does not require restart-safe recovery.
 Durable operations are an application execution primitive; they do not require
 an LLM, planner, Studio, or agent.
 
+For complete runnable files, continue the
+[ticket-desk durable tutorial](../tutorials/ticket-desk-durable.md). It mounts the
+router on the application's database, supplies a current identity resolver,
+checks admission permissions, and tests retry, rollback, cancellation and
+revocation with an installed package. The snippets below explain individual
+integration points; `identity_store` represents your application's identity source.
+
 ## Operation and Attempt
 
 An **Operation** is one logical request. Its opaque ID, state, result or error,
@@ -112,6 +119,13 @@ revoked.
 ## Dispatch and status API
 
 Mount the explicit router. It does not alter any generated synchronous route.
+The router requires an authenticated Principal, but your application must also
+restrict who may dispatch each command. `DurableOperationService.admit()` stores
+validated input and provenance; it does not invoke the action authorizer as an
+admission permission check. Use a router dependency or application endpoint to
+apply the appropriate admission permission. The registered authorizer runs at
+execution and on protected status/cancellation paths. The complete tutorial
+shows both layers; accepting a command is not a claim it will remain authorized.
 
 ```python
 from aksara.durable import PrincipalReference, create_durable_operations_router
