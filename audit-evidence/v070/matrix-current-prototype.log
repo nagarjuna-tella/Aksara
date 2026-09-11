@@ -1,16 +1,15 @@
-Python 3.11.15
-FastAPI 0.136.1; Starlette 1.0.1
+Python 3.11.15 / FastAPI 0.136.1 / Starlette 1.0.1
 ........................                                                 [100%]
-24 passed in 6.33s
-Python 3.11.15
-FastAPI 0.141.1; Starlette 1.6.0
+24 passed in 6.23s
+
+Python 3.11.15 / FastAPI 0.141.1 / Starlette 1.6.0
 ........................                                                 [100%]
-24 passed in 6.07s
-Python 3.14.4
-FastAPI 0.136.1; Starlette 1.0.1
+24 passed in 6.26s
+
+Python 3.14.4 / FastAPI 0.136.1 / Starlette 1.0.1
 ........................                                                 [100%]
-24 passed in 6.33s
-Python 3.14.4
-FastAPI 0.141.1; Starlette 1.6.0
+24 passed in 6.51s
+
+Python 3.14.4 / FastAPI 0.141.1 / Starlette 1.6.0
 ........................                                                 [100%]
-24 passed in 6.27s
+24 passed in 6.51s
