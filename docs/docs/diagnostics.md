@@ -1,160 +1,103 @@
-# Diagnostics & Doctor Mode
+# Diagnostics and Doctor
 
-**v0.5.17** — Aksara includes a built-in self-diagnostics engine that checks your project's health across database, migrations, AI providers, settings, security, file-system, and cache.
+Doctor helps inspect an application, diagnose local setup and check deployment
+configuration. Choose the command for the question you need answered: a local
+launch check and a strict production gate have different exit policies.
 
-**v0.5.18** — Every diagnostic issue now includes structured **autoremediation actions** — machine-readable fix instructions that the Studio UI, CLI, and future agents can surface. See [Autoremediation Hints](debugging/autoremediation.md) for the full guide.
+## Choose a check
 
-## Quick Start
+| Question | Command | Result policy |
+| --- | --- | --- |
+| Can this project start locally? | `aksara doctor launch-check` | 0 ready, 1 partial with warnings, 2 blocked |
+| What general health issues exist? | `aksara doctor run --format json` | 1 for errors; warnings alone do not fail |
+| What is the security posture? | `aksara doctor security-check --format json` | Inspection report; use production-check for enforcement |
+| Are production blockers present? | `aksara doctor production-check --format json` | 1 for blocking or failing results |
+| Does every release-policy check pass? | `aksara doctor production-check --release --format json` | 1 for warnings, failures, blocks, skips or unknown results |
 
-### CLI
+Run commands with the application's deployment environment. Read
+[configuration precedence](reference/settings-reference.md#precedence) when a
+result differs from the settings you expected. For local layout and migrations,
+start with the [first-project guide](getting-started/first-project.md).
+
+`launch-check` reports project structure, imports, database connectivity,
+migrations and optional development surfaces. Studio or provider warnings can
+make a valid REST-only development application PARTIAL; they are not a reason
+to enable those features in production.
+
+## Production release policy
+
+Follow [production deployment](tutorials/deployment.md) for migration and
+application roles, RLS, secrets and worker startup. Use this command in the
+deployment validation job after configuring the intended environment:
 
 ```bash
-# Run all checks
-aksara doctor run
-
-# First-user launch readiness
-aksara doctor launch-check
-aksara doctor launch-check --format json
-
-# JSON output (for CI/CD)
-aksara doctor run --format json
-
-# Quick summary
-aksara doctor summary
-
-# AI-specific checks
-aksara doctor ai
-
-# Database-specific checks
-aksara doctor db
-
-# v0.5.18: Generate a fix-plan with structured actions
-aksara doctor fix-plan
-aksara doctor fix-plan --format json
-aksara doctor fix-plan --only-errors --only-with-actions
+aksara doctor production-check --release --format json
 ```
 
-### Studio Dashboard
+The report contains `policy`, `status`, `results`, `summary`, `exit_code` and
+`release_ready`. Preserve its process exit status in CI. This command checks
+security configuration and declared coverage; it does not execute your
+application's adversarial tests, validate a live RLS policy or prove backups.
 
-Navigate to **Diagnostics** in the Studio sidebar (or press <kbd>d</kbd>) to see a live diagnostics panel with:
+Set `AKSARA_SECURITY_MATRIX_PATH` to your application's reviewed matrix.
+[Security matrix enforcement](security/production-hardening.md#security-matrix-enforcement)
+explains the schema and examples. Release policy requires completed coverage
+entries for implemented surfaces; the example's `planned` scenarios deliberately
+do not satisfy that policy. Mark a scenario covered only after its real test
+passes. Do not use the framework's release matrix as evidence for your own app.
 
-- **Summary banner** — overall status with error/warning/info counts
-- **Issue cards** — each issue with severity, category, message, and fix hints
-- **Filters** — filter by severity (All / Errors / Warnings / Info)
-- **Search** — press <kbd>/</kbd> to focus the search field
-- **Auto-refresh** — updates every 10 seconds (toggle Live/Paused)
+## Durable-operation preflight
 
-### Python API
+Doctor's production security report is separate from the durable service
+preflight. After migrations, call public `check_durable_operations()` with your
+connected service, registered action/resolver versions and tenant. The
+[durable guide](advanced/durable-operations.md#history-export-and-retention)
+shows the call and release-ready check.
+
+This preflight examines the durable schema, referenced versions, ownership,
+outbox backlog and retention configuration. It does not start workers, enumerate
+tenants, deliver exports or run a restore drill. Run it for each application
+namespace and tenant profile you deploy. The
+[durable ticket-desk chapter](tutorials/ticket-desk-durable.md) provides a working
+service and explicit worker entry point.
+
+## General diagnostics
+
+`aksara doctor run` examines database connectivity, migration state, settings,
+AI configuration, cache availability, filesystem access and security. Its issue
+severities are `error`, `warning` and `info`.
 
 ```python
 from aksara.diagnostics import run_all_checks
 
 report = await run_all_checks()
-print(f"Status: {report.overall_status}")
-print(f"Errors: {report.stats['errors']}, Warnings: {report.stats['warnings']}")
-
+print(report.overall_status)
 for issue in report.issues:
-    print(f"[{issue.severity}] {issue.title}: {issue.message}")
-    if issue.hint:
-        print(f"  Hint: {issue.hint}")
-    # v0.5.18: Autoremediation actions
-    for action in issue.actions:
-        print(f"  → [{action.kind}] {action.title}")
+    print(issue.severity, issue.title, issue.message)
 ```
 
-## What Gets Checked
+This is an asynchronous application snippet; call it from an async entry point.
+`report.stats` contains `errors`, `warnings` and `info` counts. Each issue also
+has a `kind`, optional `hint` and `meta`, and a list of suggested `actions`.
+The report includes timestamp, duration and system metadata. Review output for
+application details before publishing it.
 
-| Check | Kind | Description |
-|-------|------|-------------|
-| Database Connectivity | `database_connectivity` | Tries an actual connection to your PostgreSQL database |
-| Migrations Status | `migrations_pending` | Detects unapplied migrations |
-| Migration Conflicts | `migrations_conflict` | Finds duplicate migration prefixes |
-| AI Profiles | `ai_profile_issue` | Validates AI provider profiles (v0.5.12 validator) |
-| AI Provider Secrets | `ai_secret_missing` | Checks required env vars for AI providers |
-| Required Settings | `settings_invalid` | Validates DATABASE_URL, pool sizes, thresholds |
-
-## Launch Check
-
-`aksara doctor launch-check` is the first-user readiness check. It reports Python, Aksara version, project structure, settings import, database connection, migrations, Studio, API docs, MCP, AI Hub, examples, and local dev-mode warnings.
-
-Exit codes:
-
-| Code | Meaning |
-|---|---|
-| `0` | Ready |
-| `1` | Partial with warnings |
-| `2` | Blocked by errors |
-| Cache Availability | `cache_unavailable` | Checks AKSARA_CACHE_URL / CACHE_URL |
-| File-System Permissions | `file_system_unwritable` | Writes a probe file to temp and migrations dirs |
-| Security | `security_warning` | Checks debug mode, Studio exposure, allowed origins |
-
-## Severity Levels
-
-- **error** — Something is broken and must be fixed
-- **warning** — Something is misconfigured or risky
-- **info** — Informational, no action required
-
-## Exit Codes (CLI)
-
-| Code | Meaning |
-|------|---------|
-| `0` | No errors (warnings and info are OK) |
-| `1` | One or more errors detected |
-
-## CI/CD Integration
-
-```yaml
-# GitHub Actions example
-- name: Health Check
-  run: aksara doctor run --format json
-```
+For focused inspection and suggested repairs:
 
 ```bash
-# Shell script
-if aksara doctor run --format json | jq -e '.stats.errors == 0'; then
-    echo "All clear"
-else
-    echo "Issues found"
-    exit 1
-fi
+aksara doctor db
+aksara doctor ai
+aksara doctor summary
+aksara doctor fix-plan --format json
+aksara doctor fix-plan --only-errors --only-with-actions
 ```
 
-## Data Models
+A fix plan describes actions; inspect each before applying it. The
+[autoremediation guide](debugging/autoremediation.md) describes the hints.
 
-### DiagnosticIssue
+## Optional Studio display
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `kind` | `str` | Issue category (e.g., `database_connectivity`) |
-| `severity` | `"error" \| "warning" \| "info"` | Severity level |
-| `title` | `str` | Short human-readable title |
-| `message` | `str` | Detailed explanation |
-| `hint` | `str \| None` | Suggested fix |
-| `meta` | `dict \| None` | Extra metadata |
-
-### DiagnosticReport
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `issues` | `List[DiagnosticIssue]` | All findings, sorted by severity |
-| `stats` | `dict` | `{errors, warnings, info}` counts |
-| `timestamp` | `datetime` | UTC timestamp |
-| `duration_ms` | `float` | Total check duration in ms |
-| `system` | `dict` | Aksara version, Python version, OS, arch |
-
-## Studio Endpoint
-
-```
-GET /studio/diagnostics
-```
-
-Returns a `DiagnosticReport` JSON object with all check results.
-
-## Keyboard Shortcuts (Studio)
-
-| Key | Action |
-|-----|--------|
-| <kbd>d</kbd> | Navigate to Diagnostics |
-| <kbd>/</kbd> | Focus search input |
-| <kbd>Esc</kbd> | Clear search and unfocus |
-| <kbd>7</kbd> | Navigate to Diagnostics (number key) |
+Studio can display diagnostics through its dashboard and `/studio/diagnostics`.
+Studio is an experimental development surface and is not required for Doctor.
+Do not expose it merely to run a production check. Consult
+[Studio configuration](studio/configuration.md) if you intentionally use it.

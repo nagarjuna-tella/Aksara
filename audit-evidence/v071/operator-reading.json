@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "method": "Maintainer-assistant reading review from public Home/Operate navigation and linked production pages; no ADR required",
+  "scope": "Discoverability and explanation review, not an independent operator usability trial or live production deployment",
+  "friction_fixed": [
+    "Doctor exit policies mixed with unrelated check descriptions",
+    "No primary Doctor entry for strict production and durable preflights",
+    "Production guide named a matrix template without linking its format or explaining planned statuses"
+  ],
+  "answers": [
+    {
+      "question": "migration_role",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "2. Separate migrations from application credentials",
+      "answer": "Apply versioned migrations in a separate job under the schema owner; grant application/internal table privileges before starting new processes.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "application_role",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "2. Separate migrations from application credentials",
+      "answer": "Use a restricted NOSUPERUSER NOBYPASSRLS login with only needed schema, DML and sequence privileges.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "rls",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "3. Establish tenant isolation",
+      "answer": "Resolve tenant membership on the server; enable and force RLS; test denial under the real restricted role. Flags declare posture and do not create policies.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "services",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "Deploy an Aksara application",
+      "answer": "Provide PostgreSQL, TLS, secrets, supervision, monitoring and backups; no Redis or separate workflow service is required for durability.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "task_worker",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "5. Start background execution explicitly",
+      "answer": "Ordinary workers start in each database-backed application lifespan by default; disable the embedded worker explicitly if using dedicated processes.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "durable_worker",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "5. Start background execution explicitly",
+      "answer": "Supervise an explicit worker entry point with matching actions/resolvers and tenant; the framework does not enumerate a tenant fleet.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "doctor",
+      "page": "docs/docs/diagnostics.md",
+      "heading": "Production release policy",
+      "answer": "Run production-check --release with the deployed environment and reviewed matrix; preserve exit status. Planned template scenarios cannot pass unchanged.",
+      "page_sha256": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "durability_check",
+      "page": "docs/docs/diagnostics.md",
+      "heading": "Durable-operation preflight",
+      "answer": "Call check_durable_operations on a connected, registered service per namespace/tenant after migrations. This is separate from Doctor security policy.",
+      "page_sha256": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "retention",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "6. Operate retention and external effects",
+      "answer": "Own bounded export and pruning schedules; match retention and idempotency promises and reconcile unknown external outcomes.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "backups_and_monitoring",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "6. Operate retention and external effects",
+      "answer": "Back up and restore-test PostgreSQL, media and exports; monitor leases, retries, authorization denials, outbox, pools and external uncertainty.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    },
+    {
+      "question": "upgrade",
+      "page": "docs/docs/tutorials/deployment.md",
+      "heading": "7. Upgrade deliberately",
+      "answer": "Test a restored database, apply migrations first and retain referenced action/resolver versions; a wheel downgrade is not an effect/schema reversal.",
+      "page_sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "disposition": "discoverable"
+    }
+  ]
+}

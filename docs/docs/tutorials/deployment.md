@@ -78,12 +78,15 @@ the restricted application role.
 posture to diagnostics. They do not create policies, verify credentials, or
 turn an unrestricted database login into an isolated role. Follow
 [multi-tenancy](../security/multi-tenancy.md) and exercise cross-tenant denial
-before serving traffic.
+before serving traffic. The [ticket-desk tenancy chapter](ticket-desk-tenancy.md)
+provides an executed role, policy and cross-tenant test example.
 
 ## 4. Run diagnostics and serve
 
 Provide `AKSARA_SECURITY_MATRIX_PATH` pointing to your reviewed deployment
-security matrix. The repository's example describes the format; its assertions
+security matrix. [Security matrix enforcement](../security/production-hardening.md#security-matrix-enforcement)
+links the format and explains the coverage statuses. The example contains
+planned scenarios and cannot pass release policy unchanged; its assertions
 are not proof that your own application has passed the listed scenarios.
 
 ```bash
@@ -122,8 +125,10 @@ all needed actions and principal resolvers, connects its database, and runs
 separately from web workers. Aksara does not enumerate tenants or start a fleet
 of durable workers for you.
 
-Before enabling claims, call `check_durable_operations()` for each deployed
-application namespace and tenant profile. Keep old action/resolver versions
+Before enabling claims, use the [durable preflight recipe](../advanced/durable-operations.md#history-export-and-retention)
+to call `check_durable_operations()` for each deployed application namespace
+and tenant profile. This is a separate Python service check, not part of the
+Doctor production security command. Keep old action/resolver versions
 registered while nonterminal Operations reference them. Verify cancellation,
 revocation, and worker restart behavior with your actual business handlers.
 

@@ -101,6 +101,7 @@ Full page-by-page usability review is still pending.
 | PT-008 | P1 | Durable guide mounts the generic router without explaining application admission permissions or the connected-database lifecycle | Added explicit admission boundary explanation and runnable factory/resolver/worker tutorial | Docs fixed |
 | PT-009 | P2 | Older MCP quickstart duplicates an unrelated app and uses `httpx.AsyncClient` rather than the installed SDK 2.0 transport type | Consolidated entry around the tested ticket desk and `httpx2.AsyncClient`; no dependency change | Docs fixed |
 | PT-004 | P2 | Navigation promotes experimental AI before the backend journey; entry pages teach competing starter apps | Added Start/Build/Operate/MCP/Reference/Experimental/Contribute paths, retained every page destination, and consolidated entry pages around the tested ticket desk | Docs fixed |
+| PT-011 | P1 | Doctor page mixes launch exit codes with check descriptions and omits strict production/durable preflight entry points | Separate command policies and link the matrix and service preflight | Docs fixed |
 | PT-010 | P2 | Docs home calls released v0.7.0 a candidate; tutorial index directs readers to a separate `aksara/examples` repository rather than the documented source | Corrected released status and linked the canonical source-bearing chapters and repository example catalog | Docs fixed |
 
 ## Runtime Defects Exposed by the Documentation Audit
@@ -134,7 +135,7 @@ prove the complete examples work against a clean installed wheel.
 
 The six-chapter ticket desk now covers relations, validation, identity, tenancy,
 tasks, durability and optional MCP through executed public instructions. The
-production deployment reading test and candidate-wheel reruns remain pending.
+production reading review is recorded below; candidate-wheel reruns remain pending.
 
 ## README Findings
 
@@ -208,9 +209,25 @@ approval terminology must not imply identical storage or replay guarantees.
 
 ## Production Documentation Findings
 
-The production-hardening reference explains Doctor and restricted-role posture.
-A coherent operator path must connect migrations, app roles, RLS, workers,
-retention, deployment checks, backups, and monitoring responsibilities.
+A reading review from Home → Operate → Production Deployment now locates all
+11 operator questions in `audit-evidence/v071/operator-reading.json`: migration
+and application roles, RLS, services, ordinary/durable workers, Doctor, durable
+preflight, retention, backups/monitoring and upgrades. It required no ADR.
+
+The review exposed a malformed Doctor exit-code table and missing production
+and durability entry points (PT-011 / P1: misleading gate selection). Rewrote
+Doctor around the distinct command policies, linked the matrix format, and
+explained that planned template scenarios intentionally fail release policy.
+The production guide now links an executed RLS example and the separate durable
+preflight recipe. This is a discoverability review by the documentation author,
+not independent operator usability evidence or a live production deployment.
+
+`check_public_operator_docs.py --python <isolated-wheel-python> --output
+audit-evidence/v071/operator-cli.json` verifies 11 Doctor command forms and
+their documented flags against public 0.7.0. Help availability does not prove
+command execution or a passing deployment. Documentation/packaging plus the
+production-check and security-matrix regressions pass 199 tests; strict MkDocs
+and Ruff pass. Candidate production/reference gates remain required.
 
 ## Durable Operations Documentation Findings
 
@@ -349,7 +366,7 @@ integrity, not fresh database execution. The full installed-wheel gate remains
 required when the tutorial or runner changes.
 
 Current focused validation: `pytest tests/docs tests/test_v048_docs_lock.py
- tests/test_v048_packaging_sanity.py -q` passes **129 tests**. Strict MkDocs and
+ tests/test_v048_packaging_sanity.py -q` passes **130 tests**. Strict MkDocs and
 Ruff on the runner and evidence tests pass. PostgreSQL catalog verification
 finds zero leftover tutorial schemas or roles after the journey.
 

@@ -312,6 +312,6 @@ service.
 Existing synchronous MCP tools continue over Streamable HTTP at `/mcp/` with
 their v0.6 authorization, approval-grant, transaction, budget, and audit
 contract. Protocol-level durable MCP Tasks are deferred because the official
-MCP Python SDK used by this candidate does not yet implement the current
+MCP Python SDK used by v0.7.0 does not yet implement the current
 `io.modelcontextprotocol/tasks` extension. Aksara does not ship a competing
 wire protocol.
