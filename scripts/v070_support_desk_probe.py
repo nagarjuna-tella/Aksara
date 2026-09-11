@@ -143,7 +143,7 @@ async def main() -> None:
         application_namespace="support-desk-v070",
         actions=actions,
         resolvers=resolvers,
-        default_lease_seconds=0.05,
+        default_lease_seconds=5.0,
         retention_seconds=60,
         idempotency_seconds=60,
     )
