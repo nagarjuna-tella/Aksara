@@ -2,7 +2,7 @@
 
 !!! warning "Experimental"
     Provider-backed AI, Planner behavior, investigation sessions, code patches,
-    memory, and Studio AI internals are experimental in v0.7.0-rc1.
+    memory, and Studio AI internals are experimental in v0.7.0.
 
 Aksara configuration uses the global `aksara.conf.settings` object. Do not add
 an `AKSARA = {...}` dictionary; the runtime does not read that pattern.
@@ -43,7 +43,7 @@ result = await run_prompt_pack(
 ```
 
 These limits reset with the process. There is no `AI_AGENT_RUNTIME` dictionary,
-stable `AgentRuntime` class, or durable provider budget in v0.7.0-rc1.
+stable `AgentRuntime` class, or durable provider budget in v0.7.0.
 
 ## MCP is separate
 

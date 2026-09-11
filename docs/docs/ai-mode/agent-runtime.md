@@ -1,7 +1,7 @@
 # Agent runtime
 
 !!! warning "Experimental"
-    Aksara 0.7.0rc1 does not expose an `AgentRuntime` class. Planner quality,
+    Aksara 0.7.0 does not expose an `AgentRuntime` class. Planner quality,
     autonomous loops, persistent sessions, memory, and provider-specific
     behavior are outside the stable v0.6 contract.
 
@@ -45,7 +45,7 @@ else:
 ```
 
 This example uses real exported modules. It still needs a configured provider
-connector; Aksara does not certify live-provider quality in v0.7.0-rc1.
+connector; Aksara does not certify live-provider quality in v0.7.0.
 
 ## Agent request models
 
@@ -66,4 +66,4 @@ and in-process runtime limits. See the [MCP quickstart](../getting-started/mcp.m
 Runtime budgets, prompt-pack calls, investigation sessions, and replay state are
 process-local. A restart loses them. Persistent Agent sessions, memory,
 autonomous AI workflows, and provider-specific runtime recovery remain
-experimental and outside the v0.7.0rc1 durable-operation contract.
+experimental and outside the v0.7.0 durable-operation contract.

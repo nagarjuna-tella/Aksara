@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aksara-framework"
-version = "0.7.0rc1"
+version = "0.7.0"
 description = "Async PostgreSQL framework with generated REST APIs and authorized MCP tools"
 readme = "README.md"
 license = "MIT"

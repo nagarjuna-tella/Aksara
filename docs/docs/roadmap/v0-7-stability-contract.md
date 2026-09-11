@@ -1,7 +1,7 @@
 # v0.7 Durable Operations Stability Contract
 
 This contract defines the additive production surface introduced by
-`v0.7.0rc1`. It extends the [v0.6 stability and production
+`v0.7.0`. It extends the [v0.6 stability and production
 contract](v0-6-stability-contract.md); all stable v0.6 ORM, migration, REST,
 identity, permission, tenant, task, MCP, CLI, and diagnostic behavior remains
 in force.
@@ -168,7 +168,7 @@ The following remain outside the stable v0.7 contract:
 
 ## Upgrade and operation
 
-1. Install the candidate and run `aksara migrate` with the migration role.
+1. Install the release and run `aksara migrate` with the migration role.
 2. Grant the restricted application role required DML and sequence privileges
    on the newly migrated internal tables.
 3. Register every durable action and principal resolver version before workers

@@ -1,6 +1,6 @@
 # Aksara v0.7 ADR 0001 Conformance
 
-Candidate: `v0.7.0-rc1`
+Release: `v0.7.0`
 
 Architecture source: `docs/adr/0001-durable-authorized-operations.md`
 

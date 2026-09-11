@@ -5,11 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## v0.7.0-rc1 — Durable Authorized Operations
+## v0.7.0 — Durable Authorized Operations
 
-Prepared 2026-09-10.
+Released 2026-09-11.
 
-This candidate adds an opt-in PostgreSQL execution substrate for authorized
+This release adds an opt-in PostgreSQL execution substrate for authorized
 application work that must outlive its request, process, or worker.
 
 ### Durable execution truth

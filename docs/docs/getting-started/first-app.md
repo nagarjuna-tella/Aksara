@@ -2,7 +2,7 @@
 
 The basic scaffold contains neutral model, serializer, ViewSet, route, and admin
 stubs. The [First project](first-project.md) guide turns those stubs into a Task
-API using exported v0.7.0-rc1 APIs.
+API using exported v0.7.0 APIs.
 
 A minimal resource has three parts:
 

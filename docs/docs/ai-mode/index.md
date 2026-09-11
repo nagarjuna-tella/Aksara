@@ -1,6 +1,6 @@
 # AI Mode
 
-!!! warning "Experimental in v0.7.0-rc1"
+!!! warning "Experimental in v0.7.0"
     Provider-backed prompt execution, AI Console and flows, planner quality,
     investigations, code/patch generation, autonomous behavior, and Studio AI
     internals are experimental. Session and budget state may be process-local.
@@ -36,7 +36,7 @@ Principal, official client, and persisted database journey.
 | Describe code or patch operations | [Code generation](codegen.md), [Patch engine](patch-engine.md), [Safety](safety.md) |
 | Explore Studio AI | [Studio](../studio/index.md) |
 
-There is no public `AgentRuntime` or `Planner` class in v0.7.0-rc1. Pages with those
+There is no public `AgentRuntime` or `Planner` class in v0.7.0. Pages with those
 historical names now describe the narrower real exports or label conceptual
 architecture as pseudocode.
 
