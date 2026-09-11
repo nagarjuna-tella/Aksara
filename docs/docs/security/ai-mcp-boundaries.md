@@ -78,12 +78,18 @@ AI-exposed model has an explicit `ai_agent_writable` decision.
 
 - MCP sessions and replay IDs are process-local and do not provide durable or
   cross-worker exactly-once semantics.
-- Approval grants are signed and stateless. Aksara does not provide durable
-  approval workflow storage.
+- Synchronous MCP approval grants are signed and stateless. The separate
+  [Durable Operations approval substrate](../advanced/durable-operations.md)
+  persists Operation-bound decisions; applications still own approval inboxes,
+  notifications, and approver policy. It does not turn a synchronous MCP grant
+  into a durable workflow.
 - Replay protection storage and token issuance are application concerns; core
   helpers validate claims but do not issue or revoke credentials.
-- The stable execution claim covers generated CRUD and custom actions that use
-  Aksara's registered ViewSet path. Custom execution outside that path must
-  integrate application authorization explicitly.
+- Generated CRUD and MCP tool execution have separate enforcement paths. In
+  v0.7.0, registered custom `@action` HTTP handlers do not automatically run
+  ViewSet or decorator permission checks. They must explicitly integrate
+  application authorization; registration alone does not protect them. See
+  [custom action requirements](../api/actions.md). MCP permission and approval
+  metadata do not install equivalent HTTP enforcement.
 - External review is scoped in the release evidence and does not become an
   implied audit certification.

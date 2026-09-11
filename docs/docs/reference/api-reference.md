@@ -1,524 +1,85 @@
 # API Reference
 
-Complete reference for Aksara's API layer.
-
----
+The API reference is organized by the public component you are configuring.
+The linked guides describe installed behavior and include the supported
+signatures, defaults, and limits. For a complete runnable application, start with
+the [first project](../getting-started/first-project.md).
 
 ## ViewSets
 
-### ModelViewSet
-
-Full CRUD ViewSet for a model.
-
-```python
-from aksara.api import ModelViewSet
-
-class UserViewSet(ModelViewSet):
-    model = User
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-    filterset_fields = ["is_active", "role"]
-    search_fields = ["name", "email"]
-    ordering_fields = ["created_at", "name"]
-    ordering = ["-created_at"]
-```
-
-#### Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `model` | Model | The model class |
-| `serializer_class` | Serializer | Default serializer |
-| `permission_classes` | list | Permission classes |
-| `filterset_fields` | list | Filterable fields |
-| `search_fields` | list | Searchable fields |
-| `ordering_fields` | list | Fields for ordering |
-| `ordering` | list | Default ordering |
-| `pagination_class` | Pagination | Pagination class |
-| `lookup_field` | str | Lookup field (default: "id") |
-
-#### Methods
-
-| Method | Description |
-|--------|-------------|
-| `get_queryset()` | Return the queryset |
-| `get_object()` | Get single object |
-| `get_serializer_class()` | Return serializer class |
-| `get_permissions()` | Return permission instances |
-| `perform_create(serializer)` | Called on create |
-| `perform_update(serializer)` | Called on update |
-| `perform_destroy(instance)` | Called on delete |
-
-#### Actions
-
-| Action | Method | URL |
-|--------|--------|-----|
-| `list` | GET | `/` |
-| `create` | POST | `/` |
-| `retrieve` | GET | `/{id}/` |
-| `update` | PUT | `/{id}/` |
-| `partial_update` | PATCH | `/{id}/` |
-| `destroy` | DELETE | `/{id}/` |
-
-### ViewSet
-
-Base ViewSet without default actions.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api import ViewSet, action
-
-class CustomViewSet(ViewSet):
-    @action(detail=False, methods=["get"])
-    async def custom_list(self, request):
-        return {"data": []}
-    
-    @action(detail=True, methods=["post"])
-    async def custom_action(self, request, pk=None):
-        return {"id": pk}
-```
-
-### ReadOnlyModelViewSet
-
-Read-only ViewSet (list and retrieve only).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api import ReadOnlyModelViewSet
-
-class PostViewSet(ReadOnlyModelViewSet):
-    model = Post
-    serializer_class = PostSerializer
-```
-
----
+Use [`ModelViewSet`](../api/viewsets.md) and `include_viewset(app, ViewSetClass)`
+for generated CRUD. The guide lists the five CRUD routes, operation-specific
+serializer attributes, synchronous queryset hook, and registration example.
+Do not assume Django REST Framework attributes or lifecycle hooks exist because
+the class names look familiar. There is no generated PUT route or supported
+`serializer_class` switch.
 
 ## Actions
 
-### @action Decorator
-
-```python
-from aksara.api import action
-
-@action(
-    detail=True,           # True for /items/{id}/action
-    methods=["post"],      # HTTP methods
-    url_path="custom-path", # Custom URL path
-    url_name="custom_name", # Custom URL name
-    permission_classes=[IsAdmin],  # Override permissions
-    serializer_class=CustomSerializer,  # Override serializer
-)
-async def my_action(self, request, pk=None):
-    return {"success": True}
-```
-
-#### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `detail` | bool | Required | True for detail route |
-| `methods` | list | `["get"]` | HTTP methods |
-| `url_path` | str | Method name | URL path |
-| `url_name` | str | Method name | URL name |
-| `permission_classes` | list | None | Override permissions |
-| `serializer_class` | class | None | Override serializer |
-
----
+[`@action`](../api/actions.md) declares a custom method's route and metadata.
+`detail` and `methods` are required; the route options are `path` and `name`.
+Custom HTTP handlers must explicitly enforce authorization: neither ViewSet
+permissions nor decorator permission metadata automatically wrap the handler
+in v0.7.0. MCP execution checks are a separate path.
 
 ## Serializers
 
-### ModelSerializer
-
-```python
-from aksara.api import ModelSerializer
-
-class UserSerializer(ModelSerializer):
-    full_name = SerializerMethodField()
-    
-    class Meta:
-        model = User
-        fields = ["id", "email", "name", "full_name", "created_at"]
-        read_only_fields = ["id", "created_at"]
-        extra_kwargs = {
-            "password": {"write_only": True},
-        }
-    
-    async def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
-```
-
-#### Meta Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `model` | Model | Model class |
-| `fields` | list/str | Fields to include (`"__all__"` for all) |
-| `exclude` | list | Fields to exclude |
-| `read_only_fields` | list | Read-only fields |
-| `extra_kwargs` | dict | Per-field options |
-
-#### Methods
-
-| Method | Description |
-|--------|-------------|
-| `validate_<field>(value)` | Validate single field |
-| `validate(data)` | Cross-field validation |
-| `create(validated_data)` | Create instance |
-| `update(instance, validated_data)` | Update instance |
-| `to_representation(instance)` | Convert to output |
-| `to_internal_value(data)` | Convert from input |
-
-### Serializer
-
-Aksara serializers use Pydantic under the hood, so fields are inferred from your model automatically:
-
-```python
-from aksara.api import ModelSerializer
-
-class UserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email", "name", "is_active"]
-        read_only_fields = ["id", "created_at"]
-    
-    def validate_email(self, value):
-        # Custom field validation
-        return value.lower()
-    
-    async def validate(self, data):
-        # Cross-field validation
-        return data
-```
-
-### Meta Class Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `model` | Model class | The Aksara model to serialize |
-| `fields` | list or `"__all__"` | Fields to include |
-| `exclude` | list | Fields to exclude |
-| `read_only_fields` | list | Fields in output only |
-| `expand` | list or dict | FK expansion configuration |
-
-### SerializerMethodField
-
-For computed fields:
-
-```python
-class PostSerializer(ModelSerializer):
-    author_name = SerializerMethodField()
-    
-    class Meta:
-        model = Post
-        fields = ["id", "title", "author_name"]
-    
-    async def get_author_name(self, obj):
-        author = await obj.author
-        return author.name
-```
-```
-
----
+[`ModelSerializer`](../api/serializers.md) derives model input and output schemas.
+Its constructor accepts `instance`, `data`, `many`, and `context`. Validation
+hooks are synchronous. The guide documents `Meta` options, validation errors,
+read-only input behavior, relation expansion, and update limits. DRF's
+`partial=True`, `SerializerMethodField`, and `extra_kwargs` are not supported
+contracts here.
 
 ## Permissions
 
-### Built-in Permissions
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.permissions import (
-    AllowAny,
-    IsAuthenticated,
-    IsAdminUser,
-    IsAuthenticatedOrReadOnly,
-)
-```
-
-| Permission | Description |
-|------------|-------------|
-| `AllowAny` | Allow all requests |
-| `IsAuthenticated` | Require authentication |
-| `IsAdminUser` | Require admin user |
-| `IsAuthenticatedOrReadOnly` | Auth for writes |
-
-### Custom Permission
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.permissions import BasePermission
-
-class IsOwner(BasePermission):
-    async def has_object_permission(self, request, view, obj):
-        return obj.owner_id == request.user.id
-
-class HasSubscription(BasePermission):
-    async def has_permission(self, request, view):
-        return request.user.has_active_subscription
-```
-
-### Permission Methods
-
-| Method | Description |
-|--------|-------------|
-| `has_permission(request, view)` | Check view-level access |
-| `has_object_permission(request, view, obj)` | Check object-level access |
-
----
+[Permission classes](../api/permissions.md) implement synchronous
+`has_permission(request, view)` and
+`has_object_permission(request, view, obj)` hooks. The guide distinguishes
+view checks, object checks, list filtering, and the custom HTTP action boundary.
 
 ## Authentication
 
-### Token Authentication
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.authentication import TokenAuthentication
-
-# In settings
-"DEFAULT_AUTHENTICATION_CLASSES": [
-    "aksara.api.authentication.TokenAuthentication",
-]
-```
-
-### Custom Authentication
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.authentication import BaseAuthentication
-
-class APIKeyAuthentication(BaseAuthentication):
-    async def authenticate(self, request):
-        api_key = request.headers.get("X-API-Key")
-        if not api_key:
-            return None
-        
-        user = await User.objects.filter(api_key=api_key).first()
-        if user:
-            return (user, None)
-        return None
-```
-
----
+[Authentication helpers](../api/authentication.md) provide account, password,
+session, and dependency primitives. Applications own credential verification,
+login endpoints, and attaching trusted request identity. There is no automatic
+DRF authentication-class configuration.
 
 ## Pagination
 
-### PageNumberPagination
-
-```python
-from aksara.api.pagination import PageNumberPagination
-
-class CustomPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = "page_size"
-    max_page_size = 100
-```
-
-Response format:
-
-```json
-{
-    "count": 100,
-    "next": "/api/posts/?page=2",
-    "previous": null,
-    "results": [...]
-}
-```
-
-### LimitOffsetPagination
-
-```python
-from aksara.api.pagination import LimitOffsetPagination
-
-class CustomPagination(LimitOffsetPagination):
-    default_limit = 20
-    max_limit = 100
-```
-
-### CursorPagination
-
-```python
-from aksara.api.pagination import CursorPagination
-
-class CustomPagination(CursorPagination):
-    ordering = "-created_at"
-    page_size = 20
-```
-
----
+Start with the [ViewSet pagination defaults](../api/viewsets.md) for generated
+list behavior. Do not assume importing a pagination class changes an existing
+route's response shape; configure and test the route you expose.
 
 ## Filtering
 
-### FilterSet
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.filters import FilterSet, Filter
-
-class PostFilterSet(FilterSet):
-    author = Filter(field_name="author_id")
-    published = Filter(field_name="is_published")
-    created_after = Filter(field_name="created_at", lookup="gte")
-    title_contains = Filter(field_name="title", lookup="contains")
-    
-    class Meta:
-        model = Post
-
-class PostViewSet(ModelViewSet):
-    filterset_class = PostFilterSet
-```
-
-### Filter Lookups
-
-| Lookup | SQL | Example |
-|--------|-----|---------|
-| `exact` | `=` | `?status=active` |
-| `iexact` | `ILIKE` | `?name__iexact=john` |
-| `contains` | `LIKE %x%` | `?title__contains=python` |
-| `icontains` | `ILIKE %x%` | `?title__icontains=python` |
-| `gt` | `>` | `?price__gt=100` |
-| `gte` | `>=` | `?price__gte=100` |
-| `lt` | `<` | `?price__lt=100` |
-| `lte` | `<=` | `?price__lte=100` |
-| `in` | `IN` | `?status__in=a,b,c` |
-| `isnull` | `IS NULL` | `?deleted_at__isnull=true` |
-
----
+See [ViewSet filtering and queryset customization](../api/viewsets.md).
+Filtering must be explicitly configured through supported hooks/backends.
+It is separate from authorization and does not replace tenant isolation.
 
 ## Routing
 
-### URL Configuration
-
-```python
-from aksara import include_viewset
-from .views import UserViewSet, PostViewSet
-
-# List your ViewSets here
-urlpatterns = [
-    UserViewSet,
-    PostViewSet,
-]
-
-def register_routes(app):
-    for viewset in urlpatterns:
-        include_viewset(app, viewset)
-```
-
-### Auto-Discovery (v0.3.14+)
-
-```python
-from aksara.api import include_app_viewsets, include_all_app_viewsets
-
-# Register all ViewSets in a specific app
-include_app_viewsets(app, "blog")
-
-# Register all ViewSets across all INSTALLED_APPS
-include_all_app_viewsets(app)
-```
-
-### Manual Routes
-
-For endpoints outside of ViewSets, use FastAPI's `APIRouter` directly:
-
-```python
-from fastapi import APIRouter
-
-router = APIRouter()
-
-@router.get("/custom")
-async def custom_endpoint(request):
-    return {"data": "value"}
-
-@router.post("/custom/{id}")
-async def custom_action(request, id: str):
-    return {"id": id}
-
-# Include in your Aksara app
-app.include_router(router)
-```
-
----
+[Routing](../api/routing.md) covers registration. The checked minimal registration
+example is in [ViewSets](../api/viewsets.md). Custom FastAPI routes remain
+application-owned handlers with application-owned authorization.
 
 ## Request & Response
 
-### Request Object
-
-```python
-async def my_view(request):
-    # User
-    user = request.user
-    is_auth = request.user.is_authenticated
-    
-    # Data
-    data = request.data  # Parsed body
-    query = request.query_params  # Query string
-    
-    # Headers
-    auth = request.headers.get("Authorization")
-    
-    # Method
-    method = request.method  # GET, POST, etc.
-```
-
-### Response Formats
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api import Response
-
-# JSON response (default)
-return {"data": "value"}
-
-# Custom status
-return {"error": "Not found"}, 404
-
-# Response object
-return Response(
-    data={"key": "value"},
-    status=201,
-    headers={"X-Custom": "header"}
-)
-```
-
----
+HTTP handlers use FastAPI/Starlette request and response conventions.
+Use `await request.json()` to read a JSON body, rather than a DRF-style
+`request.data`. For custom status codes, return an explicit response or configure
+the route; returning a `(body, status)` tuple is not a status-setting contract.
+See the [generated routes and status codes](../api/viewsets.md) and
+[serializer validation errors](../api/serializers.md).
 
 ## Throttling
 
-### Built-in Throttles
+[Throttling](../api/throttling.md) describes the available rate-limit integration.
+Rate limits do not replace identity, permissions, or object-level policy.
 
-**Conceptual or legacy pseudocode (not an installed-package API):**
+## Next steps
 
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.throttling import AnonRateThrottle, UserRateThrottle
-
-class PostViewSet(ModelViewSet):
-    throttle_classes = [AnonRateThrottle, UserRateThrottle]
-```
-
-### Custom Throttle
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api.throttling import BaseThrottle
-
-class BurstThrottle(BaseThrottle):
-    rate = "60/minute"
-    
-    def get_cache_key(self, request, view):
-        return f"throttle:{request.user.id}"
-```
-
----
-
-## Related Documentation
-
-- [ViewSets Guide](../api/viewsets.md)
-- [Serializers Guide](../api/serializers.md)
-- [Permissions Guide](../api/permissions.md)
+The [API overview](../api/index.md) explains how these pieces fit together.
+The [ticket desk tutorial](../tutorials/ticket-desk.md) provides the executable
+path through validation and relationships; subsequent chapters cover tenant
+isolation, background work, durable operations, and optional MCP access.

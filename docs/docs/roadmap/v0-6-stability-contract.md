@@ -77,6 +77,12 @@ does not need DDL access.
 Applications still own their authentication and permission policy. Generated
 routes do not make an unauthenticated model safe by themselves.
 
+Current implementation clarification: in v0.7.0, registered custom `@action`
+HTTP handlers do not automatically invoke ViewSet or decorator permission
+checks. Applications must enforce those checks explicitly. See the
+[custom action boundary](../api/actions.md); the interface stability commitment
+above is not a claim that route registration supplies HTTP authorization.
+
 ### Configuration, identity, and authorization
 
 - `aksara.conf.Settings`, the `settings` object, `configure()`, and documented
