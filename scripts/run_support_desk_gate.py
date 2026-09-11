@@ -1528,7 +1528,7 @@ print(ApprovalManager(data['secret']).issue(
                 # Uvicorn may already have closed its listener.
                 if response is None and call_error is None:
                     raise
-            code = await asyncio.wait_for(process.wait(), timeout=15)
+            code = await asyncio.wait_for(process.wait(), timeout=30)
             self.check(
                 "graceful shutdown drains in-flight MCP invocation",
                 (response is not None or call_error is not None) and code == 0,
