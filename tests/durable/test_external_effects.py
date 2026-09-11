@@ -449,7 +449,9 @@ async def test_cancellation_after_intent_prevents_external_send(durable_db):
             await service.request_cancellation(
                 admitted.operation.id,
                 tenant_id=tenant,
-                principal=Principal.for_user("user-1", tenant_id=tenant),
+                principal=Principal.for_user(
+                    "user-1", tenant_id=tenant, scopes=("external:write",)
+                ),
                 requester_reference=_reference(tenant),
             )
 
@@ -539,6 +541,8 @@ async def test_external_completion_cannot_commit_after_lease_expires(
     operation = await service.get(
         admitted.operation.id,
         tenant_id=tenant,
-        principal=Principal.for_user("user-1", tenant_id=tenant),
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("external:write",)
+        ),
     )
     assert operation.state is OperationState.RUNNING

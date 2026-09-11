@@ -167,7 +167,11 @@ async def _run(args: argparse.Namespace) -> int:
             operation = await service.decide_approval(
                 UUID(args.operation_id),
                 tenant_id=args.tenant_id,
-                approver=Principal.for_user("approver-1", tenant_id=args.tenant_id),
+                approver=Principal.for_user(
+                    "approver-1",
+                    tenant_id=args.tenant_id,
+                    scopes=("counter:write",),
+                ),
                 approver_reference=_reference(args.tenant_id, subject_id="approver-1"),
                 approve=True,
             )
@@ -178,7 +182,11 @@ async def _run(args: argparse.Namespace) -> int:
             operation = await service.request_cancellation(
                 UUID(args.operation_id),
                 tenant_id=args.tenant_id,
-                principal=Principal.for_user("user-1", tenant_id=args.tenant_id),
+                principal=Principal.for_user(
+                    "user-1",
+                    tenant_id=args.tenant_id,
+                    scopes=("counter:write",),
+                ),
                 requester_reference=_reference(args.tenant_id),
             )
             _emit("cancelled", state=operation.state.value)

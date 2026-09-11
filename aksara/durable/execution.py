@@ -434,6 +434,7 @@ class ReadOnlyExecutor:
         principal = await self._identity._resolve_or_fail(claim)
         if principal is None:
             return await self._identity._read_authoritative(claim)
+        authorization_denied_after_boundary = False
         try:
             if not await self._identity._authorize(action, principal, claim):
                 return await self.service.fail_attempt(
@@ -479,22 +480,25 @@ class ReadOnlyExecutor:
                     if not break_for_lifecycle:
                         await self._identity._at_boundary("after_lock")
                         if not await self._identity._authorize(action, principal, claim):
-                            return await self.service.fail_attempt(
-                                claim,
-                                code=FailureReason.AUTHORIZATION_DENIED.value,
-                                message="current authorization denied the read-only action",
-                                retryable=False,
-                            )
-                        with durable_database_guard(self.service.db, connection) as guard:
-                            result = action.handler(context, dict(claim.command))
-                            if inspect.isawaitable(result):
-                                result = await result
-                            if guard.invalid_reason is not None:
-                                raise AtomicBoundaryViolation(
-                                    "read_only boundary was invalidated: "
-                                    f"{guard.invalid_reason}"
-                                )
-                            normalized = action.normalize_result(result)
+                            authorization_denied_after_boundary = True
+                        else:
+                            with durable_database_guard(self.service.db, connection) as guard:
+                                result = action.handler(context, dict(claim.command))
+                                if inspect.isawaitable(result):
+                                    result = await result
+                                if guard.invalid_reason is not None:
+                                    raise AtomicBoundaryViolation(
+                                        "read_only boundary was invalidated: "
+                                        f"{guard.invalid_reason}"
+                                    )
+                                normalized = action.normalize_result(result)
+            if authorization_denied_after_boundary:
+                return await self.service.fail_attempt(
+                    claim,
+                    code=FailureReason.AUTHORIZATION_DENIED.value,
+                    message="current authorization denied the read-only action",
+                    retryable=False,
+                )
             if break_for_lifecycle:
                 with _tenant_context(claim.tenant_scope):
                     async with atomic(db=self.service.db) as connection:

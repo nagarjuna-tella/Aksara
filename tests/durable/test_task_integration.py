@@ -133,7 +133,9 @@ async def test_task_backed_operation_uses_operation_attempt_as_authority(durable
     operation = await service.get(
         admitted.operation.id,
         tenant_id=tenant,
-        principal=Principal.for_user("user-1", tenant_id=tenant),
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("counter:write",)
+        ),
     )
     assert operation.state is OperationState.SUCCEEDED
     assert operation.attempt_count == 1
@@ -290,7 +292,9 @@ async def test_stale_linked_task_projects_terminal_operation(durable_db):
     await service.request_cancellation(
         admitted.operation.id,
         tenant_id=tenant,
-        principal=Principal.for_user("user-1", tenant_id=tenant),
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("counter:write",)
+        ),
         requester_reference=_reference(tenant),
     )
     await durable_db.execute(
@@ -333,7 +337,9 @@ async def test_prune_preserves_terminal_operation_until_task_projection(durable_
     await service.request_cancellation(
         admitted.operation.id,
         tenant_id=tenant,
-        principal=Principal.for_user("user-1", tenant_id=tenant),
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("counter:write",)
+        ),
         requester_reference=_reference(tenant),
     )
     with _tenant(tenant):

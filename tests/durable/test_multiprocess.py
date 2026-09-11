@@ -552,7 +552,9 @@ async def test_task_worker_death_keeps_operation_authoritative(durable_db, bound
     operation = await service.get(
         admitted.operation.id,
         tenant_id=tenant,
-        principal=Principal.for_user("user-1", tenant_id=tenant),
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("counter:write",)
+        ),
     )
     assert operation.state is OperationState.SUCCEEDED
     assert await _counter(durable_db, tenant, counter_id) == 1
