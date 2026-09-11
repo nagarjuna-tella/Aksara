@@ -116,6 +116,7 @@ Full page-by-page usability review is still pending.
 | PT-025 | P1 | Querying guide repeats unsupported await/slice/projection/exclude patterns and positional aggregate calls | Rewrote around tutorial Ticket, explicit terminal methods, Q negation, bounded pagination and named aggregates | Docs fixed; all eight Python blocks executed against installed-wheel PostgreSQL; 18 assertions |
 | PT-026 | P1 | Eighteen remaining ORM overview/model/field/relation examples directly await query builders, including unsupported exclude | Added explicit all terminals and Q negation across four guides | Docs corrected for this API shape; broader surrounding semantics still under review |
 | PT-027 | P1 | Advanced validation guide teaches async serializer hooks, nonexistent validator APIs and implicit clean behavior; type example uses null=True | Replaced with explicit layer-specific validation contracts and corrected nullable option | Docs fixed; existing installed serializer/tenant examples support linked paths |
+| PT-028 | P1 | Type reference invents async permission/serializer interfaces, return shapes and mypy plugin/stub guarantees | Replaced sketches with actual sync/async contracts and qualified annotation support | Docs fixed; existing installed signature and import checks |
 
 ## Runtime Defects Exposed by the Documentation Audit
 

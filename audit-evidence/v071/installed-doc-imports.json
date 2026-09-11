@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 624,
+  "python_blocks": 605,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -124,7 +124,7 @@
     "docs/docs/reference/orm-reference.md": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
     "docs/docs/reference/runtime-compatibility.md": "47a3415e4e2b4caca9ccc273104bf7294a1bc8fb19902a5b2644d1e858536c40",
     "docs/docs/reference/settings-reference.md": "828ca2b0bbfa3acb600d6d597c94c056861b990128a42d93f1e6d28217aaaa82",
-    "docs/docs/reference/types.md": "494cd3fc38786fbca07027e9ddede241de91fb76d99a41e3acf9aa61ee065e53",
+    "docs/docs/reference/types.md": "f0a04c4d50d44b067c09d5978c6e655a66d257b25793a55d2495d7b139e8cc84",
     "docs/docs/releasing.md": "0c46ebc9942e8c6b7896a1a3ee3e2d0d5e40b0b3042b57398fc5a953ab7798a9",
     "docs/docs/roadmap/index.md": "eb5890ddae4f71d6a1b81f1b790e0618a5499cf8229e12c8471d8e30dcd270b7",
     "docs/docs/roadmap/v0-6-stability-contract.md": "cab1c54f24762268d49626412f61e03ee88e5393f5e4e09000f98b47675dd6d4",
