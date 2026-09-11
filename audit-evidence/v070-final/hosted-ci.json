@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "repository": "nagarjuna-tella/Aksara",
+  "pr": 27,
+  "sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1",
+  "total": 21,
+  "passed": 21,
+  "failed": 0,
+  "pending": 0,
+  "checks": [
+    {
+      "name": "Analyze Python (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:36:14Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991807/job/103301147098"
+    },
+    {
+      "name": "CodeQL",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:36:05Z",
+      "completed_at": "2026-09-11T14:36:09Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/runs/103301492591"
+    },
+    {
+      "name": "Dependency audit",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:37Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301146683"
+    },
+    {
+      "name": "Dependency audit",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:35:42Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991696/job/103301146859"
+    },
+    {
+      "name": "Docs strict build",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:30Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147209"
+    },
+    {
+      "name": "Full test suite (3.11, latest-supported)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:38:32Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147141"
+    },
+    {
+      "name": "Full test suite (3.11, minimum)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:38:42Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147528"
+    },
+    {
+      "name": "Full test suite (3.14, latest-supported)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:38:36Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147272"
+    },
+    {
+      "name": "Full test suite (3.14, minimum)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:38:34Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147167"
+    },
+    {
+      "name": "Installed-wheel documentation journey",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:36:18Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147103"
+    },
+    {
+      "name": "Package build verification",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:42Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147157"
+    },
+    {
+      "name": "Packaged production reference app",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:36:27Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147010"
+    },
+    {
+      "name": "Production diagnostics",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:35:39Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147034"
+    },
+    {
+      "name": "SBOM generation",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:35:43Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147263"
+    },
+    {
+      "name": "Secret scan",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:20Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147091"
+    },
+    {
+      "name": "Secret scan",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:16Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991696/job/103301147238"
+    },
+    {
+      "name": "Security and diagnostics tests",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:11Z",
+      "completed_at": "2026-09-11T14:35:40Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991696/job/103301147182"
+    },
+    {
+      "name": "Security docs check",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:35:24Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991696/job/103301147235"
+    },
+    {
+      "name": "Security, fuzz, and diagnostics tests",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:07Z",
+      "completed_at": "2026-09-11T14:35:45Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147073"
+    },
+    {
+      "name": "Static analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:10Z",
+      "completed_at": "2026-09-11T14:35:51Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991693/job/103301147436"
+    },
+    {
+      "name": "Static analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-11T14:35:06Z",
+      "completed_at": "2026-09-11T14:35:44Z",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34610991696/job/103301147278"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Studio configuration
 
 !!! warning "Experimental surface"
-    Studio and Studio AI internals are experimental in v0.7.0-rc1. New projects
+    Studio and Studio AI internals are experimental in v0.7.0. New projects
     keep Studio disabled.
 
 Studio mounts only when `enable_studio=True`. In production it also requires

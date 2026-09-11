@@ -9,7 +9,7 @@ The sequence is:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.7.0rc1"
+pip install "aksara-framework==0.7.0"
 aksara startproject hello_aksara
 cd hello_aksara
 aksara dbsetup

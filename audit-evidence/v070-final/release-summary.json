@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.0",
+  "package_version": "0.7.0",
+  "branch": "release/v0.7.0",
+  "base_sha": "3de21899e2bc76a495f5b2a3932805a412b6b5b3",
+  "finalization_sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1",
+  "recommendation": "ready_for_v0.7.0_release",
+  "publication_performed": false,
+  "merge_performed": false,
+  "tag_created": false,
+  "adr_0001": {
+    "verdict": "PROVEN WITH REQUIRED IMPLEMENTATION CONSTRAINTS",
+    "contradictions": []
+  },
+  "mcp_tasks": {
+    "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
+    "synchronous_mcp_preserved": true
+  },
+  "validation": {
+    "full_suite": {
+      "status": "pass",
+      "passed": 8271,
+      "skipped": 2
+    },
+    "runtime_matrix": {
+      "status": "pass",
+      "cells": 4,
+      "passed_per_cell": 8271,
+      "skipped_per_cell": 2
+    },
+    "durable_targeted": {
+      "status": "pass",
+      "passed": 258
+    },
+    "invariant_prototype": {
+      "status": "pass",
+      "passed": 24
+    },
+    "security": {
+      "status": "pass",
+      "passed": 429
+    },
+    "fuzz": {
+      "status": "pass",
+      "passed": 165
+    },
+    "diagnostics": {
+      "status": "pass",
+      "passed": 314
+    },
+    "migrations": {
+      "status": "pass",
+      "passed": 455
+    },
+    "docs_contract": {
+      "status": "pass",
+      "passed": 114
+    },
+    "docs_strict": {
+      "status": "pass"
+    },
+    "doctor_release": {
+      "status": "pass",
+      "checks": 12,
+      "warnings": 0,
+      "failures": 0,
+      "blocks": 0
+    },
+    "static_analysis": {
+      "status": "pass",
+      "ruff": 7208,
+      "ruff_allowed": 7218,
+      "mypy": 465,
+      "mypy_allowed": 501
+    },
+    "bandit_high": {
+      "status": "pass",
+      "findings": 0
+    },
+    "dependency_audit": {
+      "status": "pass",
+      "known_vulnerabilities": 0
+    },
+    "gitleaks": {
+      "status": "pass",
+      "findings": 0
+    },
+    "package": {
+      "build": "pass",
+      "twine": "pass"
+    },
+    "sbom": {
+      "status": "pass",
+      "format": "CycloneDX",
+      "spec_version": "1.6",
+      "components": 46
+    },
+    "installed_package": {
+      "status": "pass",
+      "checks": 15
+    },
+    "support_desk": {
+      "status": "pass",
+      "checks": 66
+    },
+    "performance_sanity": {
+      "status": "pass",
+      "invariants": 7,
+      "capacity_claim": false
+    },
+    "hosted_ci": {
+      "status": "pass",
+      "checks": 21,
+      "postgresql_version": "16",
+      "sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1"
+    }
+  }
+}

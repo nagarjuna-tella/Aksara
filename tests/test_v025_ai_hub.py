@@ -779,11 +779,11 @@ class TestAiHubIntegration:
 
     def test_version_is_0_5_25(self):
         from aksara._version import __version__
-        assert __version__ == "0.7.0rc1"
+        assert __version__ == "0.7.0"
 
     def test_cli_version_is_0_5_25(self):
         from aksara.cli.main import CLI_VERSION
-        assert CLI_VERSION == "0.7.0rc1"
+        assert CLI_VERSION == "0.7.0"
 
     def test_unified_provider_imports(self):
         """Verify all unified provider imports work."""

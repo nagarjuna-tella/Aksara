@@ -297,7 +297,7 @@ Output:
 ```
 Aksara Project Information
 ==========================
-Version: 0.7.0rc1
+Version: 0.7.0
 Python: 3.11.0
 Database: postgresql://localhost/mydb
 

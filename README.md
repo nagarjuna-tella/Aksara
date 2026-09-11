@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/release-v0.7.0-rc1-22c55e?style=flat-square" alt="Release v0.7.0-rc1">
+  <img src="https://img.shields.io/badge/release-v0.7.0-22c55e?style=flat-square" alt="Release v0.7.0">
   <img src="https://img.shields.io/badge/PostgreSQL-required-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL required">
 </p>
 
@@ -26,7 +26,7 @@ authentication and server-owned `Principal`, permissions and `PolicyEngine`,
 tenant isolation, core CLI and Doctor, PostgreSQL background tasks, and MCP
 Streamable HTTP execution at `/mcp/`.
 
-The v0.7 candidate adds opt-in Durable Authorized Operations: one PostgreSQL
+The v0.7 release adds opt-in Durable Authorized Operations: one PostgreSQL
 Operation, separate fenced Attempts, scoped idempotency, current
 reauthorization, approval and cancellation intent, task-backed execution, and
 honest external-effect recovery.
@@ -52,7 +52,7 @@ Aksara requires PostgreSQL.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.7.0rc1"
+pip install "aksara-framework==0.7.0"
 aksara startproject opsdesk
 cd opsdesk
 aksara dbsetup
@@ -196,7 +196,7 @@ aksara ai-hub status
 aksara ai-hub doctor
 ```
 
-There is no public `AgentRuntime` or `Planner` class in v0.7.0-rc1. The documented
+There is no public `AgentRuntime` or `Planner` class in v0.7.0. The documented
 real primitives remain experimental and are described in the
 [AI Mode guide](https://nagarjuna-tella.github.io/Aksara/ai-mode/).
 
@@ -235,7 +235,7 @@ aksara examples validate --format json
 
 ## Roadmap
 
-v0.7.0-rc1 implements the accepted Durable Authorized Operations architecture
+v0.7.0 implements the accepted Durable Authorized Operations architecture
 while preserving the v0.6 synchronous surfaces and PostgreSQL-first deployment
 profile. See the
 [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/).

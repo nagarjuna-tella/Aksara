@@ -1,0 +1,111 @@
+{
+  "check": "production-check",
+  "policy": "release-candidate",
+  "status": "pass",
+  "results": [
+    {
+      "id": "security.secret_key",
+      "title": "SECRET_KEY",
+      "severity": "info",
+      "status": "pass",
+      "message": "SECRET_KEY is set and does not appear to be a known default.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.debug_mode",
+      "title": "Debug mode",
+      "severity": "info",
+      "status": "pass",
+      "message": "debug=False.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.cors",
+      "title": "CORS configuration",
+      "severity": "info",
+      "status": "pass",
+      "message": "No CORS wildcard detected.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.studio_exposure",
+      "title": "Studio production exposure",
+      "severity": "info",
+      "status": "pass",
+      "message": "Studio is not exposed in production or requires authentication.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.mcp_exposure",
+      "title": "MCP disabled",
+      "severity": "info",
+      "status": "pass",
+      "message": "MCP is disabled by default (mcp_enabled=False). This is the safe default.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.mcp_hardening",
+      "title": "MCP hardening",
+      "severity": "info",
+      "status": "pass",
+      "message": "MCP is disabled; hardening checks skipped.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.ai_console_exposure",
+      "title": "AI Console",
+      "severity": "info",
+      "status": "pass",
+      "message": "AI Console is not enabled (default).",
+      "recommendation": ""
+    },
+    {
+      "id": "security.cookies",
+      "title": "Cookie security",
+      "severity": "info",
+      "status": "pass",
+      "message": "cookie_secure=True.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.rate_limits",
+      "title": "Rate limiting",
+      "severity": "info",
+      "status": "pass",
+      "message": "Admin rate limiting is enabled.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.rls",
+      "title": "Tenancy/RLS",
+      "severity": "info",
+      "status": "pass",
+      "message": "Multi-tenancy is not explicitly enabled via environment variables.",
+      "recommendation": "If your app is multi-tenant, set AKSARA_MULTI_TENANT=true and AKSARA_RLS_ENABLED=true."
+    },
+    {
+      "id": "security.ai_field_defaults",
+      "title": "AI mutation exposure",
+      "severity": "info",
+      "status": "pass",
+      "message": "AI, MCP, and AI Console mutation surfaces are disabled.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.matrix",
+      "title": "Security matrix",
+      "severity": "info",
+      "status": "pass",
+      "message": "security_matrix.yml loaded and validated from security/security_matrix.release.yml.",
+      "recommendation": ""
+    }
+  ],
+  "summary": {
+    "blocks": 0,
+    "failures": 0,
+    "warnings": 0,
+    "passes": 12
+  },
+  "exit_code": 0,
+  "release_ready": true
+}

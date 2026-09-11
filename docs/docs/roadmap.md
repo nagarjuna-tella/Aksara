@@ -25,16 +25,16 @@ multi-agent and autonomous workflows, provider-specific quality, Studio AI,
 application approval workflow UX, durable compliance retention, and
 protocol-level MCP Tasks remain experimental, application-owned, or deferred.
 
-The v0.7.0 release candidate adds an opt-in Durable Authorized Operations
+The v0.7.0 release adds an opt-in Durable Authorized Operations
 substrate. PostgreSQL retains one logical Operation, its physical Attempts,
 scoped idempotency identity, current-authorization provenance, approval and
 cancellation intent, transition/outbox evidence, and bounded retention. See the
 [v0.7 durable operations stability contract](roadmap/v0-7-stability-contract.md)
 for the exact new boundary.
 
-## v0.7 release candidate
+## v0.7 release
 
-The v0.7 candidate milestone is **durable authorized operations**.
+The v0.7 milestone is **durable authorized operations**.
 
 The accepted architecture is recorded in
 [ADR 0001 — Durable Authorized Operations](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/adr/0001-durable-authorized-operations.md).
@@ -83,7 +83,7 @@ work.
 
 ## Delivered in v0.7
 
-The candidate implements the architectural sequence as follows:
+The release implements the architectural sequence as follows:
 
 1. **State and authorization contract.** Centralized terminal states,
    attempts, leases, fencing, retry rules, retention, and reauthorization are

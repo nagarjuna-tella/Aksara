@@ -1,6 +1,6 @@
 # Experimental AI quickstart
 
-!!! warning "Experimental in v0.7.0-rc1"
+!!! warning "Experimental in v0.7.0"
     Provider-backed prompts, planners, investigations, and Studio AI internals
     are outside the stable v0.6 contract. MCP generated-tool execution is a
     separate stable surface and does not require a model provider.
@@ -30,7 +30,7 @@ ollama pull llama3
 aksara ai-hub configure
 ```
 
-Aksara v0.7.0-rc1 does not export a stable `AgentRuntime` or `Planner` class. Use the
+Aksara v0.7.0 does not export a stable `AgentRuntime` or `Planner` class. Use the
 real primitives documented under [AI Mode](../ai-mode/index.md), expect their
 contracts to evolve, and keep human approval and application authorization
 around mutations.
