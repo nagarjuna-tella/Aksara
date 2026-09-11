@@ -2,8 +2,8 @@
   "schema_version": 1,
   "gate": "support-desk-v070-production-reference",
   "status": "passed",
-  "started_at": "2026-09-11T09:50:40.830998+00:00",
-  "finished_at": "2026-09-11T09:51:05.649277+00:00",
+  "started_at": "2026-09-11T09:58:25.974557+00:00",
+  "finished_at": "2026-09-11T09:58:51.037649+00:00",
   "wheel": "aksara_framework-0.7.0rc1-py3-none-any.whl",
   "wheel_sha256": "33f03a5425eeda54e81327cc3c6d974b84678df90201fc5cd8df344922315d55",
   "database": "aksara_test",
@@ -491,10 +491,10 @@
       "status": "pass",
       "details": {
         "tenant_a": [
-          "f32e387d-9267-4397-acec-6914c06344a1"
+          "be012153-4a04-49d8-9ad3-18adaaf469bf"
         ],
         "tenant_b": [
-          "87f573c3-0f93-42ec-a813-cee2386f5c11"
+          "2b8bf10a-532e-403e-9327-38318d4d5050"
         ]
       }
     },
