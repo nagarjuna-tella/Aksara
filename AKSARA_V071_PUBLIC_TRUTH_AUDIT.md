@@ -49,7 +49,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
 | Generated REST/ViewSets | Yes | Stable | `aksara.ModelViewSet`, `include_viewset`, `action` | Core journey rewritten | Ticket desk | CRUD and custom routes | OpenAPI, pagination and every action variant still require full regression coverage. |
 | Authentication | Yes | Stable covered backend paths | `aksara.contrib.auth`, application adapters | Partial audit | Local adapter; Support Desk | Local adapter only | A local bearer mapping is not production login/provider certification. |
-| Principal | Yes | Stable | `aksara.security.principal.Principal` | Reviewed identity explanation | Ticket identity + durable resolver | Human and tenant context | Agent/MCP identity remains pending in the new journey. |
+| Principal | Yes | Stable | `aksara.security.principal.Principal` | Reviewed identity explanation | Ticket identity + durable resolver | Human and tenant context | MCP-agent identity, scope, expiry and human-owner membership are now exercised too. |
 | Permissions | Yes | Stable | `BasePermission`, `IsAuthenticated`, `check_permissions` | Reviewed application pattern | Reader/editor ticket policy | Request/object denial | Custom endpoints must explicitly call their policy; they do not inherit ViewSet permissions. |
 | PolicyEngine | Yes | Stable documented methods | `aksara.security.policy.PolicyEngine` | Partial audit; boundaries clarified | Generated CRUD; durable authorizer | Covered query/write policy slice | `tests/security/test_policy_engine.py` remains the broader authority. |
 | Field-level policy | Yes | Stable covered write paths | `PolicyEngine.validate_payload`, enforcement helpers | Partial audit | Tenant-owned field; durable resolved field | Owned-field denial | Schema 422 and runtime permission denial are distinct enforcement points. |
@@ -68,7 +68,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Partial audit | Media guide | Pending new journey | Field correctness is distinct from storage integration and protected download design. |
 | Storage integrations | Yes | Evolving | `aksara.storage` | Configuration corrected; usage audit pending | Media guide | Pending | CSV export exercises a common app feature, not file storage. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | Discoverability gap under review | `tests/api/test_typescript_sdk.py` | Pending | See also `tests/cli/test_sdk_cli.py`; no new SDK behavior proposed. |
-| MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Endpoint distinction corrected | MCP getting-started; Support Desk | Pending new journey | Official client execution required; protocol Tasks are not implied. |
+| MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
 | AI/provider/runtime | Yes | Experimental | `aksara.ai` | Needs full stability/copy audit | ai_providers | Pending | Planner and provider quality are outside backend production guarantees. |
 | Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Needs full stability/copy audit | Studio guides | Pending | Not a substitute for production Admin or a durable investigation store. |
 | Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Boundary explained | Generic-relations/workflow guide | Pending | Step cache does not inherit Operation leases, fences or current reauthorization. |
@@ -78,11 +78,15 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 
 ## Documentation Architecture
 
-Proposed reader order: evaluate → quickstart → one progressive application
-→ task-oriented how-tos → concepts → reference → operations. Stable MCP is an
-optional application consumer and must be reachable without browsing experimental
-AI internals. Contributor and experimental material remain accessible but do not
-lead the beginner journey. Navigation implementation is pending.
+Implemented reader routes: Home for evaluation, Start for the six-chapter
+ticket desk, Build for concepts and application guides, Operate for deployment
+and diagnostics, MCP for the stable protocol, and Reference for exact usage.
+Experimental AI/Studio and contributor internals have separate sections; Roadmap
+retains release contracts and changelog. All 157 prior navigation destinations
+remain reachable. Home, Getting Started, First App, Ten Minutes and Tutorials
+now lead to the same executable application rather than competing toy projects.
+Automated navigation checks verify destinations and the principal reader routes.
+Full page-by-page usability review is still pending.
 
 ## Contradictions Found
 
@@ -95,7 +99,9 @@ lead the beginner journey. Navigation implementation is pending.
 | PT-006 | P1 | Settings pages imply dataclass constructor overrides always beat environment, and that the global database URL starts an `Aksara()` database lifespan | Explain keyword overrides and explicit settings-to-constructor handoff | Docs fixed |
 | PT-007 | P2 | Glossary claims memory/Redis cache backends and omits Operation/Attempt/Principal distinctions | Removed unsupported cache claim and added authority/execution terminology | Docs fixed |
 | PT-008 | P1 | Durable guide mounts the generic router without explaining application admission permissions or the connected-database lifecycle | Added explicit admission boundary explanation and runnable factory/resolver/worker tutorial | Docs fixed |
-| PT-004 | P2 | `docs/mkdocs.yml` gives experimental AI a large top-level section; durability is under Advanced | Provide an application learning path and prominent production/durability entry points | Open |
+| PT-009 | P2 | Older MCP quickstart duplicates an unrelated app and uses `httpx.AsyncClient` rather than the installed SDK 2.0 transport type | Consolidated entry around the tested ticket desk and `httpx2.AsyncClient`; no dependency change | Docs fixed |
+| PT-004 | P2 | Navigation promotes experimental AI before the backend journey; entry pages teach competing starter apps | Added Start/Build/Operate/MCP/Reference/Experimental/Contribute paths, retained every page destination, and consolidated entry pages around the tested ticket desk | Docs fixed |
+| PT-010 | P2 | Docs home calls released v0.7.0 a candidate; tutorial index directs readers to a separate `aksara/examples` repository rather than the documented source | Corrected released status and linked the canonical source-bearing chapters and repository example catalog | Docs fixed |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
@@ -126,10 +132,9 @@ prove the complete examples work against a clean installed wheel.
 
 ## Missing User Journeys
 
-Existing tutorials teach separate blog, multitenant, and AI examples. A single
-progressive application covering relations, validation, identity, tenancy,
-tasks, durability, and optional MCP must be built and executed. Deployment
-reading and beginner tests must use only published instructions.
+The six-chapter ticket desk now covers relations, validation, identity, tenancy,
+tasks, durability and optional MCP through executed public instructions. The
+production deployment reading test and candidate-wheel reruns remain pending.
 
 ## README Findings
 
@@ -224,7 +229,7 @@ justified yet. Durable example usability requires its own documented journey.
 
 ## Clean-Room Journey Results
 
-Five consecutive chapters now run from exact Markdown file fences in a
+Six consecutive chapters now run from exact Markdown file fences in a
 temporary scaffold using the independently installed public 0.7.0 wheel,
 local PostgreSQL and an ephemeral NOSUPERUSER/NOBYPASSRLS application role:
 
@@ -235,8 +240,9 @@ local PostgreSQL and an ephemeral NOSUPERUSER/NOBYPASSRLS application role:
 | Tenant boundary | 12 passed | Existing tests plus two-tenant reads/writes, role denial, missing tenant, forged headers/payloads, cross-tenant assignee validation |
 | Queued report and CSV export | 16 passed | Existing tests plus worker completion, tenant provenance, current read permission and protected download |
 | Durable ticket resolution | 22 passed | Existing tests plus idempotency, post-SQL rollback/retry, separate worker processes, cancellation, role revocation and command allowlist |
+| Optional MCP client | 28 passed | Existing tests plus official SDK negotiation and generated CRUD, scope/expiry/tenant/field/current-role denial, Principal type and no protocol Tasks |
 
-These are **58 test executions, 22 unique final-stage tests**, not 58 unique
+These are **86 test executions, 28 unique final-stage tests**, not 86 unique
 tests. Evidence is `audit-evidence/v071/first-project-journey.json`, with page,
 snippet and runner hashes. A ticket created before the relationship migration
 survives that migration and the subsequent tenant backfill. Separate raw SQL
@@ -254,7 +260,11 @@ The durable baseline journey now covers action/resolver registration, protected
 admission, idempotency/conflict, status, cancellation before claim, post-SQL
 failure rollback, retry in a new process and role revocation before execution.
 It does not certify a full process-death campaign, approval UI, external effects
-or a production identity integration. MCP and operator journeys remain incomplete.
+or a production identity integration. The MCP baseline journey now uses the installed official SDK 2.0.1 with its
+`httpx2` transport. It verifies current-role denial after discovery and the same
+validation through REST. It does not certify a production OAuth integration,
+durable agent resolver or model-provider behavior. The operator journey and
+candidate-wheel certification remain incomplete.
 
 Observed friction and corrections: tenant migration generation needs an explicit
 backfill for existing rows; the chapter replaces only the generated operations
@@ -284,13 +294,13 @@ this audit. Rewrote `tutorials/deployment.md` around real configuration, migrati
 restricted application roles, RLS, diagnostics, worker supervision and recovery.
 Added `concepts/application-boundaries.md` and `concepts/stability.md`, and
 Concepts/Operations navigation. Strict MkDocs and the eight semantic docs tests
-pass after these edits. Five progressive public-baseline chapters now execute;
+pass after these edits. Six progressive public-baseline chapters now execute;
 the candidate and remaining journeys still need proof. Functional runtime source
 is unchanged.
 
 ## Remaining Documentation Debt
 
-Candidate journeys, full content/example audit, navigation completion, candidate
+Candidate journeys, full content/example audit, full usability review, candidate
 packaging, compatibility regression and hosted checks remain pending. The
 market/roadmap review is now drafted from current primary documentation; its
 user-demand and integration-cost hypotheses still require independent trials.
@@ -323,8 +333,8 @@ candidate runtime matrix has not been run.
 ## Progressive Tutorial Validation
 
 `python scripts/run_public_tutorial_gate.py --python <isolated-wheel-python>
---output audit-evidence/v071/first-project-journey.json` passes 58 HTTP test
-executions across five successive stages. The controller receives the local DB
+--output audit-evidence/v071/first-project-journey.json` passes 86 HTTP/protocol test
+executions across six successive stages. The controller receives the local DB
 URL through the environment; generated credentials are not recorded. Fixtures
 remove their schema and role after stopping the server. The script extracts
 published files verbatim, runs `startproject`, `makemigrations`, `migrate`,
@@ -339,7 +349,7 @@ integrity, not fresh database execution. The full installed-wheel gate remains
 required when the tutorial or runner changes.
 
 Current focused validation: `pytest tests/docs tests/test_v048_docs_lock.py
- tests/test_v048_packaging_sanity.py -q` passes **127 tests**. Strict MkDocs and
+ tests/test_v048_packaging_sanity.py -q` passes **129 tests**. Strict MkDocs and
 Ruff on the runner and evidence tests pass. PostgreSQL catalog verification
 finds zero leftover tutorial schemas or roles after the journey.
 

@@ -19,6 +19,7 @@ import socket
 import subprocess
 import tempfile
 import textwrap
+import time
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from urllib.request import urlopen
@@ -33,6 +34,7 @@ GUIDES = [
     (ROOT / "docs/docs/tutorials/ticket-desk-tenancy.md", 12),
     (ROOT / "docs/docs/tutorials/ticket-desk-reports.md", 16),
     (ROOT / "docs/docs/tutorials/ticket-desk-durable.md", 22),
+    (ROOT / "docs/docs/tutorials/ticket-desk-mcp.md", 28),
 ]
 FILES = re.compile(r'^```python title="([^\"]+)"\n(.*?)^```', re.MULTILINE | re.DOTALL)
 
@@ -70,7 +72,7 @@ async def run(args: argparse.Namespace) -> dict:
 
     environment = {
         key: value for key, value in os.environ.items()
-        if key not in {"PYTHONPATH", "DATABASE_URL", "APP_API_TOKEN"}
+        if key not in {"PYTHONPATH", "DATABASE_URL", "APP_API_TOKEN", "APP_MEMBERSHIPS_FILE"}
         and not key.startswith("AKSARA_")
     }
     environment.update({
@@ -81,9 +83,10 @@ async def run(args: argparse.Namespace) -> dict:
         "APP_API_TOKEN": token,
         "PYTHONUNBUFFERED": "1",
     })
-    for variable in ("APP_TENANT_B_TOKEN", "APP_READER_TOKEN", "APP_UNSCOPED_TOKEN"):
+    for variable in ("APP_TENANT_B_TOKEN", "APP_READER_TOKEN", "APP_UNSCOPED_TOKEN", "APP_MCP_TOKEN", "APP_MCP_READ_TOKEN", "APP_MCP_EXPIRED_TOKEN"):
         environment[variable] = secrets.token_hex(32)
         secret_values.append(environment[variable])
+    environment["APP_MCP_EXPIRES_AT"] = str(int(time.time()) + 900)
     checks = []
 
     async def command(arguments, cwd, accepted=(0,)):
@@ -108,7 +111,7 @@ async def run(args: argparse.Namespace) -> dict:
             temp = Path(directory)
             probe = await command([
                 python, "-I", "-c",
-                "import aksara,json; print(json.dumps({'version':aksara.__version__, 'path':aksara.__file__}))",
+                "import aksara,json,importlib.metadata; print(json.dumps({'version':aksara.__version__, 'path':aksara.__file__, 'mcp_sdk':importlib.metadata.version('mcp')}))",
             ], temp)
             installed = json.loads(probe.stdout)
             if Path(installed["path"]).is_relative_to(ROOT):
@@ -149,6 +152,9 @@ async def run(args: argparse.Namespace) -> dict:
                     if expected_tests == 16 else
                     {"app/identities.py", "seed_memberships.py", "app/auth.py", "app/operations.py",
                      "main.py", "worker.py", "tests/test_durable.py"}
+                    if expected_tests == 22 else
+                    {"settings.py (append)", "app/auth.py", "app/permissions.py", "app/views.py",
+                     "main.py", "tests/test_mcp.py"}
                 )
                 if set(files) != expected:
                     raise RuntimeError("Tutorial file contract changed; update the journey deliberately")
@@ -278,10 +284,10 @@ async def run(args: argparse.Namespace) -> dict:
             return {
                 "schema_version": 2, "stages": stages,
                 "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                "package_version": installed["version"], "source_checkout_imports": False,
+                "package_version": installed["version"], "mcp_sdk_version": installed["mcp_sdk"], "source_checkout_imports": False,
                 "checks": checks, "api_tests_passed": sum(stage["api_tests_passed"] for stage in stages),
                 "database_role": "NOSUPERUSER NOBYPASSRLS, DML-only application role",
-                "scope": "First-project, relationships, tenant-isolation, queued-report and durable-action chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization are covered. No external provider, full crash campaign or production-upgrade claim.",
+                "scope": "First-project, relationships, tenant-isolation, queued-report, durable-action and optional MCP chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization and official MCP client discovery/execution/denial are covered. No external provider, full crash campaign or production-upgrade claim.",
                 "pass": True,
             }
     finally:

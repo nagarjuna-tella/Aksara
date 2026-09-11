@@ -40,193 +40,192 @@ theme:
     - toc.follow
 
 nav:
-  - Home: index.md
+- Home: index.md
+- Start:
   - Quickstart: quickstart.md
-  - Getting Started:
-      - getting-started/index.md
-      - Installation: getting-started/installation.md
-      - Runtime Compatibility: reference/runtime-compatibility.md
-      - Your First 10 Minutes: getting-started/ten-minutes.md
-      - First Project: getting-started/first-project.md
-      - Grow the Ticket Desk: tutorials/ticket-desk.md
-      - Ticket Desk Tenant Isolation: tutorials/ticket-desk-tenancy.md
-      - Ticket Desk Reports: tutorials/ticket-desk-reports.md
-      - Ticket Desk Durable Actions: tutorials/ticket-desk-durable.md
-      - Studio Quickstart: getting-started/studio.md
-      - AI Quickstart: getting-started/ai-quickstart.md
-      - MCP Quickstart: getting-started/mcp.md
-      - Examples: getting-started/examples.md
-      - Choosing a Pattern: getting-started/patterns.md
-      - Project Layout: getting-started/project-layout.md
-      - Settings: getting-started/settings.md
-      - First App: getting-started/first-app.md
-      - Database Setup: getting-started/database-setup.md
-      - Running Your App: getting-started/running-your-app.md
+  - getting-started/index.md
+  - Installation: getting-started/installation.md
+  - Runtime Compatibility: reference/runtime-compatibility.md
+  - Your First 10 Minutes: getting-started/ten-minutes.md
+  - First Project: getting-started/first-project.md
+  - Grow the Ticket Desk: tutorials/ticket-desk.md
+  - Ticket Desk Tenant Isolation: tutorials/ticket-desk-tenancy.md
+  - Ticket Desk Reports: tutorials/ticket-desk-reports.md
+  - Ticket Desk Durable Actions: tutorials/ticket-desk-durable.md
+  - Ticket Desk MCP Client: tutorials/ticket-desk-mcp.md
+  - Examples: getting-started/examples.md
+  - Choosing a Pattern: getting-started/patterns.md
+  - Project Layout: getting-started/project-layout.md
+  - Settings: getting-started/settings.md
+  - First App: getting-started/first-app.md
+  - Database Setup: getting-started/database-setup.md
+  - Running Your App: getting-started/running-your-app.md
+- Build:
   - Concepts:
-      - Application Boundaries: concepts/application-boundaries.md
-      - Stability Labels: concepts/stability.md
-      - Glossary: glossary.md
-      - Durable Operations: advanced/durable-operations.md
-      - Background Tasks: advanced/background-tasks.md
-  - Operations:
-      - Production Deployment: tutorials/deployment.md
-      - Upgrade to v0.7: operations/upgrade-v07.md
-      - Production Hardening: security/production-hardening.md
-      - Diagnostics: diagnostics.md
+    - Application Boundaries: concepts/application-boundaries.md
+    - Stability Labels: concepts/stability.md
+    - Glossary: glossary.md
+    - Durable Operations: advanced/durable-operations.md
+    - Background Tasks: advanced/background-tasks.md
   - ORM:
-      - orm/index.md
-      - Models: orm/models.md
-      - Fields: orm/fields.md
-      - Advanced Field Policy: orm/advanced-field-policy.md
-      - Relations: orm/relations.md
-      - Querying: orm/querying.md
-      - Expressions & Transactions: orm/expressions-and-transactions.md
-      - Bulk Operations: orm/bulk-operations.md
-      - Soft Deletes: orm/soft-deletes.md
-      - Signals: orm/signals.md
-      - Fixtures: orm/fixtures.md
-      - Migrations: orm/migrations.md
-      - Migration Safety: orm/migration-safety.md
-      - Model Meta: orm/model-meta.md
+    - orm/index.md
+    - Models: orm/models.md
+    - Fields: orm/fields.md
+    - Advanced Field Policy: orm/advanced-field-policy.md
+    - Relations: orm/relations.md
+    - Querying: orm/querying.md
+    - Expressions & Transactions: orm/expressions-and-transactions.md
+    - Bulk Operations: orm/bulk-operations.md
+    - Soft Deletes: orm/soft-deletes.md
+    - Signals: orm/signals.md
+    - Fixtures: orm/fixtures.md
+    - Migrations: orm/migrations.md
+    - Migration Safety: orm/migration-safety.md
+    - Model Meta: orm/model-meta.md
   - API:
-      - api/index.md
-      - ViewSets: api/viewsets.md
-      - Actions: api/actions.md
-      - Serializers: api/serializers.md
-      - Filtering & Search: api/filtering.md
-      - Pagination: api/pagination.md
-      - Routing: api/routing.md
-      - Permissions: api/permissions.md
-      - Authentication: api/authentication.md
-      - Throttling: api/throttling.md
-  - Admin:
-      - admin/index.md
-      - Admin Site: admin/admin-site.md
-      - Model Admin: admin/model-admin.md
-      - Admin Permissions: admin/admin-permissions.md
-      - Actions: admin/actions.md
-      - Widgets: admin/widgets.md
-  - Middleware:
-      - middleware/index.md
-      - Request ID: middleware/request-id.md
-      - Tenant: middleware/tenant.md
-      - Logging: middleware/logging.md
+    - api/index.md
+    - ViewSets: api/viewsets.md
+    - Actions: api/actions.md
+    - Serializers: api/serializers.md
+    - Filtering & Search: api/filtering.md
+    - Pagination: api/pagination.md
+    - Routing: api/routing.md
+    - Permissions: api/permissions.md
+    - Authentication: api/authentication.md
+    - Throttling: api/throttling.md
   - Security:
-      - Overview: security/overview.md
-      - Threat Model: security/threat-model.md
-      - Production Hardening: security/production-hardening.md
-      - Authentication: security/authentication.md
-      - Field-Level Permissions: security/field-level-permissions.md
-      - Multi-Tenancy: security/multi-tenancy.md
-      - AI/MCP Boundaries: security/ai-mcp-boundaries.md
-      - Security Coverage: security/security-coverage.md
-      - Release Security: security/release-security.md
-  - Debugging:
-      - debugging/index.md
-      - Error Pages: debugging/error-pages.md
-      - AI Debug: debugging/ai-debug.md
-      - Query Profiling: debugging/query-profiling.md
-      - Diagnostics & Doctor: diagnostics.md
-      - Gap Analysis: gapanalysis.md
-      - Autoremediation: debugging/autoremediation.md
-  - Inspectors:
-      - inspectors/index.md
-      - Query Inspector: inspectors/query.md
-      - Model Inspector: inspectors/models.md
-  - Search:
-      - search/index.md
-      - Semantic Engine: search/semantic.md
-      - Studio Spotlight: search/studio.md
-  - AI Mode:
-      - ai-mode/index.md
-      # — Getting Started with AI —
-      - Configuration: ai-mode/config.md
-      - Interactive Console: ai-mode/console.md
-      - MCP Integration: ai-mode/mcp.md
-      - AI Flows: ai-mode/flows.md
-      - Route Hints: ai-mode/hints.md
-      - Tools: ai-mode/tools.md
-      # — Diagnosis & Analysis —
-      - Schema Doctor: ai-mode/schema-doctor.md
-      - AI Debugger: ai-mode/debugger.md
-      - Architecture Review: ai-mode/architecture-review.md
-      - Performance Analyzer: ai-mode/performance-analyzer.md
-      # — Providers & Configuration —
-      - AI Hub: ai-mode/hub.md
-      - Providers: ai-mode/providers.md
-      - Bring Your Own LLM: ai-mode/bring-your-own-llm.md
-      - Ollama: ai-mode/ollama.md
-      - AI Connectors: ai-mode/connectors.md
-      - Custom HTTP Connector: ai-mode/custom-http.md
-      # — Agent & Automation —
-      - Agent Mode: ai-mode/agent.md
-      - Agent Workflows: ai-mode/workflows.md
-      - Planner: ai-mode/planner.md
-      - Agent Runtime: ai-mode/agent-runtime.md
-      # — Internals —
-      - Execution Runtime: ai-mode/runtime.md
-      - Context Engine: ai-mode/context-engine.md
-      - Project Graph: ai-mode/project-graph.md
-      - Query Engine: ai-mode/query-engine.md
-      - CodeGen: ai-mode/codegen.md
-      - Patch Engine: ai-mode/patch-engine.md
-      - Safety: ai-mode/safety.md
-  - Studio:
-      - studio/index.md
-      - Studio API: studio/api.md
-      - CLI Commands: studio/cli.md
-      - Configuration: studio/configuration.md
-      - UI: studio/ui.md
-  - CLI:
-      - cli/index.md
-      - Commands: cli/commands.md
-      - AI Commands: cli/ai-commands.md
-      - Dev Tools: cli/dev-tools.md
-      - Extending: cli/extending.md
+    - Overview: security/overview.md
+    - Threat Model: security/threat-model.md
+    - Production Hardening: security/production-hardening.md
+    - Authentication: security/authentication.md
+    - Field-Level Permissions: security/field-level-permissions.md
+    - Multi-Tenancy: security/multi-tenancy.md
+    - AI/MCP Boundaries: security/ai-mcp-boundaries.md
+    - Security Coverage: security/security-coverage.md
+    - Release Security: security/release-security.md
+  - Admin:
+    - admin/index.md
+    - Admin Site: admin/admin-site.md
+    - Model Admin: admin/model-admin.md
+    - Admin Permissions: admin/admin-permissions.md
+    - Actions: admin/actions.md
+    - Widgets: admin/widgets.md
+  - Middleware:
+    - middleware/index.md
+    - Request ID: middleware/request-id.md
+    - Tenant: middleware/tenant.md
+    - Logging: middleware/logging.md
   - Patterns:
-      - patterns/index.md
-      - Blog Pattern: patterns/blog.md
-      - CRM Pattern: patterns/crm.md
-      - Multitenant Pattern: patterns/multitenant.md
-  - Tutorials:
-      - tutorials/index.md
-      - Blog API: tutorials/blog-api.md
-      - AI Integration: tutorials/ai-integration.md
-      - Multi-Tenant: tutorials/multi-tenant.md
-      - Deployment: tutorials/deployment.md
+    - patterns/index.md
+    - Blog Pattern: patterns/blog.md
+    - CRM Pattern: patterns/crm.md
+    - Multitenant Pattern: patterns/multitenant.md
+  - Additional Tutorials:
+    - tutorials/index.md
+    - Blog API: tutorials/blog-api.md
+    - Multi-Tenant: tutorials/multi-tenant.md
   - Advanced:
-      - advanced/index.md
-      - Custom Fields: advanced/custom-fields.md
-      - Media and Email: advanced/media-and-email.md
-      - Internationalization and Timezones: advanced/internationalization-and-timezones.md
-      - Generic Relations and Durable Workflows: advanced/generic-relations-and-durable-workflows.md
-      - Durable Authorized Operations: advanced/durable-operations.md
-      - Background Tasks: advanced/background-tasks.md
-      - Caching: advanced/caching.md
-      - Performance: advanced/performance.md
-      - Signals: advanced/signals.md
-      - Testing: advanced/testing.md
-      - Validation: advanced/validation.md
-  - Reference:
-      - reference/index.md
-      - Settings Reference: reference/settings-reference.md
-      - API Reference: reference/api-reference.md
-      - ORM Reference: reference/orm-reference.md
-      - Exceptions: reference/exceptions.md
-      - Types: reference/types.md
-      - CLI Reference: reference/cli-reference.md
-  - Notes:
-      - notes/index.md
-      - Security Architecture (v0.5.49): notes/v0-5-49-security-architecture.md
-      - Announcement (v0.5.49): notes/v0-5-49-announcement.md
-  - Roadmap:
-      - roadmap/index.md
-      - Roadmap: roadmap.md
-      - v0.6 Stability and Production Contract: roadmap/v0-6-stability-contract.md
-      - v0.7 Durable Operations Stability Contract: roadmap/v0-7-stability-contract.md
-  - Releasing: releasing.md
+    - advanced/index.md
+    - Custom Fields: advanced/custom-fields.md
+    - Media and Email: advanced/media-and-email.md
+    - Internationalization and Timezones: advanced/internationalization-and-timezones.md
+    - Generic Relations and Durable Workflows: advanced/generic-relations-and-durable-workflows.md
+    - Durable Authorized Operations: advanced/durable-operations.md
+    - Background Tasks: advanced/background-tasks.md
+    - Caching: advanced/caching.md
+    - Performance: advanced/performance.md
+    - Signals: advanced/signals.md
+    - Testing: advanced/testing.md
+    - Validation: advanced/validation.md
+- Operate:
+  - Production Deployment: tutorials/deployment.md
+  - Upgrade to v0.7: operations/upgrade-v07.md
+  - Production Hardening: security/production-hardening.md
+  - Diagnostics: diagnostics.md
+  - Debugging:
+    - debugging/index.md
+    - Error Pages: debugging/error-pages.md
+    - Query Profiling: debugging/query-profiling.md
+    - Diagnostics & Doctor: diagnostics.md
+  - Inspectors:
+    - inspectors/index.md
+    - Query Inspector: inspectors/query.md
+    - Model Inspector: inspectors/models.md
+- MCP:
+  - Start with a Client: getting-started/mcp.md
+  - Protocol and Tools: ai-mode/mcp.md
+- Reference:
+  - reference/index.md
+  - Settings Reference: reference/settings-reference.md
+  - API Reference: reference/api-reference.md
+  - ORM Reference: reference/orm-reference.md
+  - Exceptions: reference/exceptions.md
+  - Types: reference/types.md
+  - CLI Reference: reference/cli-reference.md
+  - CLI:
+    - cli/index.md
+    - Commands: cli/commands.md
+    - AI Commands: cli/ai-commands.md
+    - Dev Tools: cli/dev-tools.md
+    - Extending: cli/extending.md
+  - Search:
+    - search/index.md
+    - Semantic Engine: search/semantic.md
+    - Studio Spotlight: search/studio.md
+- Experimental:
+  - AI Quickstart: getting-started/ai-quickstart.md
+  - Studio Quickstart: getting-started/studio.md
+  - AI Integration: tutorials/ai-integration.md
+  - AI Mode:
+    - ai-mode/index.md
+    - Configuration: ai-mode/config.md
+    - Interactive Console: ai-mode/console.md
+    - AI Flows: ai-mode/flows.md
+    - Route Hints: ai-mode/hints.md
+    - Tools: ai-mode/tools.md
+    - Schema Doctor: ai-mode/schema-doctor.md
+    - AI Debugger: ai-mode/debugger.md
+    - Architecture Review: ai-mode/architecture-review.md
+    - Performance Analyzer: ai-mode/performance-analyzer.md
+    - AI Hub: ai-mode/hub.md
+    - Providers: ai-mode/providers.md
+    - Bring Your Own LLM: ai-mode/bring-your-own-llm.md
+    - Ollama: ai-mode/ollama.md
+    - AI Connectors: ai-mode/connectors.md
+    - Custom HTTP Connector: ai-mode/custom-http.md
+    - Agent Mode: ai-mode/agent.md
+    - Agent Workflows: ai-mode/workflows.md
+    - Planner: ai-mode/planner.md
+    - Agent Runtime: ai-mode/agent-runtime.md
+  - Studio:
+    - studio/index.md
+    - Studio API: studio/api.md
+    - CLI Commands: studio/cli.md
+    - Configuration: studio/configuration.md
+    - UI: studio/ui.md
+  - AI Debug: debugging/ai-debug.md
+  - Autoremediation: debugging/autoremediation.md
+- Contribute:
+  - Release Validation: releasing.md
+  - Gap Analysis: gapanalysis.md
+  - Historical Notes:
+    - notes/index.md
+    - Security Architecture (v0.5.49): notes/v0-5-49-security-architecture.md
+    - Announcement (v0.5.49): notes/v0-5-49-announcement.md
+  - Experimental AI Internals:
+    - Execution Runtime: ai-mode/runtime.md
+    - Context Engine: ai-mode/context-engine.md
+    - Project Graph: ai-mode/project-graph.md
+    - Query Engine: ai-mode/query-engine.md
+    - CodeGen: ai-mode/codegen.md
+    - Patch Engine: ai-mode/patch-engine.md
+    - Safety: ai-mode/safety.md
+- Roadmap:
+  - roadmap/index.md
+  - Roadmap: roadmap.md
+  - v0.6 Stability and Production Contract: roadmap/v0-6-stability-contract.md
+  - v0.7 Durable Operations Stability Contract: roadmap/v0-7-stability-contract.md
   - Changelog: changelog.md
-  - Glossary: glossary.md
 
 plugins:
   - search

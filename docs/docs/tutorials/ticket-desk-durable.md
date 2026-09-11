@@ -601,5 +601,5 @@ for that separate choice. Provider calls need an external-effect contract and
 may remain `external_outcome_unknown`; never relabel them exactly-once.
 Operators still own worker supervision, identity availability, retention,
 outbox export, backups and monitoring. See [deployment](deployment.md).
-MCP remains an optional next consumer, and protocol-level MCP Tasks are not
-implemented by this chapter.
+Continue with the optional [MCP client chapter](ticket-desk-mcp.md). Protocol-level
+MCP Tasks are not implemented by this application.
