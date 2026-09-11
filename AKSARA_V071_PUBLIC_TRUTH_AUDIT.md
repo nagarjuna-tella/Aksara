@@ -592,3 +592,14 @@ README template return value. `pyproject.toml` is unchanged. This supplements,
 but does not replace, generated-file equivalence and candidate startup checks.
 Candidate version/build, compatibility matrix, hosted checks and the remaining
 public-page audit are still incomplete.
+
+## Durable Outbox Operator Guidance
+
+Added `how-to/export-durable-transitions.md` to the operator navigation. It
+documents the public exporter's explicit namespace/tenant scope, callback
+contract, ambiguous false result, at-least-once acknowledgement window, lease
+versus timeout, payload limits and application-owned sink retention. These
+claims were checked against `aksara/durable/outbox.py` and repository transition
+payload construction. The source regression test covers sink failure/retry
+without changing authoritative Operation state. The new helper still needs
+installed-wheel scenario execution; remote durable delivery is not claimed.
