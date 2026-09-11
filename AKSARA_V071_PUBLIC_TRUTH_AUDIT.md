@@ -101,6 +101,7 @@ Full page-by-page usability review is still pending.
 | PT-008 | P1 | Durable guide mounts the generic router without explaining application admission permissions or the connected-database lifecycle | Added explicit admission boundary explanation and runnable factory/resolver/worker tutorial | Docs fixed |
 | PT-009 | P2 | Older MCP quickstart duplicates an unrelated app and uses `httpx.AsyncClient` rather than the installed SDK 2.0 transport type | Consolidated entry around the tested ticket desk and `httpx2.AsyncClient`; no dependency change | Docs fixed |
 | PT-004 | P2 | Navigation promotes experimental AI before the backend journey; entry pages teach competing starter apps | Added Start/Build/Operate/MCP/Reference/Experimental/Contribute paths, retained every page destination, and consolidated entry pages around the tested ticket desk | Docs fixed |
+| PT-014 | P1 | Standalone Blog and Multi-Tenant tutorials combine legacy configuration/request APIs with incomplete authentication and strong isolation claims | Merged runnable learning into the tested ticket desk; retained task-specific mapping and explicit tenancy requirements at existing URLs | Docs fixed |
 | PT-013 | P1 | Schema Doctor guide advertised nonexistent `ai doctor --fix`; AI tools implied universal executable tool names | Replaced with installed schema commands and generated MCP discovery; route hints now use executable public APIs | Docs fixed |
 | PT-011 | P1 | Doctor page mixes launch exit codes with check descriptions and omits strict production/durable preflight entry points | Separate command policies and link the matrix and service preflight | Docs fixed |
 | PT-010 | P2 | Docs home calls released v0.7.0 a candidate; tutorial index directs readers to a separate `aksara/examples` repository rather than the documented source | Corrected released status and linked the canonical source-bearing chapters and repository example catalog | Docs fixed |
@@ -216,7 +217,22 @@ its generated `.env` secrets as evidence.
 
 ## CLI Findings
 
-Command help inventory and invocation checks pending. The pre-existing local
+Generated command/parameter inventory now covers all 117 registered commands
+and groups in the isolated public 0.7.0 wheel. `cli-contract.json` records
+parser declarations without environment values; the generated reference is
+verified by `generate_public_cli_reference.py --check`. This is syntax/default
+evidence, not execution of all commands. Rewrote CLI overview, workflow and
+development-tool pages; removed nonexistent routes, dbshell, fixture, and
+natural-language generator commands and corrected pytest flag guidance.
+Other public pages still contain stale CLI examples and remain under audit.
+
+**PT-015 / P1:** duplicate CLI references advertised unsupported commands and
+flags (`makemigrations --check/--empty`, `shell -c`, `routes`, and others).
+The four central CLI pages now follow installed declarations; no runtime
+commands or aliases were added. The original scan also misclassified forwarded
+pytest flags, which must be checked against pytest rather than Click options.
+
+ The pre-existing local
 `.venv/bin/aksara` fails to import `aksara.cli`; source-mode tests pass. A fresh
 public-wheel environment is required to distinguish local editable-install
 state from a product defect. That independent check passed: a fresh PyPI
