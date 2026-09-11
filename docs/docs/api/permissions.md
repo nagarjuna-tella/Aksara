@@ -1,515 +1,127 @@
 # Permissions
 
-Control API access with permission classes.
+**Stable within the generated API and policy contracts.** Permission classes
+check whether a request or an object operation is allowed. They consume trusted
+identity attached by your [authentication adapter](authentication.md); they do
+not validate passwords, tokens, or tenant membership by themselves.
 
----
+For a runnable application, follow the
+[ticket-desk permission and tenancy chapter](../tutorials/ticket-desk-tenancy.md).
+It tests allowed and denied calls through real HTTP routes and PostgreSQL RLS.
 
-## Overview
+## Choose a view-level permission
 
-Permissions determine whether a request should be granted or denied access:
+Set `permission_classes` on a `ModelViewSet` explicitly. The default list is
+empty, but that is not a promise of unrestricted generated writes: PolicyEngine
+still applies. `AllowAny` is the explicit public route-level permission and does
+not disable field or tenant restrictions.
 
-```python
-from aksara.api import ModelViewSet
-from aksara.permissions import IsAuthenticated
+| Permission | View-level behavior |
+|---|---|
+| `AllowAny` | Grants this permission check |
+| `IsAuthenticated` | Requires an attached user with `is_authenticated` true |
+| `IsActiveUser` | Requires an authenticated user whose `is_active` is true (defaults true if absent) |
+| `IsAdminUser` | Requires `is_staff` or `is_superuser`; combine with `IsActiveUser` when active status matters |
+| `IsOwnerOrReadOnly` | Grants the view check; restricts unsafe object operations to a matching owner field |
+| `DenyAI` | Rejects trusted server-side AI request state; client headers do not decide this |
+| `OperationPermission(allow=[...])` | Maps HTTP methods to `create`, `read`, `update`, or `delete` |
 
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated]
-```
+`IsOwnerOrReadOnly` checks the first populated field among `user_id`, `owner_id`,
+`author_id`, and `created_by`. It does not filter list rows, set an owner during
+creation, or require authentication by itself. Use an explicit application
+permission when your ownership rules differ.
 
----
+## Write synchronous permission hooks
 
-## Built-in Permissions
+`has_permission(request, view)` and
+`has_object_permission(request, view, obj)` are **synchronous** boolean methods.
+`ModelViewSet` calls them directly; it does not await coroutines. Do not use
+`async def` for these hooks. Resolve any asynchronous membership information in
+your trusted request adapter or another supported application boundary first.
 
-### AllowAny
+Here is an application-owned permission for an object with `owner_id`. Save it
+as `app/permissions.py` if that is your model's ownership field:
 
-Unrestricted access:
-
-```python
-from aksara.permissions import AllowAny
-
-class PublicViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [AllowAny]
-```
-
-### IsAuthenticated
-
-Only authenticated users:
-
-```python
-from aksara.permissions import IsAuthenticated
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated]
-```
-
-### IsAdminUser
-
-Only staff/admin users:
-
-```python
-from aksara.permissions import IsAdminUser
-
-class AdminViewSet(ModelViewSet):
-    model = Settings
-    permission_classes = [IsAdminUser]
-```
-
-### IsAuthenticatedOrReadOnly
-
-Authenticated for writes, anyone can read:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.permissions import IsAuthenticatedOrReadOnly
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    
-    # GET /posts/ - anyone
-    # POST /posts/ - authenticated only
-```
-
----
-
-## Action-Specific Permissions
-
-Override permissions for specific actions:
-
-```python
-from aksara.permissions import IsAuthenticated, IsAdminUser
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated]  # Default
-    
-    def get_permissions(self):
-        """Different permissions per action."""
-        if self.action in ["list", "retrieve"]:
-            # Public read access
-            return []
-        
-        if self.action == "destroy":
-            # Only admins can delete
-            return [IsAdminUser()]
-        
-        # Default: authenticated
-        return [IsAuthenticated()]
-```
-
-### Using action Decorator
-
-```python
-from aksara.api import action
-from aksara.permissions import IsAdminUser
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    
-    @action(detail=True, methods=["POST"], permission_classes=[IsAdminUser])
-    async def feature(self, request, id: str):
-        """Admin-only action."""
-        ...
-```
-
----
-
-## Custom Permissions
-
-### Basic Custom Permission
-
-```python
+```python title="app/permissions.py"
 from aksara.permissions import BasePermission
 
-class IsOwner(BasePermission):
-    """Only allow owners of an object to edit it."""
-    
-    def has_permission(self, request, view):
-        # Called for all requests
-        return request.user.is_authenticated
-    
-    async def has_object_permission(self, request, view, obj):
-        # Called for object-level actions
-        return str(obj.author_id) == str(request.user.id)
-```
 
-### Using Custom Permission
+class IsActiveOwner(BasePermission):
+    message = "An active owner is required."
 
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsOwner]
-```
+    def has_permission(self, request, view=None):
+        user = self.get_user(request)
+        return bool(
+            user is not None
+            and getattr(user, "is_authenticated", False)
+            and getattr(user, "is_active", False)
+        )
 
-### Permission Methods
-
-| Method | Called | Purpose |
-|--------|--------|---------|
-| `has_permission(request, view)` | All requests | View-level check |
-| `has_object_permission(request, view, obj)` | Object operations | Object-level check |
-
----
-
-## Common Permission Patterns
-
-### Owner or Admin
-
-```python
-class IsOwnerOrAdmin(BasePermission):
-    """Allow access to owner or admin."""
-    
-    async def has_object_permission(self, request, view, obj):
-        # Admin can access all
-        if request.user.is_staff:
-            return True
-        
-        # Owner can access their own
-        return str(obj.author_id) == str(request.user.id)
-```
-
-### Role-Based Access
-
-```python
-class HasRole(BasePermission):
-    """Check if user has required role."""
-    
-    def __init__(self, *roles):
-        self.roles = roles
-    
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+    def has_object_permission(self, request, view, obj):
+        if not self.has_permission(request, view):
             return False
-        return request.user.role in self.roles
-
-# Usage
-class EditorViewSet(ModelViewSet):
-    permission_classes = [HasRole("editor", "admin")]
-```
-
-### Team/Organization Access
-
-```python
-class IsTeamMember(BasePermission):
-    """Allow access only to team members."""
-    
-    async def has_object_permission(self, request, view, obj):
-        # Get the project/team
-        team = await obj.team
-        
-        # Check membership
-        is_member = await team.members.filter(
-            id=str(request.user.id)
-        ).exists()
-        
-        return is_member
-```
-
-### Read-Only for Non-Owners
-
-```python
-class IsOwnerOrReadOnly(BasePermission):
-    """Owner can edit, others can only read."""
-    
-    SAFE_METHODS = ["GET", "HEAD", "OPTIONS"]
-    
-    async def has_object_permission(self, request, view, obj):
-        # Allow read-only for everyone
-        if request.method in self.SAFE_METHODS:
-            return True
-        
-        # Write only for owner
-        return str(obj.author_id) == str(request.user.id)
-```
-
-### Premium Features
-
-```python
-class IsPremiumUser(BasePermission):
-    """Only premium subscribers can access."""
-    
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        return request.user.subscription_tier == "premium"
-```
-
----
-
-## Combining Permissions
-
-### AND Logic (All must pass)
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    permission_classes = [IsAuthenticated, IsOwner]
-    # User must be authenticated AND be the owner
-```
-
-### OR Logic (Any can pass)
-
-```python
-from aksara.permissions import BasePermission
-
-class IsOwnerOrAdmin(BasePermission):
-    async def has_object_permission(self, request, view, obj):
+        owner_id = getattr(obj, "owner_id", None)
+        user_id = getattr(self.get_user(request), "id", None)
         return (
-            str(obj.author_id) == str(request.user.id) or
-            request.user.is_staff
+            owner_id is not None
+            and user_id is not None
+            and str(owner_id) == str(user_id)
         )
 ```
 
-### Complex Logic
+Use `permission_classes = [IsActiveOwner]` on the relevant ViewSet. This
+permission deliberately checks both identity and ownership for object calls.
+It is not a complete multi-tenant application policy.
+
+## Separate list, create, and object rules
+
+View-level permission runs before the operation. Object permission runs when a
+ViewSet retrieves an object for a detail operation; it does not automatically
+filter every row in a list. Apply your ownership/list scope in the query path,
+and keep required tenant filters intact.
+
+Creation has no existing object to check. Assign or validate ownership on the
+server, make owner/tenant fields non-writable where appropriate, and reject
+foreign related objects. A client-supplied owner field must not grant ownership.
+The [tenancy tutorial](../tutorials/ticket-desk-tenancy.md) shows these separate
+checks for related records and read-only fields.
+
+Do not rely on a DRF-style `self.action` attribute: generated Aksara routes do
+not set it as shown in older examples. For HTTP-method rules, inspect the request
+in `has_permission` or use `OperationPermission`. For a custom action, the
+`@action` decorator accepts `permission_classes`; its override replaces the
+ViewSet list, so include every prerequisite permission needed by that action.
+
+## Combine checks deliberately
+
+Multiple entries in `permission_classes` must all pass. Permission instances
+also support `&` and `|`:
 
 ```python
-class ComplexPermission(BasePermission):
-    """Complex permission logic."""
-    
-    async def has_permission(self, request, view):
-        # Must be authenticated
-        if not request.user.is_authenticated:
-            return False
-        
-        # Admin can do anything
-        if request.user.is_staff:
-            return True
-        
-        # Check specific conditions
-        if view.action == "create":
-            # Rate limit check
-            recent_count = await Post.objects.filter(
-                author=request.user,
-                created_at__gt=one_hour_ago,
-            ).count()
-            return recent_count < 10
-        
-        return True
+from aksara.permissions import IsActiveUser, IsAdminUser
+
+active_admin = IsActiveUser() & IsAdminUser()
 ```
 
----
+Use instances for composition, not class-level operators. Test both view and
+object decisions for an OR expression: each phase evaluates its own checks,
+and a permission's default object check grants access. An expression that looks
+like “admin or owner” is not sufficient evidence of the intended whole-request
+policy. A single explicit permission is often easier to review.
 
-## Permission Denied Responses
+## Denials and policy
 
-### Default Response
+A failed `ModelViewSet` permission hook raises HTTP 403 with the permission's
+`message` as the `detail`. Authentication dependencies can instead return 401;
+other validation or lookup failures have their own response contracts.
 
-```json
-{
-    "detail": "You do not have permission to perform this action."
-}
-```
+Permission success does not disable PolicyEngine. Generated REST and MCP also
+apply execution-time policy, field writability/visibility rules, and tenant
+constraints. Your direct ORM scripts and custom endpoints must deliberately
+establish equivalent boundaries; merely importing a permission class does not
+install enforcement there.
 
-### Custom Messages
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.permissions import BasePermission, PermissionDenied
-
-class IsOwner(BasePermission):
-    message = "You can only modify your own content."
-    
-    async def has_object_permission(self, request, view, obj):
-        if str(obj.author_id) != str(request.user.id):
-            raise PermissionDenied(self.message)
-        return True
-```
-
-### Action-Specific Messages
-
-```python
-class PostPermission(BasePermission):
-    async def has_object_permission(self, request, view, obj):
-        if view.action == "destroy":
-            if not request.user.is_staff:
-                raise PermissionDenied("Only admins can delete posts")
-        
-        if view.action in ["update", "partial_update"]:
-            if str(obj.author_id) != str(request.user.id):
-                raise PermissionDenied("You can only edit your own posts")
-        
-        return True
-```
-
----
-
-## Checking Permissions Manually
-
-### In ViewSet Methods
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    
-    async def publish(self, request, id: str):
-        post = await self.get_object(id)
-        
-        # Manual permission check
-        if str(post.author_id) != str(request.user.id):
-            raise PermissionDenied("You can only publish your own posts")
-        
-        ...
-```
-
-### Using Permission Class
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.permissions import IsOwner
-
-class PostViewSet(ModelViewSet):
-    model = Post
-    
-    async def custom_action(self, request, id: str):
-        post = await self.get_object(id)
-        
-        # Check with permission class
-        permission = IsOwner()
-        if not await permission.has_object_permission(request, self, post):
-            raise PermissionDenied()
-        
-        ...
-```
-
----
-
-## Request Object
-
-Permissions receive the request object with useful attributes:
-
-```python
-class CustomPermission(BasePermission):
-    def has_permission(self, request, view):
-        # User info
-        user = request.user
-        user.is_authenticated  # bool
-        user.is_staff          # bool
-        user.id                # user ID
-        
-        # Request info
-        request.method         # "GET", "POST", etc.
-        request.path           # "/posts/123/"
-        request.headers        # Headers dict
-        request.query_params   # Query parameters
-        
-        # View info
-        view.action            # "list", "create", etc.
-        view.kwargs            # URL parameters
-        
-        return True
-```
-
----
-
-## Complete Example
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# permissions.py
-from aksara.permissions import BasePermission, PermissionDenied
-
-
-class IsAuthenticated(BasePermission):
-    """User must be logged in."""
-    
-    message = "Authentication required."
-    
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
-
-
-class IsOwnerOrAdmin(BasePermission):
-    """User must be owner or admin."""
-    
-    message = "You can only access your own resources."
-    
-    async def has_object_permission(self, request, view, obj):
-        if request.user.is_staff:
-            return True
-        
-        # Check owner field (could be author, user, owner, etc.)
-        owner_field = getattr(obj, "author_id", None) or getattr(obj, "user_id", None)
-        return str(owner_field) == str(request.user.id)
-
-
-class CanPublish(BasePermission):
-    """Check if user can publish content."""
-    
-    async def has_object_permission(self, request, view, obj):
-        # Only author can publish
-        if str(obj.author_id) != str(request.user.id):
-            raise PermissionDenied("You can only publish your own posts")
-        
-        # Check if already published
-        if obj.is_published:
-            raise PermissionDenied("Post is already published")
-        
-        return True
-
-
-class IsNotBanned(BasePermission):
-    """Check user is not banned."""
-    
-    def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.is_banned:
-            raise PermissionDenied("Your account has been suspended")
-        return True
-
-
-# viewsets.py
-from aksara.api import ModelViewSet, action
-from myapp.permissions import IsAuthenticated, IsOwnerOrAdmin, CanPublish
-
-
-class PostViewSet(ModelViewSet):
-    """Post API with granular permissions."""
-    
-    model = Post
-    permission_classes = [IsAuthenticated, IsNotBanned]
-    
-    def get_permissions(self):
-        """Action-specific permissions."""
-        if self.action in ["list", "retrieve"]:
-            # Public read
-            return []
-        
-        if self.action == "destroy":
-            # Admin only
-            return [IsAuthenticated(), IsAdminUser()]
-        
-        if self.action in ["update", "partial_update"]:
-            # Owner or admin
-            return [IsAuthenticated(), IsOwnerOrAdmin()]
-        
-        # Default
-        return super().get_permissions()
-    
-    @action(detail=True, methods=["POST"], permission_classes=[CanPublish])
-    async def publish(self, request, id: str):
-        """Publish a post (owner only, not already published)."""
-        post = await self.get_object(id)
-        post.is_published = True
-        await post.save()
-        return {"status": "published"}
-    
-    @action(detail=True, methods=["POST"], permission_classes=[IsAdminUser])
-    async def feature(self, request, id: str):
-        """Feature a post (admin only)."""
-        post = await self.get_object(id)
-        post.is_featured = True
-        await post.save()
-        return {"status": "featured"}
-```
-
----
-
-## Related Documentation
-
-- [Authentication](authentication.md) — User authentication
-- [ViewSets](viewsets.md) — ViewSet configuration
-- [Actions](actions.md) — Custom endpoints
+For tools, see [MCP execution](../tutorials/ticket-desk-mcp.md). For delayed work,
+see [Durable Operations](../advanced/durable-operations.md): admission permission
+and later reauthorization are distinct checks, and approval is not a substitute
+for current authority.

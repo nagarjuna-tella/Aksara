@@ -1,684 +1,128 @@
-# Authentication
+# Authentication and request identity
 
-Authenticate users in your Aksara API.
+**Stable within the documented backend boundary.** Authentication establishes
+who is calling. Permissions and PolicyEngine decide what that caller may do.
+A header, user ID, or tenant ID supplied by a client is not authenticated
+identity by itself.
 
----
+For a complete running application, start with the
+[ticket-desk authentication adapter](../getting-started/first-project.md), then
+add [tenant membership and roles](../tutorials/ticket-desk-tenancy.md). Those
+examples verify credentials on the server and attach both the canonical
+Principal and the user-shaped state used by permission classes.
 
-## Overview
+## Connect an identity provider to the application
 
-Aksara supports multiple authentication methods:
+The application owns credential validation: for example, a server-managed API
+token, a validated session, or a JWT verified with your identity provider's
+keys, issuer, audience, and expiry rules. After validation, resolve current
+account status, roles, and tenant membership from trusted state.
 
-- **Session authentication** — Cookie-based sessions
-- **Token authentication** — Bearer tokens
-- **JWT authentication** — JSON Web Tokens
-- **Custom authentication** — Build your own
+Attach `request.state.principal` for PolicyEngine and
+`request.state.user` for the permission/dependency compatibility surface. Keep
+them consistent. The user-shaped object supplies `id`, `is_authenticated`,
+`is_active`, `is_staff`, and `is_superuser` as needed by your permissions.
+A `Principal` alone does not expose every one of those user attributes.
 
-**Conceptual or legacy pseudocode (not an installed-package API):**
+`Principal.for_user(...)` constructs an authenticated identity; it does **not**
+verify credentials or check membership. Never construct it from an unverified
+user ID or client-provided roles. Reset request context in `finally` when your
+adapter sets tenant or user context variables; the tenancy tutorial shows this
+lifecycle.
 
-```text title="Conceptual or legacy pseudocode"
-from aksara import Aksara
-from aksara.middleware import AuthenticationMiddleware
+The old `AuthenticationMiddleware`, `TokenAuthentication`, `JWTAuthentication`,
+`login()`, and `logout()` recipes on this page are not a supported turnkey
+application-authentication stack. Aksara provides backend primitives and optional
+contrib authentication; choose and implement the application's login/session
+boundary explicitly.
 
-app = Aksara()
-app.add_middleware(AuthenticationMiddleware)
+## Use the optional built-in user model
+
+`aksara.contrib.auth.User` stores `email`, **`hashed_password`**, status flags,
+optional `metadata`, and the inherited ID/timestamps. It has no plain `password`
+field or `user.check_password()` method. Use `create_user()` to hash a password;
+ordinary `objects.create(password=...)` is not that contract.
+
+Enable `aksara.contrib.auth` in the global `installed_apps` configuration and
+apply its internal migrations with the migration role before using the account
+helpers. The application database must be connected. See
+[configuration](../reference/settings-reference.md),
+[migrations](../orm/migrations.md), and
+[production roles](../tutorials/deployment.md).
+
+These complete service functions can live in `app/accounts.py`:
+
+```python title="app/accounts.py"
+from aksara.contrib.auth import User, verify_password
+
+
+async def create_account(email: str, password: str):
+    # The application must validate signup eligibility and password policy first.
+    return await User.objects.create_user(email=email, password=password)
+
+
+async def authenticate_account(email: str, password: str):
+    # Returns an active User or None. Does not issue a cookie, token, or Principal.
+    return await User.objects.authenticate(email=email, password=password)
+
+
+def password_matches(user: User, password: str) -> bool:
+    return verify_password(password, user.hashed_password)
 ```
 
----
-
-## User Model
-
-Aksara provides a built-in User model:
-
-```python
-from aksara.contrib.auth import User
-
-# Create user
-user = await User.objects.create(
-    email="jane@example.com",
-    password="securepassword123",  # Automatically hashed
-)
-
-# Check password
-is_valid = user.check_password("securepassword123")
-
-# Get user
-user = await User.objects.get(email="jane@example.com")
-```
-
-### User Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | UUID | Primary key |
-| `email` | Email | Unique email address |
-| `password` | String | Hashed password |
-| `is_active` | Boolean | Can user login |
-| `is_staff` | Boolean | Admin access |
-| `is_superuser` | Boolean | Full permissions |
-| `created_at` | DateTime | Registration date |
-| `last_login` | DateTime | Last login time |
-
-### Custom User Model
-
-```python
-from aksara.contrib.auth import AbstractUser
-
-class User(AbstractUser):
-    """Custom user with additional fields."""
-    
-    name = fields.String(max_length=100)
-    avatar_url = fields.URL(nullable=True)
-    bio = fields.Text(nullable=True)
-    
-    class Meta:
-        table_name = "users"
-```
-
----
-
-## Session Authentication
-
-Cookie-based authentication for web apps:
-
-### Setup
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara import Aksara
-from aksara.middleware import SessionMiddleware, AuthenticationMiddleware
-
-app = Aksara()
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="your-secret-key",
-    session_cookie="session",
-    max_age=3600 * 24 * 7,  # 7 days
-)
-app.add_middleware(AuthenticationMiddleware)
-```
-
-### Login Endpoint
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import authenticate, login
-
-@app.post("/auth/login")
-async def login_view(request):
-    data = await request.json()
-    
-    # Authenticate user
-    user = await authenticate(
-        email=data["email"],
-        password=data["password"],
-    )
-    
-    if not user:
-        return JSONResponse(
-            {"error": "Invalid credentials"},
-            status_code=401,
-        )
-    
-    # Create session
-    await login(request, user)
-    
-    return {"message": "Logged in", "user_id": str(user.id)}
-```
-
-### Logout Endpoint
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import logout
-
-@app.post("/auth/logout")
-async def logout_view(request):
-    await logout(request)
-    return {"message": "Logged out"}
-```
-
-### Accessing User
-
-```python
-@app.get("/profile")
-async def profile(request):
-    if not request.user.is_authenticated:
-        return JSONResponse({"error": "Not authenticated"}, status_code=401)
-    
-    return {
-        "id": str(request.user.id),
-        "email": request.user.email,
-    }
-```
-
----
-
-## Token Authentication
-
-Bearer token authentication for APIs:
-
-### Setup
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.tokens import TokenAuthentication
-
-app.add_middleware(TokenAuthentication)
-```
-
-### Token Model
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.tokens import Token
-
-# Create token for user
-token = await Token.objects.create(user=user)
-print(token.key)  # "abc123..."
-
-# Tokens auto-expire (configurable)
-```
-
-### Login with Token
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import authenticate
-from aksara.contrib.auth.tokens import Token
-
-@app.post("/auth/token")
-async def get_token(request):
-    data = await request.json()
-    
-    user = await authenticate(
-        email=data["email"],
-        password=data["password"],
-    )
-    
-    if not user:
-        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
-    
-    # Get or create token
-    token, created = await Token.objects.get_or_create(user=user)
-    
-    return {"token": token.key}
-```
-
-### Using Token
-
-```bash
-curl -H "Authorization: Bearer <BEARER_TOKEN>" http://localhost:8000/api/posts/
-```
-
-### In ViewSet
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-```
-
----
-
-## JWT Authentication
-
-JSON Web Token authentication:
-
-### Setup
-
-```python
-# settings.py
-JWT_SECRET = "your-jwt-secret-key"
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION = 3600  # 1 hour
-```
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.jwt import JWTAuthentication
-
-app.add_middleware(JWTAuthentication)
-```
-
-### Generate JWT
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.jwt import create_access_token, create_refresh_token
-
-@app.post("/auth/token")
-async def get_jwt(request):
-    data = await request.json()
-    
-    user = await authenticate(
-        email=data["email"],
-        password=data["password"],
-    )
-    
-    if not user:
-        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
-    
-    return {
-        "access_token": create_access_token(user),
-        "refresh_token": create_refresh_token(user),
-        "token_type": "bearer",
-    }
-```
-
-### Refresh Token
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.jwt import verify_refresh_token, create_access_token
-
-@app.post("/auth/refresh")
-async def refresh_jwt(request):
-    data = await request.json()
-    refresh_token = data.get("refresh_token")
-    
-    user = await verify_refresh_token(refresh_token)
-    if not user:
-        return JSONResponse({"error": "Invalid refresh token"}, status_code=401)
-    
-    return {
-        "access_token": create_access_token(user),
-        "token_type": "bearer",
-    }
-```
-
-### JWT Payload
-
-```python
-# Default payload
-{
-    "sub": "user-uuid",           # User ID
-    "email": "user@example.com",  # User email
-    "exp": 1704067200,            # Expiration timestamp
-    "iat": 1704063600,            # Issued at timestamp
-}
-
-# Custom claims
-def create_access_token(user):
-    return jwt.encode({
-        "sub": str(user.id),
-        "email": user.email,
-        "is_staff": user.is_staff,
-        "roles": user.roles,  # Custom claim
-        "exp": datetime.utcnow() + timedelta(hours=1),
-    }, JWT_SECRET, algorithm=JWT_ALGORITHM)
-```
-
----
-
-## Custom Authentication
-
-Create your own authentication backend:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import BaseAuthentication
-
-class APIKeyAuthentication(BaseAuthentication):
-    """Authenticate with API key."""
-    
-    async def authenticate(self, request):
-        api_key = request.headers.get("X-API-Key")
-        
-        if not api_key:
-            return None
-        
-        # Look up API key
-        key = await APIKey.objects.filter(
-            key=api_key,
-            is_active=True,
-        ).select_related("user").first()
-        
-        if not key:
-            return None
-        
-        # Update last used
-        key.last_used = datetime.now()
-        await key.save()
-        
-        return (key.user, key)  # (user, auth_info)
-
-# Use it
-app.add_middleware(APIKeyAuthentication)
-```
-
-### Multiple Authentication Methods
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import MultiAuthentication
-
-app.add_middleware(
-    MultiAuthentication,
-    backends=[
-        SessionAuthentication,
-        TokenAuthentication,
-        JWTAuthentication,
-        APIKeyAuthentication,
-    ],
-)
-```
-
----
-
-## Password Management
-
-### Hashing
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth import hash_password, check_password
-
-# Hash a password
-hashed = hash_password("mypassword123")
-
-# Verify password
-is_valid = check_password("mypassword123", hashed)
-```
-
-### Password Reset
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.tokens import PasswordResetToken
-
-@app.post("/auth/forgot-password")
-async def forgot_password(request):
-    data = await request.json()
-    
-    user = await User.objects.filter(email=data["email"]).first()
-    if not user:
-        # Don't reveal if email exists
-        return {"message": "If email exists, reset link sent"}
-    
-    # Create reset token
-    token = await PasswordResetToken.create(user)
-    
-    # Send email (implement your email logic)
-    await send_email(
-        to=user.email,
-        subject="Password Reset",
-        body=f"Reset link: https://app.com/reset?token={token.key}",
-    )
-    
-    return {"message": "If email exists, reset link sent"}
-
-@app.post("/auth/reset-password")
-async def reset_password(request):
-    data = await request.json()
-    
-    # Verify token
-    token = await PasswordResetToken.objects.filter(
-        key=data["token"],
-        is_used=False,
-        expires_at__gt=datetime.now(),
-    ).first()
-    
-    if not token:
-        return JSONResponse({"error": "Invalid or expired token"}, status_code=400)
-    
-    # Update password
-    user = await token.user
-    user.password = hash_password(data["new_password"])
-    await user.save()
-    
-    # Mark token as used
-    token.is_used = True
-    await token.save()
-    
-    return {"message": "Password reset successful"}
-```
-
----
-
-## Registration
-
-```python
-from aksara.contrib.auth import User, hash_password
-
-@app.post("/auth/register")
-async def register(request):
-    data = await request.json()
-    
-    # Check if email exists
-    existing = await User.objects.filter(email=data["email"]).first()
-    if existing:
-        return JSONResponse({"error": "Email already registered"}, status_code=400)
-    
-    # Create user
-    user = await User.objects.create(
-        email=data["email"],
-        password=data["password"],  # Auto-hashed
-        name=data.get("name", ""),
-    )
-    
-    # Optionally: send verification email
-    # await send_verification_email(user)
-    
-    return {
-        "id": str(user.id),
-        "email": user.email,
-        "message": "Registration successful",
-    }
-```
-
----
-
-## Email Verification
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.contrib.auth.tokens import EmailVerificationToken
-
-@app.post("/auth/send-verification")
-async def send_verification(request):
-    user = request.user
-    
-    token = await EmailVerificationToken.create(user)
-    
-    await send_email(
-        to=user.email,
-        subject="Verify your email",
-        body=f"Verify: https://app.com/verify?token={token.key}",
-    )
-    
-    return {"message": "Verification email sent"}
-
-@app.post("/auth/verify-email")
-async def verify_email(request):
-    data = await request.json()
-    
-    token = await EmailVerificationToken.objects.filter(
-        key=data["token"],
-        is_used=False,
-    ).first()
-    
-    if not token:
-        return JSONResponse({"error": "Invalid token"}, status_code=400)
-    
-    user = await token.user
-    user.email_verified = True
-    await user.save()
-    
-    token.is_used = True
-    await token.save()
-    
-    return {"message": "Email verified"}
-```
-
----
-
-## Complete Example
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# auth/routes.py
-from fastapi import APIRouter
-from aksara.contrib.auth import (
-    User, authenticate, login, logout,
-    hash_password, check_password,
-)
-from aksara.contrib.auth.jwt import (
-    create_access_token, create_refresh_token,
-    verify_refresh_token,
-)
-
-router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-
-@router.post("/register")
-async def register(request):
-    """Register a new user."""
-    data = await request.json()
-    
-    # Validate
-    if await User.objects.filter(email=data["email"]).exists():
-        return JSONResponse({"error": "Email taken"}, status_code=400)
-    
-    # Create user
-    user = await User.objects.create(
-        email=data["email"],
-        password=data["password"],
-        name=data.get("name", ""),
-    )
-    
-    # Return tokens
-    return {
-        "user": {"id": str(user.id), "email": user.email},
-        "access_token": create_access_token(user),
-        "refresh_token": create_refresh_token(user),
-    }
-
-
-@router.post("/login")
-async def login_endpoint(request):
-    """Login with email and password."""
-    data = await request.json()
-    
-    user = await authenticate(
-        email=data["email"],
-        password=data["password"],
-    )
-    
-    if not user:
-        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
-    
-    if not user.is_active:
-        return JSONResponse({"error": "Account disabled"}, status_code=401)
-    
-    # Update last login
-    user.last_login = datetime.now()
-    await user.save()
-    
-    return {
-        "user": {"id": str(user.id), "email": user.email},
-        "access_token": create_access_token(user),
-        "refresh_token": create_refresh_token(user),
-    }
-
-
-@router.post("/refresh")
-async def refresh(request):
-    """Refresh access token."""
-    data = await request.json()
-    
-    user = await verify_refresh_token(data.get("refresh_token"))
-    if not user:
-        return JSONResponse({"error": "Invalid refresh token"}, status_code=401)
-    
-    return {
-        "access_token": create_access_token(user),
-    }
-
-
-@router.post("/logout")
-async def logout_endpoint(request):
-    """Logout (invalidate session if using sessions)."""
-    await logout(request)
-    return {"message": "Logged out"}
-
-
-@router.get("/me")
-async def me(request):
-    """Get current user."""
-    if not request.user.is_authenticated:
-        return JSONResponse({"error": "Not authenticated"}, status_code=401)
-    
-    return {
-        "id": str(request.user.id),
-        "email": request.user.email,
-        "name": request.user.name,
-        "is_staff": request.user.is_staff,
-    }
-
-
-@router.put("/me")
-async def update_me(request):
-    """Update current user."""
-    if not request.user.is_authenticated:
-        return JSONResponse({"error": "Not authenticated"}, status_code=401)
-    
-    data = await request.json()
-    user = request.user
-    
-    if "name" in data:
-        user.name = data["name"]
-    if "bio" in data:
-        user.bio = data["bio"]
-    
-    await user.save()
-    
-    return {
-        "id": str(user.id),
-        "email": user.email,
-        "name": user.name,
-    }
-
-
-@router.post("/change-password")
-async def change_password(request):
-    """Change password."""
-    if not request.user.is_authenticated:
-        return JSONResponse({"error": "Not authenticated"}, status_code=401)
-    
-    data = await request.json()
-    user = request.user
-    
-    # Verify current password
-    if not check_password(data["current_password"], user.password):
-        return JSONResponse({"error": "Invalid current password"}, status_code=400)
-    
-    # Update password
-    user.password = hash_password(data["new_password"])
-    await user.save()
-    
-    return {"message": "Password changed"}
-```
-
----
-
-## Related Documentation
-
-- [Permissions](permissions.md) — Access control
-- [Middleware](../middleware/index.md) — Authentication middleware
-- [Settings](../getting-started/settings.md) — Auth configuration
+`create_user()` normalizes email and defaults to an active, non-staff,
+non-superuser account. `authenticate()` rejects a wrong password, unknown
+account, or inactive account. It is not a password-policy validator or a
+rate limiter. A failed authentication result also does not prove database health;
+check operational failures through your diagnostics and logs.
+
+Do not return a whole user record from a public registration endpoint. Select
+response fields explicitly and exclude `hashed_password`, status flags, and
+private metadata. Do not let signup payloads set `is_staff` or `is_superuser`.
+
+For a custom user model, subclass `AbstractUser` and deliberately configure its
+manager and authentication integration. The built-in helpers and session
+lookup target the concrete built-in `User`; a subclass does not automatically
+replace it throughout the framework.
+
+## Understand the FastAPI dependencies
+
+| Helper | What it actually does |
+|---|---|
+| `get_current_user(request)` | Reads the user already attached to `request.state`; does not parse or validate a bearer token |
+| `get_current_active_user(request)` | Also rejects an inactive attached user |
+| `require_auth()` | Creates a dependency requiring an active attached user; default denial is HTTP 401 |
+| `require_staff()` | Requires an active user and the `is_staff` flag; missing user is 401, non-staff is 403 |
+| `require_superuser()` | Requires an active user and `is_superuser`; missing user is 401, insufficient role is 403 |
+
+Use these only after your authentication adapter is installed. Their presence
+on an endpoint does not manufacture authenticated state. Generated ViewSet
+permission denials use HTTP 403; do not infer a universal authentication error
+code from one helper. See [permissions](permissions.md).
+
+## Sessions, registration, and recovery
+
+Contrib auth also exports `create_session_token(db, user, expires_in=...)`,
+`get_user_from_session_token(db, token)`, `invalidate_session_token(db, token)`,
+and `cleanup_expired_sessions(db)`. These manage opaque tokens in
+`aksara_sessions`. They require provisioned tables and do not set a response
+cookie or install a general application authentication middleware.
+
+The application owns its HTTP login/logout routes, cookie settings, CSRF
+protection for cookie-authenticated writes, rate limits, signup policy, email
+verification, password reset, session revocation policy, and secret handling.
+Admin has its own login flow; it is not a ready-made application identity
+provider. Do not copy the historical password-reset or email-verification
+methods from this page: they were not APIs exported by the installed package.
+
+## Humans, tools, and delayed work
+
+An MCP token identifies a machine actor with provenance, scopes, and expiry;
+it is not interchangeable with a human login cookie. Use the
+[official MCP client tutorial](../tutorials/ticket-desk-mcp.md) to carry that
+identity through generated execution.
+
+Ordinary tasks do not persist a complete Principal. Durable Operations instead
+store an identity reference that your resolver uses to reconstruct current
+authority at execution time. See [application boundaries](../concepts/application-boundaries.md)
+and [Durable Operations](../advanced/durable-operations.md).

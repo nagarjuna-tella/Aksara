@@ -105,6 +105,8 @@ Full page-by-page usability review is still pending.
 | PT-013 | P1 | Schema Doctor guide advertised nonexistent `ai doctor --fix`; AI tools implied universal executable tool names | Replaced with installed schema commands and generated MCP discovery; route hints now use executable public APIs | Docs fixed |
 | PT-011 | P1 | Doctor page mixes launch exit codes with check descriptions and omits strict production/durable preflight entry points | Separate command policies and link the matrix and service preflight | Docs fixed |
 | PT-010 | P2 | Docs home calls released v0.7.0 a candidate; tutorial index directs readers to a separate `aksara/examples` repository rather than the documented source | Corrected released status and linked the canonical source-bearing chapters and repository example catalog | Docs fixed |
+| PT-016 | P1 | Authentication guide claims ordinary `objects.create(password=...)` hashes passwords and documents nonexistent login/JWT/reset APIs | Replaced with built-in `create_user`, `authenticate`, hashing/session primitives and explicit application-owned identity adaptation | Docs fixed; installed PostgreSQL proof |
+| PT-017 | P0 | Permission examples use async hooks although ModelViewSet calls hooks synchronously, so an unawaited denial coroutine is truthy; examples also assume an unset DRF-style `self.action` | Replaced with synchronous active-owner permission and explicit list/create/object boundaries; verified owner, non-owner, inactive and anonymous outcomes | Docs fixed; no runtime behavior change |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
@@ -238,7 +240,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. An isolated-wheel run of the existing public syntax/import contracts now
-passes all 821 Python fences and every documented Aksara import. Evidence in
+passes all 798 Python fences and every documented Aksara import. Evidence in
 `installed-doc-imports.json` binds the result to the current public pages and
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -415,11 +417,21 @@ The existing storage/media mounting/migration-field tests pass 9 tests.
 
 ## Automated Truth Gates
 
+Authentication and permissions guidance now has a dedicated installed-wheel
+PostgreSQL gate: `scripts/check_public_auth.py`. It executes the exact account
+service and active-owner snippets. Nineteen checks cover normalized account
+creation, hashed storage, correct/wrong/unknown/inactive authentication, session
+lookup and revocation, attached-user dependencies, and actual ViewSet hook
+acceptance/denial. The schema is created under a random name and removed with
+catalog verification. This is not a complete HTTP login, external JWT/provider,
+or RLS certification; the ticket-desk journey supplies the separate HTTP/RLS
+proof. Evidence is `audit-evidence/v071/auth-permission-execution.json`.
+
 The rendered-site link gate checks local page, fragment, stylesheet, script, and
 image targets, including links under the published `/Aksara/` prefix. It found
 a nonexistent `stylesheets/extra.css` referenced on all 158 HTML pages; removing
 the stale MkDocs `extra_css` entry fixes those requests without changing any
-framework behavior. The rebuilt site passes 51,250 local link/asset checks.
+framework behavior. The rebuilt site passes 50,359 local link/asset checks.
 External links are counted but not fetched by this gate. Evidence is
 `audit-evidence/v071/rendered-links.json`; source freshness and negative-control
 tests prevent a missing asset or fragment from being mistaken for a pass.
