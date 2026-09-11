@@ -974,7 +974,7 @@ class TaskWorker:
 
     async def _run_loop(self) -> None:
         """Continuously poll for work until asked to stop."""
-        active_tasks: set[asyncio.Task] = set()
+        active_tasks: set[asyncio.Task[Any]] = set()
 
         while not self._stop_event.is_set():
             now = time.monotonic()
@@ -1017,7 +1017,11 @@ class TaskWorker:
                     break
                 t = asyncio.create_task(self._process_task(record))
                 active_tasks.add(t)
-                t.add_done_callback(active_tasks.discard)
+                t.add_done_callback(
+                    lambda completed: self._consume_active_task(
+                        active_tasks, completed
+                    )
+                )
 
             if not active_tasks:
                 try:
@@ -1035,6 +1039,21 @@ class TaskWorker:
         if active_tasks:
             await asyncio.gather(*active_tasks, return_exceptions=True)
 
+    @staticmethod
+    def _consume_active_task(
+        active_tasks: set[asyncio.Task[Any]],
+        completed: asyncio.Task[Any],
+    ) -> None:
+        """Remove a child task and retrieve failures reported by asyncio."""
+
+        active_tasks.discard(completed)
+        if completed.cancelled():
+            return
+        try:
+            completed.result()
+        except Exception:  # noqa: BLE001 - callback must retrieve every child failure
+            logger.exception("Task worker child failed")
+
     async def _process_task(self, task_record: TaskRecord) -> None:
         """Execute a claimed task and persist the outcome."""
         from aksara.context_state import tenant_id_var
@@ -1042,7 +1061,14 @@ class TaskWorker:
         database = _get_db(self._db)
 
         if task_record.operation_id is not None:
-            await self._process_operation_task(task_record)
+            try:
+                await self._process_operation_task(task_record)
+            except Exception:  # noqa: BLE001 - durable state is authoritative
+                logger.exception(
+                    "Linked operation task '%s' failed; projecting durable state",
+                    task_record.id,
+                )
+                await self._project_current_operation_task(task_record)
             return
 
         # Restore the tenant context captured at enqueue time so the
@@ -1117,7 +1143,10 @@ class TaskWorker:
                 _boundary_hook=self._at_boundary,
             ).execute(claim)
         elif claim.effect_class is EffectClass.READ_ONLY:
-            operation = await ReadOnlyExecutor(service).execute(claim)
+            operation = await ReadOnlyExecutor(
+                service,
+                lease_seconds=self.stale_lock_timeout_seconds,
+            ).execute(claim)
         elif claim.effect_class in {
             EffectClass.EXTERNAL_IDEMPOTENT,
             EffectClass.EXTERNAL_AT_LEAST_ONCE,
@@ -1139,6 +1168,29 @@ class TaskWorker:
             )
         await self._at_boundary("after_operation_commit")
         await self._at_boundary("before_task_projection")
+        await self._project_operation_task(task_record, operation)
+
+    async def _project_current_operation_task(
+        self,
+        task_record: TaskRecord,
+    ) -> None:
+        """Recover a linked task from its authoritative Operation state."""
+
+        service = self.durable_service
+        if service is None or task_record.operation_id is None:
+            return
+        from aksara.durable.service import _tenant_context
+        from aksara.durable.types import tenant_scope
+
+        scope = tenant_scope(task_record.tenant_id)
+        with _tenant_context(scope):
+            async with service.db.acquire() as connection:
+                operation = await service.repository.get_public_operation(
+                    connection,
+                    task_record.operation_id,
+                    scope,
+                    service.application_namespace,
+                )
         await self._project_operation_task(task_record, operation)
 
     async def _project_operation_task(self, task_record: TaskRecord, operation: Any) -> None:

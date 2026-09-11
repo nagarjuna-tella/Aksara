@@ -113,6 +113,10 @@ def test_global_tenant_storage_sentinel_is_reserved():
     [
         ("available_at", datetime(2030, 1, 1, tzinfo=UTC).replace(tzinfo=None)),
         ("deadline_at", datetime(2030, 1, 1, tzinfo=UTC).replace(tzinfo=None)),
+        (
+            "approval_expires_at",
+            datetime(2030, 1, 1, tzinfo=UTC).replace(tzinfo=None),
+        ),
         ("deadline_at", datetime.now(UTC) - timedelta(seconds=1)),
     ],
 )

@@ -52,7 +52,10 @@ class DurableOperationWorker:
         if claim.effect_class is EffectClass.POSTGRES_ATOMIC:
             return await PostgresAtomicExecutor(self.service).execute(claim)
         if claim.effect_class is EffectClass.READ_ONLY:
-            return await ReadOnlyExecutor(self.service).execute(claim)
+            return await ReadOnlyExecutor(
+                self.service,
+                lease_seconds=self.lease_seconds,
+            ).execute(claim)
         execution = asyncio.create_task(
             ExternalOperationExecutor(self.service).execute(claim)
         )
@@ -72,8 +75,12 @@ class DurableOperationWorker:
                     raise error
             return await execution
         finally:
+            if not execution.done():
+                execution.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await execution
             renewal.cancel()
-            with suppress(asyncio.CancelledError):
+            with suppress(asyncio.CancelledError, Exception):
                 await renewal
 
     async def _renew_external_claim(

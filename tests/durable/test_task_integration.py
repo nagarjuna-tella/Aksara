@@ -20,6 +20,8 @@ from aksara.durable import (
     PrincipalResolution,
     PrincipalResolverRegistry,
 )
+from aksara.durable.errors import OwnershipLost
+from aksara.durable.execution import PostgresAtomicExecutor
 from aksara.security.principal import Principal
 from aksara.tasks import (
     TaskWorker,
@@ -146,6 +148,48 @@ async def test_task_backed_operation_uses_operation_attempt_as_authority(durable
             "SELECT mutation_counter FROM durable_test_counters WHERE id = $1",
             counter_id,
         ) == 1
+
+
+@pytest.mark.asyncio
+async def test_linked_task_projects_operation_after_ownership_loss(
+    durable_db, monkeypatch
+):
+    tenant, counter_id = str(uuid4()), uuid4()
+    service = _runtime(durable_db, tenant)
+    with _tenant(tenant):
+        await durable_db.execute(
+            "INSERT INTO durable_test_counters (id, tenant_scope) VALUES ($1, $2)",
+            counter_id,
+            tenant,
+        )
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+
+    async def lose_ownership(_executor, _claim):
+        raise OwnershipLost("reclaimed")
+
+    monkeypatch.setattr(PostgresAtomicExecutor, "execute", lose_ownership)
+    worker = TaskWorker(
+        durable_db,
+        durable_service=service,
+        worker_id="ownership-loss-worker",
+    )
+
+    projected = await worker.poll_once()
+
+    assert projected is not None
+    assert projected.id == queued.id
+    assert projected.status == "pending"
+    assert projected.locked_at is None
 
 
 @pytest.mark.asyncio

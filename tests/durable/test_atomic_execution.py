@@ -641,6 +641,68 @@ async def test_read_only_cancellation_wins_before_completion(durable_db):
 
 
 @pytest.mark.asyncio
+async def test_read_only_execution_renews_lease_until_completion(
+    durable_db, monkeypatch
+):
+    tenant = str(uuid4())
+    heartbeat_seen = asyncio.Event()
+
+    async def handler(_context, _command):
+        await asyncio.wait_for(heartbeat_seen.wait(), timeout=1)
+        return {"read": True}
+
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="counter.read-only",
+            version="1",
+            handler=handler,
+            effect_class=EffectClass.READ_ONLY,
+            required_scopes=("counter:write",),
+        )
+    )
+    resolvers = PrincipalResolverRegistry()
+    resolvers.register(
+        "test",
+        "1",
+        lambda _reference: PrincipalResolution.resolved(_principal(tenant)),
+    )
+    service = DurableOperationService(
+        durable_db,
+        application_namespace="atomic-tests",
+        actions=actions,
+        resolvers=resolvers,
+        default_lease_seconds=0.3,
+        retention_seconds=60,
+        idempotency_seconds=60,
+    )
+    admitted = await service.admit(
+        "counter.read-only", "1", {}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="read-only-worker",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    original_heartbeat = service.heartbeat
+
+    async def observe_heartbeat(claim, *, lease_seconds=None):
+        renewed = await original_heartbeat(claim, lease_seconds=lease_seconds)
+        heartbeat_seen.set()
+        return renewed
+
+    monkeypatch.setattr(service, "heartbeat", observe_heartbeat)
+
+    completed = await asyncio.wait_for(
+        ReadOnlyExecutor(service).execute(claim), timeout=1
+    )
+
+    assert heartbeat_seen.is_set()
+    assert completed.state is OperationState.SUCCEEDED
+
+
+@pytest.mark.asyncio
 async def test_success_and_cancellation_race_has_one_database_winner(durable_db):
     tenant, counter_id = str(uuid4()), uuid4()
     mutation_started = asyncio.Event()

@@ -6,6 +6,7 @@ import asyncio
 import inspect
 import json
 from collections.abc import Awaitable, Callable, Mapping
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any
 
@@ -440,12 +441,56 @@ class PostgresAtomicExecutor:
 class ReadOnlyExecutor:
     """Execute an allowlisted action inside a PostgreSQL read-only transaction."""
 
-    def __init__(self, service: DurableOperationService) -> None:
+    def __init__(
+        self,
+        service: DurableOperationService,
+        *,
+        lease_seconds: float | None = None,
+    ) -> None:
         self.service = service
         self._identity = PostgresAtomicExecutor(service)
+        self.lease_seconds = lease_seconds
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
         claim = await self.service._authoritative_claim(claim)
+        execution = asyncio.create_task(self._execute_owned(claim))
+        renewal = asyncio.create_task(self._renew_claim(claim, execution))
+        try:
+            done, _ = await asyncio.wait(
+                {execution, renewal}, return_when=asyncio.FIRST_COMPLETED
+            )
+            if execution in done:
+                return await execution
+            error = renewal.exception()
+            if error is not None:
+                execution.cancel()
+                with suppress(asyncio.CancelledError, Exception):
+                    await execution
+                raise error
+            return await execution
+        finally:
+            if not execution.done():
+                execution.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await execution
+            renewal.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await renewal
+
+    async def _renew_claim(
+        self,
+        claim: OperationClaim,
+        execution: asyncio.Task[OperationRecord],
+    ) -> None:
+        lease = self.lease_seconds or self.service.default_lease_seconds
+        interval = max(lease / 3, 0.001)
+        while not execution.done():
+            await asyncio.sleep(interval)
+            if execution.done():
+                return
+            await self.service.heartbeat(claim, lease_seconds=lease)
+
+    async def _execute_owned(self, claim: OperationClaim) -> OperationRecord:
         action = self.service.actions.get(claim.action_name, claim.action_version)
         if action.effect_class is not EffectClass.READ_ONLY:
             raise DurableConfigurationError(

@@ -62,6 +62,56 @@ async def test_external_execution_renews_lease_until_completion(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_success_wins_when_renewal_finishes_at_the_same_time(monkeypatch):
+    async def execute(_executor, _claim):
+        return "completed"
+
+    async def renewal(_claim, _execution):
+        raise OwnershipLost("late renewal")
+
+    async def wait_for_both(tasks, *, return_when):
+        assert return_when is asyncio.FIRST_COMPLETED
+        await asyncio.gather(*tasks, return_exceptions=True)
+        return set(tasks), set()
+
+    service = SimpleNamespace(default_lease_seconds=1.0)
+    worker = DurableOperationWorker(service)
+    monkeypatch.setattr(ExternalOperationExecutor, "execute", execute)
+    monkeypatch.setattr(worker, "_renew_external_claim", renewal)
+    monkeypatch.setattr(asyncio, "wait", wait_for_both)
+
+    assert await worker.execute_claim(_claim()) == "completed"
+
+
+@pytest.mark.asyncio
+async def test_cancelling_execute_claim_cancels_external_child(monkeypatch):
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def execute(_executor, _claim):
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    async def heartbeat(_claim, *, lease_seconds):
+        del lease_seconds
+
+    service = SimpleNamespace(default_lease_seconds=0.03, heartbeat=heartbeat)
+    worker = DurableOperationWorker(service, lease_seconds=0.03)
+    monkeypatch.setattr(ExternalOperationExecutor, "execute", execute)
+    running = asyncio.create_task(worker.execute_claim(_claim()))
+    await started.wait()
+
+    running.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await running
+
+    assert cancelled.is_set()
+
+
+@pytest.mark.asyncio
 async def test_worker_repolls_after_normal_ownership_loss(monkeypatch):
     calls = 0
     service = SimpleNamespace(default_lease_seconds=1.0)

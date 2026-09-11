@@ -114,7 +114,10 @@ def _principal_matches_reference(
     if not principal.is_authenticated:
         return False
     if principal.is_system:
-        return True
+        return (
+            reference.principal_kind == "system"
+            and principal.tenant_id == reference.tenant_id
+        )
     expected_kind = "agent" if principal.is_ai_agent else "user"
     return (
         reference.principal_kind == expected_kind
@@ -188,6 +191,7 @@ class DurableOperationService:
         for field_name, value in (
             ("available_at", available_at),
             ("deadline_at", deadline_at),
+            ("approval_expires_at", approval_expires_at),
         ):
             if value is not None and (
                 value.tzinfo is None or value.utcoffset() is None

@@ -64,5 +64,6 @@ and in-process runtime limits. See the [MCP quickstart](../getting-started/mcp.m
 ## Lifetime limits
 
 Runtime budgets, prompt-pack calls, investigation sessions, and replay state are
-process-local. A restart loses them. Durable operations, persistent Agent
-sessions, memory, and cross-worker recovery remain deferred to v0.7.
+process-local. A restart loses them. Persistent Agent sessions, memory,
+autonomous AI workflows, and provider-specific runtime recovery remain
+experimental and outside the v0.7.0rc1 durable-operation contract.

@@ -22,7 +22,7 @@ from aksara.durable import (
     ReadOnlyExecutor,
     ResolutionStatus,
 )
-from aksara.durable.service import _tenant_context
+from aksara.durable.service import _principal_matches_reference, _tenant_context
 from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
 
@@ -191,6 +191,35 @@ async def test_resolved_identity_must_match_durable_provenance(durable_db, princ
     assert operation.state is OperationState.FAILED
     assert operation.error["code"] == "identity_revoked"
     assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_system_principal_cannot_replace_user_provenance(durable_db):
+    tenant = str(uuid4())
+    service, executor, calls = _runtime(
+        durable_db,
+        lambda _reference: PrincipalResolution.resolved(
+            Principal.system(tenant_id=tenant)
+        ),
+    )
+
+    operation = await _execute(service, executor, tenant)
+
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "identity_revoked"
+    assert calls == []
+
+
+def test_system_principal_must_match_reference_tenant():
+    tenant = str(uuid4())
+    reference = replace(_reference(tenant), principal_kind="system")
+
+    assert _principal_matches_reference(
+        Principal.system(tenant_id=tenant), reference
+    )
+    assert not _principal_matches_reference(
+        Principal.system(tenant_id=str(uuid4())), reference
+    )
 
 
 @pytest.mark.asyncio
