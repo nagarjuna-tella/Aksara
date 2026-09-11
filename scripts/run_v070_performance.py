@@ -89,7 +89,7 @@ def _reference(tenant_id: str) -> PrincipalReference:
         resolver_key="v070-performance",
         resolver_version="1",
         identity_namespace="v070-performance",
-        principal_kind="service",
+        principal_kind="user",
         subject_id="performance-worker",
         tenant_id=tenant_id,
     )
