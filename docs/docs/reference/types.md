@@ -91,7 +91,7 @@ from datetime import datetime
 
 class Post(Model):
     title = fields.String(max_length=200)
-    published_at = fields.DateTime(null=True)  # null=True makes it optional
+    published_at = fields.DateTime(nullable=True)  # nullable=True permits NULL
 ```
 
 ### Relationship Types
