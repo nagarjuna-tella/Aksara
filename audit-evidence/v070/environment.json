@@ -1,15 +1,15 @@
 {
   "artifacts": {
-    "aksara_framework-0.7.0rc1-py3-none-any.whl": "34290591e49c2fc1dd70821059d97be14adb53c3efab7abc5c494366949eb0c1",
-    "aksara_framework-0.7.0rc1.tar.gz": "9484ec240fcbd58193e94751b4fb6f6536ee008e74799b27f395158b43b727f0"
+    "aksara_framework-0.7.0rc1-py3-none-any.whl": "0ec8c9108267e0707a0ed918bdd14578b84456b6cb516c0c74f9d77c25e5e81a",
+    "aksara_framework-0.7.0rc1.tar.gz": "d9378a28b51a85966cd3e898e4b766ea226242741545a164f300b6766ba9ce7d"
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "87ad89755ba80a5132e9a0cc0271ae4877de6f6b",
+  "candidate_implementation_sha": "4a4e6775137d5a329548883f838a0a2fdfed200b",
   "database": "aksara_test",
   "database_credentials_recorded": false,
   "hosted_postgresql": {
-    "status": "pending",
+    "status": "pass",
     "version": "16"
   },
   "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",

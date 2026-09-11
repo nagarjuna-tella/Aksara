@@ -2,23 +2,23 @@
 
 ## Recommendation
 
-**READY FOR HOSTED RELEASE VALIDATION.**
+**READY FOR FINAL REVIEW.**
 
 The evaluated candidate implements the bounded Durable Authorized Operations
 contract defined by ADR 0001 while preserving the stable v0.6 ORM, REST, MCP,
 identity, permission, tenant, task, CLI, and diagnostic surfaces. Local release
 gates are green against PostgreSQL with required database tests enabled.
 
-Hosted PostgreSQL 16 and the hosted release matrix remain required before this
-candidate can be approved for merge. Nothing was merged, tagged, published, or
-released as part of the local validation.
+Hosted PostgreSQL 16 and the complete hosted release matrix passed for the
+candidate implementation. Human approval remains required. Nothing was merged,
+tagged, published, or released as part of this validation.
 
 ## Evaluated candidate
 
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `87ad89755ba80a5132e9a0cc0271ae4877de6f6b` |
+| Candidate implementation commit | `4a4e6775137d5a329548883f838a0a2fdfed200b` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -63,12 +63,13 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,197 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable, migration, and invariant suites | **PASS:** 184 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,197 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,206 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable, migration, and invariant suites | **PASS:** 193 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,206 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,206 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,206 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,206 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks | PR #26 |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
 | Packaged Support Desk | Wheel-only app, restricted role, RLS, REST/MCP/durable operation journeys | **PASS:** 66 checks | [`support-desk-gate.json`](audit-evidence/v070/support-desk-gate.json) |
@@ -94,8 +95,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `34290591e49c2fc1dd70821059d97be14adb53c3efab7abc5c494366949eb0c1` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `9484ec240fcbd58193e94751b4fb6f6536ee008e74799b27f395158b43b727f0` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `0ec8c9108267e0707a0ed918bdd14578b84456b6cb516c0c74f9d77c25e5e81a` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `d9378a28b51a85966cd3e898e4b766ea226242741545a164f300b6766ba9ce7d` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
@@ -104,8 +105,8 @@ digests are recorded in
 
 ## Performance interpretation
 
-The local campaign admitted 256 Operations in 312.109 ms and executed them in
-551.424 ms. It also proved concurrent same-key deduplication, eight exclusive
+The local campaign admitted 256 Operations in 339.928 ms and executed them in
+494.040 ms. It also proved concurrent same-key deduplication, eight exclusive
 claims, N-to-N+1 fencing, task-backed execution, bounded pruning, indexed claim
 selection under 3,000 terminal rows, exact mutation counts, and a fully idle
 pool. These figures detect obvious local pathology; they are not a capacity or
@@ -144,5 +145,5 @@ compliance retention remain outside the stable v0.7 contract.
   Exactly-once external delivery and undo are not promised.
 - Worker orchestration, tenant enumeration, escalation UX, backups, monitoring,
   and durable audit retention remain application and operator responsibilities.
-- Hosted PostgreSQL 16 is the independent release environment and is still
-  pending at the time of this local evidence commit.
+- Hosted PostgreSQL 16 independently passed the complete release matrix for the
+  candidate implementation.

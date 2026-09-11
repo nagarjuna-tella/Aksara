@@ -5,8 +5,8 @@
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "87ad89755ba80a5132e9a0cc0271ae4877de6f6b",
-  "hosted_postgresql_16": "pending",
+  "candidate_implementation_sha": "4a4e6775137d5a329548883f838a0a2fdfed200b",
+  "hosted_postgresql_16": "pass",
   "mcp_tasks": {
     "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
     "synchronous_mcp_preserved": true
@@ -14,7 +14,7 @@
   "merge_performed": false,
   "package_version": "0.7.0rc1",
   "publication_performed": false,
-  "recommendation": "ready_for_hosted_release_validation",
+  "recommendation": "ready_for_final_review",
   "release": "v0.7.0-rc1",
   "schema_version": 1,
   "tag_created": false,
@@ -51,11 +51,11 @@
       "warnings": 0
     },
     "durable_targeted": {
-      "passed": 184,
+      "passed": 193,
       "status": "pass"
     },
     "full_suite": {
-      "passed": 8197,
+      "passed": 8206,
       "skipped": 2,
       "status": "pass"
     },
@@ -82,7 +82,7 @@
     },
     "runtime_matrix": {
       "cells": 4,
-      "passed_per_cell": 8197,
+      "passed_per_cell": 8206,
       "skipped_per_cell": 2,
       "status": "pass"
     },
