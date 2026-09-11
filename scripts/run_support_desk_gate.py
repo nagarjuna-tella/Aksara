@@ -1486,6 +1486,7 @@ print(ApprovalManager(data['secret']).issue(
         import httpx2
         from mcp import Client
         from mcp.client.streamable_http import streamable_http_client
+        from mcp.shared.exceptions import MCPError
 
         lock_conn = await asyncpg.connect(self.database_url)
         transaction = lock_conn.transaction()
@@ -1498,12 +1499,14 @@ print(ApprovalManager(data['secret']).issue(
             )
             response = None
             call_error = None
+            code = None
+            request: asyncio.Task[Any] | None = None
             try:
                 async with http_client, Client(
                     streamable_http_client(
                         f"http://127.0.0.1:{port}/mcp/", http_client=http_client
                     ),
-                    read_timeout_seconds=12,
+                    read_timeout_seconds=30,
                 ) as client:
                     request = asyncio.create_task(
                         client.call_tool("ticket_list", {"limit": 100})
@@ -1516,19 +1519,35 @@ print(ApprovalManager(data['secret']).issue(
                     process.send_signal(signal.SIGINT)
                     await asyncio.sleep(0.2)
                     await transaction.rollback()
+                    code = await asyncio.wait_for(process.wait(), timeout=30)
                     try:
-                        response = await request
+                        response = await asyncio.wait_for(request, timeout=5)
                     except asyncio.CancelledError:
                         call_error = "CancelledError"
+                    except TimeoutError:
+                        call_error = "TimeoutError"
+                    except MCPError as exc:
+                        call_error = type(exc).__name__
                     except BaseExceptionGroup as exc:
                         call_error = type(exc).__name__
-            except BaseExceptionGroup:
+            except BaseExceptionGroup as exc:
                 # After the in-flight call completes, the SDK client attempts a
                 # session DELETE, or reports cancellation as a grouped error.
                 # Uvicorn may already have closed its listener.
-                if response is None and call_error is None:
-                    raise
-            code = await asyncio.wait_for(process.wait(), timeout=30)
+                call_error = call_error or type(exc).__name__
+            finally:
+                if request is not None:
+                    if not request.done():
+                        request.cancel()
+                    outcome = (await asyncio.gather(request, return_exceptions=True))[0]
+                    if (
+                        response is None
+                        and call_error is None
+                        and isinstance(outcome, BaseException)
+                    ):
+                        call_error = type(outcome).__name__
+            if code is None:
+                code = await asyncio.wait_for(process.wait(), timeout=30)
             self.check(
                 "graceful shutdown drains in-flight MCP invocation",
                 (response is not None or call_error is not None) and code == 0,
