@@ -1,5 +1,11 @@
 # AI Architecture Review
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **AI Architecture Review** is an automated architectural analysis engine
 that reads the Project Context Graph to detect anti-patterns, coupling risks,
 schema design issues, API design problems, migration risks, and performance

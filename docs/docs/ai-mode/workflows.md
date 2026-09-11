@@ -1,5 +1,11 @@
 # Agent Workflows
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Agent Workflows transform a free-text goal into a **structured,
 step-by-step execution plan** that combines diagnostics, search,
 inspectors, and playbooks into a single ordered timeline. Nothing is

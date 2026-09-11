@@ -1,5 +1,11 @@
 # Ollama Provider
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 [Ollama](https://ollama.ai) lets you run LLMs locally. Aksara's Ollama adapter connects directly — no SDK needed.
 
 ## Setup

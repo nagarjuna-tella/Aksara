@@ -1,5 +1,11 @@
 # Studio CLI Commands
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Command-line tools for testing and managing Aksara Studio integration.
 
 ## Commands Overview

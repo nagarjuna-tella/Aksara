@@ -1,5 +1,11 @@
 # Interactive AI Console
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **Interactive AI Console** is the first AI-native development surface inside
 Aksara Studio.  Developers type natural-language commands — like
 *"explain the User model"* — and the console automatically detects intent,

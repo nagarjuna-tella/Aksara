@@ -1,5 +1,11 @@
 # Project Context Graph
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **Project Context Graph** is a structured representation of your entire
 application — models, routes, queries, migrations, diagnostics, gap analysis
 results, AI Hub configuration, and AI flow actions — assembled into a single

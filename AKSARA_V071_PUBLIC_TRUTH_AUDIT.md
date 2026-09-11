@@ -101,6 +101,7 @@ Full page-by-page usability review is still pending.
 | PT-008 | P1 | Durable guide mounts the generic router without explaining application admission permissions or the connected-database lifecycle | Added explicit admission boundary explanation and runnable factory/resolver/worker tutorial | Docs fixed |
 | PT-009 | P2 | Older MCP quickstart duplicates an unrelated app and uses `httpx.AsyncClient` rather than the installed SDK 2.0 transport type | Consolidated entry around the tested ticket desk and `httpx2.AsyncClient`; no dependency change | Docs fixed |
 | PT-004 | P2 | Navigation promotes experimental AI before the backend journey; entry pages teach competing starter apps | Added Start/Build/Operate/MCP/Reference/Experimental/Contribute paths, retained every page destination, and consolidated entry pages around the tested ticket desk | Docs fixed |
+| PT-013 | P1 | Schema Doctor guide advertised nonexistent `ai doctor --fix`; AI tools implied universal executable tool names | Replaced with installed schema commands and generated MCP discovery; route hints now use executable public APIs | Docs fixed |
 | PT-011 | P1 | Doctor page mixes launch exit codes with check descriptions and omits strict production/durable preflight entry points | Separate command policies and link the matrix and service preflight | Docs fixed |
 | PT-010 | P2 | Docs home calls released v0.7.0 a candidate; tutorial index directs readers to a separate `aksara/examples` repository rather than the documented source | Corrected released status and linked the canonical source-bearing chapters and repository example catalog | Docs fixed |
 
@@ -230,6 +231,15 @@ roadmap input, not added to make documentation pass.
 Published stability contracts are the starting boundary. Module exports alone
 are insufficient evidence of stability. The same synchronous MCP and durable
 approval terminology must not imply identical storage or replay guarantees.
+
+Added direct-entry Experimental labels to 15 previously unlabeled AI/Studio
+pages. Replaced misleading generic AI-tool JSON with the real generated MCP
+discovery path; rewrote route hints as a complete executable metadata example.
+Replaced the nonexistent `aksara ai doctor --fix` and fictional SchemaDoctor
+class with `schema-health`, `schema-issues` and `analyze_schema_health`. Public
+0.7.0 executes the hint snippet and exposes all three documented command groups;
+`ai doctor --help` returns 2. Evidence: `audit-evidence/v071/ai-docs-review.json`.
+This proves those corrected entry points, not every experimental page's contents.
 
 ## Production Documentation Findings
 
@@ -438,7 +448,7 @@ and rejects database credential patterns. These fast checks establish evidence
 integrity, not fresh database execution. The full installed-wheel gate remains
 required when the tutorial or runner changes.
 
-Current focused validation: `pytest tests/docs tests/test_v048_docs_lock.py
+Earlier progressive-tutorial validation: `pytest tests/docs tests/test_v048_docs_lock.py
  tests/test_v048_packaging_sanity.py -q` passes **132 tests**. Strict MkDocs and
 Ruff on the runner and evidence tests pass. PostgreSQL catalog verification
 finds zero leftover tutorial schemas or roles after the journey.
