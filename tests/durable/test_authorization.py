@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -21,6 +22,8 @@ from aksara.durable import (
     ReadOnlyExecutor,
     ResolutionStatus,
 )
+from aksara.durable.service import _tenant_context
+from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
 
 
@@ -322,3 +325,144 @@ async def test_identity_is_resolved_again_after_lifecycle_boundary(
     assert operation.error["code"] == "authorization_denied"
     assert resolution_count == 2
     assert calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "effect_class",
+    [
+        EffectClass.POSTGRES_ATOMIC,
+        EffectClass.READ_ONLY,
+        EffectClass.EXTERNAL_AT_LEAST_ONCE,
+    ],
+)
+@pytest.mark.parametrize(
+    "tampering",
+    ["action", "action_version", "command", "principal"],
+)
+async def test_executor_rebuilds_authoritative_claim_before_dispatch(
+    durable_db,
+    effect_class,
+    tampering,
+):
+    tenant = str(uuid4())
+    service, executor, calls = _runtime(
+        durable_db,
+        lambda _reference: PrincipalResolution.resolved(
+            Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("operation:write",)
+            )
+        ),
+        effect_class=effect_class,
+    )
+    forged_calls: list[dict] = []
+
+    async def forged_handler(_context, command):
+        forged_calls.append(command)
+        return {"forged": True}
+
+    service.actions.register(
+        DurableAction(
+            name="authorization.forged",
+            version="1",
+            handler=forged_handler,
+            effect_class=effect_class,
+            required_scopes=("operation:write",),
+        )
+    )
+    admitted = await service.admit(
+        "authorization.mutate", "1", {"value": 1}, _reference(tenant)
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="authorization-worker",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    if tampering == "action":
+        claim = replace(claim, action_name="authorization.forged")
+    elif tampering == "action_version":
+        claim = replace(claim, action_version="forged")
+    elif tampering == "command":
+        claim = replace(claim, command={"value": 999})
+    else:
+        claim = replace(
+            claim,
+            principal_reference=PrincipalReference(
+                resolver_key="forged",
+                resolver_version="1",
+                identity_namespace="tests",
+                principal_kind="user",
+                subject_id="forged-user",
+                tenant_id=tenant,
+            ),
+        )
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.SUCCEEDED
+    assert calls == [{"value": 1}]
+    assert forged_calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "effect_class",
+    [
+        EffectClass.POSTGRES_ATOMIC,
+        EffectClass.READ_ONLY,
+        EffectClass.EXTERNAL_AT_LEAST_ONCE,
+    ],
+)
+async def test_resolver_and_authorizer_run_under_operation_tenant_scope(
+    durable_db,
+    effect_class,
+):
+    tenant = str(uuid4())
+    marker_id = uuid4()
+    with _tenant_context(tenant_scope(tenant)):
+        await durable_db.execute(
+            "INSERT INTO durable_test_counters (id, tenant_scope) VALUES ($1, $2)",
+            marker_id,
+            tenant,
+        )
+    resolver_visibility: list[int] = []
+    authorizer_visibility: list[int] = []
+
+    async def resolver(_reference):
+        visible = int(
+            await durable_db.fetchval(
+                "SELECT COUNT(*) FROM durable_test_counters WHERE id = $1",
+                marker_id,
+            )
+        )
+        resolver_visibility.append(visible)
+        return PrincipalResolution.resolved(
+            Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("operation:write",)
+            )
+        )
+
+    async def authorizer(_principal, _command):
+        visible = int(
+            await durable_db.fetchval(
+                "SELECT COUNT(*) FROM durable_test_counters WHERE id = $1",
+                marker_id,
+            )
+        )
+        authorizer_visibility.append(visible)
+        return visible == 1
+
+    service, executor, calls = _runtime(
+        durable_db,
+        resolver,
+        authorizer=authorizer,
+        effect_class=effect_class,
+    )
+
+    completed = await _execute(service, executor, tenant)
+
+    assert completed.state is OperationState.SUCCEEDED
+    assert calls == [{"value": 1}]
+    assert resolver_visibility and set(resolver_visibility) == {1}
+    assert authorizer_visibility and set(authorizer_visibility) == {1}

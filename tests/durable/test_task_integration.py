@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import contextmanager
 from uuid import UUID, uuid4
 
@@ -145,6 +146,60 @@ async def test_task_backed_operation_uses_operation_attempt_as_authority(durable
             "SELECT mutation_counter FROM durable_test_counters WHERE id = $1",
             counter_id,
         ) == 1
+
+
+@pytest.mark.asyncio
+async def test_task_backed_external_operation_renews_its_operation_lease(
+    durable_db,
+    monkeypatch,
+):
+    tenant = str(uuid4())
+    heartbeat_seen = asyncio.Event()
+
+    async def handler(_context, _command):
+        await asyncio.wait_for(heartbeat_seen.wait(), timeout=1)
+        return {"renewed": True}
+
+    service = _runtime(durable_db, tenant)
+    service.actions.register(
+        DurableAction(
+            name="external.task_wait",
+            version="1",
+            handler=handler,
+            effect_class=EffectClass.EXTERNAL_IDEMPOTENT,
+            executor_type="task",
+            required_scopes=("counter:write",),
+        )
+    )
+    admitted = await service.admit(
+        "external.task_wait", "1", {"value": 1}, _reference(tenant)
+    )
+    await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+    original_heartbeat = service.heartbeat
+
+    async def observe_heartbeat(claim, *, lease_seconds=None):
+        operation = await original_heartbeat(claim, lease_seconds=lease_seconds)
+        heartbeat_seen.set()
+        return operation
+
+    monkeypatch.setattr(service, "heartbeat", observe_heartbeat)
+    worker = TaskWorker(
+        durable_db,
+        durable_service=service,
+        worker_id="external-task-worker",
+        stale_lock_timeout_seconds=0.03,
+    )
+
+    completed_task = await asyncio.wait_for(worker.poll_once(), timeout=1)
+
+    assert heartbeat_seen.is_set()
+    assert completed_task is not None
+    assert completed_task.status == "completed"
+    assert completed_task.result == {"renewed": True}
 
 
 @pytest.mark.asyncio

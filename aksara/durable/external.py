@@ -74,6 +74,10 @@ class ExternalEffectAdapter(Protocol):
 class ExternalOutcomeUnknown(RuntimeError):
     """The provider outcome cannot be established without risking duplication."""
 
+    def __init__(self, message: str, *, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.retryable = retryable
+
 
 class _OperationClosed(RuntimeError):
     pass
@@ -205,7 +209,27 @@ class ExternalEffectContext:
                 ) from exc
             raise
         await self._executor._reach_boundary("after_external_send")
-        await self._confirm(effect["id"], result)
+        try:
+            await self._confirm(effect["id"], result)
+        except Exception as exc:
+            recoverable = bool(
+                adapter.supports_idempotency or adapter.supports_reconciliation
+            )
+            if not recoverable:
+                try:
+                    await self._mark_unknown(
+                        effect["id"],
+                        "provider returned but durable confirmation failed: "
+                        f"{str(exc) or type(exc).__name__}",
+                    )
+                except Exception:  # noqa: BLE001,S110 - recovery is best effort
+                    # The intent and execution count remain authoritative. A
+                    # replacement owner will classify the effect on recovery.
+                    pass
+            raise ExternalOutcomeUnknown(
+                "provider returned but durable confirmation could not be recorded",
+                retryable=recoverable,
+            ) from exc
         await self._executor._reach_boundary("after_effect_confirmation")
         return normalize_json(result.value)
 
@@ -433,6 +457,7 @@ class ExternalOperationExecutor:
             await result
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
+        claim = await self.service._authoritative_claim(claim)
         action = self.service.actions.get(claim.action_name, claim.action_version)
         if action.effect_class not in {
             EffectClass.EXTERNAL_IDEMPOTENT,
@@ -467,7 +492,7 @@ class ExternalOperationExecutor:
                 claim,
                 code=FailureReason.EXTERNAL_OUTCOME_UNKNOWN.value,
                 message=str(exc),
-                retryable=False,
+                retryable=exc.retryable,
             )
         except Exception as exc:  # noqa: BLE001 - handlers define application failures
             retryable = action.is_retryable(exc)

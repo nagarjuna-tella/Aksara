@@ -24,6 +24,7 @@ from aksara.durable import (
     ReconciliationStatus,
 )
 from aksara.durable.errors import OwnershipLost
+from aksara.durable.external import ExternalEffectContext
 from aksara.durable.service import _tenant_context
 from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
@@ -91,6 +92,24 @@ class AmbiguousProvider:
     async def perform(self, _request, *, idempotency_key):
         self.calls += 1
         raise ConnectionError(f"response lost for {idempotency_key[:8]}")
+
+    async def reconcile(self, **_kwargs):
+        raise AssertionError("provider cannot reconcile")
+
+
+class SuccessfulNonrecoverableProvider:
+    supports_idempotency = False
+    supports_reconciliation = False
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def perform(self, request, *, idempotency_key):
+        self.calls += 1
+        return ExternalEffectResult(
+            {"sent": request["message"]},
+            provider_reference=f"message:{idempotency_key[:12]}",
+        )
 
     async def reconcile(self, **_kwargs):
         raise AssertionError("provider cannot reconcile")
@@ -285,6 +304,80 @@ async def test_provider_without_recovery_records_unknown_and_never_blindly_retri
     assert completed.error["code"] == "external_outcome_unknown"
     assert completed.error["retryable"] is False
     assert provider.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_confirmation_failure_after_nonretryable_send_records_unknown(
+    durable_db,
+    monkeypatch,
+):
+    tenant = str(uuid4())
+    provider = SuccessfulNonrecoverableProvider()
+    service, executor = _runtime(
+        durable_db, tenant, provider, EffectClass.EXTERNAL_NONRETRYABLE
+    )
+    admitted, claim = await _claim(service, tenant, {"message": "hello"}, lease=1)
+
+    async def fail_confirmation(_context, _effect_id, _result):
+        raise ConnectionError("database confirmation unavailable")
+
+    monkeypatch.setattr(ExternalEffectContext, "_confirm", fail_confirmation)
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.FAILED
+    assert completed.error["code"] == "external_outcome_unknown"
+    assert completed.error["retryable"] is False
+    assert provider.calls == 1
+    with _tenant_context(tenant_scope(tenant)):
+        effect = await durable_db.fetchrow(
+            """
+            SELECT state, execution_count FROM aksara_operation_effects
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert effect["state"] == "outcome_unknown"
+    assert effect["execution_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_confirmation_failure_retries_idempotent_effect_with_same_identity(
+    durable_db,
+    monkeypatch,
+):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service, executor = _runtime(
+        durable_db, tenant, provider, EffectClass.EXTERNAL_IDEMPOTENT
+    )
+    admitted, first = await _claim(service, tenant, {"amount": 25}, lease=1)
+    original_confirm = ExternalEffectContext._confirm
+    confirmations = 0
+
+    async def fail_once(context, effect_id, result):
+        nonlocal confirmations
+        confirmations += 1
+        if confirmations == 1:
+            raise ConnectionError("database confirmation unavailable")
+        await original_confirm(context, effect_id, result)
+
+    monkeypatch.setattr(ExternalEffectContext, "_confirm", fail_once)
+    retry = await executor.execute(first)
+
+    assert retry.state is OperationState.READY
+    assert retry.error["code"] == "external_outcome_unknown"
+    assert retry.error["retryable"] is True
+    second = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+    )
+    assert second is not None
+    completed = await executor.execute(second)
+
+    assert completed.state is OperationState.SUCCEEDED
+    assert provider.calls[0] == provider.calls[1]
+    assert len(provider.effects) == 1
 
 
 @pytest.mark.asyncio

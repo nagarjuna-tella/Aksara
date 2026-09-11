@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+import asyncpg  # type: ignore[import-untyped]
+
 from aksara.context_state import tenant_id_var
 from aksara.db import Database, atomic
 from aksara.db.session import get_session
@@ -1098,6 +1100,82 @@ class DurableOperationService:
         if row is None:
             raise OwnershipLost("attempt does not own the current unexpired lease")
         return row
+
+    async def _authoritative_claim(self, claim: OperationClaim) -> OperationClaim:
+        """Rebuild an owned claim from durable state before dispatching code."""
+
+        for read_attempt in range(2):
+            try:
+                with _tenant_context(claim.tenant_scope):
+                    async with atomic(db=self.db) as connection:
+                        return await self._authoritative_claim_under_lock(
+                            connection,
+                            claim,
+                        )
+            except (ConnectionError, asyncpg.PostgresConnectionError):
+                if read_attempt:
+                    raise
+                # This transaction only validates durable data, so retrying a
+                # lost acknowledgement cannot repeat application work.
+                continue
+        raise AssertionError("authoritative claim validation did not run")
+
+    async def _authoritative_claim_under_lock(
+        self,
+        connection: Any,
+        claim: OperationClaim,
+    ) -> OperationClaim:
+        operation = await self._lock_owned(connection, claim)
+        attempt = await connection.fetchrow(
+            """
+            SELECT * FROM aksara_operation_attempts
+            WHERE id = $1 AND operation_id = $2 AND tenant_scope = $3
+              AND fence = $4 AND worker_id = $5 AND state = 'running'
+            """,
+            operation["current_attempt_id"],
+            operation["id"],
+            operation["tenant_scope"],
+            operation["fence"],
+            operation["worker_id"],
+        )
+        command_record = await self.repository.get_command_record(
+            connection,
+            operation["id"],
+            operation["tenant_scope"],
+        )
+        if attempt is None or command_record is None:
+            raise DurableConfigurationError("authoritative claim state is incomplete")
+        stored_command = command_record["payload"]
+        if isinstance(stored_command, str):
+            stored_command = json.loads(stored_command)
+        if not isinstance(stored_command, Mapping):
+            raise DurableConfigurationError("authoritative command payload is invalid")
+        if (
+            command_record["id"] != operation["command_id"]
+            or command_record["canonical_input_hash"]
+            != operation["canonical_input_hash"]
+            or stable_hash(stored_command) != operation["canonical_input_hash"]
+        ):
+            raise DurableConfigurationError("authoritative command binding is invalid")
+        try:
+            authoritative = self.repository.claim(
+                operation,
+                attempt,
+                stored_command,
+            )
+        except (TypeError, ValueError, KeyError) as exc:
+            raise DurableConfigurationError(
+                "authoritative principal provenance is invalid"
+            ) from exc
+        reference = authoritative.principal_reference
+        if (
+            reference.integrity_hash != operation["principal_reference_hash"]
+            or reference.resolver_key != operation["resolver_key"]
+            or reference.resolver_version != operation["resolver_version"]
+            or reference.tenant_id != operation["tenant_id"]
+        ):
+            raise DurableConfigurationError("authoritative principal binding is invalid")
+        return authoritative
 
     async def request_cancellation(
         self,

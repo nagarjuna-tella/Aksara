@@ -1087,7 +1087,6 @@ class TaskWorker:
         if task_record.operation_application_namespace != service.application_namespace:
             return
         from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
-        from aksara.durable.external import ExternalOperationExecutor
         from aksara.durable.service import _tenant_context
         from aksara.durable.types import EffectClass, tenant_scope
 
@@ -1124,7 +1123,13 @@ class TaskWorker:
             EffectClass.EXTERNAL_AT_LEAST_ONCE,
             EffectClass.EXTERNAL_NONRETRYABLE,
         }:
-            operation = await ExternalOperationExecutor(service).execute(claim)
+            from aksara.durable.worker import DurableOperationWorker
+
+            operation = await DurableOperationWorker(
+                service,
+                worker_id=claim.worker_id,
+                lease_seconds=self.stale_lock_timeout_seconds,
+            ).execute_claim(claim)
         else:
             operation = await service.fail_attempt(
                 claim,

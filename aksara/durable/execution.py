@@ -88,6 +88,7 @@ class PostgresAtomicExecutor:
             await result
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
+        claim = await self.service._authoritative_claim(claim)
         action = self.service.actions.get(claim.action_name, claim.action_version)
         if action.effect_class is not EffectClass.POSTGRES_ATOMIC:
             raise DurableConfigurationError(
@@ -263,7 +264,10 @@ class PostgresAtomicExecutor:
         self, claim: OperationClaim
     ) -> tuple[Principal | None, _ResolutionFailure | None]:
         try:
-            outcome = await self.service.resolvers.resolve(claim.principal_reference)
+            with _tenant_context(claim.tenant_scope):
+                outcome = await self.service.resolvers.resolve(
+                    claim.principal_reference
+                )
         except ResolverNotRegistered as exc:
             return None, _ResolutionFailure(
                 FailureReason.RESOLVER_MISSING, str(exc), False
@@ -306,20 +310,25 @@ class PostgresAtomicExecutor:
         principal: Principal,
         claim: OperationClaim,
     ) -> bool:
-        decision = default_policy.can(
-            principal,
-            action.name,
-            required_scopes=action.required_scopes,
-            tenant_id=claim.tenant_id,
-            tenant_required=claim.tenant_id is not None,
-        )
-        if decision.denied:
-            return False
-        if action.authorizer is None:
-            return True
-        from aksara.durable.service import _call_authorizer
+        with _tenant_context(claim.tenant_scope):
+            decision = default_policy.can(
+                principal,
+                action.name,
+                required_scopes=action.required_scopes,
+                tenant_id=claim.tenant_id,
+                tenant_required=claim.tenant_id is not None,
+            )
+            if decision.denied:
+                return False
+            if action.authorizer is None:
+                return True
+            from aksara.durable.service import _call_authorizer
 
-        return await _call_authorizer(action.authorizer, principal, claim.command)
+            return await _call_authorizer(
+                action.authorizer,
+                principal,
+                claim.command,
+            )
 
     async def _cancel_under_lock(
         self,
@@ -436,6 +445,7 @@ class ReadOnlyExecutor:
         self._identity = PostgresAtomicExecutor(service)
 
     async def execute(self, claim: OperationClaim) -> OperationRecord:
+        claim = await self.service._authoritative_claim(claim)
         action = self.service.actions.get(claim.action_name, claim.action_version)
         if action.effect_class is not EffectClass.READ_ONLY:
             raise DurableConfigurationError(
