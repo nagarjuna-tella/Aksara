@@ -117,6 +117,7 @@ Full page-by-page usability review is still pending.
 | PT-026 | P1 | Eighteen remaining ORM overview/model/field/relation examples directly await query builders, including unsupported exclude | Added explicit all terminals and Q negation across four guides | Docs corrected for this API shape; broader surrounding semantics still under review |
 | PT-027 | P1 | Advanced validation guide teaches async serializer hooks, nonexistent validator APIs and implicit clean behavior; type example uses null=True | Replaced with explicit layer-specific validation contracts and corrected nullable option | Docs fixed; existing installed serializer/tenant examples support linked paths |
 | PT-028 | P1 | Type reference invents async permission/serializer interfaces, return shapes and mypy plugin/stub guarantees | Replaced sketches with actual sync/async contracts and qualified annotation support | Docs fixed; existing installed signature and import checks |
+| PT-029 | P1 | Performance guide promises missing projection/profiling/explain APIs, lazy relations and unsupported serializer patterns | Replaced with supported query controls and scoped measurement/transaction guidance | Docs fixed; no performance improvement or capacity claim |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
