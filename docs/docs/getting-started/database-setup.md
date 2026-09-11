@@ -312,7 +312,7 @@ aksara makemigrations --app app.models
 aksara migrate
 
 # Check migration status
-aksara migrate --check
+aksara status
 ```
 
 See [Migrations](../orm/migrations.md) for detailed documentation.

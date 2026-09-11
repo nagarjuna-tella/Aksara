@@ -175,23 +175,23 @@ full debugger pipeline and returns a structured report.
 
 ```bash
 # Full analysis
-aksara ai debug
+aksara ai flows debug
 
 # Focused analysis
-aksara ai debug --query "login fails"
+aksara ai flows debug --query "login fails"
 
 # JSON output
-aksara ai debug --json
+aksara ai flows debug --json
 
 # Summary only
-aksara ai debug --summary
+aksara ai flows debug --summary
 
 # Filter by model or route
-aksara ai debug --model User
-aksara ai debug --route /api/login
+aksara ai flows debug --model User
+aksara ai flows debug --route /api/login
 
 # Combine options
-aksara ai debug --query "auth" --json --summary
+aksara ai flows debug --query "auth" --json --summary
 ```
 
 ## Safety Guarantees

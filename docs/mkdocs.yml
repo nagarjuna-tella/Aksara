@@ -271,7 +271,4 @@ extra:
   version:
     provider: mike
 
-extra_css:
-  - stylesheets/extra.css
-
 copyright: Copyright &copy; 2024-2026 Aksara Framework

@@ -16,7 +16,7 @@ AKSARA_AI_ENABLED=true
 Then configure a provider with the current AI Hub path:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```

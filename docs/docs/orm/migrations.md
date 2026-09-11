@@ -528,7 +528,7 @@ aksara migrate --migrations-dir custom_migrations
 aksara makemigrations --app app.models
 
 # Check model registration
-aksara info --models
+aksara models --app app.models
 ```
 
 ### Migration Fails to Apply

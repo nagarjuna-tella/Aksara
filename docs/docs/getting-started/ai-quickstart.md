@@ -10,7 +10,7 @@ Inspect the current AI Hub configuration:
 ```bash
 aksara ai-hub status
 aksara ai-hub doctor
-aksara ai-hub configure
+aksara ai-hub configure openai
 ```
 
 Provider credentials belong in environment variables or the provider's secret
@@ -27,7 +27,7 @@ Ollama can be used for local experiments:
 ```bash
 ollama serve
 ollama pull llama3
-aksara ai-hub configure
+aksara ai-hub configure ollama --model llama3
 ```
 
 Aksara v0.7.0 does not export a stable `AgentRuntime` or `Planner` class. Use the

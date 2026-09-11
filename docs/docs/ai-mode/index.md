@@ -45,7 +45,7 @@ architecture as pseudocode.
 Use AI Hub for the current experimental provider path:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```

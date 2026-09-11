@@ -20,7 +20,7 @@ Use the AI Hub CLI, which writes the current AI Hub configuration model:
 
 ```bash
 aksara ai-hub status
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub doctor
 ```
 

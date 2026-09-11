@@ -155,7 +155,7 @@ Provider-backed prompt execution is optional and experimental. Configure the
 current AI Hub path when you need it:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```

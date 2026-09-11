@@ -229,8 +229,19 @@ file-oriented `ai plan` subcommands. Twelve extracted provider-free commands
 passed in the isolated public wheel with socket connections forbidden: help,
 the local greeting response, and a read-mode plan template. This does not prove
 provider-backed execution or plan application. Evidence is
-`audit-evidence/v071/ai-cli-execution.json`. Other public pages still contain
-stale CLI examples and remain under audit.
+`audit-evidence/v071/ai-cli-execution.json`. A broader parser-only scan now checks 341 literal Aksara commands from public
+shell fences with zero syntax errors. Eleven pipeline/redirection or usage
+examples are explicitly excluded in `cli-docs-syntax.json`; this does not
+validate file existence, application imports, runtime effects, or forwarded
+pytest flags. It does check required arguments and declared choices; this
+caught missing provider names in seven setup commands, now corrected.
+Corrected `ai flows debug/graph`, migration status, and model inspection
+examples. Replaced the nonexistent custom-command framework with an explicit
+application-owned Python command pattern. An isolated-wheel run of the existing public syntax/import contracts now
+passes all 821 Python fences and every documented Aksara import. Evidence in
+`installed-doc-imports.json` binds the result to the current public pages and
+contract tests. Import resolution does not establish API stability or execute
+snippet bodies; remaining page semantics still require audit.
 
 **PT-015 / P1:** duplicate CLI references advertised unsupported commands and
 flags (`makemigrations --check/--empty`, `shell -c`, `routes`, and others).
@@ -403,6 +414,15 @@ prove authenticated upload, SMTP delivery, S3 policy or database-file atomicity.
 The existing storage/media mounting/migration-field tests pass 9 tests.
 
 ## Automated Truth Gates
+
+The rendered-site link gate checks local page, fragment, stylesheet, script, and
+image targets, including links under the published `/Aksara/` prefix. It found
+a nonexistent `stylesheets/extra.css` referenced on all 158 HTML pages; removing
+the stale MkDocs `extra_css` entry fixes those requests without changing any
+framework behavior. The rebuilt site passes 51,250 local link/asset checks.
+External links are counted but not fetched by this gate. Evidence is
+`audit-evidence/v071/rendered-links.json`; source freshness and negative-control
+tests prevent a missing asset or fragment from being mistaken for a pass.
 
 Baseline: strict MkDocs PASS; `pytest tests/docs tests/test_v048_docs_lock.py
  tests/test_v048_packaging_sanity.py -q`: 114 passed. The 902 Python fences

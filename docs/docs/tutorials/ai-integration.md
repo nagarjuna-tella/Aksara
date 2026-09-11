@@ -39,7 +39,7 @@ Configure the current AI Hub path for optional provider-backed Studio or
 prompt-pack features:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```
