@@ -219,7 +219,7 @@ def _runtime(
     return service, ExternalOperationExecutor(service, _boundary_hook=boundary_hook)
 
 
-async def _claim(service, tenant: str, command: dict[str, Any], *, lease=0.04):
+async def _claim(service, tenant: str, command: dict[str, Any], *, lease=0.5):
     admitted = await service.admit(
         "external.perform", "1", command, _reference(tenant)
     )
@@ -244,7 +244,7 @@ async def test_idempotent_provider_reuses_stable_key_after_worker_death(durable_
 
     with pytest.raises(WorkerKilled):
         await executor.execute(first)
-    await asyncio.sleep(0.06)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",
@@ -271,7 +271,7 @@ async def test_reconciling_provider_does_not_repeat_effect_after_worker_death(du
 
     with pytest.raises(WorkerKilled):
         await executor.execute(first)
-    await asyncio.sleep(0.06)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",
@@ -404,7 +404,7 @@ async def test_death_after_intent_before_send_reuses_stable_effect_identity(dura
     with pytest.raises(WorkerKilled):
         await executor.execute(first)
     assert provider.calls == []
-    await asyncio.sleep(0.06)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",
@@ -451,7 +451,7 @@ async def test_death_after_send_before_confirmation_deduplicates_provider_effect
 
     with pytest.raises(WorkerKilled):
         await executor.execute(first)
-    await asyncio.sleep(0.06)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",
@@ -481,7 +481,7 @@ async def test_transient_reconciliation_failure_retries_without_resending(durabl
 
     with pytest.raises(WorkerKilled):
         await executor.execute(first)
-    await asyncio.sleep(0.06)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",

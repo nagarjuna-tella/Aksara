@@ -300,13 +300,13 @@ async def test_claim_heartbeat_reclaim_and_stale_owner_fencing(durable_db):
         tenant_id=tenant,
         worker_id="worker-a",
         operation_id=admitted.operation.id,
-        lease_seconds=0.05,
+        lease_seconds=0.5,
     )
     assert first is not None
-    renewed = await service.heartbeat(first, lease_seconds=0.05)
+    renewed = await service.heartbeat(first, lease_seconds=0.5)
     assert renewed > first.lease_expires_at
 
-    await asyncio.sleep(0.08)
+    await asyncio.sleep(0.6)
     second = await service.claim(
         tenant_id=tenant,
         worker_id="worker-b",
