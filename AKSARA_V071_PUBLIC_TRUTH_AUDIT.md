@@ -67,7 +67,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production path rewritten | Launch check; production guide | Launch-check slice | PARTIAL only for optional services; production release profile remains a separate gate. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Partial audit | Media guide | Pending new journey | Field correctness is distinct from storage integration and protected download design. |
 | Storage integrations | Yes | Evolving | `aksara.storage` | Configuration corrected; usage audit pending | Media guide | Pending | CSV export exercises a common app feature, not file storage. |
-| TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | Discoverability gap under review | `tests/api/test_typescript_sdk.py` | Pending | See also `tests/cli/test_sdk_cli.py`; no new SDK behavior proposed. |
+| TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
 | AI/provider/runtime | Yes | Experimental | `aksara.ai` | Needs full stability/copy audit | ai_providers | Pending | Planner and provider quality are outside backend production guarantees. |
 | Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Needs full stability/copy audit | Studio guides | Pending | Not a substitute for production Admin or a durable investigation store. |
@@ -115,6 +115,20 @@ now recommends explicit `configure(mcp_allowed_origins=[...],
 mcp_allowed_hosts=[...])` lists, which bypass environment parsing. Recommend a
 separate functional parser patch with origin, port, IPv6 and platform tests;
 production code is unchanged here.
+
+**SDK-001 / P1:** the public 0.7.0 generator emits a `TicketListParams`
+interface that is not assignable to its helper's `Record<string, QueryValue>`.
+Using the unchanged first-project Ticket model/ViewSet, generation succeeds but
+TypeScript 5.9.3 exits 2 with TS2322 at `api.ts(89,75)`. The reproducible
+`scripts/check_public_sdk.py --python <wheel-python> --tsc <typescript-compiler>
+--output audit-evidence/v071/typescript-sdk-probe.json` preserves that failing
+exit code; it is not counted as a passing SDK gate. Evidence and exact
+commands are in `audit-evidence/v071/typescript-sdk-probe.json`; the new public
+TypeScript how-to exposes this limitation. Recommend a separate generator patch
+with actual TypeScript compilation, followed by HTTP client validation. No
+runtime fix or suppression is made here. Direct CLI discovery also requires an
+importable application module; an explicit public Python script succeeds in the
+isolated project where the console entry point did not find `app.views`.
 
 ## Broken Examples Found
 

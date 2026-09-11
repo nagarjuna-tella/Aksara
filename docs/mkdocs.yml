@@ -124,6 +124,7 @@ nav:
     - tutorials/index.md
     - Blog API: tutorials/blog-api.md
     - Multi-Tenant: tutorials/multi-tenant.md
+  - TypeScript Client: how-to/typescript-client.md
   - Advanced:
     - advanced/index.md
     - Custom Fields: advanced/custom-fields.md
