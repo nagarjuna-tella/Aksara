@@ -18,7 +18,7 @@ tagged, published, or released as part of this validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `7668eced920cd4fdb2541052bd276bd76992691e` |
+| Candidate implementation commit | `c8bb2063fd8dfb5936490927bca174e1c13de81a` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
