@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 798,
+  "python_blocks": 778,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -58,7 +58,7 @@
     "docs/docs/api/routing.md": "216429ed99ee72950d8f1053ca142378a0932416c88c53c7d0da0cd6c2ab3843",
     "docs/docs/api/serializers.md": "536d4f83976d6674eb422a748a9202408e581d87515161759ea0f8c4cda6f17d",
     "docs/docs/api/throttling.md": "8a9fac1abd75ee0952e1753fbe99d783a5a9677fc3bfb81fe3be48dcae79ba0c",
-    "docs/docs/api/viewsets.md": "c9af48931e62d4fa31b58200ab80f6237a142062274b9bbf1646fe00cc7efcbe",
+    "docs/docs/api/viewsets.md": "1d4a3ed6d93018fe2f43bb231f8ce16a17ec6e04df47d4377f84482e88aed3f7",
     "docs/docs/cli/ai-commands.md": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
     "docs/docs/cli/commands.md": "4cbcf3d5a998a0b52d5927dea39e3623f2e33c4ddf4d205429dd1f98e8032ade",
     "docs/docs/cli/dev-tools.md": "8e0a5dd79e619668c23283505683a4990ebea3b1893bc5e39e38b8fe2f612612",
@@ -167,7 +167,9 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax and Aksara import resolution; not snippet execution, API stability, or runtime semantics",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "46ae55258c1fb48a00c50e9e27daa4ee6af5e44f4204962221978f9cf40a6c1d",
-  "runner_sha256": "237550589652351533ef6ba9ac5a40ca585fce49bba502a30b3f078b21b60483"
+  "viewset_contract_sha256": "502a4b9a88585d734180f77dd4e884d4b5fb77583571d41a1b735891b8b287f9",
+  "viewset_route_and_default_checks": "passed",
+  "runner_sha256": "36f0124f1a4f900af00f57ede54fa6968a7cd9d1a75d21286ff2a034368478b0"
 }

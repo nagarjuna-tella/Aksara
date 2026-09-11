@@ -10,12 +10,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "tests/docs/test_installed_package_truth.py"
+VIEWSET_CONTRACT = ROOT / "tests/docs/test_viewset_reference.py"
 PROBE = r'''
 import hashlib, json, runpy, sys
 import aksara
 module = runpy.run_path(sys.argv[1])
 module['test_public_python_fences_are_syntactically_executable']()
 module['test_public_aksara_imports_resolve']()
+viewsets = runpy.run_path(sys.argv[2])
+viewsets['test_viewset_example_registers_documented_routes']()
+viewsets['test_documented_viewset_defaults_and_hooks']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -32,15 +36,17 @@ def main():
     env = {k: v for k, v in os.environ.items()
            if k not in {"PYTHONPATH", "DATABASE_URL"} and not k.startswith("AKSARA_")}
     with tempfile.TemporaryDirectory(prefix="aksara-doc-imports-") as directory:
-        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT)],
+        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT)],
                              cwd=directory, env=env, text=True, capture_output=True,
                              timeout=60, check=True)
     evidence = json.loads(run.stdout)
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax and Aksara import resolution; not snippet execution, API stability, or runtime semantics",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
+                     "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
+                     "viewset_route_and_default_checks": "passed",
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")
     print(f"PASS: {evidence['python_blocks']} Python fences; all documented Aksara imports resolve")
