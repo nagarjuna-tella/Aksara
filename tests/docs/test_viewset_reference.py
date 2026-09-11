@@ -140,3 +140,13 @@ def test_documented_routing_registration_and_discovery():
             ("/api/tickets/{pk}", "GET"), ("/api/tickets/{pk}", "PATCH"),
             ("/api/tickets/{pk}", "DELETE"),
         }
+
+
+def test_documented_signal_dispatch_example():
+    import asyncio
+
+    page = (ROOT / "docs/docs/orm/signals.md").read_text()
+    source = re.search(r'```python title="check_signals.py"\n(.*?)```', page, re.DOTALL).group(1)
+    namespace = {"__name__": "documented_signal_probe"}
+    exec(compile(source, "documented-signals", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+    asyncio.run(namespace["main"]())

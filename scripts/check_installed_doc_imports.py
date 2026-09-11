@@ -23,6 +23,7 @@ viewsets['test_documented_viewset_defaults_and_hooks']()
 viewsets['test_documented_serializer_validation']()
 viewsets['test_custom_action_example_checks_anonymous_identity']()
 viewsets['test_documented_routing_registration_and_discovery']()
+viewsets['test_documented_signal_dispatch_example']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -46,7 +47,7 @@ def main():
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, and anonymous denial in the explicit-check action; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, and standalone signal dispatch; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "viewset_route_and_default_checks": "passed",
