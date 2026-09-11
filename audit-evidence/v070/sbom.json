@@ -253,11 +253,11 @@
           "hashes": [
             {
               "alg": "SHA-256",
-              "content": "0e2b5e2d773d01203d5bbff4297ba405429db5afd16a527d1a68af13b56d2961"
+              "content": "7e1a946259a190343254a99b56d385b66137c969fdc9c6c4cfd5a1f889db05f3"
             }
           ],
           "type": "distribution",
-          "url": "file:///tmp/aksara-dist-b36ef81-final/aksara_framework-0.7.0rc1-py3-none-any.whl"
+          "url": "file:///private/tmp/aksara-dist-08f8c62.zXo5rw/aksara_framework-0.7.0rc1-py3-none-any.whl"
         },
         {
           "comment": "from packaging metadata Project-URL: Documentation",
@@ -4023,7 +4023,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-11T06:55:15.450096+00:00",
+    "timestamp": "2026-09-11T07:48:48.029429+00:00",
     "tools": {
       "components": [
         {
@@ -4127,7 +4127,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:6b13098a-d62e-494c-82e0-525e6f8eec5d",
+  "serialNumber": "urn:uuid:7a457029-571c-425c-920f-692a276a1ea4",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",

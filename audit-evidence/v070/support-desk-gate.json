@@ -2,10 +2,10 @@
   "schema_version": 1,
   "gate": "support-desk-v070-production-reference",
   "status": "passed",
-  "started_at": "2026-09-11T06:50:01.864122+00:00",
-  "finished_at": "2026-09-11T06:50:23.503825+00:00",
+  "started_at": "2026-09-11T08:02:10.390536+00:00",
+  "finished_at": "2026-09-11T08:02:31.453774+00:00",
   "wheel": "aksara_framework-0.7.0rc1-py3-none-any.whl",
-  "wheel_sha256": "0e2b5e2d773d01203d5bbff4297ba405429db5afd16a527d1a68af13b56d2961",
+  "wheel_sha256": "7e1a946259a190343254a99b56d385b66137c969fdc9c6c4cfd5a1f889db05f3",
   "database": "aksara_test",
   "checks": [
     {
@@ -491,10 +491,10 @@
       "status": "pass",
       "details": {
         "tenant_a": [
-          "c2e0c7e2-be91-414a-8e6b-424a329b2c63"
+          "140643a3-bde6-44a9-8e2f-a57a4974e489"
         ],
         "tenant_b": [
-          "7e639337-08a5-41b0-a888-ad2f11f506a0"
+          "0e727252-3a5a-4576-bf75-43bbf9b6c4d3"
         ]
       }
     },
@@ -551,7 +551,7 @@
       "name": "graceful shutdown drains in-flight MCP invocation",
       "status": "pass",
       "details": {
-        "response_error": "CancelledError",
+        "response_error": "ExceptionGroup",
         "exit_code": 0
       }
     },
