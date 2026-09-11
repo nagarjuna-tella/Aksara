@@ -153,6 +153,7 @@ class ExternalEffectContext:
             if adapter.supports_reconciliation:
                 await self._executor._reach_boundary("before_reconciliation")
                 await self._reauthorize(action)
+                await self._ensure_lifecycle_active()
                 reconciliation = await adapter.reconcile(
                     idempotency_key=downstream_key,
                     provider_reference=effect["provider_reference"],
@@ -183,6 +184,7 @@ class ExternalEffectContext:
         await self._mark_execution_started(effect["id"])
         await self._executor._reach_boundary("before_external_send")
         await self._reauthorize(action)
+        await self._ensure_lifecycle_active()
         try:
             performed: Any = adapter.perform(
                 normalized_request,
@@ -219,6 +221,33 @@ class ExternalEffectContext:
                 retryable=False,
             )
             raise _OperationClosed("current authorization denied the external effect")
+
+    async def _ensure_lifecycle_active(self) -> None:
+        """Close lifecycle winners under lock immediately before provider I/O."""
+
+        closed_reason: str | None = None
+        with _tenant_context(self.claim.tenant_scope):
+            async with atomic(db=self._executor.service.db) as connection:
+                operation = await self._executor.service._lock_owned(
+                    connection, self.claim
+                )
+                if operation["cancellation_requested_at"] is not None:
+                    await self._executor._identity._cancel_under_lock(
+                        connection, operation, self.claim
+                    )
+                    closed_reason = "cancellation won before the external effect"
+                else:
+                    deadline_valid = await connection.fetchval(
+                        "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
+                        operation["deadline_at"],
+                    )
+                    if not deadline_valid:
+                        await self._executor._identity._expire_under_lock(
+                            connection, operation, self.claim
+                        )
+                        closed_reason = "deadline expired before the external effect"
+        if closed_reason is not None:
+            raise _OperationClosed(closed_reason)
 
     async def _record_or_load_intent(
         self,

@@ -32,6 +32,10 @@ from aksara.durable.errors import OwnershipLost
 from aksara.security.principal import Principal
 
 
+class ProcessExit(BaseException):
+    pass
+
+
 @contextmanager
 def _tenant(tenant_id: str):
     token = tenant_id_var.set(tenant_id)
@@ -750,3 +754,26 @@ async def test_deadline_after_claim_blocks_mutation_and_retains_expiry_metadata(
     assert expired.error_expires_at is not None
     assert called is False
     assert await _counter(durable_db, tenant, counter_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_process_level_exit_is_not_recorded_as_a_handler_failure(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+
+    async def handler(_context, _command):
+        raise ProcessExit("worker process is stopping")
+
+    service, executor = _runtime(durable_db, tenant, handler)
+    await _insert_counter(durable_db, tenant, counter_id)
+    admitted, claim = await _admit_claim(service, tenant, counter_id)
+
+    with pytest.raises(ProcessExit, match="worker process is stopping"):
+        await executor.execute(claim)
+
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert operation.state is OperationState.RUNNING
+    assert operation.error is None

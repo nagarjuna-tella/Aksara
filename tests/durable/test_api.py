@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import httpx
@@ -107,6 +108,51 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
     )
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        invalid_requests = [
+            (
+                {},
+                {
+                    "action": "orders.reserve",
+                    "action_version": "1",
+                    "command": {},
+                    "available_at": "2030-01-01T00:00:00",
+                },
+            ),
+            (
+                {},
+                {
+                    "action": "orders.reserve",
+                    "action_version": "1",
+                    "command": {},
+                    "deadline_at": "2030-01-01T00:00:00",
+                },
+            ),
+            (
+                {},
+                {
+                    "action": "orders.reserve",
+                    "action_version": "1",
+                    "command": {},
+                    "deadline_at": (
+                        datetime.now(UTC) - timedelta(seconds=1)
+                    ).isoformat(),
+                },
+            ),
+            (
+                {"Idempotency-Key": ""},
+                {
+                    "action": "orders.reserve",
+                    "action_version": "1",
+                    "command": {},
+                },
+            ),
+        ]
+        for headers, body in invalid_requests:
+            rejected = await client.post(
+                "/durable/operations", headers=headers, json=body
+            )
+            assert rejected.status_code == 422
+
         first = await client.post(
             "/durable/operations",
             headers={"Idempotency-Key": "reserve-1"},

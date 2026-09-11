@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from uuid import UUID, uuid4
 
+from aksara.durable.errors import OwnershipLost
 from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
 from aksara.durable.external import ExternalOperationExecutor
 from aksara.durable.service import DurableOperationService
@@ -51,12 +53,49 @@ class DurableOperationWorker:
             return await PostgresAtomicExecutor(self.service).execute(claim)
         if claim.effect_class is EffectClass.READ_ONLY:
             return await ReadOnlyExecutor(self.service).execute(claim)
-        return await ExternalOperationExecutor(self.service).execute(claim)
+        execution = asyncio.create_task(
+            ExternalOperationExecutor(self.service).execute(claim)
+        )
+        renewal = asyncio.create_task(self._renew_external_claim(claim, execution))
+        try:
+            done, _ = await asyncio.wait(
+                {execution, renewal}, return_when=asyncio.FIRST_COMPLETED
+            )
+            if execution in done:
+                return await execution
+            if renewal in done:
+                error = renewal.exception()
+                if error is not None:
+                    execution.cancel()
+                    with suppress(asyncio.CancelledError, OwnershipLost):
+                        await execution
+                    raise error
+            return await execution
+        finally:
+            renewal.cancel()
+            with suppress(asyncio.CancelledError):
+                await renewal
+
+    async def _renew_external_claim(
+        self,
+        claim: OperationClaim,
+        execution: asyncio.Task[OperationRecord],
+    ) -> None:
+        lease = self.lease_seconds or self.service.default_lease_seconds
+        interval = max(lease / 3, 0.001)
+        while not execution.done():
+            await asyncio.sleep(interval)
+            if execution.done():
+                return
+            await self.service.heartbeat(claim, lease_seconds=lease)
 
     async def run(self, *, tenant_id: str | None) -> None:
         self._stop.clear()
         while not self._stop.is_set():
-            operation = await self.poll_once(tenant_id=tenant_id)
+            try:
+                operation = await self.poll_once(tenant_id=tenant_id)
+            except OwnershipLost:
+                continue
             if operation is not None:
                 continue
             try:

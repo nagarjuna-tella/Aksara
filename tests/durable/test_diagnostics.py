@@ -16,6 +16,8 @@ from aksara.durable import (
     PrincipalResolverRegistry,
     check_durable_operations,
 )
+from aksara.durable.service import _tenant_context
+from aksara.durable.types import tenant_scope
 from aksara.security.principal import Principal
 
 
@@ -67,7 +69,24 @@ async def test_diagnostics_report_schema_and_registered_deployment(durable_db):
 
     report = await check_durable_operations(service, tenant_id=tenant)
 
+    with _tenant_context(tenant_scope(tenant)):
+        index_rows = await durable_db.fetch(
+            """
+            SELECT indexname FROM pg_indexes
+            WHERE schemaname = current_schema()
+              AND indexname = ANY($1::text[])
+            """,
+            [
+                "idx_aksara_operations_waiting_deadline",
+                "idx_aksara_operation_approvals_pending_expiry",
+            ],
+        )
+
     assert report.release_ready is True
+    assert {row["indexname"] for row in index_rows} == {
+        "idx_aksara_operations_waiting_deadline",
+        "idx_aksara_operation_approvals_pending_expiry",
+    }
     assert report.to_dict()["status"] == "pass"
     assert {result.id for result in report.results} == {
         "durable.schema",

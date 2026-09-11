@@ -513,6 +513,62 @@ async def test_authorization_revoked_after_intent_prevents_external_send(durable
 
 
 @pytest.mark.asyncio
+async def test_cancellation_during_final_reauthorization_prevents_external_send(
+    durable_db,
+):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service: DurableOperationService
+    admitted = None
+
+    async def cancel_while_resolving(_reference):
+        assert admitted is not None
+        await service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("external:write",)
+            ),
+            requester_reference=_reference_for_cancel,
+        )
+        return PrincipalResolution.resolved(
+            Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("external:write",)
+            )
+        )
+
+    async def arm_cancellation(name: str):
+        if name == "before_external_send":
+            service.resolvers.register(
+                "test", "1", cancel_while_resolving, replace=True
+            )
+
+    _reference_for_cancel = _reference(tenant)
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        boundary_hook=arm_cancellation,
+    )
+    admitted, claim = await _claim(service, tenant, {"amount": 25}, lease=1)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.CANCELLED
+    assert provider.calls == []
+    with _tenant_context(tenant_scope(tenant)):
+        execution_count = await durable_db.fetchval(
+            """
+            SELECT execution_count FROM aksara_operation_effects
+            WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert execution_count == 1
+
+
+@pytest.mark.asyncio
 async def test_deadline_after_intent_prevents_external_send(durable_db):
     tenant = str(uuid4())
     provider = RecordingIdempotentProvider()

@@ -23,7 +23,7 @@ from aksara.durable import (
     OperationState,
     PrincipalReference,
 )
-from aksara.durable.errors import OwnershipLost
+from aksara.durable.errors import InvalidDurableCommand, OwnershipLost
 from aksara.durable.service import _tenant_context
 from aksara.durable.types import GLOBAL_TENANT_SCOPE, tenant_scope
 from aksara.security.principal import Principal
@@ -105,6 +105,31 @@ def test_principal_reference_never_serializes_runtime_authority():
 def test_global_tenant_storage_sentinel_is_reserved():
     with pytest.raises(ValueError, match="reserved"):
         tenant_scope(GLOBAL_TENANT_SCOPE)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("available_at", datetime(2030, 1, 1, tzinfo=UTC).replace(tzinfo=None)),
+        ("deadline_at", datetime(2030, 1, 1, tzinfo=UTC).replace(tzinfo=None)),
+        ("deadline_at", datetime.now(UTC) - timedelta(seconds=1)),
+    ],
+)
+async def test_admission_rejects_invalid_operation_timestamps(
+    durable_db, field, value
+):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+
+    with pytest.raises(InvalidDurableCommand):
+        await service.admit(
+            "orders.increment",
+            "1",
+            {"amount": 1},
+            _reference(tenant),
+            **{field: value},
+        )
 
 
 @pytest.mark.asyncio
@@ -839,6 +864,22 @@ async def test_decision_and_cancellation_provenance_must_match_current_actor(dur
             tenant_id=tenant,
             principal=_principal(tenant),
             requester_reference=forged,
+        )
+
+    forged_kind = PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="test-app",
+        principal_kind="agent",
+        subject_id="user-1",
+        tenant_id=tenant,
+    )
+    with pytest.raises(AuthorizationDenied):
+        await service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=_principal(tenant),
+            requester_reference=forged_kind,
         )
 
 

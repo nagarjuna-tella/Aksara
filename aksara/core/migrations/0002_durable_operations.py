@@ -83,6 +83,10 @@ CREATE INDEX idx_aksara_operations_retention
 ON aksara_operations (application_namespace, tenant_scope, state, retain_until)
 WHERE state IN ('succeeded', 'failed', 'cancelled', 'expired');
 
+CREATE INDEX idx_aksara_operations_waiting_deadline
+ON aksara_operations (application_namespace, tenant_scope, deadline_at, id)
+WHERE state = 'waiting_for_approval' AND deadline_at IS NOT NULL;
+
 CREATE TABLE aksara_operation_commands (
     id UUID PRIMARY KEY,
     operation_id UUID NOT NULL UNIQUE REFERENCES aksara_operations(id) ON DELETE CASCADE,
@@ -169,6 +173,10 @@ CREATE TABLE aksara_operation_approval_decisions (
 CREATE UNIQUE INDEX uq_aksara_operation_approval_active
 ON aksara_operation_approval_decisions (operation_id)
 WHERE state IN ('pending', 'approved');
+
+CREATE INDEX idx_aksara_operation_approvals_pending_expiry
+ON aksara_operation_approval_decisions (tenant_scope, expires_at, operation_id)
+WHERE state = 'pending';
 
 CREATE TABLE aksara_operation_transitions (
     id BIGSERIAL PRIMARY KEY,

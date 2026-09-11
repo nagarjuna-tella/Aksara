@@ -219,7 +219,7 @@ class PostgresAtomicExecutor:
         except asyncio.CancelledError:
             await self._record_interrupted_cancellation(claim)
             raise
-        except BaseException as exc:
+        except Exception as exc:
             if finalized_before_commit:
                 authoritative = await self._read_authoritative(claim)
                 if authoritative.state is OperationState.SUCCEEDED:

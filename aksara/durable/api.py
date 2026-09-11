@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from aksara.durable.errors import (
     ApprovalConflict,
@@ -38,6 +38,22 @@ class DurableDispatchRequest(BaseModel):
     available_at: datetime | None = None
     deadline_at: datetime | None = None
     max_attempts: int | None = Field(default=None, ge=1, le=1000)
+
+    @field_validator("available_at", "deadline_at")
+    @classmethod
+    def require_timezone_aware_datetime(
+        cls, value: datetime | None
+    ) -> datetime | None:
+        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+            raise ValueError("durable operation timestamps must be timezone-aware")
+        return value
+
+    @field_validator("deadline_at")
+    @classmethod
+    def require_future_deadline(cls, value: datetime | None) -> datetime | None:
+        if value is not None and value <= datetime.now(UTC):
+            raise ValueError("deadline_at must be in the future")
+        return value
 
 
 class DurableCancellationRequest(BaseModel):
@@ -174,7 +190,11 @@ def create_durable_operations_router(
         payload: DurableDispatchRequest,
         request: Request,
         response: Response,
-        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+        idempotency_key: str | None = Header(
+            default=None,
+            alias="Idempotency-Key",
+            min_length=1,
+        ),
     ) -> DurableDispatchResponse:
         principal = _principal(request)
         correlation: dict[str, Any] = {}

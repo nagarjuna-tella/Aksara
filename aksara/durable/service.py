@@ -19,6 +19,7 @@ from aksara.durable.errors import (
     DurableConfigurationError,
     IdempotencyConflict,
     IdempotencyIdentityExpired,
+    InvalidDurableCommand,
     OperationNotFound,
     OwnershipLost,
 )
@@ -112,20 +113,14 @@ def _principal_matches_reference(
         return False
     if principal.is_system:
         return True
-    if principal.tenant_id != reference.tenant_id:
-        return False
-    if reference.subject_id is not None and principal.user_id != reference.subject_id:
-        return False
-    if reference.agent_id is not None and principal.agent_id != reference.agent_id:
-        return False
-    if (
-        reference.human_owner_id is not None
-        and principal.human_owner_id != reference.human_owner_id
-    ):
-        return False
-    return not (
-        reference.credential_id is not None
-        and principal.token_id != reference.credential_id
+    expected_kind = "agent" if principal.is_ai_agent else "user"
+    return (
+        reference.principal_kind == expected_kind
+        and principal.tenant_id == reference.tenant_id
+        and principal.user_id == reference.subject_id
+        and principal.agent_id == reference.agent_id
+        and principal.human_owner_id == reference.human_owner_id
+        and principal.token_id == reference.credential_id
     )
 
 
@@ -188,6 +183,14 @@ class DurableOperationService:
     ) -> OperationAdmission:
         """Create or resolve one logical operation atomically."""
 
+        for field_name, value in (
+            ("available_at", available_at),
+            ("deadline_at", deadline_at),
+        ):
+            if value is not None and (
+                value.tzinfo is None or value.utcoffset() is None
+            ):
+                raise InvalidDurableCommand(f"{field_name} must be timezone-aware")
         action = self.actions.get(action_name, action_version)
         normalized = action.normalize_command(command)
         input_hash = stable_hash(normalized)
@@ -233,6 +236,9 @@ class DurableOperationService:
 
         with _tenant_context(scope):
             async with atomic(db=self.db) as connection:
+                admitted_at = await connection.fetchval("SELECT clock_timestamp()")
+                if deadline_at is not None and deadline_at <= admitted_at:
+                    raise InvalidDurableCommand("deadline_at must be in the future")
                 if identity_hash is not None:
                     await connection.execute(
                         """
@@ -300,13 +306,15 @@ class DurableOperationService:
                         provenance_version, principal_reference_hash, canonical_input_hash,
                         idempotency_identity_hash, idempotency_scope_hash, state,
                         available_at, deadline_at, max_attempts, approval_required,
-                        correlation, retain_until
+                        correlation, created_at, retain_until
                     ) VALUES (
                         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
                         $12::jsonb, $13, $14, $15, $16, $17, $18,
-                        COALESCE($19, clock_timestamp()), $20, $21, $22,
-                        $23::jsonb,
-                        clock_timestamp() + ($24::double precision * INTERVAL '1 second')
+                        COALESCE($19::timestamptz, $24::timestamptz),
+                        $20::timestamptz, $21, $22,
+                        $23::jsonb, $24::timestamptz,
+                        $24::timestamptz
+                            + ($25::double precision * INTERVAL '1 second')
                     )
                     """,
                     operation_id,
@@ -332,6 +340,7 @@ class DurableOperationService:
                     attempts,
                     action.approval_required,
                     correlation_json,
+                    admitted_at,
                     self.retention_seconds,
                 )
                 await connection.execute(
@@ -783,26 +792,17 @@ class DurableOperationService:
     ) -> int:
         """Close bounded waiting rows whose approval or operation deadline elapsed."""
 
-        rows = await connection.fetch(
+        deadline_rows = await connection.fetch(
             """
-            SELECT o.*,
-                   (o.deadline_at IS NOT NULL
-                       AND o.deadline_at <= clock_timestamp()) AS deadline_expired
+            SELECT o.*, TRUE AS deadline_expired
             FROM aksara_operations o
             JOIN aksara_operation_approval_decisions d
               ON d.operation_id = o.id AND d.tenant_scope = o.tenant_scope
              AND d.state = 'pending'
             WHERE o.tenant_scope = $1 AND o.application_namespace = $2
               AND o.state = 'waiting_for_approval'
-              AND (
-                  (o.deadline_at IS NOT NULL
-                      AND o.deadline_at <= clock_timestamp())
-                  OR d.expires_at <= clock_timestamp()
-              )
-            ORDER BY LEAST(
-                COALESCE(o.deadline_at, 'infinity'::timestamptz),
-                d.expires_at
-            ), o.id
+              AND o.deadline_at <= clock_timestamp()
+            ORDER BY o.deadline_at, o.id
             LIMIT $3
             FOR UPDATE OF o, d SKIP LOCKED
             """,
@@ -810,6 +810,29 @@ class DurableOperationService:
             self.application_namespace,
             batch_size,
         )
+        remaining = batch_size - len(deadline_rows)
+        approval_rows = []
+        if remaining:
+            approval_rows = await connection.fetch(
+                """
+                SELECT o.*, FALSE AS deadline_expired
+                FROM aksara_operation_approval_decisions d
+                JOIN aksara_operations o
+                  ON o.id = d.operation_id AND o.tenant_scope = d.tenant_scope
+                WHERE d.tenant_scope = $1 AND d.state = 'pending'
+                  AND d.expires_at <= clock_timestamp()
+                  AND o.application_namespace = $2
+                  AND o.state = 'waiting_for_approval'
+                  AND (o.deadline_at IS NULL OR o.deadline_at > clock_timestamp())
+                ORDER BY d.expires_at, d.operation_id
+                LIMIT $3
+                FOR UPDATE OF o, d SKIP LOCKED
+                """,
+                scope,
+                self.application_namespace,
+                remaining,
+            )
+        rows = [*deadline_rows, *approval_rows]
         for row in rows:
             reason = (
                 FailureReason.DEADLINE_EXPIRED
@@ -1347,7 +1370,7 @@ class DurableOperationService:
                     raise OperationNotFound("operation was not found")
                 command = await self.repository.get_command(connection, operation_id, scope)
                 assert command is not None
-                await self._authorize_operation(
+                await self._authorize_read(
                     principal,
                     tenant_id,
                     row,
@@ -1378,7 +1401,7 @@ class DurableOperationService:
                     raise OperationNotFound("operation was not found")
                 command = await self.repository.get_command(connection, operation_id, scope)
                 assert command is not None
-                await self._authorize_operation(
+                await self._authorize_read(
                     principal,
                     tenant_id,
                     row,
@@ -1632,6 +1655,30 @@ class DurableOperationService:
         ):
             raise AuthorizationDenied("current authorization denied the durable action")
         return action
+
+    async def _authorize_read(
+        self,
+        principal: Principal,
+        tenant_id: str | None,
+        operation: Mapping[str, Any],
+        *,
+        command: Mapping[str, Any],
+    ) -> None:
+        """Authorize retained reads without requiring terminal handler code."""
+
+        self._authorize_principal(principal, tenant_id)
+        action_key = (operation["action_name"], operation["action_version"])
+        if (
+            OperationState(operation["state"]) in TERMINAL_OPERATION_STATES
+            and not self.actions.contains(*action_key)
+        ):
+            return
+        await self._authorize_operation(
+            principal,
+            tenant_id,
+            operation,
+            command=command,
+        )
 
     def _authorize_pending_outbox(
         self, principal: Principal, tenant_id: str | None

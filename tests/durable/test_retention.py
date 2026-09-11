@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 
 from aksara.durable import (
+    ActionNotRegistered,
     DurableAction,
     DurableActionRegistry,
     DurableOperationService,
@@ -216,3 +217,48 @@ async def test_pruning_expired_idempotency_releases_retained_operation_key(durab
     )
     assert second.created is True
     assert second.operation.id != first.operation.id
+
+
+@pytest.mark.asyncio
+async def test_terminal_status_and_history_survive_action_unregistration(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="reader",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    completed = await ReadOnlyExecutor(service).execute(claim)
+    assert completed.state is OperationState.SUCCEEDED
+    service.actions.unregister("retention.read", "1")
+
+    retained = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    history = await service.history(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+
+    assert retained.state is OperationState.SUCCEEDED
+    assert history[0].to_state is OperationState.SUCCEEDED
+
+
+@pytest.mark.asyncio
+async def test_nonterminal_read_still_requires_registered_action(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+    service.actions.unregister("retention.read", "1")
+
+    with pytest.raises(ActionNotRegistered):
+        await service.get(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user("user-1", tenant_id=tenant),
+        )
