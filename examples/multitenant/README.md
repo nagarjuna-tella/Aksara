@@ -8,80 +8,48 @@
 > for server-owned identity and restricted-role forced-RLS guidance. A behavioral
 > correction requires a separate patch; v0.7.1 does not change this middleware.
 
-This example demonstrates:
-- Models
-- ViewSets
-- Migrations
-- Studio
-- MCP tools
-- AI Console usage
+## Purpose and status
 
-Tenant-aware application structure. It includes tenants, tenant-bound users/projects, tenant filtering, request middleware, and a basic tenant isolation explanation.
+This historical example contains Tenant, User and Project models and routing
+ideas. It is **replaced as the recommended isolation example** by Support Desk
+and the [ticket-desk tenancy chapter](../../docs/docs/tutorials/ticket-desk-tenancy.md).
+It remains in the repository for inspection; its startup success is not tenant
+isolation evidence.
 
-## Run
+## Run for local inspection only
+
+From the repository root, with `DATABASE_URL` set to a dedicated disposable
+PostgreSQL database:
 
 ```bash
-cd examples/multitenant
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ../..
-aksara doctor launch-check
-aksara migrate
-aksara dev
+python -m pip install -e .
+export AKSARA_DATABASE_URL="$DATABASE_URL"
+aksara makemigrations --app examples.multitenant.models --output examples/multitenant/migrations
+aksara migrate --migrations-dir examples/multitenant/migrations
+aksara run examples.multitenant.main:app --host 127.0.0.1 --port 8000
 ```
 
-Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
+Use the explicit package path instead of relying on `aksara dev` discovery.
+`aksara doctor launch-check` can inspect project setup, but cannot establish
+that this middleware resolves or enforces tenant membership.
 
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_multitenant"
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-## Seed
+## Seed and tenant boundary
 
-No seed command is required. Create a first tenant through the API:
+No seed flow in this README is claimed to establish safe tenancy. In particular,
+a header naming a tenant is not proof of membership, and the middleware's
+current prefix exemption bypasses its resolver. Follow the replacement tutorial
+for authenticated identities, forced RLS and denied cross-tenant requests.
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/tenants/ \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Acme Corp","slug":"acme-corp","plan":"pro"}'
-```
+## Optional surfaces
 
-## Open
-
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
-
-## Test API
-
-```bash
-curl http://127.0.0.1:8000/api/tenants/
-curl http://127.0.0.1:8000/api/users/ -H "X-Tenant-Slug: acme-corp"
-curl http://127.0.0.1:8000/api/projects/ -H "X-Tenant-Slug: acme-corp"
-```
-
-## Inspect generated tool metadata
-
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
-
-This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
-
-Confirm tenant-scoped models are visible and review custom actions before exposing them to agents.
-
-## Tenant Isolation
-
-Tenant context is resolved from `X-Tenant-ID`, `X-Tenant-Slug`, or host-based routing. Tenant-bound models include a tenant foreign key so APIs and AI/MCP flows can stay scoped to one organization at a time.
-
-## Try in AI Console
-
-Ask:
-
-```text
-Explain the tenant-bound models
-Review tenant isolation risks
-Investigate this project
-```
-
-AI provider setup is optional for first launch. Do not send cross-tenant data to external AI providers unless your deployment policy allows it.
+Studio at `/studio/ui` and AI Console features are experimental. The
+`/ai/tools/mcp` inspection catalog is not an authorization test or the protocol
+transport. Official clients use `/mcp/`; do not expose this example as a safe
+MCP tenant backend based on its model metadata.

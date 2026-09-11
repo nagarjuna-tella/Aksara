@@ -1,91 +1,56 @@
-# Aksara Example: AI Providers
+# Aksara example: AI provider adapters
 
-This example demonstrates:
-- AI Hub provider configuration
-- Ollama local-first setup
-- OpenAI/Anthropic/Azure environment examples
-- Studio
-- MCP tools
-- AI Console usage
+**Experimental application-owned adapter demo.** This example shows local
+Python adapter classes for OpenAI, Azure OpenAI and Anthropic. It is not the
+framework's authoritative configuration interface and does not prove provider
+quality, credential validity or model availability.
 
-Provider wiring demo. It shows the adapter pattern without making the first-user flow require OpenAI, Anthropic, Azure, or Ollama.
+Its custom Settings subclass supplies values to its adapter code. Do not copy
+it as a way to configure Aksara's global settings object; use the
+[configuration reference](../../docs/docs/reference/settings-reference.md).
+The adapter-specific `AI_DEFAULT_PROVIDER` is distinct from framework AI Hub
+configuration. This example does not provide an Ollama adapter.
 
-## Run
+## Run without calling a provider
+
+From the repository root:
 
 ```bash
-cd examples/ai_providers
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ../..
-aksara doctor launch-check
-aksara migrate
-aksara dev
+python -m pip install -e .
+aksara run examples.ai_providers.main:app --host 127.0.0.1 --port 8000
 ```
 
-The `aksara migrate` step is safe to run even if you only inspect provider wiring. Add real migrations if you turn this into a persistent app.
-
-## Seed
-
-No seed command is required. This example focuses on provider configuration and adapter structure.
-
-## Open
-
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
-
-## Test API
+The explicit package path avoids relying on `aksara dev` discovery. No database
+migration is needed for the status probes below; `aksara migrate` is not a
+provider-setup step. `aksara doctor launch-check` is a general project diagnostic,
+not a test of these adapters.
 
 ```bash
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/ai/status
-curl http://127.0.0.1:8000/ai/providers
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/ai/status
+curl --fail http://127.0.0.1:8000/ai/providers
 ```
 
-## Inspect generated tool metadata
+These endpoints report configuration and installed SDK availability. A provider
+reported as ready has not necessarily authenticated successfully or generated
+a response. Live provider calls need the corresponding optional SDK, credentials
+and a currently available model. No live provider was called in the startup audit.
 
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
+## Seed and persistence
 
-This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
+No seed command is required for configuration inspection. Demo model and ViewSet
+code is illustrative; this README does not supply a persistent CRUD application.
+Use the [ticket desk](../../docs/docs/getting-started/first-project.md) for that.
 
-Confirm demo ViewSet actions appear without committing provider secrets.
+## Optional framework tools
 
-## Local-First AI With Ollama
+Studio at `/studio/ui` and the AI Console are experimental framework surfaces;
+this adapter demo is not their configuration guide. The `/ai/tools/mcp` catalog
+is HTTP JSON inspection, not the official protocol transport. The
+[MCP tutorial](../../docs/docs/tutorials/ticket-desk-mcp.md) shows a complete
+authenticated official-client journey without requiring a model provider.
 
-```bash
-ollama serve
-ollama pull llama3
-export AI_DEFAULT_PROVIDER=ollama
-export OLLAMA_BASE_URL=http://127.0.0.1:11434
-aksara ai-hub status
-aksara ai-hub configure
-```
-
-No test in this repository requires the model to exist. The commands document the local path for users who want AI features without a paid provider.
-
-## Remote Provider Environment Examples
-
-Use placeholders only:
-
-```bash
-export OPENAI_API_KEY=<OPENAI_API_KEY>
-export ANTHROPIC_API_KEY=your-key-here
-export AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
-export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-```
-
-Do not commit real secrets.
-
-## Try in AI Console
-
-Ask:
-
-```text
-Explain the provider adapter pattern
-Review this AI provider configuration
-Investigate this project
-```
-
-AI provider setup is optional for first launch. Studio, API docs, and MCP inspection can still be used before a provider is configured.
+Keep provider secrets in your environment or secret store. Do not commit them
+or treat the historical default model names in the adapter as availability guarantees.

@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "scope": "Local PostgreSQL startup and selected routes; schema-owner credentials, not RLS/security certification; providers not called",
+  "source_checkout_framework_imports": false,
+  "runner_sha256": "2ed3cff961cb8f0fd0cfa507990691136fb07cf6fbb3223891f36129cf0d5bc8",
+  "observations": [
+    {
+      "example": "basic_app",
+      "files": {
+        "examples/basic_app/README.md": "6f3149b9aab5544d84bd79954cb7a709e1ed97f8147189febc2e0dba71710718",
+        "examples/basic_app/__init__.py": "946e1c8ad62b4c19be48fb8b3841d7cab611b42ee074abd0adefd1a1b54c9eb2",
+        "examples/basic_app/main.py": "cd33667d3b0f1c426172516617e7f88224c8576dbd192e92cc52b31a6abb355f",
+        "examples/basic_app/migrations/20251129_230254_v033_initial.py": "d0ed4de3c286b773cbf79368cb134e79fed23d1031cd01e1a91bec446ae8c480",
+        "examples/basic_app/migrations/__init__.py": "2651a4af4357f7ef1fb4e505af1936407e7028f6edfd1c7ed71808625570bf1e",
+        "examples/basic_app/models.py": "89a72eb1ce5b8a0b582df881336ace655b738d05982aa32ac064e0d18a007f33",
+        "examples/basic_app/settings.py": "e1e6a6511ca25642c348ddbec749a5ec2b2082f148bf8cb963a43a3268032993"
+      },
+      "migrations": [
+        {
+          "command": "migrate",
+          "exit": 0
+        }
+      ],
+      "probe_exit": 0,
+      "package_version": "0.7.0",
+      "startup": "completed",
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/openapi.json",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/users/",
+          "status": 403,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/users/",
+          "status": 403,
+          "example_key_supplied": false
+        }
+      ]
+    },
+    {
+      "example": "blog",
+      "files": {
+        "examples/blog/README.md": "b324c3ee2ed6900dedf797779cf92577ed729072559c88a4deb9f568665f58f9",
+        "examples/blog/__init__.py": "9fa0b0f63ae6f7e5b2bfa5791134b5ccafc5cdd7ae8dea1232a42d67d3fd0f0b",
+        "examples/blog/admin.py": "f58f9bc21975a0ce1258c194b1b2eac812d3233220adac3fc12f9aebac4470d7",
+        "examples/blog/auth.py": "6278a487bb3e7446352cb594bf031b9b92a6a45b5e3b666c3b9cef3f8c44e603",
+        "examples/blog/main.py": "d8b24c4afb579193dafb59a57729337a4f9ac3e777caec1e8d622c25783c6763",
+        "examples/blog/migrations/__init__.py": "5a59c04bdb71f313fdf7ef254cf0b6f03afdc372f509ae99c4affdf43719a73a",
+        "examples/blog/models.py": "a17182fcbba6f7e227cd25d09eef5e2f4a0e2991ba1a3e5b9d02df05663cab05",
+        "examples/blog/serializers.py": "45df2efc037c18245c35c9b0d25d2010510dc3077051748c21d98518482bcc81",
+        "examples/blog/settings.py": "027c9c5e2b936ad5b51945292f405fbee3dcb7b9f4e7c2d8b0d820da301597d8",
+        "examples/blog/urls.py": "8b12377692fe69a9d1d3276a523ad31725caf40d412ede96ca134a77dfa6b0cd",
+        "examples/blog/views.py": "9e0bbf20e55113d6a9e7c75493b37e6752fa7eccfc159f56b22af0c0b65a6da4"
+      },
+      "migrations": [
+        {
+          "command": "makemigrations",
+          "exit": 0
+        },
+        {
+          "command": "migrate",
+          "exit": 0
+        }
+      ],
+      "probe_exit": 0,
+      "package_version": "0.7.0",
+      "startup": "completed",
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/openapi.json",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/posts/",
+          "status": 403,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/posts/",
+          "status": 403,
+          "example_key_supplied": true
+        }
+      ]
+    },
+    {
+      "example": "crm",
+      "files": {
+        "examples/crm/README.md": "93ebb26923e9462b552865a6dd09db64db6da2c877f1696a56a0f36805d531d3",
+        "examples/crm/__init__.py": "8093ac53c55fd091e42ad907ba353724c93db4863b7017a311bfd3197b2a2127",
+        "examples/crm/admin.py": "73d886f08736d802c033f9d561bc8124134445985bcea29f331a0bd93a7c46f7",
+        "examples/crm/auth.py": "06b2b3398c74065ff19f327c22e23db3bee60303ae24826ce352cbd9189243f3",
+        "examples/crm/main.py": "f2acf95d26abb678f5517ce70c7587b2212c71aac7b0fe56a6fe0f57caa25b0b",
+        "examples/crm/migrations/__init__.py": "cfdc8c088f65c8bc70235ccfe60bb2abe337768cb074627cec6c761e455ded0d",
+        "examples/crm/models.py": "2949ede527e0565073c608815049e6df0a2483db5b0e40dc5fcc4d0050d24d94",
+        "examples/crm/serializers.py": "2ffd65c4586c1234912431d62b32153ae4e1507157c462f7977d6c427a28c308",
+        "examples/crm/settings.py": "3d6a0dfece4aee7deb09fedfd471b5f5e700f50b3463db33366808dbdcbcbbd7",
+        "examples/crm/urls.py": "fe0caffd0f47746b6119c42e416d0dc3fde4ec3132f5deb860a8191485802bec",
+        "examples/crm/views.py": "972e8d24b6bca19b64af45aa6d266822a5b3fb5c821f3c0b2dc1eb7edec7ab18"
+      },
+      "migrations": [
+        {
+          "command": "makemigrations",
+          "exit": 0
+        },
+        {
+          "command": "migrate",
+          "exit": 0
+        }
+      ],
+      "probe_exit": 0,
+      "package_version": "0.7.0",
+      "startup": "completed",
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/openapi.json",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/customers/",
+          "status": 403,
+          "example_key_supplied": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/customers/",
+          "status": 403,
+          "example_key_supplied": true
+        }
+      ]
+    },
+    {
+      "example": "multitenant",
+      "files": {
+        "examples/multitenant/README.md": "1f2d7b24cc1f3d0e0046b1428682953d6b7c2be0be2435017d0e28b2bed26e16",
+        "examples/multitenant/__init__.py": "c7d2f64bb41a925b1502d85bb5e3f161e955ac68beef2738e9f88ef24096626d",
+        "examples/multitenant/admin.py": "e17ea211e27f815369c925b60cf99912270ade69f3b33de5d207a0379ab346d2",
+        "examples/multitenant/main.py": "87d95a9975c1001a3d0820d77eb4e39d8fde7afeaacde49678141d4332cfac53",
+        "examples/multitenant/middleware.py": "183141e923c3607d7157b1fa5d5c98d3af17e59ca04245ecbbfb2195e387f5cb",
+        "examples/multitenant/migrations/__init__.py": "f248a48843bd52f26e3992b0b52fb5231b359bd1fae9ef55a7ac0f11966c9ae9",
+        "examples/multitenant/models.py": "ce5fe6d2bd17c587bfef96c7e723133e2dd641f42adaa3a7ac4ec3e54aa83c9c",
+        "examples/multitenant/serializers.py": "a85cdec94b7306b6570533ff5cc460191e4453433c500e3c9b396e63d59ee312",
+        "examples/multitenant/settings.py": "81d54a29b23bfac616c2e6707ada49fddd0d236d6b6450b300d0f75dea890945",
+        "examples/multitenant/urls.py": "93db32f366500f63be5258d7711ce0760199c71d2a2b5d49c34c168491092bff",
+        "examples/multitenant/views.py": "58395805990453905dc5a799b47575933d27d89efb68800114058af5e2ddb800"
+      },
+      "migrations": [
+        {
+          "command": "makemigrations",
+          "exit": 0
+        },
+        {
+          "command": "migrate",
+          "exit": 0
+        }
+      ],
+      "probe_exit": 0,
+      "package_version": "0.7.0",
+      "startup": "completed",
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/openapi.json",
+          "status": 200,
+          "example_key_supplied": false
+        }
+      ]
+    },
+    {
+      "example": "ai_providers",
+      "files": {
+        "examples/ai_providers/README.md": "e0d608207b23c6a7335b6ff44e530c702905c450a7f35c50f91e8ed52c2b4f0c",
+        "examples/ai_providers/__init__.py": "f11ed9fd2f0ad72722b27e49303a0ee20240726482bad9331ee0b3de488edc41",
+        "examples/ai_providers/adapters.py": "0796c8379a654fef650c1267cd64751b83b702e2274d6e1c3aca6042b84d4fc4",
+        "examples/ai_providers/main.py": "1d81a09e3cf6bc0980de58996be61289d61adae615194ea6417a2f9ae26fe311",
+        "examples/ai_providers/prompting.py": "308e9f1d782404f1d3a5840934b924dc1c8c5dc636c48a77f07ac54d432600ec",
+        "examples/ai_providers/settings.py": "65280bd39566e18f22d11982fac899ad368e65df531c5fa649ea5d425b6c9c7a",
+        "examples/ai_providers/views.py": "4def8deccb56e351240604e83260caf3dfba005c0d288bbf97d69149762daa13"
+      },
+      "migrations": [],
+      "probe_exit": 0,
+      "package_version": "0.7.0",
+      "startup": "completed",
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/openapi.json",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/ai/status",
+          "status": 200,
+          "example_key_supplied": false
+        },
+        {
+          "method": "GET",
+          "path": "/ai/providers",
+          "status": 200,
+          "example_key_supplied": false
+        }
+      ]
+    }
+  ]
+}

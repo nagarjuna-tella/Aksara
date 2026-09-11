@@ -3,7 +3,10 @@
 This is Aksara's production-shaped reference application. It uses PostgreSQL,
 generated CRUD APIs, bearer authentication, role and MCP-scope permissions,
 `TenantModel`, forced PostgreSQL row-level security, model relations, Admin,
-durable background tasks, and an explicit migration readiness check.
+ordinary PostgreSQL-backed background tasks, and an explicit migration readiness check.
+These task rows do not implement the v0.7 Durable Operation admission and
+reauthorization contract. See the [durable ticket desk](../../docs/docs/tutorials/ticket-desk-durable.md)
+for that separate learning tier.
 
 The token-to-tenant mapping in `auth.py` is server-owned. Requests cannot choose
 a tenant with a header or JSON field. In a real deployment, replace the small
@@ -33,9 +36,23 @@ migration role.
 
 ## Check, migrate, and run
 
+These are source-checkout instructions run from the repository root, after
+installing the framework with `python -m pip install -e .`. The packaged release
+gate copies the example into an isolated installation instead.
+
+Run the following in a separate migration job with `DATABASE_URL` set to the
+migration role and `AKSARA_DATABASE_URL` set to the same URL:
+
+```bash
+aksara migrate --migrations-dir examples/support_desk/migrations
+```
+
+Grant the application role access to the migrated tables and sequences, then
+restore its restricted URL in both environment variables for the web process.
+The example prefers `DATABASE_URL`; do not leave conflicting URL aliases.
+
 Review every field on an AI-exposed model and set `ai_agent_writable` explicitly.
-Then configure the release diagnostics, apply the schema, and launch the
-service:
+Then configure the release diagnostics and launch the service:
 
 ```bash
 export AKSARA_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
@@ -52,7 +69,6 @@ export AKSARA_RLS_ENABLED=true
 export AKSARA_AI_WRITABLE_FIELDS_REVIEWED=true
 export AKSARA_SECURITY_MATRIX_PATH=/absolute/path/to/security_matrix.yml
 aksara doctor production-check --release
-aksara migrate
 aksara run examples.support_desk.main:app --host 127.0.0.1 --port 8000
 ```
 

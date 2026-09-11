@@ -6,9 +6,9 @@ different purposes and are not interchangeable production templates.
 
 | Example | Purpose | Status and limits |
 | --- | --- | --- |
-| [Basic app](basic_app/README.md) | Explore models, serializers, relations, and generated REST | Local demonstration; includes optional Studio material and is larger than a one-model quickstart |
-| [Blog](blog/README.md) | Post and Comment relationships, publishing action, Admin | Application pattern; review authentication and deployment before reuse |
-| [CRM](crm/README.md) | Customer, Deal, and Activity models and custom actions | Application pattern; not a complete commercial CRM |
+| [Basic app](basic_app/README.md) | Explore models, serializers, relations, and generated REST | Historical local demonstration; replaced by the ticket desk as the minimal starter |
+| [Blog](blog/README.md) | Post and Comment relationships, publishing action, Admin | Application pattern; generated writes require a Principal adapter not supplied here |
+| [CRM](crm/README.md) | Customer, Deal, and Activity models and custom actions | Application pattern; API-key headers alone do not authenticate generated writes |
 | [Support Desk](support_desk/README.md) | Server-owned identities, permissions, restricted database role, forced RLS, tasks, diagnostics, synchronous MCP | Production-oriented reference with a packaged execution gate; replace example identities with your actual identity provider |
 | [Multitenant](multitenant/README.md) | Historical tenant-routing and model pattern | Known middleware defect; do not use as a production isolation reference. Use Support Desk for the supported tenant boundary |
 | [AI providers](ai_providers/README.md) | Application-owned provider adapters and prompting | Experimental; provider quality is outside the backend stability contract |
@@ -43,8 +43,9 @@ Attempt ownership, fencing, decisions, and recovery semantics.
 Use the [Durable Operations guide](../docs/docs/advanced/durable-operations.md)
 for those APIs. The repository's installed-wheel and Support Desk validation
 scripts exercise durability as release gates; they are not standalone user
-application templates. A complete tutorial must explain its action registry,
-identity resolver, worker process, and database lifecycle.
+application templates. The [durable ticket-desk chapter](../docs/docs/tutorials/ticket-desk-durable.md)
+provides its action registry, identity resolver, worker process and database
+lifecycle, with tests of retries, idempotency, revocation and cancellation.
 
 ## Validation scope
 

@@ -1,75 +1,66 @@
-# Aksara Example: Blog
+# Aksara example: Blog
 
-This example demonstrates:
-- Models
-- ViewSets
-- Migrations
-- Studio
-- MCP tools
-- AI Console usage
+**Application demonstration; not the canonical starter or a production template.**
+Use the [ticket desk tutorial](../../docs/docs/getting-started/first-project.md)
+for a complete protected application with executable tests.
 
-Classic relational app. It includes author-style user data, posts, comments, category/tag metadata, relationships, filtering, Studio graph inspection, and AI Console explanation prompts.
+This example contains `Post` and `Comment`, serializers and generated REST routes.
+It is useful for inspecting model and API patterns. Optional Studio and AI
+configuration in its settings is experimental and differs from the neutral
+`startproject` defaults.
 
-## Run
+## Run locally from a source checkout
+
+Use a dedicated PostgreSQL database. Set `DATABASE_URL` to its connection URL
+in your shell before these commands; do not use a production database. The
+example's own settings prefer `DATABASE_URL` over `AKSARA_DATABASE_URL`, unlike
+the framework's normal environment precedence. Set them consistently.
+
+Run from the repository root:
 
 ```bash
-cd examples/blog
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ../..
-aksara doctor launch-check
-aksara migrate
-aksara dev
+python -m pip install -e .
+export AKSARA_DATABASE_URL="$DATABASE_URL"
+aksara makemigrations --app examples.blog.models --output examples/blog/migrations
+aksara migrate --migrations-dir examples/blog/migrations
+aksara run examples.blog.main:app --host 127.0.0.1 --port 8000
 ```
 
-Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
+The explicit module path preserves relative imports. `aksara dev` is a local
+project convenience; the command above makes this repository example's entry
+point unambiguous. `aksara doctor launch-check` is intended for a project layout
+and is not proof that an example's mutations or security integration work.
+
+## Inspect and test
 
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_blog"
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-## Seed
+Browse `http://127.0.0.1:8000/docs` to inspect the generated API. A startup or
+OpenAPI success proves neither a working authenticated write path nor a safe
+production deployment.
 
-No seed command is required. Create a first post through the API:
+## Seed and mutation boundary
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/posts/ \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Hello Aksara","slug":"hello-aksara","content":"First post","tags":["intro"]}'
-```
+There is no complete authenticated seed flow in this example. The earlier
+README's unauthenticated POST to `/api/posts/` returns **403** with v0.7.0;
+it does not create a record. Do not disable permission checks to make it pass.
+The example API-key dependency does not establish a server-owned Principal. Supplying its development X-API-Key header does not make generated writes an authenticated application journey.
 
-## Open
+The [ticket desk](../../docs/docs/getting-started/first-project.md) supplies the
+missing identity adapter and positive/negative CRUD tests. Use that flow when
+building a new application, or explicitly design equivalent authentication
+and policy for your own adaptation.
 
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
+## Optional development surfaces
 
-## Test API
-
-```bash
-curl http://127.0.0.1:8000/api/posts/
-curl http://127.0.0.1:8000/api/comments/
-curl http://127.0.0.1:8000/api/posts/published/
-```
-
-## Inspect generated tool metadata
-
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
-
-This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
-
-Confirm the catalog describes post/comment tools and marks sensitive fields as protected.
-
-## Try in AI Console
-
-Ask:
-
-```text
-Explain the BlogPost model
-Review the blog architecture
-Investigate this project
-```
-
-AI provider setup is optional for first launch. For local-first AI later, configure Ollama through AI Hub instead of committing provider secrets.
+Studio at `/studio/ui` and the AI Console are experimental. Their presence in
+this example does not make them production requirements. The HTTP JSON tool
+inspection catalog is `/ai/tools/mcp`; it is not the MCP protocol endpoint.
+Official clients use `/mcp/` after server-owned Principal resolution is installed.
+The [MCP tutorial](../../docs/docs/tutorials/ticket-desk-mcp.md) demonstrates that
+full path. No provider was called by the local startup audit.

@@ -128,8 +128,8 @@ scoped correctness/security patch with authenticated tenant and denial tests.
 The example cannot count as a successful tenant-isolation journey.
 
 
-Execution audit pending. The initial syntax/import checks pass; this does not
-prove the complete examples work against a clean installed wheel.
+Startup and selected HTTP execution are now recorded for every example below.
+This does not prove every custom action, live provider or security integration.
 
 ## Missing User Journeys
 
@@ -239,10 +239,43 @@ execution authority.
 
 ## Example Findings
 
-Initial classifications, subject to execution: KEEP basic_app as minimal;
-REWRITE instructional material for blog/crm/multitenant; KEEP support_desk as
-production reference; KEEP ai_providers explicitly experimental. No deletion is
-justified yet. Durable example usability requires its own documented journey.
+All six repository examples are classified in `audit-evidence/v071/example-review.json`.
+
+| Example | Decision | Reason and verified scope |
+| --- | --- | --- |
+| basic_app | REPLACE minimal-starter role | Keep historical code for comparison; ticket desk supplies the tested minimal path. Startup works, but old seed request is denied and custom lifespan attempts DDL. |
+| blog | REWRITE guidance | Correct model inventory, generate migrations, use explicit package entry point and explain missing Principal adapter. |
+| crm | REWRITE guidance | Same setup/auth clarification; retain Customer/Deal/Activity learning purpose. |
+| multitenant | REPLACE isolation-reference role | Keep historical code; use Support Desk/ticket desk for authenticated forced-RLS isolation. EX-001 remains a separate runtime patch. |
+| ai_providers | REWRITE guidance | Experimental application-owned adapters and status only; no Ollama adapter or live provider claim. |
+| support_desk | KEEP | Production-oriented packaged reference; clarify migration directory, role separation and ordinary tasks versus Operations. |
+
+`audit_public_examples.py` copies the five demonstration apps into temporary
+application directories and imports Aksara from public 0.7.0. It generates or
+applies migrations in isolated PostgreSQL schemas, exercises each lifespan and
+selected HTTP endpoints, then drops the schemas. All five start. Twelve GET
+observations return 200; six generated-write observations return the documented
+403 (including Blog/CRM requests with their example API-key headers). These are
+startup and denial checks under a schema-owner login, not RLS certification or
+full feature tests. The gate fails if these observed contracts change.
+
+The built 0.7.0 Support Desk wheel passes its separate 66-check production gate;
+all 12 application Python files match the current source. Candidate-wheel reruns
+remain required. No provider is called; provider quality and availability remain
+outside this baseline. No example runtime or security behavior was changed.
+The related example, pattern, documentation and packaging test selection passes
+350 tests with two optional OpenAI-SDK skips. Ruff and strict MkDocs pass.
+Evidence JSON parses and contains no connection URL or generated-password
+patterns. Tests bind the execution/review evidence to the current source hashes.
+
+EX-002 / P1: old Basic/Blog/CRM READMEs claimed unauthenticated seeding worked;
+those generated requests return 403. Documentation now points to the complete
+Principal adapter in the ticket desk rather than weakening permissions.
+EX-003 / P1: Blog/CRM/Multitenant setup omitted generation of their absent
+application migrations. Explicit `makemigrations --app` and migration directories
+are now included. EX-004 / P2: provider README conflated framework AI Hub/Ollama
+with its three application-owned adapters; corrected scope and configuration.
+
 
 ## Clean-Room Journey Results
 
@@ -317,7 +350,7 @@ is unchanged.
 
 ## Remaining Documentation Debt
 
-Candidate journeys, full content/example audit, full usability review, candidate
+Candidate journeys, remaining public-page/snippet audit, full usability review, candidate
 packaging, compatibility regression and hosted checks remain pending. The
 market/roadmap review is now drafted from current primary documentation; its
 user-demand and integration-cost hypotheses still require independent trials.
@@ -366,7 +399,7 @@ integrity, not fresh database execution. The full installed-wheel gate remains
 required when the tutorial or runner changes.
 
 Current focused validation: `pytest tests/docs tests/test_v048_docs_lock.py
- tests/test_v048_packaging_sanity.py -q` passes **130 tests**. Strict MkDocs and
+ tests/test_v048_packaging_sanity.py -q` passes **132 tests**. Strict MkDocs and
 Ruff on the runner and evidence tests pass. PostgreSQL catalog verification
 finds zero leftover tutorial schemas or roles after the journey.
 
