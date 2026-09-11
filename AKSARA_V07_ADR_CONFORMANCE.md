@@ -28,7 +28,7 @@ remain requirements of the production `postgres_atomic` executor.
 | Bounded transition evidence and transactional outbox | IMPLEMENTED WITH DOCUMENTED CONSTRAINT | Every authoritative transition emits outbox intent in the same transaction. The application sink and long-term retention are not operation authority. |
 | Bounded pruning and idempotency tombstones | IMPLEMENTED | Active rows are protected; result/error bodies can expire separately; operations and identities are pruned in DB-time batches after their windows. |
 | Existing tasks are optional executors | IMPLEMENTED | Linked tasks defer ownership to Operation Attempts and fences; unlinked task behavior and public task contracts remain unchanged. |
-| Honest external effect classes and ambiguity | IMPLEMENTED WITH DOCUMENTED CONSTRAINT | Idempotent, reconcilable at-least-once, nonretryable, and read-only paths are explicit. Aksara records intent but cannot provide an atomic PostgreSQL/provider transaction. |
+| Honest external effect classes and ambiguity | IMPLEMENTED WITH DOCUMENTED CONSTRAINT | Idempotent, reconcilable at-least-once, nonretryable, and read-only paths are explicit. Aksara preserves started-but-unconfirmed work as `external_outcome_unknown` across lease loss and lifecycle closure, and cannot provide an atomic PostgreSQL/provider transaction. |
 | DurableStep is not silently redefined | DEFERRED BY ADR | The existing workflow-step cache remains functional and evolving, outside v0.7 Operation guarantees. |
 | Workflow/DAG, memory, planner, Studio AI, autonomous orchestration | DEFERRED BY ADR | No such surface is stabilized or expanded. |
 | Protocol-level durable MCP Tasks | DEFERRED DUE TO EXTERNAL STANDARD | MCP's current Tasks extension is not implemented by the official Python SDK used for the candidate. Existing synchronous `/mcp/` behavior remains tested. |
@@ -42,6 +42,11 @@ outer Aksara transaction owns completion, the active connection is pinned, the
 Operation row is locked, all current ownership/decision/authorization checks
 pass under that lock, and the application mutation uses the guarded execution
 context in the owning asyncio task.
+
+Admission requires an explicit tenant ID for `postgres_atomic` actions. This
+keeps the internal global-operation storage sentinel out of UUID-backed
+application RLS policies; global PostgreSQL mutation is outside this bounded
+atomic contract.
 
 Direct pool acquisition, independent connections or commits, another
 `Database`, another database, subprocess/thread database mutation, concurrent

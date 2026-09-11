@@ -9,4 +9,4 @@ tests/diagnostics/test_actions_endpoint.py::TestDiagnosticsActionsEndpoint::test
     _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-314 passed, 1 warning in 1.15s
+314 passed, 1 warning in 1.22s

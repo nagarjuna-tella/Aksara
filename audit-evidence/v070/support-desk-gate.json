@@ -2,10 +2,10 @@
   "schema_version": 1,
   "gate": "support-desk-v070-production-reference",
   "status": "passed",
-  "started_at": "2026-09-11T09:58:25.974557+00:00",
-  "finished_at": "2026-09-11T09:58:51.037649+00:00",
+  "started_at": "2026-09-11T10:59:32.062848+00:00",
+  "finished_at": "2026-09-11T10:59:54.804479+00:00",
   "wheel": "aksara_framework-0.7.0rc1-py3-none-any.whl",
-  "wheel_sha256": "33f03a5425eeda54e81327cc3c6d974b84678df90201fc5cd8df344922315d55",
+  "wheel_sha256": "b39986778d9d023186159bed6e262a051564b1e012b2bab72d18cbe82662fb36",
   "database": "aksara_test",
   "checks": [
     {
@@ -295,7 +295,7 @@
       "status": "pass",
       "details": {
         "protocol_version": "2026-07-28",
-        "sdk": "mcp==2.0.0",
+        "sdk": "mcp==2.0.1",
         "transport": "streamable-http"
       }
     },
@@ -491,10 +491,10 @@
       "status": "pass",
       "details": {
         "tenant_a": [
-          "be012153-4a04-49d8-9ad3-18adaaf469bf"
+          "76b6f2d4-2e93-4a3d-9365-0c2b68846e39"
         ],
         "tenant_b": [
-          "2b8bf10a-532e-403e-9327-38318d4d5050"
+          "ca72048d-b236-44e9-84fb-87652dcb0dec"
         ]
       }
     },
