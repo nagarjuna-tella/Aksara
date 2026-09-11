@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import suppress
 from uuid import UUID, uuid4
 
@@ -11,6 +12,8 @@ from aksara.durable.execution import PostgresAtomicExecutor, ReadOnlyExecutor
 from aksara.durable.external import ExternalOperationExecutor
 from aksara.durable.service import DurableOperationService
 from aksara.durable.types import EffectClass, OperationClaim, OperationRecord
+
+logger = logging.getLogger(__name__)
 
 
 class DurableOperationWorker:
@@ -102,6 +105,18 @@ class DurableOperationWorker:
             try:
                 operation = await self.poll_once(tenant_id=tenant_id)
             except OwnershipLost:
+                continue
+            except Exception:
+                logger.exception(
+                    "Durable operation worker poll failed; retrying",
+                    extra={"worker_id": self.worker_id, "tenant_id": tenant_id},
+                )
+                try:
+                    await asyncio.wait_for(
+                        self._stop.wait(), timeout=self.poll_interval
+                    )
+                except TimeoutError:
+                    pass
                 continue
             if operation is not None:
                 continue

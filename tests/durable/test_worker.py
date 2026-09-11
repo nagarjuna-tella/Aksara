@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
@@ -130,3 +131,27 @@ async def test_worker_repolls_after_normal_ownership_loss(monkeypatch):
 
     await worker.run(tenant_id="tenant-1")
     assert calls == 2
+
+
+@pytest.mark.asyncio
+async def test_worker_logs_and_retries_after_poll_failure(monkeypatch, caplog):
+    calls = 0
+    service = SimpleNamespace(default_lease_seconds=1.0)
+    worker = DurableOperationWorker(service, poll_interval=0.001)
+
+    async def poll_once(*, tenant_id, operation_id=None):
+        nonlocal calls
+        assert tenant_id == "tenant-1"
+        assert operation_id is None
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("temporary database failure")
+        worker.stop()
+
+    monkeypatch.setattr(worker, "poll_once", poll_once)
+
+    with caplog.at_level(logging.ERROR, logger="aksara.durable.worker"):
+        await worker.run(tenant_id="tenant-1")
+
+    assert calls == 2
+    assert "Durable operation worker poll failed; retrying" in caplog.text
