@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "head": "bb8e65cadc4d7a93e80c9804313a38eb1e95ad9b",
+  "command": ".venv/bin/python -m pytest -q",
+  "environment": {
+    "AKSARA_REQUIRE_DATABASE_TESTS": "1",
+    "AKSARA_REQUIRE_SECURITY_MATRIX": "false",
+    "database": "local aksara_test; DSN omitted"
+  },
+  "python": "3.14.4",
+  "fastapi": "0.141.1",
+  "starlette": "1.6.0",
+  "asyncpg": "0.31.0",
+  "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "passed": 8312,
+  "skipped": 2,
+  "warnings": 25,
+  "seconds": 119.97,
+  "log": "audit-evidence/v071/pytest-full-checkpoint.log",
+  "log_sha256": "57e2fc81f09be0530be134a9bae608a7b0ba8ba9eded1c6a5c5d0ad21d740e3b",
+  "scope": "Full source suite checkpoint before candidate version/build; not the Python/web compatibility matrix or hosted CI"
+}

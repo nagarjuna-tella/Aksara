@@ -574,3 +574,21 @@ callback observations remain after a database rollback, directly demonstrating
 why `post_save` is not commit evidence. This probe makes no external network
 calls and does not claim durable callback delivery. Its evidence is also bound
 to the signal and transaction guide hashes.
+
+## Full Source Regression Checkpoint
+
+At `bb8e65c`, `.venv/bin/python -m pytest -q` with
+`AKSARA_REQUIRE_DATABASE_TESTS=1` and the local `aksara_test` PostgreSQL database
+passed **8,312 tests**, with **2 skips and 25 warnings**, in **119.97 seconds**.
+`AKSARA_REQUIRE_SECURITY_MATRIX=false` matches the general suite profile; this
+is not a substitute for the strict Doctor release gate. Runtime versions and
+the credential-checked log hash are in
+`audit-evidence/v071/full-regression-checkpoint.json`.
+
+`scripts/check_v071_runtime_scope.py --output
+audit-evidence/v071/runtime-scope.json` confirms the only changed production
+file is the scaffold module, and its AST is identical to v0.7.0 outside the
+README template return value. `pyproject.toml` is unchanged. This supplements,
+but does not replace, generated-file equivalence and candidate startup checks.
+Candidate version/build, compatibility matrix, hosted checks and the remaining
+public-page audit are still incomplete.
