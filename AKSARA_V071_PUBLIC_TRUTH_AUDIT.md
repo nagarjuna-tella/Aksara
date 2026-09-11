@@ -601,5 +601,11 @@ contract, ambiguous false result, at-least-once acknowledgement window, lease
 versus timeout, payload limits and application-owned sink retention. These
 claims were checked against `aksara/durable/outbox.py` and repository transition
 payload construction. The source regression test covers sink failure/retry
-without changing authoritative Operation state. The new helper still needs
-installed-wheel scenario execution; remote durable delivery is not claimed.
+without changing authoritative Operation state. The exact helper now executes against the isolated public wheel and PostgreSQL:
+12 checks cover migrations, configured defaults, tenant/non-tenant/namespace
+selection, sink failure, retry delay, duplicate payload after simulated
+acknowledgement loss, and unchanged authoritative state. Evidence is
+`audit-evidence/v071/outbox-execution.json`; the uniquely named schema was
+removed and removal verified. The fixture uses an admin role and an in-process
+sink, so restricted-role RLS, process-crash behavior and remote durable delivery
+are not claimed.
