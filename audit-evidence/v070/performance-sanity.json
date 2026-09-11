@@ -3,12 +3,12 @@
   "gate": "v070-durable-performance-pathology",
   "status": "pass",
   "purpose": "pathology and contention detection; not a throughput claim",
-  "started_at": "2026-09-11T02:10:13.167849+00:00",
-  "finished_at": "2026-09-11T02:10:14.499752+00:00",
+  "started_at": "2026-09-11T03:45:15.260713+00:00",
+  "finished_at": "2026-09-11T03:45:16.676011+00:00",
   "environment": {
     "aksara": "0.7.0rc1",
-    "python": "3.11.15",
-    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.14.4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
     "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
     "database": "aksara_test",
     "application_role": {
@@ -26,62 +26,62 @@
   "metrics": {
     "admission": {
       "samples": 256,
-      "min_ms": 128.573,
-      "median_ms": 187.64,
-      "p95_ms": 236.741,
-      "max_ms": 239.75
+      "min_ms": 135.303,
+      "median_ms": 201.364,
+      "p95_ms": 274.569,
+      "max_ms": 279.532
     },
     "claim": {
       "samples": 256,
-      "min_ms": 3.671,
-      "median_ms": 4.885,
-      "p95_ms": 6.442,
-      "max_ms": 9.695
+      "min_ms": 3.489,
+      "median_ms": 5.096,
+      "p95_ms": 7.377,
+      "max_ms": 15.731
     },
     "heartbeat": {
       "samples": 256,
-      "min_ms": 1.74,
-      "median_ms": 2.412,
-      "p95_ms": 3.492,
-      "max_ms": 4.931
+      "min_ms": 1.673,
+      "median_ms": 2.253,
+      "p95_ms": 3.731,
+      "max_ms": 4.873
     },
     "atomic_completion": {
       "samples": 256,
-      "min_ms": 3.484,
-      "median_ms": 4.332,
-      "p95_ms": 5.557,
-      "max_ms": 7.724
+      "min_ms": 2.926,
+      "median_ms": 4.095,
+      "p95_ms": 6.137,
+      "max_ms": 8.94
     },
     "status_read": {
       "samples": 64,
-      "min_ms": 0.657,
-      "median_ms": 0.9,
-      "p95_ms": 0.951,
-      "max_ms": 0.976
+      "min_ms": 0.667,
+      "median_ms": 0.879,
+      "p95_ms": 0.94,
+      "max_ms": 1.202
     },
     "cancellation": {
       "samples": 16,
-      "min_ms": 5.682,
-      "median_ms": 6.467,
-      "p95_ms": 8.914,
-      "max_ms": 8.914
+      "min_ms": 5.011,
+      "median_ms": 6.049,
+      "p95_ms": 8.819,
+      "max_ms": 8.819
     },
     "reclaim": {
       "samples": 8,
-      "min_ms": 5.41,
-      "median_ms": 5.724,
-      "p95_ms": 6.15,
-      "max_ms": 6.15
+      "min_ms": 5.603,
+      "median_ms": 5.873,
+      "p95_ms": 6.404,
+      "max_ms": 6.404
     }
   },
   "aggregate": {
-    "admission_total_ms": 260.039,
-    "admission_per_second": 984.47,
-    "execution_total_ms": 390.326,
-    "execution_per_second": 655.86,
-    "concurrent_same_key_total_ms": 6.759,
-    "task_linked_total_ms": 48.894,
-    "prune_total_ms": 69.801
+    "admission_total_ms": 298.595,
+    "admission_per_second": 857.35,
+    "execution_total_ms": 401.293,
+    "execution_per_second": 637.94,
+    "concurrent_same_key_total_ms": 9.524,
+    "task_linked_total_ms": 53.214,
+    "prune_total_ms": 69.656
   },
   "invariants": {
     "one_operation_for_concurrent_same_key": true,
@@ -140,7 +140,7 @@
                     "Plan Rows": 1,
                     "Plan Width": 4633,
                     "Disabled": false,
-                    "One-Time Filter": "(current_setting('aksara.current_tenant_id'::text, true) = '71e630e8-1c68-4684-bb91-9d3a0f6ad86a'::text)",
+                    "One-Time Filter": "(current_setting('aksara.current_tenant_id'::text, true) = '4f6b82b7-942c-4e0e-86e9-9b7ec8030659'::text)",
                     "Plans": [
                       {
                         "Node Type": "Index Scan",
@@ -156,7 +156,7 @@
                         "Plan Rows": 1,
                         "Plan Width": 4633,
                         "Disabled": false,
-                        "Index Cond": "(((application_namespace)::text = 'v070-performance-79aa3a6b4c'::text) AND (tenant_scope = '71e630e8-1c68-4684-bb91-9d3a0f6ad86a'::text))",
+                        "Index Cond": "(((application_namespace)::text = 'v070-performance-c742187a5e'::text) AND (tenant_scope = '4f6b82b7-942c-4e0e-86e9-9b7ec8030659'::text))",
                         "Filter": "((((state)::text = 'ready'::text) AND (available_at <= clock_timestamp())) OR (((state)::text = 'running'::text) AND (lease_expires_at <= clock_timestamp())))"
                       }
                     ]
@@ -176,9 +176,9 @@
     "aksara_operation_outbox": 856
   },
   "relation_sizes_bytes": {
-    "aksara_operations": 2834432,
-    "aksara_operation_attempts": 245760,
-    "aksara_operation_transitions": 417792,
+    "aksara_operations": 2859008,
+    "aksara_operation_attempts": 262144,
+    "aksara_operation_transitions": 425984,
     "aksara_operation_outbox": 589824
   },
   "prune_result": {
