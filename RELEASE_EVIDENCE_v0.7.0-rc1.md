@@ -18,7 +18,7 @@ tagged, published, or released as part of this validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `935faff73616eabc7d6c8b45ab7719b764babb22` |
+| Candidate implementation commit | `ba965ac0afd1148748b1ec3fc535412840bb404c` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -63,12 +63,12 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,261 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable and invariant suites | **PASS:** 248 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,265 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable and invariant suites | **PASS:** 252 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,265 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,265 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,265 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,265 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
 | Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks | PR #26 |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
@@ -77,6 +77,7 @@ The detailed decision audit is in
 | Security suite | Repository security tests | **PASS:** 429 passed | [`security.log`](audit-evidence/v070/security.log) |
 | Fuzz suite | Explicit generated API fuzz suite | **PASS:** 165 passed | [`fuzz.log`](audit-evidence/v070/fuzz.log) |
 | Diagnostics | Diagnostic contract tests | **PASS:** 314 passed | [`diagnostics.log`](audit-evidence/v070/diagnostics.log) |
+| Migration suite | Framework and application migration contracts | **PASS:** 455 passed | [`migrations.log`](audit-evidence/v070/migrations.log) |
 | Static ratchet | Python 3.11; pinned Ruff 0.16.6 and mypy 2.3.1 | **PASS:** Ruff 7,208 ≤ 7,218; mypy 465 ≤ 501 | [`static-analysis.log`](audit-evidence/v070/static-analysis.log) |
 | Doctor release policy | Production release configuration | **PASS:** 12 checks; no warnings, failures, or blocks | [`doctor-release.json`](audit-evidence/v070/doctor-release.json) |
 | Documentation contract | Focused docs/package assertions | **PASS:** 114 passed | [`docs-contract.log`](audit-evidence/v070/docs-contract.log) |
@@ -95,8 +96,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `f7f3e8b1863b3925a531d2481a32f1cb54a50f5c1934d74663d229adedd91d83` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `276e25e9a3a4d962d4b6cc528970357639e10062d833a58f14b73cd006e18797` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `33f03a5425eeda54e81327cc3c6d974b84678df90201fc5cd8df344922315d55` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `92097eb409149a6fde3b1477c3aa5f2424c886ed5a26bdde5be9954a0bc1ff24` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
@@ -105,8 +106,8 @@ digests are recorded in
 
 ## Performance interpretation
 
-The local campaign admitted 256 Operations in 317.894 ms and executed them in
-639.787 ms. It also proved concurrent same-key deduplication, eight exclusive
+The local campaign admitted 256 Operations in 303.456 ms and executed them in
+622.655 ms. It also proved concurrent same-key deduplication, eight exclusive
 claims, N-to-N+1 fencing, task-backed execution, bounded pruning, indexed claim
 selection under 3,000 terminal rows, exact mutation counts, and a fully idle
 pool. These figures detect obvious local pathology; they are not a capacity or

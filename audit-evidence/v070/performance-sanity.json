@@ -3,8 +3,8 @@
   "gate": "v070-durable-performance-pathology",
   "status": "pass",
   "purpose": "pathology and contention detection; not a throughput claim",
-  "started_at": "2026-09-11T08:48:35.521852+00:00",
-  "finished_at": "2026-09-11T08:48:37.252611+00:00",
+  "started_at": "2026-09-11T09:51:11.394297+00:00",
+  "finished_at": "2026-09-11T09:51:13.156149+00:00",
   "environment": {
     "aksara": "0.7.0rc1",
     "python": "3.11.15",
@@ -26,62 +26,62 @@
   "metrics": {
     "admission": {
       "samples": 256,
-      "min_ms": 135.959,
-      "median_ms": 218.991,
-      "p95_ms": 290.282,
-      "max_ms": 296.362
+      "min_ms": 138.403,
+      "median_ms": 208.96,
+      "p95_ms": 274.413,
+      "max_ms": 280.248
     },
     "claim": {
       "samples": 256,
-      "min_ms": 4.102,
-      "median_ms": 6.711,
-      "p95_ms": 9.514,
-      "max_ms": 16.759
+      "min_ms": 4.393,
+      "median_ms": 6.563,
+      "p95_ms": 9.024,
+      "max_ms": 13.976
     },
     "heartbeat": {
       "samples": 256,
-      "min_ms": 1.928,
-      "median_ms": 3.3,
-      "p95_ms": 4.636,
-      "max_ms": 6.636
+      "min_ms": 1.818,
+      "median_ms": 2.971,
+      "p95_ms": 5.164,
+      "max_ms": 8.149
     },
     "atomic_completion": {
       "samples": 256,
-      "min_ms": 6.495,
-      "median_ms": 9.54,
-      "p95_ms": 11.972,
-      "max_ms": 14.906
+      "min_ms": 6.473,
+      "median_ms": 9.604,
+      "p95_ms": 12.027,
+      "max_ms": 19.509
     },
     "status_read": {
       "samples": 64,
-      "min_ms": 0.733,
-      "median_ms": 1.024,
-      "p95_ms": 1.16,
-      "max_ms": 1.269
+      "min_ms": 0.71,
+      "median_ms": 0.961,
+      "p95_ms": 1.457,
+      "max_ms": 1.888
     },
     "cancellation": {
       "samples": 16,
-      "min_ms": 7.044,
-      "median_ms": 7.826,
-      "p95_ms": 11.859,
-      "max_ms": 11.859
+      "min_ms": 7.009,
+      "median_ms": 7.78,
+      "p95_ms": 11.739,
+      "max_ms": 11.739
     },
     "reclaim": {
       "samples": 8,
-      "min_ms": 8.05,
-      "median_ms": 9.449,
-      "p95_ms": 9.878,
-      "max_ms": 9.878
+      "min_ms": 8.343,
+      "median_ms": 8.722,
+      "p95_ms": 8.818,
+      "max_ms": 8.818
     }
   },
   "aggregate": {
-    "admission_total_ms": 317.894,
-    "admission_per_second": 805.3,
-    "execution_total_ms": 639.787,
-    "execution_per_second": 400.13,
-    "concurrent_same_key_total_ms": 9.358,
-    "task_linked_total_ms": 67.729,
-    "prune_total_ms": 70.643
+    "admission_total_ms": 303.456,
+    "admission_per_second": 843.61,
+    "execution_total_ms": 622.655,
+    "execution_per_second": 411.14,
+    "concurrent_same_key_total_ms": 10.298,
+    "task_linked_total_ms": 61.104,
+    "prune_total_ms": 71.399
   },
   "invariants": {
     "one_operation_for_concurrent_same_key": true,
@@ -140,7 +140,7 @@
                     "Plan Rows": 1,
                     "Plan Width": 4633,
                     "Disabled": false,
-                    "One-Time Filter": "(current_setting('aksara.current_tenant_id'::text, true) = '11bc53e1-3cd7-40ba-8335-20470aadc9db'::text)",
+                    "One-Time Filter": "(current_setting('aksara.current_tenant_id'::text, true) = 'aff9af2d-376c-4ab4-8778-b91f4827ae2d'::text)",
                     "Plans": [
                       {
                         "Node Type": "Index Scan",
@@ -156,7 +156,7 @@
                         "Plan Rows": 1,
                         "Plan Width": 4633,
                         "Disabled": false,
-                        "Index Cond": "(((application_namespace)::text = 'v070-performance-00ec7a3356'::text) AND (tenant_scope = '11bc53e1-3cd7-40ba-8335-20470aadc9db'::text))",
+                        "Index Cond": "(((application_namespace)::text = 'v070-performance-699be36421'::text) AND (tenant_scope = 'aff9af2d-376c-4ab4-8778-b91f4827ae2d'::text))",
                         "Filter": "((((state)::text = 'ready'::text) AND (available_at <= clock_timestamp())) OR (((state)::text = 'running'::text) AND (lease_expires_at <= clock_timestamp())))"
                       }
                     ]
@@ -176,10 +176,10 @@
     "aksara_operation_outbox": 856
   },
   "relation_sizes_bytes": {
-    "aksara_operations": 2826240,
-    "aksara_operation_attempts": 262144,
-    "aksara_operation_transitions": 409600,
-    "aksara_operation_outbox": 606208
+    "aksara_operations": 2875392,
+    "aksara_operation_attempts": 245760,
+    "aksara_operation_transitions": 425984,
+    "aksara_operation_outbox": 598016
   },
   "prune_result": {
     "outbox": 0,
