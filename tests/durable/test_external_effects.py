@@ -662,6 +662,35 @@ async def test_cancellation_during_final_reauthorization_prevents_external_send(
 
 
 @pytest.mark.asyncio
+async def test_deadline_before_intent_commits_expired_state(durable_db):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    service, executor = _runtime(
+        durable_db, tenant, provider, EffectClass.EXTERNAL_IDEMPOTENT
+    )
+    admitted = await service.admit(
+        "external.perform",
+        "1",
+        {"amount": 25},
+        _reference(tenant),
+        deadline_at=datetime.now(UTC) + timedelta(milliseconds=250),
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+        lease_seconds=1,
+    )
+    assert claim is not None
+    await asyncio.sleep(0.3)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.EXPIRED
+    assert provider.calls == []
+
+
+@pytest.mark.asyncio
 async def test_deadline_after_intent_prevents_external_send(durable_db):
     tenant = str(uuid4())
     provider = RecordingIdempotentProvider()

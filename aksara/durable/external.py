@@ -280,6 +280,8 @@ class ExternalEffectContext:
         request_hash: str,
         downstream_key: str,
     ) -> Any:
+        closed_reason: str | None = None
+        effect: Any | None = None
         with _tenant_context(self.claim.tenant_scope):
             async with atomic(db=self._executor.service.db) as connection:
                 operation = await self._executor.service._lock_owned(connection, self.claim)
@@ -287,54 +289,60 @@ class ExternalEffectContext:
                     await self._executor._identity._cancel_under_lock(
                         connection, operation, self.claim
                     )
-                    raise _OperationClosed("cancellation won before the external effect")
-                deadline_valid = await connection.fetchval(
-                    "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
-                    operation["deadline_at"],
-                )
-                if not deadline_valid:
-                    await self._executor._identity._expire_under_lock(
-                        connection, operation, self.claim
+                    closed_reason = "cancellation won before the external effect"
+                else:
+                    deadline_valid = await connection.fetchval(
+                        "SELECT $1::timestamptz IS NULL OR $1 > clock_timestamp()",
+                        operation["deadline_at"],
                     )
-                    raise _OperationClosed("deadline expired before the external effect")
-                effect = await connection.fetchrow(
-                    """
-                    SELECT * FROM aksara_operation_effects
-                    WHERE operation_id = $1 AND tenant_scope = $2
-                      AND effect_name = $3 AND ordinal = $4
-                    FOR UPDATE
-                    """,
-                    self.claim.operation_id,
-                    self.claim.tenant_scope,
-                    effect_name,
-                    ordinal,
-                )
-                if effect is not None:
-                    if effect["request_hash"] != request_hash:
-                        raise AtomicBoundaryViolation(
-                            "external effect identity was reused with different semantic input"
+                    if not deadline_valid:
+                        await self._executor._identity._expire_under_lock(
+                            connection, operation, self.claim
                         )
-                    return effect
-                return await connection.fetchrow(
-                    """
-                    INSERT INTO aksara_operation_effects (
-                        operation_id, tenant_scope, effect_name, ordinal, effect_class,
-                        state, request_hash, downstream_idempotency_key,
-                        last_attempt_id, last_fence
-                    ) VALUES (
-                        $1, $2, $3, $4, $5, 'intent_recorded', $6, $7, $8, $9
-                    ) RETURNING *
-                    """,
-                    self.claim.operation_id,
-                    self.claim.tenant_scope,
-                    effect_name,
-                    ordinal,
-                    self.claim.effect_class.value,
-                    request_hash,
-                    downstream_key,
-                    self.claim.attempt_id,
-                    self.claim.fence,
-                )
+                        closed_reason = "deadline expired before the external effect"
+                if closed_reason is None:
+                    effect = await connection.fetchrow(
+                        """
+                        SELECT * FROM aksara_operation_effects
+                        WHERE operation_id = $1 AND tenant_scope = $2
+                          AND effect_name = $3 AND ordinal = $4
+                        FOR UPDATE
+                        """,
+                        self.claim.operation_id,
+                        self.claim.tenant_scope,
+                        effect_name,
+                        ordinal,
+                    )
+                    if effect is not None:
+                        if effect["request_hash"] != request_hash:
+                            raise AtomicBoundaryViolation(
+                                "external effect identity was reused with different semantic input"
+                            )
+                    else:
+                        effect = await connection.fetchrow(
+                            """
+                            INSERT INTO aksara_operation_effects (
+                                operation_id, tenant_scope, effect_name, ordinal,
+                                effect_class, state, request_hash,
+                                downstream_idempotency_key, last_attempt_id, last_fence
+                            ) VALUES (
+                                $1, $2, $3, $4, $5, 'intent_recorded', $6, $7, $8, $9
+                            ) RETURNING *
+                            """,
+                            self.claim.operation_id,
+                            self.claim.tenant_scope,
+                            effect_name,
+                            ordinal,
+                            self.claim.effect_class.value,
+                            request_hash,
+                            downstream_key,
+                            self.claim.attempt_id,
+                            self.claim.fence,
+                        )
+        if closed_reason is not None:
+            raise _OperationClosed(closed_reason)
+        assert effect is not None
+        return effect
 
     async def _mark_execution_started(self, effect_id: UUID) -> None:
         closed_reason: str | None = None

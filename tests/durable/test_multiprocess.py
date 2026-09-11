@@ -306,7 +306,7 @@ async def test_hard_process_death_rolls_back_every_precommit_boundary(
             tenant,
             admitted.operation.id,
             "worker-that-dies",
-            lease_seconds=0.15,
+            lease_seconds=1,
         ),
         "--pause-at",
         boundary,
@@ -317,7 +317,7 @@ async def test_hard_process_death_rolls_back_every_precommit_boundary(
     await process.wait()
 
     assert await _counter(durable_db, tenant, counter_id) == 0
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(1.1)
     replacement = await _run_worker(
         durable_db,
         *_execute_args(tenant, admitted.operation.id, "replacement"),
