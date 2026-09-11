@@ -226,14 +226,19 @@ messages = [
 
 ### Settings
 
-Configure Studio UI in your settings:
+Studio is experimental. Configure its tokens through your secret store before
+using this settings example; do not expose it as a production application API:
 
 ```python
-from aksara.conf import configure, Settings
+import os
 
-configure(Settings(
+from aksara.conf import configure
+
+configure(
     # Enable/disable Studio entirely
     enable_studio=True,
+    studio_secret_token=os.environ["AKSARA_STUDIO_SECRET_TOKEN"],
+    studio_auth_token=os.environ["AKSARA_STUDIO_AUTH_TOKEN"],
     
     # Enable/disable just the UI
     studio_ui_enabled=True,
@@ -246,7 +251,7 @@ configure(Settings(
     
     # UI title (future customization)
     studio_ui_title="Aksara Studio",
-))
+)
 ```
 
 ### Environment Variables
@@ -270,10 +275,10 @@ By default, Studio UI is **disabled in production** mode. To enable:
 2. Set `studio_expose_in_production=True`
 
 ```python
-configure(Settings(
+configure(
     debug=False,
     studio_expose_in_production=True,
-))
+)
 ```
 
 !!! warning "Security Considerations"

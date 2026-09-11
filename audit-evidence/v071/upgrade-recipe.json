@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "journey": "upgrade-guide explicit migration recipe",
+  "package": "aksara-framework==0.7.0",
+  "source": "public PyPI wheel in isolated environment",
+  "database": "local PostgreSQL; disposable schema in aksara_test",
+  "script_sha256": "f571b5e3bdf1bc7ebe2e6b3934a20ef4b617d3ae69e217256b4fe5377a9caedf",
+  "first_run_exit": 0,
+  "repeat_run_exit": 0,
+  "applied_migration_names": [
+    "aksara_contrib_auth_migrations_0001_initial",
+    "aksara_core_migrations_0001_runtime_tables",
+    "aksara_core_migrations_0002_durable_operations"
+  ],
+  "repeat_applied": [],
+  "scope": "Executes bundled migrations without application files. Not a real v0.6 application/data upgrade or candidate wheel gate.",
+  "pass": true
+}

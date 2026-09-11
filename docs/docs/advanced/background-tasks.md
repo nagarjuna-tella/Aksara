@@ -123,18 +123,22 @@ await send_welcome_email.enqueue(
 
 ### Automatic (Default)
 
-When `tasks_enabled=True`, `Aksara(...)` starts a `TaskWorker` during app
-startup and stops it gracefully during shutdown.
+When `tasks_enabled=True` and an explicit database URL enables the Aksara
+database lifespan, `Aksara(...)` starts a `TaskWorker` during startup and stops
+it during shutdown. Pass the effective settings to the application constructor;
+setting a URL on the global settings object alone does not start that lifespan.
 
 ```python
-from aksara.conf import Settings, configure
+from aksara import Aksara, configure, settings
 
-configure(Settings(
-    database_url="postgresql://postgres:postgres@localhost/myapp",
+configure(
     tasks_enabled=True,
     task_poll_interval_seconds=1.0,
     task_max_attempts=3,
-))
+)
+if not settings.database_url:
+    raise RuntimeError("Set AKSARA_DATABASE_URL or DATABASE_URL")
+app = Aksara(database_url=settings.database_url)
 ```
 
 ### Manual Worker
@@ -422,8 +426,9 @@ Tasks should be idempotent when possible, and payloads should be kept small.
 
 ## Operational Notes
 
-- `aksara migrate` provisions `aksara_tasks` and `aksara_cron_state` through
-  an internal migration. Run migrations with a schema-owning release role
+- The file-based `aksara migrate` path provisions `aksara_tasks` and
+  `aksara_cron_state` through an internal migration. For projects without
+  migration files, use the [explicit migration executor](../operations/upgrade-v07.md#2-apply-versioned-migrations-before-startup). Run migrations with a schema-owning release role
   before starting application instances.
 - Runtime checks skip DDL when the internal schema is current, so a production
   worker can run with DML-only table grants. Older schemas still use the

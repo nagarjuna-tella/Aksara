@@ -79,7 +79,22 @@ lead the beginner journey. Navigation implementation is pending.
 | PT-001 | P1 | `tutorials/deployment.md` Step 1 leads with an unsupported `AKSARA` dictionary, labeled conceptual | Replaced operational instructions with real configuration, role separation, workers and recovery guidance; clean-room execution still pending | Docs fixed |
 | PT-002 | P2 | `roadmap.md` calls v0.6.1 the current adoption patch after v0.7.0 | Replaced with current v0.7.0, v0.7.1 work, evidence-gated v0.8 thesis and bounded 1.0 criteria | Docs fixed |
 | PT-003 | P2 | `examples/README.md` omits support_desk from its catalog | Rewrote catalog using actual models and execution boundaries, including Support Desk and EX-001 | Docs fixed |
+| PT-005 | P1 | Settings reference lists shortened task environment names without `_SECONDS` | Correct to installed names and verify the settings table | Docs fixed |
+| PT-006 | P1 | Settings pages imply dataclass constructor overrides always beat environment, and that the global database URL starts an `Aksara()` database lifespan | Explain keyword overrides and explicit settings-to-constructor handoff | Docs fixed |
+| PT-007 | P2 | Glossary claims memory/Redis cache backends and omits Operation/Attempt/Principal distinctions | Removed unsupported cache claim and added authority/execution terminology | Docs fixed |
 | PT-004 | P2 | `docs/mkdocs.yml` gives experimental AI a large top-level section; durability is under Advanced | Provide an application learning path and prominent production/durability entry points | Open |
+
+## Runtime Defects Exposed by the Documentation Audit
+
+**CFG-001 / P1:** the shared environment-list parser replaces `os.pathsep`
+with commas. On POSIX, `AKSARA_MCP_ALLOWED_ORIGINS=https://example.com` becomes
+`["https", "//example.com"]`; host/port patterns are also affected. Verified
+against installed `Settings` with a temporary environment patch. This proves
+configuration corruption, not an authorization bypass. The settings reference
+now recommends explicit `configure(mcp_allowed_origins=[...],
+mcp_allowed_hosts=[...])` lists, which bypass environment parsing. Recommend a
+separate functional parser patch with origin, port, IPv6 and platform tests;
+production code is unchanged here.
 
 ## Broken Examples Found
 
@@ -121,6 +136,20 @@ beginner/auth/testing journey. Rerun from an isolated installed wheel after edit
 and explicit configuration above environment values. `AKSARA_DATABASE_URL`
 precedes `DATABASE_URL`. The deployment tutorial does not follow this usable
 path. Defaults must be checked against `aksara/conf.py`, not copied from prose.
+
+The configuration rewrite corrects five task environment names, distinguishes
+keyword overrides from the dataclass environment loader, and passes database
+configuration explicitly into the Aksara constructor. New table checks compare
+published defaults with installed dataclass and durable-service signatures.
+Related media, task, locale and Studio examples now use keyword overrides;
+the S3 installation command uses the actual distribution `aksara-framework[s3]`.
+
+The upgrade guide documents the versioned CLI path and the legacy model-only
+fallback separately. Its explicit public `apply_migrations()` recipe ran from
+the public v0.7.0 wheel in a disposable PostgreSQL schema: all three bundled
+migrations applied, and a repeat applied none. See
+`audit-evidence/v071/upgrade-recipe.json`. This is not yet a real application
+upgrade or the v0.7.1 candidate-wheel gate.
 
 ## Scaffold Findings
 
@@ -220,6 +249,16 @@ Principal-preserving durable actions. No new runtime work is authorized.
 Focused documentation/packaging validation after this change: 116 passed;
 strict MkDocs passes. These are document consistency checks, not proof of
 market demand or completion of the application journeys.
+
+## Configuration and Upgrade Validation
+
+After the configuration, glossary and upgrade edits:
+`pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q`
+passes **124 tests**. Ruff on `tests/docs/test_configuration_reference.py` and
+strict MkDocs both pass. The upgrade recipe's SHA-256 matches its executed
+public-wheel evidence. All validation is scoped: a disposable internal-schema
+bootstrap does not prove a data-bearing v0.6 application upgrade, and the full
+candidate runtime matrix has not been run.
 
 ## Runtime Changes
 

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "source_version": "0.7.0",
+  "findings": [
+    {
+      "id": "PT-005",
+      "kind": "documentation",
+      "severity": "P1",
+      "observation": "Five documented task environment names lack the required _SECONDS suffix.",
+      "disposition": "Document exact names; validate against source and Settings."
+    },
+    {
+      "id": "PT-006",
+      "kind": "documentation",
+      "severity": "P1",
+      "probe": {
+        "constructor_pool_max_size": 9,
+        "environment_pool_size": 37,
+        "effective_constructor_pool_max_size": 37
+      },
+      "disposition": "Recommend configure keyword overrides and explicit constructor handoff."
+    },
+    {
+      "id": "CFG-001",
+      "kind": "runtime",
+      "severity": "P1",
+      "platform": "POSIX",
+      "probe": {
+        "environment_name": "AKSARA_MCP_ALLOWED_ORIGINS",
+        "input": "https://example.com",
+        "observed": [
+          "https",
+          "//example.com"
+        ]
+      },
+      "disposition": "Explicit configure list workaround documented; separate functional parser patch required. No bypass or data disclosure tested."
+    }
+  ]
+}

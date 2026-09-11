@@ -98,15 +98,15 @@ treated as local New York time and stored in UTC.
 ## Settings
 
 ```python
-from aksara.conf import Settings, configure
+from aksara.conf import configure
 
-configure(Settings(
+configure(
     supported_locales=["en", "fr", "de"],
     default_locale="en",
     locale_paths=["locale"],
     use_tz=True,
     time_zone="UTC",
-))
+)
 ```
 
 See [Settings Reference](../reference/settings-reference.md) for the full list

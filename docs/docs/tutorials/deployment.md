@@ -107,8 +107,11 @@ intentionally disabled in production.
 
 ## 5. Start background execution explicitly
 
-Ordinary tasks need a task worker with the application's task registrations
-loaded. Follow [background tasks](../advanced/background-tasks.md). Persisted
+A database-backed `Aksara` lifespan automatically starts its ordinary
+`TaskWorker` when `tasks_enabled=True` (the default). Load the application's
+task registrations and account for a worker in each such application process.
+If you choose dedicated task-worker processes, explicitly disable the embedded
+worker in the web process and follow the task guide for your worker entry point. Follow [background tasks](../advanced/background-tasks.md). Persisted
 tenant identity in an ordinary task is not a stored Principal or automatic
 current authorization for arbitrary task code.
 
@@ -150,6 +153,7 @@ processes during a rolling deployment, retain referenced action/resolver
 versions, and test the upgrade against a restored database before production.
 Do not assume downgrading the wheel reverses schema or external effects.
 
+Follow the [v0.6.x to v0.7.x upgrade guide](../operations/upgrade-v07.md).
 See the [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) for
 migration and operational prerequisites, and the
 [v0.6 production contract](../roadmap/v0-6-stability-contract.md) for the

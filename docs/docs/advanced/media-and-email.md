@@ -66,13 +66,13 @@ await asset.file.delete()
 ### Local Filesystem
 
 ```python
-from aksara.conf import Settings, configure
+from aksara.conf import configure
 
-configure(Settings(
+configure(
     media_storage="filesystem",
     media_root="media",
     media_url="/media/",
-))
+)
 ```
 
 In debug mode, Aksara mounts `MEDIA_URL` automatically when filesystem storage
@@ -81,18 +81,18 @@ is active.
 ### S3-Compatible Storage
 
 ```python
-configure(Settings(
+configure(
     media_storage="s3",
     media_s3_bucket="my-app-media",
     media_s3_region="us-east-1",
     media_public_base_url="https://cdn.example.com/media",
-))
+)
 ```
 
 Install the optional dependency when using S3-compatible storage:
 
 ```bash
-pip install "aksara[s3]"
+pip install "aksara-framework[s3]"
 ```
 
 ---
@@ -121,15 +121,17 @@ await send_mail(
 ### SMTP Configuration
 
 ```python
-configure(Settings(
+import os
+
+configure(
     email_backend="smtp",
     default_from_email="noreply@example.com",
     email_host="smtp.example.com",
     email_port=587,
     email_host_user="mailer",
-    email_host_password="secret",
+    email_host_password=os.environ["AKSARA_EMAIL_HOST_PASSWORD"],
     email_use_tls=True,
-))
+)
 ```
 
 ### HTML Messages
@@ -151,10 +153,10 @@ await send_mail(
 Use the in-memory backend for deterministic test assertions:
 
 ```python
-from aksara.conf import Settings, configure
+from aksara.conf import configure
 from aksara.core.mail import outbox, reset_outbox
 
-configure(Settings(email_backend="locmem"))
+configure(email_backend="locmem")
 reset_outbox()
 
 await send_mail("Subject", "Body", None, ["user@example.com"])
