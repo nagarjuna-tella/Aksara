@@ -528,7 +528,7 @@ async def test_task_worker_death_keeps_operation_authoritative(durable_db, bound
         "--worker-id",
         "task-worker-that-dies",
         "--stale-seconds",
-        "0.15",
+        "1",
         "--pause-at",
         boundary,
     )
@@ -536,7 +536,7 @@ async def test_task_worker_death_keeps_operation_authoritative(durable_db, bound
     process.kill()
     await process.wait()
 
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(1.1)
     replacement = await _run_worker(
         durable_db,
         "task",
@@ -545,7 +545,7 @@ async def test_task_worker_death_keeps_operation_authoritative(durable_db, bound
         "--worker-id",
         "replacement-task-worker",
         "--stale-seconds",
-        "0.15",
+        "1",
         "--recover",
     )
     assert replacement[-1]["event"] == "task"

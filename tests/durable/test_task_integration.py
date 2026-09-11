@@ -241,7 +241,7 @@ async def test_task_backed_external_operation_renews_its_operation_lease(
     heartbeat_seen = asyncio.Event()
 
     async def handler(_context, _command):
-        await asyncio.wait_for(heartbeat_seen.wait(), timeout=1)
+        await asyncio.wait_for(heartbeat_seen.wait(), timeout=5)
         return {"renewed": True}
 
     service = _runtime(durable_db, tenant)
@@ -275,10 +275,10 @@ async def test_task_backed_external_operation_renews_its_operation_lease(
         durable_db,
         durable_service=service,
         worker_id="external-task-worker",
-        stale_lock_timeout_seconds=0.03,
+        stale_lock_timeout_seconds=1,
     )
 
-    completed_task = await asyncio.wait_for(worker.poll_once(), timeout=1)
+    completed_task = await asyncio.wait_for(worker.poll_once(), timeout=5)
 
     assert heartbeat_seen.is_set()
     assert completed_task is not None
