@@ -5,7 +5,7 @@
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "be95d189d84b912d0ab247c59b9e7523fb432f9b",
+  "candidate_implementation_sha": "b36ef8106bbf0eb4f7666b2bbeac334610ba3cca",
   "hosted_postgresql_16": "pass",
   "mcp_tasks": {
     "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
@@ -51,11 +51,11 @@
       "warnings": 0
     },
     "durable_targeted": {
-      "passed": 238,
+      "passed": 245,
       "status": "pass"
     },
     "full_suite": {
-      "passed": 8251,
+      "passed": 8258,
       "skipped": 2,
       "status": "pass"
     },
@@ -82,7 +82,7 @@
     },
     "runtime_matrix": {
       "cells": 4,
-      "passed_per_cell": 8251,
+      "passed_per_cell": 8258,
       "skipped_per_cell": 2,
       "status": "pass"
     },
