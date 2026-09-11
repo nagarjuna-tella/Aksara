@@ -1,3 +1,15 @@
-........................................................................ [ 63%]
-..........................................                               [100%]
-114 passed in 1.24s
+============================= test session starts ==============================
+platform darwin -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara
+configfile: pyproject.toml
+plugins: asyncio-1.4.0, anyio-4.15.1, hypothesis-6.168.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 114 items
+
+tests/docs/test_installed_package_truth.py ........                      [  7%]
+tests/test_v048_docs_lock.py ........................................... [ 44%]
+..........................                                               [ 67%]
+tests/test_v048_packaging_sanity.py .................................... [ 99%]
+.                                                                        [100%]
+
+============================= 114 passed in 1.53s ==============================

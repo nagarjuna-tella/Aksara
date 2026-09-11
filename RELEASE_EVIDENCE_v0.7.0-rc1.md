@@ -18,7 +18,7 @@ tagged, published, or released as part of this validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `2d5d8e1304a196b9d784e0b2219f135bab78c2a1` |
+| Candidate implementation commit | `826799c448871951dbe9b3142bb0c300c645a03f` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -54,6 +54,8 @@ Database credentials and complete connection URLs are absent from the evidence.
 - Existing background tasks can optionally project a durable Operation while
   unlinked tasks retain their prior behavior. The REST router is opt-in and
   existing synchronous `/mcp/` tools remain compatible.
+- Durable workers log ordinary polling or execution failures, wait for the
+  configured bounded polling interval, and retry without masking cancellation.
 - Transition/outbox evidence, retention, tombstones, diagnostics, and bounded
   pruning are implemented without making history replay authoritative.
 
@@ -65,12 +67,12 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,270 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable and invariant suites | **PASS:** 257 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,270 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,270 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,270 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,270 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,271 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable and invariant suites | **PASS:** 258 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,271 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,271 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,271 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,271 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
 | Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks | PR #26 |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
@@ -88,7 +90,7 @@ The detailed decision audit is in
 | Dependency audit | Candidate dependency graph | **PASS:** no known vulnerabilities | [`pip-audit.log`](audit-evidence/v070/pip-audit.log) |
 | Secret scan | Exact tracked candidate snapshot | **PASS:** no leaks | [`gitleaks.log`](audit-evidence/v070/gitleaks.log), [`gitleaks.sarif`](audit-evidence/v070/gitleaks.sarif) |
 | Package validation | sdist, wheel-from-sdist, Twine 7 | **PASS** | [`package-build.log`](audit-evidence/v070/package-build.log), [`twine.log`](audit-evidence/v070/twine.log) |
-| SBOM | CycloneDX 1.6 | **PASS:** 96 components | [`sbom.json`](audit-evidence/v070/sbom.json) |
+| SBOM | CycloneDX 1.6 generated from a clean installed-wheel environment | **PASS:** 50 components | [`sbom.json`](audit-evidence/v070/sbom.json) |
 
 The four full matrix cells emitted 25 known deprecation warnings from
 Starlette's AnyIO portal alias and Click's `isolated_filesystem` helper. They
@@ -98,8 +100,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `b39986778d9d023186159bed6e262a051564b1e012b2bab72d18cbe82662fb36` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `6b3af70fe364fbdd5c9ba16a713d7f59be55d165b3ae69bb7bdbe9a57151b169` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `e78e5a42e8653fa305472f8824b0fbe66436a138ab7ce7cb1b6672f022ceff60` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `e174cc2c3a3cc41df019bfdaf27f7d394c71aece6ba15af2390eb9cbac20e6e1` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
@@ -108,8 +110,8 @@ digests are recorded in
 
 ## Performance interpretation
 
-The local campaign admitted 256 Operations in 335.663 ms and executed them in
-614.111 ms. It also proved concurrent same-key deduplication, eight exclusive
+The local campaign admitted 256 Operations in 301.233 ms and executed them in
+571.986 ms. It also proved concurrent same-key deduplication, eight exclusive
 claims, N-to-N+1 fencing, task-backed execution, bounded pruning, indexed claim
 selection under 3,000 terminal rows, exact mutation counts, and a fully idle
 pool. These figures detect obvious local pathology; they are not a capacity or
