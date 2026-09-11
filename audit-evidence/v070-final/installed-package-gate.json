@@ -1,0 +1,194 @@
+{
+  "artifact": {
+    "filename": "aksara_framework-0.7.0-py3-none-any.whl",
+    "sha256": "b5ceaafb547bdf095011a2ab10138c5e596a012143dd25ae7b482ff164f7816e"
+  },
+  "candidate_sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1",
+  "checks": [
+    {
+      "details": {
+        "import_location": "isolated-venv",
+        "version": "0.7.0"
+      },
+      "name": "wheel import comes from isolated environment",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "version": "0.7.0"
+      },
+      "name": "candidate package version",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "doctor": true,
+        "startproject": true,
+        "version": "0.7.0"
+      },
+      "name": "CLI version and commands",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "catalog_path": "/ai/tools/mcp",
+        "global_settings": true,
+        "protocol_path": "/mcp/"
+      },
+      "name": "scaffold teaches global configuration and distinct tool surfaces",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "source": "installed-wheel"
+      },
+      "name": "canonical documentation imports resolve from wheel",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "generated_files": 1
+      },
+      "name": "model migration generated",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "namespaced_database_precedence": true,
+        "table": "quickstart_tasks"
+      },
+      "name": "PostgreSQL migration applied",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "ai_enabled": false,
+        "mcp_enabled": true,
+        "studio_enabled": false
+      },
+      "name": "generated application imports from installed package",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "checks": 18,
+        "errors": 0,
+        "status": "partial"
+      },
+      "name": "Doctor validates generated project",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "health": 200,
+        "openapi": 200,
+        "rest_list": 200
+      },
+      "name": "generated REST and OpenAPI paths respond",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "path": "/ai/tools/mcp",
+        "status": 200
+      },
+      "name": "tool inspection catalog is HTTP JSON",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "call_error": false,
+        "discovered_tools": 5,
+        "endpoint": "/mcp/",
+        "tool": "task_create"
+      },
+      "name": "official MCP client discovers and invokes generated tool",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "persisted": true,
+        "rest_status": 200
+      },
+      "name": "MCP mutation is visible through generated REST",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "exit_code": 0
+      },
+      "name": "application shuts down cleanly",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "active_connections": 0
+      },
+      "name": "shutdown releases PostgreSQL connections",
+      "status": "pass"
+    }
+  ],
+  "environment": {
+    "database": "aksara_test",
+    "gate_python": "3.14.4",
+    "isolated_schema": true,
+    "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)"
+  },
+  "error": null,
+  "finished_at": "2026-09-11T14:18:25.999236+00:00",
+  "gate": "v070-installed-package-truth",
+  "package_version": "0.7.0",
+  "results": {
+    "cli": {
+      "doctor_command": true,
+      "help": "pass",
+      "startproject_command": true,
+      "version": "0.7.0"
+    },
+    "docs_snippets": {
+      "canonical_imports": "pass",
+      "source_checkout_imports": false
+    },
+    "doctor": {
+      "checks": 18,
+      "command": "launch-check --format json",
+      "errors": 0,
+      "status": "partial"
+    },
+    "mcp_client": {
+      "discovery": "pass",
+      "endpoint": "/mcp/",
+      "invocation": "pass",
+      "rest_persistence": "pass",
+      "sdk": "official mcp package installed from wheel dependencies",
+      "tool": "task_create"
+    },
+    "migration": {
+      "application": "pass",
+      "database_alias_precedence": "AKSARA_DATABASE_URL",
+      "generation": "pass",
+      "table": "quickstart_tasks"
+    },
+    "project_scaffold": {
+      "command": "pass",
+      "global_settings": true,
+      "python_compile": "pass",
+      "stable_core_defaults": true
+    },
+    "rest": {
+      "catalog": 200,
+      "health": 200,
+      "initial_count": 0,
+      "initial_list": 200,
+      "openapi": 200
+    },
+    "shutdown": {
+      "active_database_connections": 0,
+      "exit_code": 0,
+      "signal": "SIGINT"
+    }
+  },
+  "schema_version": 1,
+  "started_at": "2026-09-11T14:18:09.332299+00:00",
+  "status": "pass"
+}

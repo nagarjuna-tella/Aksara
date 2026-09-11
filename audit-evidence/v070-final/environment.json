@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.0",
+  "package_version": "0.7.0",
+  "branch": "release/v0.7.0",
+  "base_sha": "3de21899e2bc76a495f5b2a3932805a412b6b5b3",
+  "finalization_sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1",
+  "database": "aksara_test",
+  "database_credentials_recorded": false,
+  "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "hosted_postgresql": {
+    "version": "16",
+    "status": "pass",
+    "checks": 21,
+    "sha": "75310e8f5d058dd652e0dc26ed2713c2493774e1"
+  },
+  "mcp_dependency": "mcp>=2.0.0,<2.1.0",
+  "mcp_versions_exercised": [
+    "2.0.0",
+    "2.0.1"
+  ],
+  "runtime_matrix": [
+    {
+      "python": "3.11.5",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "status": "pass"
+    },
+    {
+      "python": "3.11.5",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "status": "pass"
+    },
+    {
+      "python": "3.14.4",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "status": "pass"
+    },
+    {
+      "python": "3.14.4",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "status": "pass"
+    }
+  ],
+  "artifacts": {
+    "aksara_framework-0.7.0-py3-none-any.whl": "b5ceaafb547bdf095011a2ab10138c5e596a012143dd25ae7b482ff164f7816e",
+    "aksara_framework-0.7.0.tar.gz": "b52895d0b5f4443be6801f43d265d6520544ea1a3012edd1b7dac8d1379e34be"
+  }
+}
