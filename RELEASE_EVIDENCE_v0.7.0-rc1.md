@@ -18,7 +18,7 @@ tagged, published, or released as part of this validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `f61ce5cdfffce81d9eced512e9a63226ad86c251` |
+| Candidate implementation commit | `7668eced920cd4fdb2541052bd276bd76992691e` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -63,12 +63,12 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,250 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable and invariant suites | **PASS:** 237 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,250 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,250 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,250 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,250 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,251 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable and invariant suites | **PASS:** 238 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,251 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,251 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,251 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,251 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
 | Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks | PR #26 |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
@@ -95,8 +95,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `e7ebb9497c003d2ede18e9a81bdbbeb19b15cb97f8ac6242f26fd115791b43d5` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `9f4c8ae4870a85478bc1d4f95768f28e0a9ad408db198ad33dce052b6d9efd62` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `0cf7a20bc50e6bc3bf27eab07e0a669b72ac9012488208b57e9c56e1ff44ec30` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `c184d005214f7938cd13a636b9502782efec992e4471fd6d43e87c24618d735f` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
