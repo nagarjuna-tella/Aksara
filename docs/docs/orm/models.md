@@ -27,7 +27,7 @@ class Article(Model):
     created_at = fields.DateTime(auto_now_add=True)
 ```
 
-**What this creates**:
+**Schema intent after migrations are generated and applied**:
 ```
 PostgreSQL table: articles
 ┌──────────────┬─────────────────┬─────────────┐
@@ -37,7 +37,8 @@ PostgreSQL table: articles
 │ title        │ VARCHAR(200)    │ NOT NULL    │
 │ content      │ TEXT            │ NOT NULL    │
 │ published    │ BOOLEAN         │ DEFAULT false│
-│ created_at   │ TIMESTAMPTZ     │ AUTO        │
+│ created_at   │ TIMESTAMPTZ     │ timestamp   │
+│ updated_at   │ TIMESTAMPTZ     │ timestamp   │
 └──────────────┴─────────────────┴─────────────┘
 ```
 
@@ -96,7 +97,7 @@ print(user.id)  # UUID('550e8400-e29b-41d4-a716-446655440000')
 
 - Globally unique (safe for distributed systems)
 - Can be generated client-side
-- No sequential pattern (better security)
+- Nonsequential identifiers; possession of an ID does not grant access
 - PostgreSQL-native with `gen_random_uuid()`
 
 ### Table Name
@@ -121,13 +122,15 @@ class Article(Model):
 
 ### Timestamps
 
-Add automatic timestamps with `auto_now` and `auto_now_add`:
+The base model supplies `created_at` and `updated_at` when they are not
+explicitly defined. Declare timestamp fields explicitly when configuring their
+behavior with `auto_now` and `auto_now_add`:
 
 ```python
 class Article(Model):
     title = fields.String(max_length=200)
     
-    # Set once when created, never changes
+    # Initialized on creation; not an immutable database constraint
     created_at = fields.DateTime(auto_now_add=True)
     
     # Updated every time you save
@@ -320,10 +323,8 @@ class Article(Model):
             ("created_at", "title"),  # Composite index
         ]
         
-        # Unique together constraints
-        unique_together = [
-            ("author_id", "slug"),  # Same author can't have duplicate slugs
-        ]
+        # This example has no multi-column uniqueness rule.
+        # Add constraints only for fields declared on the model.
         
         # App label for admin grouping
         app_label = "blog"

@@ -156,3 +156,17 @@ def test_documented_orm_query_shape():
     page = (ROOT / "docs/docs/reference/orm-reference.md").read_text()
     source = re.search(r'```python title="query_shape.py"\n(.*?)```', page, re.DOTALL).group(1)
     exec(compile(source, "documented-query-shape", "exec"), {})  # noqa: S102 - trusted repository documentation
+
+
+def test_documented_model_defaults():
+    from uuid import UUID
+
+    for name, table in (("Article", "articles"), ("Category", "categories"), ("UserProfile", "user_profiles")):
+        model = type(name, (Model,), {"__module__": "documented_model_defaults", "title": fields.String(max_length=20)})
+        assert model.__tablename__ == table
+        assert {"id", "created_at", "updated_at"} <= set(model._fields)
+        instance = model(title="Example")
+        assert isinstance(instance.id, UUID)
+        assert instance.created_at is None
+        assert model._fields["created_at"].auto_now_add
+        assert model._fields["updated_at"].auto_now
