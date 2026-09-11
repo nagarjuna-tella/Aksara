@@ -218,7 +218,7 @@ def create_durable_operations_router(
         except DurableOperationError as error:
             _raise_http(error)
             raise AssertionError("unreachable")
-        status_url = f"{prefix}/{admission.operation.id}"
+        status_url = f"{request.url.path.rstrip('/')}/{admission.operation.id}"
         response.headers["Location"] = status_url
         if not admission.created and admission.operation.terminal:
             response.status_code = status.HTTP_200_OK

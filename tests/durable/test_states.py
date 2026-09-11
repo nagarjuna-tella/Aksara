@@ -61,3 +61,19 @@ def test_retry_returns_to_ready_without_inventing_retrying_state():
     assert rule.target is OperationState.READY
     assert rule.retryable is True
     assert rule.ownership_required is True
+
+
+def test_declared_rules_cover_service_emitted_terminal_transitions():
+    ready_failure = transition_rule(
+        OperationState.READY,
+        OperationEvent.TERMINAL_FAILURE,
+    )
+    running_deadline = transition_rule(
+        OperationState.RUNNING,
+        OperationEvent.DEADLINE_EXPIRED,
+    )
+
+    assert ready_failure.target is OperationState.FAILED
+    assert ready_failure.ownership_required is False
+    assert running_deadline.target is OperationState.EXPIRED
+    assert running_deadline.ownership_required is False

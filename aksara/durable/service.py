@@ -61,6 +61,7 @@ DEFAULT_RESULT_SECONDS = 24 * 60 * 60
 DEFAULT_ERROR_SECONDS = 7 * 24 * 60 * 60
 MAX_HISTORY_PAGE = 200
 MAX_OUTBOX_PAGE = 500
+MAX_COMMAND_PAYLOAD_BYTES = 262_144
 
 
 @contextmanager
@@ -349,18 +350,26 @@ class DurableOperationService:
                     admitted_at,
                     self.retention_seconds,
                 )
-                await connection.execute(
+                inserted_command = await connection.fetchval(
                     """
                     INSERT INTO aksara_operation_commands (
                         id, operation_id, tenant_scope, payload, canonical_input_hash
-                    ) VALUES ($1, $2, $3, $4::jsonb, $5)
+                    )
+                    SELECT $1, $2, $3, $4::jsonb, $5
+                    WHERE pg_column_size($4::jsonb) <= $6
+                    RETURNING id
                     """,
                     command_id,
                     operation_id,
                     scope,
                     json.dumps(normalized),
                     input_hash,
+                    MAX_COMMAND_PAYLOAD_BYTES,
                 )
+                if inserted_command is None:
+                    raise InvalidDurableCommand(
+                        "durable command payload exceeds the 262144-byte storage limit"
+                    )
                 if action.approval_required:
                     await connection.execute(
                         """

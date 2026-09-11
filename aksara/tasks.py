@@ -793,18 +793,28 @@ class TaskWorker:
 
         database = _get_db(self._db)
         await ensure_tasks_table(database)
+        application_namespace = (
+            self.durable_service.application_namespace
+            if self.durable_service is not None
+            else None
+        )
         result = await database.fetchrow(
             f'''
             WITH deleted AS (
-                DELETE FROM "{TASKS_TABLE}"
+                DELETE FROM "{TASKS_TABLE}" AS task
                 WHERE status = ANY($1::text[])
                   AND updated_at < CURRENT_TIMESTAMP - ($2::double precision * INTERVAL '1 second')
+                  AND (
+                      (to_jsonb(task) ->> 'operation_id') IS NULL
+                      OR (to_jsonb(task) ->> 'operation_application_namespace') = $3
+                  )
                 RETURNING id
             )
             SELECT COUNT(*) AS count FROM deleted
             ''',
             list(statuses),
             timeout,
+            application_namespace,
         )
         count = int(result["count"]) if result else 0
         if count > 0:

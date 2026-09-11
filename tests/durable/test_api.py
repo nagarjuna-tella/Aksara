@@ -104,8 +104,10 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
         create_durable_operations_router(
             service,
             principal_reference_factory=reference_factory,
-        )
+        ),
+        prefix="/api",
     )
+    operations_path = "/api/durable/operations"
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         invalid_requests = [
@@ -149,12 +151,23 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
         ]
         for headers, body in invalid_requests:
             rejected = await client.post(
-                "/durable/operations", headers=headers, json=body
+                operations_path, headers=headers, json=body
             )
             assert rejected.status_code == 422
 
+        oversized = await client.post(
+            operations_path,
+            json={
+                "action": "orders.reserve",
+                "action_version": "1",
+                "command": {"value": "x" * 262_144},
+            },
+        )
+        assert oversized.status_code == 422
+        assert oversized.json()["detail"]["code"] == "invalid_command"
+
         first = await client.post(
-            "/durable/operations",
+            operations_path,
             headers={"Idempotency-Key": "reserve-1"},
             json={
                 "action": "orders.reserve",
@@ -163,7 +176,7 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
             },
         )
         duplicate = await client.post(
-            "/durable/operations",
+            operations_path,
             headers={"Idempotency-Key": "reserve-1"},
             json={
                 "action": "orders.reserve",
@@ -178,6 +191,7 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
         operation = first.json()["operation"]
         assert duplicate.json()["operation"]["id"] == operation["id"]
         assert first.headers["location"] == first.json()["status_url"]
+        assert first.json()["status_url"].startswith(f"{operations_path}/")
         assert "fence" not in operation
         assert "worker_id" not in operation
         assert "command_id" not in operation
@@ -191,7 +205,7 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
             headers={"x-server-tenant": str(uuid4())},
         )
         assert hidden.status_code == 404
-        unknown = await client.get(f"/durable/operations/{uuid4()}")
+        unknown = await client.get(f"{operations_path}/{uuid4()}")
         assert hidden.json() == unknown.json() == {
             "detail": {"code": "operation_not_found"}
         }
@@ -210,7 +224,7 @@ async def test_dispatch_status_duplicate_and_cancel_without_storage_leak(durable
         assert terminal_conflict.status_code == 409
 
         terminal_duplicate = await client.post(
-            "/durable/operations",
+            operations_path,
             headers={"Idempotency-Key": "reserve-1"},
             json={
                 "action": "orders.reserve",

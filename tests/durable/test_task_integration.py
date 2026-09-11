@@ -371,6 +371,70 @@ async def test_worker_leaves_another_application_namespace_task_pending(durable_
 
 
 @pytest.mark.asyncio
+async def test_cleanup_scopes_linked_tasks_to_worker_application_namespace(durable_db):
+    tenant = str(uuid4())
+    owner = _runtime(durable_db, tenant, namespace="application-a")
+    other = _runtime(durable_db, tenant, namespace="application-b")
+    counter_ids = (uuid4(), uuid4())
+    with _tenant(tenant):
+        for counter_id in counter_ids:
+            await durable_db.execute(
+                "INSERT INTO durable_test_counters (id, tenant_scope) VALUES ($1, $2)",
+                counter_id,
+                tenant,
+            )
+
+    queued = []
+    for service, counter_id in zip((owner, other), counter_ids, strict=True):
+        admitted = await service.admit(
+            "counter.task_increment",
+            "1",
+            {"counter_id": str(counter_id)},
+            _reference(tenant),
+        )
+        task_record = await enqueue_operation_task(
+            admitted.operation.id,
+            service=service,
+            tenant_id=tenant,
+        )
+        completed = await TaskWorker(
+            durable_db,
+            durable_service=service,
+            worker_id=f"{service.application_namespace}-worker",
+        ).poll_once()
+        assert completed is not None
+        assert completed.status == "completed"
+        queued.append(task_record)
+
+    unlinked_task_id = await durable_db.fetchval(
+        """
+        INSERT INTO aksara_tasks (task_name, payload, status)
+        VALUES ('tests.old_unlinked', '{}'::jsonb, 'completed')
+        RETURNING id
+        """
+    )
+    await durable_db.execute(
+        """
+        UPDATE aksara_tasks
+        SET updated_at = clock_timestamp() - INTERVAL '8 days'
+        WHERE id = ANY($1::uuid[])
+        """,
+        [queued[0].id, queued[1].id, unlinked_task_id],
+    )
+
+    purged = await TaskWorker(durable_db, durable_service=owner).purge_old_tasks(
+        older_than_seconds=7 * 24 * 60 * 60
+    )
+
+    assert purged == 2
+    remaining = await durable_db.fetch(
+        "SELECT id FROM aksara_tasks WHERE id = ANY($1::uuid[])",
+        [queued[0].id, queued[1].id, unlinked_task_id],
+    )
+    assert {row["id"] for row in remaining} == {queued[1].id}
+
+
+@pytest.mark.asyncio
 async def test_stale_linked_task_recovery_restores_operation_tenant_scope(durable_db):
     tenant = str(uuid4())
     service = _runtime(durable_db, tenant)

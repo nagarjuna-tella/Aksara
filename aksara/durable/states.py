@@ -214,6 +214,12 @@ TRANSITION_RULES = (
         "unconsumed approval expired before the first attempt",
     ),
     _rule(
+        OperationState.READY,
+        OperationEvent.TERMINAL_FAILURE,
+        OperationState.FAILED,
+        "row-locked pre-execution validation proved the operation unclaimable",
+    ),
+    _rule(
         OperationState.RUNNING,
         OperationEvent.HEARTBEAT,
         OperationState.RUNNING,
@@ -251,9 +257,14 @@ TRANSITION_RULES = (
         OperationState.RUNNING,
         OperationEvent.TERMINAL_FAILURE,
         OperationState.FAILED,
-        "full ownership identity matches",
-        ownership=True,
-        transaction=TransactionSemantics.OWNERSHIP_GUARDED,
+        "full ownership identity matches or database time proves the prior lease expired",
+    ),
+    _rule(
+        OperationState.RUNNING,
+        OperationEvent.DEADLINE_EXPIRED,
+        OperationState.EXPIRED,
+        "database time is past deadline",
+        "full ownership identity matches or database time proves the prior lease expired",
     ),
     _rule(
         OperationState.RUNNING,

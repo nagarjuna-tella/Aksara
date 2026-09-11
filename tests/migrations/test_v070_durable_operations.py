@@ -67,7 +67,7 @@ async def test_durable_schema_bootstraps_and_reverses_transactionally():
                 schema,
             )
         }
-        assert {
+        durable_tables = {
             "aksara_operations",
             "aksara_operation_commands",
             "aksara_operation_attempts",
@@ -76,7 +76,8 @@ async def test_durable_schema_bootstraps_and_reverses_transactionally():
             "aksara_operation_transitions",
             "aksara_operation_outbox",
             "aksara_operation_effects",
-        } <= tables
+        }
+        assert durable_tables <= tables
 
         task_columns = {
             row["column_name"]
@@ -99,9 +100,7 @@ async def test_durable_schema_bootstraps_and_reverses_transactionally():
                 schema,
             )
         }
-        assert "aksara_operations" in rls_tables
-        assert "aksara_operation_attempts" in rls_tables
-        assert "aksara_operation_outbox" in rls_tables
+        assert durable_tables <= rls_tables
 
         reverse = durable.operations[0].reverse()
         assert reverse is not None
