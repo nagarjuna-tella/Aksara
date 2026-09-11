@@ -440,6 +440,11 @@ async def enqueue_operation_task(
                 raise OperationNotFound("operation was not found in the active tenant")
             if operation["executor_type"] != "task":
                 raise ValueError("only actions registered with executor_type='task' may be linked")
+            next_available_at = await _next_operation_task_available_at(
+                connection,
+                operation,
+                fallback_seconds=max(delay_seconds, 1.0),
+            )
             record = await connection.fetchrow(
                 f'''
                 INSERT INTO "{TASKS_TABLE}" (
@@ -447,8 +452,11 @@ async def enqueue_operation_task(
                     available_at, operation_id, operation_application_namespace
                 ) VALUES (
                     $1, $2, $3, '{{}}'::jsonb, $4,
-                    CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second'),
-                    $6, $7
+                    GREATEST(
+                        $5::timestamptz,
+                        CURRENT_TIMESTAMP + ($6::double precision * INTERVAL '1 second')
+                    ),
+                    $7, $8
                 )
                 ON CONFLICT (operation_id) WHERE operation_id IS NOT NULL
                 DO UPDATE SET
@@ -460,6 +468,7 @@ async def enqueue_operation_task(
                 queue,
                 operation["tenant_id"],
                 operation["max_attempts"],
+                next_available_at,
                 delay_seconds,
                 operation_id,
                 service.application_namespace,
@@ -467,6 +476,45 @@ async def enqueue_operation_task(
     if record is None:
         raise RuntimeError("failed to enqueue operation-backed task")
     return TaskRecord.from_record(record)
+
+
+async def _next_operation_task_available_at(
+    connection: Any,
+    operation: Any,
+    *,
+    fallback_seconds: float,
+) -> datetime:
+    """Return the next database-authoritative time a linked task may need work."""
+
+    state = operation["state"]
+    if state == "ready":
+        return cast(datetime, operation["available_at"])
+    if state == "running" and operation["lease_expires_at"] is not None:
+        return cast(datetime, operation["lease_expires_at"])
+    if state == "waiting_for_approval":
+        approval_expires_at = await connection.fetchval(
+            """
+            SELECT expires_at
+            FROM aksara_operation_approval_decisions
+            WHERE operation_id = $1 AND tenant_scope = $2 AND state = 'pending'
+            """,
+            operation["id"],
+            operation["tenant_scope"],
+        )
+        candidates = [
+            value
+            for value in (operation["deadline_at"], approval_expires_at)
+            if value is not None
+        ]
+        if candidates:
+            return min(candidates)
+    return cast(
+        datetime,
+        await connection.fetchval(
+            "SELECT clock_timestamp() + ($1::double precision * INTERVAL '1 second')",
+            fallback_seconds,
+        ),
+    )
 
 
 async def get_task_record(
@@ -1137,14 +1185,32 @@ class TaskWorker:
         if claim is None:
             with _tenant_context(scope):
                 async with service.db.acquire() as connection:
-                    operation = await service.repository.get_public_operation(
+                    operation_row = await service.repository.get_operation(
                         connection,
                         task_record.operation_id,
                         scope,
                         service.application_namespace,
                     )
+                    operation = (
+                        service.repository.public_operation(operation_row)
+                        if operation_row is not None
+                        else None
+                    )
+                    next_available_at = (
+                        await _next_operation_task_available_at(
+                            connection,
+                            operation_row,
+                            fallback_seconds=self.poll_interval,
+                        )
+                        if operation_row is not None
+                        else None
+                    )
             if operation is None or operation.state.value != "running":
-                await self._project_operation_task(task_record, operation)
+                await self._project_operation_task(
+                    task_record,
+                    operation,
+                    next_available_at=next_available_at,
+                )
             return
         await self._at_boundary("after_operation_claim")
 
@@ -1196,31 +1262,57 @@ class TaskWorker:
         scope = tenant_scope(task_record.tenant_id)
         with _tenant_context(scope):
             async with service.db.acquire() as connection:
-                operation = await service.repository.get_public_operation(
+                operation_row = await service.repository.get_operation(
                     connection,
                     task_record.operation_id,
                     scope,
                     service.application_namespace,
                 )
-        await self._project_operation_task(task_record, operation)
+                operation = (
+                    service.repository.public_operation(operation_row)
+                    if operation_row is not None
+                    else None
+                )
+                next_available_at = (
+                    await _next_operation_task_available_at(
+                        connection,
+                        operation_row,
+                        fallback_seconds=self.poll_interval,
+                    )
+                    if operation_row is not None
+                    else None
+                )
+        await self._project_operation_task(
+            task_record,
+            operation,
+            next_available_at=next_available_at,
+        )
 
-    async def _project_operation_task(self, task_record: TaskRecord, operation: Any) -> None:
+    async def _project_operation_task(
+        self,
+        task_record: TaskRecord,
+        operation: Any,
+        *,
+        next_available_at: datetime | None = None,
+    ) -> None:
         """Update the compatibility task row from authoritative Operation state."""
 
         database = _get_db(self._db)
         if operation is None:
-            status, result, error, delay = "failed", None, "operation missing", 0.0
+            status, result, error = "failed", None, "operation missing"
         elif operation.state.value == "succeeded":
-            status, result, error, delay = "completed", operation.result, None, 0.0
+            status, result, error = "completed", operation.result, None
         elif operation.state.value in {"failed", "cancelled", "expired"}:
             message = (
                 operation.error.get("message", operation.state.value)
                 if isinstance(operation.error, dict)
                 else operation.state.value
             )
-            status, result, error, delay = "failed", None, message, 0.0
+            status, result, error = "failed", None, message
         else:
-            status, result, error, delay = "pending", None, None, self.poll_interval
+            status, result, error = "pending", None, None
+            if operation.state.value == "ready":
+                next_available_at = operation.available_at
         await database.execute(
             f'''
             UPDATE "{TASKS_TABLE}"
@@ -1229,7 +1321,10 @@ class TaskWorker:
                 completed_at = CASE WHEN $2::varchar = 'completed'
                     THEN CURRENT_TIMESTAMP ELSE NULL END,
                 available_at = CASE WHEN $2::varchar = 'pending'
-                    THEN CURRENT_TIMESTAMP + ($5::double precision * INTERVAL '1 second')
+                    THEN GREATEST(
+                        COALESCE($5::timestamptz, CURRENT_TIMESTAMP),
+                        CURRENT_TIMESTAMP
+                    )
                     ELSE available_at END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $1 AND operation_id = $6 AND status = 'running'
@@ -1240,7 +1335,7 @@ class TaskWorker:
             status,
             json.dumps(_encode_json_value(result)) if result is not None else None,
             error,
-            delay,
+            next_available_at,
             task_record.operation_id,
             task_record.attempts,
             task_record.locked_at,

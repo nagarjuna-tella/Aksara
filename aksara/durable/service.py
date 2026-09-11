@@ -1190,6 +1190,20 @@ class DurableOperationService:
             raise DurableConfigurationError("authoritative principal binding is invalid")
         return authoritative
 
+    async def _wake_linked_task(self, connection: Any, operation_id: UUID) -> None:
+        """Make an optional compatibility task immediately eligible for projection."""
+
+        await connection.execute(
+            """
+            UPDATE aksara_tasks
+            SET available_at = clock_timestamp(), updated_at = clock_timestamp()
+            WHERE operation_id = $1 AND operation_application_namespace = $2
+              AND status = 'pending'
+            """,
+            operation_id,
+            self.application_namespace,
+        )
+
     async def request_cancellation(
         self,
         operation_id: UUID,
@@ -1290,6 +1304,7 @@ class DurableOperationService:
                     reason_code=FailureReason.CANCELLED.value,
                     attempt_id=row["current_attempt_id"],
                 )
+                await self._wake_linked_task(connection, operation_id)
                 return self.repository.public_operation(updated)
 
     async def decide_approval(
@@ -1439,6 +1454,7 @@ class DurableOperationService:
                     reason_code=code,
                     actor_reference_hash=approver_reference.integrity_hash,
                 )
+                await self._wake_linked_task(connection, operation_id)
                 return self.repository.public_operation(updated)
 
     async def get(
@@ -1460,7 +1476,8 @@ class DurableOperationService:
                 if row is None:
                     raise OperationNotFound("operation was not found")
                 command = await self.repository.get_command(connection, operation_id, scope)
-                assert command is not None
+                if command is None:
+                    raise OperationNotFound("operation was not found")
                 await self._authorize_read(
                     principal,
                     tenant_id,
@@ -1491,7 +1508,8 @@ class DurableOperationService:
                 if row is None:
                     raise OperationNotFound("operation was not found")
                 command = await self.repository.get_command(connection, operation_id, scope)
-                assert command is not None
+                if command is None:
+                    raise OperationNotFound("operation was not found")
                 await self._authorize_read(
                     principal,
                     tenant_id,

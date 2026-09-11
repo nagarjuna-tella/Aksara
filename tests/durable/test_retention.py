@@ -12,6 +12,7 @@ from aksara.durable import (
     DurableActionRegistry,
     DurableOperationService,
     EffectClass,
+    OperationNotFound,
     OperationState,
     PrincipalReference,
     PrincipalResolution,
@@ -65,6 +66,31 @@ def _reference(tenant: str) -> PrincipalReference:
         subject_id="user-1",
         tenant_id=tenant,
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reader_name", ["get", "history"])
+async def test_read_reports_not_found_when_prune_removes_command_between_reads(
+    durable_db,
+    monkeypatch,
+    reader_name,
+):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+
+    async def missing_command(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(service.repository, "get_command", missing_command)
+    reader = getattr(service, reader_name)
+
+    with pytest.raises(OperationNotFound):
+        await reader(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user("user-1", tenant_id=tenant),
+        )
 
 
 @pytest.mark.asyncio

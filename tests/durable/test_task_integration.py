@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -40,7 +41,13 @@ def _tenant(tenant_id: str):
         tenant_id_var.reset(token)
 
 
-def _runtime(durable_db, tenant: str, *, namespace: str = "task-tests"):
+def _runtime(
+    durable_db,
+    tenant: str,
+    *,
+    namespace: str = "task-tests",
+    approval: bool = False,
+):
     async def handler(context, command):
         await context.database.execute(
             """
@@ -61,6 +68,7 @@ def _runtime(durable_db, tenant: str, *, namespace: str = "task-tests"):
             effect_class=EffectClass.POSTGRES_ATOMIC,
             executor_type="task",
             required_scopes=("counter:write",),
+            approval_required=approval,
         )
     )
     resolvers = PrincipalResolverRegistry()
@@ -368,6 +376,114 @@ async def test_worker_leaves_another_application_namespace_task_pending(durable_
     assert completed is not None
     assert completed.id == queued.id
     assert completed.status == "completed"
+
+
+@pytest.mark.asyncio
+async def test_linked_task_waits_without_attempt_churn_until_approval(durable_db):
+    tenant, counter_id = str(uuid4()), uuid4()
+    service = _runtime(durable_db, tenant, approval=True)
+    with _tenant(tenant):
+        await durable_db.execute(
+            "INSERT INTO durable_test_counters (id, tenant_scope) VALUES ($1, $2)",
+            counter_id,
+            tenant,
+        )
+    approval_expires_at = datetime.now(UTC) + timedelta(hours=1)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(counter_id)},
+        _reference(tenant),
+        approval_expires_at=approval_expires_at,
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+    worker = TaskWorker(durable_db, durable_service=service, worker_id="approval-worker")
+
+    assert queued.available_at == approval_expires_at
+    await durable_db.execute(
+        "UPDATE aksara_tasks SET available_at = clock_timestamp() WHERE id = $1",
+        queued.id,
+    )
+    projected = await worker.poll_once()
+    assert projected is not None
+    assert projected.status == "pending"
+    assert projected.available_at == approval_expires_at
+    assert await worker.poll_once() is None
+    waiting = await durable_db.fetchrow(
+        "SELECT status, attempts, available_at FROM aksara_tasks WHERE id = $1",
+        queued.id,
+    )
+    assert waiting["status"] == "pending"
+    assert waiting["attempts"] == 1
+    assert waiting["available_at"] == approval_expires_at
+
+    approved = await service.decide_approval(
+        admitted.operation.id,
+        tenant_id=tenant,
+        approver=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("counter:write",)
+        ),
+        approver_reference=_reference(tenant),
+        approve=True,
+    )
+    assert approved.state is OperationState.READY
+    woken = await durable_db.fetchrow(
+        """
+        SELECT status, attempts, available_at <= clock_timestamp() AS available
+        FROM aksara_tasks WHERE id = $1
+        """,
+        queued.id,
+    )
+    assert woken["status"] == "pending"
+    assert woken["attempts"] == 1
+    assert woken["available"] is True
+
+    completed = await worker.poll_once()
+    assert completed is not None
+    assert completed.status == "completed"
+    assert completed.attempts == 2
+
+
+@pytest.mark.asyncio
+async def test_linked_task_uses_operation_scheduled_eligibility(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    available_at = datetime.now(UTC) + timedelta(hours=1)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(uuid4())},
+        _reference(tenant),
+        available_at=available_at,
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+
+    assert queued.available_at == available_at
+    await durable_db.execute(
+        "UPDATE aksara_tasks SET available_at = clock_timestamp() WHERE id = $1",
+        queued.id,
+    )
+    worker = TaskWorker(durable_db, durable_service=service)
+    projected = await worker.poll_once()
+    assert projected is not None
+    assert projected.status == "pending"
+    assert projected.available_at == available_at
+    assert await worker.poll_once() is None
+    waiting = await durable_db.fetchrow(
+        "SELECT status, attempts, available_at FROM aksara_tasks WHERE id = $1",
+        queued.id,
+    )
+    assert waiting["status"] == "pending"
+    assert waiting["attempts"] == 1
+    assert waiting["available_at"] == available_at
 
 
 @pytest.mark.asyncio
