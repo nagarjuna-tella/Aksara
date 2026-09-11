@@ -66,7 +66,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README rewritten | Generated ticket_desk | Executed; equivalence baseline recorded | v0.6 contract explicitly excludes template layout from stability; no defaults changed. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production path rewritten | Launch check; production guide | Launch-check slice | PARTIAL only for optional services; production release profile remains a separate gate. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Partial audit | Media guide | Pending new journey | Field correctness is distinct from storage integration and protected download design. |
-| Storage integrations | Yes | Evolving | `aksara.storage` | Configuration corrected; usage audit pending | Media guide | Pending | CSV export exercises a common app feature, not file storage. |
+| Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | No SMTP/S3 or persisted model-file lifecycle claim; direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
 | AI/provider/runtime | Yes | Experimental | `aksara.ai` | Needs full stability/copy audit | ai_providers | Pending | Planner and provider quality are outside backend production guarantees. |
@@ -129,6 +129,16 @@ with actual TypeScript compilation, followed by HTTP client validation. No
 runtime fix or suppression is made here. Direct CLI discovery also requires an
 importable application module; an explicit public Python script succeeds in the
 isolated project where the console entry point did not find `app.views`.
+
+**STORAGE-001 / P1:** public 0.7.0 `FileSystemStorage.save()` accepts
+`../media-private/probe.txt` when its root is a sibling named `media`. Both
+paths were created inside a fresh temporary directory and removed afterward;
+the probe wrote only disposable content. String-prefix containment accepts the
+sibling. Evidence is `audit-evidence/v071/storage-boundary.json`. `FileField`
+separately rejects parent traversal; this does not claim a bypass of that
+validation or data disclosure in an application. Recommend a separate shared
+path-helper fix with path-component and symlink regressions. No runtime fix is
+included here.
 
 ## Broken Examples Found
 
@@ -343,6 +353,22 @@ permission. The tutorial supplies both admission and execution checks. Router
 construction needs the connected application database, so the documented factory
 registers it during one application lifespan and creates a fresh app for another
 lifecycle. No runtime fix was made for these items.
+
+## Media and Email Review
+
+Replaced the unauthenticated custom upload route with an explicit explanation
+of application identity, record permission, tenant scope and private download
+responsibilities. The old route directly loaded and saved arbitrary Asset IDs
+and returned storage URLs without those checks (PT-012 / P1). Clarified that
+file bytes and email effects are not rolled back by PostgreSQL, and that
+`FieldFile.delete()` clears the in-memory reference without saving the model.
+
+The complete public `check_media.py` runs from installed 0.7.0 without a
+network or database. Nine checks cover storage save/read/size/URL/delete,
+FileField name validation and in-memory email. The runner handles macOS's
+resolved temporary-directory path before containment assertions. This does not
+prove authenticated upload, SMTP delivery, S3 policy or database-file atomicity.
+The existing storage/media mounting/migration-field tests pass 9 tests.
 
 ## Automated Truth Gates
 

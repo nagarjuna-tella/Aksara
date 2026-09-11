@@ -1,0 +1,21 @@
+{
+  "pass": true,
+  "checks": [
+    "stored file exists",
+    "stored byte count",
+    "stored bytes round trip",
+    "chosen key stays under temporary root",
+    "relative URL construction",
+    "explicit deletion",
+    "allowed upload name",
+    "FileField rejects parent traversal",
+    "in-memory email"
+  ],
+  "schema_version": 1,
+  "package_version": "0.7.0",
+  "source_checkout_framework_imports": false,
+  "scope": "Local storage and in-memory email only; no database, SMTP or S3",
+  "page_sha256": "5c2a03e67428a1c6fa38fb328c3bbff4119da8af4edce455dc7f9161d8fc3175",
+  "snippet_sha256": "e99438d5ad1ddfa6c7cce87b7bfcbe70f0d25f37e02edf599f00d3d32a104c39",
+  "runner_sha256": "a19caf37ca80fce427b63348fd0a12e114a4b85a72b104b30194d31e3849ad14"
+}
