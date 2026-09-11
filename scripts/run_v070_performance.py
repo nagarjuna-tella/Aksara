@@ -226,7 +226,11 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
             idempotency_seconds=300,
         )
         reference = _reference(tenant)
-        principal = Principal.for_user("performance-worker", tenant_id=tenant)
+        principal = Principal.for_user(
+            "performance-worker",
+            tenant_id=tenant,
+            scopes=("counter:write",),
+        )
 
         with _tenant(tenant):
             await database.execute(
