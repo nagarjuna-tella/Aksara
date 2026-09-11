@@ -1,5 +1,13 @@
 # Aksara Example: Multitenant
 
+> **Known limitation — do not use as a production isolation reference.**
+> The example middleware currently exempts every request because its `/`
+> exemption uses prefix matching. A request to `/api/projects/` therefore skips
+> tenant resolution. Header-based tenant selection also needs authenticated
+> membership verification. Use the [Support Desk reference](../support_desk/README.md)
+> for server-owned identity and restricted-role forced-RLS guidance. A behavioral
+> correction requires a separate patch; v0.7.1 does not change this middleware.
+
 This example demonstrates:
 - Models
 - ViewSets

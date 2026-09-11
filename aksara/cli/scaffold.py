@@ -629,6 +629,48 @@ The runtime reads one global `aksara.conf.settings` object. Environment values
 are loaded first; explicit `configure(...)` calls take precedence. The generated
 `settings.py` uses `configure()` only to register installed apps.
 
+## Build your first resource
+
+The generated `app/` files are stubs. Follow the
+[first-project tutorial](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/)
+to add a model in `app/models.py`, its ViewSet in `app/views.py`, and the route
+registration in `app/urls.py`. Serializers shape and validate API data;
+`app/admin.py` registers the management interface. Commit generated migrations
+with the model change and apply them before starting an upgraded application.
+
+## Add identity before exposing data
+
+The starter is a local development scaffold, not a complete authentication
+integration. Verify credentials on the server and resolve a `Principal` before
+adding protected routes. Put business permission rules alongside the relevant
+ViewSets or durable action authorizers. A client-provided tenant ID is not proof
+of membership. See the
+[application boundary guide](https://nagarjuna-tella.github.io/Aksara/concepts/application-boundaries/).
+
+## Test and diagnose
+
+Install the development extra as shown above, add application tests in `tests/`,
+then run `python -m pytest`. The scaffold does not generate an application test
+suite. Use a dedicated PostgreSQL test database and test allowed and denied
+requests, validation errors, and cross-tenant access when tenancy is enabled.
+Never run destructive test fixtures against the production database.
+
+`aksara doctor launch-check` diagnoses local setup. For deployment, follow the
+[production guide](https://nagarjuna-tella.github.io/Aksara/tutorials/deployment/)
+for separate migration/application roles, RLS, configuration and
+`aksara doctor production-check --release`. Do not enable optional AI or Studio
+features solely to remove local development recommendations.
+
+## Add background execution when needed
+
+Ordinary tasks queue application jobs. Durable Operations additionally retain
+accepted work, ownership and current reauthorization across retries and worker
+loss. Both need explicit application registration and worker supervision;
+creating this project does not start a durable worker. Start with the
+[durable operations guide](https://nagarjuna-tella.github.io/Aksara/advanced/durable-operations/)
+when that recovery contract is necessary. MCP is an optional consumer of the
+backend and can be added later.
+
 ## Surfaces
 
 | Surface | Purpose | Default |

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "baseline": "v0.7.0",
+  "changed_generated_files": [
+    "README.md"
+  ],
+  "unchanged_generated_files": [
+    "main.py",
+    "settings.py",
+    ".env",
+    ".env.example",
+    "app/__init__.py",
+    "app/models.py",
+    "app/serializers.py",
+    "app/views.py",
+    "app/urls.py",
+    "app/admin.py",
+    "migrations/__init__.py",
+    "requirements.txt",
+    "pyproject.toml",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    ".editorconfig",
+    "static/welcome.html"
+  ],
+  "production_ast_outside_readme_template": "identical",
+  "generated_security_configuration_dependencies_and_code": "byte-identical with deterministic test token",
+  "files_compared": 18,
+  "limitation": "instructional change equivalence only; full startup journey pending"
+}

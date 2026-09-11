@@ -1,179 +1,58 @@
-# Aksara Examples
+# Choose an Aksara example
 
-This folder contains real-world example apps built with Aksara.
+Start with the [first-project tutorial](../docs/docs/getting-started/first-project.md)
+for a small model → migration → REST journey. The repository examples have
+different purposes and are not interchangeable production templates.
 
-Each example demonstrates different patterns and features. Use them as references or starting points for your own projects.
+| Example | Purpose | Status and limits |
+| --- | --- | --- |
+| [Basic app](basic_app/README.md) | Explore models, serializers, relations, and generated REST | Local demonstration; includes optional Studio material and is larger than a one-model quickstart |
+| [Blog](blog/README.md) | Post and Comment relationships, publishing action, Admin | Application pattern; review authentication and deployment before reuse |
+| [CRM](crm/README.md) | Customer, Deal, and Activity models and custom actions | Application pattern; not a complete commercial CRM |
+| [Support Desk](support_desk/README.md) | Server-owned identities, permissions, restricted database role, forced RLS, tasks, diagnostics, synchronous MCP | Production-oriented reference with a packaged execution gate; replace example identities with your actual identity provider |
+| [Multitenant](multitenant/README.md) | Historical tenant-routing and model pattern | Known middleware defect; do not use as a production isolation reference. Use Support Desk for the supported tenant boundary |
+| [AI providers](ai_providers/README.md) | Application-owned provider adapters and prompting | Experimental; provider quality is outside the backend stability contract |
 
----
+## Run or copy an example
 
-## Quick Overview
+Follow the individual README and configure a dedicated PostgreSQL database.
+Repository-relative commands assume a source checkout. An installed framework
+bundles template material under `aksara._examples`; a source import such as
+`examples.support_desk` is not an installed-package import.
 
-| Example | Path | What It Shows |
-|---------|------|---------------|
-| **Blog** | `examples/blog/` | Posts, comments, publish workflow, tags |
-| **CRM** | `examples/crm/` | Customers, deals, pipeline stages |
-| **Multitenant** | `examples/multitenant/` | Tenant models, middleware, scoped queries |
-| **AI Providers** | `examples/ai_providers/` | BYO LLM wiring with OpenAI/Azure/Anthropic |
-| **Basic App** | `examples/basic_app/` | Minimal working example |
-
----
-
-## 1. Blog
-
-**Path:** `examples/blog/`
-
-**What it demonstrates:**
-
-- Post and Comment models with relationships
-- CRUD operations with ViewSets
-- Publish workflow (draft → published)
-- Tag support with JSON fields
-- Admin registration and customization
-
-**Key concepts:**
-
-- ForeignKey relationships
-- Query filtering
-- Boolean state fields
-
-**Docs:** [Blog Pattern](../docs/docs/patterns/blog.md)
-
----
-
-## 2. CRM
-
-**Path:** `examples/crm/`
-
-**What it demonstrates:**
-
-- Customer, Deal, Pipeline, Stage models
-- Multi-model relationships
-- Custom ViewSet actions (close deal, move stage)
-- List filters in Admin
-- Reporting-style queries
-
-**Key concepts:**
-
-- Complex model relationships
-- Custom actions on ViewSets
-- State machine patterns
-
-**Docs:** [CRM Pattern](../docs/docs/patterns/crm.md)
-
----
-
-## 3. Multitenant
-
-**Path:** `examples/multitenant/`
-
-**What it demonstrates:**
-
-- Tenant and TenantUser models
-- Tenant resolution middleware
-- Base model class with automatic tenant FK
-- Scoped queries that filter by current tenant
-
-**Key concepts:**
-
-- Middleware for request context
-- Automatic query scoping
-- SaaS data isolation patterns
-
-**Docs:** [Multitenant Pattern](../docs/docs/patterns/multitenant.md)
-
----
-
-## 4. AI Providers
-
-**Path:** `examples/ai_providers/`
-
-**What it demonstrates:**
-
-- Protocol-based LLM client adapters
-- Soft SDK imports (no hard dependencies)
-- Environment-based configuration
-- Prompt building from AI route hints
-- Example AI-powered ViewSet actions
-
-**Key concepts:**
-
-- Adapter pattern for swappable providers
-- Settings from environment variables
-- Using `@ai_route_hint` with prompts
-- Testing without real API keys
-
-**How to copy to your project:**
+Inspect available templates with `aksara startproject --help`. For example:
 
 ```bash
-aksara ai examples -o ./ai_adapters
-```
-
-**Docs:** [Bring Your Own LLM](../docs/docs/ai-mode/bring-your-own-llm.md)
-
----
-
-## 5. Basic App
-
-**Path:** `examples/basic_app/`
-
-**What it demonstrates:**
-
-- Minimal working Aksara application
-- Single model with ViewSet
-- Basic project structure
-
-**Use this if:**
-
-- You want to see the simplest possible setup
-- You're debugging or testing
-
----
-
-## Running an Example
-
-Most examples can be run directly:
-
-```bash
-cd examples/blog
-
-# Set up database interactively
-aksara dbsetup
-
-# Run migrations
-aksara migrate
-
-# Start development server
-aksara dev
-```
-
-Check each example's README for specific instructions.
-
----
-
-## Creating a Project from a Pattern
-
-You can create a new project using one of the patterns:
-
-```bash
-# Blog pattern
 aksara startproject myblog --template blog
-
-# CRM pattern
 aksara startproject mycrm --template crm
-
-# Multitenant pattern
-aksara startproject saas --template multitenant
 ```
 
-See [Choosing a Pattern](../docs/docs/getting-started/patterns.md) for help deciding which to use.
+Copying a template does not establish a production security profile. Add trusted
+authentication, review object and field policy, apply migrations separately,
+and run through the [production guide](../docs/docs/tutorials/deployment.md).
+Do not use the multitenant template to infer that tenant isolation is configured
+correctly; its README records the known limitation.
 
----
+## Tasks and Durable Operations
 
-## Contributing
+The Support Desk delivery task demonstrates ordinary persisted task execution.
+Do not equate a durable task row with the v0.7 Durable Operation contract.
+Operations add explicit admission, current reauthorization, idempotency,
+Attempt ownership, fencing, decisions, and recovery semantics.
 
-Have a pattern or example to share? Contributions welcome!
+Use the [Durable Operations guide](../docs/docs/advanced/durable-operations.md)
+for those APIs. The repository's installed-wheel and Support Desk validation
+scripts exercise durability as release gates; they are not standalone user
+application templates. A complete tutorial must explain its action registry,
+identity resolver, worker process, and database lifecycle.
 
-1. Create a new folder under `examples/`
-2. Include a README.md explaining what it demonstrates
-3. Ensure it runs with a fresh database
-4. Submit a pull request
+## Validation scope
+
+`aksara examples validate --format json` checks bundled example structure and
+selected contracts. It does not certify every external provider, security
+integration, or production deployment. Real PostgreSQL and installed-wheel
+journeys remain necessary for the capabilities an application adopts.
+
+Before contributing an example, give it a clear purpose, executable setup
+instructions, a dedicated test database, and tests of both permitted and denied
+behavior. Label experimental features and application-owned responsibilities.

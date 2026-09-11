@@ -78,10 +78,20 @@ lead the beginner journey. Navigation implementation is pending.
 | --- | --- | --- | --- | --- |
 | PT-001 | P1 | `tutorials/deployment.md` Step 1 leads with an unsupported `AKSARA` dictionary, labeled conceptual | Replaced operational instructions with real configuration, role separation, workers and recovery guidance; clean-room execution still pending | Docs fixed |
 | PT-002 | P2 | `roadmap.md` calls v0.6.1 the current adoption patch after v0.7.0 | Replace with evidence-derived current/next horizons | Open |
-| PT-003 | P2 | `examples/README.md` omits support_desk from its catalog | Describe minimal, application-pattern, production, durable, and experimental purposes accurately | Open |
+| PT-003 | P2 | `examples/README.md` omits support_desk from its catalog | Rewrote catalog using actual models and execution boundaries, including Support Desk and EX-001 | Docs fixed |
 | PT-004 | P2 | `docs/mkdocs.yml` gives experimental AI a large top-level section; durability is under Advanced | Provide an application learning path and prominent production/durability entry points | Open |
 
 ## Broken Examples Found
+
+**EX-001 / P1:** `examples/multitenant/middleware.py` contains `/` in
+`EXEMPT_PATHS` and tests every exemption with `path.startswith`. A direct
+`dispatch` probe for `/api/projects/` called downstream once and the mocked
+tenant resolver zero times. This proves the middleware bypass, not database
+exfiltration. Its README now discloses the defect and points to Support Desk.
+Fixing middleware semantics is outside this release; recommend a separately
+scoped correctness/security patch with authenticated tenant and denial tests.
+The example cannot count as a successful tenant-isolation journey.
+
 
 Execution audit pending. The initial syntax/import checks pass; this does not
 prove the complete examples work against a clean installed wheel.
@@ -113,6 +123,15 @@ precedes `DATABASE_URL`. The deployment tutorial does not follow this usable
 path. Defaults must be checked against `aksara/conf.py`, not copied from prose.
 
 ## Scaffold Findings
+
+Instructional README now explains model/route ownership, permissions, testing,
+Doctor, and optional background/durable execution. Comparing v0.7.0 and current
+scaffolds with a fixed comparison token gives only `README.md` changed; all
+other 17 files are byte-identical. ASTs outside `get_readme_template` are
+identical. See `audit-evidence/v071/scaffold-equivalence.json`. The focused
+semantic docs and first-hour scaffold tests pass: 37 tests. This does not yet
+prove the full beginner journey.
+
 
 Baseline generation captured 18 files. Compare generated Python ASTs (excluding
 instructional docstrings), settings/environment defaults, dependencies, routes,
@@ -188,4 +207,6 @@ regression and hosted checks remain pending.
 
 ## Runtime Changes
 
-**NONE.** Package version remains `0.7.0` until candidate readiness is proven.
+**No functional runtime changes.** `aksara/cli/scaffold.py` changes only its
+generated README text; equivalence evidence above covers all executable files,
+settings, security defaults and dependencies. Package version remains `0.7.0` until candidate readiness is proven.
