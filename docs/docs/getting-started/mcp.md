@@ -7,7 +7,7 @@ a server-resolved `Principal`, and the official MCP Python SDK.
 ## 1. Scaffold and configure PostgreSQL
 
 ```bash
-pip install "aksara-framework==0.6.1"
+pip install "aksara-framework==0.7.0rc1"
 aksara startproject task_api
 cd task_api
 ```

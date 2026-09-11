@@ -141,7 +141,7 @@ jobs:
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build twine
+          python -m pip install build 'twine>=7,<8'
 
       - name: Build distributions
         run: python -m build
@@ -197,7 +197,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: support-desk-production-gate
-          path: audit-evidence/v060-mcp-ai/support-desk-gate.json
+          path: audit-evidence/v070/support-desk-gate.json
           if-no-files-found: error
 
   installed-package-truth:
@@ -243,8 +243,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: v061-installed-package-gate
-          path: audit-evidence/v061/installed-package-gate.json
+          name: v070-installed-package-gate
+          path: audit-evidence/v070/installed-package-gate.json
           if-no-files-found: error
 
   dependency-audit:

@@ -7,7 +7,7 @@ Async PostgreSQL database engine with connection pooling using asyncpg.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 import asyncpg
 
@@ -129,6 +129,9 @@ class Database:
     @property
     def pool(self) -> asyncpg.Pool:
         """Get the connection pool, raising if not connected."""
+        from aksara.db.durable_guard import reject_direct_pool_access
+
+        reject_direct_pool_access(self)
         if self._pool is None:
             raise RuntimeError(
                 "Database not connected. Call await db.connect() first."
@@ -178,6 +181,9 @@ class Database:
             async with db.acquire() as conn:
                 await conn.execute(...)
         """
+        from aksara.db.durable_guard import validate_database_access
+
+        validate_database_access(self)
         current_session = get_session()
         if current_session is not None:
             yield current_session
@@ -226,6 +232,9 @@ class Database:
                 async with self.acquire() as conn:
                     return await conn.execute(query, *args, timeout=timeout)
             except Exception as e:
+                from aksara.db.durable_guard import mark_database_error
+
+                mark_database_error(e)
                 raise map_database_error(e, query=query, params=args)
     
     async def fetch(
@@ -253,6 +262,9 @@ class Database:
                 async with self.acquire() as conn:
                     return await conn.fetch(query, *args, timeout=timeout)
             except Exception as e:
+                from aksara.db.durable_guard import mark_database_error
+
+                mark_database_error(e)
                 raise map_database_error(e, query=query, params=args)
     
     async def fetchrow(
@@ -280,6 +292,9 @@ class Database:
                 async with self.acquire() as conn:
                     return await conn.fetchrow(query, *args, timeout=timeout)
             except Exception as e:
+                from aksara.db.durable_guard import mark_database_error
+
+                mark_database_error(e)
                 raise map_database_error(e, query=query, params=args)
     
     async def fetchval(
@@ -309,4 +324,7 @@ class Database:
                 async with self.acquire() as conn:
                     return await conn.fetchval(query, *args, column=column, timeout=timeout)
             except Exception as e:
+                from aksara.db.durable_guard import mark_database_error
+
+                mark_database_error(e)
                 raise map_database_error(e, query=query, params=args)

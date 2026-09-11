@@ -1,0 +1,2 @@
+Ruff: 7208/7218 allowed; mypy: 465/501 allowed
+Static-analysis debt is at or below the reviewed baseline.

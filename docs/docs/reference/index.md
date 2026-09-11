@@ -100,11 +100,11 @@ aksara dev
 
 ## Version Information
 
-Current version: **0.6.1**
+Current version: **0.7.0rc1**
 
 ```python
 import aksara
-print(aksara.__version__)  # 0.6.1
+print(aksara.__version__)  # 0.7.0rc1
 ```
 
 Check your installed version:

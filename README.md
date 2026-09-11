@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/release-v0.6.1-22c55e?style=flat-square" alt="Release v0.6.1">
+  <img src="https://img.shields.io/badge/release-v0.7.0-rc1-22c55e?style=flat-square" alt="Release v0.7.0-rc1">
   <img src="https://img.shields.io/badge/PostgreSQL-required-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL required">
 </p>
 
@@ -26,10 +26,15 @@ authentication and server-owned `Principal`, permissions and `PolicyEngine`,
 tenant isolation, core CLI and Doctor, PostgreSQL background tasks, and MCP
 Streamable HTTP execution at `/mcp/`.
 
+The v0.7 candidate adds opt-in Durable Authorized Operations: one PostgreSQL
+Operation, separate fenced Attempts, scoped idempotency, current
+reauthorization, approval and cancellation intent, task-backed execution, and
+honest external-effect recovery.
+
 Planner behavior, provider-specific quality, process-local investigation
 sessions, autonomous workflows, memory, and Studio AI internals remain
 experimental. Aksara is pre-1.0; read the
-[exact stability contract](https://nagarjuna-tella.github.io/Aksara/roadmap/v0-6-stability-contract/)
+[exact v0.7 stability contract](https://nagarjuna-tella.github.io/Aksara/roadmap/v0-7-stability-contract/)
 before production adoption.
 
 ## Why Aksara?
@@ -47,7 +52,7 @@ Aksara requires PostgreSQL.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.6.1"
+pip install "aksara-framework==0.7.0rc1"
 aksara startproject opsdesk
 cd opsdesk
 aksara dbsetup
@@ -125,12 +130,14 @@ persisted invocation path.
 | Stable v0.6 | Principal, permissions, PolicyEngine, tenant and field enforcement |
 | Stable v0.6 | MCP Streamable HTTP, generated tools, approval boundary, audit events, structured failures and runtime limits |
 | Stable v0.6 | Core CLI, Doctor production policy, and PostgreSQL task queue |
+| Stable v0.7 | Opt-in durable Operations, Attempts, idempotency, fencing, current reauthorization, decisions, retention, and external-effect recovery |
 | Functional but evolving | Admin details, storage backends, email, search, SDK generation and `DurableStep` |
 | Experimental | Studio/Studio AI, planners, prompt providers, investigation sessions, code patches, memory and autonomous workflows |
 
-MCP replay state, approval workflow storage, and audit retention are bounded or
-application-owned in v0.6. Cross-worker durable operations are planned for
-v0.7 and are not part of v0.6.1.
+Application approval workflow UX, durable compliance retention, and external
+exactly-once effects remain application-owned. Protocol-level durable MCP Tasks
+are deferred because the official SDK does not yet implement the current Tasks
+extension; synchronous MCP tools remain unchanged.
 
 ## Security boundary
 
@@ -189,7 +196,7 @@ aksara ai-hub status
 aksara ai-hub doctor
 ```
 
-There is no public `AgentRuntime` or `Planner` class in v0.6.1. The documented
+There is no public `AgentRuntime` or `Planner` class in v0.7.0-rc1. The documented
 real primitives remain experimental and are described in the
 [AI Mode guide](https://nagarjuna-tella.github.io/Aksara/ai-mode/).
 
@@ -218,6 +225,8 @@ aksara examples validate --format json
 - [Installation](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/)
 - [First Project](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/)
 - [MCP Quickstart](https://nagarjuna-tella.github.io/Aksara/getting-started/mcp/)
+- [Durable Authorized Operations](https://nagarjuna-tella.github.io/Aksara/advanced/durable-operations/)
+- [v0.7 Stability Contract](https://nagarjuna-tella.github.io/Aksara/roadmap/v0-7-stability-contract/)
 - [ORM](https://nagarjuna-tella.github.io/Aksara/orm/)
 - [API](https://nagarjuna-tella.github.io/Aksara/api/)
 - [Security](https://nagarjuna-tella.github.io/Aksara/security/overview/)
@@ -226,9 +235,9 @@ aksara examples validate --format json
 
 ## Roadmap
 
-v0.6.1 aligns documentation, scaffolding, configuration, package metadata, and
-installed-wheel validation with the v0.6 product. It does not add the v0.7
-durable-operation architecture. See the
+v0.7.0-rc1 implements the accepted Durable Authorized Operations architecture
+while preserving the v0.6 synchronous surfaces and PostgreSQL-first deployment
+profile. See the
 [Roadmap](https://nagarjuna-tella.github.io/Aksara/roadmap/).
 
 ## Contributing

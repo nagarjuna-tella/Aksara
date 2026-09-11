@@ -8,7 +8,7 @@ whether to add MCP. Provider-backed AI and Studio are not prerequisites.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.6.1"
+pip install "aksara-framework==0.7.0rc1"
 aksara startproject task_api
 cd task_api
 aksara dbsetup

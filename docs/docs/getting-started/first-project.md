@@ -8,7 +8,7 @@ PostgreSQL is required.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.6.1"
+pip install "aksara-framework==0.7.0rc1"
 aksara --version
 aksara startproject hello_aksara
 cd hello_aksara

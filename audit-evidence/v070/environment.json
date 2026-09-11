@@ -1,0 +1,46 @@
+{
+  "artifacts": {
+    "aksara_framework-0.7.0rc1-py3-none-any.whl": "e78e5a42e8653fa305472f8824b0fbe66436a138ab7ce7cb1b6672f022ceff60",
+    "aksara_framework-0.7.0rc1.tar.gz": "e174cc2c3a3cc41df019bfdaf27f7d394c71aece6ba15af2390eb9cbac20e6e1"
+  },
+  "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
+  "branch": "codex/v070-durable-authorized-operations",
+  "candidate_implementation_sha": "826799c448871951dbe9b3142bb0c300c645a03f",
+  "database": "aksara_test",
+  "database_credentials_recorded": false,
+  "hosted_postgresql": {
+    "status": "pass",
+    "version": "16"
+  },
+  "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "mcp": "2.0.1",
+  "package_version": "0.7.0rc1",
+  "release": "v0.7.0-rc1",
+  "runtime_matrix": [
+    {
+      "fastapi": "0.136.1",
+      "python": "3.11.15",
+      "starlette": "1.0.1",
+      "status": "pass"
+    },
+    {
+      "fastapi": "0.141.1",
+      "python": "3.11.15",
+      "starlette": "1.6.0",
+      "status": "pass"
+    },
+    {
+      "fastapi": "0.136.1",
+      "python": "3.14.4",
+      "starlette": "1.0.1",
+      "status": "pass"
+    },
+    {
+      "fastapi": "0.141.1",
+      "python": "3.14.4",
+      "starlette": "1.6.0",
+      "status": "pass"
+    }
+  ],
+  "schema_version": 1
+}

@@ -1,7 +1,7 @@
 # Planner
 
 !!! warning "Experimental"
-    Aksara 0.6.1 does not define or export a `Planner` class. The plan schemas
+    Aksara 0.7.0rc1 does not define or export a `Planner` class. The plan schemas
     and deterministic handlers described here are functional but evolving.
 
 The real planning surface is `AiPlan` plus `AiPlanStep`. External code creates

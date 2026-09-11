@@ -19,7 +19,7 @@ from typing import Dict
 def get_main_py_template(project_name: str) -> str:
     """Generate main.py content."""
     return f'''"""
-{project_name} - Aksara Application (v0.6.1)
+{project_name} - Aksara Application (v0.7.0-rc1)
 
 An async PostgreSQL API with generated REST and optional MCP.
 
@@ -315,7 +315,7 @@ def get_welcome_html_template(project_name: str) -> str:
 def get_settings_py_template(project_name: str) -> str:
     """Generate settings.py content."""
     return f'''"""
-{project_name} - Settings (v0.6.1)
+{project_name} - Settings (v0.7.0-rc1)
 
 Environment variables configure Aksara. Use ``configure()`` only for explicit
 Python overrides such as the installed-app list below.
@@ -689,7 +689,7 @@ version = "0.1.0"
 description = "Async PostgreSQL API with generated REST and optional MCP"
 requires-python = ">=3.11"
 dependencies = [
-    "aksara-framework>=0.6.1",
+    "aksara-framework>=0.7.0rc1",
     "uvicorn[standard]>=0.24.0",
     "python-dotenv>=1.0.0",
 ]

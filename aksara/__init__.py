@@ -55,7 +55,16 @@ from aksara.contenttypes import (
     sync_content_types,
 )
 from aksara.workflows import DurableStep, DurableStepState
-from aksara.tasks import TASKS_TABLE, TaskRecord, TaskWorker, enqueue_task, ensure_tasks_table, get_task_record, task
+from aksara.tasks import (
+    TASKS_TABLE,
+    TaskRecord,
+    TaskWorker,
+    enqueue_operation_task,
+    enqueue_task,
+    ensure_tasks_table,
+    get_task_record,
+    task,
+)
 from aksara.storage import FieldFile, Storage, FileSystemStorage, S3Storage, get_default_storage
 from aksara.exceptions import (
     AksaraError,
@@ -288,6 +297,7 @@ __all__ = [
     "TASKS_TABLE",
     "TaskRecord",
     "TaskWorker",
+    "enqueue_operation_task",
     "enqueue_task",
     "ensure_tasks_table",
     "get_task_record",

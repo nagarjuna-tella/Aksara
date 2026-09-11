@@ -1,0 +1,290 @@
+"""Bounded pruning preserves active work and idempotency windows."""
+
+from __future__ import annotations
+
+from uuid import uuid4
+
+import pytest
+
+from aksara.durable import (
+    ActionNotRegistered,
+    DurableAction,
+    DurableActionRegistry,
+    DurableOperationService,
+    EffectClass,
+    OperationNotFound,
+    OperationState,
+    PrincipalReference,
+    PrincipalResolution,
+    PrincipalResolverRegistry,
+    ReadOnlyExecutor,
+)
+from aksara.durable.service import _tenant_context
+from aksara.durable.types import tenant_scope
+from aksara.security.principal import Principal
+
+
+def _runtime(durable_db, tenant: str):
+    async def handler(_context, _command):
+        return {"large": "result"}
+
+    actions = DurableActionRegistry()
+    actions.register(
+        DurableAction(
+            name="retention.read",
+            version="1",
+            handler=handler,
+            effect_class=EffectClass.READ_ONLY,
+        )
+    )
+    resolvers = PrincipalResolverRegistry()
+    resolvers.register(
+        "test",
+        "1",
+        lambda _reference: PrincipalResolution.resolved(
+            Principal.for_user("user-1", tenant_id=tenant)
+        ),
+    )
+    return DurableOperationService(
+        durable_db,
+        application_namespace="retention-tests",
+        actions=actions,
+        resolvers=resolvers,
+        retention_seconds=60,
+        idempotency_seconds=60,
+        result_retention_seconds=1,
+        error_retention_seconds=1,
+    )
+
+
+def _reference(tenant: str) -> PrincipalReference:
+    return PrincipalReference(
+        resolver_key="test",
+        resolver_version="1",
+        identity_namespace="tests",
+        principal_kind="user",
+        subject_id="user-1",
+        tenant_id=tenant,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reader_name", ["get", "history"])
+async def test_read_reports_not_found_when_prune_removes_command_between_reads(
+    durable_db,
+    monkeypatch,
+    reader_name,
+):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+
+    async def missing_command(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(service.repository, "get_command", missing_command)
+    reader = getattr(service, reader_name)
+
+    with pytest.raises(OperationNotFound):
+        await reader(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user("user-1", tenant_id=tenant),
+        )
+
+
+@pytest.mark.asyncio
+async def test_pruning_keeps_active_and_unexpired_idempotency_truth(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    active = await service.admit("retention.read", "1", {}, _reference(tenant))
+    terminal = await service.admit(
+        "retention.read",
+        "1",
+        {"terminal": True},
+        _reference(tenant),
+        idempotency_key="retained-key",
+    )
+    await service.request_cancellation(
+        terminal.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+        requester_reference=_reference(tenant),
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            "UPDATE aksara_operations SET retain_until = clock_timestamp() - INTERVAL '1 second'"
+        )
+
+    first = await service.prune(tenant_id=tenant, batch_size=10)
+    assert first["operations"] == 0
+    assert await service.get(
+        active.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    assert await service.get(
+        terminal.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_idempotency
+            SET expires_at = clock_timestamp() - INTERVAL '1 second'
+            WHERE operation_id = $1
+            """,
+            terminal.operation.id,
+        )
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_outbox
+            SET exported_at = clock_timestamp()
+            WHERE operation_id = $1
+            """,
+            terminal.operation.id,
+        )
+    second = await service.prune(tenant_id=tenant, batch_size=10)
+    assert second["operations"] == 1
+    assert second["idempotency"] == 1
+    remaining = await service.get(
+        active.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    assert remaining.state is OperationState.READY
+
+
+@pytest.mark.asyncio
+async def test_result_body_expires_before_terminal_operation_truth(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="reader",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    completed = await ReadOnlyExecutor(service).execute(claim)
+    assert completed.result == {"large": "result"}
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operations
+            SET completed_at = clock_timestamp() - INTERVAL '2 seconds',
+                result_expires_at = clock_timestamp() - INTERVAL '1 second'
+            WHERE id = $1
+            """,
+            admitted.operation.id,
+        )
+
+    result = await service.prune(tenant_id=tenant, batch_size=10)
+
+    assert result["results"] == 1
+    retained = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    assert retained.state is OperationState.SUCCEEDED
+    assert retained.result is None
+
+
+@pytest.mark.asyncio
+async def test_pruning_expired_idempotency_releases_retained_operation_key(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    reference = _reference(tenant)
+    first = await service.admit(
+        "retention.read",
+        "1",
+        {},
+        reference,
+        idempotency_key="reusable-after-prune",
+    )
+    await service.request_cancellation(
+        first.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+        requester_reference=reference,
+    )
+    scope = tenant_scope(tenant)
+    with _tenant_context(scope):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operation_idempotency
+            SET expires_at = clock_timestamp() - INTERVAL '1 second'
+            WHERE operation_id = $1
+            """,
+            first.operation.id,
+        )
+
+    pruned = await service.prune(tenant_id=tenant)
+
+    assert pruned["idempotency"] == 1
+    assert pruned["operations"] == 0
+    with _tenant_context(scope):
+        retained_identity = await durable_db.fetchval(
+            "SELECT idempotency_identity_hash FROM aksara_operations WHERE id = $1",
+            first.operation.id,
+        )
+    assert retained_identity is None
+    second = await service.admit(
+        "retention.read",
+        "1",
+        {},
+        reference,
+        idempotency_key="reusable-after-prune",
+    )
+    assert second.created is True
+    assert second.operation.id != first.operation.id
+
+
+@pytest.mark.asyncio
+async def test_terminal_status_and_history_survive_action_unregistration(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="reader",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+    completed = await ReadOnlyExecutor(service).execute(claim)
+    assert completed.state is OperationState.SUCCEEDED
+    service.actions.unregister("retention.read", "1")
+
+    retained = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+    history = await service.history(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user("user-1", tenant_id=tenant),
+    )
+
+    assert retained.state is OperationState.SUCCEEDED
+    assert history[0].to_state is OperationState.SUCCEEDED
+
+
+@pytest.mark.asyncio
+async def test_nonterminal_read_still_requires_registered_action(durable_db):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit("retention.read", "1", {}, _reference(tenant))
+    service.actions.unregister("retention.read", "1")
+
+    with pytest.raises(ActionNotRegistered):
+        await service.get(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user("user-1", tenant_id=tenant),
+        )

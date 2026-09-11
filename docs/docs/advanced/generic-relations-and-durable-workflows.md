@@ -74,6 +74,14 @@ content_type = await get_content_type_for_model(Post)
 
 ## Durable Workflow Steps
 
+!!! warning "Evolving workflow helper"
+    `DurableStep` remains available in v0.7, but it is not the Durable
+    Authorized Operations substrate. It does not provide Operation/Attempt
+    identity, leases, fencing, current reauthorization, durable cancellation,
+    or atomic application-mutation completion. Use
+    [Durable Authorized Operations](durable-operations.md) when those guarantees
+    are required.
+
 `DurableStep` persists successful step results in PostgreSQL so repeated runs
 can reuse the stored output instead of re-executing expensive work.
 

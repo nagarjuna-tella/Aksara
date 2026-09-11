@@ -174,7 +174,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-output",
         type=Path,
-        default=ROOT / "audit-evidence" / "v061" / "installed-package-gate.json",
+        default=ROOT / "audit-evidence" / "v070" / "installed-package-gate.json",
     )
     return parser
 
@@ -257,7 +257,7 @@ class InstalledPackageGate:
     def write_evidence(self, status: str, error: str | None = None) -> None:
         payload = {
             "schema_version": 1,
-            "gate": "v061-installed-package-truth",
+            "gate": "v070-installed-package-truth",
             "status": status,
             "candidate_sha": self.candidate_sha,
             "started_at": self.started_at.isoformat(),
@@ -394,7 +394,7 @@ class InstalledPackageGate:
             )
             self.check(
                 "candidate package version",
-                installed["version"] == "0.6.1",
+                installed["version"] == "0.7.0rc1",
                 version=installed["version"],
             )
 
@@ -402,15 +402,15 @@ class InstalledPackageGate:
             help_result = await self.command([cli, "--help"], cwd=temp_root, env=clean_env)
             self.check(
                 "CLI version and commands",
-                "0.6.1" in version_result.stdout
+                "0.7.0rc1" in version_result.stdout
                 and "startproject" in help_result.stdout
                 and "doctor" in help_result.stdout,
-                version="0.6.1",
+                version="0.7.0rc1",
                 startproject=True,
                 doctor=True,
             )
             self.results["cli"] = {
-                "version": "0.6.1",
+                "version": "0.7.0rc1",
                 "help": "pass",
                 "startproject_command": True,
                 "doctor_command": True,

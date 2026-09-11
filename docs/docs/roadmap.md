@@ -22,30 +22,35 @@ makes an individual tool invocation safe within that documented boundary.
 
 Planner behavior, process-local investigation sessions, persistent AI memory,
 multi-agent and autonomous workflows, provider-specific quality, Studio AI,
-durable approval workflows, durable audit retention, and cross-worker MCP
-replay/idempotency remain experimental, application-owned, or deferred. See
-the [v0.6 stability and production contract](roadmap/v0-6-stability-contract.md)
-for the exact boundary.
+application approval workflow UX, durable compliance retention, and
+protocol-level MCP Tasks remain experimental, application-owned, or deferred.
 
-## Direction to v0.7
+The v0.7.0 release candidate adds an opt-in Durable Authorized Operations
+substrate. PostgreSQL retains one logical Operation, its physical Attempts,
+scoped idempotency identity, current-authorization provenance, approval and
+cancellation intent, transition/outbox evidence, and bounded retention. See the
+[v0.7 durable operations stability contract](roadmap/v0-7-stability-contract.md)
+for the exact new boundary.
 
-The proposed v0.7 milestone is **durable authorized operations**.
+## v0.7 release candidate
+
+The v0.7 candidate milestone is **durable authorized operations**.
 
 The accepted architecture is recorded in
 [ADR 0001 — Durable Authorized Operations](https://github.com/nagarjuna-tella/Aksara/blob/main/docs/adr/0001-durable-authorized-operations.md).
 
-The intended change in guarantee is precise: framework-managed work that opts
-into durable execution should remain identifiable, queryable, bounded,
+The change in guarantee is precise: framework-managed work that opts into
+durable execution remains identifiable, queryable, bounded,
 recoverable, reauthorized, and auditable after a response, process, or worker
 is lost.
 
-This direction follows existing code. MCP already provides secure invocation
+This work follows existing code. MCP already provides secure invocation
 identity and policy enforcement. The PostgreSQL task queue already provides
 durable records, atomic multi-worker claims, retries, and stale-lock recovery.
 Approvals, replay protection, audit correlation, runtime budgets,
-cancellation, and investigation state currently stop at request or process
-lifetime. v0.7 should connect these boundaries through a small shared operation
-model rather than add a generic workflow engine.
+cancellation, and investigation state stop at request or process lifetime.
+v0.7 connects the application-operation boundaries through a small shared
+model while leaving those experimental systems unchanged.
 
 ## Current adoption patch
 
@@ -76,37 +81,36 @@ surface. Later v0.6.x numbers are not reserved; use them only for validated
 bugs, security, compatibility, packaging, MCP interoperability, or adoption
 work.
 
-## Toward v0.7
+## Delivered in v0.7
 
-Architectural prerequisite work should proceed in this order without requiring
-separate promised releases:
+The candidate implements the architectural sequence as follows:
 
-1. **Define the state and authorization contract.** Specify terminal states,
-   attempts, leases, fencing, retry rules, retention, and reauthorization before
-   schema or public API work. Existing synchronous REST and MCP behavior must
-   remain valid.
-2. **Create one PostgreSQL source of truth.** Add migrated operation and attempt
+1. **State and authorization contract.** Centralized terminal states,
+   attempts, leases, fencing, retry rules, retention, and reauthorization are
+   tested while existing synchronous REST and MCP behavior remains valid.
+2. **One PostgreSQL source of truth.** Migrated operation and attempt
    records with an authoritative state, correlation, bounded result/error
-   envelopes, and a policy-filtered read API. Test upgrade, rollback, invalid
+   envelopes, and a policy-filtered read API cover upgrade, rollback, invalid
    transitions, restricted-role DML, concurrent updates, restart queries, and
    lost responses after commit.
-3. **Make recovery and idempotency cross-worker.** Add atomic claims,
+3. **Cross-worker recovery and idempotency.** Atomic claims,
    lease/heartbeat, fencing, retry schedules, and a principal/tenant-scoped
-   idempotency key with canonical input hashing. Test worker death before,
+   idempotency key with canonical input hashing survive worker death before,
    during, and after commit; late workers; concurrent duplicates; changed input;
    retry exhaustion; and database disconnects.
-4. **Carry authority across delay without freezing it.** Persist identity
-   provenance rather than raw credentials, resolve current identity, and rerun
+4. **Current authority across delay.** Identity provenance replaces stored raw
+   credentials; execution resolves current identity and reruns
    expiry, audience, scope, permission, policy, field, tenant, and RLS checks
-   before resumed mutations. Test revocation, expiry, role and tenant changes,
-   missing resolvers, and cross-tenant resume.
-5. **Bind durable decisions and limits.** Store exact approval decisions,
+   before resumed mutations. Tests cover revocation, expiry, role and tenant
+   changes, missing resolvers, and cross-tenant resume.
+5. **Durable decisions and limits.** Exact approval decisions,
    cancellation intent, and bounded attempt/tool/step/provider-reported usage
-   counters. Test approval, cancellation, and claim races and counter exhaustion
-   across restart.
-6. **Integrate incrementally.** Link the existing task queue first, then offer a
-   durable dispatch path for selected MCP/agent mutations. Keep executor-specific
-   payloads outside the shared operation record.
+   counters persist across restart. Approval, cancellation, claim races, and
+   Attempt exhaustion are deterministic.
+6. **Incremental integration.** Existing tasks can execute linked Operations;
+   explicit REST/Python durable dispatch is additive. Synchronous generated REST
+   and MCP retain their v0.6 behavior. Protocol-level MCP Tasks are deferred
+   until the official Python SDK implements the current extension.
 
 These capabilities introduce a stable framework guarantee and therefore belong
 inside Aksara. Application code continues to own credential verification,
@@ -114,9 +118,9 @@ business policy, human-review UX, external-effect idempotency, indefinite audit
 retention, and provider/model quality. PostgreSQL is sufficient for the
 smallest useful implementation; no additional mandatory service is planned.
 
-## v0.7
+## Stable v0.7 additions
 
-v0.7 should make the following explicit durable-execution contract stable:
+v0.7 makes the following explicit durable-execution contract stable:
 
 - a framework-issued operation ID and one authoritative PostgreSQL state;
 - bounded attempt and transition history with typed result or failure;
@@ -132,7 +136,7 @@ v0.7 should make the following explicit durable-execution contract stable:
 - compatibility with the stable v0.6 synchronous REST, MCP, ORM, migration,
   security, and task contracts.
 
-Release acceptance requires multi-process PostgreSQL tests at claim, mutation,
+Release acceptance includes multi-process PostgreSQL tests at claim, mutation,
 commit, and acknowledgement boundaries; lost-response recovery; duplicate and
 approval races; cancellation and budget enforcement across restart;
 authorization revocation and cross-tenant denial; migration upgrade/replay;
@@ -163,7 +167,9 @@ the durable operation substrate:
   attempt, lease, identity, cancellation, and migration semantics;
 - custom many-to-many through models and object-valued lazy forward foreign
   keys; and
-- MCP transports other than Streamable HTTP.
+- MCP transports other than Streamable HTTP;
+- protocol-level MCP Tasks until the official Python SDK implements the
+  current `io.modelcontextprotocol/tasks` extension.
 
 Applications continue to own human approval experiences, long-term audit
 retention and certification, infrastructure operations, and safe interaction

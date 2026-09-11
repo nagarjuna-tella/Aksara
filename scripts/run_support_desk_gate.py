@@ -134,7 +134,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-output",
         type=Path,
-        default=ROOT / "audit-evidence" / "v060-mcp-ai" / "support-desk-gate.json",
+        default=ROOT / "audit-evidence" / "v070" / "support-desk-gate.json",
     )
     return parser
 
@@ -221,7 +221,7 @@ class Gate:
     def write_evidence(self, *, status: str, error: str | None = None) -> None:
         payload = {
             "schema_version": 1,
-            "gate": "support-desk-production-reference",
+            "gate": "support-desk-v070-production-reference",
             "status": status,
             "started_at": self.started_at.isoformat(),
             "finished_at": datetime.now(UTC).isoformat(),
@@ -424,6 +424,20 @@ class Gate:
                 runtime["rollback_rows"] == 0,
                 persisted_rows=runtime["rollback_rows"],
             )
+
+            durable = await self._durable_probe(
+                python,
+                app_dsn,
+                tenant_a,
+                tenant_b,
+                temp_root,
+                app_env,
+            )
+            for name, passed in durable["checks"].items():
+                self.check(
+                    f"v0.7 durable {name.replace('_', ' ')}",
+                    passed,
+                )
 
             port = _unused_port()
             first_log = temp_root / "server-first.log"
@@ -801,6 +815,36 @@ class Gate:
         if process.returncode != 0:
             raise RuntimeError(self.redact(stderr.decode(errors="replace")))
         return json.loads(stdout)
+
+    async def _durable_probe(
+        self,
+        python: Path,
+        dsn: str,
+        tenant_a: str,
+        tenant_b: str,
+        cwd: Path,
+        env: dict[str, str],
+    ) -> dict[str, Any]:
+        process = await asyncio.create_subprocess_exec(
+            str(python),
+            "-I",
+            str(ROOT / "scripts" / "v070_support_desk_probe.py"),
+            dsn,
+            tenant_a,
+            tenant_b,
+            cwd=cwd,
+            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            raise RuntimeError(self.redact(stderr.decode(errors="replace")))
+        result = json.loads(stdout)
+        if not result["passed"]:
+            failed = [name for name, passed in result["checks"].items() if not passed]
+            raise AssertionError(f"v0.7 installed-wheel durable probe failed: {failed}")
+        return result
 
     async def _grant_application_access(self, admin: asyncpg.Connection, schema: str, role: str) -> None:
         await admin.execute(f'GRANT USAGE ON SCHEMA "{schema}" TO "{role}"')
@@ -1442,6 +1486,7 @@ print(ApprovalManager(data['secret']).issue(
         import httpx2
         from mcp import Client
         from mcp.client.streamable_http import streamable_http_client
+        from mcp.shared.exceptions import MCPError
 
         lock_conn = await asyncpg.connect(self.database_url)
         transaction = lock_conn.transaction()
@@ -1454,12 +1499,14 @@ print(ApprovalManager(data['secret']).issue(
             )
             response = None
             call_error = None
+            code = None
+            request: asyncio.Task[Any] | None = None
             try:
                 async with http_client, Client(
                     streamable_http_client(
                         f"http://127.0.0.1:{port}/mcp/", http_client=http_client
                     ),
-                    read_timeout_seconds=12,
+                    read_timeout_seconds=30,
                 ) as client:
                     request = asyncio.create_task(
                         client.call_tool("ticket_list", {"limit": 100})
@@ -1472,19 +1519,35 @@ print(ApprovalManager(data['secret']).issue(
                     process.send_signal(signal.SIGINT)
                     await asyncio.sleep(0.2)
                     await transaction.rollback()
+                    code = await asyncio.wait_for(process.wait(), timeout=30)
                     try:
-                        response = await request
+                        response = await asyncio.wait_for(request, timeout=5)
                     except asyncio.CancelledError:
                         call_error = "CancelledError"
+                    except TimeoutError:
+                        call_error = "TimeoutError"
+                    except MCPError as exc:
+                        call_error = type(exc).__name__
                     except BaseExceptionGroup as exc:
                         call_error = type(exc).__name__
-            except BaseExceptionGroup:
+            except BaseExceptionGroup as exc:
                 # After the in-flight call completes, the SDK client attempts a
                 # session DELETE, or reports cancellation as a grouped error.
                 # Uvicorn may already have closed its listener.
-                if response is None and call_error is None:
-                    raise
-            code = await asyncio.wait_for(process.wait(), timeout=15)
+                call_error = call_error or type(exc).__name__
+            finally:
+                if request is not None:
+                    if not request.done():
+                        request.cancel()
+                    outcome = (await asyncio.gather(request, return_exceptions=True))[0]
+                    if (
+                        response is None
+                        and call_error is None
+                        and isinstance(outcome, BaseException)
+                    ):
+                        call_error = type(outcome).__name__
+            if code is None:
+                code = await asyncio.wait_for(process.wait(), timeout=30)
             self.check(
                 "graceful shutdown drains in-flight MCP invocation",
                 (response is not None or call_error is not None) and code == 0,

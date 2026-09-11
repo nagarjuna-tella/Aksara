@@ -1,0 +1,115 @@
+{
+  "adr_0001": {
+    "contradictions": [],
+    "verdict": "PROVEN WITH REQUIRED IMPLEMENTATION CONSTRAINTS"
+  },
+  "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
+  "branch": "codex/v070-durable-authorized-operations",
+  "candidate_implementation_sha": "826799c448871951dbe9b3142bb0c300c645a03f",
+  "hosted_postgresql_16": "pass",
+  "mcp_tasks": {
+    "classification": "DEFERRED DUE TO EXTERNAL STANDARD",
+    "synchronous_mcp_preserved": true
+  },
+  "merge_performed": false,
+  "package_version": "0.7.0rc1",
+  "publication_performed": false,
+  "recommendation": "ready_for_final_review",
+  "release": "v0.7.0-rc1",
+  "schema_version": 1,
+  "tag_created": false,
+  "validation": {
+    "bandit_high": {
+      "findings": 0,
+      "status": "pass"
+    },
+    "current_candidate_prototype_matrix": {
+      "cells": 4,
+      "passed_per_cell": 24,
+      "status": "pass"
+    },
+    "dependency_audit": {
+      "known_vulnerabilities": 0,
+      "status": "pass"
+    },
+    "diagnostics": {
+      "passed": 314,
+      "status": "pass"
+    },
+    "docs_contract": {
+      "passed": 114,
+      "status": "pass"
+    },
+    "docs_strict": {
+      "status": "pass"
+    },
+    "doctor_release": {
+      "blocks": 0,
+      "checks": 12,
+      "failures": 0,
+      "status": "pass",
+      "warnings": 0
+    },
+    "durable_targeted": {
+      "passed": 258,
+      "status": "pass"
+    },
+    "full_suite": {
+      "passed": 8271,
+      "skipped": 2,
+      "status": "pass"
+    },
+    "fuzz": {
+      "passed": 165,
+      "status": "pass"
+    },
+    "gitleaks": {
+      "findings": 0,
+      "status": "pass"
+    },
+    "installed_package": {
+      "checks": 15,
+      "status": "pass"
+    },
+    "migrations": {
+      "passed": 455,
+      "status": "pass"
+    },
+    "package": {
+      "build": "pass",
+      "twine": "pass"
+    },
+    "performance_sanity": {
+      "capacity_claim": false,
+      "invariants": 7,
+      "status": "pass"
+    },
+    "runtime_matrix": {
+      "cells": 4,
+      "passed_per_cell": 8271,
+      "skipped_per_cell": 2,
+      "status": "pass"
+    },
+    "sbom": {
+      "components": 50,
+      "format": "CycloneDX",
+      "spec_version": "1.6",
+      "status": "pass"
+    },
+    "security": {
+      "passed": 429,
+      "status": "pass"
+    },
+    "static_analysis": {
+      "mypy": 465,
+      "mypy_allowed": 501,
+      "ruff": 7208,
+      "ruff_allowed": 7218,
+      "status": "pass"
+    },
+    "support_desk": {
+      "checks": 66,
+      "status": "pass"
+    }
+  }
+}
