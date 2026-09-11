@@ -169,7 +169,7 @@ article = await Article.objects.get(title="Hello World")
 articles = await Article.objects.all()
 
 # Filter records
-published = await Article.objects.filter(published=True)
+published = await Article.objects.filter(published=True).all()
 ```
 
 ### Updating Records
@@ -485,7 +485,7 @@ async def example():
     active_products = await Product.objects.filter(
         is_active=True,
         stock_quantity__gt=0,
-    ).order_by("-created_at")
+    ).order_by("-created_at").all()
     
     # Access relationship
     for product in active_products:

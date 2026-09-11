@@ -362,13 +362,13 @@ electronics = await Category.objects.get(id=electronics_id)
 
 ```python
 # Posts by a specific author
-posts = await Post.objects.filter(author=author)
+posts = await Post.objects.filter(author=author).all()
 
 # Posts by author email
-posts = await Post.objects.filter(author__email="jane@example.com")
+posts = await Post.objects.filter(author__email="jane@example.com").all()
 
 # Posts with a specific tag (M2M)
-posts = await Post.objects.filter(tags__name="python")
+posts = await Post.objects.filter(tags__name="python").all()
 ```
 
 ### Select Related (Eager Loading)
@@ -490,7 +490,7 @@ async def demo():
     # Query examples
     jane_posts = await user.posts.all()
     tech_posts = await tech.posts.all()  # Including child categories
-    tutorial_posts = await Post.objects.filter(tags__name="Tutorial")
+    tutorial_posts = await Post.objects.filter(tags__name="Tutorial").all()
     
     # Efficient loading
     posts = await Post.objects.select_related("author", "category").all()

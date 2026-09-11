@@ -203,3 +203,17 @@ def test_version_authorities_and_scaffold_agree() -> None:
         f'"aksara-framework>={__version__}"'
         in scaffold[ROOT / ".never-written/version_probe/pyproject.toml"]
     )
+
+
+def test_public_queries_do_not_await_builders_directly():
+    builders = {"filter", "order_by", "select_related", "prefetch_related", "annotate", "limit", "offset"}
+    failures = []
+    for path, number, source in _python_blocks():
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.Await) or not isinstance(node.value, ast.Call):
+                continue
+            call = node.value
+            if (isinstance(call.func, ast.Attribute) and call.func.attr in builders
+                    and ".objects." in ast.unparse(call)):
+                failures.append(f"{path.relative_to(ROOT)} block {number}: {ast.unparse(node)}")
+    assert failures == []

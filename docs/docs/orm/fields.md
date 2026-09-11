@@ -454,7 +454,7 @@ Nested JSON keys can be queried with double-underscore paths:
 ```python
 dark_mode_users = await User.objects.filter(
     preferences__theme="dark",
-)
+).all()
 ```
 
 `JSON` accepts any JSON-compatible value, including top-level scalars (`"draft"`,

@@ -20,7 +20,7 @@ SELECT * FROM users WHERE is_active = true AND age > 18;
 You write Python:
 
 ```python
-await User.objects.filter(is_active=True, age__gt=18)
+await User.objects.filter(is_active=True, age__gt=18).all()
 ```
 
 The ORM translates your Python into SQL automatically.
@@ -185,7 +185,7 @@ laptop = await Product.objects.create(
 products = await Product.objects.all()
 
 # Filtered products
-cheap_products = await Product.objects.filter(price__lt=100)
+cheap_products = await Product.objects.filter(price__lt=100).all()
 
 # Products in category
 electronics_products = await electronics.products.all()
@@ -217,34 +217,36 @@ await laptop.delete()
 ### Filtering
 
 ```python
+from aksara import Q
+
 # Exact match
-await User.objects.filter(name="John")
+await User.objects.filter(name="John").all()
 
 # Comparison
-await Product.objects.filter(price__gt=100)  # Greater than
-await Product.objects.filter(price__lt=50)   # Less than
+await Product.objects.filter(price__gt=100).all()  # Greater than
+await Product.objects.filter(price__lt=50).all()   # Less than
 
 # Contains (case-insensitive)
-await User.objects.filter(name__icontains="john")
+await User.objects.filter(name__icontains="john").all()
 
 # Multiple conditions (AND)
-await User.objects.filter(is_active=True, age__gte=18)
+await User.objects.filter(is_active=True, age__gte=18).all()
 
 # Exclude
-await User.objects.exclude(status="deleted")
+await User.objects.filter(~Q(status="deleted")).all()
 ```
 
 ### Ordering
 
 ```python
 # Ascending (oldest first)
-await User.objects.order_by("created_at")
+await User.objects.order_by("created_at").all()
 
 # Descending (newest first) — note the minus sign
-await User.objects.order_by("-created_at")
+await User.objects.order_by("-created_at").all()
 
 # Multiple fields
-await User.objects.order_by("status", "-created_at")
+await User.objects.order_by("status", "-created_at").all()
 ```
 
 ### Counting

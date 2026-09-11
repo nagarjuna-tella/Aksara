@@ -114,6 +114,7 @@ Full page-by-page usability review is still pending.
 | PT-023 | P1 | Signal guides invent decorators, lifecycle events, and created/update_fields payloads; external effects lack commit qualification | Replaced with explicit subscriptions, exact lifecycle payloads, runnable dispatch example, and transaction/side-effect limits | Docs fixed; installed dispatcher and PostgreSQL lifecycle/rollback probes |
 | PT-024 | P1 | Duplicate ORM reference advertises nonexistent query methods, awaitable/sliceable query construction, Django field options and object-valued lazy foreign keys | Replaced with actual query boundary, concurrency qualification and links to detailed contracts | Docs fixed; installed query-shape example; no database execution claimed |
 | PT-025 | P1 | Querying guide repeats unsupported await/slice/projection/exclude patterns and positional aggregate calls | Rewrote around tutorial Ticket, explicit terminal methods, Q negation, bounded pagination and named aggregates | Docs fixed; all eight Python blocks executed against installed-wheel PostgreSQL; 18 assertions |
+| PT-026 | P1 | Eighteen remaining ORM overview/model/field/relation examples directly await query builders, including unsupported exclude | Added explicit all terminals and Q negation across four guides | Docs corrected for this API shape; broader surrounding semantics still under review |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
