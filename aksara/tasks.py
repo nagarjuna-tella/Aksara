@@ -1133,7 +1133,8 @@ class TaskWorker:
                         scope,
                         service.application_namespace,
                     )
-            await self._project_operation_task(task_record, operation)
+            if operation is None or operation.state.value != "running":
+                await self._project_operation_task(task_record, operation)
             return
         await self._at_boundary("after_operation_claim")
 

@@ -193,6 +193,46 @@ async def test_linked_task_projects_operation_after_ownership_loss(
 
 
 @pytest.mark.asyncio
+async def test_linked_task_does_not_busy_requeue_while_operation_is_running(
+    durable_db,
+):
+    tenant = str(uuid4())
+    service = _runtime(durable_db, tenant)
+    admitted = await service.admit(
+        "counter.task_increment",
+        "1",
+        {"counter_id": str(uuid4())},
+        _reference(tenant),
+    )
+    queued = await enqueue_operation_task(
+        admitted.operation.id,
+        service=service,
+        tenant_id=tenant,
+    )
+    claim = await service.claim(
+        tenant_id=tenant,
+        worker_id="operation-owner",
+        operation_id=admitted.operation.id,
+    )
+    assert claim is not None
+
+    worker = TaskWorker(
+        durable_db,
+        durable_service=service,
+        worker_id="task-projector",
+        poll_interval=0,
+    )
+    retained = await worker.poll_once()
+
+    assert retained is not None
+    assert retained.id == queued.id
+    assert retained.status == "running"
+    assert retained.attempts == 1
+    assert retained.locked_at is not None
+    assert await worker.poll_once() is None
+
+
+@pytest.mark.asyncio
 async def test_task_backed_external_operation_renews_its_operation_lease(
     durable_db,
     monkeypatch,
