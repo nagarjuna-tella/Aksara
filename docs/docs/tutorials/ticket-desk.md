@@ -223,12 +223,12 @@ normalization, invalid create/update input, relation persistence and deletion
 behavior. They deliberately make requests through the installed application
 rather than importing framework internals.
 
-## Boundaries of this stage
+## Continue with tenant isolation
 
 This application has one local identity and shared data. It is not yet a tenant
 boundary, production login system, task queue demonstration or durable-action
-example. Those concerns need explicit configuration and tests as the tutorial
-grows. For background on the next concepts, read
+example. Continue with [tenant isolation](ticket-desk-tenancy.md) to assign existing
+rows to a customer, provision a restricted role, and test cross-tenant denial. For background on the next concepts, read
 [tenant isolation](../security/multi-tenancy.md),
 [ordinary tasks](../advanced/background-tasks.md), and
 [Durable Operations](../advanced/durable-operations.md).

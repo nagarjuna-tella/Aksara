@@ -18,7 +18,7 @@
     },
     {
       "guide": "docs/docs/tutorials/ticket-desk.md",
-      "guide_sha256": "ec25072c47815693368361f8e7f67177bbb7ba755ac3d4a7795eea54eae25a8b",
+      "guide_sha256": "7e351c827dc827b1501f3733e50620865e05b095e829b7b75871a8918da2890e",
       "files": {
         "app/models.py": "d3e4b51b95ec440035a5cc82060e9d23405ed0b40ba75d6399e7f1db237192e7",
         "app/serializers.py": "3c84e632ae69443946902db2460426c1c0645b77bf1e2086f28976bf6bba48fb",
@@ -29,8 +29,39 @@
       "api_tests_passed": 5,
       "launch_check_exit": 1,
       "launch_check_output": "\n  \u26a1 Aksara Launch Check\n\n  Environment\n    \u2713 Python 3.11.5 detected\n    \u2713 Aksara 0.7.0 installed\n\n  Project\n    \u2713 aksara project detected\n    \u2713 settings module found\n    \u2713 app registry loaded\n\n  Database\n    \u2713 DATABASE_URL configured\n    \u2713 PostgreSQL connection successful\n    \u2713 Migrations are up to date\n\n  Studio\n    \u26a0 Studio UI route not registered\n      Next: Enable Studio in local debug mode and run aksara dev\n    \u2713 API docs available\n    \u2713 MCP catalog route registered\n\n  AI\n    \u26a0 No AI provider configured\n      Next: Run aksara ai-hub configure\n\n  Examples\n    \u2713 basic_app available\n    \u2713 blog available\n    \u2713 crm available\n    \u2713 multitenant available\n    \u2713 ai_providers available\n\n  Security\n    \u2713 Development mode enabled\n\n  Result\n    Launch readiness: PARTIAL\n\n  Next steps\n    1. Start Studio with aksara dev\n    2. Configure AI provider optionally\n\n"
+    },
+    {
+      "guide": "docs/docs/tutorials/ticket-desk-tenancy.md",
+      "guide_sha256": "323fee8bf4542b37eaf4610ba5d691571b65d28194d9d41180ac431e0e26943f",
+      "files": {
+        "app/models.py": "a02e5e87cd63ae584c124c8d514f8384d0fca433d2ecd511097f24154c10259b",
+        "migration operations (replace)": "304ab98559a87b822a978791be1484ab787c026ec5054274fe32432bda8e3ac4",
+        "app/auth.py": "7748a94784321dd8eff48a2ceebda511dfbad2949a1fba5914a986e71ff0ab46",
+        "app/permissions.py": "b085a840f8d585eb0c9e0bf5add5ae15abc1cf5a7bdf9e50b23b4e9992c8342f",
+        "app/serializers.py": "f2b9fe76725b281c977a75de8d354db93047ac192730c40aefd8aa08ecb07856",
+        "app/views.py": "7b3c02380a321c8b7f08c72ece6cf1f88f45e282326a4d50ad9c5b37117c217e",
+        "tests/test_api.py": "6db72f15562ee81faac6d5114cc973ce4442b587e6a68f020cf036058a3d0286",
+        "tests/test_tenants.py": "eb531197d0ea5912d7b4f19ef238409e77985698dd6d3381142bb07482b93ed6"
+      },
+      "api_tests_passed": 12,
+      "launch_check_exit": 1,
+      "launch_check_output": "\n  \u26a1 Aksara Launch Check\n\n  Environment\n    \u2713 Python 3.11.5 detected\n    \u2713 Aksara 0.7.0 installed\n\n  Project\n    \u2713 aksara project detected\n    \u2713 settings module found\n    \u2713 app registry loaded\n\n  Database\n    \u2713 DATABASE_URL configured\n    \u2713 PostgreSQL connection successful\n    \u2713 Migrations are up to date\n\n  Studio\n    \u26a0 Studio UI route not registered\n      Next: Enable Studio in local debug mode and run aksara dev\n    \u2713 API docs available\n    \u2713 MCP catalog route registered\n\n  AI\n    \u26a0 No AI provider configured\n      Next: Run aksara ai-hub configure\n\n  Examples\n    \u2713 basic_app available\n    \u2713 blog available\n    \u2713 crm available\n    \u2713 multitenant available\n    \u2713 ai_providers available\n\n  Security\n    \u2713 Development mode enabled\n\n  Result\n    Launch readiness: PARTIAL\n\n  Next steps\n    1. Start Studio with aksara dev\n    2. Configure AI provider optionally\n\n"
+    },
+    {
+      "guide": "docs/docs/tutorials/ticket-desk-reports.md",
+      "guide_sha256": "c86ae317ae8ea85162e9c00b7ae6f73bbab15f57c0a43ffc543fed36b7d8ac5c",
+      "files": {
+        "app/tasks.py": "b0f3ec7e9e3dde84498d331d2080f19dddf50ceaf653181a4d6e898318aaf42c",
+        "app/reports.py": "4a650abe47879b9ee681a1a3d56cf98e279fe4150e145a290d846f93d896491c",
+        "main.py (append)": "1d5a99ae900bdb84d020ca56bef94fb917726c162673b8e535f4a12d520f18dc",
+        "tests/test_reports.py": "ebf176024efab9b5b04af05a5fc16fe167fbbb4fdce550767170a46e7f0a6c07"
+      },
+      "api_tests_passed": 16,
+      "launch_check_exit": 1,
+      "launch_check_output": "\n  \u26a1 Aksara Launch Check\n\n  Environment\n    \u2713 Python 3.11.5 detected\n    \u2713 Aksara 0.7.0 installed\n\n  Project\n    \u2713 aksara project detected\n    \u2713 settings module found\n    \u2713 app registry loaded\n\n  Database\n    \u2713 DATABASE_URL configured\n    \u2713 PostgreSQL connection successful\n    \u2713 Migrations are up to date\n\n  Studio\n    \u26a0 Studio UI route not registered\n      Next: Enable Studio in local debug mode and run aksara dev\n    \u2713 API docs available\n    \u2713 MCP catalog route registered\n\n  AI\n    \u26a0 No AI provider configured\n      Next: Run aksara ai-hub configure\n\n  Examples\n    \u2713 basic_app available\n    \u2713 blog available\n    \u2713 crm available\n    \u2713 multitenant available\n    \u2713 ai_providers available\n\n  Security\n    \u2713 Development mode enabled\n\n  Result\n    Launch readiness: PARTIAL\n\n  Next steps\n    1. Start Studio with aksara dev\n    2. Configure AI provider optionally\n\n"
     }
   ],
+  "runner_sha256": "14aa41b49ed4b57e6c6518118302085bfafdd216f53a0f3ef8627add4e969e70",
   "package_version": "0.7.0",
   "source_checkout_imports": false,
   "checks": [
@@ -44,10 +75,24 @@
     "existing ticket survives additive relation migration with null assignee",
     "anonymous request denied",
     "authenticated create/read/update/delete",
+    "field length rejected",
+    "documented files copied without source substitutions",
+    "replaced only generated operations block as documented; preserved dependencies",
+    "documented migration commands create the table",
+    "restricted role and forced RLS verified; missing tenant sees zero rows; cross-tenant raw insert denied",
+    "existing ticket survives additive relation migration with null assignee",
+    "anonymous request denied",
+    "authenticated create/read/update/delete",
+    "field length rejected",
+    "documented files copied without source substitutions",
+    "documented migration commands create the table",
+    "existing ticket survives additive relation migration with null assignee",
+    "anonymous request denied",
+    "authenticated create/read/update/delete",
     "field length rejected"
   ],
-  "api_tests_passed": 8,
+  "api_tests_passed": 36,
   "database_role": "NOSUPERUSER NOBYPASSRLS, DML-only application role",
-  "scope": "First-project and relationships chapters, sequential migrations in one database schema. Test count includes repeated first-chapter regressions. No tenancy, durable action, provider or production-upgrade claim.",
+  "scope": "First-project, relationships, tenant-isolation and queued-report chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary task success and protected CSV export are covered; no durable action, provider or production-upgrade claim.",
   "pass": true
 }

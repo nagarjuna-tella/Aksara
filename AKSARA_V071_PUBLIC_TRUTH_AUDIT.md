@@ -211,21 +211,40 @@ justified yet. Durable example usability requires its own documented journey.
 
 ## Clean-Room Journey Results
 
-The beginner and relationships chapters now run from exact Markdown file
-fences in a temporary scaffold using the independently installed public 0.7.0
-wheel, local PostgreSQL and an ephemeral NOSUPERUSER/NOBYPASSRLS application
-role. The first chapter passes three HTTP tests; the second passes five,
-including the repeated first-chapter regressions. A ticket created before the
-second migration survives with its subject unchanged and a null assignee.
-The eight executions are not eight unique tests. Evidence is recorded in
-`audit-evidence/v071/first-project-journey.json` with page and snippet hashes.
+Four consecutive chapters now run from exact Markdown file fences in a
+temporary scaffold using the independently installed public 0.7.0 wheel,
+local PostgreSQL and an ephemeral NOSUPERUSER/NOBYPASSRLS application role:
+
+| Stage | Public application tests | Evidence |
+| --- | --- | --- |
+| First project | 3 passed | Authenticated CRUD, anonymous denial, field validation |
+| Relationships | 5 passed | Existing tests plus normalization, nullable FK and SET NULL |
+| Tenant boundary | 12 passed | Existing tests plus two-tenant reads/writes, role denial, missing tenant, forged headers/payloads, cross-tenant assignee validation |
+| Queued report and CSV export | 16 passed | Existing tests plus worker completion, tenant provenance, current read permission and protected download |
+
+These are **36 test executions, 16 unique final-stage tests**, not 36 unique
+tests. Evidence is `audit-evidence/v071/first-project-journey.json`, with page,
+snippet and runner hashes. A ticket created before the relationship migration
+survives that migration and the subsequent tenant backfill. Separate raw SQL
+checks verify the restricted role, forced RLS, zero visible rows with no tenant,
+correct backfill ownership and a denied cross-tenant insert.
 
 The runner uses the documented environment-variable database setup alternative,
 not the interactive `dbsetup` wizard. Doctor reports PARTIAL (exit 1), with only
-optional Studio/provider warnings; the gate rejects other warnings or failures.
-This is public-baseline evidence, not candidate-wheel release certification.
-Intermediate tenancy/task/media, durable, MCP and operator journeys remain
-incomplete. Earlier release gates do not substitute for these new journeys.
+optional Studio/provider warnings; the gate also requires successful project,
+database and migration checks. This is public-baseline evidence, not
+candidate-wheel release certification. The intermediate journey covers relations,
+permissions, tenancy, tasks and protected CSV export (the requested common
+application feature alternative to media). It does not certify file storage.
+Durable, MCP and operator journeys remain incomplete.
+
+Observed friction and corrections: tenant migration generation needs an explicit
+backfill for existing rows; the chapter replaces only the generated operations
+and keeps dependencies. The tenant payload denial is HTTP 422 from the generated
+schema on both create and PATCH, rather than the initially assumed 403. Tests
+now assert that actual boundary and verify ownership remains unchanged. Foreign
+keys alone do not enforce customer membership; the tutorial explicitly checks
+assignee accessibility before saving. No runtime fix was made for these items.
 
 ## Automated Truth Gates
 
@@ -279,16 +298,25 @@ candidate runtime matrix has not been run.
 ## Progressive Tutorial Validation
 
 `python scripts/run_public_tutorial_gate.py --python <isolated-wheel-python>
---output audit-evidence/v071/first-project-journey.json` passes eight HTTP test
-executions across two successive stages. The controller receives the local DB
+--output audit-evidence/v071/first-project-journey.json` passes 36 HTTP test
+executions across four successive stages. The controller receives the local DB
 URL through the environment; generated credentials are not recorded. Fixtures
 remove their schema and role after stopping the server. The script extracts
 published files verbatim, runs `startproject`, `makemigrations`, `migrate`,
 `doctor launch-check`, `run`, and the published unittest discovery command.
+For tenancy it performs the documented replacement of the generated migration's
+operations block, preserving the generated imports and dependencies.
 
-`pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q`:
-125 passed after the tutorial changes. Ruff passes for the runner and changed
-semantic docs test. No runtime implementation or version changes were needed.
+`tests/docs/test_tutorial_evidence.py` verifies that the recorded evidence still
+matches every executed page/snippet and the runner, parses every complete sample,
+and rejects database credential patterns. These fast checks establish evidence
+integrity, not fresh database execution. The full installed-wheel gate remains
+required when the tutorial or runner changes.
+
+Current focused validation: `pytest tests/docs tests/test_v048_docs_lock.py
+ tests/test_v048_packaging_sanity.py -q` passes **127 tests**. Strict MkDocs and
+Ruff on the runner and evidence tests pass. PostgreSQL catalog verification
+finds zero leftover tutorial schemas or roles after the journey.
 
 ## Runtime Changes
 

@@ -49,6 +49,8 @@ nav:
       - Your First 10 Minutes: getting-started/ten-minutes.md
       - First Project: getting-started/first-project.md
       - Grow the Ticket Desk: tutorials/ticket-desk.md
+      - Ticket Desk Tenant Isolation: tutorials/ticket-desk-tenancy.md
+      - Ticket Desk Reports: tutorials/ticket-desk-reports.md
       - Studio Quickstart: getting-started/studio.md
       - AI Quickstart: getting-started/ai-quickstart.md
       - MCP Quickstart: getting-started/mcp.md

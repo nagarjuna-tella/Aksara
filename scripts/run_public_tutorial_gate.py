@@ -8,6 +8,7 @@ No source checkout is added to the application environment.
 from __future__ import annotations
 
 import argparse
+import ast
 import asyncio
 import hashlib
 import json
@@ -17,6 +18,7 @@ import secrets
 import socket
 import subprocess
 import tempfile
+import textwrap
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from urllib.request import urlopen
@@ -28,6 +30,8 @@ ROOT = Path(__file__).resolve().parents[1]
 GUIDES = [
     (ROOT / "docs/docs/getting-started/first-project.md", 3),
     (ROOT / "docs/docs/tutorials/ticket-desk.md", 5),
+    (ROOT / "docs/docs/tutorials/ticket-desk-tenancy.md", 12),
+    (ROOT / "docs/docs/tutorials/ticket-desk-reports.md", 16),
 ]
 FILES = re.compile(r'^```python title="([^\"]+)"\n(.*?)^```', re.MULTILINE | re.DOTALL)
 
@@ -76,6 +80,9 @@ async def run(args: argparse.Namespace) -> dict:
         "APP_API_TOKEN": token,
         "PYTHONUNBUFFERED": "1",
     })
+    for variable in ("APP_TENANT_B_TOKEN", "APP_READER_TOKEN", "APP_UNSCOPED_TOKEN"):
+        environment[variable] = secrets.token_hex(32)
+        secret_values.append(environment[variable])
     checks = []
 
     async def command(arguments, cwd, accepted=(0,)):
@@ -112,7 +119,12 @@ async def run(args: argparse.Namespace) -> dict:
             preserved_ticket = None
             for guide, expected_tests in GUIDES:
                 files = {}
+                migration_operations = None
                 for title, source in FILES.findall(guide.read_text()):
+                    files[title] = hashlib.sha256(source.encode()).hexdigest()
+                    if title == "migration operations (replace)":
+                        migration_operations = source
+                        continue
                     append = title.endswith(" (append)")
                     relative = title.removesuffix(" (append)")
                     target = project / relative
@@ -121,20 +133,43 @@ async def run(args: argparse.Namespace) -> dict:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     with target.open("a" if append else "w") as stream:
                         stream.write("\n" + source if append else source)
-                    files[title] = hashlib.sha256(source.encode()).hexdigest()
                 expected = (
                     {"app/models.py", "app/views.py", "app/urls.py", "app/auth.py",
                      "main.py (append)", "tests/test_api.py"}
                     if expected_tests == 3 else
                     {"app/models.py", "app/views.py", "app/urls.py", "app/serializers.py",
                      "tests/test_relations.py"}
+                    if expected_tests == 5 else
+                    {"app/models.py", "app/views.py", "app/auth.py", "app/permissions.py",
+                     "app/serializers.py", "tests/test_api.py", "tests/test_tenants.py",
+                     "migration operations (replace)"}
+                    if expected_tests == 12 else
+                    {"app/tasks.py", "app/reports.py", "main.py (append)", "tests/test_reports.py"}
                 )
                 if set(files) != expected:
                     raise RuntimeError("Tutorial file contract changed; update the journey deliberately")
                 environment["AKSARA_DATABASE_URL"] = admin_dsn
                 checks.append("documented files copied without source substitutions")
-                await command([cli, "makemigrations", "--app", "app.models"], project)
-                await command([cli, "migrate"], project)
+                migration_args = [cli, "makemigrations", "--app", "app.models"]
+                if migration_operations is not None:
+                    migration_args.extend(["--name", "tenant_boundary"])
+                if expected_tests != 16:
+                    await command(migration_args, project)
+                if migration_operations is not None:
+                    candidates = list((project / "migrations").glob("*_tenant_boundary.py"))
+                    if len(candidates) != 1:
+                        raise RuntimeError("Expected one generated tenant migration to edit")
+                    migration = candidates[0]
+                    source = migration.read_text()
+                    module = ast.parse(source)
+                    migration_class = next(node for node in module.body if isinstance(node, ast.ClassDef) and node.name == "Migration")
+                    assignment = next(node for node in migration_class.body if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "operations" for target in node.targets))
+                    lines = source.splitlines(keepends=True)
+                    lines[assignment.lineno - 1:assignment.end_lineno] = [textwrap.indent(migration_operations, "    ")]
+                    migration.write_text("".join(lines))
+                    checks.append("replaced only generated operations block as documented; preserved dependencies")
+                if expected_tests != 16:
+                    await command([cli, "migrate"], project)
                 exists = await admin.fetchval("SELECT to_regclass($1) IS NOT NULL", f"{schema}.tutorial_tickets")
                 if not exists:
                     raise RuntimeError("The documented migration did not create the ticket table")
@@ -143,6 +178,28 @@ async def run(args: argparse.Namespace) -> dict:
                 await admin.execute(f'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA "{schema}" TO "{role}"')
                 await admin.execute(f'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA "{schema}" TO "{role}"')
                 environment["AKSARA_DATABASE_URL"] = app_dsn
+                if migration_operations is not None:
+                    restricted = await asyncpg.connect(app_dsn)
+                    try:
+                        posture = await restricted.fetchrow("SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user")
+                        assert not posture["rolsuper"] and not posture["rolbypassrls"]
+                        for table in ("tutorial_agents", "tutorial_tickets"):
+                            flags = await restricted.fetchrow("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = $1::regclass", f"{schema}.{table}")
+                            assert flags["relrowsecurity"] and flags["relforcerowsecurity"]
+                            assert await restricted.fetchval(f'SELECT count(*) FROM "{table}"') == 0
+                        await restricted.execute("SELECT set_config('aksara.current_tenant_id', $1, false)", "00000000-0000-0000-0000-000000000001")
+                        assert await restricted.fetchval("SELECT subject FROM tutorial_tickets WHERE id=$1", UUID(preserved_ticket)) == "Preserve across migration"
+                        await restricted.execute("SELECT set_config('aksara.current_tenant_id', $1, false)", "00000000-0000-0000-0000-000000000002")
+                        assert await restricted.fetchval("SELECT count(*) FROM tutorial_tickets") == 0
+                        try:
+                            await restricted.execute("INSERT INTO tutorial_tickets(id, subject, description, resolved, tenant_id) VALUES($1, 'denied', '', false, $2)", uuid4(), UUID("00000000-0000-0000-0000-000000000001"))
+                        except asyncpg.InsufficientPrivilegeError:
+                            pass
+                        else:
+                            raise AssertionError("RLS accepted cross-tenant raw insert")
+                        checks.append("restricted role and forced RLS verified; missing tenant sees zero rows; cross-tenant raw insert denied")
+                    finally:
+                        await restricted.close()
                 doctor = await command([cli, "doctor", "launch-check"], project, accepted=(0, 1))
                 doctor_output = doctor.stdout + doctor.stderr
                 warnings = {line.strip().removeprefix("⚠ ") for line in doctor_output.splitlines() if "⚠" in line}
@@ -150,6 +207,9 @@ async def run(args: argparse.Namespace) -> dict:
                     "Studio UI route not registered", "No AI provider configured",
                 }:
                     raise RuntimeError("Unexpected Doctor finding: " + redact(doctor_output))
+                for required in ("PostgreSQL connection successful", "Migrations are up to date", "app registry loaded"):
+                    if required not in doctor_output:
+                        raise RuntimeError("Doctor did not confirm " + required)
                 if doctor.returncode == 1 and "Launch readiness: PARTIAL" not in doctor_output:
                     raise RuntimeError("Unexpected Doctor exit status")
                 with socket.socket() as listener:
@@ -211,10 +271,11 @@ async def run(args: argparse.Namespace) -> dict:
                 })
             return {
                 "schema_version": 2, "stages": stages,
+                "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 "package_version": installed["version"], "source_checkout_imports": False,
                 "checks": checks, "api_tests_passed": sum(stage["api_tests_passed"] for stage in stages),
                 "database_role": "NOSUPERUSER NOBYPASSRLS, DML-only application role",
-                "scope": "First-project and relationships chapters, sequential migrations in one database schema. Test count includes repeated first-chapter regressions. No tenancy, durable action, provider or production-upgrade claim.",
+                "scope": "First-project, relationships, tenant-isolation and queued-report chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary task success and protected CSV export are covered; no durable action, provider or production-upgrade claim.",
                 "pass": True,
             }
     finally:
