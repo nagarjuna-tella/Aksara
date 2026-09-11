@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
 import pytest
 
+from aksara.context_state import tenant_id_var
 from aksara.durable import (
     DurableAction,
     DurableActionRegistry,
@@ -181,8 +183,9 @@ def _runtime(
     *,
     retry_classifier=None,
     boundary_hook=None,
+    handler=None,
 ):
-    async def handler(context, command):
+    async def default_handler(context, command):
         return await context.perform("primary", 1, command, provider)
 
     actions = DurableActionRegistry()
@@ -190,7 +193,7 @@ def _runtime(
         DurableAction(
             name="external.perform",
             version="1",
-            handler=handler,
+            handler=handler or default_handler,
             effect_class=effect_class,
             required_scopes=("external:write",),
             retry_classifier=retry_classifier,
@@ -231,6 +234,112 @@ async def _claim(service, tenant: str, command: dict[str, Any], *, lease=0.5):
     )
     assert claim is not None
     return admitted, claim
+
+
+@pytest.mark.asyncio
+async def test_external_handler_runs_under_operation_tenant_scope(durable_db):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+    observed_scopes = []
+
+    async def handler(context, command):
+        observed_scopes.append(tenant_id_var.get())
+        database_scope = await durable_db.fetchval(
+            "SELECT current_setting('aksara.current_tenant_id', true)"
+        )
+        observed_scopes.append(database_scope)
+        return await context.perform("primary", 1, command, provider)
+
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        handler=handler,
+    )
+    _, claim = await _claim(service, tenant, {"amount": 25}, lease=1)
+
+    completed = await executor.execute(claim)
+
+    assert completed.state is OperationState.SUCCEEDED
+    assert observed_scopes == [tenant, tenant]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("lifecycle_winner", ["cancellation", "deadline"])
+async def test_reclaim_records_unknown_when_lifecycle_closes_after_external_send(
+    durable_db,
+    lifecycle_winner,
+):
+    tenant = str(uuid4())
+    provider = RecordingIdempotentProvider()
+
+    async def die_after_send(name):
+        if name == "after_external_send":
+            raise WorkerKilled("worker died after send and before local confirmation")
+
+    service, executor = _runtime(
+        durable_db,
+        tenant,
+        provider,
+        EffectClass.EXTERNAL_IDEMPOTENT,
+        boundary_hook=die_after_send,
+    )
+    admitted, claim = await _claim(service, tenant, {"amount": 25}, lease=1)
+
+    with pytest.raises(WorkerKilled):
+        await executor.execute(claim)
+    if lifecycle_winner == "cancellation":
+        await service.request_cancellation(
+            admitted.operation.id,
+            tenant_id=tenant,
+            principal=Principal.for_user(
+                "user-1", tenant_id=tenant, scopes=("external:write",)
+            ),
+            requester_reference=_reference(tenant),
+        )
+    with _tenant_context(tenant_scope(tenant)):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operations
+            SET lease_expires_at = clock_timestamp() - INTERVAL '1 second',
+                deadline_at = CASE WHEN $2 = 'deadline'
+                    THEN created_at + INTERVAL '1 millisecond'
+                    ELSE deadline_at END
+            WHERE id = $1
+            """,
+            admitted.operation.id,
+            lifecycle_winner,
+        )
+
+    replacement = await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-b",
+        operation_id=admitted.operation.id,
+    )
+
+    assert replacement is None
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=Principal.for_user(
+            "user-1", tenant_id=tenant, scopes=("external:write",)
+        ),
+    )
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "external_outcome_unknown"
+    with _tenant_context(tenant_scope(tenant)):
+        effect = await durable_db.fetchrow(
+            """
+            SELECT state, execution_count, error
+            FROM aksara_operation_effects WHERE operation_id = $1
+            """,
+            admitted.operation.id,
+        )
+    assert effect["state"] == "outcome_unknown"
+    assert effect["execution_count"] == 1
+    effect_error = json.loads(effect["error"])
+    assert effect_error["code"] == "external_outcome_unknown"
 
 
 @pytest.mark.asyncio

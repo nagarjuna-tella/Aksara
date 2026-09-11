@@ -52,6 +52,7 @@ def _service(
     durable_db,
     *,
     approval: bool = False,
+    effect_class: EffectClass = EffectClass.POSTGRES_ATOMIC,
     namespace: str = "tests",
     approval_authorizer=None,
     required_scopes: tuple[str, ...] = (),
@@ -63,7 +64,7 @@ def _service(
             name="orders.increment",
             version="1",
             handler=_handler,
-            effect_class=EffectClass.POSTGRES_ATOMIC,
+            effect_class=effect_class,
             required_scopes=required_scopes,
             authorizer=authorizer,
             approval_required=approval,
@@ -105,6 +106,29 @@ def test_principal_reference_never_serializes_runtime_authority():
 def test_global_tenant_storage_sentinel_is_reserved():
     with pytest.raises(ValueError, match="reserved"):
         tenant_scope(GLOBAL_TENANT_SCOPE)
+
+
+def test_system_principal_reference_does_not_require_user_identity():
+    reference = PrincipalReference.from_principal(
+        Principal.system("durable worker"),
+        resolver_key="system-identity",
+    )
+
+    assert reference.principal_kind == "system"
+    assert reference.subject_id is None
+    assert reference.tenant_id is None
+
+
+@pytest.mark.asyncio
+async def test_global_postgres_atomic_operation_is_rejected(durable_db):
+    service = _service(durable_db)
+    reference = PrincipalReference.from_principal(
+        Principal.system("global durable operation"),
+        resolver_key="system-identity",
+    )
+
+    with pytest.raises(InvalidDurableCommand, match="explicit tenant_id"):
+        await service.admit("orders.increment", "1", {"amount": 1}, reference)
 
 
 @pytest.mark.asyncio
@@ -557,7 +581,7 @@ async def test_cancelling_waiting_operation_supersedes_pending_approval(durable_
 
 @pytest.mark.asyncio
 async def test_anonymous_principal_cannot_read_global_operation_state(durable_db):
-    service = _service(durable_db)
+    service = _service(durable_db, effect_class=EffectClass.READ_ONLY)
     reference = PrincipalReference(
         resolver_key="test",
         resolver_version="1",

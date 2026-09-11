@@ -98,7 +98,9 @@ class PrincipalReference:
             raise ValueError(
                 f"Unsupported principal reference version: {self.version}"
             )
-        if not any((self.subject_id, self.human_owner_id, self.agent_id, self.credential_id)):
+        if self.principal_kind != "system" and not any(
+            (self.subject_id, self.human_owner_id, self.agent_id, self.credential_id)
+        ):
             raise ValueError("principal reference requires at least one stable identity")
 
     @classmethod

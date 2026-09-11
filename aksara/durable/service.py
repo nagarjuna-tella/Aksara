@@ -40,6 +40,7 @@ from aksara.durable.states import (
     OperationState,
 )
 from aksara.durable.types import (
+    EffectClass,
     OperationAdmission,
     OperationClaim,
     OperationRecord,
@@ -65,7 +66,7 @@ MAX_COMMAND_PAYLOAD_BYTES = 262_144
 
 
 @contextmanager
-def _tenant_context(scope: str):
+def _tenant_context(scope: str | None):
     current_scope = tenant_id_var.get()
     if get_session() is not None and (
         current_scope is None or str(current_scope) != scope
@@ -199,6 +200,13 @@ class DurableOperationService:
             ):
                 raise InvalidDurableCommand(f"{field_name} must be timezone-aware")
         action = self.actions.get(action_name, action_version)
+        if (
+            action.effect_class is EffectClass.POSTGRES_ATOMIC
+            and principal_reference.tenant_id is None
+        ):
+            raise InvalidDurableCommand(
+                "postgres_atomic durable actions require an explicit tenant_id"
+            )
         normalized = action.normalize_command(command)
         input_hash = stable_hash(normalized)
         scope = tenant_scope(principal_reference.tenant_id)
@@ -499,16 +507,24 @@ class DurableOperationService:
                     )
                 )
                 if deadline_expired or row["cancellation_requested_at"] is not None:
+                    outcome_unknown = bool(
+                        row["state"] == OperationState.RUNNING.value
+                        and await self._mark_started_effects_unknown(connection, row)
+                    )
                     await self._close_unclaimable(
                         connection,
                         row,
                         state=(
-                            OperationState.CANCELLED
+                            OperationState.FAILED
+                            if outcome_unknown
+                            else OperationState.CANCELLED
                             if row["cancellation_requested_at"] is not None
                             else OperationState.EXPIRED
                         ),
                         reason=(
-                            FailureReason.CANCELLED
+                            FailureReason.EXTERNAL_OUTCOME_UNKNOWN
+                            if outcome_unknown
+                            else FailureReason.CANCELLED
                             if row["cancellation_requested_at"] is not None
                             else FailureReason.DEADLINE_EXPIRED
                         ),
@@ -732,6 +748,41 @@ class DurableOperationService:
                 )
                 assert updated is not None and attempt is not None
                 return self.repository.claim(updated, attempt, normalized_command)
+
+    async def _mark_started_effects_unknown(
+        self,
+        connection: Any,
+        row: Mapping[str, Any],
+    ) -> int:
+        """Preserve ambiguity when lifecycle closure races an external send."""
+
+        error = {
+            "category": "external",
+            "code": FailureReason.EXTERNAL_OUTCOME_UNKNOWN.value,
+            "message": (
+                "operation closed after external execution started but before "
+                "the provider outcome was confirmed"
+            ),
+            "retryable": False,
+        }
+        return int(
+            await connection.fetchval(
+                """
+                WITH marked AS (
+                    UPDATE aksara_operation_effects
+                    SET state = 'outcome_unknown', error = $3::jsonb,
+                        updated_at = clock_timestamp()
+                    WHERE operation_id = $1 AND tenant_scope = $2
+                      AND state = 'intent_recorded' AND execution_count > 0
+                    RETURNING 1
+                )
+                SELECT count(*) FROM marked
+                """,
+                row["id"],
+                row["tenant_scope"],
+                json.dumps(error),
+            )
+        )
 
     async def _close_unclaimable(
         self,

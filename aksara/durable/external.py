@@ -488,9 +488,10 @@ class ExternalOperationExecutor:
                     message="current authorization denied the durable action",
                     retryable=False,
                 )
-            result = action.handler(context, dict(claim.command))
-            if inspect.isawaitable(result):
-                result = await result
+            with _tenant_context(claim.tenant_id):
+                result = action.handler(context, dict(claim.command))
+                if inspect.isawaitable(result):
+                    result = await result
             normalized = action.normalize_result(result)
             return await self._complete(claim, normalized)
         except _OperationClosed:
