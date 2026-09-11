@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 715,
+  "python_blocks": 698,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -55,7 +55,7 @@
     "docs/docs/api/index.md": "3d04d739d8d5e52a7158c290c9fc9b9b478343daf44c020f8076cfc549b99a30",
     "docs/docs/api/pagination.md": "87d3bf0606c052e923480e4401fdb88b36889e9e711851428b62cea64bb16be3",
     "docs/docs/api/permissions.md": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5",
-    "docs/docs/api/routing.md": "216429ed99ee72950d8f1053ca142378a0932416c88c53c7d0da0cd6c2ab3843",
+    "docs/docs/api/routing.md": "9ea30c5840d8948ac90d18c332731d1b197b86f40f60b4c941331dc073f979fb",
     "docs/docs/api/serializers.md": "98a7d8144900010044fef0219584bac52f8a63539e07f123397352bc50c9eb4a",
     "docs/docs/api/throttling.md": "8a9fac1abd75ee0952e1753fbe99d783a5a9677fc3bfb81fe3be48dcae79ba0c",
     "docs/docs/api/viewsets.md": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306",
@@ -169,7 +169,7 @@
   "source_checkout_framework_imports": false,
   "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, and anonymous denial in the explicit-check action; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "46ae55258c1fb48a00c50e9e27daa4ee6af5e44f4204962221978f9cf40a6c1d",
-  "viewset_contract_sha256": "992ccb521f8aaf9dc73cd21abbeebaeaa4788554e65062dc25f8a35161d6c64d",
+  "viewset_contract_sha256": "150bdd80cdede4c9a103ccaeaa3a661f54f920b45856df374fc671f577b54fe6",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "e9ba668e5354227cab643190c977882d297e61b8f2e0582d25d5daef903c1a91"
+  "runner_sha256": "677b2f5c3699a14607c185f898ba028d6629b595537fc3a2d5e765295994351d"
 }

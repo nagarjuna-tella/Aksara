@@ -109,6 +109,7 @@ Full page-by-page usability review is still pending.
 | PT-017 | P0 | Permission examples use async hooks although ModelViewSet calls hooks synchronously, so an unawaited denial coroutine is truthy; examples also assume an unset DRF-style `self.action` | Replaced with synchronous active-owner permission and explicit list/create/object boundaries; verified owner, non-owner, inactive and anonymous outcomes | Docs fixed; no runtime behavior change |
 | PT-018 | P1 | ViewSet guide advertised ignored DRF-style attributes, unsupported handler helpers, PUT routes, and action-removal switches | Replaced with actual registration, PATCH/detail paths, per-operation serializers, synchronous list query hook and explicit permission boundaries | Docs fixed; installed route/default checks |
 | PT-020 | P1 | API overview and duplicate API reference repeated unsupported DRF attributes, routes, serializer hooks, and custom HTTP authorization claims | Consolidated entry pages around checked references and clarified the registered HTTP action limitation in security/stability guidance | Docs fixed; public import, CLI, and rendered-link gates |
+| PT-021 | P1 | Routing reference passed dotted strings to module discovery, invented prefix/name options and PUT/detail paths, and assumed nested parent filtering | Replaced with actual module discovery, in-place registration and explicit nested-resource/security boundaries | Docs fixed; installed registration/discovery checks |
 
 ## Runtime Defects Exposed by the Documentation Audit
 

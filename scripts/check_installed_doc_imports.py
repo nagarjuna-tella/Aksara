@@ -22,6 +22,7 @@ viewsets['test_viewset_example_registers_documented_routes']()
 viewsets['test_documented_viewset_defaults_and_hooks']()
 viewsets['test_documented_serializer_validation']()
 viewsets['test_custom_action_example_checks_anonymous_identity']()
+viewsets['test_documented_routing_registration_and_discovery']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}

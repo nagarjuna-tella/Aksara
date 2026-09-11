@@ -107,3 +107,36 @@ def test_custom_action_example_checks_anonymous_identity():
     with TestClient(app) as client:
         response = client.get("/api/tickets/00000000-0000-0000-0000-000000000001/summary")
     assert response.status_code == 403
+
+
+def test_documented_routing_registration_and_discovery():
+    from types import ModuleType
+
+    from aksara.api import discover_viewsets
+
+    class RoutingTicket(Model):
+        subject = fields.String(max_length=200)
+
+    view = _load_documented_class("docs/docs/api/viewsets.md", "app/views.py", RoutingTicket)["TicketViewSet"]
+    module = ModuleType("documented_views")
+    module.TicketViewSet = view
+    module.ModelViewSet = ModelViewSet
+    module._PrivateViewSet = view
+    assert discover_viewsets(module) == [view]
+    assert discover_viewsets("documented_views") == []
+    for title in ("app/urls.py", "app/discovered_urls.py"):
+        page = (ROOT / "docs/docs/api/routing.md").read_text()
+        source = re.search(r'```python title="' + re.escape(title) + r'"\n(.*?)```', page, re.DOTALL).group(1)
+        tree = ast.parse(source)
+        tree.body = [node for node in tree.body if not (isinstance(node, ast.ImportFrom) and node.level)]
+        namespace = {"TicketViewSet": view, "views": module}
+        exec(compile(tree, "documented-routing", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+        app = FastAPI()
+        assert namespace["register_routes"](app) is None
+        paths = {(route.path, method) for route in app.routes for method in route.methods
+                 if route.path.startswith("/api/tickets")}
+        assert paths == {
+            ("/api/tickets/", "GET"), ("/api/tickets/", "POST"),
+            ("/api/tickets/{pk}", "GET"), ("/api/tickets/{pk}", "PATCH"),
+            ("/api/tickets/{pk}", "DELETE"),
+        }
