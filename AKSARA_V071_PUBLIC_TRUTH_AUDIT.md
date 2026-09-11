@@ -113,7 +113,7 @@ Full page-by-page usability review is still pending.
 | PT-022 | P2 | Throttling page calls all rate limiting future work and shows an incomplete third-party decorator example | Documented existing Admin POST limits, process-local counters, proxy assumptions, and application-owned API limits | Docs fixed; existing Admin HTTP regression |
 | PT-023 | P1 | Signal guides invent decorators, lifecycle events, and created/update_fields payloads; external effects lack commit qualification | Replaced with explicit subscriptions, exact lifecycle payloads, runnable dispatch example, and transaction/side-effect limits | Docs fixed; installed dispatcher example; lifecycle payloads inspected in model source |
 | PT-024 | P1 | Duplicate ORM reference advertises nonexistent query methods, awaitable/sliceable query construction, Django field options and object-valued lazy foreign keys | Replaced with actual query boundary, concurrency qualification and links to detailed contracts | Docs fixed; installed query-shape example; no database execution claimed |
-| PT-025 | P1 | Querying guide repeats unsupported await/slice/projection/exclude patterns and positional aggregate calls | Rewrote around tutorial Ticket, explicit terminal methods, Q negation, bounded pagination and named aggregates | Docs fixed; syntax/import gates; database examples remain subject to journey validation |
+| PT-025 | P1 | Querying guide repeats unsupported await/slice/projection/exclude patterns and positional aggregate calls | Rewrote around tutorial Ticket, explicit terminal methods, Q negation, bounded pagination and named aggregates | Docs fixed; all eight Python blocks executed against installed-wheel PostgreSQL; 18 assertions |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
@@ -545,3 +545,18 @@ finds zero leftover tutorial schemas or roles after the journey.
 **No functional runtime changes.** `aksara/cli/scaffold.py` changes only its
 generated README text; equivalence evidence above covers all executable files,
 settings, security defaults and dependencies. Package version remains `0.7.0` until candidate readiness is proven.
+
+## Query Guide PostgreSQL Evidence
+
+`scripts/check_public_queries.py --python <isolated-wheel-python> --output
+audit-evidence/v071/query-execution.json` executes all eight querying-guide
+Python fences unchanged, with the exact first-project Ticket model and a
+seeded, uniquely named PostgreSQL schema. Eighteen assertions cover ordered
+unresolved rows, identifier lookup, missing lookup handling, first selection,
+OR/negation, conditional filters, offset pagination, count/existence/aggregate,
+and explicit output projection. The runner verifies installed-package imports
+and removes and checks removal of its own schema. No credentials are stored in
+the evidence. Setup uses test-owned DDL; this is not migration, RLS, concurrent
+access, or HTTP authorization evidence. The initial fixture omitted the base
+model's `updated_at` column; that fixture error was corrected before the passing
+run. No framework change was made.

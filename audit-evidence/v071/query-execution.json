@@ -1,0 +1,33 @@
+{
+  "checks": [
+    "querying block 1 executed",
+    "unresolved ordered rows",
+    "querying block 2 executed",
+    "get resolves identifier",
+    "missing get handled",
+    "querying block 3 executed",
+    "ordered first",
+    "querying block 4 executed",
+    "OR and negation",
+    "querying block 5 executed",
+    "conditional query",
+    "querying block 6 executed",
+    "offset beyond results",
+    "querying block 7 executed",
+    "count existence aggregate",
+    "querying block 8 executed",
+    "bounded public projection",
+    "all guide blocks covered"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "All eight querying-guide Python blocks against seeded PostgreSQL using the exact tutorial model; test-owned schema setup, not migration, RLS, concurrency or HTTP authorization proof",
+  "page_sha256": {
+    "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
+    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12"
+  },
+  "runner_sha256": "ca22e6b4d677b4de8a56975cb4118f129621ec60247bdd6c090602d28d5b9036"
+}
