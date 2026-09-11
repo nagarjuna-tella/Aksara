@@ -150,3 +150,9 @@ def test_documented_signal_dispatch_example():
     namespace = {"__name__": "documented_signal_probe"}
     exec(compile(source, "documented-signals", "exec"), namespace)  # noqa: S102 - trusted repository documentation
     asyncio.run(namespace["main"]())
+
+
+def test_documented_orm_query_shape():
+    page = (ROOT / "docs/docs/reference/orm-reference.md").read_text()
+    source = re.search(r'```python title="query_shape.py"\n(.*?)```', page, re.DOTALL).group(1)
+    exec(compile(source, "documented-query-shape", "exec"), {})  # noqa: S102 - trusted repository documentation

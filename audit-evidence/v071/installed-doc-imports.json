@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 681,
+  "python_blocks": 662,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -121,7 +121,7 @@
     "docs/docs/reference/cli-reference.md": "0e08093f9f861b32b50ee21e976dd4a81a49e5c58df302064a902eda9483dc2e",
     "docs/docs/reference/exceptions.md": "12369deead12db343f163a4c559a7af57fe5754c98b77bb857465164308e3aa4",
     "docs/docs/reference/index.md": "0c1f7ca8f67d5073661754be6344a81288daf3305115efeaa67ff7004598d0e2",
-    "docs/docs/reference/orm-reference.md": "842eb9469154bcfad82bb472ab90ba011d249fe530ff50edb97f5cdabdcc410a",
+    "docs/docs/reference/orm-reference.md": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
     "docs/docs/reference/runtime-compatibility.md": "47a3415e4e2b4caca9ccc273104bf7294a1bc8fb19902a5b2644d1e858536c40",
     "docs/docs/reference/settings-reference.md": "828ca2b0bbfa3acb600d6d597c94c056861b990128a42d93f1e6d28217aaaa82",
     "docs/docs/reference/types.md": "a280ca282479502f6192ef2be0c726bb8c7990b3c0c7eac4bbeac2dafb33280b",
@@ -169,7 +169,7 @@
   "source_checkout_framework_imports": false,
   "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, and standalone signal dispatch; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "46ae55258c1fb48a00c50e9e27daa4ee6af5e44f4204962221978f9cf40a6c1d",
-  "viewset_contract_sha256": "77674fcaa43adda6a152ea10d254eeb612bd492ff9fa0ca0107dce64e8227a3f",
+  "viewset_contract_sha256": "54bc11a997cc50061e31a018bf528420547e6c2c938271dcfb4f37e66815c5b1",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "ff56946902f4538094d0859695847134b2c14075468a1f69446b3399ebdef502"
+  "runner_sha256": "4efdfe21082475c3b9561e3638dbf501340b439e910ff5f5afc39332e48b0a6d"
 }

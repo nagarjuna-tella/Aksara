@@ -112,6 +112,7 @@ Full page-by-page usability review is still pending.
 | PT-021 | P1 | Routing reference passed dotted strings to module discovery, invented prefix/name options and PUT/detail paths, and assumed nested parent filtering | Replaced with actual module discovery, in-place registration and explicit nested-resource/security boundaries | Docs fixed; installed registration/discovery checks |
 | PT-022 | P2 | Throttling page calls all rate limiting future work and shows an incomplete third-party decorator example | Documented existing Admin POST limits, process-local counters, proxy assumptions, and application-owned API limits | Docs fixed; existing Admin HTTP regression |
 | PT-023 | P1 | Signal guides invent decorators, lifecycle events, and created/update_fields payloads; external effects lack commit qualification | Replaced with explicit subscriptions, exact lifecycle payloads, runnable dispatch example, and transaction/side-effect limits | Docs fixed; installed dispatcher example; lifecycle payloads inspected in model source |
+| PT-024 | P1 | Duplicate ORM reference advertises nonexistent query methods, awaitable/sliceable query construction, Django field options and object-valued lazy foreign keys | Replaced with actual query boundary, concurrency qualification and links to detailed contracts | Docs fixed; installed query-shape example; no database execution claimed |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
