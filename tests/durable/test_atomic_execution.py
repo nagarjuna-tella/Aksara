@@ -725,7 +725,7 @@ async def test_deadline_after_claim_blocks_mutation_and_retains_expiry_metadata(
         "1",
         {"counter_id": str(counter_id)},
         _reference(tenant),
-        deadline_at=datetime.now(UTC) + timedelta(milliseconds=30),
+        deadline_at=datetime.now(UTC) + timedelta(seconds=30),
     )
     claim = await service.claim(
         tenant_id=tenant,
@@ -733,7 +733,15 @@ async def test_deadline_after_claim_blocks_mutation_and_retains_expiry_metadata(
         operation_id=admitted.operation.id,
     )
     assert claim is not None
-    await asyncio.sleep(0.05)
+    with _tenant(tenant):
+        await durable_db.execute(
+            """
+            UPDATE aksara_operations
+            SET deadline_at = created_at + INTERVAL '1 millisecond'
+            WHERE id = $1
+            """,
+            admitted.operation.id,
+        )
 
     expired = await executor.execute(claim)
 
