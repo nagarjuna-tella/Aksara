@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs" / "docs"
 
@@ -56,13 +55,15 @@ def test_readme_mentions_launch_path(fragment):
         "# Roadmap",
         "Where Aksara is now",
         "v0.7 release",
-        "v0.6.1 — installed-package truth",
-        "Delivered in v0.7",
-        "Stable v0.7 additions",
+        "Now — v0.7.1 public truth and developer experience",
+        "v0.7.x maintenance",
+        "Next — operating authorized application work",
         "durable authorized operations",
+        "Later — supported modeling, integrations and stabilization",
+        "Explore — integrations and demand",
+        "Not planned",
         "Experimental / deferred",
-        "Principles",
-        "Beyond v0.7",
+        "v1.0 readiness",
         "directional, not a promise",
         "Release evidence overrides roadmap assumptions",
         "PostgreSQL",

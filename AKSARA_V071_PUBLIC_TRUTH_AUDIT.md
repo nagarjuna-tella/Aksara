@@ -77,7 +77,7 @@ lead the beginner journey. Navigation implementation is pending.
 | ID | Severity | Evidence | Required disposition | Status |
 | --- | --- | --- | --- | --- |
 | PT-001 | P1 | `tutorials/deployment.md` Step 1 leads with an unsupported `AKSARA` dictionary, labeled conceptual | Replaced operational instructions with real configuration, role separation, workers and recovery guidance; clean-room execution still pending | Docs fixed |
-| PT-002 | P2 | `roadmap.md` calls v0.6.1 the current adoption patch after v0.7.0 | Replace with evidence-derived current/next horizons | Open |
+| PT-002 | P2 | `roadmap.md` calls v0.6.1 the current adoption patch after v0.7.0 | Replaced with current v0.7.0, v0.7.1 work, evidence-gated v0.8 thesis and bounded 1.0 criteria | Docs fixed |
 | PT-003 | P2 | `examples/README.md` omits support_desk from its catalog | Rewrote catalog using actual models and execution boundaries, including Support Desk and EX-001 | Docs fixed |
 | PT-004 | P2 | `docs/mkdocs.yml` gives experimental AI a large top-level section; durability is under Advanced | Provide an application learning path and prominent production/durability entry points | Open |
 
@@ -201,9 +201,25 @@ is unchanged.
 
 ## Remaining Documentation Debt
 
-All candidate journeys, full content/example audit, navigation implementation,
-market research, strategic report, roadmap, candidate packaging, compatibility
-regression and hosted checks remain pending.
+Candidate journeys, full content/example audit, navigation completion, candidate
+packaging, compatibility regression and hosted checks remain pending. The
+market/roadmap review is now drafted from current primary documentation; its
+user-demand and integration-cost hypotheses still require independent trials.
+
+## Strategic Review and Roadmap
+
+[The post-v0.7 review](AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md) compares
+application frameworks, backend platforms, task/durable systems, agent runtimes
+and policy systems using primary documentation researched on 2026-09-11.
+The source index is `audit-evidence/v071/strategy-research.json`. The public
+roadmap now distinguishes released v0.7.0, in-development v0.7.1, a proposed
+v0.8 operating-experience thesis, later work, experiments and non-goals.
+It explicitly retains PostgreSQL and does not treat ordinary tasks as
+Principal-preserving durable actions. No new runtime work is authorized.
+
+Focused documentation/packaging validation after this change: 116 passed;
+strict MkDocs passes. These are document consistency checks, not proof of
+market demand or completion of the application journeys.
 
 ## Runtime Changes
 
