@@ -374,10 +374,10 @@ async def main() -> None:
             application_namespace="support-desk-v070-prune",
             actions=actions,
             resolvers=resolvers,
-            retention_seconds=0.05,
-            idempotency_seconds=0.1,
-            result_retention_seconds=0.02,
-            error_retention_seconds=0.02,
+            retention_seconds=2.0,
+            idempotency_seconds=2.0,
+            result_retention_seconds=0.2,
+            error_retention_seconds=0.2,
         )
         prune_admission = await prune_service.admit(
             "support.ticket.resolve",
@@ -398,14 +398,14 @@ async def main() -> None:
         )
         while await prune_exporter.export_once(tenant_id=tenant_a):
             pass
-        await asyncio.sleep(0.03)
+        await asyncio.sleep(0.4)
         first_prune = await prune_service.prune(tenant_id=tenant_a, batch_size=20)
         retained = await prune_service.get(
             prune_admission.operation.id,
             tenant_id=tenant_a,
             principal=_principal(tenant_a),
         )
-        await asyncio.sleep(0.08)
+        await asyncio.sleep(1.8)
         second_prune = await prune_service.prune(tenant_id=tenant_a, batch_size=20)
         try:
             await prune_service.get(
