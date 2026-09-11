@@ -120,15 +120,18 @@ reading and beginner tests must use only published instructions.
 
 ## README Findings
 
-The existing first screen correctly describes a PostgreSQL framework and scopes
-AI as experimental. Evaluate its audience, concrete use case, FastAPI comparison,
-and navigation after capability and market research; do not assume AI-native is
-the right lead category.
+The rewritten first screen leads with a Python application backend for SaaS
+and internal applications, explains the choice relative to FastAPI, and keeps
+AI optional. It scopes delayed authorized mutations and external-effect limits.
+The README and short Quick Start share one canonical ticket-desk tutorial.
 
 ## Quick Start Findings
 
-Existing gate coverage is useful but insufficient to certify the new full
-beginner/auth/testing journey. Rerun from an isolated installed wheel after edits.
+The canonical first-project page now supplies complete model, view, route,
+local authentication adapter and HTTP test files. Its three tests pass through
+a real server from the installed public package. The next chapter extends the
+same database with relationships and custom validation. Production identity
+and multi-tenancy are explicitly outside these first two stages.
 
 ## Configuration Findings
 
@@ -208,8 +211,21 @@ justified yet. Durable example usability requires its own documented journey.
 
 ## Clean-Room Journey Results
 
-Not yet run for v0.7.1. Do not interpret the v0.7.0 release's 15-step wheel gate
-or 66-check reference gate as completion of the new journeys.
+The beginner and relationships chapters now run from exact Markdown file
+fences in a temporary scaffold using the independently installed public 0.7.0
+wheel, local PostgreSQL and an ephemeral NOSUPERUSER/NOBYPASSRLS application
+role. The first chapter passes three HTTP tests; the second passes five,
+including the repeated first-chapter regressions. A ticket created before the
+second migration survives with its subject unchanged and a null assignee.
+The eight executions are not eight unique tests. Evidence is recorded in
+`audit-evidence/v071/first-project-journey.json` with page and snippet hashes.
+
+The runner uses the documented environment-variable database setup alternative,
+not the interactive `dbsetup` wizard. Doctor reports PARTIAL (exit 1), with only
+optional Studio/provider warnings; the gate rejects other warnings or failures.
+This is public-baseline evidence, not candidate-wheel release certification.
+Intermediate tenancy/task/media, durable, MCP and operator journeys remain
+incomplete. Earlier release gates do not substitute for these new journeys.
 
 ## Automated Truth Gates
 
@@ -259,6 +275,20 @@ strict MkDocs both pass. The upgrade recipe's SHA-256 matches its executed
 public-wheel evidence. All validation is scoped: a disposable internal-schema
 bootstrap does not prove a data-bearing v0.6 application upgrade, and the full
 candidate runtime matrix has not been run.
+
+## Progressive Tutorial Validation
+
+`python scripts/run_public_tutorial_gate.py --python <isolated-wheel-python>
+--output audit-evidence/v071/first-project-journey.json` passes eight HTTP test
+executions across two successive stages. The controller receives the local DB
+URL through the environment; generated credentials are not recorded. Fixtures
+remove their schema and role after stopping the server. The script extracts
+published files verbatim, runs `startproject`, `makemigrations`, `migrate`,
+`doctor launch-check`, `run`, and the published unittest discovery command.
+
+`pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q`:
+125 passed after the tutorial changes. Ruff passes for the runner and changed
+semantic docs test. No runtime implementation or version changes were needed.
 
 ## Runtime Changes
 

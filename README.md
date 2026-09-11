@@ -17,93 +17,57 @@
 
 ## What is Aksara?
 
-Aksara is a Python 3.11+ framework for async PostgreSQL applications. Define an
-ORM model and a `ModelViewSet`, then use the same schema and application policy
-for generated REST routes and MCP tools.
+Aksara is a PostgreSQL-backed Python application framework with generated APIs,
+shared authorization boundaries, and durable actions that recheck authority
+before supported effects.
 
-The v0.6 stable contract covers the ORM, migrations, generated REST,
-authentication and server-owned `Principal`, permissions and `PolicyEngine`,
-tenant isolation, core CLI and Doctor, PostgreSQL background tasks, and MCP
-Streamable HTTP execution at `/mcp/`.
-
-The v0.7 release adds opt-in Durable Authorized Operations: one PostgreSQL
-Operation, separate fenced Attempts, scoped idempotency, current
-reauthorization, approval and cancellation intent, task-backed execution, and
-honest external-effect recovery.
-
-Planner behavior, provider-specific quality, process-local investigation
-sessions, autonomous workflows, memory, and Studio AI internals remain
-experimental. Aksara is pre-1.0; read the
-[exact v0.7 stability contract](https://nagarjuna-tella.github.io/Aksara/roadmap/v0-7-stability-contract/)
-before production adoption.
+It is for backend engineers building tenant-aware applications such as support
+desks, internal operations tools and SaaS APIs. Start with ordinary models and
+REST endpoints; agents can become clients later. You operate the Python service
+and PostgreSQL yourself.
 
 ## Why Aksara?
 
-REST callers and AI agents often reach the same data through separate code and
-security paths. Aksara generates both surfaces from one model/ViewSet definition
-and rechecks identity, permissions, policy, tenant, and field-write rules when a
-tool actually runs. The production tenant claim also depends on a restricted
-PostgreSQL role and forced RLS.
+FastAPI supplies typed HTTP endpoints, validation and dependency injection.
+Aksara adds an opinionated ORM/migration path, generated model APIs, application
+policy and tenant enforcement, and opt-in durable execution. Choose it when
+that shared contract is useful enough to justify adopting its data model.
+
+The distinctive use case is an action that waits, retries, or outlives its
+worker: current authority must still permit the mutation when it eventually
+runs. With `postgres_atomic`, supported application changes and authoritative
+Operation success commit in the same PostgreSQL transaction. External effects
+have a separate reconciliation contract; no unconditional exactly-once promise
+is made.
+
+Aksara is pre-1.0. The backend and durable contracts are bounded and tested;
+planners, autonomous workflows, provider quality, memory and Studio internals
+remain experimental. Applications supply credential verification and business
+policy. Ordinary tasks do not automatically preserve a complete Principal.
+Read the [v0.7 stability contract](https://nagarjuna-tella.github.io/Aksara/roadmap/v0-7-stability-contract/)
+for the required production profile and exclusions.
 
 ## 10-Minute Quickstart
 
-Aksara requires PostgreSQL.
+Build a protected ticket API using a disposable PostgreSQL database:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.7.0"
-aksara startproject opsdesk
-cd opsdesk
+python -m pip install "aksara-framework==0.7.0"
+aksara startproject ticket_desk
+cd ticket_desk
 aksara dbsetup
 ```
 
-Open `app/models.py` and define a model:
+Continue with [First project: a ticket desk](docs/docs/getting-started/first-project.md)
+for the complete model, routes, local authentication adapter, migrations,
+curl calls and standard-library API tests. The guide uses the installed package
+and keeps MCP, AI and Studio out of the initial application path.
 
-```python
-from aksara import Model, fields
-
-
-class Incident(Model):
-    title = fields.String(max_length=200, ai_description="Short summary")
-    resolved = fields.Boolean(
-        default=False,
-        ai_description="Resolution state",
-        ai_agent_writable=False,
-    )
-    notes = fields.Text(nullable=True, ai_sensitive=True)
-
-    class Meta:
-        table_name = "incidents"
-        ai_agent_exposed = True
-```
-
-Open `app/views.py`:
-
-```python
-from aksara import ModelViewSet
-
-from .models import Incident
-
-
-class IncidentViewSet(ModelViewSet):
-    model = Incident
-    prefix = "/api/incidents"
-    ai_exposed = True
-```
-
-Then import `IncidentViewSet` in `app/urls.py`, add it to `urlpatterns`, and run:
-
-```bash
-aksara makemigrations --app app.models
-aksara migrate
-aksara doctor launch-check
-aksara dev
-```
-
-Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for generated
-REST OpenAPI. The scaffold keeps MCP, provider-backed AI, and Studio disabled
-until you configure them.
+`aksara doctor launch-check` diagnoses the local project. Production requires
+separate role, tenant and operating checks; see the
+[deployment guide](docs/docs/tutorials/deployment.md).
 
 ## REST and MCP
 

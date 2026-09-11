@@ -1,107 +1,35 @@
 # Quickstart
 
-Build a PostgreSQL-backed Task API from the installed package, then choose
-whether to add MCP. Provider-backed AI and Studio are not prerequisites.
+Build a protected ticket API with one model, a migration, generated REST,
+server-owned identity and runnable tests. Python 3.11+ and PostgreSQL are required.
 
-## Install and scaffold
+Start with [First project: a ticket desk](getting-started/first-project.md).
+It is the canonical step-by-step guide, including the exact files to create.
+Use a disposable local database; it keeps AI and advanced tenancy out of the
+initial learning path.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install "aksara-framework==0.7.0"
-aksara startproject task_api
-cd task_api
+python -m pip install "aksara-framework==0.7.0"
+aksara startproject ticket_desk
+cd ticket_desk
 aksara dbsetup
 ```
 
-The scaffold loads environment variables into the global
-`aksara.conf.settings` object. It keeps MCP, provider-backed AI, and Studio
-disabled until explicitly configured.
+Then follow the guide to define `Ticket`, protect its ViewSet, add a local
+bearer-token adapter, apply migrations, start the server and run authenticated
+CRUD tests. Creating a model does not automatically apply a database migration,
+and exposing an endpoint does not itself verify a user's credentials.
 
-## Define the model
+## After the first application
 
-Replace `app/models.py` with:
+Read [application boundaries](concepts/application-boundaries.md) to distinguish
+models, permission, tenant scope, Tasks and durable Operations. Use the
+[production guide](tutorials/deployment.md) before exposing the app publicly.
 
-```python
-from aksara import Model, fields
-
-
-class Task(Model):
-    title = fields.String(max_length=200, ai_description="Short task title")
-    done = fields.Boolean(default=False, ai_description="Completion state")
-
-    class Meta:
-        table_name = "tasks"
-        ai_agent_exposed = True
-```
-
-## Generate REST routes
-
-Replace `app/views.py` with:
-
-```python
-from aksara import ModelViewSet
-
-from .models import Task
-
-
-class TaskViewSet(ModelViewSet):
-    model = Task
-    prefix = "/api/tasks"
-    ai_exposed = True
-```
-
-Replace `app/urls.py` with:
-
-```python
-from aksara import include_viewset
-
-from .views import TaskViewSet
-
-
-urlpatterns = [TaskViewSet]
-
-
-def register_routes(app):
-    for viewset in urlpatterns:
-        include_viewset(app, viewset)
-```
-
-## Migrate and run
-
-```bash
-aksara makemigrations --app app.models
-aksara migrate
-aksara doctor launch-check
-aksara dev
-```
-
-Open `http://127.0.0.1:8000/docs` and inspect `/api/tasks/` in generated
-OpenAPI. Aksara requires a server-resolved authenticated `Principal` for
-protected writes, so anonymous POST requests are denied.
-
-## Add the stable MCP path
-
-The two tool-related routes are different:
-
-| Path | Purpose |
-| --- | --- |
-| `/mcp/` | Streamable HTTP protocol endpoint for official MCP clients |
-| `/ai/tools/mcp` | HTTP JSON inspection catalog for generated tool metadata |
-
-Continue with the [MCP quickstart](getting-started/mcp.md). It adds a small
-server-side bearer verifier, resolves an MCP `Principal`, connects an official
-client to `/mcp/`, calls `task_create`, and confirms the database row over
-REST.
-
-## What is stable
-
-The v0.6 contract covers the ORM, migrations, generated REST, authentication and
-Principal boundaries, permissions and `PolicyEngine`, tenant isolation, core
-CLI and Doctor, PostgreSQL tasks, and generated MCP execution. Planner quality,
-provider-backed AI, investigations, memory, autonomous workflows, and Studio AI
-internals remain experimental.
-
-Read the [full stability contract](roadmap/v0-6-stability-contract.md) and
-[production security guidance](security/production-hardening.md) before
-deployment.
+When you need agent access, [MCP](getting-started/mcp.md) is an optional next step:
+`/mcp/` is the Streamable HTTP protocol endpoint, while `/ai/tools/mcp` is a
+separate HTTP inspection catalog. They are not interchangeable URLs.
+Provider-backed AI and Studio remain experimental. Neither is required for the
+stable REST, MCP or durable-operation boundary.

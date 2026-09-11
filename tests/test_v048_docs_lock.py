@@ -95,14 +95,15 @@ def test_changelog_mentions_v048_items(fragment):
 @pytest.mark.parametrize(
     "fragment",
     [
-        "REST OpenAPI: http://127.0.0.1:8000/docs",
-        "generated Task API: http://127.0.0.1:8000/api/tasks/",
-        "tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp",
-        "MCP clients use Streamable HTTP",
+        "http://127.0.0.1:8000/docs",
+        "http://127.0.0.1:8000/api/tickets/",
+        "IsAuthenticated",
+        "Principal.for_user",
         "aksara doctor launch-check",
         "aksara dbsetup",
         "aksara migrate",
-        "aksara dev",
+        "aksara run main:app",
+        "python -m unittest discover -s tests -v",
     ],
 )
 def test_first_project_doc_includes_first_run_flow(fragment):
