@@ -18,7 +18,7 @@ tagged, published, or released as part of this validation.
 | Item | Value |
 | --- | --- |
 | Release | `v0.7.0-rc1` / package version `0.7.0rc1` |
-| Candidate implementation commit | `08f8c6233606b4a3e43491ff117c1827897d2a9a` |
+| Candidate implementation commit | `935faff73616eabc7d6c8b45ab7719b764babb22` |
 | Base commit | `9a09a12f7a200884f09a0262fd23209cd8282e8b` |
 | Branch | `codex/v070-durable-authorized-operations` |
 | Local database | PostgreSQL 18.4 database `aksara_test` |
@@ -63,12 +63,12 @@ The detailed decision audit is in
 
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
-| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,259 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
-| Durable operation campaign | Production durable and invariant suites | **PASS:** 246 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
-| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,259 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
-| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,259 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
-| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,259 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
-| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,259 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
+| Full source regression | Current candidate, local PostgreSQL | **PASS:** 8,261 passed, 2 expected provider skips | [`pytest-full.log`](audit-evidence/v070/pytest-full.log) |
+| Durable operation campaign | Production durable and invariant suites | **PASS:** 248 passed | [`durable-targeted.log`](audit-evidence/v070/durable-targeted.log) |
+| Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py311-min.log`](audit-evidence/v070/matrix-py311-min.log) |
+| Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py311-latest.log`](audit-evidence/v070/matrix-py311-latest.log) |
+| Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py314-min.log`](audit-evidence/v070/matrix-py314-min.log) |
+| Latest web stack | Python 3.14.4; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,261 passed, 2 skipped | [`matrix-py314-latest.log`](audit-evidence/v070/matrix-py314-latest.log) |
 | Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks | PR #26 |
 | Candidate-bound invariant matrix | 24 prototype invariants on all four supported runtime cells | **PASS:** 24/24 in every cell | [`matrix-current-prototype.log`](audit-evidence/v070/matrix-current-prototype.log) |
 | Installed package | Isolated wheel, generated app, real PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v070/installed-package-gate.json) |
@@ -95,8 +95,8 @@ Package digests:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `7e1a946259a190343254a99b56d385b66137c969fdc9c6c4cfd5a1f889db05f3` |
-| `aksara_framework-0.7.0rc1.tar.gz` | `2d1615fe2b45ecbcdd104374ae2709834331482aa3e72202a9255aee5c20e812` |
+| `aksara_framework-0.7.0rc1-py3-none-any.whl` | `f7f3e8b1863b3925a531d2481a32f1cb54a50f5c1934d74663d229adedd91d83` |
+| `aksara_framework-0.7.0rc1.tar.gz` | `276e25e9a3a4d962d4b6cc528970357639e10062d833a58f14b73cd006e18797` |
 
 The machine-readable rollup is
 [`release-summary.json`](audit-evidence/v070/release-summary.json). Evidence
@@ -105,8 +105,8 @@ digests are recorded in
 
 ## Performance interpretation
 
-The local campaign admitted 256 Operations in 311.362 ms and executed them in
-638.770 ms. It also proved concurrent same-key deduplication, eight exclusive
+The local campaign admitted 256 Operations in 317.894 ms and executed them in
+639.787 ms. It also proved concurrent same-key deduplication, eight exclusive
 claims, N-to-N+1 fencing, task-backed execution, bounded pruning, indexed claim
 selection under 3,000 terminal rows, exact mutation counts, and a fully idle
 pool. These figures detect obvious local pathology; they are not a capacity or

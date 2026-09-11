@@ -253,11 +253,11 @@
           "hashes": [
             {
               "alg": "SHA-256",
-              "content": "7e1a946259a190343254a99b56d385b66137c969fdc9c6c4cfd5a1f889db05f3"
+              "content": "f7f3e8b1863b3925a531d2481a32f1cb54a50f5c1934d74663d229adedd91d83"
             }
           ],
           "type": "distribution",
-          "url": "file:///private/tmp/aksara-dist-08f8c62.zXo5rw/aksara_framework-0.7.0rc1-py3-none-any.whl"
+          "url": "file:///Users/nagarjunatella/Desktop/Desktop%20-%20Nagarjuna%E2%80%99s%20MacBook%20Pro/projects/Aksara/dist/aksara_framework-0.7.0rc1-py3-none-any.whl"
         },
         {
           "comment": "from packaging metadata Project-URL: Documentation",
@@ -4023,7 +4023,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-11T07:48:48.029429+00:00",
+    "timestamp": "2026-09-11T08:56:16.973721+00:00",
     "tools": {
       "components": [
         {
@@ -4127,7 +4127,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:7a457029-571c-425c-920f-692a276a1ea4",
+  "serialNumber": "urn:uuid:b57b76f8-8e17-4e7c-870b-5d20a3afc131",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
