@@ -1,11 +1,11 @@
 {
   "artifacts": {
-    "aksara_framework-0.7.0rc1-py3-none-any.whl": "65e1288fc6ce3df1bf81ae3e613e4b249ac20409ba13d9abda1a34b0d963d8ca",
-    "aksara_framework-0.7.0rc1.tar.gz": "b1b55a8ff0accc264225e7ee4a77734126cc60a2a9ed721f26832d7ade431c85"
+    "aksara_framework-0.7.0rc1-py3-none-any.whl": "1c5a421817d3d74e8c9db543990753ca2c16044da82383baf2d4fee3b2f88f61",
+    "aksara_framework-0.7.0rc1.tar.gz": "f53843550bee97c9df98437e881ae7c85122a865e1b6d5c07a00667ac3a03536"
   },
   "base_sha": "9a09a12f7a200884f09a0262fd23209cd8282e8b",
   "branch": "codex/v070-durable-authorized-operations",
-  "candidate_implementation_sha": "5bb02dd118864948d581e8eadd64320fa1cb70a8",
+  "candidate_implementation_sha": "9bf0f5a4ad36a0be6ee836e3d2cbb0057d83e1c5",
   "database": "aksara_test",
   "database_credentials_recorded": false,
   "hosted_postgresql": {
