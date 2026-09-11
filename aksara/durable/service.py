@@ -11,10 +11,12 @@ from uuid import UUID, uuid4
 
 from aksara.context_state import tenant_id_var
 from aksara.db import Database, atomic
+from aksara.db.session import get_session
 from aksara.durable.errors import (
     ApprovalConflict,
     AuthorizationDenied,
     CancellationConflict,
+    DurableConfigurationError,
     IdempotencyConflict,
     IdempotencyIdentityExpired,
     OperationNotFound,
@@ -60,6 +62,13 @@ MAX_OUTBOX_PAGE = 500
 
 @contextmanager
 def _tenant_context(scope: str):
+    current_scope = tenant_id_var.get()
+    if get_session() is not None and (
+        current_scope is None or str(current_scope) != scope
+    ):
+        raise DurableConfigurationError(
+            "durable tenant scope cannot change inside an active database session"
+        )
     token = tenant_id_var.set(scope)
     try:
         yield
@@ -502,6 +511,7 @@ class DurableOperationService:
                 if (
                     row["executor_type"] != action.executor_type
                     or row["effect_class"] != action.effect_class.value
+                    or bool(row["approval_required"]) != action.approval_required
                 ):
                     await self._close_unclaimable(
                         connection,

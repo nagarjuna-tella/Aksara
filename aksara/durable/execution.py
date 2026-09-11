@@ -59,6 +59,13 @@ _PERMANENT_RESOLUTION_CODES = {
 }
 
 
+@dataclass(frozen=True)
+class _ResolutionFailure:
+    code: FailureReason
+    message: str
+    retryable: bool
+
+
 class PostgresAtomicExecutor:
     """Execute one claimed same-database action and finalize in one commit."""
 
@@ -112,6 +119,9 @@ class PostgresAtomicExecutor:
                         raise AtomicBoundaryViolation(
                             "required durable approval was not consumed by claim"
                         )
+                    principal = await self._resolve_or_fail(claim)
+                    if principal is None:
+                        return await self._read_authoritative(claim)
                     if not await self._authorize(action, principal, claim):
                         return await self.service.fail_attempt(
                             claim,
@@ -238,53 +248,53 @@ class PostgresAtomicExecutor:
                 raise exc
 
     async def _resolve_or_fail(self, claim: OperationClaim) -> Principal | None:
+        principal, failure = await self._resolve_current(claim)
+        if failure is None:
+            return principal
+        await self.service.fail_attempt(
+            claim,
+            code=failure.code.value,
+            message=failure.message,
+            retryable=failure.retryable,
+        )
+        return None
+
+    async def _resolve_current(
+        self, claim: OperationClaim
+    ) -> tuple[Principal | None, _ResolutionFailure | None]:
         try:
             outcome = await self.service.resolvers.resolve(claim.principal_reference)
         except ResolverNotRegistered as exc:
-            await self.service.fail_attempt(
-                claim,
-                code=FailureReason.RESOLVER_MISSING.value,
-                message=str(exc),
-                retryable=False,
+            return None, _ResolutionFailure(
+                FailureReason.RESOLVER_MISSING, str(exc), False
             )
-            return None
         except Exception as exc:  # noqa: BLE001 - resolver failures are operation data
-            await self.service.fail_attempt(
-                claim,
-                code=FailureReason.RESOLVER_UNAVAILABLE.value,
-                message=str(exc) or "principal resolver unavailable",
-                retryable=True,
+            return None, _ResolutionFailure(
+                FailureReason.RESOLVER_UNAVAILABLE,
+                str(exc) or "principal resolver unavailable",
+                True,
             )
-            return None
 
         if outcome.status is ResolutionStatus.TEMPORARILY_UNAVAILABLE:
-            await self.service.fail_attempt(
-                claim,
-                code=FailureReason.RESOLVER_UNAVAILABLE.value,
-                message=outcome.detail or "principal resolver temporarily unavailable",
-                retryable=True,
+            return None, _ResolutionFailure(
+                FailureReason.RESOLVER_UNAVAILABLE,
+                outcome.detail or "principal resolver temporarily unavailable",
+                True,
             )
-            return None
         if outcome.status is not ResolutionStatus.RESOLVED:
             reason = _PERMANENT_RESOLUTION_CODES[outcome.status]
-            await self.service.fail_attempt(
-                claim,
-                code=reason.value,
-                message=outcome.detail or reason.value,
-                retryable=False,
+            return None, _ResolutionFailure(
+                reason, outcome.detail or reason.value, False
             )
-            return None
         principal = outcome.principal
         assert principal is not None
         if not self._matches_reference(principal, claim):
-            await self.service.fail_attempt(
-                claim,
-                code=FailureReason.IDENTITY_REVOKED.value,
-                message="resolved principal does not match durable identity provenance",
-                retryable=False,
+            return None, _ResolutionFailure(
+                FailureReason.IDENTITY_REVOKED,
+                "resolved principal does not match durable identity provenance",
+                False,
             )
-            return None
-        return principal
+        return principal, None
 
     @staticmethod
     def _matches_reference(principal: Principal, claim: OperationClaim) -> bool:
@@ -435,6 +445,7 @@ class ReadOnlyExecutor:
         if principal is None:
             return await self._identity._read_authoritative(claim)
         authorization_denied_after_boundary = False
+        resolution_failure_after_boundary: _ResolutionFailure | None = None
         try:
             if not await self._identity._authorize(action, principal, claim):
                 return await self.service.fail_attempt(
@@ -469,29 +480,46 @@ class ReadOnlyExecutor:
                         break_for_lifecycle = True
                     else:
                         break_for_lifecycle = False
-                    context = PostgresAtomicExecutionContext(
-                        database=self.service.db,
-                        operation_id=claim.operation_id,
-                        attempt_id=claim.attempt_id,
-                        principal=principal,
-                        tenant_id=claim.tenant_id,
-                        fence=claim.fence,
-                    )
                     if not break_for_lifecycle:
                         await self._identity._at_boundary("after_lock")
-                        if not await self._identity._authorize(action, principal, claim):
-                            authorization_denied_after_boundary = True
-                        else:
-                            with durable_database_guard(self.service.db, connection) as guard:
-                                result = action.handler(context, dict(claim.command))
-                                if inspect.isawaitable(result):
-                                    result = await result
-                                if guard.invalid_reason is not None:
-                                    raise AtomicBoundaryViolation(
-                                        "read_only boundary was invalidated: "
-                                        f"{guard.invalid_reason}"
-                                    )
-                                normalized = action.normalize_result(result)
+                        principal, resolution_failure_after_boundary = (
+                            await self._identity._resolve_current(claim)
+                        )
+                        if resolution_failure_after_boundary is None:
+                            if principal is None:
+                                raise AssertionError(
+                                    "resolved identity did not return a principal"
+                                )
+                            if not await self._identity._authorize(action, principal, claim):
+                                authorization_denied_after_boundary = True
+                            else:
+                                context = PostgresAtomicExecutionContext(
+                                    database=self.service.db,
+                                    operation_id=claim.operation_id,
+                                    attempt_id=claim.attempt_id,
+                                    principal=principal,
+                                    tenant_id=claim.tenant_id,
+                                    fence=claim.fence,
+                                )
+                                with durable_database_guard(
+                                    self.service.db, connection
+                                ) as guard:
+                                    result = action.handler(context, dict(claim.command))
+                                    if inspect.isawaitable(result):
+                                        result = await result
+                                    if guard.invalid_reason is not None:
+                                        raise AtomicBoundaryViolation(
+                                            "read_only boundary was invalidated: "
+                                            f"{guard.invalid_reason}"
+                                        )
+                                    normalized = action.normalize_result(result)
+            if resolution_failure_after_boundary is not None:
+                return await self.service.fail_attempt(
+                    claim,
+                    code=resolution_failure_after_boundary.code.value,
+                    message=resolution_failure_after_boundary.message,
+                    retryable=resolution_failure_after_boundary.retryable,
+                )
             if authorization_denied_after_boundary:
                 return await self.service.fail_attempt(
                     claim,

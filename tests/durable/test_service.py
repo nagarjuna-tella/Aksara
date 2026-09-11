@@ -9,11 +9,13 @@ from uuid import uuid4
 
 import pytest
 
+from aksara.db import atomic
 from aksara.durable import (
     ApprovalConflict,
     AuthorizationDenied,
     DurableAction,
     DurableActionRegistry,
+    DurableConfigurationError,
     DurableOperationService,
     EffectClass,
     IdempotencyConflict,
@@ -674,6 +676,56 @@ async def test_tampered_authority_and_executor_metadata_fail_closed(
     )
     assert operation.state is OperationState.FAILED
     assert operation.error["code"] == expected_code
+
+
+@pytest.mark.asyncio
+async def test_registered_approval_mode_must_match_admitted_operation(durable_db):
+    tenant = str(uuid4())
+    service = _service(durable_db)
+    admitted = await service.admit(
+        "orders.increment", "1", {"amount": 1}, _reference(tenant)
+    )
+    service.actions.register(
+        DurableAction(
+            name="orders.increment",
+            version="1",
+            handler=_handler,
+            effect_class=EffectClass.POSTGRES_ATOMIC,
+            approval_required=True,
+        ),
+        replace=True,
+    )
+
+    assert await service.claim(
+        tenant_id=tenant,
+        worker_id="worker-a",
+        operation_id=admitted.operation.id,
+    ) is None
+    operation = await service.get(
+        admitted.operation.id,
+        tenant_id=tenant,
+        principal=_principal(tenant),
+    )
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "action_version_unavailable"
+
+
+@pytest.mark.asyncio
+async def test_cross_scope_durable_call_is_rejected_inside_active_transaction(
+    durable_db,
+):
+    tenant = str(uuid4())
+    other_tenant = str(uuid4())
+    service = _service(durable_db)
+
+    with _tenant_context(tenant_scope(tenant)):
+        async with atomic(db=durable_db) as connection:
+            assert await service.check_deployment(tenant_id=tenant) == set()
+            with pytest.raises(DurableConfigurationError, match="cannot change"):
+                await service.check_deployment(tenant_id=other_tenant)
+            assert await connection.fetchval(
+                "SELECT current_setting('aksara.current_tenant_id', true)"
+            ) == tenant_scope(tenant)
 
 
 @pytest.mark.asyncio

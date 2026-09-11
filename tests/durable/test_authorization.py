@@ -287,3 +287,38 @@ async def test_read_only_authorization_is_rechecked_after_lifecycle_boundary(dur
     assert operation.state is OperationState.FAILED
     assert operation.error["code"] == "authorization_denied"
     assert calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("effect_class", "executor_type"),
+    [
+        (EffectClass.POSTGRES_ATOMIC, PostgresAtomicExecutor),
+        (EffectClass.READ_ONLY, ReadOnlyExecutor),
+    ],
+)
+async def test_identity_is_resolved_again_after_lifecycle_boundary(
+    durable_db, effect_class, executor_type
+):
+    tenant = str(uuid4())
+    resolution_count = 0
+
+    def resolver(_reference):
+        nonlocal resolution_count
+        resolution_count += 1
+        scopes = ("operation:write",) if resolution_count == 1 else ()
+        return PrincipalResolution.resolved(
+            Principal.for_user("user-1", tenant_id=tenant, scopes=scopes)
+        )
+
+    service, _executor, calls = _runtime(
+        durable_db,
+        resolver,
+        effect_class=effect_class,
+    )
+    operation = await _execute(service, executor_type(service), tenant)
+
+    assert operation.state is OperationState.FAILED
+    assert operation.error["code"] == "authorization_denied"
+    assert resolution_count == 2
+    assert calls == []
