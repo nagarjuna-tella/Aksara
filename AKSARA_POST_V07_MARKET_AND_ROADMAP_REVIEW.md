@@ -263,6 +263,17 @@ to test with readers, not a measured survey result.
 
 ## Technical Debt Relevant to Adoption
 
+Installed-package checks during this review also exposed ACTION-001 (custom
+HTTP action permission metadata does not automatically enforce authorization),
+STORAGE-001 (filesystem sibling-prefix containment), CFG-001 (origin/host list
+parsing), and SDK-001 (generated TypeScript strict-compilation failure). The
+public-truth audit contains the reproductions and scoped evidence. These findings
+raise the priority of separately reviewed correctness/security maintenance
+before broader adoption claims. In particular, shared generated CRUD/MCP checks
+must not be generalized into automatic authorization of arbitrary custom HTTP
+action bodies. The proposed operating-experience direction depends on closing
+these gaps, not merely polishing their documentation.
+
 Prioritize debt by user-visible failure and change risk. Static-analysis ratchets
 contain accepted debt; they are not a claim of a clean type/lint baseline.
 Documented unsupported custom M2M through models and object-valued lazy forward

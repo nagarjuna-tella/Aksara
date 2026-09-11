@@ -124,10 +124,10 @@ means owning the checks and persistence it previously performed. There is no
 `get_request_data()` convenience method or automatically populated `self.action`
 attribute matching the older examples on this page.
 
-Permission hooks are synchronous. Custom `@action` methods have their own
-request and path-parameter contract and can override permission classes. See
-[custom actions](actions.md), and retain every prerequisite permission
-when replacing the ViewSet's permission list.
+Permission hooks are synchronous. Custom `@action` methods have their own request and path-parameter contract.
+Their HTTP handlers require explicit authorization checks in 0.7.0; decorator
+permission metadata is not an automatic HTTP wrapper. See
+[custom actions](actions.md).
 
 ## Errors and execution boundaries
 

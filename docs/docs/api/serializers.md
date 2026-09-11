@@ -1,593 +1,114 @@
-# Serializers
+# Model serializers
 
-Convert data between Python objects and JSON, and validate incoming requests.
+`ModelSerializer` derives input validation and output representation from an
+Aksara model. It is useful for selecting fields and adding application
+validation. It does not authenticate callers, establish tenant membership, or
+make arbitrary ORM writes pass through the generated API policy boundary.
 
----
+The [ticket-desk tutorial](../tutorials/ticket-desk.md) supplies a complete
+serializer, model, migration, ViewSet wiring, and HTTP validation tests.
 
-## What is a Serializer?
+## Select fields explicitly
 
-A **Serializer** is like a translator between two languages:
+For the tutorial's Ticket model, save this as `app/serializers.py`:
 
-- **Python** ↔ **JSON**
+```python title="app/serializers.py"
+from aksara.api.serializers import ModelSerializer
+from aksara.exceptions import ValidationError
+from .models import Ticket
 
-When your API receives data, the serializer:
 
-1. **Validates** — Is this data correct?
-2. **Converts** — Turn JSON into Python objects
-
-When your API sends data, the serializer:
-
-1. **Selects** — Which fields should be included?
-2. **Converts** — Turn Python objects into JSON
-
-```
-                         SERIALIZER
-                             │
-    ┌──────────────┐         │         ┌──────────────┐
-    │   JSON       │ ───────►│────────►│   Python     │
-    │   Request    │         │         │   Object     │
-    │              │         │         │              │
-    │ {"title":    │  Input  │ Output  │ task.title   │
-    │  "Buy milk"} │         │         │ = "Buy milk" │
-    └──────────────┘         │         └──────────────┘
-                             │
-```
-
----
-
-## Basic Usage
-
-### Creating a Serializer
-
-```python
-from aksara.api import ModelSerializer
-from myapp.models import Task
-
-class TaskSerializer(ModelSerializer):
-    """
-    Converts Task objects to/from JSON.
-    """
+class TicketCreateSerializer(ModelSerializer):
     class Meta:
-        model = Task
-        fields = ["id", "title", "description", "completed", "created_at"]
+        model = Ticket
+        fields = ["id", "subject", "description", "resolved"]
+        read_only_fields = ["id", "resolved"]
+
+    def validate_subject(self, value):
+        subject = value.strip()
+        if not subject:
+            raise ValidationError(
+                "Invalid ticket subject",
+                errors={"subject": "A visible subject is required"},
+            )
+        return subject
 ```
 
-### Using a Serializer
-
-```python
-# Serialize: Python → JSON
-task = await Task.objects.get(id=task_id)
-serializer = TaskSerializer(task)
-json_data = serializer.data
-# {"id": "abc123", "title": "Buy milk", "completed": false, ...}
-
-# Deserialize: JSON → Python
-data = {"title": "Buy eggs", "description": "Get a dozen"}
-serializer = TaskSerializer(data=data)
-serializer.is_valid(raise_exception=True)  # Validates
-task = await serializer.save()  # Creates the object
-```
-
----
-
-## Specifying Fields
-
-### Include Specific Fields
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "completed"]  # Only these fields
-```
-
-**Result:**
-```json
-{"id": "abc123", "title": "Buy milk", "completed": false}
-```
-
-### Include All Fields
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = "__all__"  # Every field on the model
-```
-
-### Exclude Fields
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        exclude = ["internal_notes", "deleted_at"]  # Everything except these
-```
-
----
-
-## Field Access Control
-
-### Read-Only Fields
-
-**What it means:** Users can see these fields but can't change them.
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description", "completed", "created_at"]
-        read_only_fields = ["id", "created_at"]  # Can't be set by user
-```
-
-**Use case:** IDs, timestamps, calculated values.
-
-### Write-Only Fields
-
-**What it means:** Users can send these fields but won't see them in responses.
-
-```python
-class UserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email", "password", "name"]
-        write_only_fields = ["password"]  # Hidden in responses
-```
-
-**Use case:** Passwords, secrets, internal codes.
-
----
-
-## Validation
-
-### Automatic Validation
-
-Serializers automatically validate:
-
-| Check | What It Does |
-|-------|--------------|
-| Required fields | Ensures all required fields are present |
-| Data types | Ensures correct types (string, number, etc.) |
-| Max length | Ensures strings don't exceed limits |
-| Valid values | Ensures enum values are valid |
-
-```python
-# This will fail validation:
-data = {"title": ""}  # Title is required and can't be empty
-serializer = TaskSerializer(data=data)
-serializer.is_valid()  # Returns False
-print(serializer.errors)  # {"title": ["This field is required."]}
-```
-
-### Field-Level Validation
-
-Add custom validation for a specific field.
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description"]
-    
-    def validate_title(self, value):
-        """
-        Custom validation for the title field.
-        
-        This runs when someone tries to set the title.
-        """
-        # Check minimum length
-        if len(value) < 3:
-            raise ValidationError("Title must be at least 3 characters")
-        
-        # Check for banned words
-        banned_words = ["spam", "test123"]
-        if any(word in value.lower() for word in banned_words):
-            raise ValidationError("Title contains banned words")
-        
-        return value  # Return the value (possibly modified)
-```
-
-### Object-Level Validation
-
-Validate multiple fields together.
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "due_date", "reminder_date"]
-    
-    def validate(self, data):
-        """
-        Validate the entire object.
-        
-        Use this when validation depends on multiple fields.
-        """
-        due_date = data.get("due_date")
-        reminder_date = data.get("reminder_date")
-        
-        if reminder_date and due_date and reminder_date > due_date:
-            raise ValidationError({
-                "reminder_date": "Reminder must be before the due date"
-            })
-        
-        return data
-```
-
----
-
-## Custom Fields
-
-### Computed Fields
-
-Add fields that don't exist on the model.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api import ModelSerializer, SerializerMethodField
-
-class TaskSerializer(ModelSerializer):
-    # Field computed from a method
-    summary = SerializerMethodField()
-    is_overdue = SerializerMethodField()
-    
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description", "summary", "is_overdue", "due_date"]
-    
-    def get_summary(self, obj):
-        """
-        Create a short summary from the description.
-        
-        Method name must be `get_<field_name>`.
-        """
-        if not obj.description:
-            return ""
-        return obj.description[:100] + "..." if len(obj.description) > 100 else obj.description
-    
-    def get_is_overdue(self, obj):
-        """Check if task is past due date."""
-        if not obj.due_date:
-            return False
-        return obj.due_date < datetime.now() and not obj.completed
-```
-
-**Result:**
-```json
-{
-  "id": "abc123",
-  "title": "Buy milk",
-  "description": "Get 2% milk from the store on Main Street...",
-  "summary": "Get 2% milk from the store on Main Street...",
-  "is_overdue": true,
-  "due_date": "2024-01-01T10:00:00Z"
-}
-```
-
-### Renamed Fields
-
-Expose a field with a different name.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.api import ModelSerializer, Field
-
-class TaskSerializer(ModelSerializer):
-    # Expose "created_at" as "createdAt" for JavaScript
-    createdAt = Field(source="created_at", read_only=True)
-    
-    class Meta:
-        model = Task
-        fields = ["id", "title", "createdAt"]
-```
-
----
-
-## Nested Serializers
-
-Include related objects in your response.
-
-### Basic Nesting
-
-```python
-class AuthorSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "name", "email"]
-
-class PostSerializer(ModelSerializer):
-    # Nest the author object
-    author = AuthorSerializer(read_only=True)
-    
-    class Meta:
-        model = Post
-        fields = ["id", "title", "content", "author"]
-```
-
-**Result:**
-```json
-{
-  "id": "post-123",
-  "title": "Hello World",
-  "content": "This is my first post...",
-  "author": {
-    "id": "user-456",
-    "name": "Alice",
-    "email": "alice@example.com"
-  }
-}
-```
-
-### Many Nested Objects
-
-For lists of related objects (like tags on a post).
-
-```python
-class TagSerializer(ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ["id", "name"]
-
-class PostSerializer(ModelSerializer):
-    # many=True for lists
-    tags = TagSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Post
-        fields = ["id", "title", "tags"]
-```
-
-**Result:**
-```json
-{
-  "id": "post-123",
-  "title": "Python Tips",
-  "tags": [
-    {"id": "tag-1", "name": "python"},
-    {"id": "tag-2", "name": "programming"}
-  ]
-}
-```
-
----
-
-## Different Serializers for Different Actions
-
-Use simple serializers for lists, detailed for single items.
-
-```python
-# Simple serializer for list view (less data = faster)
-class TaskListSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "completed"]
-
-# Detailed serializer for detail view (all the info)
-class TaskDetailSerializer(ModelSerializer):
-    author = UserSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description", "completed", 
-                  "author", "tags", "created_at", "updated_at"]
-```
-
-**Use in ViewSet:**
-```python
-class TaskViewSet(ModelViewSet):
-    model = Task
-    serializer_class = TaskDetailSerializer      # For single item
-    list_serializer_class = TaskListSerializer   # For list view
-```
-
----
-
-## Context
-
-Pass extra information to the serializer.
-
-```python
-# In ViewSet
-class TaskViewSet(ModelViewSet):
-    model = Task
-    
-    def get_serializer_context(self):
-        """Add the current user to serializer context."""
-        return {
-            "user": self.request.user,
-            "request": self.request,
-        }
-
-# In Serializer
-class TaskSerializer(ModelSerializer):
-    is_owner = SerializerMethodField()
-    
-    class Meta:
-        model = Task
-        fields = ["id", "title", "is_owner"]
-    
-    def get_is_owner(self, obj):
-        """Check if current user owns this task."""
-        user = self.context.get("user")
-        return user and obj.user_id == user.id
-```
-
----
-
-## Creating and Updating
-
-### Creating Objects
-
-```python
-# Data from request
-data = {"title": "New Task", "description": "Do something"}
-
-# Validate
-serializer = TaskSerializer(data=data)
-serializer.is_valid(raise_exception=True)
-
-# Create
-task = await serializer.save()
-```
-
-### Updating Objects
-
-```python
-# Get existing object
-task = await Task.objects.get(id=task_id)
-
-# Partial update (PATCH) - only provided fields
-data = {"completed": True}
-serializer = TaskSerializer(task, data=data, partial=True)
-serializer.is_valid(raise_exception=True)
-updated_task = await serializer.save()
-
-# Full update (PUT) - all fields required
-data = {"title": "Updated Task", "description": "New description", "completed": True}
-serializer = TaskSerializer(task, data=data)
-serializer.is_valid(raise_exception=True)
-updated_task = await serializer.save()
-```
-
-### Custom Create/Update Logic
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description"]
-    
-    async def create(self, validated_data):
-        """Custom create logic."""
-        # Add extra data
-        validated_data["user_id"] = self.context["user"].id
-        
-        # Create the object
-        return await Task.objects.create(**validated_data)
-    
-    async def update(self, instance, validated_data):
-        """Custom update logic."""
-        # Track what changed
-        old_title = instance.title
-        
-        # Update fields
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        
-        await instance.save()
-        
-        # Log if title changed
-        if old_title != instance.title:
-            print(f"Task renamed: {old_title} → {instance.title}")
-        
-        return instance
-```
-
----
-
-## Quick Reference
-
-### Meta Options
-
-| Option | What It Does | Example |
-|--------|--------------|---------|
-| `model` | The model to serialize | `model = Task` |
-| `fields` | Which fields to include | `["id", "title"]` or `"__all__"` |
-| `exclude` | Which fields to exclude | `["internal_notes"]` |
-| `read_only_fields` | Can read, can't write | `["id", "created_at"]` |
-| `write_only_fields` | Can write, can't read | `["password"]` |
-
-### Field Types
-
-| Type | Use Case |
-|------|----------|
-| `Field()` | Basic field with options |
-| `SerializerMethodField()` | Computed from a method |
-| `PrimaryKeyRelatedField()` | Return ID of related object |
-| `StringRelatedField()` | Return str() of related object |
-| `NestedSerializer()` | Full nested object |
-
-### Validation Methods
-
-| Method | When It Runs |
-|--------|--------------|
-| `validate_<field>(value)` | For one field |
-| `validate(data)` | For entire object |
-
----
-
-## Complete Example
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from datetime import datetime
-from aksara.api import ModelSerializer, SerializerMethodField
-from aksara.api.validators import ValidationError
-from myapp.models import Task, User, Tag
-
-class UserBriefSerializer(ModelSerializer):
-    """Minimal user info for nesting."""
-    class Meta:
-        model = User
-        fields = ["id", "name"]
-
-class TagSerializer(ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ["id", "name"]
-
-class TaskSerializer(ModelSerializer):
-    """
-    Full task serializer with related objects and computed fields.
-    """
-    # Nested objects
-    assigned_to = UserBriefSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    
-    # Computed fields
-    is_overdue = SerializerMethodField()
-    summary = SerializerMethodField()
-    
-    class Meta:
-        model = Task
-        fields = [
-            "id", "title", "description", "summary",
-            "completed", "is_overdue",
-            "due_date", "assigned_to", "tags",
-            "created_at", "updated_at"
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-    
-    def get_is_overdue(self, obj):
-        if not obj.due_date or obj.completed:
-            return False
-        return obj.due_date < datetime.now()
-    
-    def get_summary(self, obj):
-        if not obj.description:
-            return ""
-        return obj.description[:100] + "..." if len(obj.description) > 100 else obj.description
-    
-    def validate_title(self, value):
-        if len(value) < 3:
-            raise ValidationError("Title must be at least 3 characters")
-        return value
-    
-    def validate(self, data):
-        due_date = data.get("due_date")
-        if due_date and due_date < datetime.now():
-            raise ValidationError({"due_date": "Due date cannot be in the past"})
-        return data
-```
-
----
-
-## Related Documentation
-
-- [ViewSets](viewsets.md) — Use serializers in API endpoints
-- [Validation](../advanced/validation.md) — Advanced validation techniques
-- [Fields](../orm/fields.md) — Model field types
+Set `create_serializer_class = TicketCreateSerializer` on the ViewSet. There is
+no generic `serializer_class` switch on `ModelViewSet`; use the list, retrieve,
+create, or update-specific attribute for the operation you are customizing.
+
+## Validation and persistence
+
+Construct a serializer with `data=...`, call synchronous `is_valid()`, inspect
+`validated_data`, then `await serializer.save()` when persistence is intended.
+For existing records, pass `instance=...`. The database must be connected and
+migrations applied before saving. For reads, `.data` or `to_representation()`
+returns the selected representation.
+
+Validation first uses the generated Pydantic input model, then synchronous
+`validate_<field>(value)` hooks, then synchronous `validate(data)`. Return the
+normalized value or dictionary from each hook. Do not make these hooks async.
+
+`is_valid()` catches Pydantic validation errors and `ValueError`; with
+`raise_exception=True` it re-raises them. Aksara's separate `ValidationError`,
+used above for structured application errors, propagates to the generated
+router's HTTP 422 mapping. Do not assume every exception becomes a false return
+or that a plain application `ValueError` has the same HTTP response contract.
+
+## Supported configuration
+
+| Setting | Meaning |
+|---|---|
+| `Meta.model` | Required Aksara model |
+| `Meta.fields` | Explicit field list or `"__all__"` |
+| `Meta.exclude` | Exclude selected model fields |
+| `Meta.read_only_fields` | Omit fields from generated input validation |
+| `Meta.expand` | Explicit relationship representation configuration |
+| `context` constructor argument | Application context; generated ViewSets supply a request context |
+| `many=True` | Validate/represent multiple items; not a bulk-transaction guarantee |
+
+`Meta.write_only_fields` is **not implemented** in 0.7.0. Do not rely on it to
+hide passwords or other secrets from output. Use an explicit output field list
+or a dedicated response serializer and verify the actual response. Input-only
+secret handling often belongs in an application service, such as the
+[account creation helper](authentication.md), rather than a raw user serializer.
+
+Read-only input fields are omitted from the serializer's input model; this does
+not mean every extra client key is rejected. Generated HTTP/MCP execution adds
+its own field-write enforcement. A direct serializer caller must not treat
+successful validation as an authorization decision.
+
+## Partial updates need special care
+
+The constructor accepts `instance`, `data`, `many`, and `context`. It does not
+accept a DRF-style `partial=True` argument. Input validation uses the serializer's
+full field requirements and dumps defaults into validated data. The default
+update method skips `None` values, so it is not a general “clear this nullable
+field” implementation either.
+
+For ordinary PATCH behavior, retain the generated update schema and validate
+only explicitly supplied fields, as the
+[ticket-desk update example](../tutorials/ticket-desk.md) does. If you introduce an
+update serializer, define and test omitted-field, default, null, and relationship
+replacement behavior explicitly. Do not reuse a create serializer and assume
+partial-update semantics.
+
+## Relationships and custom representation
+
+Foreign keys use their stored identifier names in input, such as
+`assigned_to_id`. `Meta.expand` can request related output; ensure the relation
+is loaded through your query strategy. It does not promise automatic async
+queries during synchronous representation.
+
+DRF-style `SerializerMethodField`, `Field(source=...)`, and nested serializer
+attributes are not the declaration API shown by this implementation. Use the
+supported model fields/expansion or override `to_representation()` explicitly.
+The generated ViewSet response schema must also agree with the output; adding
+a dictionary key alone does not publish a new OpenAPI contract.
+
+Saving multiple items or replacing relationships can perform several database
+operations. Use an explicit transaction when they must be atomic, and validate
+related-object tenant ownership before saving. Follow the
+[tenant-isolation tutorial](../tutorials/ticket-desk-tenancy.md) rather than
+assuming a foreign-key constraint proves authorization.

@@ -145,6 +145,26 @@ validation or data disclosure in an application. Recommend a separate shared
 path-helper fix with path-component and symlink regressions. No runtime fix is
 included here.
 
+**ACTION-001 / P1:** installed 0.7.0 registers custom HTTP actions as bound
+methods without automatically executing ViewSet/decorator permission checks.
+An anonymous-state probe receives 403 from generated list and 200 from an inert
+custom action, both declaring `IsAuthenticated`. The reproducible
+`probe_custom_action_boundary.py` exits 1 for this failed boundary;
+`custom-action-boundary.json` records `runtime_boundary_pass: false`. No database,
+external provider, or application data was involved. The action guide now
+requires explicit checks or delegation to a checked handler; its example denies
+anonymous access in an installed-wheel HTTP check. Recommend a separate shared
+HTTP action authorization patch with view/action override, object, tenant,
+field-write, and REST/MCP parity regressions. No runtime fix is included.
+
+**PT-019 / P1:** serializer guidance advertised unsupported `partial=True`,
+`write_only_fields`, nested field declarations, and misleading validation/error
+semantics. Replaced with supported Meta configuration, synchronous hooks,
+explicit output selection, and documented PATCH limitations. Installed checks
+prove normalization, read-only input omission, blank-input rejection and actual
+constructor/default contracts. This is not full persistence or bulk atomicity
+proof; the progressive tutorial remains the separate database-backed example.
+
 ## Broken Examples Found
 
 **EX-001 / P1:** `examples/multitenant/middleware.py` contains `/` in
@@ -241,7 +261,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. An isolated-wheel run of the existing public syntax/import contracts now
-passes all 778 Python fences and every documented Aksara import. Evidence in
+passes all 738 Python fences and every documented Aksara import. Evidence in
 `installed-doc-imports.json` binds the result to the current public pages and
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -438,7 +458,7 @@ The rendered-site link gate checks local page, fragment, stylesheet, script, and
 image targets, including links under the published `/Aksara/` prefix. It found
 a nonexistent `stylesheets/extra.css` referenced on all 158 HTML pages; removing
 the stale MkDocs `extra_css` entry fixes those requests without changing any
-framework behavior. The rebuilt site passes 49,940 local link/asset checks.
+framework behavior. The rebuilt site passes 49,040 local link/asset checks.
 External links are counted but not fetched by this gate. Evidence is
 `audit-evidence/v071/rendered-links.json`; source freshness and negative-control
 tests prevent a missing asset or fragment from being mistaken for a pass.

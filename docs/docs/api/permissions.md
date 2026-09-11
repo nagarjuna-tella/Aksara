@@ -88,9 +88,9 @@ checks for related records and read-only fields.
 
 Do not rely on a DRF-style `self.action` attribute: generated Aksara routes do
 not set it as shown in older examples. For HTTP-method rules, inspect the request
-in `has_permission` or use `OperationPermission`. For a custom action, the
-`@action` decorator accepts `permission_classes`; its override replaces the
-ViewSet list, so include every prerequisite permission needed by that action.
+in `has_permission` or use `OperationPermission`. For custom HTTP actions, call the required checks explicitly: the decorator
+metadata does not automatically wrap the bound HTTP handler in 0.7.0. MCP
+action execution uses that metadata separately. See [custom actions](actions.md).
 
 ## Combine checks deliberately
 
