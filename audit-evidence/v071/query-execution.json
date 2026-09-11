@@ -17,17 +17,26 @@
     "count existence aggregate",
     "querying block 8 executed",
     "bounded public projection",
-    "all guide blocks covered"
+    "all guide blocks covered",
+    "documented pre_save normalization persisted",
+    "insert lifecycle payloads",
+    "update lifecycle payloads",
+    "post_save ran before outer commit",
+    "outer rollback removes row but not local callback observation",
+    "caught inner failure preserves outer commit",
+    "documented signal disconnection"
   ],
   "package_version": "0.7.0",
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
   "disposable_schema_removed": true,
-  "scope": "All eight querying-guide Python blocks against seeded PostgreSQL using the exact tutorial model; test-owned schema setup, not migration, RLS, concurrency or HTTP authorization proof",
+  "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
   "page_sha256": {
     "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
-    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12"
+    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
+    "docs/docs/orm/signals.md": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
+    "docs/docs/orm/expressions-and-transactions.md": "ae0f37ce31dab2e785b782d7111386c455cd2e674cf053788e2ecc75d20c3918"
   },
-  "runner_sha256": "ca22e6b4d677b4de8a56975cb4118f129621ec60247bdd6c090602d28d5b9036"
+  "runner_sha256": "0a906174d8107eb668abdd2ff5bbf0c39e46a162160a7d50df151f9ad1b2ac07"
 }

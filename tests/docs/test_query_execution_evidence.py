@@ -15,4 +15,7 @@ def test_query_execution_evidence_is_current():
         assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == digest
     assert evidence["runner_sha256"] == hashlib.sha256((ROOT / "scripts/check_public_queries.py").read_bytes()).hexdigest()
     assert {"all guide blocks covered", "OR and negation", "missing get handled",
-            "offset beyond results", "count existence aggregate", "bounded public projection"} <= set(evidence["checks"])
+            "offset beyond results", "count existence aggregate", "bounded public projection",
+            "insert lifecycle payloads", "update lifecycle payloads",
+            "outer rollback removes row but not local callback observation",
+            "caught inner failure preserves outer commit", "documented signal disconnection"} <= set(evidence["checks"])

@@ -111,7 +111,7 @@ Full page-by-page usability review is still pending.
 | PT-020 | P1 | API overview and duplicate API reference repeated unsupported DRF attributes, routes, serializer hooks, and custom HTTP authorization claims | Consolidated entry pages around checked references and clarified the registered HTTP action limitation in security/stability guidance | Docs fixed; public import, CLI, and rendered-link gates |
 | PT-021 | P1 | Routing reference passed dotted strings to module discovery, invented prefix/name options and PUT/detail paths, and assumed nested parent filtering | Replaced with actual module discovery, in-place registration and explicit nested-resource/security boundaries | Docs fixed; installed registration/discovery checks |
 | PT-022 | P2 | Throttling page calls all rate limiting future work and shows an incomplete third-party decorator example | Documented existing Admin POST limits, process-local counters, proxy assumptions, and application-owned API limits | Docs fixed; existing Admin HTTP regression |
-| PT-023 | P1 | Signal guides invent decorators, lifecycle events, and created/update_fields payloads; external effects lack commit qualification | Replaced with explicit subscriptions, exact lifecycle payloads, runnable dispatch example, and transaction/side-effect limits | Docs fixed; installed dispatcher example; lifecycle payloads inspected in model source |
+| PT-023 | P1 | Signal guides invent decorators, lifecycle events, and created/update_fields payloads; external effects lack commit qualification | Replaced with explicit subscriptions, exact lifecycle payloads, runnable dispatch example, and transaction/side-effect limits | Docs fixed; installed dispatcher and PostgreSQL lifecycle/rollback probes |
 | PT-024 | P1 | Duplicate ORM reference advertises nonexistent query methods, awaitable/sliceable query construction, Django field options and object-valued lazy foreign keys | Replaced with actual query boundary, concurrency qualification and links to detailed contracts | Docs fixed; installed query-shape example; no database execution claimed |
 | PT-025 | P1 | Querying guide repeats unsupported await/slice/projection/exclude patterns and positional aggregate calls | Rewrote around tutorial Ticket, explicit terminal methods, Q negation, bounded pagination and named aggregates | Docs fixed; all eight Python blocks executed against installed-wheel PostgreSQL; 18 assertions |
 
@@ -560,3 +560,12 @@ the evidence. Setup uses test-owned DDL; this is not migration, RLS, concurrent
 access, or HTTP authorization evidence. The initial fixture omitted the base
 model's `updated_at` column; that fixture error was corrected before the passing
 run. No framework change was made.
+
+The same installed PostgreSQL gate now executes the exact signal normalization
+snippet and checks insert/update payloads, pre-commit callback timing, outer
+rollback, nested savepoint rollback with outer commit, and disconnection.
+It passes **25 assertions** including the 18 query assertions above. In-memory
+callback observations remain after a database rollback, directly demonstrating
+why `post_save` is not commit evidence. This probe makes no external network
+calls and does not claim durable callback delivery. Its evidence is also bound
+to the signal and transaction guide hashes.

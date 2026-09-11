@@ -15,7 +15,8 @@ from uuid import uuid4
 import asyncpg
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ("docs/docs/orm/querying.md", "docs/docs/getting-started/first-project.md")
+PAGES = ("docs/docs/orm/querying.md", "docs/docs/getting-started/first-project.md", "docs/docs/orm/signals.md",
+         "docs/docs/orm/expressions-and-transactions.md")
 PROBE = r'''
 import ast, asyncio, inspect, json, os, sys, types
 from pathlib import Path
@@ -67,6 +68,50 @@ async def main():
             elif index == 8:
                 passed('bounded public projection', len(namespace['public_rows']) == 3 and all(set(r) == {'id', 'subject'} for r in namespace['public_rows']))
         passed('all guide blocks covered', len(blocks) == 8)
+        from aksara import transaction
+        from aksara.signals import pre_save, post_save
+        signal_module = types.ModuleType('app.signals')
+        exec(Path('signals.py').read_text(), signal_module.__dict__)
+        events = []
+        async def before(sender, instance, **kwargs):
+            events.append(('pre', dict(kwargs)))
+        async def after(sender, instance, **kwargs):
+            events.append(('post', dict(kwargs)))
+        signal_module.connect_signals()
+        pre_save.connect(before, sender=Ticket)
+        post_save.connect(after, sender=Ticket)
+        try:
+            obj = await Ticket.objects.create(subject='  Normalized  ')
+            passed('documented pre_save normalization persisted', (await Ticket.objects.get(id=obj.id)).subject == 'Normalized')
+            passed('insert lifecycle payloads', events == [('pre', {'is_new': True}), ('post', {})])
+            events.clear()
+            obj.subject = '  Updated  '
+            await obj.save()
+            passed('update lifecycle payloads', events == [('pre', {'is_new': False}), ('post', {})])
+            events.clear()
+            rolled_id = None
+            try:
+                async with transaction.atomic():
+                    rolled = await Ticket.objects.create(subject='  Rolled back  ')
+                    rolled_id = rolled.id
+                    passed('post_save ran before outer commit', events == [('pre', {'is_new': True}), ('post', {})])
+                    raise RuntimeError('deliberate outer rollback')
+            except RuntimeError as exc:
+                assert str(exc) == 'deliberate outer rollback'
+            passed('outer rollback removes row but not local callback observation', await Ticket.objects.get_or_none(id=rolled_id) is None and len(events) == 2)
+            async with transaction.atomic():
+                kept = await Ticket.objects.create(subject='Outer survives')
+                try:
+                    async with transaction.atomic():
+                        nested = await Ticket.objects.create(subject='Inner rolled back')
+                        raise RuntimeError('deliberate savepoint rollback')
+                except RuntimeError as exc:
+                    assert str(exc) == 'deliberate savepoint rollback'
+            passed('caught inner failure preserves outer commit', await Ticket.objects.get_or_none(id=kept.id) is not None and await Ticket.objects.get_or_none(id=nested.id) is None)
+        finally:
+            pre_save.disconnect(before, sender=Ticket)
+            post_save.disconnect(after, sender=Ticket)
+            passed('documented signal disconnection', signal_module.disconnect_signals())
     finally:
         await db.disconnect()
     print('QUERY_EVIDENCE=' + json.dumps({'checks': checks, 'package_version': aksara.__version__, 'package_path': aksara.__file__}))
@@ -97,6 +142,8 @@ async def main():
                 model_page = (ROOT / PAGES[1]).read_text()
                 model_source = re.search(r'```python title="app/models.py"\n(.*?)```', model_page, re.DOTALL).group(1)
                 (root / "models.py").write_text(model_source)
+                signal_source = re.search(r'```python title="app/signals.py"\n(.*?)```', (ROOT / PAGES[2]).read_text(), re.DOTALL).group(1)
+                (root / "signals.py").write_text(signal_source)
                 blocks = re.findall(r'```python\n(.*?)```', (ROOT / PAGES[0]).read_text(), re.DOTALL)
                 (root / "blocks.json").write_text(json.dumps(blocks))
                 run = await asyncio.to_thread(
@@ -116,7 +163,7 @@ async def main():
         await connection.close()
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False, "disposable_schema_removed": True,
-                     "scope": "All eight querying-guide Python blocks against seeded PostgreSQL using the exact tutorial model; test-owned schema setup, not migration, RLS, concurrency or HTTP authorization proof",
+                     "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
                      "page_sha256": {page: hashlib.sha256((ROOT / page).read_bytes()).hexdigest() for page in PAGES},
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")
