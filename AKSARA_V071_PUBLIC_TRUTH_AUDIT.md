@@ -32,49 +32,52 @@ directories: basic_app, blog, crm, multitenant, support_desk, and ai_providers.
 
 ## Capability Truth Matrix
 
-This matrix separates 34 capability areas rather than combining independent
+This matrix separates 35 capability areas rather than combining independent
 contracts into a feature checklist. Stability follows the published v0.6/v0.7
 contracts and `concepts/stability.md`; existence alone does not establish stability.
-Public-wheel entries below describe **only the exercised public 0.7.0 slice**.
+Installed-wheel entries identify the exercised slice. Unless labeled development,
+they use the public 0.7.0 wheel. Development evidence also reports version 0.7.0,
+so the scaffold build/equivalence artifacts identify it separately.
 Every candidate-wheel entry remains pending until the final candidate is built
 and the release gates are rerun. “Pending” is not an absence of historical tests.
 
-| Capability | Exists? | Stability | Public API / source anchor | Docs quality | Runnable example / test anchor | Installed public wheel | Notes / remaining proof |
+| Capability | Exists? | Stability | Public API / source anchor | Docs quality | Runnable example / test anchor | Installed wheel evidence | Notes / remaining proof |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed core flow | Ticket desk | CRUD slice | Lifecycle/signals and bulk methods still need candidate coverage. |
-| Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Core counts/filters exercised | Ticket report | Counts/filter slice | See `tests/test_queryset_order_by.py`; full query breadth remains a regression gate. |
+| ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk methods and candidate coverage remain open. |
+| Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Partial audit | Ticket desk | String/Boolean/UUID slice | Advanced Array/Vector/JSON contracts require their separate field suite. |
-| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Reviewed FK flow | Ticket assignee | Nullable FK / SET NULL | Stored forward ID is not a lazy object; custom M2M through models remain unsupported. |
+| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
 | Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Core journey rewritten | Ticket desk; upgrade recipe | Additive relation and tenant backfill | Full historical/data-bearing upgrade and failure campaigns remain candidate gates. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
 | Generated REST/ViewSets | Yes | Stable | `aksara.ModelViewSet`, `include_viewset`, `action` | Core journey rewritten | Ticket desk | CRUD and custom routes | OpenAPI, pagination and every action variant still require full regression coverage. |
-| Authentication | Yes | Stable covered backend paths | `aksara.contrib.auth`, application adapters | Partial audit | Local adapter; Support Desk | Local adapter only | A local bearer mapping is not production login/provider certification. |
+| Authentication | Yes | Stable covered backend paths | `aksara.contrib.auth`, application adapters | Account/session and adapter boundaries corrected | Exact account/session helper; local HTTP adapter | 19 primitive/permission checks ([evidence](audit-evidence/v071/auth-permission-execution.json)) | Database account/session behavior is exercised; no production HTTP login, JWT or provider certification. |
 | Principal | Yes | Stable | `aksara.security.principal.Principal` | Reviewed identity explanation | Ticket identity + durable resolver | Human and tenant context | MCP-agent identity, scope, expiry and human-owner membership are now exercised too. |
 | Permissions | Yes | Stable | `BasePermission`, `IsAuthenticated`, `check_permissions` | Reviewed application pattern | Reader/editor ticket policy | Request/object denial | Custom endpoints must explicitly call their policy; they do not inherit ViewSet permissions. |
 | PolicyEngine | Yes | Stable documented methods | `aksara.security.policy.PolicyEngine` | Partial audit; boundaries clarified | Generated CRUD; durable authorizer | Covered query/write policy slice | `tests/security/test_policy_engine.py` remains the broader authority. |
 | Field-level policy | Yes | Stable covered write paths | `PolicyEngine.validate_payload`, enforcement helpers | Partial audit | Tenant-owned field; durable resolved field | Owned-field denial | Schema 422 and runtime permission denial are distinct enforcement points. |
 | Multi-tenancy | Yes | Stable covered context paths | `TenantModel`, `aksara.middleware.context` | Runnable chapter added | Two-customer ticket desk | HTTP and ordinary-task context | Tenant identity comes from server-owned membership, not request headers. |
 | PostgreSQL RLS | Yes | Stable restricted-role contract | `aksara.tenancy` helpers; migration SQL | Runnable chapter added | Forced-RLS ticket tables | Raw SQL plus HTTP denial | Actual NOSUPERUSER/NOBYPASSRLS posture checked; raw cross-tenant INSERT rejected. |
-| Admin | Yes | Evolving details | `aksara.contrib.admin` | Needs detailed audit | Support Desk admin | Pending | Do not infer all Admin APIs are frozen from backend production readiness. |
+| Admin | Yes | Evolving details | `aksara.contrib.admin` | Mount, permission and relation guidance corrected | Anonymous mount/login; exact owner permission hook | Mount plus 10 real database relation checks ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Database hook fixture is not full authenticated Admin CRUD, CSRF failure or RLS coverage. |
 | Ordinary tasks | Yes | Stable unlinked behavior | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result | Persists tenant, not full Principal; separate task recovery/retention gates remain. |
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Partial help audit | Tutorial commands | Startproject/run/migrate/launch-check slice | Every major subcommand still needs discoverability and documented-command review. |
-| Scaffold | Yes | Experimental template layout | `aksara startproject` output | README rewritten | Generated ticket_desk | Executed; equivalence baseline recorded | v0.6 contract explicitly excludes template layout from stability; no defaults changed. |
-| Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production path rewritten | Launch check; production guide | Launch-check slice | PARTIAL only for optional services; production release profile remains a separate gate. |
-| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Partial audit | Media guide | Pending new journey | Field correctness is distinct from storage integration and protected download design. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 335 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). This is not a candidate wheel. |
+| Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
+| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage boundary clarified; deeper field audit pending | Media helper; historical field suite | FileField name validation only ([evidence](audit-evidence/v071/media-email.json)) | No installed persisted File/Image lifecycle or image-processing journey proof. Separate advanced field regressions remain required. |
 | Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | No SMTP/S3 or persisted model-file lifecycle claim; direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
-| AI/provider/runtime | Yes | Experimental | `aksara.ai` | Needs full stability/copy audit | ai_providers | Pending | Planner and provider quality are outside backend production guarantees. |
-| Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Needs full stability/copy audit | Studio guides | Pending | Not a substitute for production Admin or a durable investigation store. |
+| AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status and CLI examples corrected | Route hint; local greeting and plan template | 12 local CLI checks ([evidence](audit-evidence/v071/ai-cli-execution.json)) | Sockets forbidden in this gate; no provider/planner quality or autonomous execution claim. Full experimental behavior is not certified. |
+| Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Experimental boundary and default enablement clarified | Scaffold default-route probe; Studio guides | Default UI disabled ([evidence](audit-evidence/v071/scaffold-startup.json)) | Disabled-route proof is not enabled Studio workflow validation. Not a production investigation or audit store. |
 | Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Boundary explained | Generic-relations/workflow guide | Pending | Step cache does not inherit Operation leases, fences or current reauthorization. |
 | Configuration | Yes | Stable documented contract | `Settings`, `settings`, `configure` | Reference rewritten and checked | Settings/upgrade examples | Explicit overrides and upgrade recipe | POSIX origin-list env parsing defect documented with explicit-list workaround. |
 | Durable persistence internals | Yes | Internal | Repositories, raw rows and failure hooks | Separated from public contract | Framework tests only | Not a public API gate | Do not expose raw provenance/fences as application contract merely because imports exist. |
 | Legacy provider configuration | Yes | Deprecated | `Settings.ai_default_provider`, `ai_providers`, `ai_secret_hints` | Reference labels compatibility fields | Settings reference | Not recommended example | Retained metadata fields, not recommended provider setup. |
+| Application testing | Yes, limited helpers | Evolving | `aksara.testing`; standard pytest/unittest | Rewritten with explicit fixture ownership | Exact standalone serializer/permission tests | 3 development-wheel tests ([evidence](audit-evidence/v071/testing-execution.json)) | TESTING-001: cleanup helper is not general rollback isolation; source-confirmed, negative runtime probe pending. |
 
 ## Documentation Architecture
 
@@ -880,3 +883,20 @@ checks cover 581 Python fences; CLI parsing covers 335 commands with 0 errors
 and 11 explicit exclusions. Strict MkDocs, Ruff and 47,586 rendered local
 links/assets passed. The truth index records 43 scoped artifacts with no stale
 linked inputs. Release readiness and the final requirement audit remain open.
+
+## Capability Matrix Reconciliation
+
+The matrix above now reflects the scoped evidence available at `9668c08`,
+including query/signals, real Admin relations, account/session helpers, CLI
+parsing, scaffold startup/equivalence, local AI execution and testing guidance.
+Old blanket “pending” entries were replaced only where an artifact proves a
+specific slice. Public-release and development wheels are distinguished even
+though both currently carry 0.7.0 metadata. Added application testing as the
+35th area because its helper limitations affect onboarding directly.
+
+The remaining evidence gaps are still explicit: advanced fields, complete M2M
+behavior, bulk methods, authenticated Admin workflows, persisted file/image
+lifecycles, enabled Studio workflows, a data-bearing historical application
+upgrade, and final candidate-wide regression. Provider quality and experimental
+workflow behavior are not promoted into stable guarantees. This reconciliation
+is an evidence inventory, not the final requirement-by-requirement audit.
