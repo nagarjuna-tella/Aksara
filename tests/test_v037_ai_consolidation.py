@@ -609,4 +609,4 @@ class TestModuleExports:
 
     def test_version_is_0537(self):
         from aksara._version import __version__
-        assert __version__ == "0.7.1rc1"
+        assert __version__ == "0.7.1"

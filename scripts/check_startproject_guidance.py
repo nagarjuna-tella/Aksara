@@ -56,6 +56,7 @@ def main():
                                           b'AKSARA_STUDIO_SECRET_TOKEN=[NORMALIZED]', data)
                         data = data.replace(b'0.7.1-rc1', b'[RELEASE_VERSION]')
                         data = data.replace(b'0.7.1rc1', b'[RELEASE_VERSION]')
+                        data = data.replace(b'0.7.1', b'[RELEASE_VERSION]')
                         data = data.replace(b'0.7.0', b'[RELEASE_VERSION]')
                         files[str(path.relative_to(root / name))] = hashlib.sha256(data).hexdigest()
                 assert files
@@ -116,7 +117,7 @@ def main():
                                 'files_identical': True, 'help_verified': True}, 'source_checkout_framework_imports': False,
         'source_sha256': {**packages[1]['source_sha256'],
                           **{f'examples/{name}/README.md': hashlib.sha256((ROOT / 'examples' / name / 'README.md').read_bytes()).hexdigest() for name in ('blog', 'crm', 'multitenant')}},
-        'normalization': 'Generated Studio token in .env/.env.example plus exact 0.7.0/0.7.1rc1 version spellings; no other code/config/default normalization',
+        'normalization': 'Generated Studio token in .env/.env.example plus exact 0.7.0/0.7.1rc1/0.7.1 version spellings; no other code/config/default normalization',
         'scope': 'Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. Five startapp files and invalid/existing-path exit behavior also match. No database or runtime startup certification in this gate.',
         'runner_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     }

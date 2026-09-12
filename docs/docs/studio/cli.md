@@ -60,7 +60,7 @@ aksara studio handshake --format json | jq '.checksums'
   Project:
     Name:           My API
     Version:        1.0.0
-    Aksara:         0.7.1rc1
+    Aksara:         0.7.1
     Python:         3.11.5
     Environment:    development
     Debug:          True
@@ -93,7 +93,7 @@ aksara studio handshake --format json | jq '.checksums'
   "project": {
     "name": "My API",
     "version": "1.0.0",
-    "aksara_version": "0.7.1rc1",
+    "aksara_version": "0.7.1",
     "python_version": "3.11.5",
     "debug_mode": true,
     "environment": "development"

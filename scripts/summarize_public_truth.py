@@ -29,7 +29,7 @@ def main():
             if match[1][0] in 'ABCD':
                 review_state = 'scoped acceptance recorded in requirement-review.md'
             elif match[1] == 'E6':
-                review_state = 'PR #30 open and 21 hosted checks passed; human review remains'
+                review_state = 'PR #30 merged; final release evidence and human finalization review remain'
             else:
                 review_state = 'local candidate acceptance recorded in requirement-review.md'
             phases.append({'id':match[1], 'title':match[2], 'objective_line':number,
@@ -68,7 +68,7 @@ def main():
         'requirement_review': {
             'artifact': 'audit-evidence/v071/requirement-review.md',
             'sha256': digest(EVIDENCE / 'requirement-review.md'),
-            'scope': 'Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes, while candidate release approval remains open',
+            'scope': 'Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes and the reviewed candidate is merged',
         },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
@@ -96,9 +96,9 @@ def main():
             {'id':'AIFLOW002','evidence':'snippet-coverage-review.json','boundary':'Workflow diagnostics can render malformed set_env display commands with a duplicated export prefix'},
         ],
         'remaining_before_candidate':[
-            'Complete human review; keep PR #30 unmerged, untagged and unpublished until a separately authorized release decision.',
+            'Complete final release evidence and human review of the finalization PR before any separately authorized publication.',
         ],
-        'release_evidence_exists':(ROOT/'RELEASE_EVIDENCE_v0.7.1-rc1.md').exists(),
+        'release_evidence_exists':(ROOT/'RELEASE_EVIDENCE_v0.7.1.md').exists(),
         'scope':'Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval.',
     }
     args.output.write_text(json.dumps(result,indent=2)+'\n')

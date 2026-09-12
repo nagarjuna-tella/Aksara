@@ -12,7 +12,7 @@ compatibility defects can interrupt this sequence. No dates are committed here.
 
 ## Where Aksara is now
 
-The released version is **v0.7.0**. The stable backend foundation includes the
+The released version is **v0.7.1**. The stable backend foundation includes the
 ORM and migrations, generated REST APIs, serializers, identity and permissions,
 PolicyEngine, tenant/RLS enforcement, core Admin/CLI/Doctor surfaces, background
 tasks, and synchronous generated MCP tools over Streamable HTTP at `/mcp/`.
@@ -38,8 +38,8 @@ optional consumers of this backend, not a prerequisite for building an app.
 
 ## Now — v0.7.1 public truth and developer experience
 
-v0.7.1-rc1 is the current candidate. It is a documentation and developer-experience release
-with **no intentional production semantic changes**. Its acceptance work is:
+v0.7.1 is the current documentation and developer-experience release, with
+**no intentional production semantic or dependency changes**. It delivered:
 
 - an executable Quick Start and one progressive application tutorial;
 - a coherent manual for models, APIs, identity, tenants, tasks and Operations;
