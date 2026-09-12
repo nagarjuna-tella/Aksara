@@ -468,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the fourteen audit findings for separately scoped functional maintenance; do
+Track the fifteen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
@@ -650,3 +650,13 @@ now limits its example to JSON seeding and selected exports, distinguishes impor
 from backups, and explains strict-mode transaction ownership. Separate patches
 should establish tested identity/serialization contracts; no runtime fixes belong
 in this documentation release. Evidence: `audit-evidence/v071/fixture-execution.json`.
+
+### Inspector provenance defect (2026-09-11)
+
+INSPECTOR001 / P1: offline query-plan fallback can label fabricated results
+EXPLAIN ANALYZE with no warning, even for invalid SQL. Documentation now directs
+measured analysis to the database-backed profiling procedure and distinguishes
+model declarations from verified catalog state. Recommend a separate provenance
+and error-reporting patch; no production semantics change in this release.
+The installed import gate preserves the offline negative control, not a live
+pool/thread safety certification.

@@ -799,27 +799,27 @@
     },
     {
       "path": "docs/docs/inspectors/index.md",
-      "sha256": "bb7e60035b83e676f7eeafb973f4e3963cb7e9559df24f3480526e56aafbfeb1",
-      "changed_since_release": false,
+      "sha256": "2a2da56a981635013e6b3652364dd08c9246a0a72fd0b96e72f1222c781e8705",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 42
+      "lines": 16
     },
     {
       "path": "docs/docs/inspectors/models.md",
-      "sha256": "1d0fc4cc93c394fe118ce35c3216c651dacc2139bd2c3bd3237e57de09720b5d",
-      "changed_since_release": false,
+      "sha256": "58c9274945882cdaecdf74db04cb925a7cee7315ec7edd6c92932e0909a1edb9",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 160
+      "lines": 59
     },
     {
       "path": "docs/docs/inspectors/query.md",
-      "sha256": "74f7724fa87bc970af72b31699809b5b1500b1554483f7b23ce66615d0e9bad1",
-      "changed_since_release": false,
+      "sha256": "e062d96729b5b54cfc9180b7a7dabf4335cb46502b6a0d4d3b5608e987d9924b",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 127
+      "lines": 52
     },
     {
       "path": "docs/docs/middleware/index.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 38,
+    "unchanged_since_release": 35,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

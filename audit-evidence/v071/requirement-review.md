@@ -199,3 +199,11 @@ proves semantic acceptance; each entry intentionally requires explicit review.
 This avoids mistaking the old baseline's pending flags for a current work list.
 The next source-grounded review covers the three inspector pages: their examples
 and live-versus-synthetic plan claims need comparison with the current module.
+
+## Inspector reference checkpoint
+
+PT055 corrects three inspector pages. The installed import gate executes the
+model/trace examples and INSPECTOR001 offline negative control, with explicit
+false runtime warning-provenance status. This closes the scoped inspector
+reference review, not live database execution or whole-site acceptance. The
+current census now has 35 unchanged pages; that is not a count of unreviewed pages.

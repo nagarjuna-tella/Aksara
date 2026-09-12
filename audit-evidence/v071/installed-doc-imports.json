@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 367,
+  "python_blocks": 366,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -94,9 +94,9 @@
     "docs/docs/how-to/require-durable-approval.md": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
     "docs/docs/how-to/typescript-client.md": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
     "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
-    "docs/docs/inspectors/index.md": "bb7e60035b83e676f7eeafb973f4e3963cb7e9559df24f3480526e56aafbfeb1",
-    "docs/docs/inspectors/models.md": "1d0fc4cc93c394fe118ce35c3216c651dacc2139bd2c3bd3237e57de09720b5d",
-    "docs/docs/inspectors/query.md": "74f7724fa87bc970af72b31699809b5b1500b1554483f7b23ce66615d0e9bad1",
+    "docs/docs/inspectors/index.md": "2a2da56a981635013e6b3652364dd08c9246a0a72fd0b96e72f1222c781e8705",
+    "docs/docs/inspectors/models.md": "58c9274945882cdaecdf74db04cb925a7cee7315ec7edd6c92932e0909a1edb9",
+    "docs/docs/inspectors/query.md": "e062d96729b5b54cfc9180b7a7dabf4335cb46502b6a0d4d3b5608e987d9924b",
     "docs/docs/middleware/index.md": "58004483e3bd88f8eb6bbc4d1f85cebf0f9b7fb83223e1c61de3867776adab1f",
     "docs/docs/middleware/logging.md": "6f346b6a0094cbee9df6e63ee95f835a4813722cd37565cdf46420507a9cd10d",
     "docs/docs/middleware/request-id.md": "d0b9fc2eeeba44141110b50a15d36c3b458396d7fb1ec31cefd70f557d6cd158",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -185,5 +185,8 @@
   "middleware_http_and_log_checks": "passed",
   "model_meta_contract_sha256": "0710a9aa68f8192e0dbc83acccff814ce1173b64a1ec9c4026f987d81f5ba2f4",
   "model_meta_checks": "passed",
-  "runner_sha256": "3b7210b2a627df919fe1bd4af28015728d1a3502bfb0a2f2c4894b2ad0d98d6a"
+  "inspector_contract_sha256": "1a71a08a9263d750991eb22102c6260dd8ec469f0ba0869f68766ac03e94929c",
+  "inspector_offline_checks": "passed",
+  "runtime_synthetic_analyze_warning_present": false,
+  "runner_sha256": "b8a211067ee0338172eec471f9f5c8d59dc468f95518c6bd4bae75f503d9df27"
 }

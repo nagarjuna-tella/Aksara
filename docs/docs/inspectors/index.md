@@ -1,42 +1,16 @@
 # Inspectors
 
-> **v0.5.21** — Query & Model Inspector
+Use inspectors for developer diagnostics. They describe model declarations and
+process-local query traces; they do not certify the deployed database schema or
+production performance.
 
-The **Inspectors** module provides deep introspection tools for analyzing your database schema and query performance.
+- [Inspect model declarations](models.md): fields, forward relationships and
+  inferred constraints for registered Python models.
+- [Inspect query statistics and plan limitations](query.md): trace summaries and
+  the distinction between real PostgreSQL plans and synthetic output.
+- [Profile actual queries](../debugging/query-profiling.md): the supported
+  database-backed workflow for investigating performance.
 
-## Modules
-
-- **[Query Inspector](query.md)** — EXPLAIN plan generation, aggregate query statistics, slow query analysis
-- **[Model Inspector](models.md)** — Field metadata, relationship mapping, constraint detection, auto-generated comments
-
-## Usage
-
-Inspectors are available through three interfaces:
-
-| Interface     | Query Inspector                          | Model Inspector                         |
-|---------------|------------------------------------------|-----------------------------------------|
-| **Python**    | `explain_query()`, `get_query_stats()`   | `inspect_model()`, `inspect_all_models()` |
-| **CLI**       | `aksara inspect queries`                 | `aksara inspect models`                 |
-| **Studio API**| `POST /studio/db/plan`                   | `GET /studio/models/inspect/{name}`     |
-| **Studio UI** | Explain Plan button on slow queries      | Inspector tab (shortcut: `9`)           |
-| **Agent**     | `query_stats` context section            | `schema_analysis` context section       |
-
-## Package
-
-```python
-from aksara.inspectors import (
-    # Query Inspector
-    QueryPlanRequest,
-    QueryPlanResult,
-    QueryStats,
-    explain_query,
-    get_query_stats,
-    # Model Inspector
-    ModelInspectorField,
-    ModelInspectorRelationship,
-    ModelInspectorConstraint,
-    ModelInspectorSummary,
-    inspect_model,
-    inspect_all_models,
-)
-```
+Studio and AI consumers may display this metadata, but those experimental
+interfaces do not strengthen its guarantees. Keep diagnostic output private:
+it can contain schema names, SQL, and application details.

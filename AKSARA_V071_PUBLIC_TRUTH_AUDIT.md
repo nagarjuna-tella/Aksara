@@ -1770,3 +1770,26 @@ changed files can still contain errors and an artifact may cover only one exampl
 All entries retain an explicit semantic-review requirement. The next review
 queue starts with inspector model/query/overview pages, including query-plan
 fallback and execution claims. No new product behavior is introduced.
+
+## Inspector reference follow-up (2026-09-11)
+
+PT055 / P1: inspector pages blurred declared model constraints with catalog
+verification and presented synthetic costs alongside live-plan claims. The three
+pages now distinguish process traces, declaration inference, and measured plans;
+examples use defined models and avoid unverified Studio/UI and agent pipelines.
+
+INSPECTOR001 / P1: with no database, `explain_query(..., analyze=True)` produces
+synthetic output labeled EXPLAIN ANALYZE without a synthetic warning. The focused
+negative control uses deliberately invalid SQL and proves identical synthetic
+plan lines with and without analyze, while only the latter loses its warning.
+Recommend a separate patch exposing provenance and database errors explicitly.
+No production fix is included. Two focused tests pass in the checkout and
+installed wheel. This is offline behavior, not a live pool/thread safety proof.
+Installed import evidence now executes both inspector checks and records
+`runtime_synthetic_analyze_warning_present: false`. Broader validation:
+`.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py
+tests/test_v048_packaging_sanity.py -q` — 198 passed, one existing dependency
+deprecation warning. Strict docs, 366 Python fences/imports, 296 CLI forms,
+42,501 local references across 162 pages, and 42 selected external URLs passed.
+Ruff passed. The strategy inventory now tracks fifteen functional findings for
+separate maintenance; this does not change the roadmap thesis or release scope.
