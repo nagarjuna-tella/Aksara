@@ -167,7 +167,9 @@ Full page-by-page usability review is still pending.
 | PT-065 | P1 | MCP/field/query guidance mixed versions and limits | Synchronous approval, historical policy and query limits clarified; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-066 | P2 | Release guide omitted candidate-specific validation | Exact-ref evidence and historical guidance clarified; see detailed checkpoint below | Docs fixed; scope retained |
 
-The register consolidates all 66 findings. “Docs fixed” describes the recorded
+| PT-067 | P1 | ORM overview and glossary retained unsupported query, relation, database and helper claims | Rebuilt overview around the tutorial and corrected terminology; see conceptual review below | Docs fixed; candidate validation open |
+
+The register consolidates all 67 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -2087,3 +2089,28 @@ first-project source hash matches the existing installed-wheel journey's first
 stage with three API tests; no new database execution is claimed here. Navigation
 and docs-lock tests passed: 74. No public content or runtime behavior changed.
 The broader manual and actual candidate execution still require acceptance.
+
+## Conceptual manual and persistence entry review (2026-09-12)
+
+PT067 / P1: the ORM overview still claimed database independence, default integer
+IDs, directly awaitable QuerySets and object-valued lazy forward foreign keys.
+Its unrelated Product/User snippets also used undeclared fields and called an
+unawaited manager result a QuerySet. The overview now teaches the actual
+PostgreSQL/model/migration/query/relation/transaction boundaries through the
+existing Ticket Desk and links the detailed references. It explicitly separates
+ORM writes from HTTP permissions, serializers and external-effect rollback.
+
+The glossary repeated nonexistent FilterSet/defer/write-only configuration,
+cache/signal decorators and natural-language query-engine claims. Those entries
+now identify actual supported concepts or clearly say the named API is absent;
+a duplicated execution-term block was removed. No runtime API was added.
+
+Read the complete application-boundaries, stability and API overview pages;
+retain them with their explicit application-owned policy and custom-action
+limitations. This author reading does not replace independent usability research.
+Source anchors: manager query/terminal methods, model defaults, actual AI query
+and planner APIs, and existing installed ViewSet/field/relation contracts.
+Validation: 207 docs/packaging tests passed with one dependency warning; strict
+docs, 348 Python fences/imports, 292 CLI forms and 42,169 local references passed.
+The single ORM query fragment is contextual to the connected tutorial; syntax
+and imports are checked, not a new standalone database journey in this turn.

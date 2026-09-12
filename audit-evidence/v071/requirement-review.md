@@ -30,7 +30,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 66-row PT-001 through PT-066 register with detailed sections, plus sixteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 67-row PT-001 through PT-067 register with detailed sections, plus sixteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
@@ -97,7 +97,7 @@ Line numbers below refer to that exact objective.
 | D3: Snippet tests (line 1909) | PARTIAL | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; local advisor visibility/context is checked with network connections blocked. | Complete high-value snippet coverage audit; no arbitrary partial-snippet execution claim. |
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
-| D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,302 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
+| D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,169 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
 | D7: Public API contract scan (line 1933) | PARTIAL | AI labels, stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all current public page semantic dispositions; baseline inventory is not that audit. |
 | D8: Documentation truth report (line 1939) | SCOPED | public-docs-truth.json indexes artifacts, hashes, scopes, defects and open work; candidate_ready remains false. | Link this requirement checkpoint without converting SCOPED into completion. |
 
@@ -290,7 +290,7 @@ the actual hosted Python/web/PostgreSQL matrix, installed-wheel checks and
 publication prerequisites. The notes index directs current users to the current
 manual/contract; dated note contents and changelog history remain unchanged.
 207 docs/packaging tests, strict docs, 358 Python fences/imports, 292 CLI forms,
-and 42,302 local references passed. No release was dispatched. Current counts
+and 42,169 local references passed. No release was dispatched. Current counts
 in the phase table were refreshed; historical checkpoint results remain scoped.
 
 ## Capability and contradiction reconciliation checkpoint
@@ -309,3 +309,11 @@ page hashes and reasons in entry-reading-review.json. The matching historical
 installed first-project stage has three API tests. Navigation/docs-lock: 74
 passed. This advances explicit page disposition without treating hashes or a
 navigation test as whole-manual semantic acceptance.
+
+## Conceptual/persistence review checkpoint
+
+PT067 corrects the ORM entry page and glossary after complete reading of the
+concept/stability/API entry path exposed remaining unsupported claims. Current
+public Python fences: 348; CLI forms: 292; local references: 42,169. All relevant
+docs gates passed (207 tests). A8/A22 remain partial until the rest of the manual
+is reviewed; revised entry pages do not establish full manual acceptance.

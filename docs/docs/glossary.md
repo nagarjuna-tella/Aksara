@@ -26,7 +26,7 @@ One physical execution claim for a durable Operation. A retry or replacement
 worker creates a new Attempt; the logical Operation remains the same.
 
 ### AI Mode
-Experimental development features such as natural-language queries, code generation and debugging assistance; separate from stable backend and MCP execution.
+Experimental planning, structured query plans, code generation and debugging assistance; separate from stable backend and MCP execution. Aksara does not itself turn arbitrary natural language into authorized database queries.
 
 ### Agent
 An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](ai-mode/agent-runtime.md).
@@ -35,7 +35,7 @@ An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](a
 Adding computed values to queryset results, typically using aggregate functions like `Count`, `Sum`, `Avg`.
 
 ### Authentication
-The process of verifying user identity. Aksara supports token-based and custom authentication backends.
+The process of verifying identity. Application credential verification supplies a server-owned Principal; account/session primitives do not automatically install login routes.
 
 ---
 
@@ -55,7 +55,7 @@ Database operations that affect multiple records at once (`bulk_create`, `bulk_u
 Temporary storage used to avoid repeated work. Internal schema/content caches do not imply a supported general-purpose Redis cache service.
 
 ### Codegen
-AI-powered code generation for models, viewsets, serializers, and tests.
+Experimental generation of code artifacts. Some handlers are deterministic templates; generated code still requires review and tests.
 
 ### Context Engine
 Component that gathers relevant code context for AI operations.
@@ -68,10 +68,10 @@ Create, Read, Update, Delete — the four basic operations for persistent storag
 ## D
 
 ### Decorator
-A Python pattern that wraps functions or classes. Aksara uses decorators for actions, caching, signals, etc.
+A Python pattern that wraps functions or classes. Aksara uses decorators such as `@action` and `@task`; this does not imply a public cache decorator or signal-decorator API.
 
 ### Defer
-A query projection that omits selected fields. Do not assume accessing an omitted field will perform a transparent asynchronous database fetch.
+A term for omitting fields from a query in some ORMs. Aksara does not expose a QuerySet `defer()` method; use the documented projection methods instead.
 
 ### Durable Operation
 A persisted logical application command with identity, bounded retention and
@@ -112,7 +112,7 @@ A class that defines a database column and its behavior. Examples: `String`, `In
 Constraining queryset results based on field values.
 
 ### FilterSet
-A class that defines available filters for a ViewSet.
+A class-based filter configuration concept used by some frameworks. Aksara does not provide a public `FilterSet` class; see its [filtering reference](api/filtering.md).
 
 ### Foreign Key (FK)
 A database relationship where one model references another model's primary key.
@@ -122,7 +122,7 @@ A database relationship where one model references another model's primary key.
 ## G
 
 ### Generator
-A Python construct that yields values lazily. Used in async iteration over querysets.
+A Python construct that yields values lazily. Do not infer support for asynchronous QuerySet iteration from this term; execute documented terminal methods.
 
 ---
 
@@ -178,7 +178,7 @@ Temporary worker ownership measured against database time. Expiry permits
 recovery; it does not kill an old process. Fencing rejects the old owner's writes.
 
 ### Lazy Loading
-Deferring data loading until it's actually needed.
+Deferring data loading until needed. Aksara forward foreign-key attributes expose stored IDs, not lazily fetched objects.
 
 ### List Route
 A ViewSet endpoint that operates on the entire collection of objects.
@@ -281,10 +281,10 @@ The unique identifier field for a model instance.
 A request to retrieve or modify data in the database.
 
 ### Query Engine
-AI component that converts natural language to database queries.
+Aksara's experimental structured `AiQueryPlan` executor. It does not export a `QueryEngine` class or parse natural language; application authorization is required before use.
 
 ### QuerySet
-An object representing a database query that can be chained and lazily evaluated.
+An object describing a database query. Chain supported builders, then await a terminal method such as `all()`; do not await QuerySet itself.
 
 ---
 
@@ -293,19 +293,7 @@ An object representing a database query that can be chained and lazily evaluated
 ### Read-Only
 A serializer or field that can only output data, not accept input.
 
-### Other execution terms
-
-**MCP tool:** a callable exposed through the Model Context Protocol. Aksara's
-stable synchronous transport is Streamable HTTP at `/mcp/`; the inspection
-catalog is a different endpoint. Tool registration is not blanket authorization.
-
-**Cancellation:** a recorded request to stop future eligible work, not undo of
-committed database changes or external effects.
-
-**External outcome unknown:** the provider effect cannot safely be classified
-as confirmed or absent. Preserve uncertainty and reconcile; do not blindly retry.
-
-## Related Name
+### Related Name
 The attribute name for accessing related objects from the reverse side of a relationship.
 
 ### Request
@@ -390,7 +378,7 @@ tasks; `DurableOperationWorker` executes registered Operations for an explicitly
 selected tenant. They are not interchangeable names for an AI agent.
 
 ### Write-Only
-A serializer field that can only accept input, not appear in output (e.g., passwords).
+An input-only field concept. Aksara ModelSerializer does not support a `write_only_fields` option; explicitly select safe output fields instead.
 
 ---
 

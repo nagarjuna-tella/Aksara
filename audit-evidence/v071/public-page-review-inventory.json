@@ -740,11 +740,11 @@
     },
     {
       "path": "docs/docs/glossary.md",
-      "sha256": "6e27cf9b94359d3c8f53af4a881d2234a94e2268103a2b64bd3ab5fcd0041821",
+      "sha256": "d05ade65fe7cd85e30c68ae396ab334a5051c6993bbf88253788b5cb7672abc2",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 413
+      "lines": 401
     },
     {
       "path": "docs/docs/how-to/export-durable-transitions.md",
@@ -953,11 +953,11 @@
     },
     {
       "path": "docs/docs/orm/index.md",
-      "sha256": "7f0077444977daa2bbb70a286633b93af74fa5312f8551f931a384aa3b25a68c",
+      "sha256": "1a83a7fd56bb67ff0206f0bda77e182d98d47ead99d2b73c6cc37f04a038d49a",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 299
+      "lines": 95
     },
     {
       "path": "docs/docs/orm/migration-safety.md",
