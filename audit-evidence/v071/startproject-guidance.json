@@ -13,7 +13,7 @@
     {
       "version": "0.7.0",
       "source_sha256": {
-        "aksara/cli/main.py": "299a97d65a8bf17dd5e328a82cf6b5a1a2a8ce1c0f743224c54039bda77fe0bc",
+        "aksara/cli/main.py": "3e39eb15de76617effa5cb1fb8c24ec9e1f757e1b7d73438067d37e7b0803e8c",
         "aksara/cli/scaffold.py": "2455a972df0050029a52aaa815a05586b8bb1d4b3b0ddaa5fc9ce19feb7f945a",
         "aksara/cli/templates/__init__.py": "91ba33b2db8642666d5d9b636e38fde016cfda2ea46254326f02d393e63b80a3"
       }
@@ -168,9 +168,35 @@
     }
   ],
   "cli_guidance_verified": true,
+  "startapp_comparison": {
+    "baseline": {
+      "files": {
+        "models.py": "893943eeb91c3e4ad0b4d998c85f6993a3938b1770544cd5431dc55e6c019c18",
+        "serializers.py": "6dcefc81f215606b8bb23f5d99346106126f66f7af2cb3410c6486e390813496",
+        "__init__.py": "15367dabd0cf219cf0e0f301758b07a826a44952462ae09edfddf9060e05e0b5",
+        "admin.py": "b85849a2dbc63339f5f040a43fb069da83e9b078c3d72bdf299554be268d95a2",
+        "views.py": "1934bd3fb07d8b70de2bef1fc06065c91723f15889706b37e897eb362f1680d0"
+      },
+      "invalid_exit": 0,
+      "existing_exit": 0
+    },
+    "development": {
+      "files": {
+        "models.py": "893943eeb91c3e4ad0b4d998c85f6993a3938b1770544cd5431dc55e6c019c18",
+        "serializers.py": "6dcefc81f215606b8bb23f5d99346106126f66f7af2cb3410c6486e390813496",
+        "__init__.py": "15367dabd0cf219cf0e0f301758b07a826a44952462ae09edfddf9060e05e0b5",
+        "admin.py": "b85849a2dbc63339f5f040a43fb069da83e9b078c3d72bdf299554be268d95a2",
+        "views.py": "1934bd3fb07d8b70de2bef1fc06065c91723f15889706b37e897eb362f1680d0"
+      },
+      "invalid_exit": 0,
+      "existing_exit": 0
+    },
+    "files_identical": true,
+    "help_verified": true
+  },
   "source_checkout_framework_imports": false,
   "source_sha256": {
-    "aksara/cli/main.py": "299a97d65a8bf17dd5e328a82cf6b5a1a2a8ce1c0f743224c54039bda77fe0bc",
+    "aksara/cli/main.py": "3e39eb15de76617effa5cb1fb8c24ec9e1f757e1b7d73438067d37e7b0803e8c",
     "aksara/cli/scaffold.py": "2455a972df0050029a52aaa815a05586b8bb1d4b3b0ddaa5fc9ce19feb7f945a",
     "aksara/cli/templates/__init__.py": "91ba33b2db8642666d5d9b636e38fde016cfda2ea46254326f02d393e63b80a3",
     "examples/blog/README.md": "09374a9fa826951990ff897867a3505b867d75a97a60c9cb8dd13badb3a119f7",
@@ -178,6 +204,6 @@
     "examples/multitenant/README.md": "5b7df846a6fe6fd645f1d57f41c14fd383b6d966368bd16cb5cb1f6d679c0ce4"
   },
   "normalization": "Generated Studio token in .env/.env.example only; no code/config/default normalization",
-  "scope": "Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. No database or runtime startup certification in this gate.",
-  "runner_sha256": "be6611973192c040c73912cdead2ac92ca66603321789c4f8449d7f0f78f679a"
+  "scope": "Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. Five startapp files and invalid/existing-path exit behavior also match. No database or runtime startup certification in this gate.",
+  "runner_sha256": "1986f91cda3ec2a520bc530de4301c417693866b840513e17dee3b7dd1c9b986"
 }

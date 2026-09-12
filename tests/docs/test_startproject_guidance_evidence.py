@@ -10,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_startproject_guidance_evidence_is_current():
     data = json.loads((ROOT / 'audit-evidence/v071/startproject-guidance.json').read_text())
     assert data['pass'] and data['cli_guidance_verified']
+    apps = data['startapp_comparison']
+    assert apps['files_identical'] and apps['help_verified']
+    assert apps['baseline'] == apps['development']
+    assert len(apps['development']['files']) == 5
     assert data['source_checkout_framework_imports'] is False
     assert {row['template'] for row in data['comparisons']} == {'basic', 'blog', 'crm', 'multitenant'}
     for row in data['comparisons']:

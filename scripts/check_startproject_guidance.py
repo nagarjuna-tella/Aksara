@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
     env = {key: value for key, value in os.environ.items()
            if key not in {'PYTHONPATH', 'DATABASE_URL'} and not key.startswith('AKSARA_')}
-    packages, generations = [], []
+    packages, generations, application_generations = [], [], []
     with tempfile.TemporaryDirectory(prefix='aksara-cli-guidance-') as directory:
         for index, python in enumerate((args.baseline_python, args.development_python)):
             root = Path(directory) / str(index); root.mkdir()
@@ -70,6 +70,24 @@ def main():
                         assert 'aksara makemigrations --app models --output migrations' in readme
                         assert '--app app.models' not in readme
                         assert readme == (ROOT / 'examples' / template / 'README.md').read_text()
+            app_help = command([cli, 'startapp', '--help']).stdout
+            app_output = command([cli, 'startapp', 'inventory']).stdout
+            application = root / 'inventory'
+            app_hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                          for p in application.iterdir() if p.is_file()}
+            assert set(app_hashes) == {'__init__.py', 'models.py', 'views.py', 'serializers.py', 'admin.py'}
+            invalid = command([cli, 'startapp', '123invalid'])
+            existing = command([cli, 'startapp', 'inventory'])
+            assert not (root / '123invalid').exists()
+            assert {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in application.iterdir() if p.is_file()} == app_hashes
+            application_generations.append({'files': app_hashes, 'invalid_exit': invalid.returncode,
+                                            'existing_exit': existing.returncode})
+            if index == 1:
+                assert 'AksaraSettings' not in app_help + app_output
+                assert 'configure(installed_apps=INSTALLED_APPS)' in app_help + app_output
+                assert 'register their routes explicitly' in app_output
+                assert 'does not create urls.py' in app_help
             generations.append(outputs)
             if index == 1:
                 assert 'flat example modules' in help_text
@@ -85,15 +103,18 @@ def main():
         assert changed == ['README.md'], (template, changed)
         comparisons.append({'template': template, 'files_compared': len(before),
                             'changed_files': changed, 'baseline_sha256': before, 'development_sha256': after})
+    assert application_generations[0] == application_generations[1]
     for name, digest in packages[1]['source_sha256'].items():
         assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
     evidence = {
         'schema_version': 1, 'pass': True, 'packages': packages, 'comparisons': comparisons,
-        'cli_guidance_verified': True, 'source_checkout_framework_imports': False,
+        'cli_guidance_verified': True,
+        'startapp_comparison': {'baseline': application_generations[0], 'development': application_generations[1],
+                                'files_identical': True, 'help_verified': True}, 'source_checkout_framework_imports': False,
         'source_sha256': {**packages[1]['source_sha256'],
                           **{f'examples/{name}/README.md': hashlib.sha256((ROOT / 'examples' / name / 'README.md').read_bytes()).hexdigest() for name in ('blog', 'crm', 'multitenant')}},
         'normalization': 'Generated Studio token in .env/.env.example only; no code/config/default normalization',
-        'scope': 'Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. No database or runtime startup certification in this gate.',
+        'scope': 'Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. Five startapp files and invalid/existing-path exit behavior also match. No database or runtime startup certification in this gate.',
         'runner_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     }
     args.output.write_text(json.dumps(evidence, indent=2) + '\n')

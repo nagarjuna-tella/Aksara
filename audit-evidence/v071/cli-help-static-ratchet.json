@@ -13,5 +13,5 @@
   },
   "output": "Ruff: 7207/7218 allowed; mypy: 495/501 allowed\nStatic-analysis debt is at or below the reviewed baseline.\n",
   "baseline_sha256": "058c987ad4bc51c3ded1b1c04342e516a72c4711e62704d7e6bd94519834c2ee",
-  "scope": "Hosted static-check Python version with pinned tools; existing accepted debt retained, no baseline change; not a full release matrix"
+  "scope": "Python 3.11 hosted static-check version, pinned tools, no accepted-baseline edit; not a full release matrix"
 }

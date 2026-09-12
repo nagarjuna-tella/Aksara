@@ -35,17 +35,21 @@ class HelpStrings(ast.NodeTransformer):
 
 def normalized_cli(source):
     tree = ast.parse(source)
-    matches = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "startproject"]
-    assert len(matches) == 1
-    function = matches[0]
-    assert isinstance(function.body[0], ast.Expr) and isinstance(function.body[0].value, ast.Constant)
-    assert isinstance(function.body[0].value.value, str)
-    function.body[0].value.value = "COMMAND_HELP"
-    for node in ast.walk(function):
-        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                and isinstance(node.func.value, ast.Name) and node.func.value.id == "ui"
-                and node.func.attr in {"text", "bullet", "next_steps"}):
-            node.args = [HelpStrings().visit(arg) for arg in node.args]
+    for name, owner, methods in (
+        ("startproject", "ui", {"text", "bullet", "next_steps"}),
+        ("startapp", "click", {"echo"}),
+    ):
+        matches = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name]
+        assert len(matches) == 1
+        function = matches[0]
+        assert isinstance(function.body[0], ast.Expr) and isinstance(function.body[0].value, ast.Constant)
+        assert isinstance(function.body[0].value.value, str)
+        function.body[0].value.value = "COMMAND_HELP"
+        for node in ast.walk(function):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name) and node.func.value.id == owner
+                    and node.func.attr in methods):
+                node.args = [HelpStrings().visit(arg) for arg in node.args]
     return ast.dump(tree, include_attributes=False)
 
 
@@ -91,7 +95,7 @@ def main():
         "changed_production_files": names,
         "classification": {
             SCAFFOLD: "Scaffold README return template only",
-            CLI: "startproject docstring and string literals in its existing UI text/bullet/next_steps calls only",
+            CLI: "startproject/startapp docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
             TEMPLATES: "Four template description string values only; names, sources and copy logic unchanged",
         },
         "runtime_logic_changed": False,

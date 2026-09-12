@@ -80,8 +80,8 @@ inventory/
 ```
 
 It does not create `urls.py`, modify settings or register new routes for you.
-The CLI's legacy `AksaraSettings(apps=...)` suggestion is not the current global
-configuration API. In a generated basic project, add `"inventory"` to
+Older CLI versions suggest `AksaraSettings(apps=...)`; that is not the current
+global configuration API. In a generated basic project, add `"inventory"` to
 `INSTALLED_APPS` in `settings.py`; the existing `configure(installed_apps=...)`
 call applies that list. In other applications, configure the appropriate full
 module path through the [settings API](../reference/settings-reference.md).

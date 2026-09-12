@@ -943,25 +943,26 @@ def generate_sdk(language: str, output_path: str, views_module: Optional[str], t
 @click.argument("app_name")
 @click.option("--directory", "-d", default=".", help="Directory to create app in (default: current)")
 def startapp(app_name: str, directory: str):
-    """
-    Create a new Aksara app within an existing project.
-    
-    APP_NAME: Name of the app to create (e.g., 'blog', 'users', 'orders')
-    
-    Creates an app structure with:
-    - models.py (Aksara ORM models)
-    - admin.py (Admin model registration)
-    - views.py (ModelViewSet classes)
-    - serializers.py (ModelSerializer classes)
-    
-    Example:
-        aksara startapp blog
-        aksara startapp users
-        
-    After creating the app, add it to settings.apps:
-        settings = AksaraSettings(
-            apps=["app", "blog", "users"],
-        )
+    """Create a Python application module within an existing project.
+
+    APP_NAME must be a Python identifier. Creates __init__.py, models.py,
+    admin.py, views.py and serializers.py. It does not create urls.py or
+    update settings, register routes, or apply migrations.
+
+    In a basic generated project, add the module to INSTALLED_APPS in
+    settings.py. Its existing configure(installed_apps=INSTALLED_APPS) call
+    applies that list. Other layouts should configure the full importable
+    module path through aksara.configure(installed_apps=[...]).
+
+    Define models and ViewSets, register routes explicitly, then generate
+    and review migrations before applying them. Keep loaded model class
+    names distinct across application modules.
+
+    Examples:
+        aksara startapp inventory
+        aksara startapp inventory --directory apps
+
+    Layout guide: https://nagarjuna-tella.github.io/Aksara/getting-started/project-layout/
     """
     from aksara.cli.scaffold import create_app_scaffold, write_scaffold_files
     
@@ -1004,15 +1005,15 @@ def startapp(app_name: str, directory: str):
         click.echo()
         click.echo("  \033[1mNext steps:\033[0m")
         click.echo()
-        click.echo(f"  1. Add '{app_name}' to settings.apps in settings.py:")
+        click.echo(f"  1. Add '{app_name}' to INSTALLED_APPS in the basic project's settings.py:")
         click.echo()
-        click.echo("     settings = AksaraSettings(")
-        click.echo(f'         apps=["app", "{app_name}"],')
-        click.echo("     )")
+        click.echo("     INSTALLED_APPS = [")
+        click.echo(f'         "aksara.contrib.auth", "aksara.contrib.admin", "app", "{app_name}",')
+        click.echo("     ]  # used by configure(installed_apps=INSTALLED_APPS)")
         click.echo()
         click.echo(f"  2. Define your models in {app_name}/models.py")
-        click.echo(f"  3. Create ViewSets in {app_name}/views.py")
-        click.echo("  4. Run migrations:")
+        click.echo(f"  3. Create ViewSets in {app_name}/views.py and register their routes explicitly")
+        click.echo("  4. Generate and review migrations, then apply:")
         click.echo(f"     aksara makemigrations --app {app_name}.models")
         click.echo("     aksara migrate")
         click.echo()

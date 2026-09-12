@@ -16,6 +16,12 @@ def startproject(template):
     ui.text("Original text")
     ui.next_steps(["Original step"])
     write_scaffold_files(files)
+
+def startapp(app_name):
+    """Original help."""
+    files = create_app_scaffold(app_name)
+    click.echo("Original instructions")
+    write_scaffold_files(files)
 '''
     changed_help = source.replace('Original', 'Updated')
     assert normalize(source) == normalize(changed_help)
@@ -25,6 +31,8 @@ def startproject(template):
     assert normalize(source) != normalize(executable_help_argument)
     extra_call = source + '\n    another_action()\n'
     assert normalize(source) != normalize(extra_call)
+    assert normalize(source) != normalize(source.replace('create_app_scaffold(app_name)', 'create_app_scaffold("different")'))
+    assert normalize(source) != normalize(source.replace('click.echo("Original instructions")', 'click.echo(run_something())'))
 
 
 def test_template_normalizer_rejects_source_and_name_changes():

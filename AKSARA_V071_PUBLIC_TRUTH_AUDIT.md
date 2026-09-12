@@ -559,8 +559,8 @@ finds zero leftover tutorial schemas or roles after the journey.
 
 **No functional runtime changes.** Three production files have instructional
 changes: `aksara/cli/scaffold.py` changes generated README text;
-`aksara/cli/main.py` changes the `startproject` docstring and existing UI message
-string literals; `aksara/cli/templates/__init__.py` changes four template
+`aksara/cli/main.py` changes the `startproject` and `startapp` docstrings and existing
+UI/Click message string literals; `aksara/cli/templates/__init__.py` changes four template
 descriptions. The AST audit preserves all other logic, template names/sources,
 flags, defaults and dependencies. Four-template installed-wheel comparison
 permits only the prior README changes in generated output. Package version
@@ -1639,3 +1639,47 @@ preserving the already tested Python/web boundaries.
 No production source, migration or runtime defaults changed in this review.
 Whole-site review, the identified startapp help correction, final subitem
 acceptance and actual candidate release gates remain required.
+
+
+## startapp instructional correction — PT-050 follow-up
+
+The remaining startapp help/output issue identified above is now corrected.
+The command describes the actual five-file module, explains that settings and
+routes are not automatically edited, points to INSTALLED_APPS and the existing
+configure(installed_apps=INSTALLED_APPS) handoff in a basic project, and requires
+explicit route registration and migration review. The public layout page now
+identifies AksaraSettings suggestions as older-version guidance.
+
+Only the command's docstring and string literals in existing click.echo calls
+changed. The runtime-scope guard now recognizes these specific instructional
+locations in addition to the previous startproject/README/template-description
+locations. Negative controls reject generator argument changes, added calls and
+executable help expressions for both commands. All validation branches, options,
+return behavior and generator calls remain identical to released source.
+
+A rebuilt development wheel, still 0.7.0, was installed without dependency
+changes. The normal guidance comparison now covers five startapp files as well
+as all four project templates. startapp files match the public wheel byte for
+byte. Invalid-name and existing-directory invocations retain their original
+exit behavior and leave files unchanged. The four project templates continue
+to differ only in README.md after generated-token normalization. No generation
+behavior was changed to make a help claim true.
+
+The installed setup, basic startup and three domain-template observations were
+repeated using that development wheel. The setup helper retained aksara_test;
+its temporary .env was removed. Startup runners removed their own schemas and
+server processes. The historical multitenant schema still omits tenant_users,
+and the negative evidence remains explicit. These are development-wheel checks,
+not final candidate certification.
+
+Validation:
+
+- `.venv/bin/python scripts/check_startproject_guidance.py --baseline-python /tmp/aksara-v071-public-baseline/bin/python --development-python /tmp/aksara-v071-cli-help-env/bin/python --output audit-evidence/v071/startproject-guidance.json`: four project comparisons plus five-file startapp/help/error-path comparison passed.
+- `check_setup_docs.py`, `check_scaffold_startup.py` and `check_domain_template_docs.py --require-updated-readme`, each using `--python /tmp/aksara-v071-cli-help-env/bin/python`: five setup checks, five basic startup checks and three scoped domain observations passed. Database credentials supplied privately; no candidate or production readiness inferred.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py tests/cli/test_dbsetup.py tests/dx/test_startapp_scaffold.py tests/dx/test_startproject_scaffold.py tests/dx/test_scaffold_importable.py tests/patterns/test_startproject_templates.py -q`: 331 passed, three upstream deprecation warnings. The old test assertion requiring settings.apps was updated to the current configuration instructions.
+- Ruff passed on changed documentation tooling and scope/evidence tests. The pinned Python 3.11 static ratchet passed at Ruff 7,207/7,218 and mypy 495/501. Python 3.14 still reports identical before/after 497 mypy errors, including the existing index category excess (20/19); no accepted baseline was changed and that interpreter's ratchet is not reported as passing.
+- Runtime-scope AST check passed; package dependencies unchanged. Wheel metadata records current source hashes and precommit build provenance.
+- Installed public-doc checks: 388 Python fences/imports and selected behavior contracts; 302 CLI forms, zero errors and 11 exclusions. Strict docs passed; 162 pages and 43,023 local links/assets passed.
+
+This closes the identified startapp help debt. Whole-site semantic/usability
+review, final requirement acceptance and release-candidate gates remain open.
