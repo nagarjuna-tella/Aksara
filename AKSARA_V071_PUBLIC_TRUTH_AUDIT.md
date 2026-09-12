@@ -1063,3 +1063,37 @@ checks passed. Public documentation bytes were unchanged, so the existing strict
 docs/link artifacts remain applicable; the evidence index has 47 artifacts and
 no stale linked inputs. The known Boolean/timestamp bulk-update defect remains
 unfixed and separately reported.
+
+## Migration Reference Corrections and Execution
+
+**PT-037 / P1:** the migration reference used runtime `fields.*` where migration
+FieldOp objects are required, supplied nonexistent `model_name=` arguments,
+and advertised generic AlterField/RunPython recipes absent from the release.
+Replaced it with accurate operation shapes and two complete migration files,
+including nullable-add/backfill/NOT NULL/default/index sequencing. Clarified
+merge limitations, fake application, reviewed SQL and transactional index limits.
+
+The safety guide now distinguishes pending application preview from database
+metadata initialization, verifies checksums only for present applied files with
+stored digests, and states that earlier migrations remain committed when a
+later one fails. Removed a false blanket assertion that asyncpg executes only
+the first statement of a multi-statement string. Replaced a volatile partial-index
+predicate example with an immutable one; SQL guard acceptance is not PostgreSQL
+index-validity proof.
+
+The two exact public migration files pass **12 installed executor/PostgreSQL
+checks**: fresh application, representative existing-row preservation/backfill,
+future defaults, catalog nullability, index, checksums, repeat run, injected
+failure rollback/tracking, and edited-file rejection. The failing fixture is
+explicitly test-owned, and unrelated errors cannot satisfy its named division-by-
+zero assertion. This is not the CLI path, bundled internal migrations, a full
+historical application upgrade, or concurrent migrator/RLS proof. The gate uses
+and removes a disposable schema; no production implementation changed.
+
+Migration-reference checkpoint validation: **455 migration regression tests**
+passed with required local PostgreSQL enabled, and **172 docs/packaging tests**
+passed with one upstream AnyIO deprecation warning. Ruff, strict MkDocs, 555
+Python-fence syntax/import checks, 316 CLI parses (11 explicit exclusions),
+and 46,807 local rendered links/assets passed. The evidence index has 48
+artifacts with no stale linked inputs. No migration engine, production schema,
+package metadata or runtime default changed.

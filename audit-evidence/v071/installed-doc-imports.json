@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 569,
+  "python_blocks": 555,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -108,8 +108,8 @@
     "docs/docs/orm/fields.md": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4",
     "docs/docs/orm/fixtures.md": "f08bbbab7285479cbd7c2a2aef4dad72e109376f1c0d5b0408e335de7f525187",
     "docs/docs/orm/index.md": "7f0077444977daa2bbb70a286633b93af74fa5312f8551f931a384aa3b25a68c",
-    "docs/docs/orm/migration-safety.md": "644c7845d2abb16866d54011d5bd2bb5fa937b2a1ec64d7ebb7a55fdffce9a63",
-    "docs/docs/orm/migrations.md": "a9de075ba87d53cf6b377eb5d6ed65f347bb407ceceb39edc6812b3191b05906",
+    "docs/docs/orm/migration-safety.md": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960",
+    "docs/docs/orm/migrations.md": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
     "docs/docs/orm/model-meta.md": "026df22612c5f6f48be256061bb8049da68f521cbe72624d3e6ae95d49dc2390",
     "docs/docs/orm/models.md": "43f4d263ef748fc93fde6b2e7969e3245953b12d77ea164adc5d0d6aa23bc06c",
     "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",

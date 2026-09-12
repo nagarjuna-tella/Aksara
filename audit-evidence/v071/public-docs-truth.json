@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "7fe75c9dd64518f601700546e2b07fe0b6d4bb25",
+  "reviewed_head": "91eb6da65a6f9496352dcd2c168dbd7538940b25",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -462,7 +462,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "aa9df80f08da8f372daa00393beef5c32dc162120cf648b5795ecca5c68d63fb",
+      "sha256": "e7b7c5749b62f7e9ca074313a4cc87c0c90f48baeeee12ce4b4da822071dd399",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -588,7 +588,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "2da5cdfef96ece0a3d6c31fee6a85ab73f317fc1f6c6eb894ae9ab9427ec8e6f",
+      "sha256": "d02ffb5794d53cdcbea2bf89f1dc15b6d334709abf456a6d07ca8b821f14cbb8",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -650,6 +650,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/migration-doc-execution.json",
+      "sha256": "04569302b35036f200f32576139f30c9a3bcc46f834a8db1f0699d0e4ca40b73",
+      "recorded_result": true,
+      "scope": "Two exact migration files through canonical executor, existing-row backfill, default/index/catalog checks, repeat run, injected failure and checksum edit; not migration CLI, internal migrations, RLS, concurrency or a historical application upgrade",
+      "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/operator-cli.json",
       "sha256": "dd62d9b73bbd621c29cc024c046a4772e15a9fe01f2b940edc586408c47d82f9",
       "recorded_result": true,
@@ -696,7 +705,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "544cf0a45d557f1231206869bda8d4a0c735affd3751069bb042374d9ee4f0eb",
+      "sha256": "2d098ac9c19125af5ff22364bbb6c1118404638bc35bdcbe3a3325938fafea5f",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

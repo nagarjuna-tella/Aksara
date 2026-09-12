@@ -1,0 +1,27 @@
+{
+  "checks": [
+    "exact initial migration applies",
+    "exact upgrade migration applies",
+    "upgrade preserves and backfills existing row",
+    "future insert uses database default",
+    "catalog nullability and default match",
+    "index created",
+    "tracking records checksums",
+    "repeat run has no pending work",
+    "failure names intended migration",
+    "failed schema change rolled back",
+    "failed migration not recorded",
+    "edited applied file rejected"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Two exact migration files through canonical executor, existing-row backfill, default/index/catalog checks, repeat run, injected failure and checksum edit; not migration CLI, internal migrations, RLS, concurrency or a historical application upgrade",
+  "page_sha256": {
+    "docs/docs/orm/migrations.md": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
+    "docs/docs/orm/migration-safety.md": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960"
+  },
+  "runner_sha256": "f229496f1c4197f753223a198b02d663bdf6e599ed86105dd31f287d0451b86c"
+}

@@ -1,611 +1,193 @@
 # Migrations
 
-Manage database schema changes with Aksara's migration system.
+Aksara uses a project-wide directory of versioned migration files. Generate
+schema changes from models, review the result, then apply them with migration
+credentials before starting the application under its restricted role.
+The [first-project tutorial](../getting-started/first-project.md) demonstrates
+this workflow for a running application.
 
----
+## Generate and apply
 
-## Overview
-
-Aksara uses a **project-wide** migration system. All migrations live in a single `migrations/` directory at your project root, regardless of how many models or modules you have.
+From the project directory, with the environment and database configured:
 
 ```bash
-# Create migrations from your models
 aksara makemigrations --app app.models
-
-# Apply migrations to the database
+aksara migrate --dry-run
 aksara migrate
+aksara status
 ```
 
-### Project Structure
+`--app` names an importable models module. The default directory is `migrations`;
+configure `AKSARA_MIGRATIONS_DIR` through the supported
+[settings path](../reference/settings-reference.md). A bare variable in `settings.py` is
+not automatically a settings override.
 
-```
-myproject/
-├── main.py
-├── settings.py
-├── app/
-│   ├── models.py
-│   ├── views.py
-│   └── ...
-└── migrations/           # All migrations go here
-    ├── __init__.py
-    ├── 0001_auto_initial.py
-    └── 0002_auto_add_email_verification.py
-```
-
-The migrations directory is configured via `AKSARA_MIGRATIONS_DIR` in your `.env` or `settings.py` (default: `migrations`).
-
----
-
-## Creating Migrations
-
-### makemigrations
-
-Generate migration files from your models:
+Useful generation options:
 
 ```bash
-# Scan models from a module and generate a migration
-aksara makemigrations --app app.models
-
-# With a custom name
-aksara makemigrations --app app.models --name add_email_verification
-
-# Output to a custom directory
-aksara makemigrations --app app.models --output my_migrations
-
-# Preview without writing (print to stdout)
+aksara makemigrations --app app.models --name add_priority
 aksara makemigrations --app app.models --stdout
-
-# Generate legacy SQL format instead of Python
-aksara makemigrations --app app.models --sql
+aksara makemigrations --app app.models --output custom_migrations
 ```
 
-This creates a migration file in your `migrations/` directory:
+Pair a custom output directory with `aksara migrate --migrations-dir
+custom_migrations`, or configure the directory consistently for generation,
+application and status. `--sql` selects the legacy SQL output format; review its
+contents rather than assuming it provides the Python migration graph's full
+model-state history.
 
-```
-migrations/0001_auto_add_email_verification.py
-```
+A dry run previews application migrations. It still imports migration files,
+connects to PostgreSQL and can initialize migration-tracking metadata. It is
+not a sandbox or a proof that the SQL will apply successfully. It also does not
+replace the real executor's integrity checks or its bundled internal migrations.
 
-### Migration File Structure
+## Runtime fields and migration operations are different
 
-```python
-"""
-Migration: add_email_verification
-Generated: 2026-02-07T10:30:00
-"""
+Use `aksara.fields` in model classes. Migration files use field operations from
+`aksara.migrations.operations`, such as `op.StringField` and `op.UUIDField`.
+Operations take actual database table/column names, not `model_name=`.
 
-from aksara.migrations import Migration
+The following two complete files form a small standalone ticket-schema example.
+Use a fresh disposable database/schema to try them. They are an alternative
+learning fixture, not files to append to an already migrated Ticket Desk project.
+For your application, retain the dependencies and table names generated from
+its own history.
+
+```python title="migrations/0001_ticket_schema.py"
+from aksara.migrations import Migration as BaseMigration
 from aksara.migrations import operations as op
 
 
-class Migration(Migration):
-    """
-    Auto-generated migration for models: User
-    """
-
+class Migration(BaseMigration):
     dependencies = []
-
     operations = [
-        op.AddField(
-            model_name="User",
-            name="email_verified",
-            field=fields.Boolean(default=False),
-        ),
-        op.AddField(
-            model_name="User",
-            name="verification_token",
-            field=fields.String(max_length=100, nullable=True),
+        op.CreateTable(
+            name="migration_demo_tickets",
+            fields=[
+                ("id", op.UUIDField(primary_key=True)),
+                ("subject", op.StringField(max_length=200)),
+                ("resolved", op.BooleanField(default=False)),
+            ],
         ),
     ]
 ```
 
----
+```python title="migrations/0002_ticket_priority.py"
+from aksara.migrations import Migration as BaseMigration
+from aksara.migrations import operations as op
 
-## Applying Migrations
 
-### migrate
-
-Apply pending migrations:
-
-```bash
-# Apply all pending migrations
-aksara migrate
-
-# Specify a database URL
-aksara migrate --database-url postgresql://localhost/mydb
-
-# Preview without applying
-aksara migrate --dry-run
-
-# Mark migrations as applied without running SQL
-aksara migrate --fake
-
-# Use a custom migrations directory
-aksara migrate --migrations-dir my_migrations
-```
-
-### Check Migration Status
-
-```bash
-aksara status
-
-# Output:
-# 📁 Migrations directory: migrations
-# 📊 Applied migrations: 2
-#
-#  [X] 0001_auto_initial
-#  [X] 0002_auto_add_email_verification
-#  [ ] 0003_auto_add_avatar              # Not applied
-```
-
-### How Migrations Are Applied Safely
-
-`aksara migrate` and the testing helpers apply migrations through one canonical
-executor that wraps each migration in a transaction, takes a PostgreSQL advisory
-lock so two processes cannot migrate at once, executes multi-statement SQL
-statement-by-statement, and verifies the checksum of every already-applied
-migration before running new ones.
-
-See [Migration Safety](migration-safety.md) for the full behavior, including what
-happens when a migration fails, what a checksum mismatch means, and how historical
-migrations without a stored checksum are handled.
-
----
-
-## Migration Operations
-
-Aksara provides Python-based operations for schema changes.
-
-### CreateTable
-
-Create a new database table:
-
-```python
-from aksara.migrations.operations import CreateTable
-from aksara import fields
-
-CreateTable(
-    name="posts",
-    fields=[
-        ("id", fields.UUID(primary_key=True)),
-        ("title", fields.String(max_length=200)),
-        ("content", fields.Text()),
-        ("author_id", fields.UUID()),
-        ("created_at", fields.DateTime(auto_now_add=True)),
-    ],
-)
-```
-
-### DropTable
-
-Remove a table:
-
-```python
-from aksara.migrations.operations import DropTable
-
-DropTable(name="old_posts")
-```
-
-### AddField
-
-Add a field to an existing table:
-
-```python
-from aksara.migrations.operations import AddField
-
-AddField(
-    model_name="User",
-    name="phone",
-    field=fields.String(max_length=20, nullable=True),
-)
-```
-
-### RemoveField
-
-Remove a field:
-
-```python
-from aksara.migrations.operations import RemoveField
-
-RemoveField(
-    model_name="User",
-    name="phone",
-)
-```
-
-### AlterField
-
-Modify field properties:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.migrations.operations import AlterField
-
-# Change max_length
-AlterField(
-    model_name="User",
-    name="name",
-    field=fields.String(max_length=200),  # Was 100
-)
-
-# Make field nullable
-AlterField(
-    model_name="Post",
-    name="category_id",
-    field=fields.UUID(nullable=True),  # Was required
-)
-```
-
-### RenameField
-
-Rename a field:
-
-```python
-from aksara.migrations.operations import RenameField
-
-RenameField(
-    model_name="User",
-    old_name="username",
-    new_name="handle",
-)
-```
-
-### AddIndex
-
-Create an index:
-
-```python
-from aksara.migrations.operations import AddIndex
-
-AddIndex(
-    model_name="Post",
-    name="idx_posts_created_at",
-    fields=["created_at"],
-)
-
-# Composite index
-AddIndex(
-    model_name="Post",
-    name="idx_posts_author_date",
-    fields=["author_id", "created_at"],
-)
-```
-
-### RemoveIndex
-
-Drop an index:
-
-```python
-from aksara.migrations.operations import RemoveIndex
-
-RemoveIndex(
-    model_name="Post",
-    name="idx_posts_created_at",
-)
-```
-
-### AddConstraint
-
-Add a database constraint:
-
-```python
-from aksara.migrations.operations import AddConstraint
-
-# Unique constraint
-AddConstraint(
-    model_name="User",
-    name="unique_email",
-    type="unique",
-    fields=["email"],
-)
-
-# Check constraint
-AddConstraint(
-    model_name="Product",
-    name="positive_price",
-    type="check",
-    expression="price > 0",
-)
-```
-
-### RemoveConstraint
-
-Remove a constraint:
-
-```python
-from aksara.migrations.operations import RemoveConstraint
-
-RemoveConstraint(
-    model_name="User",
-    name="unique_email",
-)
-```
-
----
-
-## Data Migrations
-
-Migrations can include data changes alongside schema changes.
-
-### RunPython
-
-Execute Python code during migration:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.migrations import Migration
-from aksara.migrations.operations import RunPython
-
-
-async def populate_slugs(db):
-    """Generate slugs for existing posts."""
-    rows = await db.fetch("SELECT id, title FROM posts WHERE slug IS NULL")
-    for row in rows:
-        slug = row["title"].lower().replace(" ", "-")
-        await db.execute("UPDATE posts SET slug = $1 WHERE id = $2", slug, row["id"])
-
-
-async def reverse_slugs(db):
-    """Reverse migration: clear slugs."""
-    await db.execute("UPDATE posts SET slug = NULL")
-
-
-class Migration(Migration):
-    dependencies = ["0002_auto_add_slug"]
-
+class Migration(BaseMigration):
+    dependencies = ["0001_ticket_schema"]
     operations = [
-        RunPython(populate_slugs, reverse_slugs),
+        op.AddField(
+            table="migration_demo_tickets",
+            name="priority",
+            field=op.StringField(max_length=20, nullable=True),
+        ),
+        op.RunSQL(
+            sql="UPDATE migration_demo_tickets SET priority = 'normal' WHERE priority IS NULL"
+        ),
+        op.AlterFieldNull(
+            table="migration_demo_tickets", name="priority", nullable=False
+        ),
+        op.AlterFieldDefault(
+            table="migration_demo_tickets", name="priority", new_default="normal"
+        ),
+        op.AddIndex(
+            index=op.IndexOp(
+                name="migration_demo_tickets_priority_idx",
+                table="migration_demo_tickets",
+                columns=["priority"],
+            )
+        ),
     ]
 ```
 
-### RunSQL
+The second file safely handles existing rows: add a nullable column, populate
+it, then require a value and establish the database default for future inserts.
+Its operations share one transaction. For a large production table, assess locks
+and backfill cost; split the rollout into compatible deployment stages when a
+single migration would hold locks too long. A default is a business decision,
+not a substitute for determining correct historical values.
 
-Execute raw SQL:
+## Available operation shapes
 
-```python
-from aksara.migrations.operations import RunSQL
+| Operation | Constructor shape |
+|---|---|
+| Create table | `CreateTable(name, fields, indexes=None, if_not_exists=True)`; optional arguments are keyword-only |
+| Drop table | `DropTable(name, if_exists=True, cascade=False)`; options are keyword-only |
+| Add column | `AddField(table, name, field)` |
+| Remove column | `RemoveField(table, name, if_exists=True)`; option is keyword-only |
+| Rename column | `RenameField(table, old_name, new_name)` |
+| Change type | `AlterFieldType(table, name, new_field, using=None)`; `using` is keyword-only |
+| Change nullability | `AlterFieldNull(table, name, nullable)` |
+| Change default | `AlterFieldDefault(table, name, new_default=..., field=..., drop_default=False)`; options are keyword-only |
+| Add index | `AddIndex(index=IndexOp(name, table, columns), concurrently=False, if_not_exists=True)` |
+| Remove index | `RemoveIndex(name, table, if_exists=True, concurrently=False)`; options are keyword-only |
+| Add constraint | `AddConstraint(table, name, constraint_sql)` |
+| Remove constraint | `RemoveConstraint(table, name, if_exists=True)`; option is keyword-only |
+| SQL/data change | `RunSQL(sql, reverse_sql=None, dangerous=False)`; options are keyword-only |
 
-RunSQL(
-    sql="CREATE EXTENSION IF NOT EXISTS pg_trgm;",
-    reverse_sql="DROP EXTENSION IF EXISTS pg_trgm;",
-)
-```
+`constraint_sql` and type-conversion `using` expressions are reviewed migration
+SQL, not values to take from requests. `IndexOp` also supports keyword-only
+`unique`, `where` and `method` options. PostgreSQL still validates the resulting
+index definition. `concurrently=True` cannot run inside the canonical executor's
+per-migration transaction; it does not create an automatic non-transactional
+migration mode.
 
----
+There is no generic `AlterField` or `RunPython` operation in this release. Use
+the specific change operations and `RunSQL` for supported data changes. A
+`reverse_sql` attribute does not imply a public automatic rollback command or
+that lost data can be reconstructed.
 
-## Migration Dependencies
+## Dependencies and merge migrations
 
-### Declaring Dependencies
-
-Migrations can declare dependencies on previous migrations to ensure correct ordering:
-
-```python
-class Migration(Migration):
-    dependencies = [
-        "0001_auto_initial",
-    ]
-```
-
-Dependencies are referenced by migration name (the filename stem). The migration executor builds a directed acyclic graph (DAG) from these dependencies and applies them in topological order.
-
----
-
-## Conflict Detection
-
-Aksara detects migration conflicts when multiple developers create migrations from the same base.
-
-### What is a Conflict?
-
-```
-0001_auto_initial
-    │
-    ├── 0002_auto_add_email (Developer A)
-    │
-    └── 0002_auto_add_phone (Developer B)  ← CONFLICT: two heads
-```
-
-### Resolving Conflicts
-
-Create a merge migration:
+Python `dependencies` entries are filename stems. Keep generated dependencies
+when editing an unapplied migration. Aksara loads the dependency graph and orders
+pending files accordingly; incompatible branches must be reconciled before
+application.
 
 ```bash
 aksara makemigrations --merge
 ```
 
-This creates an empty migration that depends on both heads, linearizing the history:
+A merge migration joins graph heads. An empty merge does not reconcile SQL that
+changes the same column incompatibly. Review both branches and test the merged
+history on a disposable database with representative data. Do not rewrite files
+already applied in a shared environment to make the graph appear clean.
 
-```python
-# 0003_merge.py
-class Migration(Migration):
-    """Merge migration to resolve conflict."""
+## Integrity and failure handling
 
-    dependencies = [
-        "0002_auto_add_email",
-        "0002_auto_add_phone",
-    ]
+The canonical file executor uses an advisory lock and a transaction per migration.
+Earlier successful migrations remain committed if a later one fails. The failing
+migration rolls back its supported PostgreSQL work and is not recorded as
+applied; subsequent pending migrations are reported as unattempted.
 
-    operations = []  # Just resolves the dependency graph
-```
+Checksums detect edits to present files that have a recorded checksum. Missing
+files and historical NULL checksums are warning cases, not complete integrity
+proof. Preserve released migration files. See [migration safety](migration-safety.md)
+for the precise boundaries and the legacy bootstrap path.
 
----
+Use `--fake` only when you have independently verified that the intended schema
+and data changes already exist. It records application without doing the work;
+it is not a general repair for an out-of-sync database and can cause future
+migrations or application startup to fail.
 
-## Best Practices
+For destructive operations, back up and test recovery first. `RunSQL` can require
+`AKSARA_ALLOW_DANGEROUS_MIGRATIONS` for operations flagged as dangerous. This is
+an execution guard, not a security review, and cannot make destructive SQL safe.
+Never put credentials or untrusted dynamic input into migration files.
 
-### Keep Migrations Small
+## Verify a migration
 
-```text
-# Good: One logical change per migration
-AddField(model_name="User", name="avatar_url", ...)
+Test a fresh database and an upgrade with representative existing rows. Inspect
+the stored values and catalog constraints/defaults, rerun to prove no pending
+work, and inject failure to verify rollback and tracking behavior. Do not test
+only whether a model can be instantiated.
 
-# Avoid: Multiple unrelated changes in one migration
-```
-
-### Name Migrations Descriptively
-
-```bash
-aksara makemigrations --app app.models --name add_user_profile_fields
-aksara makemigrations --app app.models --name rename_username_to_handle
-```
-
-### Test Migrations
-
-```python
-async def test_migration_applies():
-    """Verify migration creates the expected schema."""
-    # Apply migration
-    await migrate()
-
-    # Verify schema via model
-    user = await User.objects.create(email="test@example.com")
-    assert user.email_verified == False
-```
-
-### Don't Edit Applied Migrations
-
-Once a migration has been applied to any environment:
-
-- Don't modify it
-- Create a new migration for further changes
-
-Aksara enforces this: each applied migration's checksum is verified against the
-file on disk before new migrations run, and an edited applied migration fails the
-run with a clear error. See [Migration Safety](migration-safety.md).
-
-### Preview Before Applying
-
-```bash
-# See what will happen without changing the database
-aksara migrate --dry-run
-```
-
----
-
-## Migration Graph
-
-Aksara maintains a directed acyclic graph (DAG) of migrations to determine execution order:
-
-```
-0001_auto_initial
-│
-└── 0002_auto_add_email
-    │
-    ├── 0003_auto_add_profile
-    │
-    └── 0004_auto_add_avatar
-        │
-        └── 0005_auto_add_bio
-```
-
-The graph ensures migrations are applied in the correct order, even when dependencies branch and merge.
-
----
-
-## Environment Configuration
-
-Configure the migrations directory in your `.env`:
-
-```bash
-# Default: migrations
-AKSARA_MIGRATIONS_DIR=migrations
-```
-
-Or override per-command:
-
-```bash
-aksara makemigrations --app app.models --output custom_migrations
-aksara migrate --migrations-dir custom_migrations
-```
-
----
-
-## Troubleshooting
-
-### Migration Not Detected
-
-```bash
-# Make sure you specify the models module
-aksara makemigrations --app app.models
-
-# Check model registration
-aksara models --app app.models
-```
-
-### Migration Fails to Apply
-
-```bash
-# Preview the migration operations
-aksara migrate --dry-run
-
-# Check what's already applied
-aksara status
-```
-
-### Database Out of Sync
-
-```bash
-# Mark a migration as applied without running it
-aksara migrate --fake
-```
-
----
-
-## Complete Example
-
-A full migration workflow:
-
-```python
-# 1. app/models.py — Add new field
-class User(Model):
-    email = fields.Email(unique=True)
-    name = fields.String(max_length=100)
-    avatar_url = fields.URL(nullable=True)  # NEW FIELD
-```
-
-```bash
-# 2. Generate migration
-aksara makemigrations --app app.models --name add_avatar_url
-# Created: migrations/0005_auto_add_avatar_url.py
-```
-
-```python
-# 3. Review generated migration
-# migrations/0005_auto_add_avatar_url.py
-from aksara.migrations import Migration
-from aksara.migrations import operations as op
-from aksara import fields
-
-class Migration(Migration):
-    dependencies = ["0004_auto_add_bio"]
-
-    operations = [
-        op.AddField(
-            model_name="User",
-            name="avatar_url",
-            field=fields.URL(nullable=True),
-        ),
-    ]
-```
-
-```bash
-# 4. Apply migration
-aksara migrate
-
-# Output:
-# Applying 0005_auto_add_avatar_url... ✓ Applied successfully
-```
-
-```bash
-# 5. Verify
-aksara status
-# [X] 0005_auto_add_avatar_url
-```
-
----
-
-## Related Documentation
-
-- [Migration Safety](migration-safety.md) — how migrations are applied and verified
-- [Models](models.md) — Model definition
-- [Fields](fields.md) — Field types
-- [CLI Reference](../cli/index.md) — All CLI commands
+For application integration tests, own the disposable database/schema and stop
+workers before cleanup. For production, use a separate migration job with the
+appropriate role, then verify deployment readiness. See
+[testing](../advanced/testing.md), [deployment](../tutorials/deployment.md), and
+[upgrading from v0.6](../operations/upgrade-v07.md).
