@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "pass": true,
-  "html_pages": 159,
-  "local_links_checked": 46835,
+  "html_pages": 160,
+  "local_links_checked": 47221,
   "errors": [],
   "external_links_not_fetched": 17,
   "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
@@ -98,6 +98,7 @@
     "docs/docs/getting-started/ten-minutes.md": "4b53953cccd437d7be2fe27c79911b659d2c5baae0669b9857446a8d317f47c8",
     "docs/docs/glossary.md": "6e27cf9b94359d3c8f53af4a881d2234a94e2268103a2b64bd3ab5fcd0041821",
     "docs/docs/how-to/export-durable-transitions.md": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
+    "docs/docs/how-to/require-durable-approval.md": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
     "docs/docs/how-to/typescript-client.md": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
     "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
     "docs/docs/inspectors/index.md": "bb7e60035b83e676f7eeafb973f4e3963cb7e9559df24f3480526e56aafbfeb1",
@@ -170,7 +171,7 @@
     "docs/docs/tutorials/ticket-desk-reports.md": "d3ccf9328064682545bc71f1c9dd19e59ad675e5325d9c199f023d9eba2c579c",
     "docs/docs/tutorials/ticket-desk-tenancy.md": "323fee8bf4542b37eaf4610ba5d691571b65d28194d9d41180ac431e0e26943f",
     "docs/docs/tutorials/ticket-desk.md": "7e351c827dc827b1501f3733e50620865e05b095e829b7b75871a8918da2890e",
-    "docs/mkdocs.yml": "c94fcf4429966a8819d21be4e621877fc95a5f7e4529fb5164453077101b83af"
+    "docs/mkdocs.yml": "20cc6932bc5fdeb2d7c8ff3d4a4965428af328873f753d6242bf406f91b8d261"
   },
   "runner_sha256": "33b39c3a45cd74645be35e21ad315350906c4479923991505387a27f180ab594"
 }

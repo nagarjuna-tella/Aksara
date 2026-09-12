@@ -58,7 +58,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Admin | Yes | Evolving details | `aksara.contrib.admin` | Needs detailed audit | Support Desk admin | Pending | Do not infer all Admin APIs are frozen from backend production readiness. |
 | Ordinary tasks | Yes | Stable unlinked behavior | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result | Persists tenant, not full Principal; separate task recovery/retention gates remain. |
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
-| Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Needs complete how-to review | Support Desk / durable guide | Pending new journey | Sync grants and durable decisions are different; neither overrides current authority. |
+| Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Concept reviewed; examples pending | Durable reference guide | Pending new journey | No exactly-once external-effect promise; uncertainty can remain explicit. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | Needs how-to audit | Durable guide | Pending new journey | Not a tamper-resistant ledger or application retention service. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
@@ -636,3 +636,22 @@ hosted PostgreSQL 16 validation. The general suite uses
 `AKSARA_REQUIRE_SECURITY_MATRIX=false`; strict Doctor/release profiles remain
 separate gates. The increase from 8,312 to 8,313 tests is the added outbox
 evidence freshness test. No production behavior or dependency range changed.
+
+## Durable Approval How-to Evidence
+
+`how-to/require-durable-approval.md` explains registering an approval-required
+action, the separate reviewer callback, current server-owned identity/reference,
+required action scopes, waiting/ready/rejected/expired outcomes, conflicts and
+application-owned reviewer policy. It explicitly excludes implicit separation
+of duties and distinguishes durable decisions from synchronous MCP grants.
+
+`scripts/check_public_approvals.py` extracts its exact helper and executes it
+against the isolated public 0.7.0 wheel and local PostgreSQL. Twelve checks
+cover migrations, waiting admission, claim eligibility, reviewer role and action
+scope denials, mismatched provenance, tenant selection, approval, repeated
+conflicting decisions, rejection and approval expiry. Its uniquely named schema
+is removed and removal verified. `approval-execution.json` binds the page and
+runner hashes; a documentation test detects stale evidence. The fixture uses an
+admin database role and service calls. It does not prove restricted-role RLS,
+HTTP authentication, reviewer UI usability, worker execution or process loss.
+Those are separate tutorial/regression or application responsibilities.
