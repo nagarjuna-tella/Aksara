@@ -167,8 +167,8 @@
     },
     {
       "path": "docs/docs/ai-mode/agent-runtime.md",
-      "sha256": "cf9a0e6e05b61852ef20fb7341f9ec976312b3a7246cd0075d9e1e1eadaf1c2d",
-      "changed_since_release": false,
+      "sha256": "88aeb6ac365bbca6097be05a37cf16eaa134fe49fd4bd2b91d79a5ebb134957f",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 69
@@ -199,8 +199,8 @@
     },
     {
       "path": "docs/docs/ai-mode/codegen.md",
-      "sha256": "c34c3d034f29dc36bd5882c96a1cd09ddd5e6ea43d42a17783c22dab734d37c2",
-      "changed_since_release": false,
+      "sha256": "897eb4fa3af33923bc9355f6933a620fb287d1bab99edc101e63b99e10ce1720",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 39
@@ -233,8 +233,8 @@
     },
     {
       "path": "docs/docs/ai-mode/context-engine.md",
-      "sha256": "8e2ab38f0257da63e38bfdfc43ba95f010514d3e065bdce86c4a0f7b55a7913d",
-      "changed_since_release": false,
+      "sha256": "ed92e8ba90269fdb4059c755683cf7918fe2b9355bfb6d060e68457e417fc88a",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 33
@@ -305,8 +305,8 @@
     },
     {
       "path": "docs/docs/ai-mode/patch-engine.md",
-      "sha256": "b754bfd23c0c1ec3134b2d08520cf9283a9e7c6840592e97a7d1cf4cef14c2c1",
-      "changed_since_release": false,
+      "sha256": "f19d5145ed94b57b86750d0025329f80fdef4f724db3893df693403cd4667e89",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 50
@@ -361,11 +361,11 @@
     },
     {
       "path": "docs/docs/ai-mode/safety.md",
-      "sha256": "7a6e1674a45918bf3ea37f053be84de583b528b5a8c8e7e18be6bbe2a1d45751",
-      "changed_since_release": false,
+      "sha256": "608c00dc841ad44ddccb91d42a4c36be7ce145d6477b279a48fbc77846df0633",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 58
+      "lines": 68
     },
     {
       "path": "docs/docs/ai-mode/schema-doctor.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 25,
+    "unchanged_since_release": 20,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

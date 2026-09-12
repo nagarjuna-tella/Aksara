@@ -242,3 +242,10 @@ PT060 clarifies three Studio setup/configuration/overview pages. Installed impor
 evidence runs eight dependency-level HTTP cases; related authentication tests
 pass. This does not certify browser workflows, shared-host deployment, or a
 production authorization model. The experimental boundary remains explicit.
+
+## AI execution boundary checkpoint
+
+PT061 reconciles experimental AI lifetimes with released v0.7 durable operations.
+Installed import evidence covers deterministic planner validation, generated
+Python and patch previews in a disposable project. Selected regressions pass;
+provider quality and autonomous workflows remain outside the claim.

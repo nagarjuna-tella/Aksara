@@ -1,7 +1,7 @@
 # Patch engine
 
 !!! warning "Experimental"
-    Code generation and patch application are outside the stable v0.6
+    Code generation and patch application are outside the stable v0.7
     contract. Aksara does not expose a `PatchEngine` class.
 
 The actual API uses declarative patch models and functions. Preview is the

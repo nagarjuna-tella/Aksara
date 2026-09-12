@@ -3,7 +3,7 @@
 !!! warning "Experimental"
     Aksara 0.7.0 does not expose an `AgentRuntime` class. Planner quality,
     autonomous loops, persistent sessions, memory, and provider-specific
-    behavior are outside the stable v0.6 contract.
+    behavior are outside the stable v0.7 contract.
 
 Aksara ships two narrower runtime building blocks:
 
@@ -56,7 +56,7 @@ calling loop, durable session, or autonomous runtime.
 
 ## Stable execution boundary
 
-The stable AI-native surface in v0.6 is generated MCP execution at `/mcp/`:
+The stable AI-native MCP surface retained in v0.7 is generated MCP execution at `/mcp/`:
 server-resolved `Principal`, execution-time permission and policy checks,
 tenant and field enforcement, transactions, structured failures, audit events,
 and in-process runtime limits. See the [MCP quickstart](../getting-started/mcp.md).

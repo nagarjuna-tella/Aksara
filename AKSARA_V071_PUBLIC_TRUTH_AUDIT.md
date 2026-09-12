@@ -1888,3 +1888,25 @@ tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q` — 210 pas
 one existing dependency deprecation warning. Strict docs, 359 Python fences,
 292 CLI forms, and 42,291 local references across 162 pages passed. Ruff passed.
 No production settings or behavior changed; final whole-manual review remains open.
+
+## AI execution boundary follow-up (2026-09-12)
+
+PT061 / P1: AI safety still described durable operation identity, reauthorization,
+and cancellation as deferred to v0.7. The page now distinguishes the released
+Durable Authorized Operations path from process-local prompt calls, synchronous
+MCP replay, and experimental planner/session state. Related experimental pages
+now reference the current v0.7 boundary without promoting their APIs to stable.
+
+The first planner/codegen/patch-preview/safety examples execute in a disposable
+project in checkout and installed wheel. Generated Python compiles; preview
+returns diffs without applying them, and the original model file remains intact.
+No provider calls, planner execution, patch application, or autonomous recovery
+are certified by this test. The installed import gate now executes it.
+Validation: `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py
+tests/test_v048_packaging_sanity.py tests/ai/test_ai_codegen.py
+tests/ai/test_codegen_sanitization.py tests/ai/test_ai_planner.py
+tests/ai/test_v049_planner_edges.py tests/ai/test_ai_patch.py
+tests/ai/test_v049_patch_safety.py tests/ai/test_patch_security.py -q` — 500 passed,
+one existing dependency deprecation warning. Strict docs, 359 Python fences,
+292 CLI forms, and 42,293 local references across 162 pages passed. Ruff passed.
+No production code changed; final whole-manual acceptance remains open.
