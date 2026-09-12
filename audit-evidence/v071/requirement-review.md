@@ -30,7 +30,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit records PT-001 through PT066 across tables and detailed sections, plus sixteen functional findings. | Consolidate contradiction register; finish unreviewed pages; verify every disposition, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 66-row PT-001 through PT-066 register with detailed sections, plus sixteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Final usability review must check actual reading flow and orphaned important pages. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Final evaluator reading review; no claim of independently measured comprehension. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
@@ -135,7 +135,7 @@ Line numbers below refer to that exact objective.
 
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
-| AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Consolidate historical prose and finish per-requirement/current-page audit |
+| AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
 | AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all sixteen findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
@@ -292,3 +292,12 @@ manual/contract; dated note contents and changelog history remain unchanged.
 207 docs/packaging tests, strict docs, 358 Python fences/imports, 292 CLI forms,
 and 42,302 local references passed. No release was dispatched. Current counts
 in the phase table were refreshed; historical checkpoint results remain scoped.
+
+## Capability and contradiction reconciliation checkpoint
+
+The capability matrix now reflects verified policy, Admin, Studio, AI preview
+and CLI evidence. All 66 contradiction identifiers appear exactly once in the
+ordered central register; PT-012 was recovered from the existing media review.
+Five updated capability claims were checked against installed-doc-imports.json.
+207 docs/packaging tests passed. This is a summary reconciliation, not new
+runtime coverage; detailed evidence scopes and sixteen defects remain intact.
