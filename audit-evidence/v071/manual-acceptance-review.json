@@ -22,20 +22,23 @@
     "remaining_limit": "An author review cannot measure independent comprehension or replace final candidate installation, runtime regression and hosted CI."
   },
   "contradictions": {
-    "registered": 77,
-    "latest": "PT-077"
+    "registered": 80,
+    "latest": "PT-080"
   },
   "functional_findings": {
-    "registered": 20,
-    "latest": "GAP001",
+    "registered": 22,
+    "latest": "AIFLOW002",
     "runtime_fixes_included": false
   },
   "fresh_checks": {
     "strict_mkdocs": "pass",
     "rendered_pages": 162,
-    "rendered_local_links_assets": 42195,
+    "rendered_local_links_assets": 42310,
     "rendered_link_errors": 0,
     "installed_python_fences": 348,
+    "installed_json_fences": 15,
+    "current_public_fences": 595,
+    "execution_artifacts_indexed": 31,
     "documented_cli_forms_parsed": 292,
     "documented_cli_forms_excluded": 7,
     "external_links_reachable": 41,
@@ -46,7 +49,7 @@
   "source_sha256": {
     "audit-evidence/v071/admin-reading-review.json": "3a41cf63a878ddd0b204839b13f3d9bf863a91d0e16ea0ba12de0fb87eb5e77f",
     "audit-evidence/v071/advanced-reading-review.json": "0e37be00829ee9ffecc6d16e29caa757ed86ba2c4f8def5ca3c058e25413edb4",
-    "audit-evidence/v071/ai-studio-reading-review.json": "ae334f0251d4066933d1814d2305bf46a81321276226cc6bcc3006f3130bee1f",
+    "audit-evidence/v071/ai-studio-reading-review.json": "861fd2cd2dcdc0e24cb8d6a905a71ff901c6dff029edcd11a6ab7d7bcff41ee9",
     "audit-evidence/v071/api-reading-review.json": "5e681e0541a1c662e7c722fc1dd8014c1b9d7f6eecc8cc9f9875de0e67a10a38",
     "audit-evidence/v071/concepts-reading-review.json": "79972c9bf81ad41ef08894384b02aa4a01553eadcbd682d6ff7f4b7eccb0a04a",
     "audit-evidence/v071/debugging-reading-review.json": "452617042db8f0427a43df0788571997c9edde632311c7ad61fb06f30bc196e9",
@@ -59,7 +62,9 @@
     "audit-evidence/v071/reference-tooling-reading-review.json": "9dcb7b7b5dbfef1a6617a76c687337237aa530b06bf55789d75fee73b92096b3",
     "audit-evidence/v071/security-reading-review.json": "7fd691e259c10352cb62de9665cf9a6e2cff03ba891d89e077432f6d836bf730",
     "audit-evidence/v071/start-tutorial-reading-review.json": "7a43885c7aad881afb5b873ae903bdd89fff3eba479b4087d75b3bb16b5451dc",
-    "audit-evidence/v071/public-page-review-inventory.json": "26979972b8c1bdfc5b82c50a3248b450f4dffc18d2fa911f5a57df0fa470c13c"
+    "audit-evidence/v071/public-page-review-inventory.json": "b0ba8f0c16a081c807b8d377acc38a3e6332b1e4d040c2ee073418dcc614cc09",
+    "audit-evidence/v071/installed-doc-imports.json": "89d74ce5d74b4536aadd4d69752292db4445aadd2d9570b90db1a82672852080",
+    "audit-evidence/v071/snippet-coverage-review.json": "689493f3e237b0bab9388e78fd651f33ddde5899dcc8bc39fc749b90efe6e01c"
   },
   "candidate_acceptance": false
 }

@@ -1,6 +1,13 @@
 {
   "package_version": "0.7.0",
   "python_blocks": 348,
+  "json_blocks": 15,
+  "workflow_import_observation": {
+    "direct_import_exit": 1,
+    "direct_import_error": "ImportError: cannot import name 'build_agent_workflow' from partially initialized module 'aksara.ai.workflows' (most likely due to a circular import) (/private/tmp/aksara-v071-public-baseline/lib/python3.11/site-packages/aksara/ai/workflows.py)",
+    "documented_snippet_exit": 0,
+    "documented_snippet_stdout": "Workflow for \"Fix slow queries on /api/posts/\" with 3 steps (2 inspect, 1 run_test).\n{'total_steps': 3, 'by_kind': {'inspect': 2, 'run_test': 1}, 'by_risk': {'low': 3}, 'by_effort': {'low': 1, 'medium': 2}, 'has_high_risk': False, 'playbook': None, 'source': 'manual'}\n[50] inspect: Inspect registered models\n  $ aksara inspect models\n  $ aksara inspect models --format json\n[51] inspect: Inspect slow queries\n  $ aksara inspect queries --top 10\n  $ aksara inspect queries --format table\n[300] run_test: Run test suite\n  $ python -m pytest -x -q\n  $ aksara test\n"
+  },
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "570cd2d6b2f6b8f4f51813502770df390da20787f20e65c8c94827c84786fe63",
@@ -24,14 +31,14 @@
     "docs/docs/ai-mode/agent-runtime.md": "88aeb6ac365bbca6097be05a37cf16eaa134fe49fd4bd2b91d79a5ebb134957f",
     "docs/docs/ai-mode/agent.md": "37641cf372a4ff4e98cf24f5b41e3f9168f04d282c117dbc49a458783469220b",
     "docs/docs/ai-mode/architecture-review.md": "f885513ed5a36088bf31f48705c4fa307449a82ad09a2a86a5a08bbf2b0542a4",
-    "docs/docs/ai-mode/bring-your-own-llm.md": "ba32fe17126c54c5721bd2033304edd3d44403e5ca64daebe5ce94c2a13d0c39",
+    "docs/docs/ai-mode/bring-your-own-llm.md": "8df2d22d0cb3cd526155db4f9810a4cf6cabeffc4224d130897ee3ea2f4bf004",
     "docs/docs/ai-mode/codegen.md": "897eb4fa3af33923bc9355f6933a620fb287d1bab99edc101e63b99e10ce1720",
     "docs/docs/ai-mode/config.md": "b629ef5d8d495447973405509b607ec1ebe1e1de94914dd4c129e244b4009f30",
     "docs/docs/ai-mode/connectors.md": "4e1f1bfa46c9ea350439e5e814c90e58c0bee0ac5a88841c8a2227ebde3893e1",
     "docs/docs/ai-mode/console.md": "a5c29bcd9118c40574e7368316d7f9bfc42346f47bdcefafc94a2584f21dd06f",
     "docs/docs/ai-mode/context-engine.md": "ed92e8ba90269fdb4059c755683cf7918fe2b9355bfb6d060e68457e417fc88a",
     "docs/docs/ai-mode/custom-http.md": "208812d2a03af90f6f0d5dd0b092512672c62f610559652996a7e612e829a12a",
-    "docs/docs/ai-mode/debugger.md": "990c858c3771e06beb4ed1ca9f0abf845e43889888e4ce8a9622e2ab7e20354d",
+    "docs/docs/ai-mode/debugger.md": "bc3f8d8d272117ad640fd1485925ac3c6c236b0ab3dbbb43c12a0fb961bf73a3",
     "docs/docs/ai-mode/flows.md": "b3b53f203f1e04f14372d1da984b4573b49f5761d98175afb923eab99c6fc182",
     "docs/docs/ai-mode/hints.md": "780416f4667f41fa834e68a9675f41fb17354d7583301b80ec01a27708f34928",
     "docs/docs/ai-mode/hub.md": "d7325ab4af1e28eda5b9f4db19bdd4002e0d3723736298eb52cb6e54c17bd69f",
@@ -48,7 +55,7 @@
     "docs/docs/ai-mode/safety.md": "608c00dc841ad44ddccb91d42a4c36be7ce145d6477b279a48fbc77846df0633",
     "docs/docs/ai-mode/schema-doctor.md": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56",
     "docs/docs/ai-mode/tools.md": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
-    "docs/docs/ai-mode/workflows.md": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
+    "docs/docs/ai-mode/workflows.md": "7f225fd3d1aa613cd41082e2e76fd7f8608cc6f66b5b9aca7daa654af6ce799d",
     "docs/docs/api/actions.md": "c660898508e97efe4caaa18e8e5d293b08e37b157ffb623ab6b4693942bb3343",
     "docs/docs/api/authentication.md": "77224e95b81fc4b9f7664f63632efdada7349f1644a23b64dfd4b81244655dd2",
     "docs/docs/api/filtering.md": "a15859943c8b4dafce0646c52a179fca36699b8787b15cbc8dffa7355373916d",
@@ -147,7 +154,7 @@
     "docs/docs/security/security-coverage.md": "8e6bab52f2b0372586e84cfd2217c57fde80f91e377b048b220e58fbc768bafb",
     "docs/docs/security/threat-model.md": "011693e5119441a779d9a47eeb0845207c472867e0c2d88d7428c8c3679ef265",
     "docs/docs/studio/api.md": "705a82ae3f30a1cbab512467663fc1f28f1b914e78b3d957302d32a915033076",
-    "docs/docs/studio/cli.md": "761e216e3cf741e555ac449d2bfd7d43fcac3b3fd1d459a899a2d1a1f49d39d1",
+    "docs/docs/studio/cli.md": "9fc031c633063ccd37ca6f6e830c288adea2d1490072ec26b297005990a500f6",
     "docs/docs/studio/configuration.md": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
     "docs/docs/studio/index.md": "7b55c33fab7ec91a2e52535f9c719e74d0d00d0c85e6270f84074578c7d3fb86",
     "docs/docs/studio/ui.md": "0d5090d457f95ce87777185fd880cacec23ed922333117aad06d0540cbc045e0",
@@ -171,8 +178,8 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
-  "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
+  "scope": "Python fence syntax, Aksara import resolution, all current JSON fence parsing, selected JSON response-model validation, and fresh-process execution of the exact documented Agent Workflow snippet; also covers documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
+  "contract_sha256": "51b694f4e45c0e2fdb0685c53cde351cc08094e5f0b4cee578c2910f8abeafad",
   "viewset_contract_sha256": "0cc77d8a76f2082a190d5ab00ba6350a2e5e336493c2a779ce9926e41a89a306",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
   "localization_http_and_conversion_checks": "passed",
@@ -203,5 +210,5 @@
   "ai_developer_preview_checks": "passed",
   "gap_contract_sha256": "b5f5d2f4f2417606e41caaa8dce6e833e32572b28edd28fd3768385ec39c1a74",
   "gap_orchestration_checks": "passed",
-  "runner_sha256": "9b01b1b8d3187b2ed12fb278e6e382540e5caaf9452c88171c03f17bc7c06b80"
+  "runner_sha256": "676f7ab14e6c0a550881e33dff424f8cedb080892a4489fdde0fcad40f9d9d75"
 }

@@ -98,7 +98,42 @@ aksara studio handshake --format json | jq '.checksums'
     "debug_mode": true,
     "environment": "development"
   },
-  ...
+  "database": {
+    "connected": true,
+    "dialect": "postgresql",
+    "pool_size": 10,
+    "pool_available": 8,
+    "latency_ms": null,
+    "last_error": null
+  },
+  "capabilities": [
+    "read_schema",
+    "read_data",
+    "ai_tools",
+    "admin_access",
+    "debug_panels"
+  ],
+  "checksums": {
+    "schema_checksum": "abc123def456789",
+    "migrations_checksum": "def456abc123789",
+    "settings_checksum": "789abc123def456",
+    "routes_checksum": "123def456abc789"
+  },
+  "endpoints": {
+    "context_full": "/ai/context/full",
+    "context_summary": "/studio/context/summary",
+    "health": "/studio/health",
+    "tools": "/ai/tools",
+    "tools_mcp": "/ai/tools/mcp",
+    "query_execute": "/ai/query/execute",
+    "codegen_preview": "/ai/codegen/preview",
+    "patch_preview": "/ai/patch/preview",
+    "patch_apply": "/ai/patch/apply",
+    "plan_preview": "/ai/plan/preview",
+    "plan_apply": "/ai/plan/apply",
+    "schema_health": "/ai/schema/health"
+  },
+  "metadata": {}
 }
 ```
 

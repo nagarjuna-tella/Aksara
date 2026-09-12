@@ -30,6 +30,10 @@ import aksara
 module = runpy.run_path(sys.argv[1])
 module['test_public_python_fences_are_syntactically_executable']()
 module['test_public_aksara_imports_resolve']()
+module['test_public_json_fences_are_valid_documents']()
+module['test_documented_json_response_shapes_match_installed_contracts']()
+module['test_workflow_example_executes_in_a_fresh_installed_process']()
+workflow_import = module['_fresh_workflow_import_observation']()
 viewsets = runpy.run_path(sys.argv[2])
 viewsets['test_viewset_example_registers_documented_routes']()
 viewsets['test_documented_viewset_defaults_and_hooks']()
@@ -78,10 +82,13 @@ with contextlib.redirect_stdout(io.StringIO()):
 gap = runpy.run_path(sys.argv[15])
 gap['test_gap_analysis_selection_and_failure_handling']()
 blocks = list(module['_python_blocks']())
+json_blocks = list(module['_json_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
 print(json.dumps({'package_version': aksara.__version__, 'package_path': aksara.__file__,
-                  'python_blocks': len(blocks), 'page_sha256': pages}))
+                  'python_blocks': len(blocks), 'json_blocks': len(json_blocks),
+                  'workflow_import_observation': workflow_import,
+                  'page_sha256': pages}))
 '''
 
 
@@ -100,7 +107,7 @@ def main():
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, all current JSON fence parsing, selected JSON response-model validation, and fresh-process execution of the exact documented Agent Workflow snippet; also covers documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "localization_contract_sha256": hashlib.sha256(LOCALIZATION_CONTRACT.read_bytes()).hexdigest(),
@@ -134,7 +141,11 @@ def main():
                      "gap_orchestration_checks": "passed",
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")
-    print(f"PASS: {evidence['python_blocks']} Python fences; all documented Aksara imports resolve")
+    print(
+        f"PASS: {evidence['python_blocks']} Python fences and "
+        f"{evidence['json_blocks']} JSON fences; documented imports and selected "
+        "response shapes resolve"
+    )
 
 
 if __name__ == "__main__":

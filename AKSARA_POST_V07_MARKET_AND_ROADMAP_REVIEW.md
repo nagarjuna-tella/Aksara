@@ -79,7 +79,7 @@ candidate audit owns the full stability matrix and installed-wheel results.
 | API and query diagnostics | `aksara/middleware/tracing.py`, `aksara/db/tracing.py` | `tests/db/test_tracing.py`, `tests/diagnostics/` | Do not describe observability as absent; integration and correlation need evaluation |
 | MCP | `aksara/mcp/` | `tests/mcp/`, installed-wheel reference checks | An application access surface, not a reason to build another agent planner |
 | Client generation | `aksara/sdk/typescript.py` | SDK and CLI tests | Useful convenience; generated-client usability needs its own journey |
-| AI, Studio, DurableStep | `aksara/ai/`, `aksara/studio/`, `aksara/workflows.py` | Component tests, installed provider-contract checks and separate stability exclusions | Existence and component tests do not make these v0.7 durable guarantees; provider detection remains heuristic |
+| AI, Studio, DurableStep | `aksara/ai/`, `aksara/studio/`, `aksara/workflows.py` | Component tests, installed provider/workflow contract checks and separate stability exclusions | Existence and component tests do not make these v0.7 durable guarantees; provider detection remains heuristic, the direct workflow import is order-sensitive, and diagnostic environment commands can be malformed |
 
 ## Product Hypotheses Considered
 
@@ -224,7 +224,7 @@ implementation is identified. Component existence is not certification.
 | SDKs | Generated TypeScript currently fails strict compilation | SDK-001 is reproduced; generation alone is not a usable-client claim. Direct HTTP remains available |
 | CLI/scaffold | Commands work; generated application packaging is defective | SCAFFOLD-001 prevents editable installation; the dependency-install/startup route is tested, but does not repair project packaging |
 | Gap analysis | Useful static pre-flight with a version-threshold defect | GAP001 accepts a simulated Python 3.10 environment although package metadata requires 3.11 or newer; treat metadata and the supported matrix as authoritative and fix the checker separately |
-| Experimental provider DX | Configuration loads, but readiness reporting is unreliable | AIPROVIDER001 reports default Ollama without reachability and rejects keyless custom endpoints; keep providers experimental and fix separately before stronger DX claims |
+| Experimental provider/workflow DX | Configuration loads, but readiness reporting and workflow ergonomics are unreliable | AIPROVIDER001 reports default Ollama without reachability and rejects keyless custom endpoints; AIFLOW001 makes the direct workflow-module import order-sensitive; AIFLOW002 can render malformed diagnostic environment commands. Keep these surfaces experimental and fix them separately before stronger DX claims |
 | Docs and integrations | Improved in this branch; acceptance incomplete | Executed tutorial and corrected references exist; final manual/candidate checks and independent user observation remain open |
 | Plugin ecosystem | Not established by this review | Prefer a few versioned integration contracts over promising an ecosystem |
 | Managed hosting, generic identity service | Intentionally out of scope | Use existing services; no need to operate a cloud platform to reach 1.0 |
@@ -358,6 +358,27 @@ guides now call detection a hint and require a separate ping; a provider-free
 installed-wheel probe preserves both negative controls. This is an experimental
 DX defect, not evidence for expanding provider scope or stabilizing AI. Fix it
 separately if provider setup becomes a supported adoption path.
+
+### Experimental workflow import and command rendering (2026-09-12)
+
+AIFLOW001 / P1: importing `build_agent_workflow` directly from
+`aksara.ai.workflows` fails when that module is the first Aksara submodule
+imported in a fresh process. Importing the same public helper from the
+`aksara.studio` aggregate succeeds. The public workflow guide now uses that
+working aggregate path, and installed-wheel evidence preserves the failing
+direct-import negative control. This is an import-order defect in an
+experimental surface; repair it in a separate functional patch.
+
+AIFLOW002 / P1: when workflow diagnostics are enabled, built-in `set_env`
+actions whose example values already contain `export` can be displayed as
+`export NAME=export NAME=...`. The public introduction now uses a deterministic,
+provider-free path with diagnostics and search disabled, and the guide states
+that commands are display-only suggestions that require review before use.
+Repair command rendering separately rather than broadening the workflow scope
+or treating the generated suggestions as an execution contract.
+
+Neither defect changes the roadmap thesis: experimental workflow helpers remain
+outside the v0.7 stable boundary and are not a reason to build a workflow engine.
 
 GAP001 / P1: the static environment checker rejects only interpreters below
 Python 3.10 even though the package metadata requires Python 3.11 or newer.
@@ -542,7 +563,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the twenty audit findings for separately scoped functional maintenance; do
+Track the twenty-two audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 

@@ -78,7 +78,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | This nine-check storage gate does not cover SMTP/S3; the separate File/Image row covers persisted local lifecycle. Direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
-| AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status, provider configuration, CLI examples and execution lifetimes corrected | Route hint; local greeting and plan template | 12 local CLI checks plus 6 provider-contract checks ([CLI evidence](audit-evidence/v071/ai-cli-execution.json), [provider evidence](audit-evidence/v071/ai-provider-contract.json)) | Sockets are unused in the provider contract gate; no provider/planner quality or autonomous execution claim. AIPROVIDER001 records misleading configured-state heuristics. Installed deterministic planner/codegen/patch-preview checks also pass; full experimental behavior is not certified. |
+| AI/provider/runtime | Yes | Experimental | `aksara.ai`; selected workflow helpers through `aksara.studio` | Experimental status, provider configuration, CLI examples and execution lifetimes corrected | Route hint; local greeting, plan template and fresh-process workflow | 12 local CLI checks, 6 provider-contract checks and installed workflow execution ([CLI evidence](audit-evidence/v071/ai-cli-execution.json), [provider evidence](audit-evidence/v071/ai-provider-contract.json), [snippet evidence](audit-evidence/v071/snippet-coverage-review.json)) | Sockets are unused in the provider contract gate; no provider/planner quality or autonomous execution claim. AIPROVIDER001 records misleading configured-state heuristics. AIFLOW001 and AIFLOW002 record the direct-import cycle and malformed diagnostic environment-command rendering; docs use the working aggregate import and display-only command boundary. Full experimental behavior is not certified. |
 | Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Experimental boundary, selected API scope, mounting, browser lifecycle, Origin and credential behavior clarified | Scaffold default-route probe; Studio guides | Default UI disabled ([evidence](audit-evidence/v071/scaffold-startup.json)) | Eight installed dependency-level HTTP cases cover Origin and bearer rules; neither these nor disabled-route proof certify enabled Studio workflows. The browser UI uses same-origin staff-session cookies, while explicit API clients may use the bearer token. Not a production investigation or audit store. |
 | Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Force, cancellation, identity and codec boundaries corrected | Exact generic/step helpers | 23 installed PostgreSQL observations ([evidence](audit-evidence/v071/generic-step-execution.json)) | Normal claim exclusion, forced overlap and cancelled running state are exercised; no process-death, RLS, authorization or Operation guarantee. |
 | Configuration | Yes | Stable documented contract | `Settings`, `settings`, `configure` | Reference rewritten and checked | Settings/upgrade examples | Explicit overrides and upgrade recipe | POSIX origin-list env parsing defect documented with explicit-list workaround. |
@@ -180,8 +180,11 @@ candidate-only edits still require a final hash and navigation refresh.
 | PT-075 | P2 | Live roadmap and changelog navigation linked a temporary feature branch and an unrelated nonexistent GitHub release repository | Pointed both links at their durable locations in the public repository | Docs fixed; complete project-history reading |
 | PT-076 | P1 | Gap Analysis presented its Python 3.10 threshold without warning that package metadata and the supported matrix require Python 3.11 or newer | Made the implementation mismatch and authoritative compatibility sources explicit | Docs fixed; GAP001 retained |
 | PT-077 | P2 | The v0.6 historical contract called a nonexistent `AgentRuntime` class a usable experimental surface | Named the actual `run_prompt_pack`, `AgentRuntimeLimits` and `AgentRuntimeBudget` surfaces | Docs fixed; complete historical-contract reading |
+| PT-078 | P1 | Four current AI/Studio response examples used JavaScript-style ellipses in `json` fences; the provider, debugger and handshake examples also omitted or renamed required response fields | Replaced fragments with complete JSON documents and validated five selected objects against installed response models | Docs fixed; all 15 current JSON fences parse |
+| PT-079 | P1 | The Agent Workflow Python example imported `aksara.ai.workflows` directly, which fails in a fresh v0.7.0 process because Studio re-enters the partially initialized module | Use the exported `aksara.studio` aggregate path and execute the exact block in a fresh installed process | Docs fixed; AIFLOW001 retained |
+| PT-080 | P1 | Enabling diagnostics in the first workflow snippet can emit malformed `export NAME=export NAME=...` suggestions, despite the page presenting commands for incremental execution | Keep the minimal executable sample provider-free and deterministic, disclose AIFLOW002, and state that workflow commands are display-only suggestions requiring review | Docs fixed; AIFLOW002 retained |
 
-The register consolidates all 77 findings. “Docs fixed” describes the recorded
+The register consolidates all 80 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -270,6 +273,25 @@ wheel probe patches the reported interpreter tuple and observes an error for
 makes package metadata and the runtime matrix authoritative. Recommend a
 separate threshold/message patch with 3.10/3.11 boundary tests; production code
 is unchanged here.
+
+**AIFLOW001 / P1:** importing `aksara.ai.workflows` directly as the first Aksara
+submodule in a clean installed-0.7.0 process fails. The module imports
+`aksara.studio.models`; package initialization then imports `studio.utils`, which
+tries to import `build_agent_workflow` from the still-partial workflow module.
+The installed documentation gate records the exact `ImportError`. Importing the
+same public helpers through `aksara.studio` succeeds, and the corrected exact
+workflow block executes in a fresh process. The experimental workflow guide
+documents that path and limitation. Recommend a separately scoped import-cycle
+fix and clean-process regression; no production source changed here.
+
+**AIFLOW002 / P1:** workflow conversion of a diagnostic `set_env` action always
+formats `export {target}={example}` even though built-in diagnostic examples
+already contain a full `export NAME=...` command. A clean workflow run therefore
+emits strings such as `export DATABASE_URL=export DATABASE_URL=...` and the same
+duplication for provider secrets. The initial workflow example now disables
+diagnostics and search and tells readers to review all display-only commands.
+Recommend normalizing either diagnostic action examples or workflow rendering in
+a separate patch with cross-checker coverage; runtime behavior is unchanged here.
 
 **PT-019 / P1:** serializer guidance advertised unsupported `partial=True`,
 `write_only_fields`, nested field declarations, and misleading validation/error
@@ -578,10 +600,17 @@ External links are counted but not fetched by this gate. Evidence is
 `audit-evidence/v071/rendered-links.json`; source freshness and negative-control
 tests prevent a missing asset or fragment from being mistaken for a pass.
 
-Baseline: strict MkDocs PASS; `pytest tests/docs tests/test_v048_docs_lock.py
- tests/test_v048_packaging_sanity.py -q`: 114 passed. The 902 Python fences
-include partial snippets; import/syntax verification is not execution coverage.
-Expand gates around complete public examples and record each coverage limit.
+The current sample census covers 169 public Markdown files and excludes four
+dated historical entry points from current-example assertions. The remaining
+165 files contain 595 fences: all 348 Python fences compile, their Aksara imports
+resolve against the isolated public wheel, all 15 JSON fences parse, and five
+selected JSON request/response objects validate against installed models. The
+corrected Agent Workflow block also executes in a fresh process. The 292 literal
+CLI forms, six repository example dispositions, five example startups, packaged
+Support Desk, six-stage tutorial, scaffold and 23 focused DB/provider-free gate
+families are reconciled in `snippet-coverage-review.json`. That artifact states
+why partial fragments, display output and the external TypeScript integration
+are not claimed as independently executed programs.
 
 ## Changes Made
 
@@ -597,8 +626,9 @@ candidate reruns remain pending. Functional runtime source is unchanged.
 
 ## Remaining Documentation Debt
 
-Final high-value snippet-coverage reconciliation, candidate journeys, candidate
-packaging, compatibility regression and hosted checks remain pending. The
+Candidate journeys, candidate packaging, compatibility regression and hosted
+checks remain pending. The high-value snippet census and reconciliation are
+complete within the limits recorded in `snippet-coverage-review.json`. The
 author page/usability pass is complete; it is not an independent novice or
 operator study. The market/roadmap review is drafted from current primary
 documentation, while its user-demand and integration-cost hypotheses still
@@ -2652,3 +2682,33 @@ external targets are reachable, while the one post-merge `main` target is
 verified locally and recorded as excluded; and 227 documentation/packaging
 tests pass with one upstream dependency warning. The no-runtime-change AST guard
 passes against v0.7.0.
+
+## Public sample and snippet acceptance — 2026-09-12
+
+A15/D3: the final fence census distinguishes 600 fences across 169 public
+Markdown files from the 595 current fences in 165 nonhistorical files. All 348
+current Python blocks compile and their Aksara imports resolve against the
+isolated public wheel; all 15 current JSON blocks parse. Five selected JSON
+objects additionally validate against installed Studio/workflow models. The
+exact Agent Workflow Python block now runs in a clean process. Existing scoped
+evidence reconciles 31 syntax, CLI, application, PostgreSQL and provider-free
+artifacts, including all six example dispositions, five historical-example
+startups, the packaged Support Desk, the scaffold and all six tutorial stages.
+
+PT078 replaces four non-JSON ellipsis fragments with complete, model-checked
+documents. PT079/AIFLOW001 records that direct first import of
+`aksara.ai.workflows` fails through a Studio circular import; the documented
+`aksara.studio` aggregate import works. PT080/AIFLOW002 records duplicated
+`export` prefixes in diagnostic action conversion. The minimal workflow example
+now disables environment-dependent diagnostics/search and labels generated
+commands as display-only review material. Both runtime defects remain for a
+separately scoped functional patch.
+
+`snippet-coverage-review.json` makes the unexecuted boundaries explicit: partial
+Python fragments are not all standalone applications, CLI parsing is not
+callback execution, and the one experimental TypeScript integration fragment
+requires an external package and live endpoint. Dotenv, HTTP, SQL, CSS, text,
+diagrams, formulas and displayed output remain under their owning setup,
+journey, schema or rendering checks. This closes the current-source A15/D3
+acceptance without inventing universal execution. Candidate repetition remains
+an E-phase release gate. No production source or runtime behavior changed.

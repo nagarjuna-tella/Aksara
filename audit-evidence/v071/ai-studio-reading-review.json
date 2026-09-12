@@ -6,14 +6,14 @@
     "docs/docs/ai-mode/agent-runtime.md": "88aeb6ac365bbca6097be05a37cf16eaa134fe49fd4bd2b91d79a5ebb134957f",
     "docs/docs/ai-mode/agent.md": "37641cf372a4ff4e98cf24f5b41e3f9168f04d282c117dbc49a458783469220b",
     "docs/docs/ai-mode/architecture-review.md": "f885513ed5a36088bf31f48705c4fa307449a82ad09a2a86a5a08bbf2b0542a4",
-    "docs/docs/ai-mode/bring-your-own-llm.md": "ba32fe17126c54c5721bd2033304edd3d44403e5ca64daebe5ce94c2a13d0c39",
+    "docs/docs/ai-mode/bring-your-own-llm.md": "8df2d22d0cb3cd526155db4f9810a4cf6cabeffc4224d130897ee3ea2f4bf004",
     "docs/docs/ai-mode/codegen.md": "897eb4fa3af33923bc9355f6933a620fb287d1bab99edc101e63b99e10ce1720",
     "docs/docs/ai-mode/config.md": "b629ef5d8d495447973405509b607ec1ebe1e1de94914dd4c129e244b4009f30",
     "docs/docs/ai-mode/connectors.md": "4e1f1bfa46c9ea350439e5e814c90e58c0bee0ac5a88841c8a2227ebde3893e1",
     "docs/docs/ai-mode/console.md": "a5c29bcd9118c40574e7368316d7f9bfc42346f47bdcefafc94a2584f21dd06f",
     "docs/docs/ai-mode/context-engine.md": "ed92e8ba90269fdb4059c755683cf7918fe2b9355bfb6d060e68457e417fc88a",
     "docs/docs/ai-mode/custom-http.md": "208812d2a03af90f6f0d5dd0b092512672c62f610559652996a7e612e829a12a",
-    "docs/docs/ai-mode/debugger.md": "990c858c3771e06beb4ed1ca9f0abf845e43889888e4ce8a9622e2ab7e20354d",
+    "docs/docs/ai-mode/debugger.md": "bc3f8d8d272117ad640fd1485925ac3c6c236b0ab3dbbb43c12a0fb961bf73a3",
     "docs/docs/ai-mode/flows.md": "b3b53f203f1e04f14372d1da984b4573b49f5761d98175afb923eab99c6fc182",
     "docs/docs/ai-mode/hints.md": "780416f4667f41fa834e68a9675f41fb17354d7583301b80ec01a27708f34928",
     "docs/docs/ai-mode/hub.md": "d7325ab4af1e28eda5b9f4db19bdd4002e0d3723736298eb52cb6e54c17bd69f",
@@ -30,9 +30,9 @@
     "docs/docs/ai-mode/safety.md": "608c00dc841ad44ddccb91d42a4c36be7ce145d6477b279a48fbc77846df0633",
     "docs/docs/ai-mode/schema-doctor.md": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56",
     "docs/docs/ai-mode/tools.md": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
-    "docs/docs/ai-mode/workflows.md": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
+    "docs/docs/ai-mode/workflows.md": "7f225fd3d1aa613cd41082e2e76fd7f8608cc6f66b5b9aca7daa654af6ce799d",
     "docs/docs/studio/api.md": "705a82ae3f30a1cbab512467663fc1f28f1b914e78b3d957302d32a915033076",
-    "docs/docs/studio/cli.md": "761e216e3cf741e555ac449d2bfd7d43fcac3b3fd1d459a899a2d1a1f49d39d1",
+    "docs/docs/studio/cli.md": "9fc031c633063ccd37ca6f6e830c288adea2d1490072ec26b297005990a500f6",
     "docs/docs/studio/configuration.md": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
     "docs/docs/studio/index.md": "7b55c33fab7ec91a2e52535f9c719e74d0d00d0c85e6270f84074578c7d3fb86",
     "docs/docs/studio/ui.md": "0d5090d457f95ce87777185fd880cacec23ed922333117aad06d0540cbc045e0"
@@ -210,6 +210,7 @@
     "ai-docs-review.json",
     "ai-provider-contract.json",
     "installed-doc-imports.json",
+    "snippet-coverage-review.json",
     "studio access dependency cases in installed-doc-imports.json"
   ],
   "functional_findings": [
@@ -217,6 +218,18 @@
       "id": "AIPROVIDER001",
       "severity": "P2",
       "boundary": "The experimental compatibility provider detector reports default Ollama as configured without environment or reachability, and rejects a keyless custom endpoint even though the adapter accepts one.",
+      "runtime_fix_deferred": true
+    },
+    {
+      "id": "AIFLOW001",
+      "severity": "P1",
+      "boundary": "Importing aksara.ai.workflows directly as the first Aksara submodule import fails through the Studio aggregate cycle, while importing the public helper from aksara.studio succeeds.",
+      "runtime_fix_deferred": true
+    },
+    {
+      "id": "AIFLOW002",
+      "severity": "P1",
+      "boundary": "Workflow diagnostics can render built-in set_env examples as malformed commands with a duplicated export prefix.",
       "runtime_fix_deferred": true
     }
   ]

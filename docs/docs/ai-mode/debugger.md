@@ -137,11 +137,13 @@ Response:
 {
   "ok": true,
   "query": "login fails",
-  "issues": [...],
-  "clusters": [...],
-  "root_causes": [...],
-  "summary": "Found 12 issues in 4 clusters with 2 root causes.",
-  "counts": {"issues": 12, "clusters": 4, "root_causes": 2},
+  "issues": [],
+  "clusters": [],
+  "root_causes": [],
+  "summary": "Debug analysis for: login fails Found 0 issues in 0 clusters. No specific root causes detected.",
+  "issue_count": 0,
+  "cluster_count": 0,
+  "root_cause_count": 0,
   "elapsed_ms": 42.3,
   "generated_at": "2026-03-01T12:00:00Z"
 }

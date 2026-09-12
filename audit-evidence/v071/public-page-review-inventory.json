@@ -231,13 +231,14 @@
     },
     {
       "path": "docs/docs/ai-mode/bring-your-own-llm.md",
-      "sha256": "ba32fe17126c54c5721bd2033304edd3d44403e5ca64daebe5ce94c2a13d0c39",
+      "sha256": "8df2d22d0cb3cd526155db4f9810a4cf6cabeffc4224d130897ee3ea2f4bf004",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "ai-studio-reading-review.json"
+        "ai-studio-reading-review.json",
+        "snippet-coverage-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 363
+      "lines": 384
     },
     {
       "path": "docs/docs/ai-mode/codegen.md",
@@ -304,13 +305,14 @@
     },
     {
       "path": "docs/docs/ai-mode/debugger.md",
-      "sha256": "990c858c3771e06beb4ed1ca9f0abf845e43889888e4ce8a9622e2ab7e20354d",
+      "sha256": "bc3f8d8d272117ad640fd1485925ac3c6c236b0ab3dbbb43c12a0fb961bf73a3",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "ai-studio-reading-review.json"
+        "ai-studio-reading-review.json",
+        "snippet-coverage-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 218
+      "lines": 220
     },
     {
       "path": "docs/docs/ai-mode/flows.md",
@@ -478,13 +480,14 @@
     },
     {
       "path": "docs/docs/ai-mode/workflows.md",
-      "sha256": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
+      "sha256": "7f225fd3d1aa613cd41082e2e76fd7f8608cc6f66b5b9aca7daa654af6ce799d",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "ai-studio-reading-review.json"
+        "ai-studio-reading-review.json",
+        "snippet-coverage-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 211
+      "lines": 277
     },
     {
       "path": "docs/docs/api/actions.md",
@@ -1556,13 +1559,14 @@
     },
     {
       "path": "docs/docs/studio/cli.md",
-      "sha256": "761e216e3cf741e555ac449d2bfd7d43fcac3b3fd1d459a899a2d1a1f49d39d1",
+      "sha256": "9fc031c633063ccd37ca6f6e830c288adea2d1490072ec26b297005990a500f6",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "ai-studio-reading-review.json"
+        "ai-studio-reading-review.json",
+        "snippet-coverage-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 205
+      "lines": 240
     },
     {
       "path": "docs/docs/studio/configuration.md",

@@ -1,10 +1,12 @@
 # v0.7.1 requirement review checkpoint
 
-This is a verification checkpoint, **not a completion or release approval**.
-The current table incorporates the complete public-page reading assessment
-prepared after source head `17088633`. Earlier checkpoint sections below retain
-their original scoped evidence; the table is refreshed where current artifacts
-provide a stronger or newer result.
+This is the final current-source A–D requirement review, **not release
+approval**. The table incorporates the complete public-page reading and snippet
+assessments prepared after source head `9f5a97eb`. Earlier checkpoint sections
+below retain their original scoped evidence; the table is refreshed where
+current artifacts provide a stronger or newer result. Every A–D phase is now
+accepted as VERIFIED or SCOPED within its stated boundary. Candidate-only E
+work remains open.
 
 The objective's original scope remains authoritative. This table preserves all
 63 phase identities and identifies evidence/limits. It does **not** replace the
@@ -31,19 +33,19 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | SCOPED | public-docs-inventory.json preserves the 157-page release baseline and the current inventory has 163 pages. Fifteen reading artifacts give every inventoried page a current explicit disposition. | Repeat inventory and hash reconciliation after candidate-only edits; baseline `semantic_acceptance` fields remain historical diff flags rather than the current author review. |
 | A2: Build a capability truth matrix (line 316) | SCOPED | Audit capability matrix has 35 rows, implementation anchors, stability, examples, limitations and scoped installed-wheel evidence, reconciled after the full-page pass. | Repeat candidate evidence after build; existence/imports are insufficient and every row retains its stated limits. |
-| A3: Identify public contradictions (line 370) | SCOPED | Audit has one ordered 77-row PT-001 through PT-077 register with detailed sections, plus twenty functional findings. All 163 inventoried pages have explicit reading dispositions. | Re-run contradiction/order/evidence guards after candidate-only edits; no functional finding is repaired in this branch. |
-| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | The complete Start/tutorial route has an author-reading record; continue remaining reader journeys and important-page discovery. |
+| A3: Identify public contradictions (line 370) | SCOPED | Audit has one ordered 80-row PT-001 through PT-080 register with detailed sections, plus twenty-two functional findings. All 163 inventoried pages have explicit reading dispositions. | Re-run contradiction/order/evidence guards after candidate-only edits; no functional finding is repaired in this branch. |
+| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths; all six reader journeys have explicit author review. | Repeat navigation/link checks after candidate-only edits; author review is not an independent usability study. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
 | A8: Conceptual user manual (line 618) | SCOPED | Start/tutorial, concepts, glossary, patterns, how-tos, API, security, middleware, Admin, advanced, ORM, debugging, AI, Studio, reference, CLI, Inspector, Search, release, history and roadmap pages have explicit author-reading dispositions; execution artifacts cover major backend paths. | Repeat against the candidate; a complete author review is not an independent user study or proof of every API path. |
 | A9: How-to guides (line 680) | SCOPED | Auth, tenancy/RLS, reports, durability, approval, external effect, MCP, diagnostics, SDK, media, deployment and upgrade guides exist with scoped gates; all five dedicated How-to pages have explicit reading dispositions. | Candidate reruns; SDK compilation is a documented failure, not successful end-to-end client use. |
 | A10: Reference quality (line 707) | SCOPED | All eight Reference and five CLI pages have explicit reading dispositions; settings and 117 CLI declarations, installed imports, route/default/serializer contracts, AI provider environment/default checks and dedicated DB gates exist. | Candidate rerun remains required. Syntax/import coverage is not universal behavior proof and generated CLI declarations do not execute callbacks. |
-| A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts. | Final plain-language review and candidate execution; no arbitrary Python/external exactly-once promise. |
+| A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts; full-page and cross-manual reading check plain-language sequence. | Candidate execution; no arbitrary Python/external exactly-once promise. |
 | A12: Stable vs experimental visibility (line 788) | SCOPED | concepts/stability.md and ai-studio-reading-review.json cover every AI/Studio direct-entry page and distinguish stable synchronous MCP and Durable Operations. | Labeling and author reading do not certify every experimental example or final candidate output. |
 | A13: Examples audit (line 816) | SCOPED | example-review.json classifies all six apps; all four Pattern pages have explicit reading dispositions; example-execution.json checks five startups/selected HTTP and Support Desk has its own gate. | Retained historical examples have explicit limits; no live provider or every-custom-action proof. |
 | A14: Canonical example applications (line 844) | SCOPED | Minimal Ticket Desk, production-oriented Support Desk, durable Ticket Desk with separate approval/external recipes provide three tiers. | Candidate application gates; avoid treating historical multi-tenant demo as an isolation reference. |
-| A15: Example execution gate (line 884) | PARTIAL | Exact fence runners, installed imports/CLI and example application gates execute important examples. | Finish public sample audit and cover remaining high-value executable examples; import-only samples are not execution-certified. |
+| A15: Example execution gate (line 884) | SCOPED | snippet-coverage-review.json inventories all 600 fences, checks all 595 current fences by type, reconciles 31 execution artifacts, classifies all six examples and adds fresh-process workflow execution. | Repeat installed examples, snippets and journeys against the candidate; partial fragments, live providers and the external TypeScript integration retain explicit limits. |
 | A16: Scaffold audit (line 902) | SCOPED | 18-file scaffold snapshots, equivalence artifacts and exact installed-wheel startup record actual defaults/README behavior. | Candidate generation/startup; SCAFFOLD-001 remains disclosed. |
 | A17: Scaffold improvement (line 931) | SCOPED | Generated README changes plus CLI instructional corrections; they explain model/routes, configuration, migrations, tests, Doctor and later optional services. | Final candidate equivalence, including generated dependencies/settings/services, remains required. |
 | A18: CLI discoverability (line 952) | SCOPED | cli-contract.json inventories 117 command/group declarations; CLI reference and narrower execution gates cover discovery. | Current 292-command parse result excludes 7 forms; callbacks are not all executed. startapp help now matches INSTALLED_APPS and explicit route registration; five generated files and error-path behavior match the released CLI. |
@@ -61,7 +63,7 @@ Line numbers below refer to that exact objective.
 | B2: Current market research (line 1149) | SCOPED | strategy-research.json records 26 primary sources researched 2026-09-11; report cites retrieved documentation. | Final source freshness review before candidate; research is not measured demand or reliability. |
 | B3: Adjacent category analysis (line 1173) | SCOPED | Adjacent Systems covers Python frameworks, backend platforms, queues/durable systems, agents and policy; Table Stakes covers backend DX. | Category comparison is qualitative; example vendor lists in objective are illustrative, not a claim every vendor was tested. |
 | B4: Do not build a fake competitor scorecard (line 1274) | SCOPED | Per-category matrices compare abstractions, operational model and complement/competition; no numeric scorecard. | No comparative benchmark or unsupported universal absence claim. |
-| B5: Identify table stakes (line 1302) | SCOPED | Table Stakes labels strong/adequate/weak/missing/out-of-scope paths and distinguishes integration gaps from nonexistent code. | Reconcile newly found runtime failures with the maturity wording before final publication. |
+| B5: Identify table stakes (line 1302) | SCOPED | Table Stakes labels strong/adequate/weak/missing/out-of-scope paths and distinguishes integration gaps from nonexistent code; AIFLOW001/AIFLOW002 are included in experimental DX debt. | Final candidate does not repair the recorded functional findings. |
 | B6: Identify differentiators (line 1347) | SCOPED | Current Differentiators and durable discussion qualify reauthorization, shared contracts and same-database atomic effects. | Technical unusualness is not a validated commercial moat. |
 | B7: Identify adoption blockers (line 1376) | SCOPED | Adoption Blockers separates technical, trust and discoverability; audit demonstrates setup/reference failures. | Independent user demand/trust observations are proposed future work, not invented evidence. |
 | B8: Identify strategic distractions (line 1425) | SCOPED | Strategic Distractions and Not Planned analyze workflow, agents, vector/gateway, frontend/BaaS, portability and infrastructure obligations. | No implementation authorized; revisit only with a demonstrated user problem. |
@@ -71,7 +73,7 @@ Line numbers below refer to that exact objective.
 | B12: Capability-gap analysis (line 1542) | SCOPED | Capability Gaps table has all eight requested qualitative dimensions and eleven gaps. | No summed numerical precision; prioritization explicitly weighs risk and integration alternatives. |
 | B13: Roadmap principles (line 1565) | SCOPED | Roadmap Principles records eight evidence-based rules before version sequencing. | No further feature commitments inferred. |
 | B14: Roadmap horizons (line 1586) | SCOPED | Now, Next, Later, Explore and Not Planned horizons exist in report and public roadmap. | Dates and speculative later versions remain uncommitted. |
-| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Twenty findings require separate functional scope; no quiet fixes here. |
+| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Twenty-two findings require separate functional scope; no quiet fixes here. |
 | B16: Determine v0.8 thesis (line 1635) | SCOPED | v0.8 Thesis proposes operating existing authorized work, with acceptance scenario and conditions for reconsideration. | Recommendation only; no v0.8 implementation. |
 | B17: Longer release sequence (line 1658) | SCOPED | Possible Later Release Sequence leaves v0.9 unassigned and uses evidence-gated stabilization. | No arbitrary feature allocation or schedule. |
 | B18: Define v1.0 cutoff (line 1675) | SCOPED | v1.0 Readiness Criteria bounds supported API, migrations, security, operations, docs, compatibility, integrations and defect closure. | These are future criteria, not a current 1.0 claim. |
@@ -95,7 +97,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | D1: Public import tests (line 1895) | SCOPED | installed-doc-imports.json verifies 348 Python fences/imports plus selected contracts with an isolated public wheel. | Repeat final sources/candidate; valid import is not proof of public stability. |
 | D2: CLI documentation tests (line 1903) | SCOPED | cli-docs-syntax.json verifies 292 literal forms with 7 explicit exclusions; tutorial/scaffold gates execute selected flows. | Repeat final sources/candidate; do not treat parser-only commands as run. |
-| D3: Snippet tests (line 1909) | PARTIAL | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; local advisor visibility/context is checked with network connections blocked. | Complete high-value snippet coverage audit; no arbitrary partial-snippet execution claim. |
+| D3: Snippet tests (line 1909) | SCOPED | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; all 348 current Python fences compile/import, all 15 JSON fences parse, five JSON objects match installed models and the exact workflow block runs fresh. | Candidate rerun remains required; no universal execution claim for partial snippets, display output, live providers or the external TypeScript integration. |
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
 | D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,152 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
@@ -123,7 +125,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Twenty findings recorded with scoped evidence; no runtime fix in this branch | Final candidate freshness; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001 and GAP001 are provider-free |
+| Functional defects: document, classify, preserve, separate patch | Twenty-two findings recorded with scoped evidence; no runtime fix in this branch | Final candidate freshness; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001, GAP001 and AIFLOW001/AIFLOW002 are provider-free |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -136,8 +138,8 @@ Line numbers below refer to that exact objective.
 
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
-| AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
-| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all twenty findings and source/date qualifications |
+| AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, 80 contradictions, evidence and debt | Current A–D acceptance complete; refresh candidate-only evidence |
+| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all twenty-two findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
 | Runnable Quick Start and progressive tutorial | Exact installed-wheel six-stage Ticket Desk | Actual candidate rerun |
@@ -148,23 +150,17 @@ Line numbers below refer to that exact objective.
 | Stable/evolving/experimental guidance | concepts/stability.md and direct-entry labels | Finish whole-public-surface scan |
 | Audited examples | All six classified; selected installed execution | Final candidate runs, no overstatement of defective historical examples |
 | Scaffold instructional experience | README-only change and execution/equivalence evidence | Actual candidate repetition |
-| Automated public-doc/example gates | Import, CLI, selected exact snippets, examples, links and evidence integrity | Finish uncovered important examples and integrate final release evidence |
+| Automated public-doc/example gates | Complete fence census, import, JSON/model, CLI, selected exact snippets, examples, links and evidence integrity | Repeat against candidate and integrate final release evidence |
 | audit-evidence/v071/public-docs-truth.json | Machine-readable scoped index exists | Final freshness; never infer release approval from aggregate pass fields |
 | RELEASE_EVIDENCE_v0.7.1-rc1.md | Missing intentionally before readiness | Build complete candidate evidence and write the report |
 
 ## Next work, ordered by what can change readiness
 
-1. Finish current public-page semantic and usability review. The baseline
-   inventory's pending flags cannot prove this. Prioritize remaining advanced,
-   integration and reference pages; record explicit treatment of historical
-   notes/changelogs and experimental snippets.
-2. Reconcile the contradiction register and capability matrix, then check each
-   objective subitem against the actual guides and scoped execution evidence.
-   Known-defect reproductions must retain their failed runtime flags.
-3. Once A-D are accepted, bump once, build the real candidate and run the full
+1. A–D are accepted for current sources within every recorded evidence limit.
+   Bump once, build the real candidate and run the full
    established release campaign plus exact installed examples/scaffold/journeys.
    Earlier 0.7.0 wheels and historical matrices are supporting evidence only.
-4. Write release evidence, complete the final no-functional-change audit, open
+2. Write release evidence, complete the final no-functional-change audit, open
    the one final PR and inspect hosted CI. Leave it unmerged and unpublished.
 
 No external blocker prevents these next actions. The goal remains active.
@@ -594,3 +590,27 @@ and reconciled Stable/Evolving/Experimental labels, Task/Operation/DurableStep,
 MCP protocol/catalog/Tasks, provider/planner limits and PostgreSQL-only scope.
 No additional architectural contradiction emerged. Candidate versioning,
 candidate-installed execution and the full release campaign remain open.
+
+## A15/D3 public sample acceptance — 2026-09-12
+
+The final census records 600 fences in 169 public Markdown files and 595 current
+fences after excluding the four dated historical entry points. All 348 current
+Python fences compile and resolve Aksara imports against the isolated public
+wheel; all 15 JSON fences parse, five selected JSON examples validate through
+installed response models, and the exact documented Agent Workflow block runs
+in a fresh process. The evidence reconciles 31 existing syntax, CLI,
+application, PostgreSQL and provider-free artifacts plus all six repository
+example dispositions.
+
+PT078 fixes four invalid JSON-shaped fragments. PT079/AIFLOW001 moves the
+workflow example from a direct submodule import that fails in a clean process to
+the working public Studio aggregate. PT080/AIFLOW002 discloses malformed
+diagnostic environment-command formatting and keeps those commands explicitly
+display-only. Production source is unchanged; both defects require separately
+scoped patches.
+
+The review does not label every partial fragment a standalone application or
+claim live-provider, callback-wide CLI or external TypeScript-toolchain
+execution. Those boundaries are explicit in `snippet-coverage-review.json`.
+A15 and D3 therefore move from PARTIAL to SCOPED. With every A–D phase now
+VERIFIED or SCOPED, the one-time candidate bump and E-phase campaign may begin.

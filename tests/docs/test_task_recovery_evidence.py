@@ -42,6 +42,8 @@ def test_public_truth_summary_tracks_task_recovery_defect():
     )
     findings = {finding["id"]: finding for finding in summary["known_defects"]}
 
-    assert len(findings) == 20
+    assert len(findings) == 22
     assert findings["TASK-001"]["evidence"] == "task-stale-recovery.json"
     assert findings["GAP001"]["evidence"] == "gap-analysis-version-contract.json"
+    assert findings["AIFLOW001"]["evidence"] == "installed-doc-imports.json"
+    assert findings["AIFLOW002"]["evidence"] == "snippet-coverage-review.json"

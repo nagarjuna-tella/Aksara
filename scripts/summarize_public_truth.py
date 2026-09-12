@@ -26,8 +26,13 @@ def main():
     for number, line in enumerate(objective.splitlines(),1):
         match = re.match(r'^#{1,3} Phase ([A-E]\d+)\s+[—–-]\s+(.+)$',line)
         if match:
+            review_state = (
+                'scoped acceptance recorded in requirement-review.md'
+                if match[1][0] in 'ABCD'
+                else 'candidate phase remains open'
+            )
             phases.append({'id':match[1], 'title':match[2], 'objective_line':number,
-                           'final_requirement_audit':'not yet performed'})
+                           'final_requirement_audit':review_state})
     assert len(phases)==63, 'Objective phase structure changed; review explicitly'
     entries = []
     stale = []
@@ -53,16 +58,16 @@ def main():
                         'historical_head':data.get('head',data.get('source_head'))})
     metadata=tomllib.loads((ROOT/'pyproject.toml').read_text())
     result={
-        'schema_version':1,'assessment':'NOT READY: final requirement audit and release gates remain open',
+        'schema_version':1,'assessment':'NOT READY: candidate release gates remain open',
         'candidate_ready':False,'input_integrity_pass':not stale,
         'reviewed_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'package_version':metadata['project']['version'],
         'objective_sha256':digest(args.objective),'objective_phase_index':phases,
-        'phase_index_scope':'Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective',
+        'phase_index_scope':'Preserves phase identities and records the scoped A-D acceptance state from requirement-review.md; E remains open and this index does not replace the objective or individual evidence limits',
         'requirement_review': {
             'artifact': 'audit-evidence/v071/requirement-review.md',
             'sha256': digest(EVIDENCE / 'requirement-review.md'),
-            'scope': 'Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval',
+            'scope': 'Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes, while candidate release approval remains open',
         },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
@@ -86,12 +91,11 @@ def main():
             {'id':'TASK-001','evidence':'task-stale-recovery.json','boundary':'Ordinary stale-lock recovery can duplicate active work and permits an older completion to overwrite the newer result'},
             {'id':'AIPROVIDER001','evidence':'ai-provider-contract.json','boundary':'Experimental compatibility detection reports default Ollama without reachability and rejects keyless custom endpoints'},
             {'id':'GAP001','evidence':'gap-analysis-version-contract.json','boundary':'Environment checker accepts Python 3.10 although package metadata requires Python 3.11 or newer'},
+            {'id':'AIFLOW001','evidence':'installed-doc-imports.json','boundary':'Direct aksara.ai.workflows import fails as the first Aksara submodule import while the supported Studio aggregate works'},
+            {'id':'AIFLOW002','evidence':'snippet-coverage-review.json','boundary':'Workflow diagnostics can render malformed set_env display commands with a duplicated export prefix'},
         ],
         'remaining_before_candidate':[
-            'Finish semantic public-page/reference audit and reconcile stale capability-matrix descriptions with the scoped evidence.',
-            'Perform the final usability and requirement-by-requirement review, including every named deliverable and hard scope constraint.',
-            'Record deliberate disposition of known functional defects; do not silently fix them in this documentation release.',
-            'Only when documentation readiness is established, bump once to 0.7.1rc1 and write the candidate changelog.',
+            'Bump once to 0.7.1rc1 and write the candidate changelog now that the scoped A-D documentation acceptance is complete.',
             'Build and validate candidate wheel/sdist and run the established final regression, security, Doctor, migration, MCP, durable, task, RLS and reference-application gates.',
             'Repeat installed examples/scaffold/journeys against the actual candidate; current development/public-wheel successes are not candidate evidence.',
             'Create RELEASE_EVIDENCE_v0.7.1-rc1.md, open the one final PR, inspect hosted checks, and leave it unmerged/unpublished.',

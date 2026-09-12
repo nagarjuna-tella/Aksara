@@ -5,10 +5,12 @@ from __future__ import annotations
 import ast
 import dataclasses
 import importlib
+import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from aksara import __version__
@@ -19,6 +21,10 @@ ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs" / "docs"
 PYTHON_FENCE = re.compile(
     r"^```(?:python|py)(?:[ \t][^\n]*)?\n(.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
+JSON_FENCE = re.compile(
+    r"^```json(?:[ \t][^\n]*)?\n(.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
 
@@ -41,6 +47,21 @@ def _python_blocks():
             yield path, number, match.group(1)
 
 
+def _json_blocks():
+    for path in _public_markdown():
+        text = path.read_text(encoding="utf-8")
+        for number, match in enumerate(JSON_FENCE.finditer(text), start=1):
+            yield path, number, match.group(1)
+
+
+def _json_payloads(path: Path) -> list[object]:
+    return [
+        json.loads(source)
+        for candidate, _number, source in _json_blocks()
+        if candidate == path
+    ]
+
+
 def test_public_python_fences_are_syntactically_executable() -> None:
     failures: list[str] = []
     for path, number, source in _python_blocks():
@@ -57,6 +78,103 @@ def test_public_python_fences_are_syntactically_executable() -> None:
                 f"(line {exc.lineno})"
             )
     assert failures == []
+
+
+def test_public_json_fences_are_valid_documents() -> None:
+    failures: list[str] = []
+    for path, number, source in _json_blocks():
+        try:
+            json.loads(source)
+        except json.JSONDecodeError as exc:
+            failures.append(
+                f"{path.relative_to(ROOT)} block {number}: {exc.msg} "
+                f"(line {exc.lineno}, column {exc.colno})"
+            )
+    assert failures == []
+
+
+def test_documented_json_response_shapes_match_installed_contracts() -> None:
+    from aksara.ai.debugger import DebugReport
+    from aksara.studio import AgentWorkflowRequest, AgentWorkflowResponse
+    from aksara.studio.models import StudioAiProfileSetSummary, StudioHandshake
+
+    profile = _json_payloads(DOCS / "ai-mode" / "bring-your-own-llm.md")[0]
+    assert StudioAiProfileSetSummary.model_validate(profile).model_dump() == profile
+
+    debugger = _json_payloads(DOCS / "ai-mode" / "debugger.md")[0]
+    assert DebugReport(**debugger).to_dict() == debugger
+
+    workflow_request, workflow_response = _json_payloads(
+        DOCS / "ai-mode" / "workflows.md"
+    )
+    assert AgentWorkflowRequest.model_validate(workflow_request).model_dump() == (
+        workflow_request
+    )
+    assert AgentWorkflowResponse.model_validate(workflow_response).model_dump() == (
+        workflow_response
+    )
+
+    handshake = _json_payloads(DOCS / "studio" / "cli.md")[0]
+    assert StudioHandshake.model_validate(handshake).model_dump() == handshake
+
+
+def _fresh_workflow_import_observation() -> dict[str, object]:
+    import aksara as installed_aksara
+
+    page = DOCS / "ai-mode" / "workflows.md"
+    source = next(
+        source
+        for path, _number, source in _python_blocks()
+        if path == page and "build_agent_workflow" in source
+    )
+    clean_env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in {"PYTHONPATH", "DATABASE_URL"} and not key.startswith("AKSARA_")
+    }
+    package_parent = Path(installed_aksara.__file__).resolve().parent.parent
+    clean_env["PYTHONPATH"] = str(package_parent)
+    with tempfile.TemporaryDirectory(prefix="aksara-workflow-doc-") as directory:
+        direct = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from aksara.ai.workflows import build_agent_workflow",
+            ],
+            cwd=directory,
+            env=clean_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        documented = subprocess.run(
+            [sys.executable, "-c", source],
+            cwd=directory,
+            env=clean_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    return {
+        "direct_import_exit": direct.returncode,
+        "direct_import_error": direct.stderr.splitlines()[-1] if direct.stderr else "",
+        "documented_snippet_exit": documented.returncode,
+        "documented_snippet_stdout": documented.stdout,
+    }
+
+
+def test_workflow_example_executes_in_a_fresh_installed_process() -> None:
+    observation = _fresh_workflow_import_observation()
+
+    assert observation["direct_import_exit"] == 1
+    assert "partially initialized module 'aksara.ai.workflows'" in observation[
+        "direct_import_error"
+    ]
+    assert observation["documented_snippet_exit"] == 0
+    assert "with 3 steps (2 inspect, 1 run_test)" in observation[
+        "documented_snippet_stdout"
+    ]
+    assert "=export" not in observation["documented_snippet_stdout"]
 
 
 def test_public_aksara_imports_resolve() -> None:

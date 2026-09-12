@@ -55,8 +55,8 @@ def test_manual_acceptance_summary_is_current_and_scoped():
     assert evidence["inventory"]["public_pages"] == 163
     assert evidence["inventory"]["pages_with_explicit_reading_disposition"] == 163
     assert evidence["inventory"]["missing_pages"] == []
-    assert evidence["contradictions"] == {"registered": 77, "latest": "PT-077"}
-    assert evidence["functional_findings"]["registered"] == 20
+    assert evidence["contradictions"] == {"registered": 80, "latest": "PT-080"}
+    assert evidence["functional_findings"]["registered"] == 22
     assert evidence["functional_findings"]["runtime_fixes_included"] is False
     for name, digest in evidence["source_sha256"].items():
         assert _digest(ROOT / name) == digest
@@ -78,7 +78,7 @@ def test_contradiction_register_is_complete_and_ordered():
         for value in re.findall(r"^\| PT-(\d{3}) \|", report, re.MULTILINE)
     ]
 
-    assert identifiers == list(range(1, 78))
+    assert identifiers == list(range(1, 81))
 
 
 def test_live_roadmap_and_release_links_use_the_public_repository():
