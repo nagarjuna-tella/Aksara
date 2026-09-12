@@ -989,11 +989,11 @@
     },
     {
       "path": "docs/docs/orm/models.md",
-      "sha256": "dc5626cb90c648c33ed2d87a236cc9b42ba8de3aec1a4248b7660e2b5fdd6759",
+      "sha256": "9ee5f303e2bc3afee7681f8d116f317ecbc53c2acb6f5b4ea2195925274efec3",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 516
+      "lines": 508
     },
     {
       "path": "docs/docs/orm/querying.md",

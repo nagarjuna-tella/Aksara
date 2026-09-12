@@ -97,7 +97,7 @@ Line numbers below refer to that exact objective.
 | D3: Snippet tests (line 1909) | PARTIAL | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; local advisor visibility/context is checked with network connections blocked. | Complete high-value snippet coverage audit; no arbitrary partial-snippet execution claim. |
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
-| D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,169 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
+| D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,152 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
 | D7: Public API contract scan (line 1933) | PARTIAL | AI labels, stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all current public page semantic dispositions; baseline inventory is not that audit. |
 | D8: Documentation truth report (line 1939) | SCOPED | public-docs-truth.json indexes artifacts, hashes, scopes, defects and open work; candidate_ready remains false. | Link this requirement checkpoint without converting SCOPED into completion. |
 
@@ -290,7 +290,7 @@ the actual hosted Python/web/PostgreSQL matrix, installed-wheel checks and
 publication prerequisites. The notes index directs current users to the current
 manual/contract; dated note contents and changelog history remain unchanged.
 207 docs/packaging tests, strict docs, 358 Python fences/imports, 292 CLI forms,
-and 42,169 local references passed. No release was dispatched. Current counts
+and 42,152 local references passed. No release was dispatched. Current counts
 in the phase table were refreshed; historical checkpoint results remain scoped.
 
 ## Capability and contradiction reconciliation checkpoint
@@ -317,3 +317,11 @@ concept/stability/API entry path exposed remaining unsupported claims. Current
 public Python fences: 348; CLI forms: 292; local references: 42,169. All relevant
 docs gates passed (207 tests). A8/A22 remain partial until the rest of the manual
 is reviewed; revised entry pages do not establish full manual acceptance.
+
+## Model guide follow-up
+
+The model guide now agrees with the metadata and relation references: unsupported
+Meta options removed, explicit ordering/migration responsibilities stated, and
+eager relation access corrected. Existing installed contracts plus 207 docs tests
+pass. Complete Product/Category example database execution remains to be added;
+syntax/import coverage is not used as proof of that remaining item.

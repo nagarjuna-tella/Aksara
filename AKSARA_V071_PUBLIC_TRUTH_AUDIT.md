@@ -166,7 +166,6 @@ Full page-by-page usability review is still pending.
 | PT-064 | P1 | Security overview lagged release automation/policy | Current workflow and matrix boundaries reconciled; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-065 | P1 | MCP/field/query guidance mixed versions and limits | Synchronous approval, historical policy and query limits clarified; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-066 | P2 | Release guide omitted candidate-specific validation | Exact-ref evidence and historical guidance clarified; see detailed checkpoint below | Docs fixed; scope retained |
-
 | PT-067 | P1 | ORM overview and glossary retained unsupported query, relation, database and helper claims | Rebuilt overview around the tutorial and corrected terminology; see conceptual review below | Docs fixed; candidate validation open |
 
 The register consolidates all 67 findings. “Docs fixed” describes the recorded
@@ -2114,3 +2113,20 @@ Validation: 207 docs/packaging tests passed with one dependency warning; strict
 docs, 348 Python fences/imports, 292 CLI forms and 42,169 local references passed.
 The single ORM query fragment is contextual to the connected tutorial; syntax
 and imports are checked, not a new standalone database journey in this turn.
+
+## Model guide consistency follow-up (2026-09-12)
+
+Follow-up to PT054/PT026: the model guide still repeated ignored Meta ordering,
+indexes and unique_together despite the corrected metadata reference. Removed
+those declarations and explained explicit ordering and reviewed migrations.
+The complete model example now uses select_related/get_related instead of
+awaiting a forward FK ID. Its database setup and transaction prerequisites are
+explicit, and UUID-default wording allows explicit primary-key overrides.
+The central register's PT067 row was kept contiguous with the table.
+
+Validation: installed model-default/metadata/relation shape checks and public
+imports passed; docs/packaging tests: 207 passed with one dependency warning.
+Strict docs, 348 Python fences, 292 CLI forms and 42,152 local references passed.
+This turn does not claim database execution of the complete Product/Category
+example; that remains a high-value snippet coverage item for final acceptance.
+No production code changed.

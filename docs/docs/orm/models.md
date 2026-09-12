@@ -94,7 +94,7 @@ aksara migrate
 
 ### Primary Key (`id`)
 
-Every model automatically gets a UUID primary key. You don't need to define it:
+Unless explicitly overridden, a model gets a UUID primary key. You don't need to define it:
 
 ```python
 class User(Model):
@@ -268,7 +268,7 @@ class Settings(Model):
     # True/False
     is_active = fields.Boolean(default=True)
     
-    # JSON data (dictionaries, lists)
+    # JSON data (objects, arrays or scalars)
     preferences = fields.JSON(default=dict)
     
     # PostgreSQL arrays
@@ -284,7 +284,9 @@ See [Fields Reference](fields.md) for complete documentation.
 
 ## Field Options
 
-All fields accept these common options:
+Common field options include the following; check the concrete constructor
+for type-specific support. Index and uniqueness declarations require migrations
+to take effect:
 
 | Option | What It Does | Example |
 |--------|--------------|---------|
@@ -326,18 +328,6 @@ class Article(Model):
         # Custom table name
         table_name = "blog_articles"
         
-        # Default ordering (newest first)
-        ordering = ["-created_at"]
-        
-        # Database indexes for performance
-        indexes = [
-            ("title",),  # Single column index
-            ("created_at", "title"),  # Composite index
-        ]
-        
-        # This example has no multi-column uniqueness rule.
-        # Add constraints only for fields declared on the model.
-        
         # App label for admin grouping
         app_label = "blog"
 ```
@@ -347,12 +337,14 @@ class Article(Model):
 | Option | What It Does | Example |
 |--------|--------------|---------|
 | `table_name` | Custom database table name | `"blog_posts"` |
-| `ordering` | Default sort order | `["-created_at"]` |
-| `indexes` | Database indexes | `[("field1", "field2")]` |
-| `unique_together` | Multi-column uniqueness | `[("user_id", "slug")]` |
 | `app_label` | Group in admin | `"blog"` |
 
 ---
+
+`Meta.ordering`, `Meta.indexes` and `Meta.unique_together` are not implemented
+configuration options. Use explicit `order_by()` calls and reviewed migrations
+for database constraints/indexes. See [model metadata](model-meta.md) for the
+actual introspection interface and supported declarations.
 
 ## AI Metadata
 
@@ -410,7 +402,13 @@ See [Relations](relations.md) for complete documentation.
 
 ---
 
-## Complete Example
+## Complete model example
+
+The following declarations and function belong in a configured application.
+Import the models for migration discovery and apply the migration before calling
+`example()` with a connected database. The snippet is not a standalone startup
+script. It uses separate writes; wrap them in an explicit supported transaction
+if creating both records must be atomic.
 
 ```python
 from aksara import Model, fields, CASCADE
@@ -424,7 +422,6 @@ class Category(Model):
     description = fields.Text(nullable=True)
     
     class Meta:
-        ordering = ["name"]
         app_label = "store"
 
 
@@ -464,12 +461,7 @@ class Product(Model):
     updated_at = fields.DateTime(auto_now=True)
     
     class Meta:
-        ordering = ["-created_at"]
         app_label = "store"
-        indexes = [
-            ("category_id", "is_active"),
-            ("sku",),
-        ]
 
 
 # Using the models
@@ -498,11 +490,11 @@ async def example():
     active_products = await Product.objects.filter(
         is_active=True,
         stock_quantity__gt=0,
-    ).order_by("-created_at").all()
+    ).select_related("category").order_by("-created_at").all()
     
-    # Access relationship
+    # Access the eagerly loaded relationship; product.category is the stored ID
     for product in active_products:
-        category = await product.category
+        category = product.get_related("category")
         print(f"{product.name} in {category.name}")
 ```
 
