@@ -615,7 +615,7 @@ configure; provider-backed AI and Studio stay disabled until you opt in.
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install -e ".[dev]"
+pip install "aksara-framework>=0.7.0" "uvicorn[standard]>=0.24.0" "pytest>=8.0.0" "pytest-asyncio>=0.21.0"
 # Edit DATABASE_URL in .env, or run the interactive helper:
 aksara dbsetup
 # Define a model and ViewSet from the stubs in app/, then:
@@ -624,6 +624,13 @@ aksara migrate
 aksara doctor launch-check
 aksara dev
 ```
+
+Run from the generated project directory. These commands install the framework
+and local test tools; they do not package this application. The generated
+`pyproject.toml` does not yet configure Hatch file selection for its `app/`
+directory, so `pip install -e ".[dev]"` fails for a fresh project. Configure your
+application packaging explicitly before using editable installation or building
+an application wheel. This limitation does not require changing runtime defaults.
 
 The runtime reads one global `aksara.conf.settings` object. Environment values
 are loaded first; explicit `configure(...)` calls take precedence. The generated
@@ -649,7 +656,7 @@ of membership. See the
 
 ## Test and diagnose
 
-Install the development extra as shown above, add application tests in `tests/`,
+Install the test tools as shown above, add application tests in `tests/`,
 then run `python -m pytest`. The scaffold does not generate an application test
 suite. Use a dedicated PostgreSQL test database and test allowed and denied
 requests, validation errors, and cross-tenant access when tenancy is enabled.

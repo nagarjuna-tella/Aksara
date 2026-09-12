@@ -738,3 +738,22 @@ those paths locally. This check proves reachability at the recorded time, not
 page-content truth, fragment anchors, future availability, or every external
 link across the documentation corpus. Strategic claim verification and source
 citations remain a separate research responsibility.
+
+## Scaffold Editable Packaging Defect
+
+**SCAFFOLD-001 / P1:** a fresh generated project fails at `pip install -e
+".[dev]"` with Hatchling's file-selection error. The project name is
+`scaffold_probe`, while the generated Python package is `app/`, and the emitted
+`pyproject.toml` provides no explicit Hatch wheel file selection. Reproduced in
+a fresh Python 3.11 environment using a locally built 0.7.0 development wheel.
+`probe_scaffold_editable_install.py` records this negative result in
+`scaffold-editable-defect.json`; its nonzero exit is intentional evidence of a
+real failure, not a passing installation gate.
+
+The README now installs framework/server/test dependencies directly for the
+local development path and explicitly discloses the application packaging
+limitation. No generated pyproject, dependency constraint, security setting,
+application code or framework runtime was changed. A separately scoped scaffold
+packaging patch should establish an intentional application package layout and
+verify editable and wheel installation. Full fresh-wheel execution of the
+corrected README startup path remains required before candidate readiness.

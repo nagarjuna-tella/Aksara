@@ -2,13 +2,13 @@
   "schema_version": 1,
   "pass": true,
   "baseline": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
-  "reviewed_head": "bb8e65cadc4d7a93e80c9804313a38eb1e95ad9b",
+  "reviewed_head": "aa9c535e8911675c4538ed8ff12f511b1dd5a52e",
   "changed_production_files": [
     "aksara/cli/scaffold.py"
   ],
   "classification": "Scaffold README return template only; AST outside that return value is identical",
   "dependencies_changed": false,
   "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
-  "source_sha256": "76b875ac8afd22407d9c1057ddfa46858d36c2bd574c8a93c1800e330ecf8680",
+  "source_sha256": "2455a972df0050029a52aaa815a05586b8bb1d4b3b0ddaa5fc9ce19feb7f945a",
   "runner_sha256": "90d6a95e361fb8016b6b17d916a46a06e7472b49b02ee98062af14d02059d3f4"
 }
