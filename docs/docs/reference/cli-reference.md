@@ -1,6 +1,6 @@
 # CLI Reference
 
-Command and parameter declarations from installed Aksara **0.7.1rc1**.
+Command and parameter declarations from installed Aksara **0.7.1**.
 
 This generated reference describes parser syntax, literal defaults, and environment
 bindings. It does not execute commands or prove their runtime effects. A `null`

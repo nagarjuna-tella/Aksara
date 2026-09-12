@@ -229,9 +229,9 @@ def main() -> None:
             "CLI parsing does not run every callback; application and journey gates execute the release-critical paths.",
             "The lone TypeScript integration fragment needs an external compiler package and live endpoint and is not executed here.",
             "Dotenv, HTTP, SQL, CSS, text, diagrams, formulas and displayed output are reviewed by their owning setup, journey, schema or rendering gates rather than treated as standalone programs.",
-            "Current public-wheel evidence must be repeated against the 0.7.1rc1 candidate.",
+            "Final public-wheel execution is recorded separately by the installed-package and Support Desk release gates.",
         ],
-        "scope": "Complete fence census plus all-current Python syntax, all-current JSON parsing, selected installed response-shape checks, fresh workflow execution, literal CLI parsing, all six example dispositions and the existing installed-wheel/PostgreSQL behavior gates named here. This is bounded sample coverage, not universal execution of partial fragments, live providers, an external TypeScript toolchain or final candidate acceptance.",
+        "scope": "Complete fence census plus all-current Python syntax, all-current JSON parsing, selected installed response-shape checks, fresh workflow execution, literal CLI parsing, all six example dispositions and the existing installed-wheel/PostgreSQL behavior gates named here. This is bounded sample coverage, not universal execution of partial fragments, live providers, an external TypeScript toolchain or final release certification.",
         "runner_sha256": _digest(Path(__file__)),
     }
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

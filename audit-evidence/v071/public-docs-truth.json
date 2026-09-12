@@ -3,8 +3,8 @@
   "assessment": "READY FOR HUMAN REVIEW",
   "candidate_ready": true,
   "input_integrity_pass": true,
-  "reviewed_head": "71e034dc0bf53d8c99a7a72e468b1ad181b96ec5",
-  "package_version": "0.7.1rc1",
+  "reviewed_head": "6a2a4a08708fb9d82baa67143875f4121a3f63d4",
+  "package_version": "0.7.1",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
     {
@@ -383,14 +383,14 @@
       "id": "E6",
       "title": "Branch and PR",
       "objective_line": 2079,
-      "final_requirement_audit": "PR #30 open and 21 hosted checks passed; human review remains"
+      "final_requirement_audit": "PR #30 merged; final release evidence and human finalization review remain"
     }
   ],
   "phase_index_scope": "Preserves phase identities and records the scoped A-D acceptance state from requirement-review.md; E remains open and this index does not replace the objective or individual evidence limits",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
     "sha256": "b1dcba4f35f9621be8623191ab3ffec0be6b4cfd734b846d2d1cf5644652534d",
-    "scope": "Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes, while candidate release approval remains open"
+    "scope": "Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes and the reviewed candidate is merged"
   },
   "evidence": [
     {
@@ -458,9 +458,9 @@
     },
     {
       "artifact": "audit-evidence/v071/ai-studio-reading-review.json",
-      "sha256": "f9830acdd5ff9e3c0588005495d6eb8ab10f53e82277664c42e5dabc26626ff7",
+      "sha256": "d26dd395127ef0ced585a29281af4d67223d89aa422950eda9b4dac2328d49a6",
       "recorded_result": "not a boolean gate",
-      "scope": "Complete author reading of all twenty-eight AI Mode pages and all five Studio pages, compared with provider, adapter, runtime, planner, query, patch, context, MCP, Studio router/settings/CLI and static-UI source plus existing scoped execution evidence. This does not certify provider quality, network reachability, browser interaction, autonomous workflows, production Studio exposure or final candidate behavior.",
+      "scope": "Complete author reading of all twenty-eight AI Mode pages and all five Studio pages, compared with provider, adapter, runtime, planner, query, patch, context, MCP, Studio router/settings/CLI and static-UI source plus existing scoped execution evidence. This does not certify provider quality, network reachability, browser interaction, autonomous workflows, production Studio exposure or final release behavior.",
       "checked_linked_page_hashes": 33,
       "stale_linked_pages": [],
       "historical_head": null
@@ -494,7 +494,7 @@
     },
     {
       "artifact": "audit-evidence/v071/bulk-execution.json",
-      "sha256": "61338ef4e1cf490c5265bd691704c6df7394c2f0567293624ca215cc440b1a39",
+      "sha256": "8e3da43c821f1e2e8b830874e0aa8c8896c40393bb205baa94924b0451e957b3",
       "recorded_result": true,
       "scope": "Exact bulk helper with real PostgreSQL create/update/upsert, conflict handling, signals and across-batch CHECK failure; Boolean/timestamp bulk_update failure is a reproduced defect, not a passing runtime contract; owned DDL and admin role, not migrations, RLS, advanced fields or concurrency proof",
       "checked_linked_page_hashes": 3,
@@ -503,7 +503,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-contract.json",
-      "sha256": "e601bf01e6cc60408c0cc5fdb35ca69869ebfc2737aa69ec066f4f7669a7acfd",
+      "sha256": "8d3f67065be992b0f704281a4057670cf174555d2309d4aa0aa78b03e980f6db",
       "recorded_result": "not a boolean gate",
       "scope": "Read the artifact and audit report for scope; no inferred pass",
       "checked_linked_page_hashes": 0,
@@ -512,7 +512,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "c0c07a79ec790c9f546ec1c2522e8e81f0b19ab7906a024260080eb26ae10bbd",
+      "sha256": "e0cdb8800f1e074ccc71936f8c1cffe134ae280e9915c2d731235931b2d7565e",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -557,12 +557,12 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-help-wheel-build.json",
-      "sha256": "c7cfeb9a63c0ee4fd764e4196f34b574c871f1db464090c07ef7770dacbe0389",
+      "sha256": "80a062a38bde62021dc9125bcd28f4f61296c7217f738a58522024dd58a1f998",
       "recorded_result": "not a boolean gate",
-      "scope": "Local v0.7.1rc1 candidate wheel for CLI and scaffold instructional changes, built from the validated source commit with source hashes; not published",
+      "scope": "Local v0.7.1 final wheel for CLI and scaffold instructional changes, built from the validated finalization source commit with source hashes; not published",
       "checked_linked_page_hashes": 6,
       "stale_linked_pages": [],
-      "historical_head": "b751187d77af0486dda656e3b28d33cfe3efe981"
+      "historical_head": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9"
     },
     {
       "artifact": "audit-evidence/v071/concepts-reading-review.json",
@@ -620,7 +620,7 @@
     },
     {
       "artifact": "audit-evidence/v071/development-wheel-tutorial.json",
-      "sha256": "b01f6e13d4162ea6ba78a36f7543a1abd2d0a7f8b7ef3876cbe938bdfc3f7204",
+      "sha256": "b8e818e79da09270111d31e24a57069f289c8fa9f54701ab40d901021f3b0db5",
       "recorded_result": true,
       "scope": "First-project, relationships, tenant-isolation, queued-report, durable-action and optional MCP chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization and official MCP client discovery/execution/denial are covered. No external provider, full crash campaign or production-upgrade claim.",
       "checked_linked_page_hashes": 6,
@@ -638,9 +638,9 @@
     },
     {
       "artifact": "audit-evidence/v071/entry-reading-review.json",
-      "sha256": "ea5aae964651fb53df1e40067aa3fcaedc3f99ba3065c5bc8a088acf8927dbdf",
+      "sha256": "99ed34c89eb1caf3f0d462e30ae23a9882180d3ccdd05ceff54930b6d31c237b",
       "recorded_result": "not a boolean gate",
-      "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final candidate execution.",
+      "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final release certification.",
       "checked_linked_page_hashes": 4,
       "stale_linked_pages": [],
       "historical_head": null
@@ -656,7 +656,7 @@
     },
     {
       "artifact": "audit-evidence/v071/example-execution.json",
-      "sha256": "1e33050b56269a2dd10a89c037425aa446d093880e739b5a09484f99b0fbc8f7",
+      "sha256": "a906f51d943625f23b436b74c83eefac9cd156d0fb32766609f45636be44ac78",
       "recorded_result": true,
       "scope": "Local PostgreSQL startup and selected routes; schema-owner credentials, not RLS/security certification; providers not called",
       "checked_linked_page_hashes": 0,
@@ -683,7 +683,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "c09982c782b772462c620cbf4881d22894009a17607d1419ce5bc866acff185f",
+      "sha256": "dcbb791ffd19b6844ed741c2689fd172a6200a659179aa1727b1de28e1321913",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 8,
@@ -692,7 +692,7 @@
     },
     {
       "artifact": "audit-evidence/v071/filter-doc-execution.json",
-      "sha256": "e5cc16995203fd691e3ad22f0aafed9756ae2b4a405f2aa7300a1d6812e25526",
+      "sha256": "23d79cda56c2bbd3390f39a31a94d5bcaa3dbaacfdea208e192f0454b65bfb8c",
       "recorded_result": true,
       "scope": "Exact model/ViewSet with real ASGI requests and PostgreSQL filtering/search/ordering/pagination; synthetic test identity and admin-role fixture, not credential validation, RLS, every coercion or adversarial filter syntax",
       "checked_linked_page_hashes": 3,
@@ -701,7 +701,7 @@
     },
     {
       "artifact": "audit-evidence/v071/first-project-journey.json",
-      "sha256": "b01f6e13d4162ea6ba78a36f7543a1abd2d0a7f8b7ef3876cbe938bdfc3f7204",
+      "sha256": "b8e818e79da09270111d31e24a57069f289c8fa9f54701ab40d901021f3b0db5",
       "recorded_result": true,
       "scope": "First-project, relationships, tenant-isolation, queued-report, durable-action and optional MCP chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization and official MCP client discovery/execution/denial are covered. No external provider, full crash campaign or production-upgrade claim.",
       "checked_linked_page_hashes": 6,
@@ -728,7 +728,7 @@
     },
     {
       "artifact": "audit-evidence/v071/gap-analysis-version-contract.json",
-      "sha256": "d53642663f1075707cbd7f81ff95e1b7dc3c9a32b0ce66fc00e34922ff09550c",
+      "sha256": "73e858b7005d0d7a3ef3c32c91ddabaffbf736c6176e19f90b5d9a988f738f9a",
       "recorded_result": true,
       "scope": "Negative provider-free installed-wheel probe. It patches the reported interpreter tuple in the environment checker and proves the 3.10 threshold mismatch; it does not run Aksara on Python 3.10, test deployment health, or change production behavior.",
       "checked_linked_page_hashes": 4,
@@ -755,7 +755,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "a0199c758030a64192ac2b5dc88339e69017082a358340b091c702cf8e7c5783",
+      "sha256": "8fa6df0dabb0230359d7a84a74b19860e9e5cd162064d4029a46bc59ded47472",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, all current JSON fence parsing, selected JSON response-model validation, and fresh-process execution of the exact documented Agent Workflow snippet; also covers documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -764,7 +764,7 @@
     },
     {
       "artifact": "audit-evidence/v071/manual-acceptance-review.json",
-      "sha256": "83750a8b3a1a8a6b9689ee346460b5b56120d3e10d6dde616f3180fd3d14c3e6",
+      "sha256": "014dd94910c406cd9d509737a2c00f134206a4b53dcc4fdf4e8fa2065165f831",
       "recorded_result": "scoped_author_review_complete",
       "scope": "Final cross-manual author review of all inventoried public pages and the six reader journeys. It checks explicit reading coverage, terminology, task orientation, navigation and stability boundaries. It is not an independent user study, candidate-wheel execution, provider certification or release approval.",
       "checked_linked_page_hashes": 18,
@@ -890,7 +890,7 @@
     },
     {
       "artifact": "audit-evidence/v071/pagination-doc-execution.json",
-      "sha256": "e4ee3f80ff58db28725e26e973f149129f071f64966c2577dd94be6803fe7e16",
+      "sha256": "fff5a8365050758c3a97dd37f84fa20a1d0e438aaff3dfc9b140174c5267b621",
       "recorded_result": true,
       "scope": "Default/limit-offset success and reproduced page/cursor response metadata loss through real HTTP versus direct calls; synthetic identity, admin role, not credential validation, RLS, concurrency or performance proof",
       "checked_linked_page_hashes": 3,
@@ -908,7 +908,7 @@
     },
     {
       "artifact": "audit-evidence/v071/project-history-reading-review.json",
-      "sha256": "b5d8227e73ec5cb9f008173c99a4320493e8a14f60a8aa9a41f35c3b4606db7a",
+      "sha256": "8e119f18686211fbe91bd201475ff6deb496582d4a54f6e5973f92a8fbc6fb85",
       "recorded_result": "not a boolean gate",
       "scope": "Complete author reading of the current changelog, gap-analysis and release pages, the public roadmap and roadmap index, both released stability contracts, and all three historical-note entry pages. Historical release narratives were assessed as dated records rather than current setup instructions. This review verifies page truth and installed-wheel version-check behavior; it does not approve the candidate, recertify every historical API, or run deployment and release workflows.",
       "checked_linked_page_hashes": 10,
@@ -935,7 +935,7 @@
     },
     {
       "artifact": "audit-evidence/v071/query-execution.json",
-      "sha256": "80cf464dd7c58fc1a0aef1a28c1b37f57068c0b574aad79976469a4c4e83c9b2",
+      "sha256": "d3a802d16e9ece52589fff2bd6e16cf41d67bad940562988f244d7031203fd82",
       "recorded_result": true,
       "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; plus the exact complete Product/Category model example; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
       "checked_linked_page_hashes": 5,
@@ -953,7 +953,7 @@
     },
     {
       "artifact": "audit-evidence/v071/reference-tooling-reading-review.json",
-      "sha256": "07507ff4fe2ab859153a31b79d17b7fb48bf097b3cfcdd7592e1af9a7552d804",
+      "sha256": "51a76098803345c79acc3710541f71a7cb8fb582c556e1c9beb4764ae7fadcc5",
       "recorded_result": "not a boolean gate",
       "scope": "Complete author reading of all eight Reference pages, all five CLI pages, all three Inspector pages and all three Search pages, reconciled with the isolated-wheel CLI declaration generator, settings tests, package/workflow bounds and focused search/inspector tests. This does not execute every CLI callback, certify every internal symbol as public or establish production search/diagnostic behavior.",
       "checked_linked_page_hashes": 19,
@@ -962,7 +962,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "49a55d979fd73e636992ca141ab16e51f7d3a0e84a61d7c1993a5c52584a2b95",
+      "sha256": "a88f7d92586ecc7d179275690e876e250c3fda1842744a9ae2ba0a8e799bf169",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -971,9 +971,9 @@
     },
     {
       "artifact": "audit-evidence/v071/runtime-scope.json",
-      "sha256": "9867645f6b55d213bc0bb8d5ab0bcd2eb396918c5c97904760c7b6f6dea2737a",
+      "sha256": "a4fc7ab0871daa1464f5cde9006632bc42556f04ce7cd82e385327c21f52195f",
       "recorded_result": true,
-      "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
+      "scope": "aksara source tree and pyproject.toml against released v0.7.0 and the merged v0.7.1rc1 tree; does not prove final startup, generated-file equivalence or full runtime regression",
       "checked_linked_page_hashes": 5,
       "stale_linked_pages": [],
       "historical_head": null
@@ -998,7 +998,7 @@
     },
     {
       "artifact": "audit-evidence/v071/scaffold-startup.json",
-      "sha256": "fd70619ce1928974772dcfb0c531473dd0975bf89b8fba584dd818db77516d12",
+      "sha256": "9edd3eac618e4e8ab10c588c087a3a4c42e18f637ef5398ecfcfc179e6fd7b7e",
       "recorded_result": true,
       "scope": "Generated stubs, exact dependency install, .env database edit, migrations, Doctor and dev --no-reload with ephemeral port; no application resource, interactive dbsetup, production role, reload watcher or application packaging claim",
       "checked_linked_page_hashes": 0,
@@ -1007,7 +1007,7 @@
     },
     {
       "artifact": "audit-evidence/v071/scaffold-wheel-equivalence.json",
-      "sha256": "6bb78cdaeb2fdd7b86b2e4bae6e292233ca286c17445fa508ef0e016e6581e1a",
+      "sha256": "c029ec90d17bf24432c1a39e614253cfa8b3b20729081d50218f4ccd2925a7cd",
       "recorded_result": true,
       "scope": "Read the artifact and audit report for scope; no inferred pass",
       "checked_linked_page_hashes": 0,
@@ -1025,7 +1025,7 @@
     },
     {
       "artifact": "audit-evidence/v071/setup-doc-execution.json",
-      "sha256": "e8fe6e7c8f11937baf913dc6e780a0225bf3aa05da75c330d22e93882b792b2e",
+      "sha256": "a0f70e799786613d687ea9de99b4d6bada8a7ac689c2992eb7bf34eec0877941",
       "recorded_result": true,
       "scope": "Installed version/package inspection, real CLI file generation, interactive existing-database dbsetup, exact read-only PostgreSQL probe and URL precedence. No server provisioning, new database creation, operating-system installer, source editable install, production role, RLS or candidate certification.",
       "checked_linked_page_hashes": 5,
@@ -1034,9 +1034,9 @@
     },
     {
       "artifact": "audit-evidence/v071/snippet-coverage-review.json",
-      "sha256": "7df55f8755e5961d85d1e4320db2730389ccd0540d491f9d7e9f3f9d03b22eff",
+      "sha256": "63f4fb97e7d367eed453411cdd4bac6ef1c118b2eab897c0d40dde07df0611ef",
       "recorded_result": true,
-      "scope": "Complete fence census plus all-current Python syntax, all-current JSON parsing, selected installed response-shape checks, fresh workflow execution, literal CLI parsing, all six example dispositions and the existing installed-wheel/PostgreSQL behavior gates named here. This is bounded sample coverage, not universal execution of partial fragments, live providers, an external TypeScript toolchain or final candidate acceptance.",
+      "scope": "Complete fence census plus all-current Python syntax, all-current JSON parsing, selected installed response-shape checks, fresh workflow execution, literal CLI parsing, all six example dispositions and the existing installed-wheel/PostgreSQL behavior gates named here. This is bounded sample coverage, not universal execution of partial fragments, live providers, an external TypeScript toolchain or final release certification.",
       "checked_linked_page_hashes": 4,
       "stale_linked_pages": [],
       "historical_head": null
@@ -1052,7 +1052,7 @@
     },
     {
       "artifact": "audit-evidence/v071/start-tutorial-reading-review.json",
-      "sha256": "9d2175076818bcb822f71660f25a4695d37d54b81cd9cf04b97cdbab8a99e6df",
+      "sha256": "782360d3f737227e3572d6591ddf5c44fcd01425e97c71a95933bead482ca67e",
       "recorded_result": "not a boolean gate",
       "scope": "Complete author reading of the public quickstart, all fourteen Getting Started pages and all ten tutorial pages, reconciled with the existing installed-wheel, PostgreSQL, REST, task, Durable Operation, MCP, scaffold and operator evidence. This is a semantic and usability review, not an independent novice study or a final-candidate rerun.",
       "checked_linked_page_hashes": 25,
@@ -1061,7 +1061,7 @@
     },
     {
       "artifact": "audit-evidence/v071/startproject-guidance.json",
-      "sha256": "2f92fe1987cb0cf5410987bf0026f7923987fe664be9a04277b12149b7e7d142",
+      "sha256": "480837dd3c8c837ece29bf1ca92b37a1eb6d1bdfea9640e844396c4353a4eaff",
       "recorded_result": true,
       "scope": "Four CLI generations, help/list/post-generation guidance and byte hashes; only README differs from released wheel, including earlier documentation work. Five startapp files and invalid/existing-path exit behavior also match. No database or runtime startup certification in this gate.",
       "checked_linked_page_hashes": 6,
@@ -1264,7 +1264,7 @@
     }
   ],
   "remaining_before_candidate": [
-    "Complete human review; keep PR #30 unmerged, untagged and unpublished until a separately authorized release decision."
+    "Complete final release evidence and human review of the finalization PR before any separately authorized publication."
   ],
   "release_evidence_exists": true,
   "scope": "Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval."

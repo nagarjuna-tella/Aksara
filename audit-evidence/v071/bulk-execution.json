@@ -17,7 +17,7 @@
     "unwrapped bulk call can retain earlier batch",
     "bulk update does not implicitly refresh auto_now"
   ],
-  "package_version": "0.7.1rc1",
+  "package_version": "0.7.1",
   "known_runtime_defect": "BULK-001: Boolean/timestamp bulk_update CASE inferred as text",
   "schema_version": 1,
   "pass": true,
@@ -26,7 +26,7 @@
   "disposable_schema_removed": true,
   "scope": "Exact bulk helper with real PostgreSQL create/update/upsert, conflict handling, signals and across-batch CHECK failure; Boolean/timestamp bulk_update failure is a reproduced defect, not a passing runtime contract; owned DDL and admin role, not migrations, RLS, advanced fields or concurrency proof",
   "page_sha256": {
-    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60",
+    "docs/docs/getting-started/first-project.md": "c987488eaf2008328583c4c389bc6ed25f9b1836e115e46908a7e85725b4e330",
     "docs/docs/orm/bulk-operations.md": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344",
     "docs/docs/orm/expressions-and-transactions.md": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7"
   },

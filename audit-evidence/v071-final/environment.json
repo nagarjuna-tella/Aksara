@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.1",
+  "package_version": "0.7.1",
+  "branch": "release/v0.7.1",
+  "merged_candidate_base_sha": "c84c1a3a40c4f7868ce536b242ac537f87f5db9c",
+  "validation_source_sha": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9",
+  "released_v070_tag_sha": "d41531a885985196fd0198ea135038d3455e2b34",
+  "released_v070_equivalent_main_sha": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
+  "released_v070_trees_equal": true,
+  "database": "aksara_test",
+  "database_credentials_recorded": false,
+  "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "hosted_postgresql": {
+    "version": "16",
+    "status": "pass",
+    "validated_head_sha": "6a2a4a08708fb9d82baa67143875f4121a3f63d4",
+    "checks_passed": 21,
+    "checks_total": 21
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "mcp_dependency": "mcp>=2.0.0,<2.1.0",
+  "runtime_matrix": [
+    {
+      "python": "3.11.15",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "status": "pass",
+      "passed": 8389,
+      "skipped": 2
+    },
+    {
+      "python": "3.11.15",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "status": "pass",
+      "passed": 8389,
+      "skipped": 2
+    },
+    {
+      "python": "3.14.4",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "status": "pass",
+      "passed": 8389,
+      "skipped": 2
+    },
+    {
+      "python": "3.14.4",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "status": "pass",
+      "passed": 8389,
+      "skipped": 2
+    }
+  ],
+  "artifacts": {
+    "wheel": {
+      "filename": "aksara_framework-0.7.1-py3-none-any.whl",
+      "sha256": "42a3a42be08ee5be1075d4f6da3b22fea6acaa5bf678a57db7ecc00ce4fdd197"
+    },
+    "sdist": {
+      "filename": "aksara_framework-0.7.1.tar.gz",
+      "sha256": "d3ce8e4b8c735bfcf61b41f2df90c7cc7a448722e8329b7f074bb9840653cb94"
+    }
+  },
+  "publication": {
+    "git_tag": false,
+    "github_release": false,
+    "pypi": false
+  },
+  "scope": "Final source and artifact environment. Hosted PostgreSQL 16 validation passed on the finalization PR evidence head."
+}

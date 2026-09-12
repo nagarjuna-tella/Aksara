@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-09-12T20:01:53.756324+00:00",
+  "checked_at": "2026-09-12T21:56:31.220590+00:00",
   "pass": true,
   "counts": {
     "reachable": 41,
@@ -9,12 +9,12 @@
   },
   "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
   "page_sha256": {
-    "README.md": "7471a8b6c7d635ed7377afd86397510e6cf588e6a834d3db39c576c2b1dabd32",
+    "README.md": "a00e9eb59b3435e65a60a1ec013a7b8343073ae2a5b0df5ca81078649131fb57",
     "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
-    "docs/docs/getting-started/installation.md": "e9a9c7a3b74582775d065fe0b4b3d06219af9d303cf63c0d1b7512e8006b1ca4",
+    "docs/docs/getting-started/installation.md": "b39b144835c7dd604f721da71f1365f050602be961d2e45f29d841bba7945284",
     "docs/docs/getting-started/database-setup.md": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
     "docs/docs/tutorials/deployment.md": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
-    "docs/docs/roadmap.md": "29544b6023ea06e5f9b5aaea45b401679bbe8a59646d41307053612e93952be2",
+    "docs/docs/roadmap.md": "1d77fbfe9f063c8ef85614e5c5c4be7251014aeb179e32f9cfb1c6c6222d6a45",
     "docs/docs/reference/runtime-compatibility.md": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c",
     "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md": "f20a0ac95fb2c611a171129b0bf96ce598296a3e55fc2d969148ac59a77ec252"
   },
@@ -274,9 +274,9 @@
       ]
     },
     {
-      "url": "https://img.shields.io/badge/release-v0.7.1-rc1-22c55e?style=flat-square",
+      "url": "https://img.shields.io/badge/release-v0.7.1-22c55e?style=flat-square",
       "status": 200,
-      "final_url": "https://img.shields.io/badge/release-v0.7.1-rc1-22c55e?style=flat-square",
+      "final_url": "https://img.shields.io/badge/release-v0.7.1-22c55e?style=flat-square",
       "classification": "reachable",
       "source_pages": [
         "README.md"

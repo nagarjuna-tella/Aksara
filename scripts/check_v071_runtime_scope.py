@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "b7ac75f4b1bd4b262824e828601168336b4ecf7f"
+CANDIDATE_BASE = "c84c1a3a40c4f7868ce536b242ac537f87f5db9c"
 SCAFFOLD = "aksara/cli/scaffold.py"
 CLI = "aksara/cli/main.py"
 TEMPLATES = "aksara/cli/templates/__init__.py"
@@ -23,6 +24,7 @@ class VersionStrings(ast.NodeTransformer):
         if isinstance(node.value, str):
             value = node.value.replace("0.7.1-rc1", "RELEASE_VERSION")
             value = value.replace("0.7.1rc1", "RELEASE_VERSION")
+            value = value.replace("0.7.1", "RELEASE_VERSION")
             value = value.replace("0.7.0", "RELEASE_VERSION")
             return ast.Constant(value=value)
         return node
@@ -59,7 +61,7 @@ def normalized_version(source):
 
 def normalized_metadata(source):
     data = tomllib.loads(source)
-    assert data["project"]["version"] in {"0.7.0", "0.7.1rc1"}
+    assert data["project"]["version"] in {"0.7.0", "0.7.1rc1", "0.7.1"}
     data["project"]["version"] = "RELEASE_VERSION"
     return data
 
@@ -127,6 +129,11 @@ def main():
         cwd=ROOT, text=True,
     ).splitlines()
     assert names == sorted([VERSION, SCAFFOLD, CLI, TEMPLATES, "pyproject.toml"]), names
+    candidate_names = subprocess.check_output(
+        ["git", "diff", "--name-only", CANDIDATE_BASE, "--", "aksara", "pyproject.toml"],
+        cwd=ROOT, text=True,
+    ).splitlines()
+    assert candidate_names == sorted([VERSION, SCAFFOLD, "pyproject.toml"]), candidate_names
     untracked = subprocess.check_output(
         ["git", "ls-files", "--others", "--exclude-standard", "--", "aksara"], cwd=ROOT, text=True,
     ).splitlines()
@@ -145,18 +152,20 @@ def main():
         hashes[path] = hashlib.sha256(after.encode()).hexdigest()
     result = {
         "schema_version": 1, "pass": True, "baseline": BASELINE,
+        "candidate_base": CANDIDATE_BASE,
         "reviewed_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "changed_production_files": names,
+        "candidate_changed_production_files": candidate_names,
         "classification": {
             VERSION: "Package version declaration only",
-            SCAFFOLD: "Generated README instructional text plus candidate version labels and dependency floor only",
+            SCAFFOLD: "Generated README instructional text plus release version labels and dependency floor only",
             CLI: "startproject/startapp/ai_provider_detect docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
             TEMPLATES: "Four template description string values only; names, sources and copy logic unchanged",
             "pyproject.toml": "Project version metadata only; dependency declarations unchanged",
         },
         "runtime_logic_changed": False,
         "dependencies_changed": False,
-        "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
+        "scope": "aksara source tree and pyproject.toml against released v0.7.0 and the merged v0.7.1rc1 tree; does not prove final startup, generated-file equivalence or full runtime regression",
         "source_sha256": hashes,
         "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     }

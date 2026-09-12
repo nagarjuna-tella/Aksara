@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "searched_patterns": [
+    "0.7.1rc1",
+    "0.7.1-rc1",
+    "v0.7.1-rc1",
+    "relevant current-release rc1 wording"
+  ],
+  "final_release_version_surfaces_updated": [
+    "pyproject.toml",
+    "aksara/_version.py",
+    "README.md",
+    "aksara/cli/scaffold.py",
+    "docs/docs/getting-started/installation.md",
+    "docs/docs/getting-started/first-project.md",
+    "docs/docs/getting-started/ten-minutes.md",
+    "docs/docs/quickstart.md",
+    "docs/docs/reference/cli-reference.md",
+    "docs/docs/studio/api.md",
+    "docs/docs/studio/cli.md",
+    "examples/support_desk/main.py",
+    "scripts/run_installed_package_gate.py"
+  ],
+  "candidate_only_release_wording_updated": [
+    "CHANGELOG.md",
+    "docs/docs/changelog.md",
+    "docs/docs/roadmap.md",
+    "RELEASE_NOTES_v0.7.1.md",
+    "scripts/check_public_snippet_coverage.py",
+    "scripts/summarize_public_truth.py"
+  ],
+  "current_version_test_fixtures_updated": [
+    "tests/dx/test_v056_first_hour_magic.py",
+    "tests/integration/test_first_app_golden_path.py",
+    "tests/studio/test_v038_ai_ux_consolidation.py",
+    "tests/test_gapanalysis.py",
+    "tests/test_v025_ai_hub.py",
+    "tests/test_v037_ai_consolidation.py",
+    "tests/test_v039_investigation_engine.py",
+    "tests/test_v048_packaging_sanity.py"
+  ],
+  "historical_rc_evidence_preserved": [
+    "RELEASE_EVIDENCE_v0.7.1-rc1.md",
+    "audit-evidence/v071-rc1/",
+    "AKSARA_V071_PUBLIC_TRUTH_AUDIT.md candidate-validation checkpoint",
+    "audit-evidence/v071/requirement-review.md candidate checkpoint"
+  ],
+  "intentional_rc_tokens_retained_for_normalization_or_comparison": [
+    "scripts/check_scaffold_equivalence.py",
+    "scripts/check_startproject_guidance.py",
+    "scripts/check_v071_runtime_scope.py",
+    "audit-evidence/v071/scaffold-wheel-equivalence.json",
+    "audit-evidence/v071/startproject-guidance.json",
+    "audit-evidence/v071/runtime-scope.json"
+  ],
+  "historical_records_edited": false,
+  "global_replacement_used": false,
+  "current_public_version": "0.7.1",
+  "scope": "Classification of v0.7.1 RC references before and after the final version transition. Historical release evidence and chronological audit records remain unchanged."
+}

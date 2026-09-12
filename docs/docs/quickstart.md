@@ -11,7 +11,7 @@ initial learning path.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install "aksara-framework==0.7.1rc1"
+python -m pip install "aksara-framework==0.7.1"
 aksara startproject ticket_desk
 cd ticket_desk
 aksara dbsetup

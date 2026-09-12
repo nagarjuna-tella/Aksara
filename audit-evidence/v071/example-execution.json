@@ -23,7 +23,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.1rc1",
+      "package_version": "0.7.1",
       "startup": "completed",
       "responses": [
         {
@@ -78,7 +78,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.1rc1",
+      "package_version": "0.7.1",
       "startup": "completed",
       "responses": [
         {
@@ -133,7 +133,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.1rc1",
+      "package_version": "0.7.1",
       "startup": "completed",
       "responses": [
         {
@@ -188,7 +188,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.1rc1",
+      "package_version": "0.7.1",
       "startup": "completed",
       "responses": [
         {
@@ -218,7 +218,7 @@
       },
       "migrations": [],
       "probe_exit": 0,
-      "package_version": "0.7.1rc1",
+      "package_version": "0.7.1",
       "startup": "completed",
       "responses": [
         {

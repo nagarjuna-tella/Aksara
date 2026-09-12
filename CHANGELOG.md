@@ -5,13 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## v0.7.1-rc1 — Documentation & Developer Experience
+## v0.7.1 — Documentation & Developer Experience
 
-Prepared 2026-09-12.
+Released 2026-09-12.
 
-This is the release candidate for **Aksara v0.7.1 — Documentation & Developer
-Experience**. It adds no runtime capability and makes no intentional production
-semantic change.
+This release brings Aksara's public documentation and developer experience into
+line with actual installed behavior. It adds no runtime capability and makes no
+intentional runtime semantic or dependency change.
 
 ### Public truth and onboarding
 
@@ -35,6 +35,8 @@ semantic change.
   and retained negative controls for functional defects found during the review.
 - Kept those runtime defects out of this documentation release; each requires a
   separately reviewed functional patch.
+- Preserved all 22 disclosed functional findings without fixing or masking them
+  in this release.
 
 ### Strategy and roadmap
 

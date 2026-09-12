@@ -8,9 +8,9 @@
       "readme_sha256": "5bf391526da864e688b89a0933b7525f3d70e8eab7a95d7e214263da057544b9"
     },
     {
-      "version": "0.7.1rc1",
-      "scaffold_sha256": "c0ad6c2099d7f1ca681caba390b516835c2196b9b9c3f6e1a8110679e95ba41e",
-      "readme_sha256": "f36689e5c6b5c9f9ddc9d24ff93616529d9cef5d61338323ad02982710af1a87"
+      "version": "0.7.1",
+      "scaffold_sha256": "a6d2b1935c4ddce576414fead664e28dafab3fd975f88523f3a5358dd54bd7f3",
+      "readme_sha256": "9ff18c3e801316392e4ae997d90abc9d691b24dd5c6463553716149754599484"
     }
   ],
   "changed_generated_files": [
@@ -57,6 +57,6 @@
     "app/views.py": "de67e5aed6208bab217eda6653c58afb6e7f6e7c65779a6892bc13e5916f638b",
     "static/welcome.html": "82f11e95b4a41fda8bd4ccb1f35ec182e2abcc30d77f9198602b4354f7dd2f8e"
   },
-  "normalization": "Generated Studio token value in .env/.env.example plus exact 0.7.0/0.7.1rc1 version spellings; no other executable/config/dependency normalization",
-  "runner_sha256": "efbfdc41409eee38755b2e08db023b8f768393091054e18cb3565fc1dd14d495"
+  "normalization": "Generated Studio token value in .env/.env.example plus exact 0.7.0/0.7.1rc1/0.7.1 version spellings; no other executable/config/dependency normalization",
+  "runner_sha256": "bcbd60bc0d23871fa069c0d8420eb61245e38e24e39f94464d4843eb75bd4e40"
 }

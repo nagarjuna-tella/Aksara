@@ -393,8 +393,8 @@ class InstalledPackageGate:
                 version=installed["version"],
             )
             self.check(
-                "candidate package version",
-                installed["version"] == "0.7.1rc1",
+                "final package version",
+                installed["version"] == "0.7.1",
                 version=installed["version"],
             )
 
@@ -402,15 +402,15 @@ class InstalledPackageGate:
             help_result = await self.command([cli, "--help"], cwd=temp_root, env=clean_env)
             self.check(
                 "CLI version and commands",
-                "0.7.1rc1" in version_result.stdout
+                "0.7.1" in version_result.stdout
                 and "startproject" in help_result.stdout
                 and "doctor" in help_result.stdout,
-                version="0.7.1rc1",
+                version="0.7.1",
                 startproject=True,
                 doctor=True,
             )
             self.results["cli"] = {
-                "version": "0.7.1rc1",
+                "version": "0.7.1",
                 "help": "pass",
                 "startproject_command": True,
                 "doctor_command": True,
