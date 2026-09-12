@@ -843,3 +843,40 @@ Relation correction validation: **77 passed** across `tests/test_relations.py`,
 required local PostgreSQL; **165 docs/packaging tests passed**. Strict MkDocs,
 Ruff and rendered links passed. The consolidated report indexes 41 artifacts
 with no stale linked page hashes; candidate readiness remains unproven.
+
+## Application Testing Guide Corrections
+
+**PT-033 / P1:** the testing guide promised automatic per-test rollback and
+runner setup through a plain `AksaraTestCase`, advertised an absent `test` extra,
+and mixed nonexistent factory/fixture/mocking APIs with runnable Python fences.
+Replaced the guide with three executable serializer/permission unit tests,
+links to the existing PostgreSQL-backed progressive application tests, explicit
+lifespan/authentication requirements, and isolation choices appropriate to
+same-task transactions versus HTTP requests and worker processes. Removed the
+legacy pseudocode instead of retaining it as an apparent application recipe.
+
+The exact standalone pytest file passes **3 tests** outside the checkout using
+the installed development wheel. This proves normalization, exclusion of a
+server-owned input field, structured validation failure, and the synchronous
+permission predicate. It does not prove credential verification or database
+isolation; those boundaries are explicitly separated in the guide.
+
+**TESTING-001 / P1, source-confirmed functional limitation:**
+`aksara.testing.test_database(cleanup=True)` acquires a raw pool transaction,
+yields a `Database` without pinning application queries to that connection, and
+does not disconnect the pool in that branch. Consequently its rollback must not
+be presented as general ORM/HTTP test isolation. This turn inspected the source;
+it did not execute a negative database probe or claim a measured resource leak.
+A separate patch should bind supported same-task queries correctly, guarantee
+pool teardown, and test failure/cancellation paths. No runtime fix is included.
+The plain `AksaraTestCase` setup and header-only `with_user()` limitations are
+also stated explicitly; applications should use their own fixtures and actual
+authentication adapter rather than assuming these conveniences enforce them.
+
+Testing-guide validation: **166 docs/packaging tests passed** and **21 existing
+helper unit tests passed**, each with one upstream AnyIO deprecation warning.
+The latter use mocks and do not disprove TESTING-001. Installed syntax/import
+checks cover 581 Python fences; CLI parsing covers 335 commands with 0 errors
+and 11 explicit exclusions. Strict MkDocs, Ruff and 47,586 rendered local
+links/assets passed. The truth index records 43 scoped artifacts with no stale
+linked inputs. Release readiness and the final requirement audit remain open.

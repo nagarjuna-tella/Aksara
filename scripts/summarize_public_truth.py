@@ -66,6 +66,7 @@ def main():
             {'id':'SDK-001','evidence':'typescript-sdk-probe.json','boundary':'Generated TypeScript strict compilation'},
             {'id':'STORAGE-001','evidence':'storage-boundary.json','boundary':'Direct filesystem path containment'},
             {'id':'ACTION-001','evidence':'custom-action-boundary.json','boundary':'Custom HTTP action authorization metadata'},
+            {'id':'TESTING-001','evidence':'testing-helper-findings.json','boundary':'Test helper rollback isolation and pool cleanup; source inspection only'},
             {'id':'SCAFFOLD-001','evidence':'scaffold-editable-defect.json','boundary':'Generated application editable packaging'},
         ],
         'remaining_before_candidate':[

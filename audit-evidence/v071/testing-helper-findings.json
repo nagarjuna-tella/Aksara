@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "source-confirmed limitation; runtime reproduction pending",
+  "scope": "Source inspection of cleanup=True; not a negative runtime database or measured leak probe",
+  "source_sha256": {
+    "aksara/testing.py": "18717d039c79158248adc231d94cc5a6c7c4d07d7ba96cd47aff6c6e2541cbc7"
+  },
+  "findings": [
+    {
+      "id": "TESTING-001",
+      "severity": "P1",
+      "observations": [
+        "Raw acquired connection transaction is not bound to application queries",
+        "cleanup=True branch does not disconnect its Database pool"
+      ],
+      "disposition": "Documented; separately scoped runtime patch recommended"
+    }
+  ]
+}
