@@ -1,162 +1,46 @@
 # Debugging
 
-Developer tools for debugging Aksara applications.
+Start with the failure you need to understand. Use [exception handling](../reference/exceptions.md)
+for application error responses, [error pages](error-pages.md) for a development
+traceback, and [query profiling](query-profiling.md) for database tracing.
 
----
+## Inspect a development error
 
-## Overview
-
-Aksara provides powerful debugging tools for development:
-
-- **Debug Error Pages** — Rich error pages with context
-- **AI Debug Tab** — AI-powered fix suggestions
-- **Query Profiler** — Database query analysis
-- **Request Inspector** — Request/response details
+Pass `debug=True` explicitly when creating a local development application:
 
 ```python
 from aksara import Aksara
 
-app = Aksara(debug=True)  # Enable debug mode
-```
-
-!!! warning "Production Warning"
-    Never enable debug mode in production. It exposes sensitive information.
-
----
-
-## Enabling Debug Mode
-
-### Via Constructor
-
-```python
 app = Aksara(debug=True)
 ```
 
-### Via Settings
+The [error-page example](error-pages.md) shows a complete application and the
+JSON versus HTML response behavior. Debug HTML includes traceback source context
+and selected request and system details. It is not a frame-local inspector or an
+interactive Python debugger. Do not assume that a `/__debug__/` request inspector
+is mounted by this constructor option.
 
-```python
-# settings.py
-DEBUG = True
+!!! warning "Keep debug mode out of production"
+    Debug HTML can expose sensitive data to remote clients. The loopback check
+    for JSON `debug_detail` does not restrict HTML access. Header redaction is
+    limited; it does not make request bodies, query strings, or exception text
+    safe to disclose. See the precise [access and masking boundaries](error-pages.md).
 
-# main.py
-from aksara import Aksara
-from myapp.settings import DEBUG
+## Choose the next diagnostic step
 
-app = Aksara(debug=DEBUG)
-```
+- **Unexpected HTTP status or response body:** compare the exception with the
+  [exception reference](../reference/exceptions.md). Different exception families
+  have different response shapes.
+- **Slow database work:** inspect query tracing separately. `debug=True` does not
+  by itself configure per-request query collection; tracing has its own
+  `db_trace_enabled` setting and `QueryTraceMiddleware` integration.
+- **A suspected application bug:** reproduce it in a focused test, then use normal
+  Python logging or a debugger in a local process. A breakpoint blocks the
+  executing worker and is unsuitable for a shared production service.
+- **AI-assisted diagnosis:** treat [AI debugging](ai-debug.md) as experimental
+  assistance. Review suggested changes and validate them against a reproduction
+  before applying them. Provider output is not a correctness guarantee.
 
-### Via Environment
-
-```python
-import os
-
-app = Aksara(debug=os.getenv("DEBUG", "false").lower() == "true")
-```
-
----
-
-## Debug Features
-
-### Rich Error Pages
-
-When an exception occurs in debug mode, you get a detailed error page:
-
-- **Exception type and message**
-- **Full stack trace with code context**
-- **Local variables at each frame**
-- **Request details (headers, body, params)**
-- **AI-powered fix suggestions**
-
-### Request/Response Inspector
-
-View complete request and response data:
-
-```python
-# In debug mode, access via /__debug__/
-# Or from error pages
-```
-
-### Query Profiler
-
-Track database queries:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import query_profiler
-
-@app.get("/api/posts")
-async def list_posts(request):
-    with query_profiler() as profiler:
-        posts = await Post.objects.select_related("author").all()
-    
-    print(f"Queries: {profiler.query_count}")
-    print(f"Time: {profiler.total_time}ms")
-    for query in profiler.queries:
-        print(f"  {query.sql} ({query.time}ms)")
-    
-    return posts
-```
-
----
-
-## Section Contents
-
-<div class="grid cards" markdown>
-
--   :material-alert-circle: **[Error Pages](error-pages.md)**
-    
-    Rich debugging error pages
-
--   :material-robot: **[AI Debug](ai-debug.md)**
-    
-    AI-powered debugging suggestions
-
--   :material-database-search: **[Query Profiling](query-profiling.md)**
-    
-    Database query analysis
-
-</div>
-
----
-
-## Quick Debug Tips
-
-### Print Debugging
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import debug_print
-
-@app.get("/api/data")
-async def get_data(request):
-    data = await fetch_data()
-    debug_print(data)  # Pretty prints with context
-    return data
-```
-
-### Breakpoints
-
-```python
-@app.get("/api/data")
-async def get_data(request):
-    data = await fetch_data()
-    breakpoint()  # Python debugger
-    return data
-```
-
-### Query Logging
-
-```python
-# In settings
-DATABASE_ECHO = True  # Log all SQL queries
-```
-
----
-
-## Related Documentation
-
-- [Error Pages](error-pages.md) — Debug error pages
-- [AI Debug](ai-debug.md) — AI suggestions
-- [Query Profiling](query-profiling.md) — Query analysis
+For a reproducible starting point, follow the
+[testing guide](../advanced/testing.md) and preserve the failing request or operation
+inputs with credentials and private payloads removed.

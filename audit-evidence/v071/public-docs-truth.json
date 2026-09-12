@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "412745ee1d05224b83bfd60502585dd1085b8f0c",
+  "reviewed_head": "e59552afcde321a44c7e6caae395bfbd4da825a2",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "b4f7a44d1e2206c4cce8059f42b1b74e8226744e1eec34d4b92939a445e8e1d4",
+      "sha256": "a19f6b247ce9e868a84c97c9360194697ccba6a84709ad7f26591525d3fd451b",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -611,7 +611,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "a79b7ebbebee173ecada6610adb42486938ce05ec036c702fbc0e011740c220b",
+      "sha256": "a1902bd5ae0844b5d405aa2ead189d6a370d8a4e88afa4f843dca2388c54334a",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -737,7 +737,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "1e57901f4b0e4c2393452eec97e1588cbb4b665e4c953a6d118c0511e280c74e",
+      "sha256": "3feabf5d670e25c38749e20dab255f7b150520d019ed11e28d124c55b55cc7b2",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

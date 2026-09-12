@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 521,
+  "python_blocks": 515,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -69,7 +69,7 @@
     "docs/docs/debugging/ai-debug.md": "a6b328bb13a3f105c5a6a02c3e2ec6070fad8629e87ec3bdbc402c144c6b351b",
     "docs/docs/debugging/autoremediation.md": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
     "docs/docs/debugging/error-pages.md": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
-    "docs/docs/debugging/index.md": "1d96e68bb6d21fffc00794de4857d6d7ff251fc406a65531cad7a4aae0176e82",
+    "docs/docs/debugging/index.md": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
     "docs/docs/debugging/query-profiling.md": "78eac3352ff2e55a96a632ffd017dde3d63afcd36400656959afaad260286f76",
     "docs/docs/diagnostics.md": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
     "docs/docs/gapanalysis.md": "9125ecfab0414e91715456e98039a38faa0a0a601de7336ddcfe79dcdc4e85f5",

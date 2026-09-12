@@ -1294,3 +1294,20 @@ passed 248 tests with one upstream AnyIO warning. Ruff, strict MkDocs, 521
 Python fence/import checks, 316 CLI parses (11 exclusions), and 46,313 rendered
 local links/assets passed. The 51-artifact index has zero stale linked inputs.
 The candidate/version/full final release campaign remains open.
+
+## Debugging Overview Follow-through
+
+The overview now follows PT-043's verified error-page boundary: removed the
+unsupported frame-local inspector, `/__debug__/` inspector, `debug_print` and
+`query_profiler` recipes, and the unverified `DATABASE_ECHO` configuration.
+It directs readers by diagnostic task and distinguishes explicit query tracing
+configuration from the debug constructor flag. The detailed query-profiling
+page still requires its own semantic review; this edit does not certify it.
+
+Validation: installed-package syntax/import checks passed for 515 Python fences;
+316 CLI forms parsed with zero errors and 11 exclusions. Strict MkDocs passed;
+162 rendered pages and 46,248 local links/assets validated. An initial test run
+started before rendered evidence regeneration and correctly rejected its stale
+page hash; the sequential rerun after regeneration passed all 179 documentation
+and packaging tests (one upstream AnyIO deprecation warning). No Python or
+runtime source changed in this checkpoint.
