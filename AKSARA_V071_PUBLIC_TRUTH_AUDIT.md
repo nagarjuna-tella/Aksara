@@ -61,7 +61,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Needs complete how-to review | Support Desk / durable guide | Pending new journey | Sync grants and durable decisions are different; neither overrides current authority. |
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Concept reviewed; examples pending | Durable reference guide | Pending new journey | No exactly-once external-effect promise; uncertainty can remain explicit. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | Needs how-to audit | Durable guide | Pending new journey | Not a tamper-resistant ledger or application retention service. |
-| Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Needs runnable operator example | `tests/durable/test_outbox.py` | Pending | Raw outbox row layout is internal; operator owns durable export/retention. |
+| Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
 | CLI | Yes | Stable core commands | `aksara` command groups | Partial help audit | Tutorial commands | Startproject/run/migrate/launch-check slice | Every major subcommand still needs discoverability and documented-command review. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README rewritten | Generated ticket_desk | Executed; equivalence baseline recorded | v0.6 contract explicitly excludes template layout from stability; no defaults changed. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production path rewritten | Launch check; production guide | Launch-check slice | PARTIAL only for optional services; production release profile remains a separate gate. |
@@ -590,8 +590,8 @@ audit-evidence/v071/runtime-scope.json` confirms the only changed production
 file is the scaffold module, and its AST is identical to v0.7.0 outside the
 README template return value. `pyproject.toml` is unchanged. This supplements,
 but does not replace, generated-file equivalence and candidate startup checks.
-Candidate version/build, compatibility matrix, hosted checks and the remaining
-public-page audit are still incomplete.
+Candidate version/build, hosted checks and the remaining public-page audit
+are still incomplete. The later local compatibility checkpoint is recorded below.
 
 ## Durable Outbox Operator Guidance
 
@@ -609,3 +609,30 @@ acknowledgement loss, and unchanged authoritative state. Evidence is
 removed and removal verified. The fixture uses an admin role and an in-process
 sink, so restricted-role RLS, process-crash behavior and remote durable delivery
 are not claimed.
+
+## Local Compatibility Matrix Checkpoint
+
+At `f7547fed5d9190d110f90177bbb76d60bc630171`, all four supported
+Python/web combinations passed the full source suite against local PostgreSQL
+18.4 (`aksara_test`) with required database tests enabled.
+
+| Python | Web boundary | Result |
+| --- | --- | --- |
+| 3.11.5 | latest-supported | 8313 passed, 2 skipped, 25 warnings in 110.15s |
+| 3.11.5 | minimum | 8313 passed, 2 skipped, 25 warnings in 102.66s (0:01:42) |
+| 3.14.4 | latest-supported | 8313 passed, 2 skipped, 25 warnings in 106.54s (0:01:46) |
+| 3.14.4 | minimum | 8313 passed, 2 skipped, 25 warnings in 101.54s (0:01:41) |
+
+Minimum means FastAPI 0.136.1 / Starlette 1.0.1; latest-supported means
+FastAPI 0.141.1 / Starlette 1.6.0. Each command runs the selected environment
+Python with `-m pytest --tb=short -q`. JSON metadata and hashed logs are
+`audit-evidence/v071/matrix-*.json` and matching `.log` files. Three cells use
+`scripts/run_v071_regression.py`; the Python 3.11 latest-supported cell was
+run directly before that wrapper was added. All four log hashes were verified
+and the supplied database password was absent from each log.
+
+This is a source checkout checkpoint, not final candidate-wheel evidence or
+hosted PostgreSQL 16 validation. The general suite uses
+`AKSARA_REQUIRE_SECURITY_MATRIX=false`; strict Doctor/release profiles remain
+separate gates. The increase from 8,312 to 8,313 tests is the added outbox
+evidence freshness test. No production behavior or dependency range changed.
