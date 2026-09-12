@@ -1742,3 +1742,20 @@ passed 195 tests with one existing dependency deprecation warning. Strict docs,
 384 Python fences/imports, 302 CLI forms, 43,002 local references across 162 pages,
 and 42 selected external URLs passed. Ruff passed for the new runner/test and
 indexer. This is scoped fixture validation, not final candidate acceptance.
+
+## Model metadata reference follow-up (2026-09-11)
+
+PT054 / P1: `orm/model-meta.md` described a nonexistent `_meta` interface,
+FieldInfo abstractions, unsupported nested Meta options, and incomplete schema
+and form generators. It now documents `Model.meta`, concrete field objects,
+forward relation dictionaries, missing-field behavior, declared versus database
+state, and safe metadata handling. The database-free inspection example passes
+against both the checkout and isolated installed wheel. The installed import gate
+now executes this exact example. No runtime change or new functional defect is
+claimed; this is correction of unsupported documentation promises.
+
+Metadata validation: `.venv/bin/python -m pytest tests/docs
+tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q` — 196 passed,
+one existing dependency deprecation warning. Strict docs, 367 Python fences/imports,
+302 CLI command forms, and 42,623 local references across 162 pages passed.
+Ruff passed for the changed runner and new test. Whole-manual review remains open.

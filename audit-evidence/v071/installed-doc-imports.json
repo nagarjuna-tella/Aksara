@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 384,
+  "python_blocks": 367,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -110,7 +110,7 @@
     "docs/docs/orm/index.md": "7f0077444977daa2bbb70a286633b93af74fa5312f8551f931a384aa3b25a68c",
     "docs/docs/orm/migration-safety.md": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960",
     "docs/docs/orm/migrations.md": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
-    "docs/docs/orm/model-meta.md": "026df22612c5f6f48be256061bb8049da68f521cbe72624d3e6ae95d49dc2390",
+    "docs/docs/orm/model-meta.md": "7f8acb6243bc2578473a539f5466489662652c873343c7586c78f415dd6a346b",
     "docs/docs/orm/models.md": "dc5626cb90c648c33ed2d87a236cc9b42ba8de3aec1a4248b7660e2b5fdd6759",
     "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
     "docs/docs/orm/relations.md": "5ef927577e7f3da2732e45e5584301748620cae300cf608288421a7fc95ab970",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -183,5 +183,7 @@
   "viewset_route_and_default_checks": "passed",
   "middleware_contract_sha256": "174de99bede14de7fe8755ef27b5ee482396dc54678e7690c3fc73770fc88560",
   "middleware_http_and_log_checks": "passed",
-  "runner_sha256": "f6edee24524fcbc2968b9e6e8c9925bfe7b78e1d248992534f16529bc0e65c05"
+  "model_meta_contract_sha256": "0710a9aa68f8192e0dbc83acccff814ce1173b64a1ec9c4026f987d81f5ba2f4",
+  "model_meta_checks": "passed",
+  "runner_sha256": "3b7210b2a627df919fe1bd4af28015728d1a3502bfb0a2f2c4894b2ad0d98d6a"
 }

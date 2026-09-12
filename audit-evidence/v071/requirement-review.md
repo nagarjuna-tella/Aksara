@@ -183,3 +183,9 @@ helpers. Thirteen installed-wheel PostgreSQL observations cover the example,
 three negative controls, mapping fallback, parse failures, partial writes and
 outer atomic rollback. This is scoped A3/A8/A10/D3 evidence, not whole-ORM
 acceptance. FIXTURE001–003 remain separate functional patch recommendations.
+
+## Model metadata reference checkpoint
+
+PT054 replaces invented introspection APIs with `Model.meta` and an exact
+installed-wheel inspection example. Scoped A3/A8/A10/D1/D3 evidence is included
+in `installed-doc-imports.json`; this does not complete whole-site semantic review.
