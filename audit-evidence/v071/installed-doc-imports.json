@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 531,
+  "python_blocks": 521,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -68,7 +68,7 @@
     "docs/docs/concepts/stability.md": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
     "docs/docs/debugging/ai-debug.md": "a6b328bb13a3f105c5a6a02c3e2ec6070fad8629e87ec3bdbc402c144c6b351b",
     "docs/docs/debugging/autoremediation.md": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
-    "docs/docs/debugging/error-pages.md": "08cff19ae2e9265c3ca59a31557c505ff37d3e7e3b651ed897bde328c9c949e2",
+    "docs/docs/debugging/error-pages.md": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
     "docs/docs/debugging/index.md": "1d96e68bb6d21fffc00794de4857d6d7ff251fc406a65531cad7a4aae0176e82",
     "docs/docs/debugging/query-profiling.md": "78eac3352ff2e55a96a632ffd017dde3d63afcd36400656959afaad260286f76",
     "docs/docs/diagnostics.md": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
@@ -171,13 +171,13 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response contracts without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
   "localization_http_and_conversion_checks": "passed",
-  "exception_contract_sha256": "b39f35552de191702ef2683cc4e959149b156229841dc907e2585526accfc15f",
+  "exception_contract_sha256": "dff4306396198e052a649dbe4a6dcb7e12f702073f411ef6607d4ea08a287de4",
   "exception_types_and_http_checks": "passed",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "081ef373a00bbd43f1db859bbfadf5a7fc4d10c7eb29753d611c7d66491e4ee2"
+  "runner_sha256": "f410417fa4698403fc75eb467bd066bc869e9b417d479d4387f4909f55558ef2"
 }

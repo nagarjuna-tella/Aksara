@@ -282,7 +282,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. The current isolated-wheel
-syntax/import gate checks 531 Python fences and documented Aksara imports.
+syntax/import gate checks 521 Python fences and documented Aksara imports.
 `installed-doc-imports.json` binds that result to the public pages and selected
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -1268,3 +1268,29 @@ warning. Ruff, strict MkDocs, 531 Python fence/import checks, 316 CLI parses
 (11 exclusions), and 46,483 rendered local links/assets passed. The evidence
 index retains 51 artifacts with no stale linked inputs. Final candidate gates
 remain open.
+
+## Debug Error Page Security Guidance
+
+**PT-043 / P0:** the debug guide claimed that unsupported `debug_allowed_ips`
+restricted pages to staff/local clients and that `debug_hide_vars` provided
+configurable masking. It also advertised nonexistent template, local-variable
+and expression-evaluation controls. These instructions could encourage exposing
+debug HTML under a false access-control assumption. Replaced them with actual
+constructor behavior, fixed-header masking limits and explicit HTML/JSON
+response boundaries. This is a documentation correction, not a new security
+feature or runtime fix.
+
+The exact no-database factory now runs in the installed public 0.7.0 contract
+gate. Eight ASGI requests cross debug on/off, loopback/non-loopback client
+addresses and HTML/JSON Accept headers. Debug HTML includes the deliberate
+exception marker for both addresses; JSON adds debug detail only for loopback
+in debug mode. Production-mode responses omit that marker. This establishes
+the documented presentation boundary, not exhaustive redaction, proxy safety,
+authorization or provider behavior.
+
+Validation: the documentation/packaging selection plus
+`tests/test_v02_features.py::TestExceptions` and `tests/test_debug_error_pages.py`
+passed 248 tests with one upstream AnyIO warning. Ruff, strict MkDocs, 521
+Python fence/import checks, 316 CLI parses (11 exclusions), and 46,313 rendered
+local links/assets passed. The 51-artifact index has zero stale linked inputs.
+The candidate/version/full final release campaign remains open.

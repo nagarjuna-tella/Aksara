@@ -92,3 +92,35 @@ def test_exception_http_example():
         response = client.get('/http', headers={'Accept': 'text/html'})
         assert response.status_code == 403
         assert response.headers['content-type'].startswith('text/html')
+
+
+def test_debug_page_example_boundaries():
+    import asyncio
+
+    import httpx
+
+    page = ROOT / 'docs/docs/debugging/error-pages.md'
+    source = re.search(r'```python title="debug_example.py"\n(.*?)```', page.read_text(), re.DOTALL)[1]
+    namespace = {'__name__': 'debug_example'}
+    exec(compile(source, 'debug_example.py', 'exec'), namespace)  # noqa: S102 - trusted repository example
+
+    async def check():
+        for debug in (False, True):
+            for address in ('127.0.0.1', '203.0.113.10'):
+                app = namespace['create_debug_example'](debug=debug)
+                transport = httpx.ASGITransport(app=app, client=(address, 12345))
+                async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+                    response = await client.get('/probe-error', headers={'Accept': 'application/json'})
+                    assert response.status_code == 500
+                    error = response.json()['error']
+                    assert error['message'] == 'Internal Server Error'
+                    if debug and address == '127.0.0.1':
+                        assert error['debug_detail'] == 'deliberate diagnostic example'
+                    else:
+                        assert 'debug_detail' not in error
+                    response = await client.get('/probe-error', headers={'Accept': 'text/html'})
+                    assert response.status_code == 500
+                    assert response.headers['content-type'].startswith('text/html')
+                    assert ('deliberate diagnostic example' in response.text) is debug
+
+    asyncio.run(check())
