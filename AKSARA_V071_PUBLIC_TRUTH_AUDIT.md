@@ -2467,3 +2467,18 @@ boundary, and when Durable Operations are the appropriate path. The isolated
 installed-wheel PostgreSQL probe observed two calls and an older completion
 overwriting the reclaimed call's result; its disposable schema was removed.
 No production source or task behavior changed.
+
+## ORM section reading assessment — 2026-09-12
+
+Read all fourteen ORM pages completely. `orm-reading-review.json` records each
+current page hash and a page-specific disposition. The review follows model
+declaration through migrations, query execution, relation identity, fields,
+transactions, bulk writes, fixtures, signals and soft deletion. It keeps the
+known BULK-001, MIGRATION-001, FIXTURE001–003, SOFTDELETE001 and RELATION001
+defects visible instead of generalizing the successful PostgreSQL probes.
+
+The Models introduction still said a model mapped to a table “automatically”
+and that Aksara handled all database work. It now says mapping follows an
+applied migration and names the application's schema-migration, authorization
+and transaction responsibilities. This finishes the ORM author-reading scope,
+not every ORM method or the candidate regression. No production source changed.

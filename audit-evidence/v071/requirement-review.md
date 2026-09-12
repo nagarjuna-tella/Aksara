@@ -36,7 +36,7 @@ Line numbers below refer to that exact objective.
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
-| A8: Conceptual user manual (line 618) | PARTIAL | concepts/application-boundaries.md, ORM/API references, tasks, durability and MCP guides provide conceptual paths. | Complete semantic/readability review across the full manual, including remaining advanced pages. |
+| A8: Conceptual user manual (line 618) | PARTIAL | Concepts, API, security, middleware, Admin, advanced and all fourteen ORM pages now have explicit author-reading dispositions; execution artifacts cover major ORM paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
 | A9: How-to guides (line 680) | SCOPED | Auth, tenancy/RLS, reports, durability, approval, external effect, MCP, diagnostics, SDK, media, deployment and upgrade guides exist with scoped gates. | Candidate reruns; SDK compilation is a documented failure, not successful end-to-end client use. |
 | A10: Reference quality (line 707) | PARTIAL | Settings and CLI declarations, installed imports, route/default/serializer contracts and dedicated DB gates exist. | Middleware signatures, request-ID/logging behavior and tenant trust are now checked; review remaining references. Syntax coverage is not universal behavior proof. |
 | A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts. | Final plain-language review and candidate execution; no arbitrary Python/external exactly-once promise. |
@@ -87,7 +87,7 @@ Line numbers below refer to that exact objective.
 | C3: Durable Operation journey (line 1821) | SCOPED | Durable chapter tests registration, admission, worker, idempotency/status, post-SQL retry, cancel and current role revocation. | Repeat candidate; full crash campaign belongs to broader established regression. |
 | C4: MCP journey (line 1840) | SCOPED | Official MCP SDK 2.0.1 journey verifies negotiation, authentication adapter, CRUD/denial and REST parity; no MCP Tasks. | Repeat candidate; no external OAuth provider certification. |
 | C5: Production deployment reading test (line 1854) | VERIFIED | operator-reading.json answers all named operator questions and records complete reading of deployment, upgrade and Doctor, with per-page hashes and usability assessment. | Author reading satisfies the requested reading test; live deployment, restore execution and candidate regression remain separate requirements. |
-| C6: Documentation usability review (line 1872) | OPEN | Five entry hubs, five middleware/security pages and five setup/compatibility pages reviewed; unsupported examples replaced with checked workflows. No complete final readability review is recorded. | Review walls of text, jargon, nesting, duplication, navigation, task orientation, cross-links and tutorial/reference separation. |
+| C6: Documentation usability review (line 1872) | PARTIAL | Entry, operator, API, security, middleware, Admin, concepts, advanced and ORM sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete remaining sections and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
 
 ## Workstream D
 
@@ -500,3 +500,13 @@ fence. `task-stale-recovery.json` reproduces two calls and a stale overwrite
 using the installed 0.7.0 wheel and an owned PostgreSQL schema, then verifies
 cleanup. This advances the manual review but does not complete remaining docs
 sections, final candidate execution, or the full regression campaign.
+
+## ORM section reading — 2026-09-12
+
+A2/A8/A10/A12/A22/C6: all fourteen ORM pages were read completely. Current
+hashes and per-page dispositions are in `orm-reading-review.json`; existing
+installed PostgreSQL artifacts remain the bounded execution evidence. The model
+introduction now makes migration application, authorization and transaction
+ownership explicit. Known bulk, migration discovery, fixture, soft-delete and
+relation defects remain documented and deferred. This closes ORM author
+reading, not candidate execution, every ORM method, or the remaining manual.

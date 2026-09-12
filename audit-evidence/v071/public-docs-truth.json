@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "8a2661d0f7efbc533ec2e70e6afc60f67a30fb6a",
+  "reviewed_head": "83a4e2beeba560a5bdf795f4a79470a111ee27c6",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "f45e2abb97b6567d81bb33abc82e63908d85b8b5c184ef99df4c61e4c067159d",
+    "sha256": "e5d8b1a849e6bf992f86e8d683f7817f3d4c128681e1126363b024f1c703c026",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -494,7 +494,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "c56974873830228d9ab5f0d59a8bcd9adb5d67d011fc9dc00c01a4a1dc13042e",
+      "sha256": "480bbc62e6e20ad7950cb851149cdde2c46bf3bb71dc876011e7cf6d123702b4",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -719,7 +719,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "dc82d5121215e2fcfd4448ec608901f940552bf886f5e09f2d68c7c8e6d5a404",
+      "sha256": "56c8c3afcd7631ef11514fd6a87088573b9acd537a6fe68878f44ac78bf6c779",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -826,6 +826,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/orm-reading-review.json",
+      "sha256": "77f0908543cb786ac817380c9504621882fc681540bb87d23f46c6cc6624f71e",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all fourteen ORM pages, with comparison to the existing installed-wheel PostgreSQL query, relation, field, bulk, migration, fixture, signal and soft-delete evidence. This is not final candidate execution, every ORM method, or a historical data-bearing upgrade certification.",
+      "checked_linked_page_hashes": 14,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/outbox-execution.json",
       "sha256": "489259ccc32b4fc533eebc5deb802f1110803325d4e9b815ac15a3708dba1e90",
       "recorded_result": true,
@@ -854,7 +863,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "10872db506d826b2620683e1d6e5e070fc2b2fe05f599edad791ecd0891221cc",
+      "sha256": "4ac6f6d5fc08a47a7f7b0ec8858997adf3cc22f5b62c765a59e549a77d987dbc",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -863,7 +872,7 @@
     },
     {
       "artifact": "audit-evidence/v071/query-execution.json",
-      "sha256": "b2346717eaa1cf6abb391da861c9b6e4f0be2056a7a049f4a7da3d535d81e2bd",
+      "sha256": "ba95f6d6fd23b7a528b84948354b6e32396475a3661b5a9d85395b43bc5f6589",
       "recorded_result": true,
       "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; plus the exact complete Product/Category model example; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
       "checked_linked_page_hashes": 5,
@@ -881,7 +890,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "c0ead7773380d7c91f1c166eba0ec4023a24ca4889262a1674d12964fda1fff6",
+      "sha256": "462fc11fd3c8ad8c253bf1c91052846a5f29ec9ccbf1c006f8e6ebbda39ff7e6",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

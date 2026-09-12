@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all fourteen ORM pages, with comparison to the existing installed-wheel PostgreSQL query, relation, field, bulk, migration, fixture, signal and soft-delete evidence. This is not final candidate execution, every ORM method, or a historical data-bearing upgrade certification.",
+  "page_sha256": {
+    "docs/docs/orm/advanced-field-policy.md": "d8510ede1461d64a5eac643f53e08d6e4cc5ff6c10bcb4397277b82a5b2cf201",
+    "docs/docs/orm/bulk-operations.md": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344",
+    "docs/docs/orm/expressions-and-transactions.md": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7",
+    "docs/docs/orm/fields.md": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4",
+    "docs/docs/orm/fixtures.md": "e3051b0e2c12c3c6c14b424b22b6de49600ac72b2be606038190664d1d1d2c69",
+    "docs/docs/orm/index.md": "1a83a7fd56bb67ff0206f0bda77e182d98d47ead99d2b73c6cc37f04a038d49a",
+    "docs/docs/orm/migration-safety.md": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960",
+    "docs/docs/orm/migrations.md": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
+    "docs/docs/orm/model-meta.md": "7f8acb6243bc2578473a539f5466489662652c873343c7586c78f415dd6a346b",
+    "docs/docs/orm/models.md": "0f52557b488a835d7794cea4841a50d9c38b26150c43ae93ea2d82c64d84ada3",
+    "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
+    "docs/docs/orm/relations.md": "4b2e4ccb5911c760a0bbfc7c897f47f89414fb18ee39d1981c8609ef38d23a12",
+    "docs/docs/orm/signals.md": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
+    "docs/docs/orm/soft-deletes.md": "d8b29f39cc839a646e7c1e382af332a7cff8683f244bd5e15d88631073f824da"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/orm/index.md",
+      "disposition": "retain_after_reading",
+      "reason": "Provides a task-oriented persistence map and distinguishes model declaration, migration, query execution, relation identity, validation, transactions and durable work."
+    },
+    {
+      "page": "docs/docs/orm/models.md",
+      "disposition": "retain_after_schema_lifecycle_clarification",
+      "reason": "The opening now says table mapping follows an applied migration and keeps authorization and transaction ownership explicit; defaults and complete Product/Category usage match the checked contract."
+    },
+    {
+      "page": "docs/docs/orm/fields.md",
+      "disposition": "retain_after_reading",
+      "reason": "Lists concrete field contracts and write-path limits, including advanced validation, storage wrappers, relation exclusions and scoped AI metadata enforcement."
+    },
+    {
+      "page": "docs/docs/orm/advanced-field-policy.md",
+      "disposition": "retain_as_labeled_historical_design_record",
+      "reason": "Its direct-entry notice sends current usage to authoritative references and preserves proposed wording as historical field-policy context rather than current universal API proof."
+    },
+    {
+      "page": "docs/docs/orm/querying.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses actual lazy builders and async terminal methods, supported filters, bounded pagination, named aggregates and explicit raw-SQL authority boundaries."
+    },
+    {
+      "page": "docs/docs/orm/relations.md",
+      "disposition": "retain_after_reading",
+      "reason": "Distinguishes stored forward IDs, reverse managers, batched eager loading and M2M access while disclosing RELATION001 and unsupported forward M2M filters/through models."
+    },
+    {
+      "page": "docs/docs/orm/migrations.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates model fields from migration operations, provides exact constructor shapes and explains graph, lock, checksum, fake and destructive-change boundaries."
+    },
+    {
+      "page": "docs/docs/orm/migration-safety.md",
+      "disposition": "retain_after_reading",
+      "reason": "Bounds canonical file execution, per-migration transactions, advisory locking, checksums, dry runs, legacy fallback and deferred metadata."
+    },
+    {
+      "page": "docs/docs/orm/model-meta.md",
+      "disposition": "retain_after_reading",
+      "reason": "Documents the actual introspection members without presenting declaration metadata as a migrated catalog, authorization schema or Django Meta compatibility."
+    },
+    {
+      "page": "docs/docs/orm/expressions-and-transactions.md",
+      "disposition": "retain_after_reading",
+      "reason": "Explains Q, F and one-hop aggregates and limits atomicity to sequential work on the active Aksara PostgreSQL connection."
+    },
+    {
+      "page": "docs/docs/orm/bulk-operations.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates batching from all-batch atomicity, documents preparation/signal differences and exposes BULK-001 rather than implying general typed updates work."
+    },
+    {
+      "page": "docs/docs/orm/fixtures.md",
+      "disposition": "retain_after_reading",
+      "reason": "Treats fixtures as controlled application records rather than backups and explicitly describes FIXTURE001 through FIXTURE003 and transaction/allowlist limits."
+    },
+    {
+      "page": "docs/docs/orm/signals.md",
+      "disposition": "retain_after_reading",
+      "reason": "States exact payloads and receiver semantics while separating callbacks from commits, durable events and authorization."
+    },
+    {
+      "page": "docs/docs/orm/soft-deletes.md",
+      "disposition": "retain_after_reading",
+      "reason": "Distinguishes instance soft deletion from physical queryset deletion and warns that the module helpers discard existing restrictions in SOFTDELETE001."
+    }
+  ],
+  "candidate_acceptance": false,
+  "execution_evidence": [
+    "advanced-field-execution.json",
+    "admin-relation-execution.json",
+    "bulk-execution.json",
+    "fixture-execution.json",
+    "migration-doc-execution.json",
+    "query-execution.json",
+    "signal-lifecycle.json",
+    "soft-delete-execution.json"
+  ]
+}

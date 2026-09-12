@@ -9,11 +9,13 @@ Define your data structure using Python classes that map directly to PostgreSQL 
 A **model** is a Python class that represents a table in your database. Each model:
 
 - Defines what data you want to store (fields like title, email, price)
-- Maps to a PostgreSQL table automatically
+- Maps to a PostgreSQL table after its migration is applied
 - Provides methods to create, read, update, and delete records
 - Validates data before saving
 
-Think of a model as a blueprint: it describes what a "Post" or "User" looks like, and Aksara handles all the database work.
+Think of a model as a blueprint: it describes what a "Post" or "User" looks
+like. Aksara provides the persistence operations, while your application keeps
+schema migration, authorization, and transaction boundaries explicit.
 
 ```python
 from aksara import Model, fields

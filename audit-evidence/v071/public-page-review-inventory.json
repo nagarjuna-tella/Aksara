@@ -959,7 +959,9 @@
       "path": "docs/docs/orm/advanced-field-policy.md",
       "sha256": "d8510ede1461d64a5eac643f53e08d6e4cc5ff6c10bcb4397277b82a5b2cf201",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "orm-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 392
     },
@@ -969,7 +971,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "bulk-execution.json",
-        "custom-field-execution.json"
+        "custom-field-execution.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 170
@@ -980,6 +983,7 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "bulk-execution.json",
+        "orm-reading-review.json",
         "query-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -991,7 +995,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "advanced-field-execution.json",
-        "media-lifecycle.json"
+        "media-lifecycle.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 1024
@@ -1001,7 +1006,8 @@
       "sha256": "e3051b0e2c12c3c6c14b424b22b6de49600ac72b2be606038190664d1d1d2c69",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "fixture-execution.json"
+        "fixture-execution.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 89
@@ -1010,7 +1016,9 @@
       "path": "docs/docs/orm/index.md",
       "sha256": "1a83a7fd56bb67ff0206f0bda77e182d98d47ead99d2b73c6cc37f04a038d49a",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "orm-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 95
     },
@@ -1019,7 +1027,8 @@
       "sha256": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "migration-doc-execution.json"
+        "migration-doc-execution.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 188
@@ -1029,7 +1038,8 @@
       "sha256": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "migration-doc-execution.json"
+        "migration-doc-execution.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 193
@@ -1038,25 +1048,29 @@
       "path": "docs/docs/orm/model-meta.md",
       "sha256": "7f8acb6243bc2578473a539f5466489662652c873343c7586c78f415dd6a346b",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "orm-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 103
     },
     {
       "path": "docs/docs/orm/models.md",
-      "sha256": "9ee5f303e2bc3afee7681f8d116f317ecbc53c2acb6f5b4ea2195925274efec3",
+      "sha256": "0f52557b488a835d7794cea4841a50d9c38b26150c43ae93ea2d82c64d84ada3",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "orm-reading-review.json",
         "query-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 508
+      "lines": 510
     },
     {
       "path": "docs/docs/orm/querying.md",
       "sha256": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "orm-reading-review.json",
         "query-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -1067,7 +1081,8 @@
       "sha256": "4b2e4ccb5911c760a0bbfc7c897f47f89414fb18ee39d1981c8609ef38d23a12",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "admin-relation-execution.json"
+        "admin-relation-execution.json",
+        "orm-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 572
@@ -1077,6 +1092,7 @@
       "sha256": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "orm-reading-review.json",
         "query-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -1087,6 +1103,7 @@
       "sha256": "d8b29f39cc839a646e7c1e382af332a7cff8683f244bd5e15d88631073f824da",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "orm-reading-review.json",
         "soft-delete-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -1501,7 +1518,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 78
+    "with_scoped_evidence_candidates": 81
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

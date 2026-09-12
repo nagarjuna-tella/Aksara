@@ -44,7 +44,7 @@
     "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
     "docs/docs/orm/signals.md": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
     "docs/docs/orm/expressions-and-transactions.md": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7",
-    "docs/docs/orm/models.md": "9ee5f303e2bc3afee7681f8d116f317ecbc53c2acb6f5b4ea2195925274efec3"
+    "docs/docs/orm/models.md": "0f52557b488a835d7794cea4841a50d9c38b26150c43ae93ea2d82c64d84ada3"
   },
   "runner_sha256": "74c22bfe17c350868d566da40c665e4eb700d7cd54f263a6edcaba397c6c9cf5"
 }
