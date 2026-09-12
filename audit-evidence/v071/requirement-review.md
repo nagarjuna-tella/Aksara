@@ -266,3 +266,11 @@ generated MCP dispatch and custom-handler responsibility. Existing tests pass:
 199 with local PostgreSQL required, plus 207 docs/packaging checks. Public import,
 CLI and rendered-link evidence refreshed. No runtime change; remaining manual
 review and actual candidate release gates remain open.
+
+## Security overview/release-policy checkpoint
+
+PT064 reconciles four security pages with existing workflows and release matrix
+policy. 69 matrix/production-policy tests and 207 docs/packaging tests pass.
+Current docs/import/CLI/link evidence refreshed. Workflow definitions support
+only the described configuration, not verified hosted protection or candidate
+success. No publication action; final release gates remain open.

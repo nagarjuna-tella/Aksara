@@ -1951,3 +1951,22 @@ The initial unconfigured run was 194 passed/5 skipped and is not the database
 validation claim. Docs/packaging tests: 207 passed, one dependency deprecation
 warning. Strict docs, 358 Python fences/imports, 292 CLI forms and 42,288 local
 references passed. This checkpoint does not claim final whole-manual acceptance.
+
+## Security overview and release-policy review (2026-09-12)
+
+PT064 / P1: the threat model described existing supply-chain/release automation
+as planned and described matrix enforcement without the release-mode exception.
+The overview/release pages still led with the older stability boundary and could
+make named environment configuration look like verified branch protection.
+Four pages now link the v0.7 contract, describe durable ownership/external-effect
+trust boundaries, separate application coverage from framework matrices, and
+state that manual publication does not itself rerun the release gate. No external
+audit or configured hosted protection is inferred from workflow YAML.
+
+Reviewed `aksara/security/checks.py`, `.github/workflows/security.yml`,
+`release-gate.yml`, `publish.yml`, and `.github/dependabot.yml`. Existing matrix
+and production-policy tests: 69 passed. Docs/packaging tests: 207 passed with one
+dependency warning. Strict docs, 358 Python fences/imports, 292 CLI forms and
+42,292 local references across 162 pages passed. No production code changed.
+These are page corrections and scoped checks; final candidate acceptance remains
+incomplete, and publication was not dispatched.

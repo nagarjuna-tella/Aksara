@@ -3,8 +3,8 @@
 ## Current Status
 
 Aksara includes security diagnostics, real generated-API abuse coverage, a
-restricted-role PostgreSQL tenancy gate, and release workflows. The v0.6
-production claim is bounded by the published stability contract. It does not
+restricted-role PostgreSQL tenancy gate, and release workflows. The current
+production claim is bounded by the [v0.7 stability contract](../roadmap/v0-7-stability-contract.md). It does not
 constitute an external audit certification.
 
 ## CI Workflows
@@ -17,7 +17,9 @@ constitute an external audit certification.
   audit, static analysis, secret scanning, SBOM generation, and docs build.
 - `codeql.yml` runs GitHub CodeQL analysis for Python.
 - `publish.yml` is manual and uses PyPI Trusted Publishing/OIDC with the
-  protected `pypi` environment. It does not use API tokens.
+  `pypi` environment. Repository administrators must configure its protection
+  rules; the workflow file alone does not prove required reviewers exist. It
+  does not use API tokens.
 - `dependabot.yml` keeps Python and GitHub Actions dependencies visible through
   weekly update pull requests.
 
@@ -75,7 +77,10 @@ PyPI Trusted Publishing should be configured in PyPI project settings:
 - Workflow: `publish.yml`
 - Environment: `pypi`
 
-Publishing remains manual and environment-gated. Do not add PyPI API tokens to
+Publishing remains manual and targets the named environment. It builds the
+selected ref and checks the distributions; it does not itself rerun the full
+release gate. Verify passing checks for that exact ref and configured environment
+protections before dispatching it. Do not add PyPI API tokens to
 the repository or workflow secrets.
 
 ## External Review

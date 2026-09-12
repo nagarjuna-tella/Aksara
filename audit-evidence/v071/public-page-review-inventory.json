@@ -1243,11 +1243,11 @@
     },
     {
       "path": "docs/docs/security/overview.md",
-      "sha256": "6e24f935f84750c305d4b17a6315660796ea442fc5baa16af300e899007c01d2",
-      "changed_since_release": false,
+      "sha256": "3bdba7d248acc03e4d7f5f11bb737cbb7d9a5e4ee39fad1b268d921d1f61aaa4",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 71
+      "lines": 75
     },
     {
       "path": "docs/docs/security/production-hardening.md",
@@ -1259,27 +1259,27 @@
     },
     {
       "path": "docs/docs/security/release-security.md",
-      "sha256": "043fa047e1bcbc06b898aa5398a1791527839b441184d25adf9b76f382c51fb4",
-      "changed_since_release": false,
+      "sha256": "639588c59af54bce640646f1b4656640bea7ef9c3efcd33e7dbf323d5da92e17",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 101
+      "lines": 106
     },
     {
       "path": "docs/docs/security/security-coverage.md",
-      "sha256": "1e1999728e325bfe336ecf1e90a2c5355a64a0777017f55d5494523e815b4966",
-      "changed_since_release": false,
+      "sha256": "8e6bab52f2b0372586e84cfd2217c57fde80f91e377b048b220e58fbc768bafb",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 58
+      "lines": 60
     },
     {
       "path": "docs/docs/security/threat-model.md",
-      "sha256": "5d9a54d513ca6da480c4482d16030eea0de6c5c7da3906f18822bf21719d58ec",
-      "changed_since_release": false,
+      "sha256": "011693e5119441a779d9a47eeb0845207c472867e0c2d88d7428c8c3679ef265",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 86
+      "lines": 97
     },
     {
       "path": "docs/docs/studio/api.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 16,
+    "unchanged_since_release": 12,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

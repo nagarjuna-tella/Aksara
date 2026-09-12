@@ -24,7 +24,9 @@ as first-class security concerns.
 - Migration safety controls that improve the reliability and integrity of
   generated schema changes (transactional application, advisory locking,
   checksum verification of applied migrations, and SQL-generation guardrails)
-- Public security matrix example with optional private matrix enforcement
+- Explicit Durable Operations with current authorization, fenced ownership,
+  bounded approval and recovery contracts
+- Public security matrix example and strict release-mode matrix enforcement
 
 ## Generated Surfaces
 
@@ -37,7 +39,7 @@ schemas as the boundary.
 ## Current Limitations
 
 - Production support is bounded by the
-  [v0.6 contract](../roadmap/v0-6-stability-contract.md); it is not a blanket
+  [v0.7 contract](../roadmap/v0-7-stability-contract.md); it is not a blanket
   claim for Studio or AI/agent features.
 - `production-check --release` always requires a complete matrix. Deployment
   checks without `--release` keep missing-matrix findings advisory unless
@@ -57,7 +59,9 @@ schemas as the boundary.
 3. Review generated surfaces and AI-writable fields.
 4. Run `aksara doctor production-check --release` with the project's complete
    security matrix.
-5. Deploy only when every release diagnostic passes.
+5. Treat passing diagnostics as one prerequisite. Validate application-specific
+   authorization, backup/restore, monitoring, and the selected worker/deployment
+   topology; diagnostics do not certify a deployment.
 
 ## More Detail
 
