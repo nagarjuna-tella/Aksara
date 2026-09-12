@@ -2361,3 +2361,20 @@ and conceptual boundary. Retained the other five pages after reading: they
 state custom-path responsibilities, ordinary task limits, field enforcement
 scope and diagnostic limits without requiring the ADR. This closes the missing
 security-to-implementation navigation, not a new authentication capability.
+
+## API section reading assessment (2026-09-12)
+
+Completed reading all ten API-section pages across the core, identity and final
+filter/pagination/throttle passes. api-reading-review.json records each current
+page hash and its disposition. Filtering and pagination retain fresh installed
+PostgreSQL evidence (11 and 8 checks respectively), including the explicit
+negative pagination flag. Throttle defaults, POST/prefix restriction, per-path
+address buckets, process-local storage and loopback forwarding were compared
+with AdminRateLimitMiddleware. Older address-source tests duplicate logic and
+are not treated as middleware execution proof. No further page change was needed.
+This accepts the API section's author reading, not the full manual or every
+production API path.
+
+Validation: six existing AdminRateLimitMiddleware tests pass, exercising POST
+budget, disablement, GET/outside-prefix behavior, Retry-After and defaults.
+They do not prove distributed quotas or the actual deployment's proxy chain.

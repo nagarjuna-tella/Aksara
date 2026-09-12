@@ -450,3 +450,10 @@ A8/A10/C6: six identity/security pages reviewed together. Existing account/owner
 evidence remains source-current; no new credential-provider or RLS proof is
 inferred. Security authentication now links directly to the implementation
 guide, permission hooks and conceptual map. Other reviewed content retained.
+
+## API section author-reading complete
+
+C6/A10: all ten current API pages now have a recorded reading disposition and
+page hash in api-reading-review.json. Core, identity and list/limit boundaries
+are coherent, including explicit known limitations. This completes the API
+section reading pass; other manual sections and candidate execution remain open.

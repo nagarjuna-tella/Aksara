@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "ad5376f038e5e79019b48a17c92b269ff263b7ed",
+  "reviewed_head": "fcf7f679411e604f49ec5b216915d16478236b27",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "449a20c34a6f1f68650ea488c9eaf496f4e4b7b3c9b962942fb3d69116788da9",
+    "sha256": "2042157aa1aae9f1f3aa8253028297c68fbd36279cff79fa1f05374f973e4aff",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -426,6 +426,15 @@
       "recorded_result": "not a boolean gate",
       "scope": "Route hint snippet and CLI availability; not schema-drift correctness or full experimental-feature execution",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/api-reading-review.json",
+      "sha256": "5e681e0541a1c662e7c722fc1dd8014c1b9d7f6eecc8cc9f9875de0e67a10a38",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all ten current API-section pages across the core API, identity and list/limit review passes. Source and scoped execution evidence support the stated limits; not independent usability measurement, every API path or final candidate validation.",
+      "checked_linked_page_hashes": 10,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -809,7 +818,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "d7d365ba8ed4b26522982a234f4a4c225e1d8c6b93c46917b1264aa0e31d239e",
+      "sha256": "8c19b092275405c0a7ec3f6434c169593c3f87694c94de52076ee7e59bed43a6",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
