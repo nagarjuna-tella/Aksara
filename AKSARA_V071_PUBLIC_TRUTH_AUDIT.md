@@ -2215,3 +2215,15 @@ The evidence test requires all four new checks. Ruff and the full 207-test
 docs/packaging set pass (one dependency warning). The gate uses an admin-role
 fixture, not RLS, full migration CLI/history or every field/write-path proof.
 No production code or public page changed; final candidate acceptance is open.
+
+## Time and Duration example execution (2026-09-12)
+
+The remaining field-reference sections were read against their implementations.
+The installed advanced-field gate now executes the four exact Time/Duration
+blocks and reloads their PostgreSQL values, checking 07:30 and a 30-minute
+interval. All 23 checks pass, including verified disposable-schema removal.
+No public-page correction or runtime change was required.
+
+Evidence guards require the new block and persistence assertions. Ruff passes;
+207 docs/packaging tests pass with one dependency deprecation warning. This is
+selected field-example execution, not all field paths, RLS, or candidate proof.

@@ -24,4 +24,6 @@ def test_advanced_field_evidence_is_current():
             'validation fragment catches both field errors',
             'catalog model decimal and enum persist',
             'catalog model defaults and nullable fields',
-            'catalog model foreign key persists'} <= set(evidence['checks'])
+            'catalog model foreign key persists', 'all Time guide blocks execute',
+            'all Duration guide blocks execute', 'Time guide persisted clock value',
+            'Duration guide persisted interval'} <= set(evidence['checks'])

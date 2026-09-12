@@ -53,6 +53,13 @@ async def main():
             for block in blocks: await execute_block(block,namespace,db)
             namespaces[name]=namespace
             passed('all '+name+' guide blocks execute',True)
+        from datetime import time, timedelta
+        time_ns=namespaces['Time']
+        schedule=await time_ns['Schedule'].objects.get(id=time_ns['schedule'].id)
+        passed('Time guide persisted clock value',schedule.alarm==time(7,30))
+        duration_ns=namespaces['Duration']
+        recipe=await duration_ns['Recipe'].objects.get(id=duration_ns['recipe'].id)
+        passed('Duration guide persisted interval',recipe.prep_time==timedelta(minutes=30))
         user_ns=namespaces['JSON'];User=user_ns['User']
         passed('nested JSON query returns created row',[r.id for r in user_ns['dark_mode_users']]==[user_ns['user'].id])
         for value in ['draft',3.14,True,{'nested':[None,'value']}]:
@@ -126,10 +133,10 @@ async def main():
                 root = Path(directory)
                 text = (ROOT / PAGE).read_text()
                 sections = {}
-                for name in ('JSON', 'Array', 'Vector'):
+                for name in ('JSON', 'Array', 'Vector', 'Time', 'Duration'):
                     body = text.split('### ' + name + '\n', 1)[1].split('\n### ', 1)[0]
                     sections[name] = re.findall(r'```python\n(.*?)```', body, re.DOTALL)
-                assert {name: len(blocks) for name, blocks in sections.items()} == {'JSON': 3, 'Array': 2, 'Vector': 2}
+                assert {name: len(blocks) for name, blocks in sections.items()} == {'JSON': 3, 'Array': 2, 'Vector': 2, 'Time': 2, 'Duration': 2}
                 (root / 'sections.json').write_text(json.dumps(sections))
                 validation = text.split('## Field Validation',1)[1].split('## Complete Example',1)[0]
                 (root / 'validation.py').write_text(re.search(r'```python\n(.*?)```',validation,re.DOTALL).group(1))
@@ -152,7 +159,7 @@ async def main():
         await connection.close()
     evidence.update({"schema_version": 1, "pass": True, "pgvector_version": extension["extversion"],
                      "source_checkout_framework_imports": False, "disposable_schema_removed": True,
-                     "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections plus the exact validation fragment and catalog model declarations; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
+                     "scope": "All eleven JSON/Array/Vector/Time/Duration guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections plus the exact validation fragment and catalog model declarations; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
                      "page_sha256": {PAGE: hashlib.sha256((ROOT / PAGE).read_bytes()).hexdigest()},
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")

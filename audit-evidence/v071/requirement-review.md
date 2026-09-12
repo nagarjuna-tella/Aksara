@@ -366,3 +366,10 @@ PostgreSQL gate, bringing advanced-field-execution.json to 19 checks. Evidence
 guards require the new assertions. 207 docs/packaging tests and Ruff pass.
 This closes those two snippet gaps without claiming all field behavior or
 candidate execution. No public page or production code changed.
+
+## Time/Duration coverage checkpoint
+
+D3/A15: four more exact field-guide blocks execute against installed 0.7.0 and
+PostgreSQL; persisted clock/interval assertions bring the gate to 23 checks.
+207 docs/packaging tests and Ruff pass. No public page or runtime change was
+needed. Full manual acceptance and final candidate gates remain open.
