@@ -78,7 +78,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
 | AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status and CLI examples corrected | Route hint; local greeting and plan template | 12 local CLI checks ([evidence](audit-evidence/v071/ai-cli-execution.json)) | Sockets forbidden in this gate; no provider/planner quality or autonomous execution claim. Full experimental behavior is not certified. |
 | Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Experimental boundary and default enablement clarified | Scaffold default-route probe; Studio guides | Default UI disabled ([evidence](audit-evidence/v071/scaffold-startup.json)) | Disabled-route proof is not enabled Studio workflow validation. Not a production investigation or audit store. |
-| Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Boundary explained | Generic-relations/workflow guide | Pending | Step cache does not inherit Operation leases, fences or current reauthorization. |
+| Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Force, cancellation, identity and codec boundaries corrected | Exact generic/step helpers | 23 installed PostgreSQL observations ([evidence](audit-evidence/v071/generic-step-execution.json)) | Normal claim exclusion, forced overlap and cancelled running state are exercised; no process-death, RLS, authorization or Operation guarantee. |
 | Configuration | Yes | Stable documented contract | `Settings`, `settings`, `configure` | Reference rewritten and checked | Settings/upgrade examples | Explicit overrides and upgrade recipe | POSIX origin-list env parsing defect documented with explicit-list workaround. |
 | Durable persistence internals | Yes | Internal | Repositories, raw rows and failure hooks | Separated from public contract | Framework tests only | Not a public API gate | Do not expose raw provenance/fences as application contract merely because imports exist. |
 | Legacy provider configuration | Yes | Deprecated | `Settings.ai_default_provider`, `ai_providers`, `ai_secret_hints` | Reference labels compatibility fields | Settings reference | Not recommended example | Retained metadata fields, not recommended provider setup. |
@@ -282,7 +282,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. The current isolated-wheel
-syntax/import gate checks 549 Python fences and documented Aksara imports.
+syntax/import gate checks 543 Python fences and documented Aksara imports.
 `installed-doc-imports.json` binds that result to the public pages and selected
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -1179,3 +1179,37 @@ broken or unverified targets. Ruff and diff whitespace checks passed. The source
 AST audit again confines production changes to the scaffold README return text;
 dependencies remain unchanged. The evidence index has 50 artifacts and zero
 stale linked inputs. No candidate, release or final PR is claimed by this check.
+
+## Generic Relations and Persisted Steps
+
+**PT-040 / P1:** the combined guide implied production-ready resumable workflows
+and unconditional concurrent exclusion despite `force=True` bypassing claims.
+Its pickle encoder treated `serializer` as a whole-result transform although
+the implementation passes it as JSON's fallback encoder. Replaced with exact
+model/helper examples and a Decimal-specific codec; documented identity keys,
+cached target resolution, dangling references, migration/DDL prerequisites,
+force overlap, cancellation and explicit cleanup. No runtime behavior changed.
+
+`scripts/check_public_generic_steps.py` executes all four named Python blocks
+from the guide in an isolated installed public 0.7.0 process, with model tables
+created through autodetected migration operations in an owned PostgreSQL schema.
+It records 23 observations, including actual generic resolution after reload,
+cache behavior after target deletion, step reuse/retry/force, a deterministic
+concurrent claim, forced overlap without a completion fence, and task cancellation
+leaving a running row. The schema is dropped and catalog absence verified.
+This uses an admin-role fixture; it does not establish RLS, application
+authorization, process-death recovery, or Durable Operation guarantees.
+
+The first runner attempt imported DoesNotExist from the wrong module and failed
+before any example executed. Source inspection identified `aksara.manager`; the
+runner and public error name now use that installed class. The successful result
+is recorded in `audit-evidence/v071/generic-step-execution.json`.
+
+Validation: `pytest tests/docs tests/test_v048_docs_lock.py
+ tests/test_v048_packaging_sanity.py -q` passed 175 tests (one upstream AnyIO
+warning); required-database `pytest tests/test_generic_foreign_key.py
+ tests/test_durable_workflows.py -q` passed 8. Ruff, strict MkDocs, 543 Python
+fence/import checks, 316 CLI parses with 11 exclusions, and 46,714 rendered local
+link/asset checks passed. The index now contains 51 scoped artifacts with no
+stale linked inputs. These are public 0.7.0/checkpoint results, not a candidate
+or production workflow certification.

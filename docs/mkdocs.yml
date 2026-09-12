@@ -134,7 +134,7 @@ nav:
     - Custom Fields: advanced/custom-fields.md
     - Media and Email: advanced/media-and-email.md
     - Internationalization and Timezones: advanced/internationalization-and-timezones.md
-    - Generic Relations and Durable Workflows: advanced/generic-relations-and-durable-workflows.md
+    - Generic relations and persisted steps: advanced/generic-relations-and-durable-workflows.md
     - Durable Authorized Operations: advanced/durable-operations.md
     - Background Tasks: advanced/background-tasks.md
     - Caching: advanced/caching.md

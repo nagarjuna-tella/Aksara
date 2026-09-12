@@ -12,7 +12,7 @@ These guides cover advanced patterns and features:
 |-------|-------------|
 | [Signals](signals.md) | Model lifecycle hooks |
 | [Custom Fields](custom-fields.md) | Creating custom field types |
-| [Generic Relations and Durable Workflows](generic-relations-and-durable-workflows.md) | Model-agnostic relations and resumable step execution |
+| [Generic relations and persisted steps](generic-relations-and-durable-workflows.md) | Generic target references and evolving step-result reuse |
 | [Background Tasks](background-tasks.md) | PostgreSQL-backed queueing and worker lifecycle |
 | [Validation](validation.md) | Advanced validation patterns |
 | [Caching](caching.md) | Query and response caching |

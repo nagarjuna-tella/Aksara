@@ -1,0 +1,37 @@
+{
+  "checks": [
+    "exact generic example persists and resolves",
+    "unset generic relation returns None",
+    "reassignment persists new target",
+    "instance accessor retains resolved cache",
+    "fresh dangling target lookup raises DoesNotExist",
+    "clearing generic relation persists null pair",
+    "non-model assignment rejected",
+    "exact step example reuses completed result",
+    "new instance same identity reuses without callback",
+    "callback arguments do not change cache identity",
+    "synchronous callback supported",
+    "default encoding normalizes UUID",
+    "exact Decimal codec first and cached result",
+    "ordinary failure recorded and reraised",
+    "explicit retry reclaims failed step",
+    "force reruns completed step",
+    "missing state returns None",
+    "normal competing claim rejected",
+    "force bypasses running claim",
+    "original completion can overwrite forced result",
+    "task cancellation leaves running state",
+    "clear one preserves other steps",
+    "clear all is scoped by workflow"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Exact generic and step helpers, fresh/cached target resolution, JSON codec, reuse/retry/force/concurrent claims and task cancellation against PostgreSQL; admin role, not RLS, authorization, process-death recovery or Durable Operation certification",
+  "page_sha256": {
+    "docs/docs/advanced/generic-relations-and-durable-workflows.md": "2bee26b94f01166089839a66bd848bb63304fa77a39eef44be539e8b1ca3809e"
+  },
+  "runner_sha256": "9c8030ce985653671206c905f580c3b64f75b967b66456b7be4ff34506620b56"
+}
