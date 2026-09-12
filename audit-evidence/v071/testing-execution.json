@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "package_version": "0.7.0",
+  "source_checkout_framework_imports": false,
+  "tests_passed": 3,
+  "scope": "Exact standalone serializer and permission unit tests; no database, HTTP authentication, RLS or rollback-isolation proof",
+  "command": "python -I -m pytest tests/test_ticket_rules.py -q",
+  "page_sha256": {
+    "docs/docs/advanced/testing.md": "267870d1dac0c8e30eb0ee9ecdb9a8031354958bdc3552df18c8913274bbfa3f"
+  },
+  "runner_sha256": "1c2c1c19787ddd8d4f13103bd1201920f2bd977f0f0adf30eb7bd4b02f5ebbd9"
+}

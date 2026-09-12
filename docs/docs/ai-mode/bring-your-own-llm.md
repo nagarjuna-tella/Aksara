@@ -1,5 +1,11 @@
 # Bring Your Own LLM
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Wire Aksara's AI contracts to your preferred LLM provider.
 
 ## Overview
@@ -279,15 +285,36 @@ Access at: `GET /studio/ai/profiles`
 
 ```json
 {
+  "enabled": true,
   "providers": [
     {
       "name": "openai",
       "display_name": "OpenAI",
       "kind": "openai",
+      "model_count": 1,
+      "default_model": "gpt-4o-mini",
+      "has_custom_base_url": false,
+      "is_example": false,
       "client_ready": true,
-      "models": [...]
+      "models": [
+        {
+          "name": "gpt-4o-mini",
+          "display_name": "GPT-4o mini",
+          "kind": "chat",
+          "max_input_tokens": 128000,
+          "max_output_tokens": 16384,
+          "supports_tools": true,
+          "supports_streaming": true,
+          "supports_vision": false,
+          "tags": ["fast", "efficient"]
+        }
+      ]
     }
-  ]
+  ],
+  "default_provider": "openai",
+  "total_models": 1,
+  "environment": "development",
+  "version": "1"
 }
 ```
 

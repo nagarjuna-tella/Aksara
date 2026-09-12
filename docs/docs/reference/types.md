@@ -1,407 +1,71 @@
-# Types
-
-Type definitions for Aksara.
-
----
-
-## Overview
-
-Aksara ships a `py.typed` marker and public annotations for IDE and type-checker
-support. Its own source tree still has reviewed mypy debt, so v0.6 does not
-claim complete or strict typing coverage.
-
-```python
-# py.typed marker included
-# Use with mypy, pyright, etc.
-```
-
----
-
-## Core Types
-
-### Model Types
-
-```python
-from aksara import Model
-from typing import TypeVar, Generic
-
-# Model type variable
-ModelT = TypeVar("ModelT", bound=Model)
-
-# Generic model type
-class ModelViewSet(Generic[ModelT]):
-    model: type[ModelT]
-```
-
-### ID Types
-
-```python
-from uuid import UUID
-from typing import Union
-
-# Primary key type
-PK = Union[str, UUID]
-
-# Model ID
-class Model:
-    id: UUID
-    pk: UUID  # Alias for id
-```
-
-### QuerySet Types
-
-```python
-from typing import TypeVar, Generic, AsyncIterator, List, Optional
-
-ModelT = TypeVar("ModelT", bound=Model)
-
-class QuerySet(Generic[ModelT]):
-    async def all(self) -> List[ModelT]: ...
-    async def first(self) -> Optional[ModelT]: ...
-    async def get(self, **kwargs) -> ModelT: ...
-    async def filter(self, **kwargs) -> "QuerySet[ModelT]": ...
-    async def count(self) -> int: ...
-    async def exists(self) -> bool: ...
-    def __aiter__(self) -> AsyncIterator[ModelT]: ...
-```
-
----
-
-## Field Types
-
-### Basic Field Types
-
-```python
-from aksara import fields
-
-# Fields use the pattern: fields.FieldType
-class User(Model):
-    name = fields.String(max_length=100)
-    age = fields.Integer()
-    score = fields.Float()
-    is_active = fields.Boolean(default=True)
-    email = fields.Email()
-    metadata = fields.JSON(default=dict)
-```
-
-### Optional Fields
-
-```python
-from datetime import datetime
-
-class Post(Model):
-    title = fields.String(max_length=200)
-    published_at = fields.DateTime(null=True)  # null=True makes it optional
-```
-
-### Relationship Types
-
-```python
-from aksara import fields
-
-class Post(Model):
-    author = fields.ForeignKey("User", on_delete=fields.CASCADE)
-    tags = fields.ManyToMany("Tag", related_name="posts")
-```
-
----
-
-## API Types
-
-### Request Types
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from typing import Any, Dict, Optional
-from aksara.api.request import Request
-
-class Request:
-    user: "User"
-    data: Dict[str, Any]
-    query_params: Dict[str, str]
-    headers: Dict[str, str]
-    method: str
-    path: str
-```
-
-### Response Types
-
-```python
-from typing import Any, Dict, Optional, Union, Tuple
-
-# Response can be:
-ResponseType = Union[
-    Dict[str, Any],                    # JSON dict
-    Tuple[Dict[str, Any], int],        # Dict with status code
-    "Response",                         # Response object
-]
-```
-
-### Serializer Types
-
-```python
-from typing import TypeVar, Generic, Type, Dict, Any, List
-
-ModelT = TypeVar("ModelT", bound=Model)
-
-class ModelSerializer(Generic[ModelT]):
-    class Meta:
-        model: Type[ModelT]
-        fields: Union[List[str], str]
-    
-    async def is_valid(self, raise_exception: bool = False) -> bool: ...
-    async def save(self, **kwargs) -> ModelT: ...
-    @property
-    def data(self) -> Dict[str, Any]: ...
-    @property
-    def errors(self) -> Dict[str, List[str]]: ...
-```
-
-### ViewSet Types
-
-```python
-from typing import TypeVar, Generic, Type, List, Optional
-
-ModelT = TypeVar("ModelT", bound=Model)
-
-class ModelViewSet(Generic[ModelT]):
-    model: Type[ModelT]
-    serializer_class: Type[ModelSerializer[ModelT]]
-    permission_classes: List[Type["BasePermission"]]
-    
-    def get_queryset(self) -> QuerySet[ModelT]: ...
-    async def get_object(self) -> ModelT: ...
-```
-
----
-
-## Permission Types
-
-```python
-from typing import Protocol
-
-class BasePermission(Protocol):
-    async def has_permission(
-        self,
-        request: "Request",
-        view: "ViewSet"
-    ) -> bool: ...
-    
-    async def has_object_permission(
-        self,
-        request: "Request",
-        view: "ViewSet",
-        obj: Model
-    ) -> bool: ...
-```
-
----
-
-## Pagination Types
-
-```python
-from typing import TypedDict, List, Any, Optional
-
-class PagedResponse(TypedDict):
-    count: int
-    next: Optional[str]
-    previous: Optional[str]
-    results: List[Any]
-```
-
----
-
-## Filter Types
-
-```python
-from typing import Dict, Any, TypeVar
-
-FilterValue = Any
-FilterDict = Dict[str, FilterValue]
-```
-
----
-
-## Cache Types
-
-```python
-from typing import TypeVar, Optional, Any, Callable, Awaitable
-
-T = TypeVar("T")
-CacheKey = str
-CacheTTL = int
-
-class Cache:
-    async def get(self, key: CacheKey, default: T = None) -> Optional[T]: ...
-    async def set(self, key: CacheKey, value: Any, ttl: CacheTTL = None) -> None: ...
-    async def delete(self, key: CacheKey) -> None: ...
-```
-
----
-
-## Signal Types
-
-```python
-from typing import Callable, Awaitable, Any, TypeVar
-
-ModelT = TypeVar("ModelT", bound=Model)
-
-SignalHandler = Callable[..., Awaitable[None]]
-
-class Signal:
-    def connect(
-        self,
-        handler: SignalHandler,
-        sender: type[ModelT] = None
-    ) -> None: ...
-    
-    async def send(
-        self,
-        sender: type[ModelT],
-        **kwargs: Any
-    ) -> None: ...
-```
-
----
-
-## AI Types
-
-```python
-from typing import TypedDict, List, Optional, Any
-
-class QueryResult(TypedDict):
-    data: List[Any]
-    count: int
-    sql: str
-
-class SchemaIssue(TypedDict):
-    severity: str  # "critical", "high", "medium", "low"
-    message: str
-    fix_hint: Optional[str]
-    model: str
-    field: Optional[str]
-
-class AgentResult(TypedDict):
-    output: str
-    session_id: str
-    steps: List[str]
-```
-
----
-
-## Utility Types
-
-### Settings Type
-
-```python
-from typing import TypedDict, List, Dict, Any, Optional
-
-class AksaraSettings(TypedDict, total=False):
-    DEBUG: bool
-    SECRET_KEY: str
-    DATABASE_URL: str
-    INSTALLED_APPS: List[str]
-    MIDDLEWARE: List[str]
-    CACHE: Dict[str, Any]
-    AI_MODE: bool
-    AI_API_KEY: Optional[str]
-```
-
-### Callable Types
-
-```python
-from typing import Callable, Awaitable, TypeVar
-
-T = TypeVar("T")
-
-# Async function
-AsyncFunc = Callable[..., Awaitable[T]]
-
-# Validator
-Validator = Callable[[Any], Any]
-
-# Async validator
-AsyncValidator = Callable[[Any], Awaitable[Any]]
-```
-
----
-
-## Type Checking
-
-### Using mypy
-
-```bash
-# Install
-pip install mypy
-
-# Run
-mypy myapp/
-
-# Configuration in pyproject.toml
-[tool.mypy]
-plugins = ["aksara.mypy"]
-strict = true
-```
-
-### Using pyright
-
-```bash
-# Install
-pip install pyright
-
-# Run
-pyright myapp/
-
-# Configuration in pyrightconfig.json
-{
-    "typeCheckingMode": "strict"
-}
-```
-
----
-
-## Type Stubs
-
-Aksara includes inline type annotations and a `py.typed` marker. Type stubs are available for all public APIs.
-
-```python
-# Example stub (fields.pyi)
-from typing import TypeVar, Generic, Optional, Any
-
-T = TypeVar("T")
-
-class Field(Generic[T]):
-    def __init__(
-        self,
-        null: bool = False,
-        default: Optional[T] = None,
-        unique: bool = False,
-        db_index: bool = False,
-        validators: list = ...,
-        **kwargs: Any
-    ) -> None: ...
-    
-    def __get__(self, obj: Any, type: Any = None) -> T: ...
-    def __set__(self, obj: Any, value: T) -> None: ...
-
-class String(Field[str]):
-    def __init__(
-        self,
-        max_length: int = ...,
-        min_length: int = ...,
-        **kwargs: Any
-    ) -> None: ...
-
-class Integer(Field[int]): ...
-class Float(Field[float]): ...
-class Boolean(Field[bool]): ...
-```
-
----
-
-## Related Documentation
-
-- [ORM Reference](orm-reference.md)
-- [API Reference](api-reference.md)
-- [Custom Fields](../advanced/custom-fields.md)
+# Types and annotations
+
+Aksara includes inline annotations and a `py.typed` marker. These help editors
+and type checkers, but do not establish complete strict typing coverage. The
+framework still has recorded mypy debt. Do not treat handwritten interface
+sketches as exported classes or assume a `py.typed` marker guarantees that an
+application passes strict checking.
+
+## Public contracts
+
+Use the installed classes and their current signatures rather than copying
+replacement stubs into an application.
+
+| Surface | Sync/async boundary | Reference |
+| --- | --- | --- |
+| Query builders | `filter`, `order_by`, `limit`, and `offset` are synchronous; await terminal methods such as `all` and `first`. | [ORM](orm-reference.md) |
+| Model persistence | Await individual `save` and `delete` operations. | [Models](../orm/models.md) |
+| Serializer validation | `is_valid`, `validate`, and `validate_<field>` are synchronous; persistence through `save` is async. | [Serializers](../api/serializers.md) |
+| ViewSet list query hook | `get_queryset` is synchronous. Configure operation-specific serializers, not `serializer_class`. | [ViewSets](../api/viewsets.md) |
+| Permission hooks | `has_permission` and `has_object_permission` return booleans synchronously. | [Permissions](../api/permissions.md) |
+| Signal receivers | Async callables, invoked with keyword arguments; `send` returns receiver/result pairs. | [Signals](../orm/signals.md) |
+
+An async permission method returns a coroutine object when called synchronously;
+that object is not an evaluated permission decision. Do not change a documented
+sync hook to async merely to perform database I/O there.
+
+## Fields and relations
+
+Declare model fields with the actual constructors in `aksara.fields`.
+Use `nullable=True` for database nullability. Constructor options are
+type-specific; there is no generic field stub accepting arbitrary validators
+or Django-style options.
+
+A forward foreign key exposes its stored identifier. It is not a lazy,
+awaitable related object. Use explicit loading or the documented
+`select_related`/`get_related` pair. See [relations](../orm/relations.md) before
+annotating a relation as though accessing it returns a model instance.
+
+## HTTP inputs and outputs
+
+Use FastAPI/Starlette request and response types for HTTP handlers. A
+`(dictionary, status_code)` tuple is not a framework response-status contract.
+Inspect the application's generated OpenAPI and the
+[API reference](api-reference.md) for the response schema actually exposed.
+Do not substitute a handwritten pagination `TypedDict` for that schema.
+
+Application-owned payload types can describe your own contract, but annotations
+do not replace runtime validation, authentication, or field-write policy.
+
+## Configuration and experimental results
+
+`aksara.conf.Settings` is the actual configuration type. The
+[settings reference](settings-reference.md) documents its fields, defaults, and
+environment variables. A handwritten uppercase `TypedDict` does not define new
+configuration options.
+
+AI planner, provider, and Studio result shapes remain experimental. Use their
+actual exported types where available and handle the documented experimental
+boundary; this page does not promise universal `AgentResult` or `QueryResult`
+shapes across those systems.
+
+## Type checking an application
+
+Run the type checker your project uses against your own code and installed
+dependencies. Review diagnostics explicitly. There is no documented bundled
+`aksara.mypy` plugin to add to a mypy configuration, and this page does not
+claim a complete parallel set of public `.pyi` stubs.
+
+The [TypeScript client guide](../how-to/typescript-client.md) separately records
+the generated client's known compilation limitation. Python annotations do not
+prove the generated TypeScript package compiles.

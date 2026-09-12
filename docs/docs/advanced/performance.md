@@ -1,515 +1,91 @@
-# Performance
-
-Optimize your Aksara application for speed.
-
----
-
-## Overview
-
-Key areas for performance optimization:
-
-- **Database queries** — N+1 prevention, indexing
-- **Serialization** — Efficient data transformation
-- **Caching** — Reduce redundant operations
-- **Async patterns** — Concurrent execution
-
----
-
-## Database Optimization
-
-### Select Related (Eager Loading)
-
-Prevent N+1 queries by loading related objects:
-
-```python
-# ❌ Bad: N+1 queries
-posts = await Post.objects.all()
-for post in posts:
-    author = await post.author  # Query per post!
-
-# ✅ Good: Single query with JOIN
-posts = await Post.objects.select_related("author").all()
-for post in posts:
-    author = post.author  # Already loaded
-```
-
-### Prefetch Related (Many Relations)
-
-For many-to-many or reverse foreign keys:
-
-```python
-# ❌ Bad: N+1 queries
-posts = await Post.objects.all()
-for post in posts:
-    comments = await post.comments.all()  # Query per post!
-
-# ✅ Good: Batched queries
-posts = await Post.objects.prefetch_related("comments").all()
-for post in posts:
-    comments = post.comments  # Already loaded
-```
-
-### Nested Prefetch
-
-```python
-# Load posts → comments → comment authors
-posts = await Post.objects.prefetch_related(
-    "comments",
-    "comments__author"
-).all()
-```
-
-### Only / Defer Fields
-
-Load only needed fields:
-
-```python
-# Load only specific fields
-posts = await Post.objects.only("id", "title", "slug").all()
-
-# Exclude heavy fields
-posts = await Post.objects.defer("content", "metadata").all()
-```
-
-### Pagination
-
-Always paginate large queries:
-
-```python
-# Limit results
-posts = await Post.objects.limit(20).offset(40).all()
-
-# Or use built-in pagination
-from aksara.api.pagination import PageNumberPagination
-
-class PostViewSet(ModelViewSet):
-    pagination_class = PageNumberPagination
-    page_size = 20
-```
-
----
-
-## Query Profiling
-
-### Enable Query Logging
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-# settings.py
-AKSARA = {
-    "DEBUG": True,
-    "LOG_QUERIES": True,
-}
-```
-
-### Profile Decorator
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import profile_queries
-
-@profile_queries
-async def get_posts():
-    posts = await Post.objects.select_related("author").all()
-    return posts
-
-# Output:
-# Query Profile: get_posts
-# Total queries: 1
-# Total time: 0.023s
-# Queries:
-#   1. SELECT posts.*, users.* FROM posts JOIN users... (0.023s)
-```
-
-### Query Capture
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import capture_queries
-
-async with capture_queries() as queries:
-    posts = await Post.objects.all()
-    for post in posts:
-        author = await post.author
-
-print(f"Executed {len(queries)} queries")
-for q in queries:
-    print(f"  {q.sql} ({q.duration}ms)")
-```
-
-### N+1 Detection
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import detect_n_plus_one
-
-@detect_n_plus_one
-async def list_posts(request):
-    posts = await Post.objects.all()
-    return [{"title": p.title, "author": p.author.name} for p in posts]
-
-# Warning: N+1 detected!
-# Similar query executed 10 times:
-#   SELECT * FROM users WHERE id = ?
-```
-
----
-
-## Database Indexing
-
-### Add Indexes
-
-```python
-class Post(Model):
-    title = fields.String(max_length=200)
-    slug = fields.String(max_length=200, db_index=True)  # Index
-    author = fields.ForeignKey(User, on_delete=fields.CASCADE)  # FK auto-indexed
-    created_at = fields.DateTime(auto_now_add=True, db_index=True)
-    
-    class Meta:
-        indexes = [
-            # Composite index
-            Index(fields=["author", "created_at"]),
-            # Partial index
-            Index(
-                fields=["is_published"],
-                condition="is_published = true"
-            ),
-        ]
-```
-
-### Check Explain Plans
-
-```python
-# Get query plan
-plan = await Post.objects.filter(
-    author=user,
-    is_published=True
-).explain()
-
-print(plan)
-# Bitmap Heap Scan on posts
-#   -> Bitmap Index Scan on posts_author_id_idx
-```
-
----
-
-## Serialization Performance
-
-### Efficient Serializers
-
-```python
-# ❌ Bad: Nested queries in serializer
-class PostSerializer(ModelSerializer):
-    author_name = SerializerMethodField()
-    comment_count = SerializerMethodField()
-    
-    async def get_author_name(self, obj):
-        author = await obj.author  # Query!
-        return author.name
-    
-    async def get_comment_count(self, obj):
-        return await obj.comments.count()  # Query!
-
-# ✅ Good: Use select_related and annotations
-class PostSerializer(ModelSerializer):
-    author_name = serializers.String(source="author.name")
-    comment_count = serializers.Integer()
-
-# In viewset:
-def get_queryset(self):
-    return Post.objects.select_related("author").annotate(
-        comment_count=Count("comments")
-    )
-```
-
-### Read-Only Serializers
-
-```python
-# For list views, use lightweight serializers
-class PostListSerializer(ModelSerializer):
-    class Meta:
-        model = Post
-        fields = ["id", "title", "slug", "created_at"]
-        read_only = True
-
-# Detailed serializer for single items
-class PostDetailSerializer(ModelSerializer):
-    class Meta:
-        model = Post
-        fields = "__all__"
-```
-
----
-
-## Async Optimization
-
-### Concurrent Queries
-
-```python
-import asyncio
-
-# ❌ Bad: Sequential queries
-async def get_dashboard():
-    users = await User.objects.count()
-    posts = await Post.objects.count()
-    comments = await Comment.objects.count()
-    return {"users": users, "posts": posts, "comments": comments}
-
-# ✅ Good: Concurrent queries
-async def get_dashboard():
-    users, posts, comments = await asyncio.gather(
-        User.objects.count(),
-        Post.objects.count(),
-        Comment.objects.count()
-    )
-    return {"users": users, "posts": posts, "comments": comments}
-```
-
-### Batch Operations
-
-```python
-# ❌ Bad: Individual inserts
-for item in items:
-    await Item.objects.create(**item)
-
-# ✅ Good: Bulk insert
-await Item.objects.bulk_create([
-    Item(**item) for item in items
-])
-
-# ❌ Bad: Individual updates
-for user in users:
-    user.last_login = now
-    await user.save()
-
-# ✅ Good: Bulk update
-await User.objects.filter(
-    id__in=[u.id for u in users]
-).update(last_login=now)
-```
-
----
-
-## Caching Strategies
-
-### Cache Expensive Queries
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.cache import cached
-
-@cached(ttl=300)
-async def get_popular_posts():
-    return await Post.objects.filter(
-        is_published=True
-    ).order_by("-view_count").limit(10).all()
-```
-
-### Cache Computed Values
-
-```python
-class Post(Model):
-    @property
-    async def comment_count(self):
-        cache_key = f"post:{self.id}:comment_count"
-        count = await cache.get(cache_key)
-        
-        if count is None:
-            count = await self.comments.count()
-            await cache.set(cache_key, count, ttl=60)
-        
-        return count
-```
-
-### Response Caching
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.cache import cache_response
-
-class PostViewSet(ModelViewSet):
-    @cache_response(ttl=60)
-    async def list(self, request):
-        return await super().list(request)
-```
-
-See [Caching Guide](caching.md) for more.
-
----
-
-## Connection Pooling
-
-### Database Pool
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-# settings.py
-AKSARA = {
-    "DATABASE_URL": "postgresql://localhost/myapp",
-    "DATABASE_POOL": {
-        "min_size": 5,
-        "max_size": 20,
-        "max_queries": 50000,
-        "max_inactive_connection_lifetime": 300,
-    }
-}
-```
-
-### Redis Pool
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-AKSARA = {
-    "CACHE": {
-        "default": {
-            "backend": "redis",
-            "url": "redis://localhost:6379/0",
-            "pool_size": 10,
-        }
-    }
-}
-```
-
----
-
-## Response Optimization
-
-### Compression
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.middleware import GZipMiddleware
-
-app.add_middleware(GZipMiddleware, minimum_size=500)
-```
-
-### Pagination
-
-```python
-class PostViewSet(ModelViewSet):
-    pagination_class = PageNumberPagination
-    page_size = 20
-    max_page_size = 100
-```
-
-### Field Selection
-
-```python
-# Allow clients to select fields
-# GET /api/posts/?fields=id,title,slug
-
-class PostViewSet(ModelViewSet):
-    def get_serializer_fields(self):
-        fields = self.request.query_params.get("fields")
-        if fields:
-            return fields.split(",")
-        return None
-```
-
----
-
-## Benchmarking
-
-### Simple Benchmark
-
-```python
-import time
-
-async def benchmark_query():
-    start = time.perf_counter()
-    
-    for _ in range(100):
-        await Post.objects.filter(is_published=True).all()
-    
-    elapsed = time.perf_counter() - start
-    print(f"100 queries in {elapsed:.2f}s ({elapsed/100*1000:.1f}ms avg)")
-```
-
-### Load Testing
-
-```bash
-# Using locust
-pip install locust
-
-# locustfile.py
-from locust import HttpUser, task
-
-class APIUser(HttpUser):
-    @task
-    def list_posts(self):
-        self.client.get("/api/posts/")
-    
-    @task
-    def get_post(self):
-        self.client.get("/api/posts/abc-123/")
-
-# Run
-locust -f locustfile.py --host=http://localhost:8000
-```
-
----
-
-## Checklist
-
-### Before Production
-
-- [ ] Enable query logging in development
-- [ ] Check for N+1 queries
-- [ ] Add database indexes
-- [ ] Enable caching
-- [ ] Configure connection pooling
-- [ ] Set up pagination
-- [ ] Enable response compression
-
-### Monitoring
-
-- [ ] Track query counts per request
-- [ ] Monitor cache hit rates
-- [ ] Set up slow query alerts
-- [ ] Profile periodically
-
----
-
-## Common Issues
-
-### N+1 Queries
-
-**Symptom:** High query count, slow responses
-
-**Solution:** Use `select_related()` and `prefetch_related()`
-
-### Missing Indexes
-
-**Symptom:** Slow filtered queries
-
-**Solution:** Add `db_index=True` or composite indexes
-
-### Large Payloads
-
-**Symptom:** Slow serialization, high memory
-
-**Solution:** Paginate, use lightweight serializers, enable compression
-
-### Connection Exhaustion
-
-**Symptom:** Database connection errors under load
-
-**Solution:** Configure connection pooling
-
----
-
-## Related Documentation
-
-- [Caching](caching.md)
-- [Query Profiling](../debugging/query-profiling.md)
-- [Querying](../orm/querying.md)
+# Application performance
+
+Measure a representative application path before changing it. Record the data
+volume, query count, latency distribution, concurrency, database role, and
+runtime versions. A local smoke check is not a throughput guarantee.
+
+## Bound database work
+
+Use explicit QuerySet limits and deterministic ordering. The
+[querying guide](../orm/querying.md) demonstrates these operations against the
+tutorial Ticket model. Start pagination with a QuerySet, not a manager-level
+`limit()` call or a slice of the async `.all()` method.
+
+For generated APIs, use the actual [ViewSet](../api/viewsets.md) limits and
+supported filter backends. `page_size` is not a general ModelViewSet switch.
+Avoid unbounded reads merely to compute a count or check existence: use the
+terminal `.count()` or `.exists()` query methods.
+
+The ordinary Manager/QuerySet does not offer `only()` or `defer()`. Shaping a
+small result into a dictionary in Python does not reduce columns fetched by
+SQL. Do not describe that transformation as database projection.
+
+## Load related objects deliberately
+
+Forward foreign-key attributes hold identifiers. Accessing or awaiting
+`post.author` does not lazily fetch an author object. Use an explicit query or
+`select_related()` followed by `get_related()` as described in
+[relations](../orm/relations.md).
+
+Use only supported prefetch paths and accessors. Do not assume arbitrary nested
+prefetch traversal or collection iteration matches another ORM. Measure actual
+queries on the relationship shape you use; an illustrative query count is not a
+guarantee for every combination of relations and filters.
+
+## Index the workload
+
+Declare supported indexes through [model metadata](../orm/model-meta.md) and
+apply them through migrations. An index that helps one read pattern can add
+write and storage cost. Inspect the deployed PostgreSQL schema and query plan
+before concluding an index is present or used.
+
+There is no documented QuerySet `.explain()` shortcut here. Use PostgreSQL
+planning tools through your database tooling for the actual SQL and bound
+values. `EXPLAIN ANALYZE` executes its statement; use an appropriate test
+environment for statements with effects. Do not include credentials or
+sensitive values in profiling artifacts.
+
+## Keep serialization predictable
+
+Use the supported [serializer](../api/serializers.md) hooks and relation
+expansion contract. DRF-style `SerializerMethodField` and declarative
+`serializers.String(source=...)` recipes are not Aksara APIs. Avoid hidden
+per-row database operations in application transformation code, and measure
+both database work and output size.
+
+## Concurrency and transactions
+
+Async functions allow other work to proceed while awaiting I/O. They do not
+make one database connection safe for overlapping queries. Inside
+`transaction.atomic()`, run participating database operations sequentially on
+the pinned connection; do not use `asyncio.gather()` to share it across child
+tasks.
+
+Independent pool connections can execute independent work, but do not join the
+same atomic transaction. Keep transaction duration short and avoid waiting on
+remote services while holding database locks. See
+[transaction limits](../orm/expressions-and-transactions.md).
+
+## Caching and background work
+
+Aksara has no public general-purpose `aksara.cache` API. Application caches
+need explicit tenant keys, invalidation, lifetime, and authorization rules;
+see [caching](caching.md). Cache hits must not substitute stale access decisions
+for current policy.
+
+Use [ordinary tasks](background-tasks.md) when their execution semantics fit.
+Use [Durable Operations](durable-operations.md) when recovery and authorization
+across time are required. Moving work to a worker does not reduce its resource
+cost or prove a performance improvement; measure queue delay and completion
+latency as well as request latency.
+
+## Validate the change
+
+Compare the same workload before and after, including error rates, pool waits,
+and database resource use. Preserve authorization, tenant isolation, validation,
+and transaction guarantees in the test. Do not remove those checks to produce
+a faster benchmark.
+
+The [production guide](../tutorials/deployment.md) and
+[diagnostics](../diagnostics.md) cover operational checks. Doctor readiness
+is not a load-test result or a capacity estimate.

@@ -17,6 +17,7 @@ implemented controls.
 - Studio/admin surfaces
 - Migration SQL/DDL
 - Background task context
+- Durable Operation/Attempt ownership, approval records and transition history
 - Security diagnostics and logs
 
 ## Trust Boundaries
@@ -28,6 +29,9 @@ implemented controls.
 - Request tenant context to trusted server-side tenant context
 - Background task payloads to trusted task context
 - Migration generation to database execution
+- Durable admission to execution under current authorization
+- Worker lease/fence ownership to transactional application writes
+- Database commits to external effects with potentially uncertain outcomes
 
 ## Primary Risks
 
@@ -75,12 +79,19 @@ implemented controls.
 - Aksara does not currently make a blanket production-readiness claim.
 - Generated schemas are not security controls; applications must rely on
   server-side runtime enforcement.
-- Direct MCP tool-call enforcement is limited where tool calls bypass REST
-  write paths.
+- Generated MCP tools dispatch through application ASGI routes. Custom handlers
+  must integrate their own missing authorization and field enforcement; see
+  [field-level permissions](field-level-permissions.md).
 - Manager-level bulk update/upsert principal enforcement is not universal;
   helper-level validation is available for application paths that integrate it.
 - OpenAPI fuzzing requires optional tooling such as Schemathesis.
-- Private security matrix enforcement is warning-only unless
-  `AKSARA_REQUIRE_SECURITY_MATRIX=true`.
-- Supply-chain gates, release-security automation, and external review remain
-  planned before a production-mode claim.
+- A missing matrix is advisory in ordinary deployment checks unless
+  `AKSARA_REQUIRE_SECURITY_MATRIX=true`. Release mode always requires a complete
+  matrix and fails on warnings and skipped checks.
+- Supply-chain and release-security workflows exist; see
+  [Release Security](release-security.md). Their presence does not establish that
+  the current candidate passed them or that an external audit occurred.
+- The [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) bounds
+  Durable Operations. Fenced writes require the supported transaction boundary;
+  cancellation is not undo, approval is not permanent permission, and external
+  effects are not promised exactly once.

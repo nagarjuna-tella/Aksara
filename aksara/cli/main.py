@@ -377,33 +377,30 @@ def cli(
 @click.option("--directory", "-d", default=".", help="Directory to create project in (default: current)")
 @click.option("--template", "-t", default="basic", help="Template to use: basic, blog, crm, multitenant")
 def startproject(project_name: str, directory: str, template: str):
-    """
-    Create a new Aksara project with scaffolded structure.
-    
-    PROJECT_NAME: Name of the project to create
-    
-    Creates a complete project structure with:
-    - main.py (Aksara app entry point)
-    - settings.py (global Aksara settings configuration)
-    - app/ (models, views, serializers)
-    - migrations/ (database migrations)
-    - .env (environment configuration)
-    - README.md (documentation)
-    
-    Templates:
-        basic       - Minimal neutral scaffold (commented Post example stubs)
-        blog        - Full blog with Post, Comment, moderation
-        crm         - Customer & Deal pipeline with forecasting
-        multitenant - Tenant-scoped SaaS backend
-    
-    Example:
-        aksara startproject blogapi
-        aksara startproject myblog --template blog
-        aksara startproject mycrm -t crm
-        cd blogapi
-        aksara makemigrations --app app.models
-        aksara migrate
-        aksara run main:app --reload
+    """Create a project shell or copy a bundled domain example.
+
+    PROJECT_NAME must be a Python identifier.
+
+    The default basic template creates main.py, settings.py, an app/ package,
+    migrations/, .env and project metadata, with commented model/API examples.
+    Blog, CRM and multitenant copy flat example modules instead; they do not
+    create an app/ package, .env or pyproject.toml. Their defaults differ.
+
+    Domain examples require application-specific authentication and policy.
+    The historical multitenant example has known isolation and migration
+    limitations; use the Ticket Desk tenancy tutorial for a supported path.
+
+    After generation, follow the template-specific dependency and database
+    instructions. For basic, discover models with --app app.models; for a
+    domain copy, use --app models --output migrations. Review generated
+    migrations before applying them. Studio and MCP remain optional.
+
+    Setup guide: https://nagarjuna-tella.github.io/Aksara/getting-started/patterns/
+
+    Examples:
+        aksara startproject myapp
+        aksara startproject blog_demo --template blog
+        aksara startproject crm_demo --template crm
     """
     from aksara.cli.scaffold import write_scaffold_files
     from aksara.cli.templates import get_template_info, copy_template_project, list_templates
@@ -459,10 +456,10 @@ def startproject(project_name: str, directory: str, template: str):
         ui.text(f"  {project_name}/")
         ui.text("  ├── main.py              # App entry point")
         ui.text("  ├── settings.py          # Global settings configuration")
-        ui.text("  ├── pyproject.toml")
-        ui.text("  ├── .env")
+        ui.text("  ├── pyproject.toml        # basic template only")
+        ui.text("  ├── .env                  # basic template only")
         ui.text("  ├── README.md")
-        ui.text("  ├── app/")
+        ui.text("  ├── app/                  # basic only; domain modules live at project root")
         ui.text("  │   ├── models.py        # Define your models here (Post example in comments)")
         ui.text("  │   ├── views.py         # Define your ViewSets here (PostViewSet example in comments)")
         ui.text("  │   ├── serializers.py   # Define your serializers here (PostSerializer example in comments)")
@@ -473,23 +470,23 @@ def startproject(project_name: str, directory: str, template: str):
         ui.separator(40)
         ui.blank()
         ui.section("What's included")
-        ui.bullet("Commented example stubs for models, views, serializers, admin")
+        ui.bullet("Basic: commented model/API stubs. Domain templates: example application modules.")
         ui.bullet("Admin at /admin")
-        ui.bullet("Studio at /studio/ui (disabled by default; enable explicitly)")
+        ui.bullet("Studio at /studio/ui: optional; disabled in basic, inspect domain settings.")
         ui.bullet("Tool inspection catalog at /ai/tools/mcp")
         ui.bullet("Optional MCP protocol endpoint at /mcp/")
         ui.next_steps(
             [
                 f"cd {project_name}",
-                'pip install -e ".[dev]"',
-                "aksara dbsetup",
-                "aksara makemigrations --app app.models",
-                "aksara migrate",
+                "Follow the setup guide for your template; install its documented dependencies.",
+                "Set DATABASE_URL for a dedicated local PostgreSQL database.",
+                "Generate migrations with the template-specific command in the setup guide; review before applying.",
+                "aksara migrate --migrations-dir migrations",
                 "aksara run main:app --reload",
             ]
         )
         ui.blank()
-        ui.text("  Then open: http://localhost:8000/docs")
+        ui.text("  Setup: https://nagarjuna-tella.github.io/Aksara/getting-started/patterns/ | API: http://localhost:8000/docs")
         ui.blank()
         
     except Exception as e:
@@ -946,25 +943,26 @@ def generate_sdk(language: str, output_path: str, views_module: Optional[str], t
 @click.argument("app_name")
 @click.option("--directory", "-d", default=".", help="Directory to create app in (default: current)")
 def startapp(app_name: str, directory: str):
-    """
-    Create a new Aksara app within an existing project.
-    
-    APP_NAME: Name of the app to create (e.g., 'blog', 'users', 'orders')
-    
-    Creates an app structure with:
-    - models.py (Aksara ORM models)
-    - admin.py (Admin model registration)
-    - views.py (ModelViewSet classes)
-    - serializers.py (ModelSerializer classes)
-    
-    Example:
-        aksara startapp blog
-        aksara startapp users
-        
-    After creating the app, add it to settings.apps:
-        settings = AksaraSettings(
-            apps=["app", "blog", "users"],
-        )
+    """Create a Python application module within an existing project.
+
+    APP_NAME must be a Python identifier. Creates __init__.py, models.py,
+    admin.py, views.py and serializers.py. It does not create urls.py or
+    update settings, register routes, or apply migrations.
+
+    In a basic generated project, add the module to INSTALLED_APPS in
+    settings.py. Its existing configure(installed_apps=INSTALLED_APPS) call
+    applies that list. Other layouts should configure the full importable
+    module path through aksara.configure(installed_apps=[...]).
+
+    Define models and ViewSets, register routes explicitly, then generate
+    and review migrations before applying them. Keep loaded model class
+    names distinct across application modules.
+
+    Examples:
+        aksara startapp inventory
+        aksara startapp inventory --directory apps
+
+    Layout guide: https://nagarjuna-tella.github.io/Aksara/getting-started/project-layout/
     """
     from aksara.cli.scaffold import create_app_scaffold, write_scaffold_files
     
@@ -1007,15 +1005,15 @@ def startapp(app_name: str, directory: str):
         click.echo()
         click.echo("  \033[1mNext steps:\033[0m")
         click.echo()
-        click.echo(f"  1. Add '{app_name}' to settings.apps in settings.py:")
+        click.echo(f"  1. Add '{app_name}' to INSTALLED_APPS in the basic project's settings.py:")
         click.echo()
-        click.echo("     settings = AksaraSettings(")
-        click.echo(f'         apps=["app", "{app_name}"],')
-        click.echo("     )")
+        click.echo("     INSTALLED_APPS = [")
+        click.echo(f'         "aksara.contrib.auth", "aksara.contrib.admin", "app", "{app_name}",')
+        click.echo("     ]  # used by configure(installed_apps=INSTALLED_APPS)")
         click.echo()
         click.echo(f"  2. Define your models in {app_name}/models.py")
-        click.echo(f"  3. Create ViewSets in {app_name}/views.py")
-        click.echo("  4. Run migrations:")
+        click.echo(f"  3. Create ViewSets in {app_name}/views.py and register their routes explicitly")
+        click.echo("  4. Generate and review migrations, then apply:")
         click.echo(f"     aksara makemigrations --app {app_name}.models")
         click.echo("     aksara migrate")
         click.echo()
@@ -6870,8 +6868,8 @@ def ai_provider_detect():
         click.echo("    OPENAI_API_KEY         → OpenAI")
         click.echo("    ANTHROPIC_API_KEY      → Anthropic")
         click.echo("    AZURE_OPENAI_API_KEY   → Azure OpenAI")
-        click.echo("    OLLAMA_HOST            → Ollama (or localhost:11434)")
-        click.echo("    AKSARA_CUSTOM_LLM_URL  → Custom HTTP endpoint")
+        click.echo("    OLLAMA_BASE_URL        → Ollama (or localhost:11434)")
+        click.echo("    CUSTOM_LLM_BASE_URL    → Custom HTTP endpoint")
     else:
         click.echo(f"  Found {len(configured)} provider(s):")
         click.echo()

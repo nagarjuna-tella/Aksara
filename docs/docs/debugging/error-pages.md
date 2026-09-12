@@ -1,302 +1,91 @@
-# Debug Error Pages
+# Debug error pages
 
-Rich error pages with context for faster debugging.
+Aksara can render rich HTML tracebacks for local development. Enable them with
+its explicit `debug=True` constructor argument. This is diagnostic output, not
+an authenticated administration surface.
 
----
+!!! danger "Keep debug disabled in production"
+    Debug HTML can expose exception messages, source context, request data and
+    internal paths. It is not restricted to staff or loopback clients by Aksara.
+    `debug_allowed_ips`, `debug_hide_vars` and `debug_error_template` are not
+    implemented Aksara controls; passing those extra keywords does not install
+    access restrictions, configurable masking or a custom template.
 
-## Overview
+## A reproducible example
 
-When `debug=True`, Aksara displays detailed error pages instead of generic 500 errors:
+This application deliberately raises an error and needs no database. Use the
+factory's `debug` argument to compare modes; do not deploy the probe route.
 
-```python
-app = Aksara(debug=True)
-```
-
----
-
-## Error Page Features
-
-### Exception Details
-
-- **Exception type** — `ValueError`, `DoesNotExist`, etc.
-- **Error message** — The full exception message
-- **Exception chain** — For chained exceptions (`raise ... from ...`)
-
-### Stack Trace
-
-- **Full traceback** — All frames from error to root
-- **Code context** — Source code around each frame
-- **Syntax highlighting** — Colored code for readability
-- **Frame expansion** — Click to expand any frame
-
-### Local Variables
-
-Each stack frame shows local variables:
-
-```text
-# At the error point:
-user_id = "abc-123"
-post = <Post: My Post>
-data = {"title": "...", "content": "..."}
-```
-
-### Request Information
-
-Complete request details:
-
-- **Method & URL** — `POST /api/posts/`
-- **Headers** — All request headers
-- **Query params** — URL parameters
-- **Body** — Request body (JSON formatted)
-- **Cookies** — Request cookies
-- **Session** — Session data (if available)
-
----
-
-## Configuration
-
-### Enable/Disable
-
-```python
-# Development
-app = Aksara(debug=True)
-
-# Production (default)
-app = Aksara(debug=False)
-```
-
-### Custom Error Template
-
-```python
-app = Aksara(
-    debug=True,
-    debug_error_template="myapp/custom_error.html",
-)
-```
-
-### Hide Sensitive Data
-
-```python
-app = Aksara(
-    debug=True,
-    debug_hide_vars=["password", "secret", "token", "api_key"],
-)
-```
-
-Variables matching these names are masked in error pages.
-
----
-
-## Error Types
-
-### Application Errors
-
-Standard Python exceptions from your code:
-
-```python
-@app.get("/api/users/{user_id}")
-async def get_user(request, user_id: str):
-    user = await User.objects.get(id=user_id)  # DoesNotExist
-    return user
-```
-
-### ORM Errors
-
-Database-related exceptions:
-
-- `DoesNotExist` — Record not found
-- `MultipleObjectsReturned` — Expected one, got many
-- `IntegrityError` — Constraint violation
-- `OperationalError` — Database connection issues
-
-### Validation Errors
-
-Request validation failures:
-
-```python
-@app.post("/api/users")
-async def create_user(request):
-    data = await request.json()
-    # ValidationError if data is invalid
-```
-
----
-
-## Interactive Features
-
-### Frame Expansion
-
-Click any stack frame to expand:
-
-- Full source code
-- Local variables at that point
-- Expression evaluation
-
-### Copy Stack Trace
-
-Button to copy the full traceback as text for bug reports.
-
-### Search
-
-Search through the stack trace and variables.
-
----
-
-## Security Considerations
-
-!!! danger "Never use debug=True in production"
-    Debug error pages expose:
-    
-    - Source code
-    - Environment variables
-    - Database credentials
-    - Session secrets
-    - Internal paths
-
-### Environment-Based Configuration
-
-```python
-import os
-
-DEBUG = os.getenv("ENVIRONMENT") == "development"
-app = Aksara(debug=DEBUG)
-```
-
-### Conditional Debug
-
-```python
-# Even in debug mode, hide from non-staff
-app = Aksara(
-    debug=True,
-    debug_allowed_ips=["127.0.0.1", "::1"],  # Localhost only
-)
-```
-
----
-
-## Custom Error Handlers
-
-Override default error handling:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import HTTPException
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    if app.debug:
-        # Show debug page for HTTP errors too
-        raise exc
-    
-    return JSONResponse(
-        {"error": exc.detail},
-        status_code=exc.status_code,
-    )
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    if app.debug:
-        raise exc  # Let debug handler catch it
-    
-    # Log error
-    logger.exception("Unhandled exception")
-    
-    return JSONResponse(
-        {"error": "Internal server error"},
-        status_code=500,
-    )
-```
-
----
-
-## Debugging Tips
-
-### 1. Check Local Variables
-
-Look at variable values at the error point:
-
-```python
-# Error: NoneType has no attribute 'id'
-# Check locals: user = None
-# Fix: Check if user exists before accessing
-```
-
-### 2. Trace the Flow
-
-Follow the stack trace from bottom to top:
-
-```
-get_data() called
-  fetch_user() called
-    User.objects.get() → DoesNotExist
-```
-
-### 3. Check Request Data
-
-Verify the request contains expected data:
-
-```python
-# Expected: {"user_id": "123"}
-# Actual: {"userId": "123"}  # Wrong key!
-```
-
-### 4. Use the AI Debug Tab
-
-Click "AI Debug" for automated analysis and fix suggestions.
-
----
-
-## Complete Example
-
-```python
+```python title="debug_example.py"
 from aksara import Aksara
-import os
-
-# Environment-based debug mode
-DEBUG = os.getenv("DEBUG", "false").lower() == "true"
-
-app = Aksara(
-    debug=DEBUG,
-    debug_hide_vars=[
-        "password",
-        "secret",
-        "token",
-        "api_key",
-        "DATABASE_URL",
-    ],
-)
 
 
-@app.get("/api/posts/{post_id}")
-async def get_post(request, post_id: str):
-    # If post doesn't exist, debug page shows:
-    # - DoesNotExist exception
-    # - post_id value in locals
-    # - Full request details
-    post = await Post.objects.get(id=post_id)
-    return {"id": str(post.id), "title": post.title}
-
-
-@app.post("/api/posts")
-async def create_post(request):
-    data = await request.json()
-    
-    # Debug page will show 'data' contents
-    # if validation fails
-    post = await Post.objects.create(
-        title=data["title"],
-        content=data["content"],
-        author_id=str(request.user.id),
+def create_debug_example(*, debug=False):
+    app = Aksara(
+        database_url=None,
+        auto_discover_views=False,
+        enable_admin=False,
+        debug=debug,
     )
-    
-    return {"id": str(post.id)}
+
+    @app.get("/probe-error")
+    async def probe_error():
+        raise ValueError("deliberate diagnostic example")
+
+    return app
 ```
 
----
+For this unhandled `ValueError`, the response is status 500:
 
-## Related Documentation
+| Mode and request | Result |
+| --- | --- |
+| `debug=False`, `Accept: application/json` | Generic JSON `error` with `message="Internal Server Error"`; no exception detail |
+| `debug=False`, `Accept: text/html` | Minimal HTML error page |
+| `debug=True`, `Accept: text/html` | Rich HTML debug page, including for non-loopback clients |
+| `debug=True`, JSON, direct client `127.0.0.1` or `::1` | Generic JSON plus `error.debug_detail` containing the exception message |
+| `debug=True`, JSON, other direct client address | Generic JSON without `debug_detail` |
 
-- [AI Debug](ai-debug.md) — AI-powered suggestions
-- [Query Profiling](query-profiling.md) — Query analysis
-- [Debugging Overview](index.md) — All debug tools
+Browser-like Accept headers, including `*/*`, can select HTML. The JSON
+loopback check is not an access restriction on HTML and is not authentication.
+Do not infer a trusted user from a proxy connection's address. Keep development
+servers private and apply any network access control outside this feature.
+
+Known HTTP and ORM exceptions have their own handlers; not every missing record
+or validation error becomes this generic 500 page. The
+[exception reference](../reference/exceptions.md) documents their statuses and
+different response shapes, with an executable custom handler example.
+
+## What the rich page contains
+
+The implementation collects traceback frames and available source lines,
+exception information, request method/URL/query data, selected request context,
+headers and a small request body when available. It also provides system and
+application context. Which data is present depends on the failure path and what
+can still be read from the request.
+
+Header collection masks the fixed names `authorization`, `cookie`, `x-api-key`
+and `api-key`. This is not comprehensive secret redaction: another header,
+query string, body or exception message can contain sensitive values. The
+collector does not promise a complete session dump, frame-local variable
+inspection, expression evaluation or a configurable variable-mask list.
+
+Use the traceback and source context to locate the first relevant application
+frame. Reproduce the input in a test before changing behavior. Copy only reviewed,
+redacted diagnostics into bug reports or external tools. Do not treat a debug
+page as a durable audit record or an operational monitoring service.
+
+## Custom behavior and AI assistance
+
+Use explicit application exception handlers that return an application-owned
+response. Do not raise the same exception from a handler expecting another
+handler to reprocess it. Test custom handling with the actual middleware and
+Accept headers used by your clients.
+
+AI debug assistance is experimental and separately configured; `debug=True`
+alone is not a guarantee that an AI panel or provider-backed analysis runs.
+Any suggested fix still needs review and tests. See [AI debug](ai-debug.md) and
+the [stability boundary](../concepts/stability.md).
+
+For production configuration, roles and diagnostics, follow the
+[deployment guide](../tutorials/deployment.md). Error-page presentation does not
+replace authentication, permission checks or incident monitoring.

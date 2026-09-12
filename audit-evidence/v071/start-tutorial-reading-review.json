@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of the public quickstart, all fourteen Getting Started pages and all ten tutorial pages, reconciled with the existing installed-wheel, PostgreSQL, REST, task, Durable Operation, MCP, scaffold and operator evidence. This is a semantic and usability review, not an independent novice study or a final-candidate rerun.",
+  "page_sha256": {
+    "docs/docs/quickstart.md": "5bce27ec524e099b32286b5993147310d705643cb85d69b90185bfca556e732e",
+    "docs/docs/getting-started/ai-quickstart.md": "8f9e06186af0cf362840985be0620a9870aec3004185f6cf75831ebd3447ef86",
+    "docs/docs/getting-started/database-setup.md": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
+    "docs/docs/getting-started/examples.md": "348de5410ecac5a95ca2877a1f9110f1f663d89a1412bc960b9b380be6cc8b4f",
+    "docs/docs/getting-started/first-app.md": "c2d8ceb1115da2becf71ac73bba39681e0f7f3cc06376a61e0c1379c5a71ff2e",
+    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60",
+    "docs/docs/getting-started/index.md": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
+    "docs/docs/getting-started/installation.md": "e9a9c7a3b74582775d065fe0b4b3d06219af9d303cf63c0d1b7512e8006b1ca4",
+    "docs/docs/getting-started/mcp.md": "be82c4c7721a5cecc3865d22b5ed234875da2862ab33a015404a22c724d80894",
+    "docs/docs/getting-started/patterns.md": "ea302702480f9888ffc704aceb98254c6290aa438d8614c33677033e975898a3",
+    "docs/docs/getting-started/project-layout.md": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
+    "docs/docs/getting-started/running-your-app.md": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",
+    "docs/docs/getting-started/settings.md": "111caa8e9daf54dabf9c7869ca3610894911914edda7b9e0151c0b4c745e0c01",
+    "docs/docs/getting-started/studio.md": "36cd8cad229583ba4ca5d6c27ee4a949a8c6b90221191b04758567e6bc3a8c02",
+    "docs/docs/getting-started/ten-minutes.md": "8238fdf1725f33dacddfb8466d4fafa0df0f54fccbe5af38a6bdc7d8b6ddac8a",
+    "docs/docs/tutorials/ai-integration.md": "8242dca09fc6d0a057cdfbe073ee43ed5ec635278673e12c3ff71d8b095a240b",
+    "docs/docs/tutorials/blog-api.md": "9d35111dde0bdc5845fcebb489819a0e038036e7f4bc361c46cb2546d1f34479",
+    "docs/docs/tutorials/deployment.md": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+    "docs/docs/tutorials/index.md": "1245efd2021cc4f92e1ed217e3013f345c4314c02af22d84c47ce0844c0bcf1a",
+    "docs/docs/tutorials/multi-tenant.md": "c2d147dabe773f3e68afb76f9bca60ad4c07a441e9f5642d176acf28eb57a828",
+    "docs/docs/tutorials/ticket-desk-durable.md": "09f5935e6b448ae083f7ef2daec6615b714d3a533df8e2f76e307f7dfa993e24",
+    "docs/docs/tutorials/ticket-desk-mcp.md": "4774a52f60049f505a61425337775fd4dcce0d5558de4036df974223fd5c60b8",
+    "docs/docs/tutorials/ticket-desk-reports.md": "d3ccf9328064682545bc71f1c9dd19e59ad675e5325d9c199f023d9eba2c579c",
+    "docs/docs/tutorials/ticket-desk-tenancy.md": "323fee8bf4542b37eaf4610ba5d691571b65d28194d9d41180ac431e0e26943f",
+    "docs/docs/tutorials/ticket-desk.md": "7e351c827dc827b1501f3733e50620865e05b095e829b7b75871a8918da2890e"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/quickstart.md",
+      "disposition": "retain_as_short_router",
+      "reason": "Routes an evaluator to the exact first-project journey, preserves PostgreSQL and identity prerequisites, and defers MCP, tenancy and AI until after the first protected REST application."
+    },
+    {
+      "page": "docs/docs/getting-started/index.md",
+      "disposition": "retain_as_start_hub",
+      "reason": "Provides one ordered beginner route and separates optional advanced and experimental paths."
+    },
+    {
+      "page": "docs/docs/getting-started/installation.md",
+      "disposition": "retain_after_reading",
+      "reason": "Distinguishes distribution and import names, public-wheel and source installs, PostgreSQL ownership, generated-project packaging limits and environment verification."
+    },
+    {
+      "page": "docs/docs/getting-started/ten-minutes.md",
+      "disposition": "retain_as_concise_entry",
+      "reason": "Keeps the first ten minutes to project creation and points to the exact files and executable checks instead of duplicating an incomplete mini-application."
+    },
+    {
+      "page": "docs/docs/getting-started/first-project.md",
+      "disposition": "retain_as_canonical_beginner_journey",
+      "reason": "Gives one coherent model, migration, protected REST, local identity and test sequence whose installed-wheel PostgreSQL execution is separately recorded."
+    },
+    {
+      "page": "docs/docs/getting-started/first-app.md",
+      "disposition": "retain_as_compatibility_router",
+      "reason": "Directs legacy entry traffic to the canonical application and explains the model, ViewSet, migration and authentication sequence without another divergent example."
+    },
+    {
+      "page": "docs/docs/getting-started/project-layout.md",
+      "disposition": "retain_after_scaffold_reconciliation",
+      "reason": "Matches the basic scaffold tree, startapp output, installed-app and route responsibilities, and distinguishes the flat domain templates."
+    },
+    {
+      "page": "docs/docs/getting-started/settings.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses the global settings object and explicit constructor handoff, states precedence and reload limits, and delegates the full contract to one reference."
+    },
+    {
+      "page": "docs/docs/getting-started/database-setup.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates local dbsetup from production role provisioning, gives a bounded pool probe, and explains URL precedence, lifecycle and role/RLS limits."
+    },
+    {
+      "page": "docs/docs/getting-started/running-your-app.md",
+      "disposition": "retain_after_reading",
+      "reason": "Distinguishes dev and production startup, health and readiness, MCP and inspection URLs, process-local services and graceful shutdown."
+    },
+    {
+      "page": "docs/docs/getting-started/examples.md",
+      "disposition": "retain_as_scoped_catalog",
+      "reason": "Classifies all repository examples by teaching purpose and defects, and separates structural validation from authenticated execution."
+    },
+    {
+      "page": "docs/docs/getting-started/patterns.md",
+      "disposition": "retain_after_template_reconciliation",
+      "reason": "Explains the basic versus flat domain-template shapes and directs tenant users away from the defective historical multitenant example."
+    },
+    {
+      "page": "docs/docs/getting-started/mcp.md",
+      "disposition": "retain_as_stable_optional_entry",
+      "reason": "Starts from server-owned machine identity and explicit exposure, uses the official synchronous transport, and denies protocol Tasks or implied durability."
+    },
+    {
+      "page": "docs/docs/getting-started/ai-quickstart.md",
+      "disposition": "retain_after_v07_boundary_correction",
+      "reason": "Keeps provider execution experimental, uses real AI Hub commands and environment names, and now anchors exclusions to the released v0.7 contract."
+    },
+    {
+      "page": "docs/docs/getting-started/studio.md",
+      "disposition": "retain_as_experimental_local_entry",
+      "reason": "Keeps Studio disabled by default, gives a loopback-only unauthenticated development profile and names the stronger production prerequisites."
+    },
+    {
+      "page": "docs/docs/tutorials/index.md",
+      "disposition": "retain_as_progressive_tutorial_hub",
+      "reason": "Lists the six sequential Ticket Desk stages and separates supplementary patterns and production how-to material."
+    },
+    {
+      "page": "docs/docs/tutorials/ticket-desk.md",
+      "disposition": "retain_as_relations_stage",
+      "reason": "Adds one nullable relation, serializer validation and a reviewed additive migration while preserving authentication and explicit non-tenant scope."
+    },
+    {
+      "page": "docs/docs/tutorials/ticket-desk-tenancy.md",
+      "disposition": "retain_as_tenancy_stage",
+      "reason": "Combines trusted membership, application permission, relation ownership and forced RLS under a restricted role, with explicit production backfill limits."
+    },
+    {
+      "page": "docs/docs/tutorials/ticket-desk-reports.md",
+      "disposition": "retain_as_ordinary_task_stage",
+      "reason": "Uses a read-only tenant report to teach persisted tasks while disclosing the missing full Principal reauthorization and unfenced recovery boundary."
+    },
+    {
+      "page": "docs/docs/tutorials/ticket-desk-durable.md",
+      "disposition": "retain_as_durable_operation_stage",
+      "reason": "Covers registration, admission, one-shot workers, bounded idempotency, retry rollback, cancellation and current role resolution in the supported postgres_atomic boundary."
+    },
+    {
+      "page": "docs/docs/tutorials/ticket-desk-mcp.md",
+      "disposition": "retain_as_synchronous_mcp_stage",
+      "reason": "Uses the official client and server-owned MCP AgentPrincipal to prove shared CRUD validation and denial while keeping durable human dispatch separate."
+    },
+    {
+      "page": "docs/docs/tutorials/blog-api.md",
+      "disposition": "retain_as_pattern_router",
+      "reason": "Replaces the incomplete historical tutorial with links to the canonical implementation and accurately limits the supplementary Blog example."
+    },
+    {
+      "page": "docs/docs/tutorials/multi-tenant.md",
+      "disposition": "retain_as_tenant_boundary_router",
+      "reason": "Explains the complete isolation stack and directs users to the tested Ticket Desk path instead of the defective historical template."
+    },
+    {
+      "page": "docs/docs/tutorials/ai-integration.md",
+      "disposition": "retain_after_v07_boundary_correction",
+      "reason": "Keeps synchronous MCP as the stable agent access path, marks query and provider helpers experimental, and now anchors exclusions to v0.7."
+    },
+    {
+      "page": "docs/docs/tutorials/deployment.md",
+      "disposition": "retain_after_operator_and_journey_reading",
+      "reason": "Orders configuration, migration roles, RLS, Doctor, workers, retention and upgrade responsibilities and preserves operator-owned infrastructure boundaries."
+    }
+  ],
+  "candidate_acceptance": false,
+  "execution_evidence": [
+    "first-project-journey.json",
+    "ticket-desk-progressive-journey.json",
+    "ticket-desk-tenancy-journey.json",
+    "ticket-desk-report-journey.json",
+    "ticket-desk-durable-journey.json",
+    "ticket-desk-mcp-journey.json",
+    "operator-reading.json"
+  ],
+  "contradictions": [
+    {
+      "id": "PT-073",
+      "severity": "P2",
+      "boundary": "Two experimental AI entry pages still described exclusions relative to the superseded v0.6 contract after v0.7.0 was released.",
+      "disposition": "Both pages now anchor experimental exclusions to the stable v0.7 contract."
+    }
+  ]
+}

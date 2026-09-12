@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "pass": true,
+  "package_version": "0.7.1rc1",
+  "source_checkout_framework_imports": false,
+  "inventory": {
+    "public_markdown_files": 169,
+    "current_sample_files": 165,
+    "historical_files_excluded": [
+      "docs/docs/changelog.md",
+      "docs/docs/notes/index.md",
+      "docs/docs/notes/v0-5-49-announcement.md",
+      "docs/docs/notes/v0-5-49-security-architecture.md"
+    ],
+    "all_fences": 600,
+    "historical_fences": 5,
+    "current_fences": 595,
+    "current_fences_by_language": {
+      "bash": 184,
+      "css": 1,
+      "dotenv": 12,
+      "http": 1,
+      "json": 15,
+      "python": 348,
+      "sql": 1,
+      "text": 14,
+      "typescript": 1,
+      "unlabeled": 18
+    }
+  },
+  "automated_coverage": {
+    "python": {
+      "blocks": 348,
+      "all_compile": true,
+      "all_aksara_imports_resolve": true,
+      "fresh_workflow_example_executes": true
+    },
+    "json": {
+      "blocks": 15,
+      "all_parse": true,
+      "selected_installed_response_models": 5
+    },
+    "cli": {
+      "literal_forms_parsed": 295,
+      "explicit_exclusions": 7,
+      "errors": 0
+    },
+    "repository_examples": {
+      "classified": 6,
+      "startup_checked": 5,
+      "packaged_support_desk_checks": 66,
+      "development_tutorial_stages": 6
+    }
+  },
+  "execution_evidence": {
+    "application_journeys": [
+      "development-wheel-tutorial.json",
+      "example-execution.json",
+      "scaffold-startup.json",
+      "support-desk-baseline.json"
+    ],
+    "database_examples": [
+      "advanced-field-execution.json",
+      "approval-execution.json",
+      "auth-permission-execution.json",
+      "bulk-execution.json",
+      "custom-field-execution.json",
+      "external-execution.json",
+      "filter-doc-execution.json",
+      "fixture-execution.json",
+      "generic-step-execution.json",
+      "history-execution.json",
+      "media-lifecycle.json",
+      "migration-doc-execution.json",
+      "outbox-execution.json",
+      "pagination-doc-execution.json",
+      "query-execution.json",
+      "query-profiling-execution.json",
+      "soft-delete-execution.json",
+      "testing-execution.json"
+    ],
+    "provider_free_examples": [
+      "ai-cli-execution.json",
+      "ai-provider-contract.json",
+      "gap-analysis-version-contract.json",
+      "installed-doc-imports.json",
+      "media-email.json",
+      "operator-cli.json",
+      "setup-doc-execution.json",
+      "upgrade-recipe.json"
+    ],
+    "syntax_and_cli": [
+      "cli-docs-syntax.json",
+      "installed-doc-imports.json"
+    ]
+  },
+  "evidence_results": {
+    "development-wheel-tutorial.json": true,
+    "example-execution.json": true,
+    "scaffold-startup.json": true,
+    "support-desk-baseline.json": "passed",
+    "advanced-field-execution.json": true,
+    "approval-execution.json": true,
+    "auth-permission-execution.json": true,
+    "bulk-execution.json": true,
+    "custom-field-execution.json": true,
+    "external-execution.json": true,
+    "filter-doc-execution.json": true,
+    "fixture-execution.json": true,
+    "generic-step-execution.json": true,
+    "history-execution.json": true,
+    "media-lifecycle.json": true,
+    "migration-doc-execution.json": true,
+    "outbox-execution.json": true,
+    "pagination-doc-execution.json": true,
+    "query-execution.json": true,
+    "query-profiling-execution.json": true,
+    "soft-delete-execution.json": true,
+    "testing-execution.json": true,
+    "ai-cli-execution.json": true,
+    "ai-provider-contract.json": true,
+    "gap-analysis-version-contract.json": true,
+    "installed-doc-imports.json": true,
+    "media-email.json": true,
+    "operator-cli.json": true,
+    "setup-doc-execution.json": true,
+    "upgrade-recipe.json": true,
+    "cli-docs-syntax.json": true
+  },
+  "evidence_sha256": {
+    "advanced-field-execution.json": "beb7683a4ecafde9beee23daba2dcd82917b1b4d9d8f82e0d463d4b9ea8f027f",
+    "ai-cli-execution.json": "eb4488f1ce97c0dd22aa935e5ee7acd0fcdad88fcd621aa0597c1ba41e4d6ff5",
+    "ai-provider-contract.json": "40b5f35ed69d0d777cac8ef38a8265d51037ef1e3e7a383b25ea21cc8a8d71ae",
+    "approval-execution.json": "091cccbccf0279c339ec466088f79ea5d14c7baee97544497b7f5f97ccf0b0e5",
+    "auth-permission-execution.json": "06a8eafd3c38d0af89158d9d53be8c85d5cf29daa9f60ed06d9d687fe265fbfb",
+    "bulk-execution.json": "61338ef4e1cf490c5265bd691704c6df7394c2f0567293624ca215cc440b1a39",
+    "cli-docs-syntax.json": "c0c07a79ec790c9f546ec1c2522e8e81f0b19ab7906a024260080eb26ae10bbd",
+    "custom-field-execution.json": "998c61c63652806a559894d7c0902eed616dd4e3fc48fdef0577308231cc0a76",
+    "development-wheel-tutorial.json": "b01f6e13d4162ea6ba78a36f7543a1abd2d0a7f8b7ef3876cbe938bdfc3f7204",
+    "example-execution.json": "1e33050b56269a2dd10a89c037425aa446d093880e739b5a09484f99b0fbc8f7",
+    "external-execution.json": "856079150b613cb6a68887937d1c653e3169f067cabdf8d9633e94a4819a33b4",
+    "filter-doc-execution.json": "e5cc16995203fd691e3ad22f0aafed9756ae2b4a405f2aa7300a1d6812e25526",
+    "fixture-execution.json": "a5663f65b00a20981dcd40cd25f34ad1bc1c6ad6dc6884a5d3b7083e1cd43242",
+    "gap-analysis-version-contract.json": "d53642663f1075707cbd7f81ff95e1b7dc3c9a32b0ce66fc00e34922ff09550c",
+    "generic-step-execution.json": "15099cd9379a1d4c1f5c0fbe4089e78ee4e8a0f2661f3905aa3803c00f07adf6",
+    "history-execution.json": "89f8b63abf7b7559ee3c06c64ba6440e9fbf6417d90df4b470a990a3bb7a432d",
+    "installed-doc-imports.json": "a0199c758030a64192ac2b5dc88339e69017082a358340b091c702cf8e7c5783",
+    "media-email.json": "e8db04a5f4b569bc007e89e299c0f90298dc5b568aa23be85e364e30bc107913",
+    "media-lifecycle.json": "a8dcee2404f8de61cc5887efb3c9a09895f3659815e49c45d074b59c3b85a112",
+    "migration-doc-execution.json": "04569302b35036f200f32576139f30c9a3bcc46f834a8db1f0699d0e4ca40b73",
+    "operator-cli.json": "dd62d9b73bbd621c29cc024c046a4772e15a9fe01f2b940edc586408c47d82f9",
+    "outbox-execution.json": "489259ccc32b4fc533eebc5deb802f1110803325d4e9b815ac15a3708dba1e90",
+    "pagination-doc-execution.json": "e4ee3f80ff58db28725e26e973f149129f071f64966c2577dd94be6803fe7e16",
+    "query-execution.json": "80cf464dd7c58fc1a0aef1a28c1b37f57068c0b574aad79976469a4c4e83c9b2",
+    "query-profiling-execution.json": "d64e2e9fbe5b884c639eeb9c2570ed8717a0689928ca337b1d998a4093b16db4",
+    "scaffold-startup.json": "fd70619ce1928974772dcfb0c531473dd0975bf89b8fba584dd818db77516d12",
+    "setup-doc-execution.json": "e8fe6e7c8f11937baf913dc6e780a0225bf3aa05da75c330d22e93882b792b2e",
+    "soft-delete-execution.json": "2c5eb35c9f96739a93bf2f43ae22530865104be4e301c48afcd2e3b82ac831fc",
+    "support-desk-baseline.json": "e1145429d31e6fee363b0c74b37274ef68971d41ce920802fe90918359d7426e",
+    "testing-execution.json": "dd218275d0d6bb557ba7f9237174a72557736eff4152e70e4edc232703a8f0a2",
+    "upgrade-recipe.json": "22422ae55802007c89494718c91743148f9562689efa83bc6cd787c1055da693"
+  },
+  "functional_findings": {
+    "AIFLOW001": "A fresh direct aksara.ai.workflows import fails through a circular Studio import; the documented aksara.studio aggregate import executes.",
+    "AIFLOW002": "Diagnostic set_env examples can acquire a duplicate export prefix when converted to display-only workflow commands."
+  },
+  "page_sha256": {
+    "docs/docs/ai-mode/bring-your-own-llm.md": "8df2d22d0cb3cd526155db4f9810a4cf6cabeffc4224d130897ee3ea2f4bf004",
+    "docs/docs/ai-mode/debugger.md": "bc3f8d8d272117ad640fd1485925ac3c6c236b0ab3dbbb43c12a0fb961bf73a3",
+    "docs/docs/ai-mode/workflows.md": "7f225fd3d1aa613cd41082e2e76fd7f8608cc6f66b5b9aca7daa654af6ce799d",
+    "docs/docs/studio/cli.md": "fe044f8e4c0913a7b9d451776f1a545595b49a1de4356792f6169d8c19edc90f"
+  },
+  "candidate_acceptance": false,
+  "limits": [
+    "Python compilation and import resolution do not execute every partial fragment as a standalone program.",
+    "CLI parsing does not run every callback; application and journey gates execute the release-critical paths.",
+    "The lone TypeScript integration fragment needs an external compiler package and live endpoint and is not executed here.",
+    "Dotenv, HTTP, SQL, CSS, text, diagrams, formulas and displayed output are reviewed by their owning setup, journey, schema or rendering gates rather than treated as standalone programs.",
+    "Current public-wheel evidence must be repeated against the 0.7.1rc1 candidate."
+  ],
+  "scope": "Complete fence census plus all-current Python syntax, all-current JSON parsing, selected installed response-shape checks, fresh workflow execution, literal CLI parsing, all six example dispositions and the existing installed-wheel/PostgreSQL behavior gates named here. This is bounded sample coverage, not universal execution of partial fragments, live providers, an external TypeScript toolchain or final candidate acceptance.",
+  "runner_sha256": "7cfa6b191b58939fafb318d462ca370a4259c6b0fe4e5c6280dbe5ff8a5a9f42"
+}

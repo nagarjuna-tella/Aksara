@@ -1,5 +1,11 @@
 # Agent Workflows
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Agent Workflows transform a free-text goal into a **structured,
 step-by-step execution plan** that combines diagnostics, search,
 inspectors, and playbooks into a single ordered timeline. Nothing is
@@ -60,7 +66,7 @@ aksara agent workflow "Fix login" --format json
 ### Python API
 
 ```python
-from aksara.ai.workflows import (
+from aksara.studio import (
     build_agent_workflow,
     summarize_agent_workflow,
     workflow_stats,
@@ -68,9 +74,8 @@ from aksara.ai.workflows import (
 
 wf = build_agent_workflow(
     "Fix slow queries on /api/posts/",
-    include_diagnostics=True,
-    include_search=True,
-    search_query="slow query posts",
+    include_diagnostics=False,
+    include_search=False,
 )
 
 print(summarize_agent_workflow(wf))
@@ -81,6 +86,15 @@ for step in wf.steps:
     for cmd in step.commands:
         print(f"  $ {cmd}")
 ```
+
+Import these helpers through `aksara.studio`, as above. In v0.7.0, importing
+`aksara.ai.workflows` as the first Aksara submodule can fail because of the
+documented `AIFLOW001` circular-import defect. The aggregate Studio import is
+the supported workaround; a runtime fix belongs in a separately scoped patch.
+Enable diagnostics and search after the basic call works. In v0.7.0, a
+diagnostic `set_env` action whose example already contains `export` can be
+rendered as `export NAME=export NAME=...` (`AIFLOW002`). Workflow commands are
+display-only suggestions: review and correct them before execution.
 
 ---
 
@@ -136,8 +150,8 @@ Generate a workflow from a goal.
 {
   "goal": "Fix slow queries on /api/posts/",
   "playbook": null,
-  "include_diagnostics": true,
-  "include_search": true,
+  "include_diagnostics": false,
+  "include_search": false,
   "search_query": null,
   "limit_search_results": 10,
   "limit_diagnostics": 10
@@ -152,18 +166,76 @@ Generate a workflow from a goal.
     "id": "wf-abc123",
     "goal": "Fix slow queries on /api/posts/",
     "playbook": null,
-    "source": "mixed",
-    "steps": [ ... ],
-    "metadata": { ... }
+    "source": "manual",
+    "steps": [
+      {
+        "id": "step-inspect-9143c828",
+        "kind": "inspect",
+        "title": "Inspect registered models",
+        "description": "Review model schemas, fields, relationships, and constraints to understand the data layer relevant to your goal.",
+        "references": {
+          "target": "models",
+          "goal": "Fix slow queries on /api/posts/"
+        },
+        "estimated_effort": "low",
+        "risk": "low",
+        "commands": [
+          "aksara inspect models",
+          "aksara inspect models --format json"
+        ],
+        "notes": ["Check field types, relationships, and constraints."],
+        "order": 50
+      },
+      {
+        "id": "step-inspect-f89863f9",
+        "kind": "inspect",
+        "title": "Inspect slow queries",
+        "description": "Analyse the slowest queries for potential optimisation.",
+        "references": {
+          "target": "queries",
+          "goal": "Fix slow queries on /api/posts/"
+        },
+        "estimated_effort": "medium",
+        "risk": "low",
+        "commands": [
+          "aksara inspect queries --top 10",
+          "aksara inspect queries --format table"
+        ],
+        "notes": ["Look for missing indexes, full table scans, and N+1 patterns."],
+        "order": 51
+      },
+      {
+        "id": "step-run_test-c549b243",
+        "kind": "run_test",
+        "title": "Run test suite",
+        "description": "Verify changes by running the project test suite.",
+        "references": {"goal": "Fix slow queries on /api/posts/"},
+        "estimated_effort": "medium",
+        "risk": "low",
+        "commands": ["python -m pytest -x -q", "aksara test"],
+        "notes": ["Run after applying any changes to ensure nothing is broken."],
+        "order": 300
+      }
+    ],
+    "metadata": {
+      "goal": "Fix slow queries on /api/posts/",
+      "ai_hub": {
+        "active_provider": null,
+        "chat_model": null,
+        "code_model": null,
+        "embeddings_model": null
+      }
+    }
   },
-  "summary": "Workflow for \"Fix slow queries on /api/posts/\" with 5 steps...",
+  "summary": "Workflow for \"Fix slow queries on /api/posts/\" with 3 steps (2 inspect, 1 run_test).",
   "stats": {
-    "total_steps": 5,
-    "by_kind": { "inspect": 2, "search": 1, "run_test": 1, "diagnostics": 1 },
-    "by_risk": { "low": 3, "medium": 2 },
-    "by_effort": { "low": 3, "medium": 2 },
+    "total_steps": 3,
+    "by_kind": {"inspect": 2, "run_test": 1},
+    "by_risk": {"low": 3},
+    "by_effort": {"low": 1, "medium": 2},
     "has_high_risk": false,
-    "source": "mixed"
+    "playbook": null,
+    "source": "manual"
   }
 }
 ```

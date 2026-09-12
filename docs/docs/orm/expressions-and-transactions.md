@@ -55,7 +55,8 @@ posts = await Post.objects.filter(views__gt=F("likes")).all()
 
 ### Create-path restriction
 
-Expressions are intentionally rejected in insert-style operations such as `create()`, `bulk_create()`, and `upsert()` input values. They are supported in update-oriented flows and annotations.
+Expressions are intentionally rejected in insert-style operations such as `create()`, `bulk_create()`, and `upsert()` input values. They are supported in `QuerySet.update()` and annotations. `bulk_update()`
+also rejects expression values; it is not the expression-update path.
 
 ---
 
@@ -163,7 +164,24 @@ async def publish_post(post_id: str) -> None:
 
 ### Nested transactions
 
-Nested `atomic()` blocks reuse the active connection and rely on asyncpg nested transaction behavior, which maps to savepoints under the hood.
+Nested `atomic()` blocks reuse the active connection and use asyncpg savepoints.
+If an inner failure is caught outside its block, that savepoint can roll back
+while the outer transaction continues and commits. Let the error escape the
+outer block when the whole unit must fail.
+
+### Limits of atomicity
+
+The guarantee covers database work participating in the same active Aksara
+connection and PostgreSQL transaction. Independent pool acquisitions, separate
+drivers, and subprocess writes do not join that transaction automatically.
+Do not run concurrent child tasks against the inherited pinned connection;
+asyncpg connections do not support overlapping operations.
+
+Email, file writes, remote APIs, and already-dispatched jobs are not undone by
+PostgreSQL rollback. Model `post_save` callbacks run before an outer commit,
+not as after-commit hooks. See [signals](signals.md) and
+[Durable Operations](../advanced/durable-operations.md) for the separate
+execution and external-effect boundaries.
 
 ---
 

@@ -1,354 +1,82 @@
 # API Layer
 
-Build REST APIs that let other applications (websites, mobile apps, AI agents) interact with your data.
-
----
-
-## What is an API?
-
-An **API** (Application Programming Interface) is how different programs talk to each other. When a mobile app shows you your tasks, it's calling an API to get that data.
-
-```
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│   Mobile App    │  ────►  │    Your API     │  ────►  │    Database     │
-│                 │         │   (Aksara)      │         │                 │
-│  "Show my       │  ◄────  │                 │  ◄────  │   [Tasks...]    │
-│   tasks"        │         │                 │         │                 │
-└─────────────────┘         └─────────────────┘         └─────────────────┘
-     Request                   Process                      Fetch
-```
-
-**A REST API uses HTTP requests:**
-
-| HTTP Method | What It Does | Example |
-|-------------|--------------|---------|
-| `GET` | Read data | Get all tasks |
-| `POST` | Create data | Create a new task |
-| `PUT` | Replace data | Update a whole task |
-| `PATCH` | Modify data | Update part of a task |
-| `DELETE` | Remove data | Delete a task |
-
----
-
-## What Aksara Gives You
-
-Aksara creates a complete REST API automatically. You define your data (Models), and Aksara creates the endpoints.
-
-```python
-from aksara.api import ModelViewSet
-from myapp.models import Task
-
-class TaskViewSet(ModelViewSet):
-    model = Task
-```
-
-**That's 4 lines. You get 6 endpoints by default:**
-
-| Method | URL | What It Does |
-|--------|-----|--------------|
-| `GET` | `/tasks/` | List all tasks |
-| `POST` | `/tasks/` | Create a task |
-| `GET` | `/tasks/stream/` | Subscribe to task lifecycle events via SSE |
-| `GET` | `/tasks/{id}/` | Get one task |
-| `PATCH` | `/tasks/{id}/` | Partial update |
-| `DELETE` | `/tasks/{id}/` | Delete a task |
-
----
-
-## Key Concepts
-
-### ViewSets
-
-**What they are:** Classes that handle API requests for a model.
-
-**What they do:** When someone calls `GET /tasks/`, the ViewSet decides what to return.
-
-```python
-class TaskViewSet(ModelViewSet):
-    model = Task  # Which model to expose
-    
-    # Optional: customize which fields are returned
-    serializer_class = TaskSerializer
-    
-    # Optional: who can access this?
-    permission_classes = [IsAuthenticated]
-```
-
-Every `ModelViewSet` also exposes a built-in `GET /<prefix>/stream/` endpoint unless `stream_enabled = False`, so frontend clients can subscribe to model lifecycle events over server-sent events.
-
-👉 **Learn more:** [ViewSets](viewsets.md)
-
----
-
-### Serializers
-
-**What they are:** Classes that convert between Python objects and JSON.
-
-**What they do:** 
-
-- When receiving data: Validate it and convert JSON to Python
-- When sending data: Convert Python to JSON
-
-```python
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "completed"]
-        read_only_fields = ["id"]  # Can't be set by user
-```
-
-**The serializer automatically:**
-
-- Validates required fields are present
-- Checks data types (string, number, boolean)
-- Rejects extra fields
-- Formats the response
-
-👉 **Learn more:** [Serializers](serializers.md)
-
----
-
-### Permissions
-
-**What they are:** Rules about who can do what.
-
-**What they do:** Check each request and allow or deny access.
-
-```python
-from aksara.permissions import IsAuthenticated, IsAdminUser
-
-class TaskViewSet(ModelViewSet):
-    model = Task
-    
-    # Only logged-in users can access
-    permission_classes = [IsAuthenticated]
-```
-
-**Common permission classes:**
-
-| Permission | Who Can Access |
-|------------|----------------|
-| `AllowAny` | Everyone (even anonymous) |
-| `IsAuthenticated` | Only logged-in users |
-| `IsAdminUser` | Only admin users |
-| `IsOwner` | Only the object's owner |
-
-👉 **Learn more:** [Permissions](permissions.md)
-
----
-
-### Actions
-
-**What they are:** Custom endpoints beyond basic CRUD.
-
-**When to use:** When you need operations that aren't create/read/update/delete.
-
-```python
-from aksara.api import ModelViewSet, action
-
-class TaskViewSet(ModelViewSet):
-    model = Task
-    
-    @action(detail=True, methods=["POST"])
-    async def complete(self, request, id: str):
-        """
-        Mark a task as complete.
-        
-        URL: POST /tasks/{id}/complete/
-        """
-        task = await self.get_object(id)
-        task.completed = True
-        await task.save()
-        return {"status": "completed"}
-```
-
-**Action options:**
-
-| Option | Meaning |
-|--------|---------|
-| `detail=True` | Operates on one item (`/tasks/{id}/complete/`) |
-| `detail=False` | Operates on the collection (`/tasks/complete_all/`) |
-| `methods=["POST"]` | Which HTTP methods to accept |
-
-👉 **Learn more:** [Actions](actions.md)
-
----
-
-### Routing
-
-**What it is:** Tools that connect URLs to ViewSets.
-
-**What it does:** Automatically create all the URL patterns.
-
-```python
-from aksara import include_viewset
-from myapp.views import TaskViewSet, ProjectViewSet
-
-urlpatterns = [
-    TaskViewSet,      # → /api/tasks/
-    ProjectViewSet,   # → /api/projects/
-]
-
-def register_routes(app):
-    for viewset in urlpatterns:
-        include_viewset(app, viewset)
-```
-
-👉 **Learn more:** [Routing](routing.md)
-
----
-
-## Quick Example
-
-Here's a complete API for a Task model:
-
-```python
-# models.py
-from aksara import Model, fields
-
-class Task(Model):
-    title = fields.String(max_length=200)
-    description = fields.Text(nullable=True)
-    completed = fields.Boolean(default=False)
-    created_at = fields.DateTime(auto_now_add=True)
-```
-
-```python
-# serializers.py
-from aksara.api import ModelSerializer
-from myapp.models import Task
-
-class TaskSerializer(ModelSerializer):
-    class Meta:
-        model = Task
-        fields = ["id", "title", "description", "completed", "created_at"]
-        read_only_fields = ["id", "created_at"]
-```
-
-```python
-# views.py
-from aksara.api import ModelViewSet, action
-from aksara.permissions import IsAuthenticated
-from myapp.models import Task
-from myapp.serializers import TaskSerializer
-
-class TaskViewSet(ModelViewSet):
-    model = Task
-    serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
-    
-    # Filter options
-    filterset_fields = ["completed"]
-    search_fields = ["title", "description"]
-    ordering = ["-created_at"]
-    
-    @action(detail=True, methods=["POST"])
-    async def toggle(self, request, id: str):
-        """Toggle task completion status."""
-        task = await self.get_object(id)
-        task.completed = not task.completed
-        await task.save()
-        return {"completed": task.completed}
-```
-
-```python
-# urls.py
-from aksara import include_viewset
-from myapp.views import TaskViewSet
-
-urlpatterns = [
-    TaskViewSet,
-]
-
-def register_routes(app):
-    for viewset in urlpatterns:
-        include_viewset(app, viewset)
-```
-
-**This creates:**
-
-| Endpoint | What It Does |
-|----------|--------------|
-| `GET /api/tasks/` | List all tasks |
-| `GET /api/tasks/?completed=true` | List completed tasks |
-| `GET /api/tasks/?search=groceries` | Search tasks |
-| `POST /api/tasks/` | Create a task |
-| `GET /api/tasks/{id}/` | Get one task |
-| `PATCH /api/tasks/{id}/` | Update a task |
-| `DELETE /api/tasks/{id}/` | Delete a task |
-| `POST /api/tasks/{id}/toggle/` | Toggle completion |
-
----
-
-## Testing Your API
-
-### Interactive Documentation
-
-Aksara automatically generates interactive docs at `/docs`:
-
-```
-http://localhost:8000/docs
-```
-
-You can try out every endpoint directly in the browser!
-
-### Using curl
-
-```bash
-# List tasks
-curl http://localhost:8000/api/tasks/
-
-# Create a task
-curl -X POST http://localhost:8000/api/tasks/ \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Buy milk"}'
-
-# Get one task
-curl http://localhost:8000/api/tasks/abc123/
-
-# Update a task
-curl -X PATCH http://localhost:8000/api/tasks/abc123/ \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Buy milk", "completed": true}'
-
-# Delete a task
-curl -X DELETE http://localhost:8000/api/tasks/abc123/
-```
-
-### Using Python
-
-```python
-import httpx
-
-# Create a client
-client = httpx.Client(base_url="http://localhost:8000")
-
-# List tasks
-tasks = client.get("/api/tasks/").json()
-
-# Create a task
-new_task = client.post(
-    "/api/tasks/",
-    json={"title": "Learn Aksara"}
-).json()
-
-# Update a task
-client.patch(
-    f"/api/tasks/{new_task['id']}/",
-    json={"title": "Learn Aksara", "completed": True}
-)
-```
-
----
-
-## What's Next?
-
-| Guide | What You'll Learn |
-|-------|-------------------|
-| [ViewSets](viewsets.md) | All ViewSet options and customization |
-| [Serializers](serializers.md) | Data validation and transformation |
-| [Actions](actions.md) | Custom endpoints beyond CRUD |
-| [Permissions](permissions.md) | Access control and security |
-| [Authentication](authentication.md) | User login and tokens |
-| [Routing](routing.md) | URL configuration |
-| [Throttling](throttling.md) | Rate limiting requests |
+**Stable surface, with documented limits.** Aksara generates HTTP endpoints from
+models. A ViewSet selects the model and configures the generated handlers;
+a serializer validates and represents model data; permissions decide whether a
+request may proceed. Your application authenticates the caller and attaches the
+server-owned identity before those checks run.
+
+## Build your first API
+
+Follow the [first project](../getting-started/first-project.md) to create a
+PostgreSQL-backed ticket API, apply its migration, attach a local development
+identity, and exercise authenticated requests. Continue with the
+[ticket desk tutorial](../tutorials/ticket-desk.md) for relationships and custom
+validation, then [tenant isolation](../tutorials/ticket-desk-tenancy.md).
+
+These chapters grow one executable application. They include the configuration,
+registration, database setup, and request headers needed to run the examples.
+
+## Generated endpoints
+
+For a ViewSet explicitly registered with `prefix = "/api/tickets"`, the standard
+CRUD routes are:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/api/tickets/` | List records |
+| POST | `/api/tickets/` | Create a record; success is 201 |
+| GET | `/api/tickets/{pk}` | Retrieve one record |
+| PATCH | `/api/tickets/{pk}` | Update supplied fields |
+| DELETE | `/api/tickets/{pk}` | Delete a record; success is 200 |
+
+There is no generated PUT handler. Detail routes have no trailing slash.
+A lifecycle-event stream is also registered at `/api/tickets/stream` unless
+`stream_enabled = False`. The introductory tutorial disables that stream and
+MCP exposure explicitly. Consult [ViewSets](viewsets.md) for checked registration
+examples and the actual customization hooks.
+
+## Choose the layer to customize
+
+| Need | Start here | Boundary |
+| --- | --- | --- |
+| Select a model, prefix, fields, or CRUD serializer | [ViewSets](viewsets.md) | Use the operation-specific serializer attributes; `serializer_class` is not a supported switch. |
+| Normalize or validate model data | [Serializers](serializers.md) | Validation does not authenticate the caller or establish tenant ownership. Extra input is not universally rejected. |
+| Establish identity | [Authentication](authentication.md) | Password/session helpers do not install login routes or token-verification middleware. |
+| Restrict requests and objects | [Permissions](permissions.md) | Hooks are synchronous; list filtering and object access are separate concerns. |
+| Add a custom endpoint | [Actions](actions.md) | Custom HTTP handlers must explicitly enforce authorization. |
+| Register endpoints | [Routing](routing.md) | Registration makes routes available; it does not establish caller identity. |
+| Handle rejected or failed requests | [Exceptions and responses](../reference/exceptions.md) | Validation, HTTP and database errors do not share one response envelope. |
+| Understand identity, tenancy, and policy together | [Identity concepts](../concepts/application-boundaries.md) | Resolve identity and tenant membership on the server. |
+
+## Custom HTTP action boundary
+
+!!! warning "Known v0.7.0 limitation"
+    A registered `@action` HTTP handler does not automatically run the ViewSet's
+    permission checks or the decorator's `permission_classes` metadata. Merely
+    adding `IsAuthenticated` to the class does not protect that custom handler.
+    Follow the explicit checked example in [Actions](actions.md). Custom writes
+    must also enforce object, tenant, payload, and transaction requirements.
+
+Generated CRUD and MCP execution have their own enforcement paths. MCP approval
+metadata does not install an HTTP approval workflow, and exposing a method over
+both transports does not prove equivalent authorization behavior.
+
+## Handle errors at the right boundary
+
+A malformed request, a denied action and a database constraint failure are
+separate cases. Generated permission checks return 403; request validation and
+Aksara validation errors return 422 with different JSON structures. Send
+`Accept: application/json` and test the actual endpoint's response instead of
+assuming one universal error object. The [error reference](../reference/exceptions.md)
+includes executable examples and explains which exception families to catch.
+Unexpected failures should remain visible to application diagnostics; a blanket
+retry is not a recovery policy for writes.
+
+## Test the application boundary
+
+Use the tutorial's authenticated HTTP tests and negative cases, including
+anonymous requests, another tenant's identifiers, and forbidden fields. Route
+registration or generated OpenAPI alone does not prove those controls work.
+Interactive API documentation is available when enabled by the application's
+FastAPI configuration; it is an exploration tool, not an authorization test.

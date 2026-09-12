@@ -13,11 +13,16 @@ AKSARA_STUDIO_SECRET_TOKEN=replace-with-a-random-local-secret
 AKSARA_STUDIO_REQUIRE_AUTH=false
 ```
 
+This disables Studio credential checking. Keep the development server bound to
+loopback and use only a local development dataset. The Studio secret does not
+replace authentication. For a shared environment, use the authenticated
+[configuration](../studio/configuration.md) instead.
+
 Then restart the app:
 
 ```bash
 aksara doctor launch-check
-aksara dev
+aksara dev --host 127.0.0.1
 ```
 
 Open `http://127.0.0.1:8000/studio/ui`. Studio can inspect models, routes,

@@ -2,11 +2,36 @@
 
 !!! info "v0.5.26 — Gap Analysis Engine"
     The gap analysis engine is a **static pre-flight scanner** that surfaces
-    actionable issues across eight categories *without* requiring a live database
+    actionable issues across nine categories *without* requiring a live database
     connection.  It complements the
     [Diagnostics & Doctor](diagnostics.md) system, which tests live connectivity.
 
 ---
+
+## Scope and failure handling
+
+Gap analysis is a pre-flight heuristic scanner, not the production release gate.
+It imports packages and inspects available configuration/project metadata; its
+database check does not prove live connectivity, RLS, or migration application.
+Use [Doctor production checks](diagnostics.md) for the separate release policy.
+
+The v0.7.0 environment checker reports a Python-version error only below 3.10,
+while the package metadata requires Python 3.11 or newer and the supported
+runtime matrix is Python 3.11–3.14. A 3.10 result from this checker therefore
+does not establish compatibility. Use the
+[runtime compatibility matrix](reference/runtime-compatibility.md) and package
+metadata as the authority. This known `GAP001` mismatch needs a separate
+functional patch; it is documented rather than changed in v0.7.1.
+
+The categories are `imports`, `db`, `migrations`, `routers`, `providers`, `studio`,
+`environment`, `ai_pipeline`, and `ai_hub`. They run sequentially. A checker
+exception becomes a warning issue; it does not fail the whole scan. Unknown
+category names raise a validation error before scanning; an empty category list
+selects all categories.
+
+Fix commands are suggested text. Review them for your current configuration and
+permissions; the scanner does not execute them. Some historical suggestions may
+need adaptation. Never automatically apply the generated fix plan.
 
 ## Overview
 
@@ -17,7 +42,7 @@ catch common configuration problems early:
 aksara gaps run
 ```
 
-The engine checks eight categories in parallel and produces a prioritised
+The engine checks nine categories sequentially and produces a prioritised
 issue list with remediation commands included.
 
 ---
@@ -37,7 +62,7 @@ aksara gaps summary
 # Only show errors and criticals
 aksara gaps list-errors
 
-# CI gate — exits 1 if any critical issue is found
+# Critical-only filter — exits 1 if a critical issue is found
 aksara gaps list-critical
 
 # Structured fix plan with one-liner commands
@@ -56,8 +81,9 @@ aksara gaps fix-plan
 | `routers` | Apps in `settings.apps` have `models.py` and `views.py` |
 | `providers` | AI provider profiles, required secrets present |
 | `studio` | Studio panel enabled, static assets exist, secret key set |
-| `environment` | Required env vars present, Python version ≥ 3.10, no debug-in-prod |
+| `environment` | Required env vars present, implemented Python threshold (currently rejects only versions below 3.10; see `GAP001` above), no debug-in-prod |
 | `ai_pipeline` | AI modules importable, MCP package when enabled, exposed models |
+| `ai_hub` | AI Hub provider/default/embedding configuration; no live provider call |
 
 ---
 
@@ -94,7 +120,7 @@ aksara gaps run --categories db,migrations,environment
 | Flag | Description |
 |---|---|
 | `--format pretty\|json` | Output format (default: `pretty`) |
-| `--categories` | Comma-separated list of categories (default: all eight) |
+| `--categories` | Comma-separated list of categories (default: all nine) |
 
 ---
 
@@ -154,7 +180,7 @@ Exit code is `1` when any blocking issues are found.
 
 ### `aksara gaps list-critical`
 
-Lists only `critical` issues.  Designed as a **CI gate**:
+Lists only `critical` issues.  This is only a critical-severity filter, not the full release gate:
 
 ```bash
 # In a CI script:
@@ -168,7 +194,8 @@ fi
 
 ### `aksara gaps fix-plan`
 
-Generates a prioritised list of shell commands to remediate each issue.
+Lists suggested fix commands for review; not every issue has a command and
+commands are not executed.
 
 ```bash
 aksara gaps fix-plan
@@ -206,7 +233,10 @@ Studio dashboard.
 | `GET` | `/studio/gaps` | Run the analysis and return the full report |
 | `POST` | `/studio/gaps/run` | Trigger a fresh analysis run |
 
-Both endpoints accept an optional `categories` query parameter:
+Studio must be mounted and its access requirements satisfied; see
+[Studio configuration](studio/configuration.md). GET accepts an optional
+`categories` query parameter. POST runs all categories and reports scan failures
+in its response body.
 
 ```bash
 # HTTP API — specific categories only
@@ -296,47 +326,24 @@ class GapFixCommand(BaseModel):
 
 ---
 
-## Writing a Custom Checker
+## Single-category helper
 
-The gap analysis engine is fully extensible.  Register a custom checker
-with the `_CATEGORY_CHECKERS` dict or call `run_gap_analysis_for_category`
-with your own coroutine:
+`run_gap_analysis_for_category(category)` accepts one built-in category name and
+returns its issues. It does not accept or register a custom coroutine. Unlike
+`run_gap_analysis`, it returns an empty list for an unknown category; a checker
+exception is logged and also returns an empty list. An empty result therefore
+cannot distinguish a clean scan from these failures.
 
-```python
-from aksara.gapanalysis import GapIssue, GapAnalysisReport, _make_issue
-
-async def my_custom_check() -> list[GapIssue]:
-    issues = []
-    if not some_condition():
-        issues.append(_make_issue(
-            category="environment",
-            severity="warning",
-            code="MY_CUSTOM_CHECK_FAILED",
-            title="Custom check: something is missing",
-            message="Explanation of what is wrong.",
-            hint="How to fix it.",
-        ))
-    return issues
-```
-
-!!! tip
-    Custom checkers can use any of the eight built-in categories.
-    Group related checks together to keep the output organised.
+The `_CATEGORY_CHECKERS` registry and `_make_issue` helper are internal. Do not
+use registry mutation as a supported application extension API.
 
 ---
 
 ## Comparison with Doctor
 
-| Feature | `aksara doctor` | `aksara gaps` |
-|---|---|---|
-| Requires live DB | ✅ Yes | ❌ No |
-| Checks database connectivity | ✅ Yes | ❌ Config only |
-| Checks import availability | ❌ No | ✅ Yes |
-| Checks migration conflicts | ✅ Yes | ✅ Yes |
-| Checks AI providers | ✅ Yes | ✅ Yes |
-| Fix commands included | ✅ Yes | ✅ Yes |
-| CI-gate exit codes | ✅ Yes | ✅ Yes |
-| Runs offline | ❌ No | ✅ Yes |
-
-Use **`aksara gaps`** for local development pre-flight and CI checks.
-Use **`aksara doctor`** after the application has started to verify live connectivity.
+Use `aksara gaps` for heuristic configuration checks. Doctor has separate
+static and live checks, so whether it needs a database depends on the selected
+command/checks. The application web server need not already be running. Follow
+[Diagnostics & Doctor](diagnostics.md) for production release policy and
+connectivity validation rather than treating either command family as one
+interchangeable gate.

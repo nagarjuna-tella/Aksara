@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "internal migrations applied",
+    "admission waits for approval",
+    "waiting operation cannot be claimed",
+    "reviewer role required",
+    "action scopes still required",
+    "provenance must match",
+    "other tenant cannot select operation",
+    "approval returns ready",
+    "second decision conflicts",
+    "approved operation can be claimed",
+    "rejection returns cancelled",
+    "expired approval returns expired"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Installed approval helper with real PostgreSQL admission, policy, decisions and expiry; admin-role fixture, not restricted-role RLS, HTTP authentication, worker execution or process-crash proof",
+  "page_sha256": {
+    "docs/docs/how-to/require-durable-approval.md": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864"
+  },
+  "runner_sha256": "cdef9255c334e412c0d0bf6e51c1102046804b8b3f23273a8a210f4004b81232"
+}

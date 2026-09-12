@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "research_date": "2026-09-11",
+  "framework_baseline": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
+  "report": "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md",
+  "method": "Current primary product documentation inspected via web retrieval; source capability is not independently benchmarked or a demand measurement.",
+  "sources": [
+    {
+      "title": "Appwrite",
+      "url": "https://appwrite.io/docs",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Celery",
+      "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Convex",
+      "url": "https://docs.convex.dev/understanding/overview",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "CrewAI",
+      "url": "https://docs.crewai.com/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Django",
+      "url": "https://docs.djangoproject.com/en/6.0/intro/overview/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "migration workflow",
+      "url": "https://docs.djangoproject.com/en/6.0/topics/migrations/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Hatchet",
+      "url": "https://docs.hatchet.run/v1",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Litestar",
+      "url": "https://docs.litestar.dev/latest/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Temporal",
+      "url": "https://docs.temporal.io/workflow-execution",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Dramatiq",
+      "url": "https://dramatiq.io/guide.html",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "FastAPI",
+      "url": "https://fastapi.tiangolo.com/features/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Flask",
+      "url": "https://flask.palletsprojects.com/en/stable/extensions/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Flask tutorial",
+      "url": "https://flask.palletsprojects.com/en/stable/tutorial/database/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Google ADK",
+      "url": "https://google.github.io/adk-docs/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Microsoft Agent Framework",
+      "url": "https://learn.microsoft.com/en-us/agent-framework/overview/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "OpenAI Agents SDK",
+      "url": "https://openai.github.io/openai-agents-python/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "OpenFGA",
+      "url": "https://openfga.dev/docs/concepts",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "PocketBase",
+      "url": "https://pocketbase.io/docs/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Pydantic AI",
+      "url": "https://pydantic.dev/docs/ai/capabilities/durable_execution/overview/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "RQ",
+      "url": "https://python-rq.org/",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Supabase",
+      "url": "https://supabase.com/docs",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Trigger.dev",
+      "url": "https://trigger.dev/docs/introduction",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Casbin",
+      "url": "https://v3.casbin.org/docs/supported-models",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Inngest",
+      "url": "https://www.inngest.com/docs/learn/inngest-steps",
+      "source_kind": "official_documentation"
+    },
+    {
+      "title": "Oso",
+      "url": "https://www.osohq.com/docs",
+      "source_kind": "official_documentation"
+    }
+  ],
+  "unverified_assumptions": [
+    "Independent developer demand for delayed authorized mutations",
+    "Comparative integration cost versus assembling existing frameworks",
+    "User response to backend-first positioning"
+  ],
+  "excluded_claims": [
+    "Market size",
+    "Customer count",
+    "Comparative performance",
+    "Universal uniqueness of authorization-aware execution"
+  ],
+  "recommendation": "Backend-first positioning; evidence-gated v0.8 operating experience for existing authorized application work; PostgreSQL-only stable contract."
+}

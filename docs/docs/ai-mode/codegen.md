@@ -1,7 +1,7 @@
 # AI code generation
 
 !!! warning "Experimental"
-    Code generation and patch application are outside the stable v0.6
+    Code generation and patch application are outside the stable v0.7
     contract. Aksara does not expose a `Codegen` class.
 
 The real deterministic API accepts a structured model specification and returns

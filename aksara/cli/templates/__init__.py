@@ -22,22 +22,22 @@ from typing import Dict, Optional
 TEMPLATES = {
     "basic": {
         "name": "basic",
-        "description": "Default minimal project (Post model)",
+        "description": "Neutral project shell with commented model/API examples",
         "source": None,  # Uses scaffold.py templates
     },
     "blog": {
         "name": "blog",
-        "description": "Full blog with Post, Comment, moderation",
+        "description": "Post/Comment demonstration; authentication adaptation required",
         "source": "blog",  # Copy from examples/blog
     },
     "crm": {
         "name": "crm",
-        "description": "Customer & Deal pipeline with forecasting",
+        "description": "Customer/Deal/Activity demonstration; authentication adaptation required",
         "source": "crm",  # Copy from examples/crm
     },
     "multitenant": {
         "name": "multitenant",
-        "description": "Tenant-scoped SaaS backend",
+        "description": "Historical tenant example; known isolation and migration limitations",
         "source": "multitenant",  # Copy from examples/multitenant
     },
 }

@@ -1,142 +1,50 @@
-# Patterns & Example Packs
+# Application patterns
 
-Aksara provides real-world example applications demonstrating common patterns for building async APIs. These patterns serve as starting points for your own projects.
+Use a pattern to study how models and API actions fit together. For your first
+working application, follow the [Ticket Desk tutorial](../getting-started/first-project.md):
+it supplies the identity adapter, migrations, and positive/negative tests that
+these older domain examples do not.
 
-## Available Patterns
+| What you want to learn | Example | Boundary |
+|---|---|---|
+| Related content and explicit state changes | [Blog](blog.md) | Post and Comment; local domain demonstration, not a complete protected publishing application. |
+| Customer relationships and sales actions | [CRM](crm.md) | Customer, Deal and Activity; illustrative pipeline logic, not a production CRM or accounting system. |
+| Authenticated tenant isolation | [Ticket Desk tenancy](../tutorials/ticket-desk-tenancy.md) | The recommended path, with server-owned tenant identity and restricted-role PostgreSQL RLS. |
+| Historical tenant middleware design | [Multitenant example](multitenant.md) | Known resolver defect; retained for inspection, not an isolation reference. |
 
-| Pattern | Description | Use Case |
-|---------|-------------|----------|
-| [Blog](blog.md) | Post + Comment with moderation | Content platforms, blogs |
-| [CRM](crm.md) | Customer + Deal pipeline | Sales apps, lead tracking |
-| [Multitenant](multitenant.md) | Tenant-scoped SaaS | B2B SaaS, white-label apps |
+## Templates and examples are different starting points
 
-## Quick Start with Templates
+`aksara templates list` lists `basic`, `blog`, `crm`, and `multitenant`.
+The default `basic` template generates a project shell with commented model/API
+examples, a project configuration, and setup guidance. The three domain templates
+copy their bundled example files into a flat directory. They do not have the
+same layout or defaults as `basic`.
 
-Use templates to scaffold a project with your chosen pattern:
+Use [Choosing a starting point](../getting-started/patterns.md) before generating
+a project. Follow the specific pattern page's commands for domain templates:
+older CLI output can suggest the basic layout for every template. In particular,
+do not assume an `app/` package,
+`pyproject.toml`, or `.env` exists.
 
-```bash
-# Blog pattern
-aksara startproject myblog --template blog
+## Adapt a pattern deliberately
 
-# CRM pattern
-aksara startproject mycrm --template crm
+Start with the domain model, then decide which operations each actor may perform.
+A publish flag or deal stage is application state, not a Durable Operation.
+An API-key helper does not by itself establish the Principal used by generated
+write permissions. Custom HTTP actions also need explicit authorization checks;
+see the [action contract](../api/actions.md) before exposing one.
 
-# Multitenant pattern
-aksara startproject mysaas --template multitenant
-```
+Use the checked references when adapting an example:
 
-## List Available Templates
+- [Relations](../orm/relations.md) for foreign-key storage and eager loading.
+- [Serializers](../api/serializers.md) for input validation and output shaping.
+- [Authentication](../api/authentication.md) and [permissions](../api/permissions.md)
+  for identity and allowed operations.
+- [Durable actions](../tutorials/ticket-desk-durable.md) when a delayed or retried
+  mutation needs current authorization and recovery.
+- [MCP client tutorial](../tutorials/ticket-desk-mcp.md) for an authenticated tool
+  consumer. Model metadata alone does not mount a safe protocol endpoint.
 
-```bash
-aksara templates list
-```
-
-Output:
-```
-  ⚡ Aksara v0.5.7
-  Available project templates
-
-  basic        Default minimal project (Post model) (default)
-  blog         Full blog with Post, Comment, moderation
-  crm          Customer & Deal pipeline with forecasting
-  multitenant  Tenant-scoped SaaS backend
-```
-
-## Pattern Structure
-
-Each pattern includes:
-
-```
-pattern/
-├── models.py        # Domain models
-├── serializers.py   # Validation & response shaping
-├── views.py         # ViewSets with actions
-├── admin.py         # Admin registrations
-├── urls.py          # Route configuration
-├── settings.py      # App configuration
-├── main.py          # Entry point
-├── README.md        # Documentation
-└── migrations/      # Database migrations
-```
-
-## Key Concepts
-
-### 1. Models with AI Metadata
-
-All patterns use Aksara's AI-enhanced models:
-
-```python
-class Post(Model):
-    title = fields.String(
-        max_length=200,
-        ai_description="Post title",
-    )
-    
-    class Meta:
-        table_name = "posts"
-        ai_name = "Post"
-        ai_description = "Blog posts"
-        ai_agent_exposed = True
-```
-
-### 2. ViewSets with Custom Actions
-
-Patterns demonstrate custom actions:
-
-```python
-class PostViewSet(ModelViewSet):
-    model = Post
-    serializer_class = PostSerializer
-    prefix = "/api/posts"
-    
-    @action(detail=True, methods=["POST"])
-    async def publish(self, pk: str, request: Request):
-        """Publish a post."""
-        post = await self.model.objects.get(id=pk)
-        post.is_published = True
-        await post.save()
-        return {"status": "published"}
-```
-
-### 3. Serializers with Computed Fields
-
-Patterns include computed fields:
-
-```python
-class DealSerializer(ModelSerializer):
-    expected_revenue: Optional[float] = None
-    
-    class Meta:
-        model = Deal
-        fields = ["id", "title", "value", "probability", "expected_revenue"]
-    
-    @classmethod
-    def from_model(cls, deal: Deal) -> "DealSerializer":
-        instance = super().from_model(deal)
-        instance.expected_revenue = deal.value * (deal.probability / 100)
-        return instance
-```
-
-## Learning Path
-
-1. **Start with Blog** if you're new to Aksara
-   - Simple Post + Comment models
-   - Basic CRUD with custom actions
-   - Moderation workflow
-
-2. **Move to CRM** for business logic
-   - Deal stages and probability
-   - Forecasting endpoints
-   - Pipeline aggregations
-
-3. **Study Multitenant** for SaaS patterns
-   - Tenant middleware
-   - Scoped queries
-   - Domain-based routing
-
-## Next Steps
-
-- [Blog Pattern](blog.md) - Content management
-- [CRM Pattern](crm.md) - Sales pipeline
-- [Multitenant Pattern](multitenant.md) - SaaS backend
-- [CLI Reference](../cli/index.md) - Command reference
+Optional Studio and AI settings in historical examples are experimental. Their
+presence is not a requirement for an ordinary backend, nor evidence of a tested
+provider integration.

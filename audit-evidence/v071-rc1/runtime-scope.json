@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "baseline": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
+  "reviewed_head": "b751187d77af0486dda656e3b28d33cfe3efe981",
+  "changed_production_files": [
+    "aksara/_version.py",
+    "aksara/cli/main.py",
+    "aksara/cli/scaffold.py",
+    "aksara/cli/templates/__init__.py",
+    "pyproject.toml"
+  ],
+  "classification": {
+    "aksara/_version.py": "Package version declaration only",
+    "aksara/cli/scaffold.py": "Generated README instructional text plus candidate version labels and dependency floor only",
+    "aksara/cli/main.py": "startproject/startapp/ai_provider_detect docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
+    "aksara/cli/templates/__init__.py": "Four template description string values only; names, sources and copy logic unchanged",
+    "pyproject.toml": "Project version metadata only; dependency declarations unchanged"
+  },
+  "runtime_logic_changed": false,
+  "dependencies_changed": false,
+  "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
+  "source_sha256": {
+    "aksara/_version.py": "35e54df16e18a65934674164295806e0066341ca650013b9f72f8b41f9d44da2",
+    "aksara/cli/scaffold.py": "c0ad6c2099d7f1ca681caba390b516835c2196b9b9c3f6e1a8110679e95ba41e",
+    "aksara/cli/main.py": "c18521486fd2b652046e18b7968372c7da87822fbd5aada26dd228b4877f423a",
+    "aksara/cli/templates/__init__.py": "91ba33b2db8642666d5d9b636e38fde016cfda2ea46254326f02d393e63b80a3",
+    "pyproject.toml": "fce5c96d3705d9ec2fea7f96981bed30368612acaf1721e6e76ca2ccacec1786"
+  },
+  "runner_sha256": "041b2963650670d9dff7dd37aecd485ccace1701b26cb31d51cdc29fba12d138"
+}

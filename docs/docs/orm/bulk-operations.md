@@ -1,103 +1,170 @@
-# Bulk Operations
+# Bulk writes and upserts
 
-Aksara's ORM provides high-performance bulk operations for efficiently managing large datasets. These operations minimize database roundtrips and utilize PostgreSQL-native features for atomicity and speed.
+Use bulk writes when many rows need the same persistence operation. Aksara
+builds batched PostgreSQL statements instead of calling `save()` on every
+instance. That reduces statement overhead, but changes which hooks run.
+It is not an automatic authorization boundary or an all-batches transaction.
 
----
+## A complete helper for Ticket Desk
 
-## Bulk Create
+Use the Ticket model from the [first-project tutorial](../getting-started/first-project.md)
+and apply its migrations before calling this helper. Save as `app/bulk_tickets.py`:
 
-Insert thousands of records efficiently with automatic batching.
+```python title="app/bulk_tickets.py"
+from datetime import datetime, timezone
 
-```python
-# Create 10,000 user instances in memory
-users_to_create = [
-    User(email=f"user{i}@example.com", name=f"User {i}")
-    for i in range(10000)
-]
+from aksara import transaction
+from .models import Ticket
 
-# Batch insert (1000 per batch by default)
-created_users = await User.objects.bulk_create(
-    users_to_create,
-    batch_size=1000
-)
 
-# ✅ This performs 10 queries (batching 1000 items each)
-# ❌ Instead of 10,000 individual INSERT queries
+def checked_subject(value):
+    subject = value.strip()
+    if not subject or len(subject) > 200:
+        raise ValueError("A subject must contain 1 to 200 characters")
+    return subject
+
+
+async def create_tickets(subjects, batch_size=1000):
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    tickets = [Ticket(subject=checked_subject(value)) for value in subjects]
+    async with transaction.atomic():
+        return await Ticket.objects.bulk_create(tickets, batch_size=batch_size)
+
+
+async def append_note(tickets, note, batch_size=1000):
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    if not tickets:
+        return 0
+    for ticket in tickets:
+        ticket.description += note
+    async with transaction.atomic():
+        return await Ticket.objects.bulk_update(
+            tickets, fields=["description"], batch_size=batch_size
+        )
+
+
+async def import_ticket(ticket_id, subject):
+    return await Ticket.objects.upsert(
+        id=ticket_id,
+        defaults={
+            "subject": checked_subject(subject),
+            "description": "",
+            "resolved": False,
+            "updated_at": datetime.now(timezone.utc),
+        },
+        update_fields=["subject", "updated_at"],
+    )
 ```
 
-`bulk_create()` prepares every row before insertion. Auto-managed timestamp
-fields such as `updated_at` are populated before insert, field preparation hooks
-such as `Slug(auto_from=...)` run, and explicit per-row `auto_now_add` values
-such as `created_at` are preserved. Returned objects are hydrated from
-`INSERT ... RETURNING *`, including database-generated defaults.
+The caller must authorize the import and select only tickets it may modify.
+For a tenant model, establish the tenant context, supply server-owned tenant
+values, and enforce database RLS as described in the
+[tenant tutorial](../tutorials/ticket-desk-tenancy.md). Do not accept arbitrary
+objects or primary keys from an untrusted request and pass them to these helpers.
 
-### Ignoring Conflicts
+The helper validates subjects explicitly because direct ORM writes do not invoke
+HTTP serializer validation. `import_ticket()` uses a supplied UUID as its
+conflict key: insert initializes description/resolved, while update changes only
+subject/updated_at. It does not overwrite an existing ticket's resolved flag.
 
-If you want to skip records that violate unique constraints instead of raising exceptions, use `ignore_conflicts=True`. This utilizes PostgreSQL's `ON CONFLICT DO NOTHING`.
+## Method contracts
 
-```python
-# If email is unique and some duplicates exist, skip them silently
-created = await User.objects.bulk_create(
-    users,
-    ignore_conflicts=True
-)
+| Method | Inputs | Return value |
+|---|---|---|
+| `bulk_create(objs, batch_size=1000, ignore_conflicts=False)` | Unsaved instances | List of inserted instances; empty input returns `[]` |
+| `bulk_update(objs, fields, batch_size=1000)` | Saved instances and explicit field names | Number of affected rows; empty objects or fields raises `ValueError` |
+| `upsert(defaults=None, update_fields=None, **kwargs)` | Conflict key fields plus insertion values | `(instance, created)` |
 
-# Returns only successfully inserted records
-```
+Pass a positive integer batch size. These methods materialize their inputs and
+build statements in memory; batching is not a streaming-import API. Choose
+batch size with row width and PostgreSQL parameter limits in mind. Field
+preparation, such as file storage or relationship work, can perform additional
+operations, so row count divided by batch size is not a universal query count.
 
----
+## Current bulk-update limitation
 
-## Bulk Update
+**Known defect in 0.7.0 (BULK-001):** the generated CASE values for ordinary
+Boolean and timestamp fields are inferred as text by PostgreSQL. Updating
+`resolved` or `updated_at` with `bulk_update()` fails with a database type
+mismatch. The text-only helper above was executed successfully, but this does
+not establish general scalar bulk-update support. Vector fields use a separate
+explicit cast path; they are not evidence that all other types work.
 
-Update thousands of records efficiently using PostgreSQL `CASE` statements.
+For a uniform change, use a filtered `QuerySet.update()`; for different values
+per row, use supported individual updates within an explicit transaction until
+a separately reviewed runtime patch fixes typed CASE generation. Do not coerce
+your schema to text to accommodate this defect. Verify the actual fields used
+by your application against PostgreSQL.
 
-```python
-# Mark all unpublished posts as published
-posts = await Post.objects.filter(status="draft").all()
+## Transactions and partial failure
 
-# Modify instances in memory
-for post in posts:
-    post.status = "published"
-    post.updated_at = datetime.now()
+Each individual PostgreSQL statement is atomic. An unwrapped multi-batch call
+can commit earlier batches before a later batch fails. The two bulk helpers
+above deliberately use `transaction.atomic()` so their supported PostgreSQL
+writes commit or roll back together. Keep their calls sequential on the pinned
+connection. See [transaction limits](expressions-and-transactions.md#limits-of-atomicity).
 
-# Batch update all at once
-updated_count = await Post.objects.bulk_update(
-    posts,
-    fields=['status', 'updated_at'],
-    batch_size=1000
-)
+Rollback restores database state, not Python object attributes or `_is_new`
+flags already changed by preparation/hydration. Reload or discard affected
+instances after a failed operation. Storage uploads and other external effects
+performed during preparation are not undone by a database rollback.
 
-print(f"Updated {updated_count} posts")
-```
+## Preparation, validation and signals
 
-For Vector fields, `bulk_update()` casts CASE branch parameters as PostgreSQL
-`vector` values. Ordinary scalar and foreign-key bulk updates keep their normal
-SQL shape.
+`bulk_create()` checks that instances are unsaved, rejects expression values,
+runs async field/generic-relation preparation and field validation for all
+objects before issuing its inserts, and populates `auto_now` fields. Explicit
+`auto_now_add` values are retained. Returned rows hydrate database-generated
+values into instances.
 
-`QuerySet.update()` also refreshes `auto_now` fields such as `updated_at` when
-regular fields are updated. If you explicitly pass `updated_at`, that value is
-respected; `update(updated_at=...)` does not override itself.
+`bulk_update()` writes only the named fields through their database conversion.
+It does not call `save()`, run full instance validation/preparation, or refresh
+`auto_now` automatically. The text-only `append_note()` helper deliberately
+leaves `updated_at` unchanged. This differs from `QuerySet.update()`, which refreshes `auto_now`
+when updating regular fields unless the caller supplied that timestamp.
 
----
+`upsert()` converts supplied fields to database values but does not construct
+and prepare an unsaved instance as `create()` does. Supply required insertion
+values and timestamps intentionally. A Python model default is not proof that
+an omitted upsert column has a database default; inspect the applied migration.
 
-## Upsert (Insert or Update)
+These three manager methods do not emit per-instance `pre_save`/`post_save`
+signals. Do not use a signal as the sole implementation of an invariant that
+bulk or raw SQL writes must obey. Database constraints still apply.
 
-Perform an insert if a record is new, or update it if it already exists based on unique constraints. 
+Expression values are rejected by `bulk_create()`, `bulk_update()`, and the
+insertion values of `upsert()`. Use the supported `QuerySet.update()` expression
+path when you need an `F()` calculation. Unresolved File/Image upload objects
+need a preparation-capable save/create path; bulk update and upsert are not
+upload handlers. Vector conversion has its own
+[advanced-field contract](advanced-field-policy.md).
 
-**Uses PostgreSQL's native `ON CONFLICT DO UPDATE`** for atomicity and performance.
+## Ignoring conflicts
 
-```python
-# Upsert: Insert if new, update if exists (by email)
-user, created = await User.objects.upsert(
-    email="john@example.com",  # Unique key for conflict detection
-    defaults={'name': 'John Doe', 'is_active': True},  # Values for creation
-    update_fields=['name', 'updated_at']  # Fields to update on conflict
-)
+`ignore_conflicts=True` adds `ON CONFLICT DO NOTHING` to bulk insertion. It
+returns only inserted rows; it does not suppress arbitrary validation, CHECK,
+foreign-key, or permission failures.
 
-if created:
-    print(f"Created new user: {user.email}")
-else:
-    print(f"Updated existing user: {user.email}")
-```
+When PostgreSQL returns fewer rows than a batch contained, Aksara constructs
+returned instances from those rows rather than matching them back to every
+input object. Use the returned list. Do not infer that all input objects were
+saved, that each input's state was updated, or that a skipped row's existing
+contents were changed.
 
-If `update_fields` is omitted, all fields specified in `defaults` will be updated on conflict.
+## Upsert conflict keys
+
+The names in `**kwargs` form the SQL conflict target; PostgreSQL must have a
+matching unique constraint or index. The primary key in the helper satisfies
+that requirement. Using a non-unique field does not turn it into a unique key.
+An invalid conflict target fails at the database boundary; the manager does not
+prevalidate every unique-index shape.
+
+Keep key fields separate from `defaults`. If `update_fields` is omitted, fields
+in `defaults` are updated on conflict. Explicit update fields missing from
+`defaults` use PostgreSQL's proposed insertion value (`EXCLUDED`), which can
+include database defaults. A keys-only upsert still emits a no-op `DO UPDATE`
+to return a row; do not treat it as a read-only lookup or as free of database
+update-trigger effects. `get_or_create()` is a separate lookup/create method
+and does not inherit upsert's single-statement conflict handling.

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "packages": [
+    {
+      "version": "0.7.0",
+      "scaffold_sha256": "d5be77cbb3a65f134c00285139a2f4ca5649692a9a2ae58fa3df575f4076acab",
+      "readme_sha256": "5bf391526da864e688b89a0933b7525f3d70e8eab7a95d7e214263da057544b9"
+    },
+    {
+      "version": "0.7.1rc1",
+      "scaffold_sha256": "c0ad6c2099d7f1ca681caba390b516835c2196b9b9c3f6e1a8110679e95ba41e",
+      "readme_sha256": "f36689e5c6b5c9f9ddc9d24ff93616529d9cef5d61338323ad02982710af1a87"
+    }
+  ],
+  "changed_generated_files": [
+    "README.md"
+  ],
+  "files_compared": 18,
+  "baseline_file_sha256": {
+    "requirements.txt": "38680cef9e8c784eb6d5cca78a1dfc74ffcc052949b001c81db35543db257ae8",
+    ".pre-commit-config.yaml": "d344bfdabc034fe0b7344772dbb38d709799aed198581b8ec27c095ea888c951",
+    "pyproject.toml": "a5bfbd4bbf80eda2017855f3402a2a3c299d85dcafc59586988d5cbaaee0bc50",
+    ".editorconfig": "a4cb982114210df5f0477d9be523c19c12e70dace435059b10b94ab392211bba",
+    "README.md": "5bf391526da864e688b89a0933b7525f3d70e8eab7a95d7e214263da057544b9",
+    ".gitignore": "00ced19a1700ac03e6514f4623db166a7b1ef6b6f316e1c88445f39f0155da0d",
+    ".env": "a5995a4e56de83044ff0e1072e98e9d91824ba0ff50b59fd510c6ba2c5ab7d63",
+    "settings.py": "bd1ed8947e0556eb35e54de718c8a3042aae1fe39a7039ca6b4cd037c3a494d1",
+    ".env.example": "5de803c803cec035c619ec5433e4955c15756322662ebfdf07c26a944351713d",
+    "main.py": "ed8652211c63f40c37d0b38710c37168d93b6a5b06e5538fedc8cd8c62cf2480",
+    "migrations/__init__.py": "4e15556da0f44835d651b385d9e9be126a54c82048f49d6848a418ac568d8363",
+    "app/models.py": "d2f300678a375a3326c01fb84ef8c84ccc28674707b3e23bf9ac98449790e81c",
+    "app/serializers.py": "9663b9200bae21ecf391ebd46e87fe5faee69a5786d6cf7d93a168028ddf5074",
+    "app/__init__.py": "bd74aa66ed553754570d2754ce7b0c8313b04eef5015f0a22ae7f88b7eb9fcd0",
+    "app/admin.py": "cc63b168295b241160daa5ea87d8df0d693347046ff12f185faa978a3cc20c2d",
+    "app/urls.py": "ca73d951bec627ebe60f4cda567709c6bb09240ff061ba0443f26359a9c39ff1",
+    "app/views.py": "de67e5aed6208bab217eda6653c58afb6e7f6e7c65779a6892bc13e5916f638b",
+    "static/welcome.html": "82f11e95b4a41fda8bd4ccb1f35ec182e2abcc30d77f9198602b4354f7dd2f8e"
+  },
+  "development_file_sha256": {
+    "requirements.txt": "38680cef9e8c784eb6d5cca78a1dfc74ffcc052949b001c81db35543db257ae8",
+    ".pre-commit-config.yaml": "d344bfdabc034fe0b7344772dbb38d709799aed198581b8ec27c095ea888c951",
+    "pyproject.toml": "a5bfbd4bbf80eda2017855f3402a2a3c299d85dcafc59586988d5cbaaee0bc50",
+    ".editorconfig": "a4cb982114210df5f0477d9be523c19c12e70dace435059b10b94ab392211bba",
+    "README.md": "9faf744f46679da5f6991889c82cd9ae4bab7c7c14e2e6fd523de1f97354a0d4",
+    ".gitignore": "00ced19a1700ac03e6514f4623db166a7b1ef6b6f316e1c88445f39f0155da0d",
+    ".env": "a5995a4e56de83044ff0e1072e98e9d91824ba0ff50b59fd510c6ba2c5ab7d63",
+    "settings.py": "bd1ed8947e0556eb35e54de718c8a3042aae1fe39a7039ca6b4cd037c3a494d1",
+    ".env.example": "5de803c803cec035c619ec5433e4955c15756322662ebfdf07c26a944351713d",
+    "main.py": "ed8652211c63f40c37d0b38710c37168d93b6a5b06e5538fedc8cd8c62cf2480",
+    "migrations/__init__.py": "4e15556da0f44835d651b385d9e9be126a54c82048f49d6848a418ac568d8363",
+    "app/models.py": "d2f300678a375a3326c01fb84ef8c84ccc28674707b3e23bf9ac98449790e81c",
+    "app/serializers.py": "9663b9200bae21ecf391ebd46e87fe5faee69a5786d6cf7d93a168028ddf5074",
+    "app/__init__.py": "bd74aa66ed553754570d2754ce7b0c8313b04eef5015f0a22ae7f88b7eb9fcd0",
+    "app/admin.py": "cc63b168295b241160daa5ea87d8df0d693347046ff12f185faa978a3cc20c2d",
+    "app/urls.py": "ca73d951bec627ebe60f4cda567709c6bb09240ff061ba0443f26359a9c39ff1",
+    "app/views.py": "de67e5aed6208bab217eda6653c58afb6e7f6e7c65779a6892bc13e5916f638b",
+    "static/welcome.html": "82f11e95b4a41fda8bd4ccb1f35ec182e2abcc30d77f9198602b4354f7dd2f8e"
+  },
+  "normalization": "Generated Studio token value in .env/.env.example plus exact 0.7.0/0.7.1rc1 version spellings; no other executable/config/dependency normalization",
+  "runner_sha256": "efbfdc41409eee38755b2e08db023b8f768393091054e18cb3565fc1dd14d495"
+}

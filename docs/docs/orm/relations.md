@@ -77,9 +77,15 @@ author = await Author.objects.get(id=author_id)
 
 Today, `post.author` and `post.author_id` expose the same stored FK value/id;
 `post.author` is not a lazy-loaded related object. For eager loading, use
-`select_related()` and then read the loaded object with `get_related("author")`.
+`select_related(...).all()` and then read the loaded object synchronously with
+`get_related("author")`. Calling it without preloading raises `ValueError`; it
+does not issue a query.
 
 ### Reverse Access
+
+Aksara finalizes reverse descriptors after loading models during application
+startup. In a standalone script, import all related models and call the public
+`aksara.finalize_relations()` before using reverse accessors.
 
 Access related objects from the parent:
 
@@ -147,7 +153,7 @@ class Post(Model):
     )
 
 # When category is deleted, posts remain but category becomes NULL
-await category.delete()  # post.category becomes None
+await category.delete()  # Reload the post to observe category=None
 ```
 
 ### RESTRICT / PROTECT
@@ -159,7 +165,7 @@ class Post(Model):
     author = fields.ForeignKey(Author, on_delete=RESTRICT)
 
 # This raises an error if the author has posts
-await author.delete()  # Raises ForeignKeyConstraintError
+await author.delete()  # ORM precheck raises RestrictedError
 ```
 
 ### Import on_delete Constants
@@ -214,7 +220,8 @@ print(profile.bio)
 ```
 
 !!! note "OneToOne Reverse is a Single Object"
-    Unlike ForeignKey's reverse which returns a manager (`.all()`, `.filter()`), OneToOne reverse returns a single object (or raises `DoesNotExist`).
+    Unlike ForeignKey's reverse which returns a manager (`.all()`, `.filter()`), `await user.profile()` returns one object or `None`. Use
+    `await user.profile.get()` when absence should raise `DoesNotExist`.
 
 ### When to Use OneToOne
 
@@ -271,7 +278,7 @@ await post.tags.clear()
 await post.tags.set([tag1, tag2, tag3])
 
 # Check membership
-has_tag = await post.tags.contains(tag)
+has_tag = tag.id in await post.tags.ids()
 ```
 
 ### Reverse Access
@@ -282,23 +289,17 @@ tag = await Tag.objects.get(name="python")
 # Get all posts with this tag
 posts = await tag.posts.all()
 
-# Filter
-recent = await tag.posts.filter(created_at__gt=last_week)
+# Filter the returned list; the reverse M2M manager has no filter() method.
+recent = [post for post in await tag.posts.all() if post.created_at > last_week]
 ```
 
 ### Junction Table
 
-Aksara automatically creates a junction table:
-
-```sql
--- Auto-generated for Post.tags -> Tag
-CREATE TABLE post_tags (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    UNIQUE (post_id, tag_id)
-);
-```
+Generate and apply migrations to create the junction table. Declaring a model
+alone does not create it. The default name is `{source_table}_{field_name}`:
+`posts_tags` for a `posts` table with a `tags` field. It contains source/target
+UUID references, a unique pair, its own ID and a creation timestamp. Inspect
+the generated migration rather than copying a separate hand-written schema.
 
 ### Custom Through Model
 
@@ -330,13 +331,14 @@ class Post(Model):
 
 ## Self-Referential Relations
 
-Models can reference themselves:
+Models can reference themselves by their explicit registered class name. The
+string `"self"` is not a supported shortcut:
 
 ```python
 class Category(Model):
     name = fields.String(max_length=100)
     parent = fields.ForeignKey(
-        "self",  # or "Category"
+        "Category",  # explicit registered model name
         on_delete=CASCADE,
         nullable=True,
         related_name="children",
@@ -362,18 +364,25 @@ electronics = await Category.objects.get(id=electronics_id)
 
 ```python
 # Posts by a specific author
-posts = await Post.objects.filter(author=author)
+posts = await Post.objects.filter(author=author).all()
 
 # Posts by author email
-posts = await Post.objects.filter(author__email="jane@example.com")
+posts = await Post.objects.filter(author__email="jane@example.com").all()
 
 # Posts with a specific tag (M2M)
-posts = await Post.objects.filter(tags__name="python")
+tag = await Tag.objects.get(name="python")
+posts = await tag.posts.all()
 ```
+
+Forward M2M traversal in a filter such as `tags__name` is not supported by
+the current query builder. Resolve the tag and use its reverse M2M manager,
+as above.
 
 ### Select Related (Eager Loading)
 
-Avoid N+1 queries by loading related objects in one query:
+Avoid one lookup per parent by batching related-object loads. Aksara first
+fetches the parent rows, then loads the requested FK/O2O relations in additional
+queries; `select_related()` is not a promise of one SQL JOIN query.
 
 ```python
 # Without select_related: N+1 queries
@@ -381,12 +390,20 @@ posts = await Post.objects.all()
 for post in posts:
     author = await Author.objects.get(id=post.author_id)  # Query per post
 
-# With select_related: Single query
+# With select_related: batched related-object loading
 posts = await Post.objects.select_related("author").all()
 for post in posts:
     author = post.get_related("author")
     print(author.name)
 ```
+
+!!! warning "Known v0.7.0 terminal-method limitation"
+    `select_related(...).first()` does not populate the related-object cache.
+    Calling `get_related()` on that result raises `ValueError`. Use the
+    documented `select_related(...).all()` path (with an appropriately bounded
+    query) or explicitly load the related record. QuerySet has no `get()`
+    method; `Model.objects.get()` is a manager method. These names are not
+    interchangeable. A separate runtime consistency fix is required.
 
 ### Prefetch Related (For M2M)
 
@@ -400,44 +417,51 @@ for post in posts:
 
 ---
 
-## Complete Example
+## Complete relation example
+
+These models use distinct names to avoid collisions with framework models.
+In an application, import them for migration discovery and apply migrations,
+including the M2M junction table, before calling `demo()` on a connected database.
+For a standalone script, call `finalize_relations()` after all declarations and
+before using reverse accessors. The example is not a standalone setup script
+or an authentication implementation.
 
 ```python
 from aksara import Model, fields, CASCADE, SET_NULL
 
-class User(Model):
+class BlogAuthor(Model):
     email = fields.Email(unique=True)
     name = fields.String(max_length=100)
 
-class Category(Model):
+class BlogCategory(Model):
     name = fields.String(max_length=50)
     slug = fields.String(max_length=50, unique=True)
     parent = fields.ForeignKey(
-        "self",
+        "BlogCategory",
         on_delete=CASCADE,
         nullable=True,
         related_name="children",
     )
 
-class Tag(Model):
+class BlogTag(Model):
     name = fields.String(max_length=30, unique=True)
     slug = fields.String(max_length=30, unique=True)
 
-class Post(Model):
+class BlogPost(Model):
     title = fields.String(max_length=200)
     content = fields.Text()
     published = fields.Boolean(default=False)
     
     # Many-to-one: Many posts per author
     author = fields.ForeignKey(
-        User,
+        BlogAuthor,
         on_delete=CASCADE,
         related_name="posts",
     )
     
     # Many-to-one: Many posts per category (optional)
     category = fields.ForeignKey(
-        Category,
+        BlogCategory,
         on_delete=SET_NULL,
         nullable=True,
         related_name="posts",
@@ -445,16 +469,16 @@ class Post(Model):
     
     # Many-to-many: Posts have multiple tags
     tags = fields.ManyToMany(
-        Tag,
+        BlogTag,
         related_name="posts",
     )
     
     created_at = fields.DateTime(auto_now_add=True)
 
-class UserProfile(Model):
+class BlogProfile(Model):
     # One-to-one: Each user has one profile
     user = fields.OneToOne(
-        User,
+        BlogAuthor,
         on_delete=CASCADE,
         related_name="profile",
     )
@@ -465,19 +489,19 @@ class UserProfile(Model):
 # Usage examples
 async def demo():
     # Create user with profile
-    user = await User.objects.create(email="jane@example.com", name="Jane")
-    profile = await UserProfile.objects.create(user=user, bio="Tech writer")
+    user = await BlogAuthor.objects.create(email="jane@example.com", name="Jane")
+    profile = await BlogProfile.objects.create(user=user, bio="Tech writer")
     
     # Create category hierarchy
-    tech = await Category.objects.create(name="Technology", slug="tech")
-    python = await Category.objects.create(name="Python", slug="python", parent=tech)
+    tech = await BlogCategory.objects.create(name="Technology", slug="tech")
+    python = await BlogCategory.objects.create(name="Python", slug="python", parent=tech)
     
     # Create tags
-    tutorial = await Tag.objects.create(name="Tutorial", slug="tutorial")
-    beginner = await Tag.objects.create(name="Beginner", slug="beginner")
+    tutorial = await BlogTag.objects.create(name="Tutorial", slug="tutorial")
+    beginner = await BlogTag.objects.create(name="Beginner", slug="beginner")
     
     # Create post with relations
-    post = await Post.objects.create(
+    post = await BlogPost.objects.create(
         title="Getting Started with Python",
         content="Learn Python basics...",
         author=user,
@@ -489,11 +513,11 @@ async def demo():
     
     # Query examples
     jane_posts = await user.posts.all()
-    tech_posts = await tech.posts.all()  # Including child categories
-    tutorial_posts = await Post.objects.filter(tags__name="Tutorial")
+    tech_posts = await tech.posts.all()  # Direct category only; not descendants
+    tutorial_posts = await tutorial.posts.all()
     
     # Efficient loading
-    posts = await Post.objects.select_related("author", "category").all()
+    posts = await BlogPost.objects.select_related("author", "category").all()
 ```
 
 ---
@@ -524,7 +548,7 @@ editor = fields.ForeignKey(User, related_name="posts2")  # ❌
 ### Use select_related for Performance
 
 ```python
-# Always use when accessing related objects
+# Use when you need these related objects; measure the resulting query
 posts = await Post.objects.select_related("author").all()
 ```
 

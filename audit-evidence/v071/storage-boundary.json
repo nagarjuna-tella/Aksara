@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "STORAGE-001",
+  "severity": "P1",
+  "package_version": "0.7.0",
+  "public_api": "aksara.storage.FileSystemStorage.save",
+  "probe": "Create a TemporaryDirectory with media and media-private children. Instantiate FileSystemStorage(location=media). Save ../media-private/probe.txt with disposable content. Both directories are deleted when the probe ends.",
+  "returned_name": "../media-private/probe.txt",
+  "outside_root_created": true,
+  "cause": "Resolved paths are compared with string startswith rather than path-component containment.",
+  "scope": "Direct storage method; no private files or application data touched, no HTTP exploit or FieldField traversal bypass claimed.",
+  "runtime_fix_performed": false,
+  "recommendation": "Separate containment patch with sibling-prefix, parent traversal and symlink tests; review all storage methods using the shared path helper."
+}

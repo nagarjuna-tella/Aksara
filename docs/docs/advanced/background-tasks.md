@@ -123,39 +123,60 @@ await send_welcome_email.enqueue(
 
 ### Automatic (Default)
 
-When `tasks_enabled=True`, `Aksara(...)` starts a `TaskWorker` during app
-startup and stops it gracefully during shutdown.
+When `tasks_enabled=True` and an explicit database URL enables the Aksara
+database lifespan, `Aksara(...)` starts a `TaskWorker` during startup and stops
+it during shutdown. Pass the effective settings to the application constructor;
+setting a URL on the global settings object alone does not start that lifespan.
 
 ```python
-from aksara.conf import Settings, configure
+from aksara import Aksara, configure, settings
 
-configure(Settings(
-    database_url="postgresql://postgres:postgres@localhost/myapp",
+configure(
     tasks_enabled=True,
     task_poll_interval_seconds=1.0,
     task_max_attempts=3,
-))
+)
+if not settings.database_url:
+    raise RuntimeError("Set AKSARA_DATABASE_URL or DATABASE_URL")
+app = Aksara(database_url=settings.database_url)
 ```
 
 ### Manual Worker
 
 Run the worker directly for full control:
 
-```python
+```python title="run_task_worker.py"
+import asyncio
+
 from aksara.tasks import TaskWorker
 from aksara.db import Database
 
-db = Database("postgresql://localhost/myapp")
-await db.connect()
 
-worker = TaskWorker(
-    db,
-    poll_interval=0.25,
-    retry_delay_seconds=5.0,
-    concurrency=4,
-)
-await worker.start()
+async def main():
+    db = Database("postgresql://localhost/myapp")
+    await db.connect()
+    worker = TaskWorker(
+        db,
+        poll_interval=0.25,
+        retry_delay_seconds=5.0,
+        concurrency=4,
+    )
+    await worker.start()
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await worker.stop()
+        await db.disconnect()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
+
+`start()` starts the polling task and returns. The process that owns a manual
+worker must stay alive, call `stop()` during shutdown, and then disconnect its
+database pool. `stop()` waits for in-flight callables to finish; choose a
+separate process supervisor and shutdown deadline appropriate to the deployment.
 
 ### Queue Binding
 
@@ -251,6 +272,14 @@ Every `lock_recovery_interval_seconds` (default: 60 s) the worker queries for
 tasks whose `locked_at` is older than `stale_lock_timeout_seconds` (default:
 300 s / 5 min) and resets them to `pending` so another worker can retry them.
 
+For an ordinary unlinked task, this age test is not a heartbeat or ownership
+fence. A callable that is still running beyond `stale_lock_timeout_seconds` can
+be reclaimed and executed by another worker, and the older callable can later
+overwrite the stored result. Set the timeout above the longest expected runtime,
+make ordinary tasks safe to repeat, and split long work where practical. Use a
+[Durable Operation](durable-operations.md) when fenced ownership, current
+reauthorization, or guarded application writes are required.
+
 ```python
 worker = TaskWorker(
     db,
@@ -338,8 +367,10 @@ A task record does not persist the complete request `Principal`, roles, scopes,
 credential, or authorization decision. Applications must authorize who may
 enqueue work and who may inspect task status. Task code that performs a delayed
 side effect must apply the application's current authorization rule itself.
-Durable Principal provenance and framework-managed reauthorization are planned
-for v0.7 rather than implied by the v0.6 task contract.
+For framework-managed current reauthorization, register an opt-in
+[Durable Operation](durable-operations.md). Released in v0.7, that contract
+applies to linked Operation execution; it does not automatically extend to
+ordinary unlinked `@task` jobs.
 
 ---
 
@@ -422,8 +453,9 @@ Tasks should be idempotent when possible, and payloads should be kept small.
 
 ## Operational Notes
 
-- `aksara migrate` provisions `aksara_tasks` and `aksara_cron_state` through
-  an internal migration. Run migrations with a schema-owning release role
+- The file-based `aksara migrate` path provisions `aksara_tasks` and
+  `aksara_cron_state` through an internal migration. For projects without
+  migration files, use the [explicit migration executor](../operations/upgrade-v07.md#2-apply-versioned-migrations-before-startup). Run migrations with a schema-owning release role
   before starting application instances.
 - Runtime checks skip DDL when the internal schema is current, so a production
   worker can run with DML-only table grants. Older schemas still use the

@@ -1,0 +1,29 @@
+{
+  "package_version": "0.7.0",
+  "checks": {
+    "documented_ollama_environment_loaded": true,
+    "documented_custom_environment_loaded": true,
+    "detect_help_uses_loaded_environment_names": true,
+    "clean_environment_reports_default_ollama": true,
+    "keyless_custom_detected_but_not_configured": true,
+    "custom_adapter_defaults_match_docs": true
+  },
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "scope": "Installed-wheel environment loading, provider-help labels and CustomHttpAdapter defaults with sockets unused. Records two experimental configured-state defects; does not test provider reachability, model output or production suitability.",
+  "page_sha256": {
+    "docs/docs/ai-mode/config.md": "b629ef5d8d495447973405509b607ec1ebe1e1de94914dd4c129e244b4009f30",
+    "docs/docs/ai-mode/custom-http.md": "208812d2a03af90f6f0d5dd0b092512672c62f610559652996a7e612e829a12a",
+    "docs/docs/ai-mode/hub.md": "d7325ab4af1e28eda5b9f4db19bdd4002e0d3723736298eb52cb6e54c17bd69f",
+    "docs/docs/ai-mode/index.md": "8550bec64885019150822c9770cc7447ddd404754f497d12d5591ea0a24cfee2",
+    "docs/docs/ai-mode/ollama.md": "e84d4833f74030742d112a760e11c892afb21d5dd0baffa975f00016de13a933",
+    "docs/docs/ai-mode/providers.md": "67cafdec34af91c737d23039252be5decac695f5a63ecdf3aa42e8e27c3e3c55"
+  },
+  "source_sha256": {
+    "aksara/ai/llm_clients/custom_adapter.py": "86ccc90c9443ff9ff5b1e847103d238ad3be8ad0fcc9d7a3cdbde916e37dfc60",
+    "aksara/ai/providers_unified.py": "dbb333545af07895db9d39c6ad94b095820b933c4a5c9f01a3f2a889648de811",
+    "aksara/cli/main.py": "c18521486fd2b652046e18b7968372c7da87822fbd5aada26dd228b4877f423a"
+  },
+  "runner_sha256": "5e85ffed5b4d6399312f172e103defffd567d471ccf4dc17409bd5371c1b8c04"
+}

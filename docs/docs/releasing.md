@@ -9,7 +9,8 @@ not publish packages by itself.
 Before a production-mode claim or public release candidate, run the release gate
 workflow and confirm these checks pass:
 
-- Full test suite
+- Full test suite on Python 3.11 and 3.14 at both supported web dependency
+  boundaries, with required database tests enabled
 - Security tests
 - Diagnostics tests
 - Bounded fuzz/adversarial tests
@@ -25,7 +26,27 @@ workflow and confirm these checks pass:
 - Package build
 - `twine check`
 - Wheel import verification
+- Packaged production reference application
+- Installed-wheel documentation journey
 - SBOM generation
+
+## Evidence for the selected candidate
+
+Record the exact commit, Python/dependency versions, PostgreSQL environment,
+commands, results, and artifact hashes. The hosted matrix uses PostgreSQL 16
+with pgvector and `AKSARA_REQUIRE_DATABASE_TESTS=1`; a local run on another
+PostgreSQL version is useful evidence but does not replace that hosted check.
+Database skips are not successful database validation.
+
+Build and exercise the candidate wheel outside the checkout so source imports
+cannot hide packaging or public-example failures. Rerun affected checks after
+candidate changes. Preserve older release evidence as historical records; do
+not relabel a prior commit's results as validation of the new candidate.
+
+For a documentation-only candidate, include executable public examples and
+scaffold guidance checks as well as a comparison of production-source changes
+against the previous release. Documentation work does not waive runtime
+regression checks.
 
 ## PyPI Trusted Publishing
 
@@ -47,7 +68,10 @@ Keep the `pypi` environment protected so maintainers must approve publishing.
 ## Publish Workflow
 
 Publishing is manual. Use the `Publish Package` workflow only after release-gate
-checks pass and the protected `pypi` environment is ready.
+checks pass for the exact selected ref and the protected `pypi` environment is
+ready. The publish job itself does not rerun the release suite. A named
+environment in YAML is not proof that required-reviewer protection has been
+configured; verify that setting before dispatch.
 
 Pushing a `v*` tag runs the release-gate workflow; it does not publish a
 package. Creating a GitHub Release also does not trigger publication. Package

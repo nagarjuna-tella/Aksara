@@ -10,7 +10,7 @@ middleware and checks authentication type, expiry, audience, scope,
 permissions, `PolicyEngine`, object access, writable fields, tenant context, and
 PostgreSQL RLS where configured. Mutation runs through the generated REST/ORM
 transaction path. Structured failures, bounded approval grants, audit events,
-cancellation, and in-process limits are part of the documented v0.6 boundary.
+cancellation, and in-process limits are part of the MCP boundary retained in v0.7.
 
 Schemas, prompt instructions, hidden fields, and client-supplied tenant values
 are not authorization controls. See [MCP](mcp.md) and the
@@ -48,11 +48,21 @@ for reviewing diffs, permissions, tests, and source control.
 
 ## Lifetime and ownership
 
-Runtime budgets, investigation sessions, and MCP replay state are process-local.
-Approval workflow storage and long-term audit retention belong to the
-application. Durable operation identity, reauthorization after delay,
-cross-worker idempotency, durable cancellation, and restart-safe budgets remain
-deferred to v0.7.
+Prompt-call budgets, investigation sessions, and synchronous MCP replay state
+are process-local. They do not become durable merely because the application
+uses v0.7.0.
+
+[Durable Authorized Operations](../advanced/durable-operations.md) are a separate,
+explicitly registered execution path introduced in v0.7.0. They provide persisted
+operation identity, current reauthorization, idempotent admission, approval and
+cancellation state, fencing, and bounded recovery under their documented
+production profile. They do not persist an AI planner, chat session, memory, or
+arbitrary provider call.
+
+Long-term audit retention, external approval interfaces, deployment operations,
+and external-effect reconciliation remain application responsibilities. Read the
+[v0.7 contract](../roadmap/v0-7-stability-contract.md) for exact guarantees and
+limits rather than extending synchronous MCP or prompt-runtime claims.
 
 Provider configuration does not certify model quality. Treat model output as
 untrusted input and validate it before queries, patches, or side effects.

@@ -1,75 +1,72 @@
-# Aksara Example: CRM
+# CRM example
 
-This example demonstrates:
-- Models
-- ViewSets
-- Migrations
-- Studio
-- MCP tools
-- AI Console usage
+**Application demonstration.** This example contains Customer, Deal and Activity. For a complete
+protected application, use the [Ticket Desk tutorial](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/).
 
-Business app pattern. It includes contacts/customers, companies, deals/opportunities, activities/tasks, status fields, and query examples for pipeline reporting.
+This is a domain demonstration, not a production CRM or financial ledger. Valid anonymous generated writes return 403; the example API-key helper does not establish a server-owned Principal. Custom stage/report actions need explicit authorization before exposure.
 
-## Run
+## Repository source or generated copy?
+
+If you are reading the repository's example source, first
+[install Aksara](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/)
+in an activated environment and generate a standalone copy in your working
+directory:
 
 ```bash
-cd examples/crm
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ../..
+aksara startproject crm_demo --template crm
+cd crm_demo
+```
+
+If this README is already inside a project created by `startproject`, skip those
+two commands and work in that project's directory. The generated copy has flat
+`models.py`, `views.py`, `settings.py` and `main.py` modules. It does not contain
+an `app/` package, `.env`, or a `pyproject.toml` for editable installation.
+The repository source uses package-relative imports; it is not the same layout
+as a generated standalone copy.
+
+## Run the generated copy locally
+
+Use an environment with Aksara installed. Export `DATABASE_URL` for a dedicated
+local PostgreSQL database before running these commands. This example prefers
+it over `AKSARA_DATABASE_URL`; keep both values consistent if both are set.
+Do not use a production database for example migrations.
+
+```bash
+aksara makemigrations --app models --output migrations
+aksara migrate --migrations-dir migrations
 aksara doctor launch-check
-aksara migrate
-aksara dev
+aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
-Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
+Review generated migrations before applying them. A successful command does not
+prove every model is present; the historical multitenant example has the
+explicit omission described above.
+
+In another terminal:
 
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_crm"
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-## Seed
+Use `/docs` for registered API routes. Health and OpenAPI success are startup
+checks, not positive CRUD, custom-action authorization, tenant isolation, or
+production readiness evidence. Do not disable permissions to make an old
+unauthenticated seed command succeed.
 
-No seed command is required. Create a first customer and deal through the API:
+The generic scaffold also offers `aksara dev`; this example uses the explicit
+`aksara run` command above so its import target is visible. It does not enable
+`/studio/ui` or the AI Console.
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/customers/ \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Acme Corp","email":"hello@example.com","industry":"SaaS"}'
-```
+## Adapt with the public guide
 
-## Open
+Read the [crm pattern guide](https://nagarjuna-tella.github.io/Aksara/patterns/crm/)
+for purpose, limitations and next steps. For tenant isolation, use
+[Ticket Desk tenancy](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-tenancy/)
+and the [production guide](https://nagarjuna-tella.github.io/Aksara/tutorials/deployment/).
 
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
-
-## Test API
-
-```bash
-curl http://127.0.0.1:8000/api/customers/
-curl http://127.0.0.1:8000/api/deals/
-curl http://127.0.0.1:8000/api/deals/pipeline/
-```
-
-## Inspect generated tool metadata
-
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
-
-This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
-
-Confirm the catalog includes customer, deal, and activity tools.
-
-## Try in AI Console
-
-Ask:
-
-```text
-Explain the CRM data model
-Review the sales pipeline architecture
-Investigate this project
-```
-
-AI provider setup is optional for first launch. Non-AI Studio tools and MCP inspection work without paid providers.
+Optional Studio and AI surfaces are experimental. The `/ai/tools/mcp` inspection
+catalog is not the MCP protocol transport or an authorization test. Follow the
+[official MCP client tutorial](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-mcp/)
+for server-owned identity and tool execution. No provider integration is proved
+by the local startup checks.

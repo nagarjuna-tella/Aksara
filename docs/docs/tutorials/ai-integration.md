@@ -39,7 +39,7 @@ Configure the current AI Hub path for optional provider-backed Studio or
 prompt-pack features:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```
@@ -59,4 +59,4 @@ result = await run_prompt_pack(
 
 Treat provider output as untrusted. Provider selection and quality, session
 persistence, autonomous workflows, memory, and durable orchestration are not
-stable v0.6 guarantees.
+stable v0.7 guarantees.

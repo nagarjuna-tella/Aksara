@@ -121,7 +121,10 @@ class TestStartappCommand:
         
         assert result.exit_code == 0
         assert "Next steps" in result.output
-        assert "settings.apps" in result.output
+        assert "INSTALLED_APPS" in result.output
+        assert "configure(installed_apps=INSTALLED_APPS)" in result.output
+        assert "AksaraSettings" not in result.output
+        assert "register their routes explicitly" in result.output
         assert '"blog"' in result.output
     
     def test_startapp_underscore_name(self, temp_dir):

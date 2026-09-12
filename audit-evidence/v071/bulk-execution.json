@@ -1,0 +1,34 @@
+{
+  "checks": [
+    "exact create helper inserts across batches",
+    "explicit normalization and returned defaults",
+    "exact update helper counts rows",
+    "explicit updated fields persisted",
+    "empty helpers return without writes",
+    "invalid subjects and batch size rejected",
+    "exact upsert helper inserts",
+    "upsert conflict preserves fields excluded from update",
+    "bulk methods bypass save signals",
+    "BULK-001 reproduced: resolved CASE inferred as text",
+    "BULK-001 reproduced: updated_at CASE inferred as text",
+    "ignore conflicts returns only inserted rows",
+    "partial returning does not hydrate input instances",
+    "exact atomic helper rolls back earlier batch",
+    "unwrapped bulk call can retain earlier batch",
+    "bulk update does not implicitly refresh auto_now"
+  ],
+  "package_version": "0.7.1rc1",
+  "known_runtime_defect": "BULK-001: Boolean/timestamp bulk_update CASE inferred as text",
+  "schema_version": 1,
+  "pass": true,
+  "runtime_boolean_timestamp_bulk_update_pass": false,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Exact bulk helper with real PostgreSQL create/update/upsert, conflict handling, signals and across-batch CHECK failure; Boolean/timestamp bulk_update failure is a reproduced defect, not a passing runtime contract; owned DDL and admin role, not migrations, RLS, advanced fields or concurrency proof",
+  "page_sha256": {
+    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60",
+    "docs/docs/orm/bulk-operations.md": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344",
+    "docs/docs/orm/expressions-and-transactions.md": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7"
+  },
+  "runner_sha256": "a1a943717b1f71b2506f90c6b1a93684edbc425452ddedb5cd463915db3cce98"
+}

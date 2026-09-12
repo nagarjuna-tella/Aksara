@@ -95,8 +95,12 @@ The public repository includes:
 security/security_matrix.example.yml
 ```
 
-This file demonstrates the structure of a matrix without publishing internal
-project coverage details.
+The [example matrix](https://github.com/nagarjuna-tella/Aksara/blob/v0.7.0/security/security_matrix.example.yml)
+demonstrates the structure without publishing internal project coverage details.
+Its scenarios are `planned`; it is a template, not a passing production gate.
+Describe your actual surfaces, actors and risks, then link coverage to tests
+that you have run. Setting a status to `covered` does not cause Doctor to execute
+that test.
 
 Private projects and release processes may maintain:
 

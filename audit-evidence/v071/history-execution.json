@@ -1,0 +1,27 @@
+{
+  "checks": [
+    "internal migrations applied",
+    "current state and initial transition",
+    "projection serializes to JSON",
+    "registered action scope checked",
+    "different tenant cannot select operation",
+    "none is not all tenants",
+    "different namespace cannot select operation",
+    "cancellation reflected in state and history",
+    "history is newest first",
+    "limit truncates recent list",
+    "zero limit rejected",
+    "above maximum limit rejected",
+    "retired terminal action permits same tenant read without removed scope"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Installed history helper with PostgreSQL admission/cancellation, scoped reads, limits and retired-action policy; admin-role fixture, not restricted RLS, HTTP authentication, retention campaign or atomic snapshot proof",
+  "page_sha256": {
+    "docs/docs/how-to/inspect-durable-history.md": "e329687f5cc19a332c0c752617247fa9c8dd23d6094e7ab8da8daaf27d2b166a"
+  },
+  "runner_sha256": "c2900b5b1cd811fc5e9a7b3790e48dcd77703a6019f6009b6a099cba7946fec5"
+}

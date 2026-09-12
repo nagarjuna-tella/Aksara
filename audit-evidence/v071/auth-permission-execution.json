@@ -1,0 +1,34 @@
+{
+  "checks": [
+    "internal migrations apply",
+    "email normalized",
+    "password stored as hash",
+    "correct password verifies",
+    "wrong password rejected",
+    "unprivileged defaults",
+    "active account authenticates",
+    "incorrect credentials rejected",
+    "missing account rejected",
+    "session resolves active account",
+    "revoked session rejected",
+    "inactive credentials rejected",
+    "missing attached user dependency denies 401",
+    "dependency reads attached identity",
+    "active owner passes both permission hooks",
+    "different owner denied",
+    "missing owner denied",
+    "anonymous denied",
+    "inactive owner denied"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "PostgreSQL account/session primitives and direct permission/dependency checks; not HTTP login, JWT/provider integration, RLS or complete application authorization",
+  "page_sha256": {
+    "docs/docs/api/authentication.md": "77224e95b81fc4b9f7664f63632efdada7349f1644a23b64dfd4b81244655dd2",
+    "docs/docs/api/permissions.md": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5"
+  },
+  "runner_sha256": "2b632e3b5bc18bc103c641e3001ca472203f88add0163043bf516d7325069fd8"
+}

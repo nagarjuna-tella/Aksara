@@ -47,7 +47,8 @@ site.register(Category)
 
 ### 2. Mount the Admin
 
-`include_admin()` attaches the admin routes (and the required session/CSRF middleware and static files) to your application.
+`include_admin()` attaches Admin routes, session and rate-limit middleware,
+and static files. The Admin form handlers enforce CSRF checks.
 
 ```python
 # main.py
@@ -55,15 +56,17 @@ from aksara import Aksara
 from aksara.contrib.admin import include_admin
 import myapp.admin  # noqa: F401 — registers models with `site`
 
-app = Aksara(database_url="postgresql://localhost/myapp")
+app = Aksara(database_url="postgresql://localhost/myapp", enable_admin=False)
 include_admin(app)              # Admin at /admin/
 # include_admin(app, prefix="/manage")   # …or a custom prefix
 ```
 
 !!! note "Auto-mount in development"
     When `debug=True` (and the auth contrib is available), Aksara auto-mounts the
-    admin at `/admin/`, so an explicit `include_admin(app)` is optional in
-    development. Set `enable_admin=True` to mount it in production.
+    admin at `/admin/`. Choose that automatic path or the explicit mounting
+    shown above, which sets `enable_admin=False` before calling `include_admin()`.
+    Do not mount the same site/prefix twice. `enable_admin=True` selects automatic
+    mounting outside debug mode too; it is not needed for explicit mounting.
 
 ### 3. Access the Admin
 
@@ -117,7 +120,7 @@ Aksara ships two browser UIs with different jobs:
 | UI | Path | Use it for |
 |----|------|------------|
 | **Admin** | `/admin/` | Day-to-day data management by authenticated staff users: create records, edit content, run bulk actions, and review model data. |
-| **Studio** | `/studio/ui` | Developer/operator inspection: models, routes, migrations, diagnostics, AI tools, and project health. |
+| **Studio (experimental)** | `/studio/ui` | Developer/operator inspection: models, routes, migrations, diagnostics, AI tools, and project health. |
 
 Use Admin when a user is managing application data. Use Studio when a developer
 or operator is inspecting how the application is built and running. They share
@@ -128,7 +131,10 @@ the same app process, but their security settings are separate.
 ## Security Defaults
 
 Admin access requires a staff user by default. Form POSTs use a same-site CSRF
-cookie and hidden form token, and login/action POSTs are rate-limited.
+cookie and hidden form token. Admin POST requests are rate-limited with
+process-local counters per client address and request path; this is best-effort
+abuse resistance, not a shared fleet quota. See the
+[throttling guide](../api/throttling.md) for the precise boundary.
 
 !!! warning "Do not disable CSRF in production"
     `AKSARA_ADMIN_CSRF_ENABLED=false` is intended only for controlled tests or
@@ -136,7 +142,14 @@ cookie and hidden form token, and login/action POSTs are rate-limited.
 
 ---
 
-## Complete Example
+## Registration example
+
+This configuration assumes `myapp.models` already defines the Post, Author,
+Category and Tag fields referenced below, the database is configured, and their
+migrations have been applied. It is not a standalone application. For initial
+model/migration setup, use the [first-project guide](../getting-started/first-project.md);
+for account creation and password verification, see
+[authentication](../api/authentication.md).
 
 ```python
 # admin.py
@@ -183,7 +196,7 @@ from aksara import Aksara
 from aksara.contrib.admin import include_admin
 import myapp.admin  # noqa: F401
 
-app = Aksara(database_url="postgresql://localhost/myapp")
+app = Aksara(database_url="postgresql://localhost/myapp", enable_admin=False)
 include_admin(app)
 ```
 

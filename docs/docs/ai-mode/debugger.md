@@ -1,5 +1,11 @@
 # AI Debugger
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **AI Debugger** is an automated root-cause analysis engine that examines
 your entire application — the Project Graph, event timeline, diagnostics, and
 gap analysis — to identify, cluster, and rank issues, then suggest safe fixes.
@@ -131,11 +137,13 @@ Response:
 {
   "ok": true,
   "query": "login fails",
-  "issues": [...],
-  "clusters": [...],
-  "root_causes": [...],
-  "summary": "Found 12 issues in 4 clusters with 2 root causes.",
-  "counts": {"issues": 12, "clusters": 4, "root_causes": 2},
+  "issues": [],
+  "clusters": [],
+  "root_causes": [],
+  "summary": "Debug analysis for: login fails Found 0 issues in 0 clusters. No specific root causes detected.",
+  "issue_count": 0,
+  "cluster_count": 0,
+  "root_cause_count": 0,
   "elapsed_ms": 42.3,
   "generated_at": "2026-03-01T12:00:00Z"
 }
@@ -169,23 +177,23 @@ full debugger pipeline and returns a structured report.
 
 ```bash
 # Full analysis
-aksara ai debug
+aksara ai flows debug
 
 # Focused analysis
-aksara ai debug --query "login fails"
+aksara ai flows debug --query "login fails"
 
 # JSON output
-aksara ai debug --json
+aksara ai flows debug --json
 
 # Summary only
-aksara ai debug --summary
+aksara ai flows debug --summary
 
 # Filter by model or route
-aksara ai debug --model User
-aksara ai debug --route /api/login
+aksara ai flows debug --model User
+aksara ai flows debug --route /api/login
 
 # Combine options
-aksara ai debug --query "auth" --json --summary
+aksara ai flows debug --query "auth" --json --summary
 ```
 
 ## Safety Guarantees

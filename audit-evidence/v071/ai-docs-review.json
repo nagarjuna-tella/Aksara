@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "package_version": "0.7.0",
+  "scope": "Route hint snippet and CLI availability; not schema-drift correctness or full experimental-feature execution",
+  "hint_snippet_exit": 0,
+  "hint_snippet_sha256": "52276c2dd77e671138aaf975a8720047ffd277021593850f069ecf13ecb2f403",
+  "pages": {
+    "docs/docs/ai-mode/hints.md": "780416f4667f41fa834e68a9675f41fb17354d7583301b80ec01a27708f34928",
+    "docs/docs/ai-mode/tools.md": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
+    "docs/docs/ai-mode/schema-doctor.md": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56"
+  },
+  "commands": [
+    {
+      "command": "aksara ai schema-health --help",
+      "exit": 0,
+      "meaning": "command help available"
+    },
+    {
+      "command": "aksara ai schema-issues --help",
+      "exit": 0,
+      "meaning": "command help available"
+    },
+    {
+      "command": "aksara ai hints --help",
+      "exit": 0,
+      "meaning": "command help available"
+    },
+    {
+      "command": "aksara ai doctor --help",
+      "exit": 2,
+      "meaning": "not an installed command"
+    }
+  ]
+}

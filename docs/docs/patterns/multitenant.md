@@ -1,512 +1,81 @@
-# Multitenant Pattern
+# Historical multitenant example
 
-A tenant-scoped SaaS backend with automatic query isolation based on request context.
+**Known limitation — not the recommended isolation pattern.** Use
+[Ticket Desk tenant isolation](../tutorials/ticket-desk-tenancy.md) for a working
+application with server-owned tenant identity and restricted-role PostgreSQL
+RLS. Use the [production guide](../tutorials/deployment.md) for operational roles
+and deployment checks.
 
-## Quick Start
+## Why this example is retained
 
-```bash
-aksara startproject mysaas --template multitenant
-cd mysaas
-pip install -e ".[dev]"
-aksara makemigrations --app app.models
-aksara migrate
-aksara dev
-```
+The historical template contains `Tenant`, `User`, and `Project` models,
+serializers, ViewSets, and middleware that attempts to resolve a tenant from
+request headers or a host name. It is useful for understanding an earlier
+application design, not for proving safe SaaS isolation.
 
-## Concepts
+Its middleware exempts paths by prefix and includes `/` in that exemption list.
+Every normal request therefore skips the tenant resolver. This is the known
+EX-001 defect; it remains unchanged in the documentation release. Startup and
+OpenAPI success do not prove tenant selection or isolation.
 
-### Row-Level Multitenancy
+Even after a resolver correction, a client-supplied tenant ID, slug, or host is
+not proof that the authenticated actor belongs to that tenant. Application
+membership checks and the database role/RLS configuration must be designed and
+tested together. The template does not supply the canonical tutorial's
+restricted-role, forced-RLS evidence.
 
-This pattern uses **row-level isolation**:
+There is also a migration discovery limitation: the registry keys models by
+class name. In the installed v0.7.0 CLI flow, discovery of the built-in auth
+`User` replaces this example's `User`. Migration generation and application
+return success, but the declared `tenant_users` table is absent. This is
+MIGRATION-001; the inspection commands below do not produce a complete working
+tenant application. Changing `Meta.table_name` alone does not disambiguate a
+class-name collision. Use distinct application model names and inspect the
+actual migration operations and resulting tables.
 
-- All tenant-scoped models have a `tenant_id` foreign key
-- Middleware extracts tenant from request headers
-- Queries are filtered to the current tenant's data
-- Simple to implement and scale horizontally
+## Generate only for local inspection
 
-### Tenant Resolution
-
-Tenants are resolved from requests in this order:
-
-1. `X-Tenant-ID` header (UUID)
-2. `X-Tenant-Slug` header (slug string)
-3. `Host` header (domain-based routing)
-
-## Models
-
-### Tenant
-
-```python
-class Tenant(Model):
-    """SaaS tenant/organization."""
-    
-    name = fields.String(max_length=200, ai_description="Tenant name")
-    slug = fields.String(
-        max_length=100,
-        unique=True,
-        ai_description="URL-friendly identifier",
-    )
-    domain = fields.String(
-        max_length=255,
-        nullable=True,
-        unique=True,
-        ai_description="Custom domain (e.g., acme.example.com)",
-    )
-    plan = fields.String(
-        max_length=50,
-        default="free",
-        ai_description="Subscription plan: free, pro, enterprise",
-    )
-    is_active = fields.Boolean(default=True, ai_description="Tenant active status")
-    created_at = fields.DateTime(auto_now_add=True)
-    
-    class Meta:
-        table_name = "tenants"
-        ai_name = "Tenant"
-```
-
-### User (Tenant-Scoped)
-
-```python
-class User(Model):
-    """User within a tenant."""
-    
-    tenant = fields.ForeignKey(
-        Tenant,
-        on_delete="CASCADE",
-        related_name="users",
-        ai_description="User's tenant",
-    )
-    email = fields.Email(ai_description="User email")
-    name = fields.String(max_length=200, ai_description="User name")
-    role = fields.String(
-        max_length=50,
-        default="member",
-        ai_description="Tenant role: admin, member, viewer",
-    )
-    is_active = fields.Boolean(default=True)
-    created_at = fields.DateTime(auto_now_add=True)
-    
-    class Meta:
-        table_name = "tenant_users"
-        ai_name = "TenantUser"
-```
-
-### Project (Tenant-Scoped)
-
-```python
-class Project(Model):
-    """Project within a tenant."""
-    
-    tenant = fields.ForeignKey(
-        Tenant,
-        on_delete="CASCADE",
-        related_name="projects",
-        ai_description="Project's tenant",
-    )
-    name = fields.String(max_length=200, ai_description="Project name")
-    description = fields.Text(nullable=True)
-    is_public = fields.Boolean(
-        default=False,
-        ai_description="Public projects visible across tenants",
-    )
-    created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
-    
-    class Meta:
-        table_name = "projects"
-        ai_name = "Project"
-```
-
-## Tenant Middleware
-
-```python
-from contextvars import ContextVar
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-
-# Context variable for current tenant
-current_tenant: ContextVar[Optional["Tenant"]] = ContextVar(
-    "current_tenant", 
-    default=None
-)
-
-
-def get_current_tenant() -> Optional["Tenant"]:
-    """Get the current tenant from context."""
-    return current_tenant.get()
-
-
-class TenantMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to resolve and set the current tenant.
-    
-    Resolution order:
-    1. X-Tenant-ID header (UUID)
-    2. X-Tenant-Slug header (slug)
-    3. Host header (domain-based)
-    """
-    
-    async def dispatch(self, request: Request, call_next):
-        from .models import Tenant
-        
-        tenant = None
-        
-        # Try X-Tenant-ID header
-        tenant_id = request.headers.get("X-Tenant-ID")
-        if tenant_id:
-            try:
-                tenant = await Tenant.objects.get(id=tenant_id)
-            except Exception:
-                pass
-        
-        # Try X-Tenant-Slug header
-        if not tenant:
-            tenant_slug = request.headers.get("X-Tenant-Slug")
-            if tenant_slug:
-                try:
-                    tenant = await Tenant.objects.filter(slug=tenant_slug).first()
-                except Exception:
-                    pass
-        
-        # Try Host header (domain-based)
-        if not tenant:
-            host = request.headers.get("Host", "").split(":")[0]
-            if host and host not in ("localhost", "127.0.0.1"):
-                try:
-                    tenant = await Tenant.objects.filter(domain=host).first()
-                except Exception:
-                    pass
-        
-        # Set tenant in context
-        token = current_tenant.set(tenant)
-        try:
-            response = await call_next(request)
-            return response
-        finally:
-            current_tenant.reset(token)
-```
-
-## Tenant-Scoped ViewSets
-
-```python
-class UserViewSet(ModelViewSet):
-    """User API - scoped to current tenant."""
-    
-    model = User
-    serializer_class = UserSerializer
-    prefix = "/api/users"
-    tags = ["Users"]
-    
-    async def get_queryset(self):
-        """Filter users to current tenant."""
-        tenant = get_current_tenant()
-        if not tenant:
-            return []
-        return await self.model.objects.filter(tenant_id=tenant.id).all()
-    
-    async def perform_create(self, data: dict) -> User:
-        """Auto-assign tenant on create."""
-        tenant = get_current_tenant()
-        if not tenant:
-            raise ValueError("Tenant context required")
-        data["tenant_id"] = tenant.id
-        return await super().perform_create(data)
-```
-
-## API Endpoints
-
-### Tenants (Admin)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tenants/` | List all tenants |
-| POST | `/api/tenants/` | Create a tenant |
-| GET | `/api/tenants/{id}/` | Get tenant details |
-| PUT | `/api/tenants/{id}/` | Update a tenant |
-| DELETE | `/api/tenants/{id}/` | Delete a tenant |
-| GET | `/api/tenants/{id}/ai-overview/` | AI: Model overview (v0.5.8) |
-
-### Users (Tenant-Scoped)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users/` | List users in tenant |
-| POST | `/api/users/` | Create a user in tenant |
-| GET | `/api/users/{id}/` | Get user details |
-| PUT | `/api/users/{id}/` | Update a user |
-| DELETE | `/api/users/{id}/` | Delete a user |
-| GET | `/api/users/me/` | Get current user info |
-| GET | `/api/users/admins/` | List admin users |
-
-### Projects (Tenant-Scoped)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/projects/` | List projects in tenant |
-| POST | `/api/projects/` | Create a project in tenant |
-| GET | `/api/projects/{id}/` | Get project details |
-| PUT | `/api/projects/{id}/` | Update a project |
-| DELETE | `/api/projects/{id}/` | Delete a project |
-
-## AI-Ready Endpoints (v0.5.8)
-
-The multitenant example includes an AI-aware endpoint for tenant model overview.
-
-### AI Tenant Model Overview
-
-```python
-@action(
-    detail=True,
-    methods=["GET"],
-    path="ai-overview",
-    name="tenant_model_overview",
-    description="Get an overview of models and record counts for a specific tenant. Respects tenant isolation.",
-    ai_exposed=True,
-)
-async def ai_overview(self, pk: str, request: Request):
-    """AI Tool: Tenant model overview."""
-    tenant = await self.model.objects.get(id=pk)
-    
-    # Count records for tenant-scoped models
-    user_count = len(await User.objects.filter(tenant_id=pk).all())
-    project_count = len(await Project.objects.filter(tenant_id=pk).all())
-    
-    # User role breakdown
-    admin_count = len(await User.objects.filter(tenant_id=pk, role="admin").all())
-    member_count = len(await User.objects.filter(tenant_id=pk, role="member").all())
-    viewer_count = len(await User.objects.filter(tenant_id=pk, role="viewer").all())
-    
-    # Project visibility breakdown
-    public_projects = len(await Project.objects.filter(tenant_id=pk, is_public=True).all())
-    
-    return {
-        "tenant_id": str(tenant.id),
-        "tenant_slug": tenant.slug,
-        "tenant_name": tenant.name,
-        "plan": tenant.plan,
-        "is_active": tenant.is_active,
-        "models": [
-            {
-                "name": "User",
-                "count": user_count,
-                "breakdown": {
-                    "admin": admin_count,
-                    "member": member_count,
-                    "viewer": viewer_count,
-                }
-            },
-            {
-                "name": "Project",
-                "count": project_count,
-                "breakdown": {
-                    "public": public_projects,
-                    "private": project_count - public_projects,
-                }
-            },
-        ],
-        "summary": {
-            "total_records": user_count + project_count,
-            "active_users": admin_count + member_count,
-        }
-    }
-```
-
-### Example Request
+Use an environment with [Aksara installed](../getting-started/installation.md)
+and export `DATABASE_URL` for a dedicated local PostgreSQL database. The example
+prefers it over `AKSARA_DATABASE_URL`; keep them consistent.
 
 ```bash
-curl http://localhost:8000/api/tenants/abc123/ai-overview/
+aksara startproject tenant_demo --template multitenant
+cd tenant_demo
+aksara makemigrations --app models --output migrations
+aksara migrate --migrations-dir migrations
+aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
-### Response
+This template copies flat modules and does not generate a `pyproject.toml`,
+`.env`, or `app/` package. If an older CLI suggests an editable install or
+`app.models` after generation, follow the commands above instead.
 
-```json
-{
-  "tenant_id": "abc123",
-  "tenant_slug": "acme-corp",
-  "tenant_name": "Acme Corporation",
-  "plan": "pro",
-  "is_active": true,
-  "models": [
-    {
-      "name": "User",
-      "count": 15,
-      "breakdown": {
-        "admin": 2,
-        "member": 10,
-        "viewer": 3
-      }
-    },
-    {
-      "name": "Project",
-      "count": 8,
-      "breakdown": {
-        "public": 2,
-        "private": 6
-      }
-    }
-  ],
-  "summary": {
-    "total_records": 23,
-    "active_users": 12
-  }
-}
-```
-
-### AI Tools Discovery
-
-This endpoint is discoverable at `/ai/tools` with `ai_exposed=True`:
-
-```json
-{
-  "name": "tenant_model_overview",
-  "description": "Get an overview of models and record counts for a specific tenant. Respects tenant isolation.",
-  "endpoint": "/api/tenants/{id}/ai-overview/"
-}
-```
-
-## Example Requests
-
-### Create a Tenant
+In another terminal, inspect startup only:
 
 ```bash
-curl -X POST http://localhost:8000/api/tenants/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Acme Corp",
-    "slug": "acme-corp",
-    "plan": "pro"
-  }'
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-### Create a User (with Tenant Context)
+Do not interpret a successful response or an `ai_exposed` flag as authorization
+or isolation evidence. This guide intentionally provides no tenant seed/write
+flow that could be mistaken for a safe production path.
 
-```bash
-curl -X POST http://localhost:8000/api/users/ \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-Slug: acme-corp" \
-  -d '{
-    "email": "admin@acme.com",
-    "name": "Admin User",
-    "role": "admin"
-  }'
-```
+## Build the supported path instead
 
-### List Users (Scoped to Tenant)
+Follow the tenancy chapter in order: establish the actor's identity, derive
+its allowed tenant on the server, scope model access, and apply/test PostgreSQL
+RLS using an application role that cannot bypass it. Test two tenants and
+negative access, including attempts to supply a different tenant in input.
 
-```bash
-curl http://localhost:8000/api/users/ \
-  -H "X-Tenant-Slug: acme-corp"
-```
+For a custom endpoint, follow the synchronous query hooks and explicit
+permission checks in the [ViewSet reference](../api/viewsets.md). The older
+pattern's asynchronous `get_queryset` recipe is not the current hook contract.
+For work that continues later, propagate identity through the
+[durable-action tutorial](../tutorials/ticket-desk-durable.md) rather than assuming
+a request header survives as trusted worker context.
 
-### Create a Project
-
-```bash
-curl -X POST http://localhost:8000/api/projects/ \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-Slug: acme-corp" \
-  -d '{
-    "name": "Website Redesign",
-    "description": "Q2 website refresh project"
-  }'
-```
-
-## Request Headers
-
-| Header | Format | Description |
-|--------|--------|-------------|
-| `X-Tenant-ID` | UUID | Tenant's UUID |
-| `X-Tenant-Slug` | String | Tenant's URL slug |
-| `Host` | Domain | Custom domain (for production) |
-
-## Isolation Strategies
-
-### 1. Row-Level (This Pattern)
-
-- All data in same database
-- Tenant ID column on all tables
-- Filter queries by tenant
-- **Pros**: Simple, easy to scale
-- **Cons**: Requires discipline in queries
-
-### 2. Schema-Level (Future)
-
-- Separate PostgreSQL schema per tenant
-- `SET search_path = tenant_schema`
-- **Pros**: Better isolation
-- **Cons**: More complex migrations
-
-### 3. Database-Level
-
-- Separate database per tenant
-- Full isolation
-- **Pros**: Maximum isolation
-- **Cons**: Complex management, expensive
-
-## Extending the Pattern
-
-### Add Billing/Subscription
-
-```python
-class Subscription(Model):
-    """Tenant subscription."""
-    
-    tenant = fields.OneToOneField(Tenant, on_delete="CASCADE")
-    plan = fields.String(max_length=50)
-    stripe_subscription_id = fields.String(max_length=100, nullable=True)
-    current_period_start = fields.DateTime()
-    current_period_end = fields.DateTime()
-    status = fields.String(max_length=50)  # active, past_due, canceled
-    
-    class Meta:
-        table_name = "subscriptions"
-```
-
-### Add Usage Tracking
-
-```python
-class UsageRecord(Model):
-    """Track tenant resource usage."""
-    
-    tenant = fields.ForeignKey(Tenant, on_delete="CASCADE")
-    metric = fields.String(max_length=100)  # api_calls, storage_bytes, users
-    value = fields.Integer()
-    recorded_at = fields.DateTime(auto_now_add=True)
-    period_start = fields.Date()
-    
-    class Meta:
-        table_name = "usage_records"
-```
-
-### Add Feature Flags
-
-```python
-class FeatureFlag(Model):
-    """Per-tenant feature flags."""
-    
-    tenant = fields.ForeignKey(Tenant, on_delete="CASCADE")
-    name = fields.String(max_length=100)
-    enabled = fields.Boolean(default=False)
-    
-    class Meta:
-        table_name = "feature_flags"
-        unique_together = [("tenant", "name")]
-
-
-def has_feature(tenant: Tenant, feature: str) -> bool:
-    """Check if tenant has a feature enabled."""
-    # Implementation...
-```
-
-## Security Considerations
-
-1. **Always validate tenant context** - Never allow cross-tenant data access
-2. **Use middleware consistently** - All tenant-scoped endpoints need tenant resolution
-3. **Audit tenant access** - Log tenant ID with all operations
-4. **Test isolation** - Write tests that verify data isolation
-
-## Next Steps
-
-- [Blog Pattern](blog.md) - Content management
-- [CRM Pattern](crm.md) - Sales pipeline
-- [Middleware](../middleware/index.md) - Custom middleware
+Schema-per-tenant and database-per-tenant routing are not implementations provided
+by this example. The supported production path documented here remains shared
+PostgreSQL tables with explicitly verified application and RLS boundaries.

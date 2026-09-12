@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of both conceptual pages, with source inspection of REST create/update handlers and comparison to the transaction reference. This is a semantic and readability review, not final candidate execution.",
+  "page_sha256": {
+    "docs/docs/concepts/application-boundaries.md": "5d00fbfab586b37ac93e16f49e8e8b9bae5b3fbb8bd6113df24d70e8b374157b",
+    "docs/docs/concepts/stability.md": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/concepts/application-boundaries.md",
+      "disposition": "retain_after_transaction_scope_clarification",
+      "reason": "Identity, persistence and execution paths progress from ordinary requests to delayed work. Explicit transaction guidance avoids implying request-wide atomicity; application-owned policy and external effects remain bounded."
+    },
+    {
+      "page": "docs/docs/concepts/stability.md",
+      "disposition": "retain_after_reading",
+      "reason": "Defines five stability labels, links authoritative version contracts, and distinguishes planner and DurableStep behavior from stable execution guarantees."
+    }
+  ],
+  "candidate_acceptance": false
+}

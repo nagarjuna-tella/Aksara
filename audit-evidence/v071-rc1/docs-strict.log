@@ -1,0 +1,19 @@
+
+ │  ⚠  Warning from the Material for MkDocs team
+ │
+ │  MkDocs 2.0, the underlying framework of Material for MkDocs,
+ │  will introduce backward-incompatible changes, including:
+ │
+ │  × All plugins will stop working – the plugin system has been removed
+ │  × All theme overrides will break – the theming system has been rewritten
+ │  × No migration path exists – existing projects cannot be upgraded
+ │  × Closed contribution model – community members can't report bugs
+ │  × Currently unlicensed – unsuitable for production use
+ │
+ │  Our full analysis:
+ │
+ │  https://squidfunk.github.io/mkdocs-material/blog/2026/02/18/mkdocs-2.0/
+
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /private/tmp/aksara-v071rc1-site-final3
+INFO    -  Documentation built in 2.38 seconds

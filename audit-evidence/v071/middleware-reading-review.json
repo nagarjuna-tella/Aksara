@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all four middleware pages and inspection of their exact-example tests. Not RLS, background-worker identity, production proxy or durable-log certification.",
+  "page_sha256": {
+    "docs/docs/middleware/index.md": "58004483e3bd88f8eb6bbc4d1f85cebf0f9b7fb83223e1c61de3867776adab1f",
+    "docs/docs/middleware/logging.md": "6f346b6a0094cbee9df6e63ee95f835a4813722cd37565cdf46420507a9cd10d",
+    "docs/docs/middleware/request-id.md": "d0b9fc2eeeba44141110b50a15d36c3b458396d7fb1ec31cefd70f557d6cd158",
+    "docs/docs/middleware/tenant.md": "32068510e5d59a6becf97c6f6d48b383dc0756a28302531d0fd11b78947cbd1f"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/middleware/index.md",
+      "disposition": "retain_after_reading",
+      "reason": "Explains constructor versus add_middleware ordering, exact timing scope and request-context lifetime without implying permission enforcement."
+    },
+    {
+      "page": "docs/docs/middleware/logging.md",
+      "disposition": "retain_after_reading",
+      "reason": "Provides an explicit JSON formatter, current defaults, log levels and context ordering; excludes body collection and automatic redaction/audit guarantees."
+    },
+    {
+      "page": "docs/docs/middleware/request-id.md",
+      "disposition": "retain_after_reading",
+      "reason": "Documents unvalidated client values, UUID fallback, response-header timing and finally reset; correlation is not identity or idempotency."
+    },
+    {
+      "page": "docs/docs/middleware/tenant.md",
+      "disposition": "retain_after_reading",
+      "reason": "Labels header/subdomain extraction as untrusted, lists exact options and rejection rules, and links verified membership/RLS instead of assuming isolation."
+    }
+  ],
+  "candidate_acceptance": false,
+  "execution_contract": "tests/docs/test_middleware_reference.py"
+}

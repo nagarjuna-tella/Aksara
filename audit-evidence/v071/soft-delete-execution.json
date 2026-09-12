@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "exact delete and restore function",
+    "default visibility excludes marked row",
+    "exact active query",
+    "exact including-deleted query",
+    "exact deleted-only query",
+    "SOFTDELETE001 with_deleted loses id restriction",
+    "SOFTDELETE001 only_deleted loses id restriction",
+    "queryset delete physically removes row",
+    "unsaved delete rejected",
+    "unsaved undelete rejected"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "runtime_queryset_helper_preserves_filters": false,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Exact soft-delete guide fences against PostgreSQL; owned schema, admin role; no RLS or concurrency proof. Helper filter loss is a reproduced defect.",
+  "page_sha256": {
+    "docs/docs/orm/soft-deletes.md": "d8b29f39cc839a646e7c1e382af332a7cff8683f244bd5e15d88631073f824da"
+  },
+  "runner_sha256": "fd2a62996fe9fde3b5ccf2308faea38276538b556ea0084a9ef085631e6c2463"
+}

@@ -471,8 +471,8 @@ class TestStartprojectDevFiles:
             result = runner.invoke(cli, ["startproject", "myproject"])
             
             assert result.exit_code == 0
-            assert "pip install -e" in result.output
-            # v0.5.5: Shows what's included instead of pre-commit instructions
+            assert "install its documented dependencies" in result.output
+            assert "pip install -e" not in result.output
             assert "What's included" in result.output
     
     def test_startproject_creates_pyproject_toml(self, tmp_path):

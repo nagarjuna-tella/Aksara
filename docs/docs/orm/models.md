@@ -9,11 +9,13 @@ Define your data structure using Python classes that map directly to PostgreSQL 
 A **model** is a Python class that represents a table in your database. Each model:
 
 - Defines what data you want to store (fields like title, email, price)
-- Maps to a PostgreSQL table automatically
+- Maps to a PostgreSQL table after its migration is applied
 - Provides methods to create, read, update, and delete records
 - Validates data before saving
 
-Think of a model as a blueprint: it describes what a "Post" or "User" looks like, and Aksara handles all the database work.
+Think of a model as a blueprint: it describes what a "Post" or "User" looks
+like. Aksara provides the persistence operations, while your application keeps
+schema migration, authorization, and transaction boundaries explicit.
 
 ```python
 from aksara import Model, fields
@@ -27,7 +29,7 @@ class Article(Model):
     created_at = fields.DateTime(auto_now_add=True)
 ```
 
-**What this creates**:
+**Schema intent after migrations are generated and applied**:
 ```
 PostgreSQL table: articles
 ┌──────────────┬─────────────────┬─────────────┐
@@ -37,11 +39,24 @@ PostgreSQL table: articles
 │ title        │ VARCHAR(200)    │ NOT NULL    │
 │ content      │ TEXT            │ NOT NULL    │
 │ published    │ BOOLEAN         │ DEFAULT false│
-│ created_at   │ TIMESTAMPTZ     │ AUTO        │
+│ created_at   │ TIMESTAMPTZ     │ timestamp   │
+│ updated_at   │ TIMESTAMPTZ     │ timestamp   │
 └──────────────┴─────────────────┴─────────────┘
 ```
 
 ---
+
+## Model names and discovery
+
+Use distinct model class names across loaded applications, including framework
+models. The registry keys classes by their Python name, not their module or
+`Meta.table_name`. In the historical multitenant example, CLI discovery of the
+built-in auth `User` replaces the example's `User`, so its `tenant_users` table
+is omitted from generated migrations even though the commands succeed. This
+known limitation is not fixed in the documentation release. Inspect generated
+operations and actual tables; do not treat a successful command as proof that
+every declared model was included. See the
+[historical example's status](../patterns/multitenant.md).
 
 ## Creating a Model
 
@@ -81,7 +96,7 @@ aksara migrate
 
 ### Primary Key (`id`)
 
-Every model automatically gets a UUID primary key. You don't need to define it:
+Unless explicitly overridden, a model gets a UUID primary key. You don't need to define it:
 
 ```python
 class User(Model):
@@ -96,7 +111,7 @@ print(user.id)  # UUID('550e8400-e29b-41d4-a716-446655440000')
 
 - Globally unique (safe for distributed systems)
 - Can be generated client-side
-- No sequential pattern (better security)
+- Nonsequential identifiers; possession of an ID does not grant access
 - PostgreSQL-native with `gen_random_uuid()`
 
 ### Table Name
@@ -121,13 +136,15 @@ class Article(Model):
 
 ### Timestamps
 
-Add automatic timestamps with `auto_now` and `auto_now_add`:
+The base model supplies `created_at` and `updated_at` when they are not
+explicitly defined. Declare timestamp fields explicitly when configuring their
+behavior with `auto_now` and `auto_now_add`:
 
 ```python
 class Article(Model):
     title = fields.String(max_length=200)
     
-    # Set once when created, never changes
+    # Initialized on creation; not an immutable database constraint
     created_at = fields.DateTime(auto_now_add=True)
     
     # Updated every time you save
@@ -169,7 +186,7 @@ article = await Article.objects.get(title="Hello World")
 articles = await Article.objects.all()
 
 # Filter records
-published = await Article.objects.filter(published=True)
+published = await Article.objects.filter(published=True).all()
 ```
 
 ### Updating Records
@@ -253,7 +270,7 @@ class Settings(Model):
     # True/False
     is_active = fields.Boolean(default=True)
     
-    # JSON data (dictionaries, lists)
+    # JSON data (objects, arrays or scalars)
     preferences = fields.JSON(default=dict)
     
     # PostgreSQL arrays
@@ -269,7 +286,9 @@ See [Fields Reference](fields.md) for complete documentation.
 
 ## Field Options
 
-All fields accept these common options:
+Common field options include the following; check the concrete constructor
+for type-specific support. Index and uniqueness declarations require migrations
+to take effect:
 
 | Option | What It Does | Example |
 |--------|--------------|---------|
@@ -311,20 +330,6 @@ class Article(Model):
         # Custom table name
         table_name = "blog_articles"
         
-        # Default ordering (newest first)
-        ordering = ["-created_at"]
-        
-        # Database indexes for performance
-        indexes = [
-            ("title",),  # Single column index
-            ("created_at", "title"),  # Composite index
-        ]
-        
-        # Unique together constraints
-        unique_together = [
-            ("author_id", "slug"),  # Same author can't have duplicate slugs
-        ]
-        
         # App label for admin grouping
         app_label = "blog"
 ```
@@ -334,12 +339,14 @@ class Article(Model):
 | Option | What It Does | Example |
 |--------|--------------|---------|
 | `table_name` | Custom database table name | `"blog_posts"` |
-| `ordering` | Default sort order | `["-created_at"]` |
-| `indexes` | Database indexes | `[("field1", "field2")]` |
-| `unique_together` | Multi-column uniqueness | `[("user_id", "slug")]` |
 | `app_label` | Group in admin | `"blog"` |
 
 ---
+
+`Meta.ordering`, `Meta.indexes` and `Meta.unique_together` are not implemented
+configuration options. Use explicit `order_by()` calls and reviewed migrations
+for database constraints/indexes. See [model metadata](model-meta.md) for the
+actual introspection interface and supported declarations.
 
 ## AI Metadata
 
@@ -397,7 +404,13 @@ See [Relations](relations.md) for complete documentation.
 
 ---
 
-## Complete Example
+## Complete model example
+
+The following declarations and function belong in a configured application.
+Import the models for migration discovery and apply the migration before calling
+`example()` with a connected database. The snippet is not a standalone startup
+script. It uses separate writes; wrap them in an explicit supported transaction
+if creating both records must be atomic.
 
 ```python
 from aksara import Model, fields, CASCADE
@@ -411,7 +424,6 @@ class Category(Model):
     description = fields.Text(nullable=True)
     
     class Meta:
-        ordering = ["name"]
         app_label = "store"
 
 
@@ -451,12 +463,7 @@ class Product(Model):
     updated_at = fields.DateTime(auto_now=True)
     
     class Meta:
-        ordering = ["-created_at"]
         app_label = "store"
-        indexes = [
-            ("category_id", "is_active"),
-            ("sku",),
-        ]
 
 
 # Using the models
@@ -485,11 +492,11 @@ async def example():
     active_products = await Product.objects.filter(
         is_active=True,
         stock_quantity__gt=0,
-    ).order_by("-created_at")
+    ).select_related("category").order_by("-created_at").all()
     
-    # Access relationship
+    # Access the eagerly loaded relationship; product.category is the stored ID
     for product in active_products:
-        category = await product.category
+        category = product.get_related("category")
         print(f"{product.name} in {category.name}")
 ```
 

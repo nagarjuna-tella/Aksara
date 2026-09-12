@@ -1,616 +1,187 @@
-# Testing
+# Testing applications
 
-Comprehensive testing patterns for Aksara applications.
+Test application rules without a database where possible, then exercise persistence
+and HTTP behavior against a dedicated PostgreSQL database. Aksara does not supply
+an automatically isolated pytest database, a factory framework, or automatic
+pytest execution of `AksaraTestCase.asyncSetUp()`.
 
----
+The [first-project tutorial](../getting-started/first-project.md#6-test-the-running-application)
+provides complete HTTP tests for the Ticket Desk application. Later chapters add
+[relation and validation tests](../tutorials/ticket-desk.md),
+[tenant isolation](../tutorials/ticket-desk-tenancy.md),
+[background work](../tutorials/ticket-desk-reports.md), and
+[durable recovery](../tutorials/ticket-desk-durable.md).
+Use these as the integration path alongside the unit tests below.
 
-## Overview
+## Install and run unit tests
 
-Aksara provides testing utilities built on pytest:
-
-- **Test client** — Make API requests
-- **Database fixtures** — Clean database per test
-- **Factories** — Generate test data
-- **Mocking** — Mock services and AI
-
----
-
-## Setup
-
-### Install Test Dependencies
+In your application's virtual environment:
 
 ```bash
-pip install aksara-framework[test]
-# or
-pip install pytest pytest-asyncio httpx
+python -m pip install aksara-framework pytest pytest-asyncio httpx
 ```
 
-### Configure pytest
+There is no `aksara-framework[test]` extra in 0.7.0. The `dev` extra contains
+framework development tools; an application can install its test dependencies
+explicitly instead.
 
-```ini
-# pytest.ini
-[pytest]
-asyncio_mode = auto
-testpaths = tests
-python_files = test_*.py
-python_functions = test_*
-```
+Save the following standalone example as `tests/test_ticket_rules.py`:
 
-Or in `pyproject.toml`:
+```python title="tests/test_ticket_rules.py"
+from types import SimpleNamespace
 
-```toml
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-```
-
----
-
-## Basic Test Structure
-
-### Test Case Class
-
-```python
-# tests/test_users.py
 import pytest
-from aksara.testing import AksaraTestCase
-from myapp.models import User
 
-class TestUserModel(AksaraTestCase):
-    async def asyncSetUp(self):
-        """Run before each test."""
-        self.user = await User.objects.create(
-            email="test@example.com",
-            name="Test User"
-        )
-    
-    async def asyncTearDown(self):
-        """Run after each test."""
-        pass  # Database is rolled back automatically
-    
-    async def test_user_creation(self):
-        """Test creating a user."""
-        assert self.user.id is not None
-        assert self.user.email == "test@example.com"
-    
-    async def test_user_update(self):
-        """Test updating a user."""
-        self.user.name = "Updated Name"
-        await self.user.save()
-        
-        refreshed = await User.objects.get(id=self.user.id)
-        assert refreshed.name == "Updated Name"
-```
+from aksara import Model, fields
+from aksara.api.serializers import ModelSerializer
+from aksara.exceptions import ValidationError
+from aksara.permissions import IsAuthenticated
+from aksara.testing import create_test_user
 
-### Function-Based Tests
 
-**Conceptual or legacy pseudocode (not an installed-package API):**
+class RuleTicket(Model):
+    subject = fields.String(max_length=200)
+    resolved = fields.Boolean(default=False)
 
-```text title="Conceptual or legacy pseudocode"
-import pytest
-from aksara.testing import async_test, db_session
-from myapp.models import User
 
-@pytest.fixture
-async def user(db_session):
-    return await User.objects.create(
-        email="test@example.com",
-        name="Test User"
-    )
-
-@async_test
-async def test_user_exists(user):
-    assert await User.objects.filter(id=user.id).exists()
-```
-
----
-
-## API Testing
-
-### Test Client
-
-```python
-from aksara.testing import AksaraTestCase
-
-class TestPostAPI(AksaraTestCase):
-    async def asyncSetUp(self):
-        self.user = await User.objects.create(
-            email="test@example.com",
-            password=hash_password("password")
-        )
-        self.token = create_token(self.user)
-    
-    async def test_list_posts(self):
-        """Test listing posts."""
-        response = await self.client.get("/api/posts/")
-        
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-    
-    async def test_create_post_authenticated(self):
-        """Test creating a post while authenticated."""
-        response = await self.client.post(
-            "/api/posts/",
-            json={"title": "Test", "content": "Content"},
-            headers={"Authorization": f"Bearer {self.token}"}
-        )
-        
-        assert response.status_code == 201
-        assert response.json()["title"] == "Test"
-    
-    async def test_create_post_unauthenticated(self):
-        """Test creating a post without auth."""
-        response = await self.client.post(
-            "/api/posts/",
-            json={"title": "Test", "content": "Content"}
-        )
-        
-        assert response.status_code == 401
-```
-
-### Authentication Helpers
-
-```python
-class TestAuthenticatedAPI(AksaraTestCase):
-    async def asyncSetUp(self):
-        self.user = await User.objects.create(
-            email="test@example.com",
-            password=hash_password("password")
-        )
-        # Login helper
-        self.authenticate(self.user)
-    
-    async def test_protected_endpoint(self):
-        # Auth headers added automatically
-        response = await self.client.get("/api/me/")
-        assert response.status_code == 200
-```
-
-### Request Assertions
-
-```python
-async def test_post_detail(self):
-    post = await Post.objects.create(title="Test", content="Content")
-    
-    response = await self.client.get(f"/api/posts/{post.id}/")
-    
-    # Status code
-    assert response.status_code == 200
-    
-    # Response data
-    data = response.json()
-    assert data["id"] == str(post.id)
-    assert data["title"] == "Test"
-    
-    # Response headers
-    assert "application/json" in response.headers["content-type"]
-```
-
----
-
-## Factories
-
-### Basic Factory
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# tests/factories.py
-from aksara.testing import Factory, Faker
-from myapp.models import User, Post
-
-class UserFactory(Factory):
+class TicketInput(ModelSerializer):
     class Meta:
-        model = User
-    
-    email = Faker("email")
-    name = Faker("name")
-    password = "hashed_password"
-    is_active = True
+        model = RuleTicket
+        fields = ["subject", "resolved"]
+        read_only_fields = ["resolved"]
 
-class PostFactory(Factory):
-    class Meta:
-        model = Post
-    
-    title = Faker("sentence")
-    content = Faker("paragraph")
-    author = Factory.SubFactory(UserFactory)
-    is_published = True
-```
-
-### Using Factories
-
-```python
-from tests.factories import UserFactory, PostFactory
-
-class TestPosts(AksaraTestCase):
-    async def test_with_factories(self):
-        # Create single instance
-        user = await UserFactory.create()
-        
-        # Create with overrides
-        admin = await UserFactory.create(
-            email="admin@example.com",
-            is_admin=True
-        )
-        
-        # Create multiple
-        users = await UserFactory.create_batch(5)
-        
-        # Create with related objects
-        post = await PostFactory.create(
-            author=admin,
-            title="Admin Post"
-        )
-```
-
-### Factory Sequences
-
-```python
-class UserFactory(Factory):
-    class Meta:
-        model = User
-    
-    # Unique values using sequence
-    email = Factory.Sequence(lambda n: f"user{n}@example.com")
-    username = Factory.Sequence(lambda n: f"user{n}")
-```
-
-### Factory Traits
-
-```python
-class UserFactory(Factory):
-    class Meta:
-        model = User
-    
-    email = Faker("email")
-    is_admin = False
-    is_active = True
-    
-    class Params:
-        admin = Factory.Trait(is_admin=True)
-        inactive = Factory.Trait(is_active=False)
-
-# Usage
-admin = await UserFactory.create(admin=True)
-inactive = await UserFactory.create(inactive=True)
-```
-
----
-
-## Database Fixtures
-
-### Automatic Rollback
-
-```python
-from aksara.testing import AksaraTestCase
-
-class TestDatabase(AksaraTestCase):
-    # Database is automatically rolled back after each test
-    
-    async def test_creates_data(self):
-        await User.objects.create(email="test@example.com")
-        count = await User.objects.count()
-        assert count == 1
-    
-    async def test_clean_database(self):
-        # Previous test's data is gone
-        count = await User.objects.count()
-        assert count == 0
-```
-
-### Shared Fixtures
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-import pytest
-from aksara.testing import db_session
-
-@pytest.fixture(scope="module")
-async def test_data(db_session):
-    """Create test data shared across module."""
-    user = await User.objects.create(email="shared@example.com")
-    posts = await PostFactory.create_batch(10, author=user)
-    return {"user": user, "posts": posts}
-
-async def test_first(test_data):
-    assert len(test_data["posts"]) == 10
-
-async def test_second(test_data):
-    # Same data available
-    assert test_data["user"].email == "shared@example.com"
-```
-
----
-
-## Mocking
-
-### Mock External Services
-
-```python
-from unittest.mock import AsyncMock, patch
-
-class TestPayment(AksaraTestCase):
-    @patch("myapp.services.payment.process_payment")
-    async def test_checkout(self, mock_payment):
-        mock_payment.return_value = {"status": "success", "transaction_id": "123"}
-        
-        response = await self.client.post(
-            "/api/checkout/",
-            json={"amount": 100}
-        )
-        
-        assert response.status_code == 200
-        mock_payment.assert_called_once_with(amount=100)
-```
-
-### Mock AI Services
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import mock_ai
-
-class TestAIFeatures(AksaraTestCase):
-    async def test_ai_query(self):
-        with mock_ai(response="SELECT * FROM users"):
-            response = await self.client.post(
-                "/api/ai/query/",
-                json={"query": "Get all users"}
+    def validate_subject(self, value):
+        subject = value.strip()
+        if not subject:
+            raise ValidationError(
+                "Invalid subject", errors={"subject": "A subject is required"}
             )
-            
-            assert response.status_code == 200
+        return subject
+
+
+def test_subject_normalization_and_server_owned_field():
+    serializer = TicketInput(data={"subject": "  Help  ", "resolved": True})
+    assert serializer.is_valid()
+    assert serializer.validated_data["subject"] == "Help"
+    assert "resolved" not in serializer.validated_data
+
+
+def test_blank_subject_is_rejected():
+    with pytest.raises(ValidationError) as error:
+        TicketInput(data={"subject": "  "}).is_valid()
+    assert error.value.errors == {"subject": "A subject is required"}
+
+
+def test_permission_receives_application_identity():
+    request = SimpleNamespace(state=SimpleNamespace(user=None))
+    permission = IsAuthenticated()
+    assert not permission.has_permission(request)
+    request.state.user = create_test_user(username="alice")
+    assert permission.has_permission(request)
 ```
-
-### Mock Database Queries
-
-```python
-from unittest.mock import patch, AsyncMock
-
-async def test_with_mocked_query():
-    mock_users = [User(id="1", email="test@example.com")]
-    
-    with patch.object(User.objects, "all", new_callable=AsyncMock) as mock:
-        mock.return_value = mock_users
-        
-        users = await User.objects.all()
-        assert len(users) == 1
-```
-
----
-
-## Testing Async Code
-
-### Async Test Functions
-
-```python
-import pytest
-
-@pytest.mark.asyncio
-async def test_async_function():
-    result = await some_async_function()
-    assert result == expected
-
-# With AksaraTestCase, async is automatic
-class TestAsync(AksaraTestCase):
-    async def test_no_decorator_needed(self):
-        result = await some_async_function()
-        assert result == expected
-```
-
-### Testing Background Tasks
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import capture_tasks
-
-class TestBackgroundTasks(AksaraTestCase):
-    async def test_creates_background_task(self):
-        with capture_tasks() as tasks:
-            response = await self.client.post("/api/send-email/")
-        
-        assert len(tasks) == 1
-        assert tasks[0].name == "send_email"
-```
-
----
-
-## Testing ViewSets
-
-### ViewSet Testing
-
-```python
-from aksara.testing import AksaraTestCase
-from myapp.viewsets import PostViewSet
-
-class TestPostViewSet(AksaraTestCase):
-    async def test_list_action(self):
-        await PostFactory.create_batch(5)
-        
-        response = await self.client.get("/api/posts/")
-        
-        assert response.status_code == 200
-        assert len(response.json()) == 5
-    
-    async def test_custom_action(self):
-        post = await PostFactory.create(is_published=False)
-        self.authenticate(post.author)
-        
-        response = await self.client.post(f"/api/posts/{post.id}/publish/")
-        
-        assert response.status_code == 200
-        
-        # Verify database change
-        await post.refresh_from_db()
-        assert post.is_published is True
-```
-
-### Permission Testing
-
-```python
-class TestPermissions(AksaraTestCase):
-    async def test_admin_only_endpoint(self):
-        user = await UserFactory.create(is_admin=False)
-        self.authenticate(user)
-        
-        response = await self.client.delete("/api/posts/123/")
-        assert response.status_code == 403
-    
-    async def test_owner_can_edit(self):
-        post = await PostFactory.create()
-        self.authenticate(post.author)
-        
-        response = await self.client.patch(
-            f"/api/posts/{post.id}/",
-            json={"title": "Updated"}
-        )
-        assert response.status_code == 200
-```
-
----
-
-## Testing Migrations
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import MigrationTestCase
-
-class TestMigrations(MigrationTestCase):
-    async def test_migration_0003(self):
-        # Apply up to migration before
-        await self.migrate("myapp", "0002")
-        
-        # Create data in old schema
-        await self.execute("INSERT INTO posts (title) VALUES ('Test')")
-        
-        # Apply the migration
-        await self.migrate("myapp", "0003")
-        
-        # Verify migration worked
-        result = await self.execute("SELECT slug FROM posts WHERE title = 'Test'")
-        assert result[0]["slug"] == "test"
-```
-
----
-
-## Test Configuration
-
-### Test Settings
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# tests/conftest.py
-import pytest
-from aksara.testing import setup_test_database
-
-@pytest.fixture(scope="session")
-def test_settings():
-    return {
-        "DATABASE_URL": "postgresql://localhost/test_db",
-        "DEBUG": True,
-        "AI_MODE": False,
-    }
-
-@pytest.fixture(scope="session", autouse=True)
-async def setup_database(test_settings):
-    await setup_test_database(test_settings)
-```
-
-### Test Markers
-
-```python
-import pytest
-
-# Skip slow tests
-@pytest.mark.slow
-async def test_slow_operation():
-    pass
-
-# Run only in CI
-@pytest.mark.ci_only
-async def test_integration():
-    pass
-
-# pytest.ini
-# markers =
-#     slow: marks tests as slow
-#     ci_only: marks tests for CI only
-```
-
----
-
-## Running Tests
-
-### Basic Commands
 
 ```bash
-# Run all tests
-aksara test
-
-# Run specific file
-aksara test tests/test_users.py
-
-# Run specific test
-aksara test tests/test_users.py::TestUserAPI::test_create
-
-# Run with coverage
-aksara test --cov=myapp
-
-# Run with verbose output
-aksara test -v
+python -m pytest tests/test_ticket_rules.py -q
 ```
 
-### Test Coverage
+These three tests need no database: they never call `save()` or an ORM query.
+The synthetic request deliberately tests a permission predicate. It does not
+prove that an HTTP authentication adapter validates a credential or rejects an
+inactive account. Add tests for those boundaries using the application's real
+adapter, as in the tutorial.
+
+For asynchronous pytest functions, use `@pytest.mark.asyncio` and
+`@pytest_asyncio.fixture` for async fixtures, or configure your chosen
+pytest-asyncio mode explicitly. Ordinary synchronous serializer and permission
+methods should not be awaited.
+
+## Database tests and cleanup
+
+Use a dedicated database such as `aksara_test`, configured through your local
+`DATABASE_URL`. Apply the application's migrations before running integration
+tests. Never point destructive test cleanup at a production database.
+
+Choose isolation to match the work being tested:
+
+| Test boundary | Suitable isolation |
+|---|---|
+| One task using the documented transaction context | Roll back that transaction after assertions, on the same pinned connection |
+| Requests handled by a running server | Create and delete test-owned records, or use a disposable migrated database/schema |
+| Tasks, durable workers, subprocesses, or commit/recovery tests | A disposable migrated database/schema shared by those processes, with explicit cleanup after they stop |
+| RLS enforcement | A restricted application role with actual policies; verify denials as that role |
+
+A transaction opened in the test process does not automatically cover another
+process, another pool connection, or work scheduled in another task. See
+[transactions](../orm/expressions-and-transactions.md) for connection pinning, nested savepoints, and
+the prohibition on concurrent use of one transaction connection.
+
+For application fixtures, connect a `Database` explicitly and disconnect it in
+`finally`. Own the schema or records you remove. If you use a schema, configure
+every participating connection to use it and stop workers before dropping it.
+Do not create arbitrary tables instead of applying migrations when the purpose
+of the test is to prove that the application can be installed or upgraded.
+
+The tutorial's HTTP tests delete their own tickets in `finally`; their server
+uses the configured database. This is record cleanup, not a clean database per
+test. Dedicated databases also prevent test runs from changing development data.
+
+## HTTP and authorization assertions
+
+Use the real authentication middleware and send the credential the application
+accepts. Include anonymous, invalid-credential, unauthorized-user, and authorized
+cases. For tenant applications, also try another tenant's identifiers and forged
+server-owned fields. A test header or a constructed user object alone does not
+exercise credential verification.
+
+With Starlette's synchronous `TestClient`, enter its context manager to run the
+application lifespan and call `client.get()` without `await`. If you use an
+async HTTPX ASGI transport, arrange lifespan startup and shutdown explicitly;
+transport construction alone does not start the application's database pool.
+
+Assert the route's actual contract. Generated resource collections use a trailing
+slash and a paginated response envelope; detail routes have no trailing slash.
+The first-project adapter returns 403 for anonymous generated requests. Do not
+assume all authentication adapters or custom endpoints use that status. See the
+[REST reference](../api/viewsets.md) for the generated contract.
+
+## Scope of `aksara.testing` helpers
+
+The 0.7.0 helper module has a narrower contract than a full test framework:
+
+| Helper | Behavior and limit |
+|---|---|
+| `create_test_user()` | Synchronous in-memory user double; no database record or credential verification |
+| `create_test_app()` | Async application construction; optionally applies migrations; the caller still owns lifespan and cleanup |
+| `AksaraTestCase` | Plain class with explicit async setup/teardown methods; it is not `unittest.IsolatedAsyncioTestCase` and pytest does not automatically invoke those names |
+| `AksaraTestClient` | Synchronous request methods even under its async context manager; `with_user()` adds an `X-Test-User-Id` header, not a production authentication mechanism |
+| `test_database()` | Do not rely on its `cleanup=True` as general ORM/HTTP rollback isolation: it opens a raw pool transaction without binding application queries to that connection |
+
+`AksaraTestCase` does not create a client, implement `authenticate()`, or roll back
+every test. The cleanup branch of `test_database()` also does not disconnect its
+pool. Use explicit application fixtures rather than depending on these helpers
+for those guarantees. These are current limitations, not changes introduced by
+this documentation release.
+
+There are no public `async_test`, `db_session`, `MigrationTestCase`,
+`setup_test_database`, `capture_tasks`, or `mock_ai` helpers in `aksara.testing`.
+Use pytest fixtures and your application's own factories or mocks. Mock an
+external service at its adapter boundary; keep database constraint, transaction,
+RLS, and recovery tests on the real implementation.
+
+## Coverage and test selection
+
+Install coverage support before requesting its pytest options:
 
 ```bash
-# Generate coverage report
-aksara test --cov=myapp --cov-report=html
-
-# View report
-open htmlcov/index.html
+python -m pip install pytest-cov
+python -m pytest tests --cov=app --cov-report=term-missing
 ```
 
----
+Replace `app` with your application package. Coverage measures executed lines,
+not authorization correctness or recovery guarantees. Keep explicit denial and
+failure-path assertions.
 
-## Best Practices
-
-### Do
-
-- Test one thing per test
-- Use descriptive test names
-- Use factories for test data
-- Clean up after tests
-- Test edge cases
-
-### Don't
-
-- Don't test framework code
-- Don't rely on test order
-- Don't share mutable state
-- Don't skip error handling tests
-
-### Naming Conventions
-
-```text
-# Good: descriptive, action-focused
-async def test_create_user_with_valid_data():
-async def test_create_user_fails_with_invalid_email():
-async def test_delete_post_requires_authentication():
-
-# Bad: vague, non-descriptive
-async def test_user():
-async def test_api():
-async def test_1():
-```
-
----
-
-## Related Documentation
-
-- [Signals](signals.md)
-- [ViewSets](../api/viewsets.md)
-- [CLI Commands](../cli/commands.md)
+Custom pytest markers only label tests. Registering a marker named `ci_only`
+does not skip anything automatically; use an explicit selection or skip rule.
+Keep provider/network tests separate from deterministic application tests and
+report skipped prerequisites rather than counting them as proven behavior.

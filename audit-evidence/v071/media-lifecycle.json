@@ -1,0 +1,29 @@
+{
+  "checks": [
+    "file and image uploads stored",
+    "public wrappers expose names",
+    "wrapper read and size",
+    "database reload wraps stored reference",
+    "image content survives persistence",
+    "replacement preserves old stored file",
+    "wrapper deletion clears in-memory reference",
+    "wrapper deletion does not persist database clearing",
+    "explicit save persists nullable clearing",
+    "rollback removes database row",
+    "rollback leaves externally stored bytes",
+    "model deletion leaves stored bytes",
+    "invalid image creates no file or row",
+    "explicit orphan cleanup removes files"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Exact media model, autodetected CreateTable operation, PostgreSQL persistence and local file/image lifecycle; not full migration history, RLS, protected HTTP uploads, S3, SMTP or content-safety certification",
+  "page_sha256": {
+    "docs/docs/advanced/media-and-email.md": "2ad02c5e56ce26e5f693cba114944ea4eb75717a540330cb1ac5ab26e88d19d7",
+    "docs/docs/orm/fields.md": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4"
+  },
+  "runner_sha256": "e1b57ff0a293c261a3c09453453dc10d485c42066c467a07e39ace1d2cd41f7b"
+}

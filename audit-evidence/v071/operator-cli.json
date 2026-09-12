@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "scope": "Installed command and flag availability; not live deployment validation",
+  "package_version": "0.7.0",
+  "source_checkout_imports": false,
+  "runner_sha256": "112a688af8403d251752f5ec38a07b5f938b21f76bbf4b125ac7ca97ac1f6e99",
+  "page": "docs/docs/diagnostics.md",
+  "page_sha256": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
+  "commands": [
+    {
+      "command": "aksara doctor ai",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor db",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor fix-plan --format json",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor fix-plan --only-errors --only-with-actions",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor launch-check",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor production-check --format json",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor production-check --release --format json",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor run",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor run --format json",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor security-check --format json",
+      "help_exit": 0
+    },
+    {
+      "command": "aksara doctor summary",
+      "help_exit": 0
+    }
+  ],
+  "pass": true
+}

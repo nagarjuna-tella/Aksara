@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "internal migrations applied",
+    "documented defaults",
+    "another tenant has no eligible event",
+    "none is not all tenants",
+    "namespace selection",
+    "sink failure returns false",
+    "retry delay prevents immediate redelivery",
+    "export failure leaves authoritative state ready",
+    "eligible retry acknowledged",
+    "duplicate payload after acceptance ambiguity",
+    "payload identity and scope limits",
+    "no remaining eligible event"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Installed helper with real PostgreSQL migrations/admission/export and simulated sink acknowledgement loss; admin-role fixture, not restricted-role RLS, process-crash or remote durable delivery proof",
+  "page_sha256": {
+    "docs/docs/how-to/export-durable-transitions.md": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5"
+  },
+  "runner_sha256": "26736952a1b631a19491a742ba5fb1f523ec63ae0516a36f28e11b1665032a0b"
+}

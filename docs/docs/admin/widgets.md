@@ -56,6 +56,20 @@ Supported `item_type` values are regular HTML input types such as:
 
 ---
 
+## Rendering and validation boundaries
+
+`min_rows` and `max_rows` configure the widget UI; they are not server-side
+array-length constraints. Define and validate application data requirements on
+the server. Browser controls can be bypassed.
+
+In v0.7.0, rendering an array with fewer entries than `min_rows` appends blank
+strings to the supplied list itself. For application code calling `render()`
+directly, pass a copy if the original list must remain unchanged. This rendering
+side effect needs a separate runtime patch; this guide does not change it.
+
+The JSON renderer escapes HTML in values, including closing textarea tags.
+Widget field names and attributes should come from trusted model configuration.
+
 ## Standard Form Rendering
 
 For ordinary fields, the admin maps model fields to standard HTML controls:

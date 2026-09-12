@@ -1,431 +1,85 @@
-# Tenant Middleware
+# Tenant identifier middleware
 
-Multi-tenant application support.
+`TenantMiddleware` extracts a tenant identifier from an HTTP header, with an
+optional subdomain fallback. It stores the value in `request.state.tenant_id`
+and `aksara.middleware.tenant_id_var`. **Extraction does not prove that the
+caller belongs to the tenant.**
 
----
+For an application handling tenant data, follow the
+[ticket desk tenancy tutorial](../tutorials/ticket-desk-tenancy.md). It verifies
+identity and membership, uses tenant-scoped application models, and tests
+restricted-role PostgreSQL RLS. A client-supplied header alone is not that
+security boundary.
 
-## Overview
+## Inspect extraction without accessing tenant data
 
-`TenantMiddleware` enables multi-tenancy by identifying the current tenant from requests:
+This standalone example only echoes extracted context. It does not query a
+database or authorize a tenant operation.
 
-```python
-from aksara import Aksara
-from aksara.middleware import TenantMiddleware
-
-app = Aksara()
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-)
-```
-
----
-
-## Tenant Resolution
-
-Tenants can be identified from multiple sources:
-
-### Header-Based
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-)
-
-# Client sends: X-Tenant-ID: acme-corp
-```
-
-### Subdomain-Based
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    resolver="subdomain",
-)
-
-# acme.myapp.com → tenant_id = "acme"
-# beta.myapp.com → tenant_id = "beta"
-```
-
-### Path-Based
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    resolver="path",
-    path_prefix="/tenant/",
-)
-
-# /tenant/acme/api/users → tenant_id = "acme"
-```
-
-### Custom Resolver
-
-```python
-async def resolve_tenant(request):
-    # Custom logic: check JWT, database, etc.
-    token = request.headers.get("Authorization")
-    if token:
-        payload = decode_jwt(token)
-        return payload.get("tenant_id")
-    return None
-
-app.add_middleware(
-    TenantMiddleware,
-    resolver=resolve_tenant,
-)
-```
-
----
-
-## Configuration
-
-### Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `header_name` | `str` | `"X-Tenant-ID"` | Header for tenant ID |
-| `resolver` | `str\|callable` | `"header"` | Resolution strategy |
-| `default_tenant` | `str` | `None` | Fallback tenant |
-| `required` | `bool` | `False` | Require tenant ID |
-
-### With Default Tenant
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-    default_tenant="default",  # Use if no tenant specified
-)
-```
-
-### Required Tenant
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-    required=True,  # Return 400 if no tenant
-)
-```
-
----
-
-## Accessing Tenant ID
-
-### Context Variable
-
-```python
-from aksara.middleware import tenant_id_var
-
-@app.get("/api/data")
-async def get_data(request):
-    tenant_id = tenant_id_var.get()
-    print(f"Tenant: {tenant_id}")
-    ...
-```
-
-### Request State
-
-```python
-@app.get("/api/data")
-async def get_data(request):
-    tenant_id = request.state.tenant_id
-    ...
-```
-
----
-
-## Multi-Tenant Queries
-
-### Automatic Filtering
-
-```python
-from aksara.middleware import tenant_id_var
-
-class TenantManager:
-    """Custom manager that filters by tenant."""
-    
-    def get_queryset(self):
-        tenant_id = tenant_id_var.get()
-        return super().get_queryset().filter(tenant_id=tenant_id)
-
-class Post(Model):
-    tenant_id = fields.String(max_length=100)
-    title = fields.String(max_length=200)
-    
-    objects = TenantManager()
-```
-
-### Manual Filtering
-
-```python
-from aksara.middleware import tenant_id_var
-
-@app.get("/api/posts")
-async def list_posts(request):
-    tenant_id = tenant_id_var.get()
-    posts = await Post.objects.filter(tenant_id=tenant_id).all()
-    return [{"id": str(p.id), "title": p.title} for p in posts]
-```
-
-### Creating with Tenant
-
-```python
-from aksara.middleware import tenant_id_var
-
-@app.post("/api/posts")
-async def create_post(request):
-    tenant_id = tenant_id_var.get()
-    data = await request.json()
-    
-    post = await Post.objects.create(
-        tenant_id=tenant_id,
-        **data,
-    )
-    return {"id": str(post.id)}
-```
-
----
-
-## Tenant Validation
-
-### Validate Against Database
-
-```python
-async def validate_tenant(request):
-    """Resolve and validate tenant."""
-    tenant_id = request.headers.get("X-Tenant-ID")
-    
-    if not tenant_id:
-        return None
-    
-    # Check tenant exists and is active
-    tenant = await Tenant.objects.filter(
-        id=tenant_id,
-        is_active=True,
-    ).first()
-    
-    if not tenant:
-        return None  # Invalid tenant
-    
-    return tenant.id
-
-app.add_middleware(
-    TenantMiddleware,
-    resolver=validate_tenant,
-    required=True,
-)
-```
-
-### Tenant Context Object
-
-```python
-from contextvars import ContextVar
-
-tenant_var: ContextVar[Tenant] = ContextVar("tenant")
-
-async def resolve_tenant_object(request):
-    """Resolve full tenant object."""
-    tenant_id = request.headers.get("X-Tenant-ID")
-    
-    if not tenant_id:
-        return None
-    
-    tenant = await Tenant.objects.filter(id=tenant_id).first()
-    if tenant:
-        tenant_var.set(tenant)  # Store full object
-        return tenant.id
-    
-    return None
-
-# Access full tenant object
-def get_current_tenant() -> Tenant:
-    return tenant_var.get()
-```
-
----
-
-## Database Per Tenant
-
-For complete isolation, use separate databases:
-
-```python
-from aksara.middleware import tenant_id_var
-
-# Database URLs per tenant
-TENANT_DATABASES = {
-    "acme": "postgresql://localhost/acme_db",
-    "beta": "postgresql://localhost/beta_db",
-}
-
-async def get_tenant_connection():
-    tenant_id = tenant_id_var.get()
-    db_url = TENANT_DATABASES.get(tenant_id)
-    
-    if not db_url:
-        raise ValueError(f"No database for tenant: {tenant_id}")
-    
-    return await create_connection(db_url)
-```
-
----
-
-## Schema Per Tenant
-
-For PostgreSQL schema-based isolation:
-
-```python
-from aksara.middleware import tenant_id_var
-
-class TenantMiddleware:
-    async def __call__(self, scope, receive, send):
-        tenant_id = extract_tenant(scope)
-        tenant_id_var.set(tenant_id)
-        
-        # Set PostgreSQL search_path
-        async with db.connection() as conn:
-            await conn.execute(f"SET search_path TO {tenant_id}, public")
-        
-        await self.app(scope, receive, send)
-```
-
----
-
-## Excluding Paths
-
-Some paths shouldn't require tenant:
-
-```python
-app.add_middleware(
-    TenantMiddleware,
-    header_name="X-Tenant-ID",
-    required=True,
-    exclude_paths=[
-        "/health",
-        "/metrics",
-        "/auth/login",
-        "/docs",
-    ],
-)
-```
-
----
-
-## Complete Example
-
-```python
+```python title="tenant_context_app.py"
+from starlette.requests import Request
 from aksara import Aksara
 from aksara.middleware import TenantMiddleware, tenant_id_var
-from myapp.models import Tenant, Post
 
-
-# Custom tenant resolver with validation
-async def resolve_and_validate_tenant(request):
-    """Resolve tenant from header and validate."""
-    tenant_id = request.headers.get("X-Tenant-ID")
-    
-    if not tenant_id:
-        return None
-    
-    # Validate tenant exists
-    tenant = await Tenant.objects.filter(
-        slug=tenant_id,
-        is_active=True,
-    ).first()
-    
-    if not tenant:
-        return None
-    
-    # Store tenant slug as ID
-    return tenant.slug
-
-
-# Create app
-app = Aksara()
-
-# Add tenant middleware
-app.add_middleware(
-    TenantMiddleware,
-    resolver=resolve_and_validate_tenant,
-    required=True,
-    exclude_paths=[
-        "/health",
-        "/docs",
-        "/openapi.json",
-    ],
+app = Aksara(
+    database_url=None,
+    auto_discover_views=False,
+    middlewares=[(TenantMiddleware, {"use_subdomain": True})],
 )
 
 
-# Tenant-aware endpoints
-@app.get("/api/posts")
-async def list_posts(request):
-    """List posts for current tenant."""
-    tenant_id = tenant_id_var.get()
-    
-    posts = await Post.objects.filter(
-        tenant_id=tenant_id,
-    ).order_by("-created_at").all()
-    
+@app.get("/context")
+async def context(request: Request):
     return {
-        "tenant": tenant_id,
-        "posts": [{"id": str(p.id), "title": p.title} for p in posts],
+        "state": request.state.tenant_id,
+        "context": tenant_id_var.get(),
     }
-
-
-@app.post("/api/posts")
-async def create_post(request):
-    """Create post for current tenant."""
-    tenant_id = tenant_id_var.get()
-    data = await request.json()
-    
-    post = await Post.objects.create(
-        tenant_id=tenant_id,
-        title=data["title"],
-        content=data["content"],
-    )
-    
-    return {"id": str(post.id), "tenant": tenant_id}
-
-
-@app.get("/api/tenant/info")
-async def tenant_info(request):
-    """Get current tenant information."""
-    tenant_id = tenant_id_var.get()
-    
-    tenant = await Tenant.objects.get(slug=tenant_id)
-    
-    return {
-        "id": tenant_id,
-        "name": tenant.name,
-        "plan": tenant.plan,
-        "features": tenant.features,
-    }
-
-
-# Health check (excluded from tenant requirement)
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
 ```
 
-**Usage:**
-```bash
-# Request with tenant header
-curl -H "X-Tenant-ID: acme-corp" http://localhost:8000/api/posts
+Run `uvicorn tenant_context_app:app` after installing Uvicorn. A request with
+`X-Tenant-Id: example` returns `example` in both fields. Without that header,
+`Host: example.test.local` selects `example`. A header value takes precedence
+over the host. Neither input is inherently trusted.
 
-# Missing tenant (returns 400)
-curl http://localhost:8000/api/posts
+## Exact extraction rules
 
-# Health check (no tenant needed)
-curl http://localhost:8000/health
-```
+| Constructor option | Default | Meaning |
+| --- | --- | --- |
+| `header_name` | `"X-Tenant-Id"` | Header to inspect. HTTP header names are case-insensitive. |
+| `use_subdomain` | `False` | Try the host's first label if no tenant header is present. |
 
----
+An explicitly empty or whitespace-only tenant header returns HTTP 400. Other
+header values are stripped of surrounding whitespace. If no value is found,
+handling continues with `None`; there is no built-in requirement to supply a
+tenant.
 
-## Related Documentation
+With subdomain extraction enabled, the middleware removes a port and requires
+at least three dot-separated host parts. It uses the first part unless it is
+`www`, `api` or `app` (case-insensitive). This is a simple extraction rule, not
+public-suffix parsing, host validation or tenant lookup. Validate allowed hosts
+and tenant membership in the application or trusted deployment boundary.
 
-- [Middleware Overview](index.md) — All middleware
-- [Request ID](request-id.md) — Request tracing
-- [Logging](logging.md) — Request logging
+There are no `resolver`, `path_prefix`, `default_tenant`, `required` or
+`exclude_paths` constructor options. A custom authentication/membership resolver
+belongs in application code; it is not passed to this middleware as a callback.
+The middleware resets its context token in `finally` after downstream handling.
+
+## From context to isolation
+
+The extracted value does not automatically add an ORM filter, validate a tenant
+record, choose a database or change a PostgreSQL schema. Supported Aksara
+connection paths can apply tenant context to PostgreSQL, but isolation also
+requires the correct models, deployed policies and restricted database role.
+See [multi-tenancy](../security/multi-tenancy.md) for that contract.
+
+Use trusted identity to determine which tenant the actor may access. Reject
+missing or unauthorized tenant selection before serving protected data, and
+prevent client payloads from choosing another tenant during writes. Establish
+and reset trusted tenant context around the work that requires it. The tutorial
+provides an executable membership and RLS example instead of relying on an
+unauthenticated header-to-query shortcut.
+
+Do not build schema selection by interpolating a header into `SET search_path`,
+or assume a setting applied to one pool connection affects the next acquired
+connection. Database-per-tenant and schema-per-tenant routing are separate
+application architectures, not capabilities configured by this middleware.

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "scope": "Semantic review of these five public pages only; no inferred review of other inventory entries and no candidate certification. HTTP checks use in-process ASGI without a database; RLS claims rely on the separately recorded tutorial evidence.",
+  "reviewed_head": "1f535abe111819902c385e043c08f670a598acdf",
+  "page_sha256": {
+    "docs/docs/middleware/index.md": "58004483e3bd88f8eb6bbc4d1f85cebf0f9b7fb83223e1c61de3867776adab1f",
+    "docs/docs/middleware/request-id.md": "d0b9fc2eeeba44141110b50a15d36c3b458396d7fb1ec31cefd70f557d6cd158",
+    "docs/docs/middleware/logging.md": "6f346b6a0094cbee9df6e63ee95f835a4813722cd37565cdf46420507a9cd10d",
+    "docs/docs/middleware/tenant.md": "32068510e5d59a6becf97c6f6d48b383dc0756a28302531d0fd11b78947cbd1f",
+    "docs/docs/security/multi-tenancy.md": "9cd9a37e720e97f681905288c7062ecd6cd9d0fc9b1cd4f36f7c965980810894"
+  },
+  "source_sha256": {
+    "aksara/app.py": "b2ab6c2c36a995800a2206b31c535a249568a991f4cd96a6c33ee95eeb72e209",
+    "aksara/conf.py": "2ba2d34af5a7dd818585feb28f30c792783d7d4473d639efa76567f4786b0186",
+    "aksara/db/tenant_context.py": "395b05fa30abc5e84f61b7362a712469daea8728353ecd426e0e04035cc3ac47",
+    "aksara/middleware/__init__.py": "30f4f1fef55799d65655cf67d9b05543cb3f85677c772b47ace9126ddab0c1f2",
+    "aksara/middleware/logging.py": "dd1b0bfe2fe5e04e868310c5fb2df34cb7287007ebb21a3a84b97108020cf606",
+    "aksara/middleware/request_id.py": "c9c2d462acee49732e987b0484304fe8dfd6f4e1082a4713a00439064111350e",
+    "aksara/middleware/tenant.py": "1b110f5acd118bffc111035c0882f98f0e965365853906f3f38acf6ab5beb804",
+    "aksara/security/checks.py": "4ac3aa617ba984eb90e27072a8716724bc8dc8f4450b411339cb18fa1f78b7c6",
+    "aksara/security/context.py": "092ce56931805cd8ac1c904c955ac88cb11815a393cd02bab9266eab11d4aae6"
+  },
+  "pages": [
+    {
+      "path": "docs/docs/middleware/index.md",
+      "disposition": "REWRITTEN",
+      "anchors": [
+        "aksara/app.py",
+        "aksara/middleware/__init__.py"
+      ],
+      "review": "Registration order, actual Starlette base class, context lifetime and task-oriented links replace unsupported configuration and legacy middleware samples."
+    },
+    {
+      "path": "docs/docs/middleware/request-id.md",
+      "disposition": "REWRITTEN",
+      "anchors": [
+        "aksara/middleware/request_id.py"
+      ],
+      "review": "Exact constructor, unchanged client IDs, UUID fallback, context reset and missing header on an escaping exception verified through ASGI."
+    },
+    {
+      "path": "docs/docs/middleware/logging.md",
+      "disposition": "REWRITTEN",
+      "anchors": [
+        "aksara/middleware/logging.py",
+        "aksara/conf.py"
+      ],
+      "review": "Exact options, status levels, dict versus serialized JSON, ignored body option, metadata limits and ordering verified; masking and exclusion claims removed."
+    },
+    {
+      "path": "docs/docs/middleware/tenant.md",
+      "disposition": "REWRITTEN",
+      "anchors": [
+        "aksara/middleware/tenant.py",
+        "aksara/db/tenant_context.py",
+        "aksara/security/context.py"
+      ],
+      "review": "Extraction, absence/empty-header distinction and host fallback verified. Membership, query filtering and schema routing promises removed; protected tutorial linked."
+    },
+    {
+      "path": "docs/docs/security/multi-tenancy.md",
+      "disposition": "CORRECTED",
+      "anchors": [
+        "aksara/security/context.py",
+        "aksara/security/checks.py"
+      ],
+      "review": "Legacy Principal state trust qualified; posture environment flags do not install or inspect RLS. Existing PostgreSQL tutorial remains the isolation reference."
+    }
+  ],
+  "execution_evidence": "installed-doc-imports.json",
+  "execution_contract": "tests/docs/test_middleware_reference.py",
+  "executed_http_requests": 24,
+  "runtime_change": false,
+  "new_functional_defect_claim": false,
+  "contradictions": [
+    "PT-048",
+    "PT-049"
+  ]
+}

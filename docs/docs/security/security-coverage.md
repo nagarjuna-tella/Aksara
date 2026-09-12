@@ -12,7 +12,9 @@ security/security_matrix.example.yml
 ```
 
 This file demonstrates the structure of the matrix without publishing internal
-project coverage details.
+project coverage details. `security/security_matrix.release.yml` is the separate
+public framework release matrix. Neither file proves coverage of an application
+built on Aksara; maintain an application-specific matrix and evidence.
 
 ## Private/Internal Matrix
 

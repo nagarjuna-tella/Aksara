@@ -95,8 +95,11 @@ to remove a registration.
 
 ## Mounting the Admin
 
-`include_admin()` attaches the routes, session + CSRF + rate-limit middleware,
-and static files to your app.
+`include_admin()` attaches routes, session and rate-limit middleware, and static
+files to your app. CSRF validation runs in the Admin form handlers. For explicit
+mounting on an Aksara app, construct it with `enable_admin=False` so debug-mode
+auto-mounting does not register the default site first. Mount each site/prefix
+once; repeated `include_admin()` calls are not a deduplication contract.
 
 ```python
 from aksara.contrib.admin import include_admin
@@ -144,12 +147,13 @@ admin = AdminSite(
     login_url="/accounts/login",
     logout_url="/accounts/signed-out",
 )
+include_admin(app, prefix="/staff", site=admin)
 ```
 
 When an unauthenticated user opens `/staff/`, they are redirected to:
 
 ```text
-/accounts/login?next=/staff/
+/accounts/login?next=%2Fstaff%2F
 ```
 
 `logout_url` controls where the built-in logout route redirects after clearing

@@ -1,0 +1,6604 @@
+{
+  "schema_version": 1,
+  "package_version": "0.7.1rc1",
+  "commands": [
+    {
+      "path": [
+        "aksara"
+      ],
+      "parameters": [
+        {
+          "name": "quiet",
+          "kind": "option",
+          "spellings": [
+            "--quiet"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "plain",
+          "kind": "option",
+          "spellings": [
+            "--plain"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "no_color",
+          "kind": "option",
+          "spellings": [
+            "--no-color"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "force_color",
+          "kind": "option",
+          "spellings": [
+            "--force-color"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "version",
+          "kind": "option",
+          "spellings": [
+            "--version"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent",
+        "context"
+      ],
+      "parameters": [
+        {
+          "name": "sections",
+          "kind": "option",
+          "spellings": [
+            "--sections",
+            "-s"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "",
+          "envvar": null
+        },
+        {
+          "name": "output",
+          "kind": "option",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "type": "choice",
+          "choices": [
+            "json",
+            "pretty"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "summary",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "size",
+          "kind": "option",
+          "spellings": [
+            "--size"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent",
+        "playbook-run"
+      ],
+      "parameters": [
+        {
+          "name": "key",
+          "kind": "argument",
+          "spellings": [
+            "key"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "goal",
+          "kind": "option",
+          "spellings": [
+            "--goal",
+            "-g"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "sections",
+          "kind": "option",
+          "spellings": [
+            "--sections",
+            "-s"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "",
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent",
+        "playbooks"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "category",
+          "kind": "option",
+          "spellings": [
+            "--category",
+            "-c"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "risk",
+          "kind": "option",
+          "spellings": [
+            "--risk",
+            "-r"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "usage",
+          "kind": "option",
+          "spellings": [
+            "--usage",
+            "-u"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent",
+        "prompt"
+      ],
+      "parameters": [
+        {
+          "name": "goal",
+          "kind": "option",
+          "spellings": [
+            "--goal",
+            "-g"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "sections",
+          "kind": "option",
+          "spellings": [
+            "--sections",
+            "-s"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "",
+          "envvar": null
+        },
+        {
+          "name": "custom_system_prompt",
+          "kind": "option",
+          "spellings": [
+            "--custom-system-prompt",
+            "-c"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "agent",
+        "workflow"
+      ],
+      "parameters": [
+        {
+          "name": "goal",
+          "kind": "argument",
+          "spellings": [
+            "goal"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "playbook",
+          "kind": "option",
+          "spellings": [
+            "--playbook",
+            "-p"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "no_diagnostics",
+          "kind": "option",
+          "spellings": [
+            "--no-diagnostics"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "no_search",
+          "kind": "option",
+          "spellings": [
+            "--no-search"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "search_query",
+          "kind": "option",
+          "spellings": [
+            "--search-query"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "limit_search",
+          "kind": "option",
+          "spellings": [
+            "--limit-search"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 10,
+          "envvar": null
+        },
+        {
+          "name": "limit_diagnostics",
+          "kind": "option",
+          "spellings": [
+            "--limit-diagnostics"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 10,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "briefing"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary_only",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "context"
+      ],
+      "parameters": [
+        {
+          "name": "intent",
+          "kind": "option",
+          "spellings": [
+            "--intent",
+            "-i"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "mode",
+          "kind": "option",
+          "spellings": [
+            "--mode",
+            "-m"
+          ],
+          "type": "choice",
+          "choices": [
+            "read",
+            "design",
+            "modify"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "modify",
+          "envvar": null
+        },
+        {
+          "name": "scope",
+          "kind": "option",
+          "spellings": [
+            "--scope",
+            "-s"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "use_stdin",
+          "kind": "option",
+          "spellings": [
+            "--stdin"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "json",
+            "summary"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "summary",
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "continue"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "examples"
+      ],
+      "parameters": [
+        {
+          "name": "provider",
+          "kind": "option",
+          "spellings": [
+            "--provider",
+            "-p"
+          ],
+          "type": "choice",
+          "choices": [
+            "openai",
+            "azure",
+            "anthropic"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_dir",
+          "kind": "option",
+          "spellings": [
+            "--output-dir",
+            "-o"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "force",
+          "kind": "option",
+          "spellings": [
+            "--force",
+            "-f"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "list_only",
+          "kind": "option",
+          "spellings": [
+            "--list",
+            "-l"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "actions"
+      ],
+      "parameters": [
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "chat"
+      ],
+      "parameters": [
+        {
+          "name": "message",
+          "kind": "argument",
+          "spellings": [
+            "message"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "debug"
+      ],
+      "parameters": [
+        {
+          "name": "query",
+          "kind": "option",
+          "spellings": [
+            "--query"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary_only",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "model_filter",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "route_filter",
+          "kind": "option",
+          "spellings": [
+            "--route"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "diagnostic"
+      ],
+      "parameters": [
+        {
+          "name": "issue_id",
+          "kind": "option",
+          "spellings": [
+            "--issue-id"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "graph"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "events",
+          "kind": "option",
+          "spellings": [
+            "--events"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "rebuild",
+          "kind": "option",
+          "spellings": [
+            "--rebuild"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "migration"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "name",
+          "kind": "option",
+          "spellings": [
+            "--name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "model"
+      ],
+      "parameters": [
+        {
+          "name": "model_name",
+          "kind": "argument",
+          "spellings": [
+            "model_name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "performance"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary_only",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "show_issues",
+          "kind": "option",
+          "spellings": [
+            "--issues"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "show_metrics",
+          "kind": "option",
+          "spellings": [
+            "--metrics"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "query"
+      ],
+      "parameters": [
+        {
+          "name": "sql",
+          "kind": "option",
+          "spellings": [
+            "--sql"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "review"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary_only",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "show_metrics",
+          "kind": "option",
+          "spellings": [
+            "--metrics"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "flows",
+        "route"
+      ],
+      "parameters": [
+        {
+          "name": "route_spec",
+          "kind": "argument",
+          "spellings": [
+            "route_spec"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "hints"
+      ],
+      "parameters": [
+        {
+          "name": "view_name",
+          "kind": "option",
+          "spellings": [
+            "--view",
+            "-v"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "route_name",
+          "kind": "option",
+          "spellings": [
+            "--route",
+            "-r"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "risk",
+          "kind": "option",
+          "spellings": [
+            "--risk"
+          ],
+          "type": "choice",
+          "choices": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "investigate"
+      ],
+      "parameters": [
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "summary_only",
+          "kind": "option",
+          "spellings": [
+            "--summary"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "models"
+      ],
+      "parameters": [
+        {
+          "name": "provider",
+          "kind": "option",
+          "spellings": [
+            "--provider",
+            "-p"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "table",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "table",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "plan"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "plan",
+        "apply"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "kind": "argument",
+          "spellings": [
+            "path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "yes",
+          "kind": "option",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "summary",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "summary",
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "plan",
+        "preview"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "kind": "argument",
+          "spellings": [
+            "path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "summary",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "summary",
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "plan",
+        "template"
+      ],
+      "parameters": [
+        {
+          "name": "intent",
+          "kind": "option",
+          "spellings": [
+            "--intent",
+            "-i"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "mode",
+          "kind": "option",
+          "spellings": [
+            "--mode",
+            "-m"
+          ],
+          "type": "choice",
+          "choices": [
+            "read",
+            "design",
+            "modify"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "modify",
+          "envvar": null
+        },
+        {
+          "name": "include_schema",
+          "kind": "option",
+          "spellings": [
+            "--include-schema"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "providers"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "table",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "table",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run",
+        "diagnostic"
+      ],
+      "parameters": [
+        {
+          "name": "issue_id",
+          "kind": "option",
+          "spellings": [
+            "--issue-id"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run",
+        "migration"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "name",
+          "kind": "option",
+          "spellings": [
+            "--name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run",
+        "model"
+      ],
+      "parameters": [
+        {
+          "name": "model_name",
+          "kind": "argument",
+          "spellings": [
+            "model_name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run",
+        "query"
+      ],
+      "parameters": [
+        {
+          "name": "sql",
+          "kind": "option",
+          "spellings": [
+            "--sql"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "run",
+        "route"
+      ],
+      "parameters": [
+        {
+          "name": "route_spec",
+          "kind": "argument",
+          "spellings": [
+            "route_spec"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "action_key",
+          "kind": "option",
+          "spellings": [
+            "--action"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "provider_override",
+          "kind": "option",
+          "spellings": [
+            "--provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model_override",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fmt",
+          "kind": "option",
+          "spellings": [
+            "--format"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "schema-health"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "table",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "table",
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "schema-issues"
+      ],
+      "parameters": [
+        {
+          "name": "severity",
+          "kind": "option",
+          "spellings": [
+            "--severity",
+            "-s"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "kind",
+          "kind": "option",
+          "spellings": [
+            "--kind",
+            "-k"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "table",
+          "kind": "option",
+          "spellings": [
+            "--table",
+            "-t"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "app_label",
+          "kind": "option",
+          "spellings": [
+            "--app-label",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "table",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "table",
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "secrets"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "table",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "table",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai",
+        "validate"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "configure"
+      ],
+      "parameters": [
+        {
+          "name": "provider_name",
+          "kind": "argument",
+          "spellings": [
+            "provider_name"
+          ],
+          "type": "choice",
+          "choices": [
+            "openai",
+            "azure",
+            "anthropic",
+            "ollama",
+            "custom"
+          ],
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "api_key",
+          "kind": "option",
+          "spellings": [
+            "--api-key"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "base_url",
+          "kind": "option",
+          "spellings": [
+            "--base-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "enable",
+          "kind": "option",
+          "spellings": [
+            "--enable",
+            "--disable"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": true,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "defaults"
+      ],
+      "parameters": [
+        {
+          "name": "chat_model",
+          "kind": "option",
+          "spellings": [
+            "--chat-model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "code_model",
+          "kind": "option",
+          "spellings": [
+            "--code-model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "embeddings_model",
+          "kind": "option",
+          "spellings": [
+            "--embeddings-model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "chat_provider",
+          "kind": "option",
+          "spellings": [
+            "--chat-provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "code_provider",
+          "kind": "option",
+          "spellings": [
+            "--code-provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "embeddings_provider",
+          "kind": "option",
+          "spellings": [
+            "--embeddings-provider"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "doctor"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "models"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "providers"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-hub",
+        "status"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-provider"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-provider",
+        "configure"
+      ],
+      "parameters": [
+        {
+          "name": "provider_name",
+          "kind": "argument",
+          "spellings": [
+            "provider_name"
+          ],
+          "type": "choice",
+          "choices": [
+            "openai",
+            "azure",
+            "anthropic",
+            "ollama",
+            "custom"
+          ],
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "api_key",
+          "kind": "option",
+          "spellings": [
+            "--api-key"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "model",
+          "kind": "option",
+          "spellings": [
+            "--model"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "base_url",
+          "kind": "option",
+          "spellings": [
+            "--base-url"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "save_to",
+          "kind": "option",
+          "spellings": [
+            "--save-to"
+          ],
+          "type": "choice",
+          "choices": [
+            "env",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "env",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-provider",
+        "detect"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-provider",
+        "list"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "ai-provider",
+        "ping"
+      ],
+      "parameters": [
+        {
+          "name": "provider",
+          "kind": "option",
+          "spellings": [
+            "--provider",
+            "-p"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "collectstatic"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "createsuperuser"
+      ],
+      "parameters": [
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "email",
+          "kind": "option",
+          "spellings": [
+            "--email",
+            "-e"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "password",
+          "kind": "option",
+          "spellings": [
+            "--password",
+            "-p"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "db"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "db",
+        "clear"
+      ],
+      "parameters": [
+        {
+          "name": "force",
+          "kind": "option",
+          "spellings": [
+            "--force",
+            "-f"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "db",
+        "profile"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "limit",
+          "kind": "option",
+          "spellings": [
+            "--limit",
+            "-n"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 20,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "slow",
+          "kind": "option",
+          "spellings": [
+            "--slow"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "recent",
+          "kind": "option",
+          "spellings": [
+            "--recent"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "db",
+        "stats"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "dbsetup"
+      ],
+      "parameters": [
+        {
+          "name": "host",
+          "kind": "option",
+          "spellings": [
+            "--host"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "localhost",
+          "envvar": null
+        },
+        {
+          "name": "port",
+          "kind": "option",
+          "spellings": [
+            "--port"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 5432,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "dev"
+      ],
+      "parameters": [
+        {
+          "name": "app_path",
+          "kind": "argument",
+          "spellings": [
+            "app_path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "main:app",
+          "envvar": null
+        },
+        {
+          "name": "host",
+          "kind": "option",
+          "spellings": [
+            "--host",
+            "-h"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "127.0.0.1",
+          "envvar": null
+        },
+        {
+          "name": "port",
+          "kind": "option",
+          "spellings": [
+            "--port",
+            "-p"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 8000,
+          "envvar": null
+        },
+        {
+          "name": "reload",
+          "kind": "option",
+          "spellings": [
+            "--reload",
+            "-r"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": true,
+          "envvar": null
+        },
+        {
+          "name": "no_reload",
+          "kind": "option",
+          "spellings": [
+            "--no-reload"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "log_level",
+          "kind": "option",
+          "spellings": [
+            "--log-level",
+            "-l"
+          ],
+          "type": "choice",
+          "choices": [
+            "debug",
+            "info",
+            "warning",
+            "error"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "info",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "ai"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "db"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "fix-plan"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "text",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "text",
+          "envvar": null
+        },
+        {
+          "name": "only_errors",
+          "kind": "option",
+          "spellings": [
+            "--only-errors"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "only_with_actions",
+          "kind": "option",
+          "spellings": [
+            "--only-with-actions"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "launch-check"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "production-check"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "release_candidate",
+          "kind": "option",
+          "spellings": [
+            "--release"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "run"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "security-check"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "doctor",
+        "summary"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "examples"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "examples",
+        "validate"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "format"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "kind": "argument",
+          "spellings": [
+            "path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": ".",
+          "envvar": null
+        },
+        {
+          "name": "check",
+          "kind": "option",
+          "spellings": [
+            "--check"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "fix-plan"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "only_blocking",
+          "kind": "option",
+          "spellings": [
+            "--only-blocking"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "json"
+      ],
+      "parameters": [
+        {
+          "name": "categories",
+          "kind": "option",
+          "spellings": [
+            "--categories",
+            "-c"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "list-critical"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "list-errors"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "run"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "pretty",
+            "json"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "categories",
+          "kind": "option",
+          "spellings": [
+            "--categories",
+            "-c"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "gaps",
+        "summary"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "generate"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "generate",
+        "sdk"
+      ],
+      "parameters": [
+        {
+          "name": "language",
+          "kind": "option",
+          "spellings": [
+            "--language"
+          ],
+          "type": "choice",
+          "choices": [
+            "typescript"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "typescript",
+          "envvar": null
+        },
+        {
+          "name": "output_path",
+          "kind": "option",
+          "spellings": [
+            "--output"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "api.ts",
+          "envvar": null
+        },
+        {
+          "name": "views_module",
+          "kind": "option",
+          "spellings": [
+            "--views-module"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "to_stdout",
+          "kind": "option",
+          "spellings": [
+            "--stdout"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "info"
+      ],
+      "parameters": [
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "inspect"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "inspect",
+        "models"
+      ],
+      "parameters": [
+        {
+          "name": "model",
+          "kind": "option",
+          "spellings": [
+            "--model",
+            "-m"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "fields",
+          "kind": "option",
+          "spellings": [
+            "--fields"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "relationships",
+          "kind": "option",
+          "spellings": [
+            "--relationships"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "inspect",
+        "queries"
+      ],
+      "parameters": [
+        {
+          "name": "limit",
+          "kind": "option",
+          "spellings": [
+            "--limit",
+            "-n"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 10,
+          "envvar": null
+        },
+        {
+          "name": "as_json",
+          "kind": "option",
+          "spellings": [
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "lint"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "kind": "argument",
+          "spellings": [
+            "path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": ".",
+          "envvar": null
+        },
+        {
+          "name": "fix",
+          "kind": "option",
+          "spellings": [
+            "--fix"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "makemigrations"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "output",
+          "kind": "option",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "name",
+          "kind": "option",
+          "spellings": [
+            "--name",
+            "-n"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "auto",
+          "envvar": null
+        },
+        {
+          "name": "stdout",
+          "kind": "option",
+          "spellings": [
+            "--stdout"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "sql",
+          "kind": "option",
+          "spellings": [
+            "--sql"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "merge",
+          "kind": "option",
+          "spellings": [
+            "--merge"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "merge_app",
+          "kind": "argument",
+          "spellings": [
+            "merge_app"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "migrate"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "migrations_dir",
+          "kind": "option",
+          "spellings": [
+            "--migrations-dir",
+            "-m"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "dry_run",
+          "kind": "option",
+          "spellings": [
+            "--dry-run"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "fake",
+          "kind": "option",
+          "spellings": [
+            "--fake"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "models"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "ai",
+          "kind": "option",
+          "spellings": [
+            "--ai"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "precommit"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "precommit",
+        "init"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "precommit",
+        "run"
+      ],
+      "parameters": [
+        {
+          "name": "hook",
+          "kind": "option",
+          "spellings": [
+            "--hook",
+            "-h"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "run"
+      ],
+      "parameters": [
+        {
+          "name": "app_path",
+          "kind": "argument",
+          "spellings": [
+            "app_path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "host",
+          "kind": "option",
+          "spellings": [
+            "--host",
+            "-h"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "127.0.0.1",
+          "envvar": null
+        },
+        {
+          "name": "port",
+          "kind": "option",
+          "spellings": [
+            "--port",
+            "-p"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 8000,
+          "envvar": null
+        },
+        {
+          "name": "reload",
+          "kind": "option",
+          "spellings": [
+            "--reload",
+            "-r"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "workers",
+          "kind": "option",
+          "spellings": [
+            "--workers",
+            "-w"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 1,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "search"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "search",
+        "index"
+      ],
+      "parameters": [
+        {
+          "name": "json_out",
+          "kind": "option",
+          "spellings": [
+            "--json-output",
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "search",
+        "query"
+      ],
+      "parameters": [
+        {
+          "name": "query_text",
+          "kind": "argument",
+          "spellings": [
+            "query_text"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "kind",
+          "kind": "option",
+          "spellings": [
+            "--kind",
+            "-k"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "top",
+          "kind": "option",
+          "spellings": [
+            "--top",
+            "-n"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 10,
+          "envvar": null
+        },
+        {
+          "name": "semantic",
+          "kind": "option",
+          "spellings": [
+            "--semantic",
+            "-s"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "json_out",
+          "kind": "option",
+          "spellings": [
+            "--json-output",
+            "--json"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "min_score",
+          "kind": "option",
+          "spellings": [
+            "--min-score"
+          ],
+          "type": "float",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 0.0,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "shell"
+      ],
+      "parameters": [
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "no_ipython",
+          "kind": "option",
+          "spellings": [
+            "--no-ipython"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "startapp"
+      ],
+      "parameters": [
+        {
+          "name": "app_name",
+          "kind": "argument",
+          "spellings": [
+            "app_name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "directory",
+          "kind": "option",
+          "spellings": [
+            "--directory",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": ".",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "startproject"
+      ],
+      "parameters": [
+        {
+          "name": "project_name",
+          "kind": "argument",
+          "spellings": [
+            "project_name"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": true,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "directory",
+          "kind": "option",
+          "spellings": [
+            "--directory",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": ".",
+          "envvar": null
+        },
+        {
+          "name": "template",
+          "kind": "option",
+          "spellings": [
+            "--template",
+            "-t"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "basic",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "status"
+      ],
+      "parameters": [
+        {
+          "name": "database_url",
+          "kind": "option",
+          "spellings": [
+            "--database-url",
+            "-d"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": [
+            "AKSARA_DATABASE_URL",
+            "DATABASE_URL"
+          ]
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio",
+        "ai-context"
+      ],
+      "parameters": [
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "json",
+            "summary"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "json",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio",
+        "handshake"
+      ],
+      "parameters": [
+        {
+          "name": "app",
+          "kind": "option",
+          "spellings": [
+            "--app",
+            "-a"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "main:app",
+          "envvar": null
+        },
+        {
+          "name": "output_format",
+          "kind": "option",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "type": "choice",
+          "choices": [
+            "json",
+            "pretty"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "pretty",
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio",
+        "open"
+      ],
+      "parameters": [
+        {
+          "name": "host",
+          "kind": "option",
+          "spellings": [
+            "--host",
+            "-h"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "127.0.0.1",
+          "envvar": null
+        },
+        {
+          "name": "port",
+          "kind": "option",
+          "spellings": [
+            "--port",
+            "-p"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 8000,
+          "envvar": null
+        },
+        {
+          "name": "https",
+          "kind": "option",
+          "spellings": [
+            "--https",
+            "--no-https"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio",
+        "ui-path"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "studio",
+        "url"
+      ],
+      "parameters": [
+        {
+          "name": "host",
+          "kind": "option",
+          "spellings": [
+            "--host",
+            "-h"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": "localhost",
+          "envvar": null
+        },
+        {
+          "name": "port",
+          "kind": "option",
+          "spellings": [
+            "--port",
+            "-p"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 8000,
+          "envvar": null
+        },
+        {
+          "name": "https",
+          "kind": "option",
+          "spellings": [
+            "--https",
+            "--no-https"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "section",
+          "kind": "option",
+          "spellings": [
+            "--section",
+            "-s"
+          ],
+          "type": "choice",
+          "choices": [
+            "overview",
+            "models",
+            "routes",
+            "migrations",
+            "db-queries",
+            "ai-profiles",
+            "diagnostics"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "tasks"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "tasks",
+        "list"
+      ],
+      "parameters": [
+        {
+          "name": "status",
+          "kind": "option",
+          "spellings": [
+            "--status",
+            "-s"
+          ],
+          "type": "choice",
+          "choices": [
+            "pending",
+            "running",
+            "completed",
+            "failed"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": "failed",
+          "envvar": null
+        },
+        {
+          "name": "queue",
+          "kind": "option",
+          "spellings": [
+            "--queue",
+            "-q"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "task_name",
+          "kind": "option",
+          "spellings": [
+            "--task-name",
+            "-t"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "limit",
+          "kind": "option",
+          "spellings": [
+            "--limit",
+            "-n"
+          ],
+          "type": "integer",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 20,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "tasks",
+        "purge"
+      ],
+      "parameters": [
+        {
+          "name": "statuses",
+          "kind": "option",
+          "spellings": [
+            "--status",
+            "-s"
+          ],
+          "type": "choice",
+          "choices": [
+            "completed",
+            "failed"
+          ],
+          "required": false,
+          "nargs": 1,
+          "default": [
+            "completed"
+          ],
+          "envvar": null
+        },
+        {
+          "name": "older_than_days",
+          "kind": "option",
+          "spellings": [
+            "--older-than-days",
+            "-d"
+          ],
+          "type": "float",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": 7.0,
+          "envvar": null
+        },
+        {
+          "name": "yes",
+          "kind": "option",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "tasks",
+        "reenqueue"
+      ],
+      "parameters": [
+        {
+          "name": "task_id",
+          "kind": "argument",
+          "spellings": [
+            "task_id"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "all_failed",
+          "kind": "option",
+          "spellings": [
+            "--all"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "queue",
+          "kind": "option",
+          "spellings": [
+            "--queue",
+            "-q"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "yes",
+          "kind": "option",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "tasks",
+        "stats"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "templates"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": true,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "templates",
+        "list"
+      ],
+      "parameters": [
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    },
+    {
+      "path": [
+        "aksara",
+        "test"
+      ],
+      "parameters": [
+        {
+          "name": "args",
+          "kind": "argument",
+          "spellings": [
+            "args"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": -1,
+          "default": null,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": true
+    },
+    {
+      "path": [
+        "aksara",
+        "typecheck"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "kind": "argument",
+          "spellings": [
+            "path"
+          ],
+          "type": "text",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": ".",
+          "envvar": null
+        },
+        {
+          "name": "strict",
+          "kind": "option",
+          "spellings": [
+            "--strict"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        },
+        {
+          "name": "_click_default_help",
+          "kind": "option",
+          "spellings": [
+            "--help"
+          ],
+          "type": "boolean",
+          "choices": null,
+          "required": false,
+          "nargs": 1,
+          "default": false,
+          "envvar": null
+        }
+      ],
+      "group": false,
+      "forwards_unknown_options": false
+    }
+  ],
+  "source_checkout_framework_imports": false
+}

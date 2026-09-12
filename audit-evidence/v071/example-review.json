@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "scope": "All six repository example applications classified; selected startup/HTTP contracts executed, not every action or provider",
+  "runtime_example_changes": false,
+  "examples": [
+    {
+      "example": "basic_app",
+      "classification": "REPLACE",
+      "decision": "Replace minimal-starter role with ticket desk; retain historical ORM/manual API comparison.",
+      "limits": "User/Post/Article imports and startup work; generated seed returns 403; custom lifespan attempts DDL and suppresses errors; not minimal or production.",
+      "execution_evidence": "first-project-journey.json",
+      "readme_sha256": "6f3149b9aab5544d84bd79954cb7a709e1ed97f8147189febc2e0dba71710718"
+    },
+    {
+      "example": "blog",
+      "classification": "REWRITE",
+      "decision": "Rewrite setup and authorization expectations; retain relationship/custom-action example.",
+      "limits": "Post and Comment only; requires migration generation; example API key does not establish Principal for generated writes.",
+      "execution_evidence": "example-execution.json",
+      "readme_sha256": "5ba191c02bfc6670844c31705d28065bbac82988ede6e8289b9956f13b0a495c"
+    },
+    {
+      "example": "crm",
+      "classification": "REWRITE",
+      "decision": "Rewrite setup and authorization expectations; retain domain/action example.",
+      "limits": "Customer, Deal and Activity; requires migration generation and real identity adaptation; not a complete CRM.",
+      "execution_evidence": "example-execution.json",
+      "readme_sha256": "3fe0a9c3bfc887196010d97c11af606a0b3119e1a224822f06f17f003502edaf"
+    },
+    {
+      "example": "multitenant",
+      "classification": "REPLACE",
+      "decision": "Replace recommended isolation role with Support Desk and ticket-desk tenancy; retain historical code.",
+      "limits": "Known EX-001 middleware exemption and MIGRATION-001 model-discovery collision in installed template flow; startup is not complete schema, RLS or tenant authorization evidence.",
+      "execution_evidence": "example-execution.json",
+      "readme_sha256": "8a29e5359605617440d78b66524cc50f604a12ce0a7e16b1888aaefc7e4b690e"
+    },
+    {
+      "example": "ai_providers",
+      "classification": "REWRITE",
+      "decision": "Retain as explicitly experimental adapter/status demo with accurate local setup.",
+      "limits": "Application-local Settings and OpenAI/Azure/Anthropic adapters; no Ollama adapter, persistence journey or live provider verification.",
+      "execution_evidence": "example-execution.json",
+      "readme_sha256": "e0d608207b23c6a7335b6ff44e530c702905c450a7f35c50f91e8ed52c2b4f0c"
+    },
+    {
+      "example": "support_desk",
+      "classification": "KEEP",
+      "decision": "Retain production-oriented reference; clarify migration path and ordinary-task terminology.",
+      "limits": "Packaged PostgreSQL gate covers forced RLS and runtime recovery; identity adapter and retained evidence remain application responsibilities.",
+      "execution_evidence": "support-desk-baseline.json",
+      "readme_sha256": "096259df65462eb628cb9d9d4f83b78ea49afbc07aabbbaf789e724e6ea99d14"
+    }
+  ]
+}

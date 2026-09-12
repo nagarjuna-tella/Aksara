@@ -1,153 +1,44 @@
 # Reference
 
-Complete API reference for Aksara — a quick lookup for all classes, methods, and options.
+Use this section to look up supported interfaces and configuration. For a
+complete install-to-application sequence, start with
+[First project: a ticket desk](../getting-started/first-project.md).
 
----
+## Find a contract
 
-## What is This Section?
+| You need to look up… | Reference |
+| --- | --- |
+| Configuration fields, environment variables and precedence | [Settings](settings-reference.md) |
+| ViewSets, serializers, permissions and actions | [API](api-reference.md) |
+| Models, fields, queries and managers | [ORM](orm-reference.md) |
+| Command arguments, flags and parser defaults | [CLI](cli-reference.md) |
+| Exception families and HTTP error handling | [Exceptions](exceptions.md) |
+| Type aliases and their import paths | [Types](types.md) |
+| Supported Python, PostgreSQL and web dependencies | [Runtime compatibility](runtime-compatibility.md) |
 
-This is a **reference guide**, not a tutorial. Use it when you need to look up:
+The settings and CLI references expose declarations from the implementation.
+A parser default does not establish the effects of running a command. Use the
+linked workflows for prerequisites, database setup and operational checks.
+The API and ORM pages describe selected public contracts; they are not a
+catalog of every internal class or method.
 
-- What options a setting accepts
-- What methods are available on a class
-- What parameters a function takes
+## Choose guidance by task
 
-**New to Aksara?** Start with the [Getting Started Guide](../getting-started/index.md) or [Quickstart](../quickstart.md) instead.
+- **Create and run an application:** follow the [first project](../getting-started/first-project.md), or the [template-specific setup](../getting-started/patterns.md) when using `startproject`.
+- **Understand data access:** read [models](../orm/models.md), [queries](../orm/querying.md) and [transactions](../orm/expressions-and-transactions.md).
+- **Protect an endpoint:** start with [authentication](../api/authentication.md) and [permissions](../api/permissions.md); check the [custom-action boundary](../api/actions.md) before adding an action.
+- **Operate a deployment:** use the [production guide](../tutorials/deployment.md), [Doctor](../diagnostics.md) and [upgrade guide](../operations/upgrade-v07.md).
 
----
+For terminology and maturity, see the [glossary](../glossary.md) and
+[stability guide](../concepts/stability.md). A successful import alone does not
+make an internal or experimental interface stable.
 
-## Reference Sections
-
-| Reference | What It Covers |
-|-----------|----------------|
-| [Settings Reference](settings-reference.md) | All configuration options for your app |
-| [API Reference](api-reference.md) | ViewSets, serializers, permissions, actions |
-| [ORM Reference](orm-reference.md) | Models, fields, queries, managers |
-| [CLI Reference](cli-reference.md) | All command-line commands |
-| [Exceptions](exceptions.md) | Error types and how to handle them |
-| [Types](types.md) | Type definitions for type hints |
-
----
-
-## Quick Reference
-
-### Settings
-
-```python
-# settings.py
-from aksara import configure
-
-configure(
-    database_url="postgresql://localhost/myapp",
-    debug=True,
-    installed_apps=["myapp"],
-)
-```
-
-👉 [Full Settings Reference](settings-reference.md)
-
----
-
-### Models
-
-```python
-from aksara import Model, fields
-
-class User(Model):
-    email = fields.Email(unique=True)
-    name = fields.String(max_length=100)
-    is_active = fields.Boolean(default=True)
-```
-
-👉 [ORM Reference](orm-reference.md)
-
----
-
-### ViewSets
-
-```python
-from aksara.api import ModelViewSet
-
-class UserViewSet(ModelViewSet):
-    model = User
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-```
-
-👉 [API Reference](api-reference.md)
-
----
-
-### CLI Commands
-
-```bash
-# Create a project
-aksara startproject myproject
-
-# Create database migrations
-aksara makemigrations
-
-# Apply migrations
-aksara migrate
-
-# Start the development server
-aksara dev
-```
-
-👉 [CLI Reference](cli-reference.md)
-
----
-
-## Version Information
-
-Current version: **0.7.0**
-
-```python
-import aksara
-print(aksara.__version__)  # 0.7.0
-```
-
-Check your installed version:
+## Check the installed version
 
 ```bash
 aksara --version
 ```
 
----
-
-## How to Use This Reference
-
-### Finding What You Need
-
-1. **Know the setting name?** → [Settings Reference](settings-reference.md)
-2. **Working with models?** → [ORM Reference](orm-reference.md)
-3. **Building an API?** → [API Reference](api-reference.md)
-4. **Running commands?** → [CLI Reference](cli-reference.md)
-5. **Handling errors?** → [Exceptions](exceptions.md)
-
-### Understanding the Format
-
-Each reference page uses this format:
-
-```text
-# Class or Function Name
-description of what it does
-
-# Parameters/Options
-parameter_name: type = default  # description
-
-# Example
-actual_code_example()
-```
-
----
-
-## Related Documentation
-
-| Section | For |
-|---------|-----|
-| [Getting Started](../getting-started/index.md) | Learning Aksara from scratch |
-| [Tutorials](../tutorials/index.md) | Building complete applications |
-| [ORM Guide](../orm/index.md) | Understanding the ORM in depth |
-| [API Guide](../api/index.md) | Understanding the API layer |
-| [Changelog](../changelog.md) | What's new in each version |
+Use the [changelog](../changelog.md) and release stability contracts to understand
+the installed version's supported surface. The local package can differ from
+the version used to build the documentation.

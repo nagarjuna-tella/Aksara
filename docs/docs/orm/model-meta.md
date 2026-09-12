@@ -1,496 +1,103 @@
-# Model Meta & Introspection
+# Model metadata and introspection
 
-Access model metadata and schema information programmatically.
+Use a model's `meta` attribute to inspect its declared fields and relationships.
+This is useful for developer tools and diagnostics. It describes the Python model;
+it does not query PostgreSQL to confirm that migrations, indexes, or constraints
+have been applied. It is not an authorization-filtered API schema.
 
----
+## Inspect a model
 
-## Overview
+This example runs without a database connection. It uses a concrete related
+model so introspection does not depend on resolving a lazy relation.
 
-Aksara models expose metadata through the `_meta` attribute, enabling introspection for:
-
-- Building admin interfaces
-- Generating API schemas
-- Creating migrations
-- AI-powered tooling
-
-```python
-from myapp.models import Post
-
-# Access meta information
-print(Post._meta.model_name)     # "Post"
-print(Post._meta.table_name)     # "posts"
-print(Post._meta.fields)         # List of field objects
-```
-
----
-
-## Meta Class Options
-
-Configure model behavior using the inner `Meta` class:
-
-```python
+```python title="inspect_models.py"
 from aksara import Model, fields
 
-class Post(Model):
+
+class MetadataOwner(Model):
+    name = fields.String(max_length=80)
+
+
+class MetadataDocument(Model):
     title = fields.String(max_length=200)
-    content = fields.Text()
-    created_at = fields.DateTime(auto_now_add=True)
-    
+    owner = fields.ForeignKey(MetadataOwner, related_name="documents")
+
     class Meta:
-        table_name = "blog_posts"           # Custom table name
-        ordering = ["-created_at"]          # Default ordering
-        unique_together = [("author", "slug")]  # Composite unique
-        indexes = [                         # Database indexes
-            ("created_at",),
-            ("author_id", "created_at"),
-        ]
-        verbose_name = "Blog Post"          # Human-readable name
-        verbose_name_plural = "Blog Posts"  # Plural name
-```
+        table_name = "metadata_documents"
+        app_label = "documents"
 
-### Available Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `table_name` | `str` | `{model_name}s` | Database table name |
-| `ordering` | `list[str]` | `[]` | Default ordering |
-| `unique_together` | `list[tuple]` | `[]` | Composite unique constraints |
-| `indexes` | `list[tuple]` | `[]` | Database indexes |
-| `verbose_name` | `str` | `{model_name}` | Human-readable name |
-| `verbose_name_plural` | `str` | `{verbose_name}s` | Plural name |
-| `abstract` | `bool` | `False` | Abstract base model |
-
----
-
-## Accessing _meta
-
-### Model Information
-
-```python
-# Model name
-Post._meta.model_name        # "Post"
-Post._meta.verbose_name      # "Blog Post" or "post"
-Post._meta.verbose_name_plural  # "Blog Posts" or "posts"
-
-# Database table
-Post._meta.table_name        # "blog_posts" or "posts"
-Post._meta.db_table          # Alias for table_name
-
-# App information
-Post._meta.app_label         # "myapp"
-```
-
-### Field Information
-
-```python
-# All fields
-fields = Post._meta.fields  # List[FieldInfo]
-
-# Get field by name
-title_field = Post._meta.get_field("title")
-print(title_field.name)           # "title"
-print(title_field.field_type)     # "String"
-print(title_field.max_length)     # 200
-
-# Field names
-names = Post._meta.field_names    # ["id", "title", "content", ...]
-
-# Concrete fields (excluding relations)
-concrete = Post._meta.concrete_fields
-
-# Primary key
-pk_field = Post._meta.pk
-print(pk_field.name)              # "id"
-```
-
-### Relation Information
-
-```python
-# All relations
-relations = Post._meta.relations  # List[RelationInfo]
-
-# ForeignKey fields
-fks = Post._meta.foreign_keys     # List[ForeignKeyInfo]
-
-# ManyToMany fields
-m2ms = Post._meta.many_to_many    # List[ManyToManyInfo]
-
-# Reverse relations
-reverse = Post._meta.reverse_relations
-```
-
----
-
-## Field Introspection
-
-### FieldInfo Object
-
-```python
-field = Post._meta.get_field("title")
-
-# Basic info
-field.name                  # "title"
-field.field_type           # "String"
-field.python_type          # str
-field.db_column            # "title" (database column name)
-
-# Constraints
-field.max_length           # 200
-field.nullable             # False
-field.unique               # False
-field.primary_key          # False
-field.default              # None
-
-# Choices (for Enum fields)
-field.choices              # None or list of choices
-
-# AI metadata (if defined)
-field.ai_description       # "The title of the blog post"
-field.ai_visible           # True
-```
-
-### Checking Field Types
-
-```python
-from aksara.fields import String, ForeignKey, ManyToMany
-
-field = Post._meta.get_field("author")
-
-# Check type
-isinstance(field, ForeignKey)  # True
-
-# Or use string check
-field.field_type == "ForeignKey"  # True
-
-# Check if relation
-field.is_relation              # True
-field.is_foreign_key           # True
-field.is_many_to_many          # False
-```
-
----
-
-## Relation Introspection
-
-### ForeignKey Meta
-
-```python
-author_field = Post._meta.get_field("author")
-
-# Related model
-author_field.related_model        # User class
-author_field.related_model_name   # "User"
-
-# Relation details
-author_field.on_delete            # "CASCADE"
-author_field.related_name         # "posts"
-author_field.db_column            # "author_id"
-```
-
-### ManyToMany Meta
-
-```python
-tags_field = Post._meta.get_field("tags")
-
-# Related model
-tags_field.related_model          # Tag class
-
-# Junction table
-tags_field.through_model          # PostTag (auto or custom)
-tags_field.through_table          # "post_tags"
-
-# Relation details
-tags_field.related_name           # "posts"
-```
-
-### Reverse Relations
-
-```python
-# Get reverse relations to a model
-for rel in User._meta.reverse_relations:
-    print(f"{rel.related_model_name}.{rel.field_name}")
-    # "Post.author"
-    # "Comment.user"
-```
-
----
-
-## Practical Use Cases
-
-### Generate API Schema
-
-```python
-def model_to_schema(model_class):
-    """Convert model to OpenAPI schema."""
-    properties = {}
-    required = []
-    
-    for field in model_class._meta.fields:
-        if field.name == "id":
-            continue
-            
-        prop = {
-            "type": python_type_to_json(field.python_type),
-        }
-        
-        if field.max_length:
-            prop["maxLength"] = field.max_length
-            
-        if field.ai_description:
-            prop["description"] = field.ai_description
-            
-        properties[field.name] = prop
-        
-        if not field.nullable and field.default is None:
-            required.append(field.name)
-    
+def describe_document():
+    meta = MetadataDocument.meta
+    title = meta.get_field("title")
     return {
-        "type": "object",
-        "properties": properties,
-        "required": required,
-    }
-```
-
-### Build Admin Interface
-
-```python
-def get_admin_columns(model_class):
-    """Get columns for admin list view."""
-    columns = []
-    
-    for field in model_class._meta.fields:
-        columns.append({
-            "name": field.name,
-            "label": field.name.replace("_", " ").title(),
-            "sortable": not field.is_relation,
-            "type": field.field_type,
-        })
-    
-    return columns
-```
-
-### Dynamic Form Generation
-
-```python
-def model_to_form_fields(model_class):
-    """Generate form fields from model."""
-    form_fields = {}
-    
-    for field in model_class._meta.concrete_fields:
-        if field.name == "id" or field.name.endswith("_at"):
-            continue
-            
-        form_field = {
-            "name": field.name,
-            "required": not field.nullable,
-            "type": get_input_type(field),
-        }
-        
-        if field.max_length:
-            form_field["maxlength"] = field.max_length
-            
-        if field.choices:
-            form_field["options"] = field.choices
-            
-        form_fields[field.name] = form_field
-    
-    return form_fields
-```
-
----
-
-## AI Metadata
-
-Aksara models support AI-specific metadata for LLM integration.
-
-### Field-Level AI Metadata
-
-```python
-class Product(Model):
-    name = fields.String(
-        max_length=200,
-        ai_description="The product name shown to customers",
-    )
-    price = fields.Decimal(
-        max_digits=10,
-        decimal_places=2,
-        ai_description="Price in USD, must be positive",
-    )
-    sku = fields.String(
-        max_length=50,
-        ai_visible=False,  # Hide from AI tools
-    )
-```
-
-### Model-Level AI Metadata
-
-```python
-class Product(Model):
-    class Meta:
-        ai_description = "Products available for sale"
-        ai_examples = [
-            "List all products under $50",
-            "Find products with 'laptop' in the name",
-        ]
-```
-
-### Accessing AI Metadata
-
-```python
-# Field AI description
-field = Product._meta.get_field("price")
-print(field.ai_description)  # "Price in USD, must be positive"
-
-# Model AI metadata
-print(Product._meta.ai_description)  # "Products available for sale"
-print(Product._meta.ai_examples)     # List of example queries
-
-# Get all AI-visible fields
-visible_fields = [
-    f for f in Product._meta.fields
-    if f.ai_visible
-]
-```
-
----
-
-## Constraints Introspection
-
-```python
-# Unique together constraints
-for constraint in Post._meta.unique_together:
-    print(constraint)  # ("author", "slug")
-
-# Indexes
-for index in Post._meta.indexes:
-    print(index)  # ("created_at",) or ("author_id", "created_at")
-
-# Check constraints (from field definitions)
-for field in Post._meta.fields:
-    if field.unique:
-        print(f"{field.name} has unique constraint")
-```
-
----
-
-## Complete Example
-
-```python
-from aksara import Model, fields
-
-class Article(Model):
-    """Blog article model with full metadata."""
-    
-    title = fields.String(
-        max_length=200,
-        ai_description="Article headline",
-    )
-    slug = fields.String(
-        max_length=200,
-        unique=True,
-        ai_description="URL-safe identifier",
-    )
-    content = fields.Text(
-        ai_description="Full article content in Markdown",
-    )
-    author = fields.ForeignKey(
-        "User",
-        on_delete="CASCADE",
-        related_name="articles",
-    )
-    category = fields.ForeignKey(
-        "Category",
-        on_delete="SET_NULL",
-        nullable=True,
-        related_name="articles",
-    )
-    tags = fields.ManyToMany(
-        "Tag",
-        related_name="articles",
-    )
-    view_count = fields.Integer(
-        default=0,
-        ai_visible=False,  # Internal metric
-    )
-    is_published = fields.Boolean(default=False)
-    published_at = fields.DateTime(nullable=True)
-    created_at = fields.DateTime(auto_now_add=True)
-    updated_at = fields.DateTime(auto_now=True)
-    
-    class Meta:
-        table_name = "articles"
-        ordering = ["-published_at"]
-        unique_together = [("author", "slug")]
-        indexes = [
-            ("is_published", "published_at"),
-            ("category_id",),
-        ]
-        verbose_name = "Article"
-        verbose_name_plural = "Articles"
-        ai_description = "Blog articles with rich content"
-        ai_examples = [
-            "Find published articles by author",
-            "Get articles in the Python category",
-        ]
-
-
-# Introspection example
-def describe_model(model_class):
-    """Generate a complete model description."""
-    meta = model_class._meta
-    
-    description = {
-        "name": meta.model_name,
+        "name": meta.name,
         "table": meta.table_name,
-        "description": getattr(meta, "ai_description", None),
-        "fields": [],
-        "relations": [],
-        "constraints": {
-            "unique_together": list(meta.unique_together),
-            "indexes": list(meta.indexes),
-        },
+        "app": meta.app_label,
+        "primary_key": meta.pk_name,
+        "title_limit": title.max_length,
+        "owner_is_foreign_key": isinstance(
+            meta.foreign_keys["owner"], fields.ForeignKey
+        ),
+        "field_names": meta.field_names,
     }
-    
-    for field in meta.fields:
-        field_info = {
-            "name": field.name,
-            "type": field.field_type,
-            "required": not field.nullable and field.default is None,
-            "unique": field.unique,
-        }
-        
-        if field.is_relation:
-            field_info["related_to"] = field.related_model_name
-            description["relations"].append(field_info)
-        else:
-            description["fields"].append(field_info)
-    
-    return description
-
-
-# Usage
-info = describe_model(Article)
-print(info)
-# {
-#     "name": "Article",
-#     "table": "articles",
-#     "description": "Blog articles with rich content",
-#     "fields": [
-#         {"name": "title", "type": "String", "required": True, "unique": False},
-#         ...
-#     ],
-#     "relations": [
-#         {"name": "author", "type": "ForeignKey", "related_to": "User"},
-#         ...
-#     ],
-#     ...
-# }
 ```
 
----
+`describe_document()` reports `MetadataDocument`, `metadata_documents`,
+`documents`, primary key `id`, a title limit of 200, and a foreign-key flag of
+`True`. The field names include framework-added fields as well as your declarations.
 
-## Related Documentation
+## Interface
 
-- [Models](models.md) — Model definition
-- [Fields](fields.md) — Field types
-- [AI Mode](../ai-mode/context-engine.md) — AI integration
+| Member | Result |
+| --- | --- |
+| `name` | Python model class name |
+| `table_name` | Declared/inferred SQL table name |
+| `app_label` | Explicit `Meta.app_label`, otherwise inferred from the module path |
+| `fields` | New list of the model's actual field objects |
+| `field_names` | New list of declared field names |
+| `pk`, `pk_name` | Primary-key field and its name, or `None` |
+| `get_field(name)` | Field object, or `None` if absent |
+| `has_field(name)` | Whether the declared field exists |
+| `relations` | Cached name-to-field dictionary combining forward FK and M2M fields |
+| `foreign_keys` | Copy of the name-to-field dictionary for foreign keys, including one-to-one fields |
+| `many_to_many` | Copy of the name-to-field dictionary for many-to-many fields |
+| `to_dict()` | Metadata dictionary with model, field, primary-key, and relation descriptions |
+
+Treat all returned field objects and the cached `relations` dictionary as
+read-only. Copying a list or dictionary does not clone the fields inside it.
+`meta` does not expose a `reverse_relations` collection or the old reference's
+`model_name`, `db_table`, `concrete_fields`, and `FieldInfo` abstractions.
+
+Use `isinstance(field, fields.ForeignKey)` to distinguish types. Common field
+attributes include `name`, `column_name`, `nullable`, `unique`, `primary_key`,
+and `default`; attributes such as `max_length` depend on the concrete field type.
+Use [relations](relations.md) for supported relationship declarations and access.
+
+`to_dict()` is a descriptive representation, not OpenAPI or JSON Schema. It
+includes field type names and selected attributes; it does not encode every
+validator or permission. Do not assume arbitrary defaults or choices are JSON
+serializable. Inspect and normalize your application's values before exporting
+metadata. Avoid exposing schema information to unauthorized callers.
+
+## Nested `Meta` declarations
+
+`Meta.table_name` overrides the inferred snake-case plural table name.
+`Meta.app_label` controls the metadata label; without it, a module ending in
+`.models` uses the preceding component, and other module paths use their first
+component. A label does not create a database schema or enforce tenancy.
+
+The previous reference listed Django-style `ordering`, `unique_together`,
+`indexes`, `verbose_name`, `verbose_name_plural`, and `abstract` as supported
+options. They are not implemented as those model behaviors in v0.7.0. Adding
+arbitrary attributes to the nested class does not make Aksara enforce them.
+Specify ordering explicitly on queries and review generated migrations for
+actual database constraints. See [models](models.md) and
+[migrations](migrations.md).
+
+AI-oriented model declarations are separate from `meta`: model construction
+reads `ai_name`, `ai_description`, `ai_agent_exposed`, and `ai_permissions` into
+its AI metadata. These labels are not a replacement for execution-time
+permissions, field policy, or tenant enforcement. Do not rely on the historical
+`ai_visible=False` example as a security boundary; consult the
+[MCP guide](../ai-mode/mcp.md) for the supported tool exposure and authorization path.

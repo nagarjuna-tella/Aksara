@@ -1,555 +1,139 @@
-# Custom Fields
+# Application-specific fields
 
-Create specialized field types for your application.
+**Evolving extension surface.** Prefer a built-in field plus explicit application
+validation when it expresses your requirement. If you need reusable conversion,
+subclass a compatible built-in field and test every persistence path you use.
+A working subclass does not automatically establish support for a new PostgreSQL
+type, migration reconstruction, Admin widget, serializer, or SDK type.
 
----
+The [field reference](../orm/fields.md) covers existing types, including Slug,
+Enum, Decimal, Array, File and Image. Reimplementing these in a custom field can
+lose validation and database conversion already supplied by Aksara.
 
-## Overview
+## A reusable ticket code
 
-Aksara's field system is extensible. You can create custom fields for:
+Save this as `app/fields.py`. It stores a normalized ASCII code in a VARCHAR
+column and inherits the built-in string field's length and choice checks.
 
-- Domain-specific data types (phone numbers, currencies)
-- Complex validation
-- Custom serialization
-- Database-specific types
-
----
-
-## Basic Custom Field
-
-### Field Structure
-
-```python
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
-
-class PercentageField(Field):
-    """Field for percentage values (0-100)."""
-    
-    def __init__(self, min_value=0, max_value=100, **kwargs):
-        self.min_value = min_value
-        self.max_value = max_value
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        """Validate the value."""
-        if value is None and self.null:
-            return None
-        
-        if not isinstance(value, (int, float)):
-            raise ValidationError("Must be a number")
-        
-        if value < self.min_value or value > self.max_value:
-            raise ValidationError(
-                f"Must be between {self.min_value} and {self.max_value}"
-            )
-        
-        return float(value)
-    
-    def to_db(self, value):
-        """Convert to database representation."""
-        if value is None:
-            return None
-        return float(value)
-    
-    def from_db(self, value):
-        """Convert from database representation."""
-        if value is None:
-            return None
-        return float(value)
-    
-    def get_db_type(self):
-        """Return the database column type."""
-        return "REAL"
-```
-
-### Using the Field
-
-```python
-class Product(Model):
-    name = fields.String(max_length=100)
-    discount = PercentageField(default=0)
-
-# Usage
-product = Product(name="Widget", discount=25.5)
-await product.save()
-```
-
----
-
-## Field Methods
-
-### Required Methods
-
-| Method | Purpose |
-|--------|---------|
-| `validate(value)` | Validate and clean the value |
-| `to_db(value)` | Convert Python → Database |
-| `from_db(value)` | Convert Database → Python |
-| `get_db_type()` | Database column type |
-
-### Optional Methods
-
-| Method | Purpose |
-|--------|---------|
-| `get_default()` | Return the default value |
-| `contribute_to_class(cls, name)` | Called when field is added to model |
-| `deconstruct()` | For migrations |
-| `__get__` / `__set__` | Descriptor protocol |
-
----
-
-## Practical Examples
-
-### Phone Number Field
-
-```python
+```python title="app/fields.py"
 import re
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
 
-class PhoneField(Field):
-    """Phone number field with validation."""
-    
-    PHONE_REGEX = re.compile(r'^\+?1?\d{9,15}$')
-    
-    def __init__(self, region="US", **kwargs):
-        self.region = region
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        if value is None:
-            if self.null:
-                return None
-            raise ValidationError("Phone number is required")
-        
-        # Normalize: remove spaces, dashes, parentheses
-        normalized = re.sub(r'[\s\-\(\)]', '', str(value))
-        
-        if not self.PHONE_REGEX.match(normalized):
-            raise ValidationError("Invalid phone number format")
-        
-        return normalized
-    
-    def to_db(self, value):
-        return value
-    
-    def from_db(self, value):
-        return value
-    
-    def get_db_type(self):
-        return "VARCHAR(20)"
+from aksara import fields
 
-# Usage
-class Contact(Model):
-    name = fields.String(max_length=100)
-    phone = PhoneField()
-    alt_phone = PhoneField(null=True)
-```
 
-### Money Field
+class TicketCode(fields.String):
+    def __init__(self, max_length=24, **kwargs):
+        super().__init__(max_length=max_length, **kwargs)
 
-```python
-from decimal import Decimal
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
-
-class MoneyField(Field):
-    """Field for monetary values."""
-    
-    def __init__(self, currency="USD", max_digits=10, decimal_places=2, **kwargs):
-        self.currency = currency
-        self.max_digits = max_digits
-        self.decimal_places = decimal_places
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        if value is None:
-            if self.null:
-                return None
-            raise ValidationError("Value is required")
-        
-        try:
-            decimal_value = Decimal(str(value))
-        except:
-            raise ValidationError("Invalid monetary value")
-        
-        if decimal_value < 0:
-            raise ValidationError("Value cannot be negative")
-        
-        # Round to decimal places
-        return decimal_value.quantize(Decimal(10) ** -self.decimal_places)
-    
     def to_db(self, value):
         if value is None:
             return None
-        # Store as integer cents for precision
-        return int(value * (10 ** self.decimal_places))
-    
-    def from_db(self, value):
-        if value is None:
-            return None
-        return Decimal(value) / (10 ** self.decimal_places)
-    
-    def get_db_type(self):
-        return "BIGINT"
+        if not isinstance(value, str):
+            raise ValueError("Ticket code must be a string")
+        code = value.strip().upper()
+        if not re.fullmatch(r"[A-Z][A-Z0-9-]*", code):
+            raise ValueError("Ticket code must start with a letter and use ASCII letters, digits or hyphens")
+        return super().to_db(code)
 
-# Usage
-class Order(Model):
-    total = MoneyField(currency="USD")
-    tax = MoneyField(currency="USD", default=Decimal("0.00"))
+    def to_python(self, value):
+        return self.to_db(value)
+
+    async def async_prepare(self, value, *, instance=None):
+        return self.to_db(value)
 ```
 
-### Encrypted Field
+The `None` branch preserves database NULL conversion; the model's non-nullable
+check and the database constraint decide whether NULL is allowed. A field
+conversion call by itself is not a complete model validation pass.
 
-```python
-from cryptography.fernet import Fernet
-from aksara.fields import Field
-from aksara.conf import settings
+Use it in a separate application model:
 
-class EncryptedField(Field):
-    """Field that encrypts data at rest."""
-    
-    def __init__(self, **kwargs):
-        self._fernet = None
-        super().__init__(**kwargs)
-    
-    @property
-    def fernet(self):
-        if self._fernet is None:
-            key = settings.ENCRYPTION_KEY.encode()
-            self._fernet = Fernet(key)
-        return self._fernet
-    
-    def validate(self, value):
-        if value is None and self.null:
-            return None
-        return str(value)
-    
-    def to_db(self, value):
-        if value is None:
-            return None
-        return self.fernet.encrypt(value.encode()).decode()
-    
-    def from_db(self, value):
-        if value is None:
-            return None
-        return self.fernet.decrypt(value.encode()).decode()
-    
-    def get_db_type(self):
-        return "TEXT"
+```python title="app/models.py"
+from aksara import Model
+from .fields import TicketCode
 
-# Usage
-class User(Model):
-    email = fields.Email()
-    ssn = EncryptedField()  # Encrypted at rest
+
+class TicketReference(Model):
+    code = TicketCode(unique=True)
+
+    class Meta:
+        table_name = "ticket_references"
 ```
 
-### Enum Field
+Import the model in your application's model-discovery path, generate and review
+its migration, then apply it before persistence. `unique=True` describes a
+constraint; model declaration alone does not install it. The normalized key
+makes inputs such as `" help-12 "` and `"HELP-12"` conflict once the unique
+constraint exists. This example does not generate codes or retry collisions.
 
-```python
-from enum import Enum
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
+## The actual field hooks
 
-class EnumField(Field):
-    """Field for Python enums."""
-    
-    def __init__(self, enum_class, **kwargs):
-        self.enum_class = enum_class
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        if value is None:
-            if self.null:
-                return None
-            raise ValidationError("Value is required")
-        
-        # Accept enum member or string value
-        if isinstance(value, self.enum_class):
-            return value
-        
-        try:
-            return self.enum_class(value)
-        except ValueError:
-            valid = [e.value for e in self.enum_class]
-            raise ValidationError(f"Must be one of: {valid}")
-    
-    def to_db(self, value):
-        if value is None:
-            return None
-        return value.value
-    
-    def from_db(self, value):
-        if value is None:
-            return None
-        return self.enum_class(value)
-    
-    def get_db_type(self):
-        return "VARCHAR(50)"
+| Hook | Contract |
+|---|---|
+| `sql_type` property | PostgreSQL type string; abstract on `Field`, inherited as `VARCHAR(max_length)` here |
+| `to_db(value)` | Synchronous conversion for database parameters; called by multiple write paths |
+| `to_python(value)` | Synchronous conversion when loading database values |
+| `async_prepare(value, *, instance=None)` | Async preparation on save/create and bulk-create paths; returns the value to store on the instance |
+| `get_default_value()` | Gets or calls a default; built-in handling copies mutable defaults |
+| `validate(value)` when supplied | Optional field validation; model validation calls it but does not assign its return value back to the instance |
 
-# Usage
-class Status(Enum):
-    PENDING = "pending"
-    ACTIVE = "active"
-    COMPLETED = "completed"
+The base field accepts `nullable`, not `null`. It has no `from_db()`,
+`get_db_type()`, `get_default()`, `contribute_to_class()`, or `deconstruct()`
+contract. A Python method with one of those names will not become an ORM hook
+merely because it appears on your subclass. Do not use `Field[T]` as though the
+runtime base class were a generic field API.
 
-class Task(Model):
-    title = fields.String(max_length=200)
-    status = EnumField(Status, default=Status.PENDING)
-```
+The example repeats normalization in `to_db()` and `async_prepare()` on purpose:
+preparation updates the in-memory value during save, while direct update and
+upsert paths still need conversion. Conversion should be deterministic and safe
+to call more than once. Keep network calls and irreversible side effects out of
+these synchronous conversion methods.
 
-### Slug Field
+## Validation boundaries
 
-```python
-from slugify import slugify
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
+Aksara model validation catches `ValueError` from a field and aggregates it into
+`aksara.exceptions.ValidationError`. Direct calls to this example's `to_db()`
+raise `ValueError`. They do not require a database connection.
 
-class SlugField(Field):
-    """Auto-generating slug field."""
-    
-    def __init__(self, source_field=None, **kwargs):
-        self.source_field = source_field
-        kwargs.setdefault("max_length", 200)
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        if value is None and self.null:
-            return None
-        
-        if value:
-            return slugify(str(value))
-        return value
-    
-    def contribute_to_class(self, cls, name):
-        super().contribute_to_class(cls, name)
-        
-        # Auto-generate from source field
-        if self.source_field:
-            from aksara.signals import pre_save
-            
-            @pre_save(cls)
-            async def auto_slug(sender, instance, **kwargs):
-                if not getattr(instance, name):
-                    source_value = getattr(instance, self.source_field, "")
-                    setattr(instance, name, slugify(source_value))
-    
-    def to_db(self, value):
-        return value
-    
-    def from_db(self, value):
-        return value
-    
-    def get_db_type(self):
-        return f"VARCHAR({self.max_length})"
+The `async_prepare()` hook can fail before model validation aggregates errors;
+do not assume every invalid input on every write path has the same exception
+class. Test the exact path and map application errors at your public boundary.
 
-# Usage
-class Post(Model):
-    title = fields.String(max_length=200)
-    slug = SlugField(source_field="title", unique=True)
-```
+A generated API may validate an input through its Pydantic model before ORM
+conversion, and a serializer may have additional rules. A custom conversion
+method does not automatically become a public input schema constraint. Use an
+explicit serializer hook when API validation must expose the same rule and
+verify both HTTP responses and stored values.
 
-### Array Field (PostgreSQL)
+`bulk_update()` and `upsert()` do not run full save preparation. The text-only
+conversion here can be used by those paths; it does not remove the current
+[Boolean/timestamp bulk-update limitation](../orm/bulk-operations.md#current-bulk-update-limitation).
+Upsert callers must also supply required insertion values such as `updated_at`;
+an `auto_now` model field does not make that timestamp an automatic database
+default. See the bulk/upsert guide for the complete insertion contract.
+Database raw SQL can bypass Python conversion entirely, so put required
+cross-client invariants in database constraints too.
 
-```python
-import json
-from aksara.fields import Field
-from aksara.exceptions import ValidationError
+## Migrations and compatibility
 
-class ArrayField(Field):
-    """PostgreSQL array field."""
-    
-    def __init__(self, base_type="text", **kwargs):
-        self.base_type = base_type
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        if value is None:
-            if self.null:
-                return None
-            raise ValidationError("Value is required")
-        
-        if not isinstance(value, (list, tuple)):
-            raise ValidationError("Must be a list")
-        
-        return list(value)
-    
-    def to_db(self, value):
-        if value is None:
-            return None
-        # PostgreSQL array format: {item1,item2}
-        return "{" + ",".join(str(v) for v in value) + "}"
-    
-    def from_db(self, value):
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return value
-        # Parse PostgreSQL array format
-        return value.strip("{}").split(",") if value else []
-    
-    def get_db_type(self):
-        return f"{self.base_type.upper()}[]"
+Aksara's migrations describe database schema changes; they do not use Django's
+field `deconstruct()` protocol. Keeping this example on an existing VARCHAR
+representation avoids introducing a new database codec. Review generated SQL,
+constraints and defaults, and test the migration against PostgreSQL. Changing a
+normalization rule can change uniqueness behavior without changing SQL type;
+plan and validate existing-data conversion separately.
 
-# Usage
-class Article(Model):
-    title = fields.String(max_length=200)
-    tags = ArrayField(base_type="text", default=list)
-```
+Custom encrypted, money and array examples require more than conversion methods.
+Key rotation, exact numeric representation, array escaping, filtering and schema
+compatibility need their own contracts. Use supported built-ins where possible;
+Aksara does not supply an `ENCRYPTION_KEY` setting or a generic encrypted-field
+recipe here.
 
----
+## What to verify
 
-## Field with Serialization
-
-### Custom Serialization
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.fields import Field
-from aksara.api.serializers import SerializerField
-
-class ColorField(Field):
-    """RGB color field."""
-    
-    def validate(self, value):
-        if value is None and self.null:
-            return None
-        
-        if isinstance(value, dict):
-            # {r: 255, g: 128, b: 0}
-            return value
-        
-        if isinstance(value, str) and value.startswith("#"):
-            # #ff8000
-            return self.hex_to_rgb(value)
-        
-        raise ValidationError("Invalid color format")
-    
-    def hex_to_rgb(self, hex_color):
-        hex_color = hex_color.lstrip("#")
-        return {
-            "r": int(hex_color[0:2], 16),
-            "g": int(hex_color[2:4], 16),
-            "b": int(hex_color[4:6], 16),
-        }
-    
-    def to_db(self, value):
-        if value is None:
-            return None
-        return f"{value['r']},{value['g']},{value['b']}"
-    
-    def from_db(self, value):
-        if value is None:
-            return None
-        r, g, b = map(int, value.split(","))
-        return {"r": r, "g": g, "b": b}
-    
-    def get_db_type(self):
-        return "VARCHAR(20)"
-    
-    def get_serializer_field(self):
-        """Return the API serializer field."""
-        return ColorSerializerField()
-
-class ColorSerializerField(SerializerField):
-    """Serializer field for colors."""
-    
-    def to_representation(self, value):
-        """Convert to JSON output."""
-        if value is None:
-            return None
-        return {
-            "rgb": value,
-            "hex": "#{r:02x}{g:02x}{b:02x}".format(**value),
-        }
-    
-    def to_internal_value(self, data):
-        """Convert from JSON input."""
-        if isinstance(data, str):
-            return {"hex": data}
-        return data
-```
-
----
-
-## Migration Support
-
-### Deconstruction
-
-For migrations to work, fields must be deconstructable:
-
-```python
-class CustomField(Field):
-    def __init__(self, custom_arg, **kwargs):
-        self.custom_arg = custom_arg
-        super().__init__(**kwargs)
-    
-    def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        kwargs["custom_arg"] = self.custom_arg
-        return name, path, args, kwargs
-```
-
----
-
-## Type Hints
-
-### Add Type Hints
-
-Create a `.pyi` stub file:
-
-```python
-# fields.pyi
-from typing import TypeVar, Generic, Optional
-
-T = TypeVar("T")
-
-class PercentageField(Field[float]):
-    def __init__(
-        self,
-        min_value: float = 0,
-        max_value: float = 100,
-        null: bool = False,
-        default: Optional[float] = None,
-    ) -> None: ...
-```
-
----
-
-## Testing Custom Fields
-
-```python
-import pytest
-from aksara.testing import AksaraTestCase
-
-class TestPercentageField(AksaraTestCase):
-    async def test_valid_value(self):
-        field = PercentageField()
-        assert field.validate(50) == 50.0
-    
-    async def test_boundary_values(self):
-        field = PercentageField()
-        assert field.validate(0) == 0.0
-        assert field.validate(100) == 100.0
-    
-    async def test_invalid_range(self):
-        field = PercentageField()
-        with pytest.raises(ValidationError):
-            field.validate(150)
-    
-    async def test_custom_range(self):
-        field = PercentageField(min_value=10, max_value=50)
-        assert field.validate(30) == 30.0
-        with pytest.raises(ValidationError):
-            field.validate(5)
-```
-
----
-
-## Related Documentation
-
-- [Fields](../orm/fields.md)
-- [Validation](validation.md)
-- [Migrations](../orm/migrations.md)
+Test valid and invalid conversion, nullable behavior, maximum length, model
+save/reload, uniqueness after normalization, and the direct update, bulk and
+upsert paths your application uses. Also test migration output and API input/
+output separately; direct field tests do not prove either one. See
+[application testing](testing.md) for fixture ownership and real PostgreSQL
+integration guidance.

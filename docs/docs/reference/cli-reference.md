@@ -1,827 +1,1032 @@
 # CLI Reference
 
-Complete reference for Aksara CLI commands.
+Command and parameter declarations from installed Aksara **0.7.1rc1**.
+
+This generated reference describes parser syntax, literal defaults, and environment
+bindings. It does not execute commands or prove their runtime effects. A `null`
+default means no literal parser default; the command may discover configuration
+or prompt later. Environment values and credentials are never captured.
+
+Start with [CLI workflows](../cli/commands.md) for migrations, serving, diagnostics,
+and worker guidance. See [configuration](settings-reference.md) for settings precedence.
+
+The `agent`, `ai`, `ai-hub`, `ai-provider`, and `studio` command families are
+**Experimental**. Their presence is not a stable backend guarantee.
+
+Durable workers use a separate Python module entry point; see
+[Durable Operations](../advanced/durable-operations.md). Ordinary `tasks` commands
+do not manage Durable Operations.
 
----
+Regenerate from an isolated wheel environment with
+`python scripts/generate_public_cli_reference.py --python /path/to/venv/bin/python`.
+
+<!-- Generated parser declarations; edit the generator, not the tables. -->
+
+## aksara
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--quiet` | option / boolean | no | `false` | — |
+| `--plain` | option / boolean | no | `false` | — |
+| `--no-color` | option / boolean | no | `false` | — |
+| `--force-color` | option / boolean | no | `false` | — |
+| `--version` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara agent
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara agent context
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--sections, -s` | option / text | no | `""` | — |
+| `--output, -o` | option / choice: json, pretty | no | `"pretty"` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--size` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-## Usage
+## aksara agent playbook-run
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `key` | argument / text | yes | `null` | — |
+| `--goal, -g` | option / text | no | `null` | — |
+| `--sections, -s` | option / text | no | `""` | — |
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara agent playbooks
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--category, -c` | option / text | no | `null` | — |
+| `--risk, -r` | option / text | no | `null` | — |
+| `--usage, -u` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara agent prompt
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--goal, -g` | option / text | yes | `null` | — |
+| `--sections, -s` | option / text | no | `""` | — |
+| `--custom-system-prompt, -c` | option / text | no | `null` | — |
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara agent workflow
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `goal` | argument / text | yes | `null` | — |
+| `--playbook, -p` | option / text | no | `null` | — |
+| `--no-diagnostics` | option / boolean | no | `false` | — |
+| `--no-search` | option / boolean | no | `false` | — |
+| `--search-query` | option / text | no | `null` | — |
+| `--limit-search` | option / integer | no | `10` | — |
+| `--limit-diagnostics` | option / integer | no | `10` | — |
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai briefing
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai context
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--intent, -i` | option / text | no | `null` | — |
+| `--mode, -m` | option / choice: read, design, modify | no | `"modify"` | — |
+| `--scope, -s` | option / text | no | `null` | — |
+| `--stdin` | option / boolean | no | `false` | — |
+| `--format, -f` | option / choice: json, summary | no | `"summary"` | — |
+| `--database-url` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai continue
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai examples
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--provider, -p` | option / choice: openai, azure, anthropic | no | `null` | — |
+| `--output-dir, -o` | option / text | no | `null` | — |
+| `--force, -f` | option / boolean | no | `false` | — |
+| `--list, -l` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows actions
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows chat
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `message` | argument / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows debug
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--query` | option / text | no | `null` | — |
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--model` | option / text | no | `null` | — |
+| `--route` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows diagnostic
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--issue-id` | option / text | no | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows graph
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--events` | option / boolean | no | `false` | — |
+| `--rebuild` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows migration
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app` | option / text | no | `null` | — |
+| `--name` | option / text | no | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows model
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `model_name` | argument / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows performance
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--issues` | option / boolean | no | `false` | — |
+| `--metrics` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows query
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--sql` | option / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows review
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--metrics` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai flows route
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `route_spec` | argument / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai hints
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--view, -v` | option / text | no | `null` | — |
+| `--route, -r` | option / text | no | `null` | — |
+| `--risk` | option / choice: low, medium, high | no | `null` | — |
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai investigate
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json` | option / boolean | no | `false` | — |
+| `--summary` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai models
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--provider, -p` | option / text | no | `null` | — |
+| `--format, -f` | option / choice: table, json | no | `"table"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai plan
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai plan apply
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `path` | argument / text | no | `null` | — |
+| `--yes, -y` | option / boolean | no | `false` | — |
+| `--format, -f` | option / choice: summary, json | no | `"summary"` | — |
+| `--database-url` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai plan preview
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `path` | argument / text | no | `null` | — |
+| `--format, -f` | option / choice: summary, json | no | `"summary"` | — |
+| `--database-url` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai plan template
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--intent, -i` | option / text | yes | `null` | — |
+| `--mode, -m` | option / choice: read, design, modify | no | `"modify"` | — |
+| `--include-schema` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai providers
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: table, json | no | `"table"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run diagnostic
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--issue-id` | option / text | no | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run migration
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app` | option / text | no | `null` | — |
+| `--name` | option / text | no | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run model
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `model_name` | argument / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run query
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--sql` | option / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai run route
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `route_spec` | argument / text | yes | `null` | — |
+| `--action` | option / text | yes | `null` | — |
+| `--provider` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--format` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai schema-health
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: table, json | no | `"table"` | — |
+| `--database-url` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai schema-issues
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--severity, -s` | option / text | no | `null` | — |
+| `--kind, -k` | option / text | no | `null` | — |
+| `--table, -t` | option / text | no | `null` | — |
+| `--app-label, -a` | option / text | no | `null` | — |
+| `--format, -f` | option / choice: table, json | no | `"table"` | — |
+| `--database-url` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai secrets
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: table, json | no | `"table"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai validate
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub configure
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `provider_name` | argument / choice: openai, azure, anthropic, ollama, custom | yes | `null` | — |
+| `--api-key` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--base-url` | option / text | no | `null` | — |
+| `--enable, --disable` | option / boolean | no | `true` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub defaults
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--chat-model` | option / text | no | `null` | — |
+| `--code-model` | option / text | no | `null` | — |
+| `--embeddings-model` | option / text | no | `null` | — |
+| `--chat-provider` | option / text | no | `null` | — |
+| `--code-provider` | option / text | no | `null` | — |
+| `--embeddings-provider` | option / text | no | `null` | — |
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub doctor
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub models
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub providers
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-hub status
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-provider
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-provider configure
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `provider_name` | argument / choice: openai, azure, anthropic, ollama, custom | yes | `null` | — |
+| `--api-key` | option / text | no | `null` | — |
+| `--model` | option / text | no | `null` | — |
+| `--base-url` | option / text | no | `null` | — |
+| `--save-to` | option / choice: env, json | no | `"env"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-provider detect
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-provider list
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara ai-provider ping
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--provider, -p` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara collectstatic
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara createsuperuser
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--database-url, -d` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--email, -e` | option / text | no | `null` | — |
+| `--password, -p` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara db
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara db clear
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--force, -f` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara db profile
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `null` | — |
+| `--limit, -n` | option / integer | no | `20` | — |
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--slow` | option / boolean | no | `false` | — |
+| `--recent` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara db stats
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `null` | — |
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara dbsetup
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--host` | option / text | no | `"localhost"` | — |
+| `--port` | option / integer | no | `5432` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara dev
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `app_path` | argument / text | no | `"main:app"` | — |
+| `--host, -h` | option / text | no | `"127.0.0.1"` | — |
+| `--port, -p` | option / integer | no | `8000` | — |
+| `--reload, -r` | option / boolean | no | `true` | — |
+| `--no-reload` | option / boolean | no | `false` | — |
+| `--log-level, -l` | option / choice: debug, info, warning, error | no | `"info"` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara doctor
+
+Command group; choose a subcommand below.
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara doctor ai
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara doctor db
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara [OPTIONS] COMMAND [ARGS]...
-```
+## aksara doctor fix-plan
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: text, json | no | `"text"` | — |
+| `--only-errors` | option / boolean | no | `false` | — |
+| `--only-with-actions` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### Global Options
+## aksara doctor launch-check
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Description |
-|--------|-------------|
-| `--help` | Show help message |
-| `--version` | Show version |
-| `--quiet` | Suppress non-error Aksara UI output |
-| `--plain` | Disable Rich rendering and animations |
-| `--no-color` | Disable colored terminal output |
-| `--force-color` | Force colored output when supported |
-| `--settings PATH` | Settings module path *(planned)* |
-| `--pythonpath PATH` | Add a path to `sys.path` *(planned)* |
-| `--verbose` | Increase output verbosity *(planned)* |
+## aksara doctor production-check
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--release` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Global output flags must be placed before the subcommand. Examples: `aksara --quiet migrate`, `aksara --plain dev`, `aksara --no-color info`.
+## aksara doctor run
 
-> **Note:** `--settings`, `--pythonpath`, and `--verbose` are planned. Use the `AKSARA_SETTINGS` environment variable in the meantime.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
----
+## aksara doctor security-check
 
-## Project Commands
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### startproject
+## aksara doctor summary
 
-Create a new Aksara project.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara startproject NAME [OPTIONS]
-```
+## aksara examples
 
-| Option | Description |
-|--------|-------------|
-| `--directory DIR` | Target directory |
-| `--template TEMPLATE` | Project template |
+Command group; choose a subcommand below.
 
-**Example:**
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara startproject myproject
-aksara startproject myproject --directory /path/to/dir
-```
+## aksara examples validate
 
-### startapp
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Create a new application.
+## aksara format
 
-```bash
-aksara startapp NAME [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `path` | argument / text | no | `"."` | — |
+| `--check` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Description |
-|--------|-------------|
-| `--directory DIR` | Target directory |
+## aksara gaps
 
-**Example:**
+Command group; choose a subcommand below.
 
-```bash
-aksara startapp users
-aksara startapp blog --directory apps/
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
----
+## aksara gaps fix-plan
 
-## Database Commands
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--only-blocking` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### makemigrations
+## aksara gaps json
 
-Create new migrations.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--categories, -c` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
+
+## aksara gaps list-critical
 
-```bash
-aksara makemigrations [APP] [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Description |
-|--------|-------------|
-| `--name NAME` | Migration name |
-| `--empty` | Create empty migration |
-| `--check` | Check only, don't create |
-| `--dry-run` | Show without creating |
+## aksara gaps list-errors
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-**Example:**
+## aksara gaps run
+
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: pretty, json | no | `"pretty"` | — |
+| `--categories, -c` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara makemigrations
-aksara makemigrations users --name add_bio_field
-aksara makemigrations --check
-```
+## aksara gaps summary
 
-### migrate
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-Apply migrations from the project-wide `migrations/` directory.
+## aksara generate
 
-```bash
-aksara migrate [OPTIONS]
-```
+Command group; choose a subcommand below.
 
-| Option | Description |
-|--------|-------------|
-| `--database-url`, `-d` | PostgreSQL connection URL |
-| `--migrations-dir`, `-m` | Migrations directory (default: `./migrations`) |
-| `--dry-run` | Preview without applying |
-| `--fake` | Mark as applied without running |
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-**Example:**
+## aksara generate sdk
 
-```bash
-aksara migrate
-aksara migrate --dry-run
-aksara migrate --fake
-aksara migrate --migrations-dir custom_migrations
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--language` | option / choice: typescript | no | `"typescript"` | — |
+| `--output` | option / text | no | `"api.ts"` | — |
+| `--views-module` | option / text | no | `null` | — |
+| `--stdout` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### status
+## aksara info
 
-Show migration status.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--database-url, -d` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara status [OPTIONS]
-```
+## aksara inspect
 
-| Option | Description |
-|--------|-------------|
-| `--database-url`, `-d` | PostgreSQL connection URL |
+Command group; choose a subcommand below.
 
-**Example:**
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara status
-aksara status --database-url postgresql://postgres:password@localhost:5432/myapp
-```
+## aksara inspect models
 
----
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--model, -m` | option / text | no | `null` | — |
+| `--fields` | option / boolean | no | `false` | — |
+| `--relationships` | option / boolean | no | `false` | — |
+| `--json` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-## Server Commands
+## aksara inspect queries
 
-### dev
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--limit, -n` | option / integer | no | `10` | — |
+| `--json` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Start the preferred local development server with the Aksara hero banner.
+## aksara lint
 
-```bash
-aksara dev [APP_PATH] [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `path` | argument / text | no | `"."` | — |
+| `--fix` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--host HOST` | `127.0.0.1` | Bind host |
-| `--port PORT` | `8000` | Bind port |
-| `--reload` | True | Enable auto-reload |
-| `--no-reload` | False | Disable auto-reload |
-| `--log-level LEVEL` | `info` | Uvicorn log level |
+## aksara makemigrations
 
-**Example:**
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `null` | — |
+| `--output, -o` | option / text | no | `null` | — |
+| `--name, -n` | option / text | no | `"auto"` | — |
+| `--stdout` | option / boolean | no | `false` | — |
+| `--sql` | option / boolean | no | `false` | — |
+| `--merge` | option / boolean | no | `false` | — |
+| `merge_app` | argument / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara dev
-aksara dev myproject.main:app --log-level debug
-aksara dev --no-reload --port 3000
-aksara run dev
-```
+## aksara migrate
 
-### run
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `null` | — |
+| `--database-url, -d` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--migrations-dir, -m` | option / text | no | `null` | — |
+| `--dry-run` | option / boolean | no | `false` | — |
+| `--fake` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Start a specific ASGI app path directly.
+## aksara models
 
-```bash
-aksara run APP_PATH [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `null` | — |
+| `--ai` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--host HOST` | `127.0.0.1` | Bind host |
-| `--port PORT` | `8000` | Bind port |
-| `--reload` | True | Auto-reload |
-| `--workers N` | `1` | Worker count |
+## aksara precommit
 
-**Example:**
+Command group; choose a subcommand below.
 
-```bash
-aksara run main:app
-aksara run main:app --port 3000
-aksara run main:app --host 0.0.0.0 --port 8080
-aksara run myproject.main:app --reload
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
----
+## aksara precommit init
 
-## Shell Commands
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-### shell
+## aksara precommit run
 
-Start interactive Python shell.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--hook, -h` | option / text | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara shell [OPTIONS]
-```
+## aksara run
 
-| Option | Description |
-|--------|-------------|
-| `--database-url`, `-d` | PostgreSQL connection URL |
-| `--no-ipython` | Disable IPython even if available |
-| `--bpython` | Use BPython instead of IPython *(planned)* |
-| `--command`, `-c` | Execute a Python command and exit *(planned)* |
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `app_path` | argument / text | yes | `null` | — |
+| `--host, -h` | option / text | no | `"127.0.0.1"` | — |
+| `--port, -p` | option / integer | no | `8000` | — |
+| `--reload, -r` | option / boolean | no | `false` | — |
+| `--workers, -w` | option / integer | no | `1` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-**Example:**
+## aksara search
 
-```bash
-aksara shell
-aksara shell --database-url postgresql://postgres:password@localhost:5432/myapp
-aksara shell --no-ipython
-```
+Command group; choose a subcommand below.
 
-### dbshell
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-> **Planned** — not yet available.
+## aksara search index
 
-```bash
-aksara dbshell [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--json-output, --json` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Open a raw `psql` session connected to the project database.
+## aksara search query
 
-### inspectdb
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `query_text` | argument / text | yes | `null` | — |
+| `--kind, -k` | option / text | no | `null` | — |
+| `--top, -n` | option / integer | no | `10` | — |
+| `--semantic, -s` | option / boolean | no | `false` | — |
+| `--json-output, --json` | option / boolean | no | `false` | — |
+| `--min-score` | option / float | no | `0.0` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-> **Planned** — not yet available.
+## aksara shell
 
-```bash
-aksara inspectdb [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--database-url, -d` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--no-ipython` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Generate Aksara model definitions by introspecting an existing PostgreSQL schema.
+## aksara startapp
 
----
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `app_name` | argument / text | yes | `null` | — |
+| `--directory, -d` | option / text | no | `"."` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-## Utility Commands
+## aksara startproject
 
-### routes
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `project_name` | argument / text | yes | `null` | — |
+| `--directory, -d` | option / text | no | `"."` | — |
+| `--template, -t` | option / text | no | `"basic"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-List all routes.
+## aksara status
 
-```bash
-aksara routes [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--database-url, -d` | option / text | no | `null` | AKSARA_DATABASE_URL, DATABASE_URL |
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Description |
-|--------|-------------|
-| `--format FMT` | Output format (table, json) |
-| `--filter PATTERN` | Filter routes by path pattern *(planned)* |
-| `--method METHOD` | Filter routes by HTTP method *(planned)* |
+## aksara studio
 
-**Example:**
+Command group; choose a subcommand below.
 
-```bash
-aksara routes
-aksara routes --format json
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-**Output:**
+## aksara studio ai-context
 
-```
-Method  Path                    Name                Handler
-------  ----------------------  ------------------  ----------------------
-GET     /api/users/             users-list          UserViewSet.list
-POST    /api/users/             users-create        UserViewSet.create
-GET     /api/users/{id}/        users-detail        UserViewSet.retrieve
-PUT     /api/users/{id}/        users-update        UserViewSet.update
-DELETE  /api/users/{id}/        users-delete        UserViewSet.destroy
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--format, -f` | option / choice: json, summary | no | `"json"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### info
+## aksara studio handshake
 
-Show project information.
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--app, -a` | option / text | no | `"main:app"` | — |
+| `--format, -f` | option / choice: json, pretty | no | `"pretty"` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara info [OPTIONS]
-```
+## aksara studio open
 
-| Option | Description |
-|--------|-------------|
-| `--database-url`, `-d` | PostgreSQL connection URL |
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--host, -h` | option / text | no | `"127.0.0.1"` | — |
+| `--port, -p` | option / integer | no | `8000` | — |
+| `--https, --no-https` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-**Output:**
+## aksara studio ui-path
 
-```
-Aksara Project Information
-==========================
-Version: 0.7.0
-Python: 3.11.0
-Settings: myproject.settings
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-Database: postgresql://localhost/myproject
-Apps: users, posts, comments
+## aksara studio url
 
-Models:
-  - users.User
-  - users.Profile
-  - posts.Post
-  - posts.Comment
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--host, -h` | option / text | no | `"localhost"` | — |
+| `--port, -p` | option / integer | no | `8000` | — |
+| `--https, --no-https` | option / boolean | no | `false` | — |
+| `--section, -s` | option / choice: overview, models, routes, migrations, db-queries, ai-profiles, diagnostics | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### models
+## aksara tasks
 
-List registered models.
+Command group; choose a subcommand below.
 
-```bash
-aksara models [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-| Option | Description |
-|--------|-------------|
-| `--app APP` | Application models module to import |
-| `--ai` | Show AI metadata |
-| `--detail` | Show detailed field definitions *(planned)* |
+## aksara tasks list
 
-**Example:**
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--status, -s` | option / choice: pending, running, completed, failed | no | `"failed"` | — |
+| `--queue, -q` | option / text | no | `null` | — |
+| `--task-name, -t` | option / text | no | `null` | — |
+| `--limit, -n` | option / integer | no | `20` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-```bash
-aksara models
-aksara models --app blog.models --ai
-```
+## aksara tasks purge
 
-### test
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--status, -s` | option / choice: completed, failed | no | `["completed"]` | — |
+| `--older-than-days, -d` | option / float | no | `7.0` | — |
+| `--yes, -y` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Run tests.
+## aksara tasks reenqueue
 
-```bash
-aksara test [PATH] [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `task_id` | argument / text | no | `null` | — |
+| `--all` | option / boolean | no | `false` | — |
+| `--queue, -q` | option / text | no | `null` | — |
+| `--yes, -y` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-Additional arguments are passed through to pytest.
+## aksara tasks stats
 
-| Flag | Description |
-|------|-------------|
-| `-v` / `--verbose` | Verbose output |
-| `--failfast` | Stop on first failure |
-| `--parallel` | Run in parallel (requires `pytest-xdist`) |
-| `--cov` / `--coverage` | Measure coverage (requires `pytest-cov`) |
-| `-k EXPRESSION` | Filter by name expression |
-| `--tb=short` | Shorter tracebacks |
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-**Example:**
+## aksara templates
 
-```bash
-aksara test
-aksara test tests/test_users.py
-aksara test -v --tb=short
-aksara test -k "test_create"
-aksara test --failfast
-aksara test --parallel
-```
+Command group; choose a subcommand below.
 
-### collectstatic
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-Collect static files.
+## aksara templates list
 
-```bash
-aksara collectstatic [OPTIONS]
-```
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `--help` | option / boolean | no | `false` | — |
 
-Creates missing project static assets such as `static/welcome.html`. This also runs automatically before `aksara dev` and `aksara run`.
+## aksara test
 
-| Option | Description |
-|--------|-------------|
-| `--no-input` | Skip confirmation prompts *(planned)* |
-| `--clear` | Delete existing static files first *(planned)* |
-| `--dry-run` | Preview without writing files *(planned)* |
+Additional options are forwarded to the underlying tool (pytest for `aksara test`).
+Its supported flags and installed plugins determine validity.
 
----
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `args` | argument / text (variadic) | no | `null` | — |
+| `--help` | option / boolean | no | `false` | — |
 
-### check
+## aksara typecheck
 
-> **Planned** — not yet available.
-
-```bash
-aksara check [OPTIONS]
-```
-
-Validate the project configuration and run system checks.
-
-| Option | Description |
-|--------|-------------|
-| `--deploy` | Run stricter production-safety checks |
-
-**Example output:**
-
-```
-⚡ Aksara System Check
-
-  ✓ Database connection OK
-  ✓ Migrations up to date
-  ✓ Settings valid
-  ✓ Admin configured
-  ✓ Static files present
-
-  0 issues found.
-```
-
-### settings
-
-> **Planned** — not yet available.
-
-```bash
-aksara settings [OPTIONS]
-```
-
-Display the current project settings.
-
-| Option | Description |
-|--------|-------------|
-| `--setting NAME` | Show only the specified setting |
-
----
-
-## Watch & Automation
-
-### watch
-
-> **Planned** — not yet available.
-
-```bash
-aksara watch [PATH]
-```
-
-Watch for file changes and re-run tests automatically.
-
----
-
-## Data Commands
-
-### dumpdata
-
-> **Planned** — not yet available.
-
-```bash
-aksara dumpdata [APP] [OPTIONS]
-```
-
-Export database content to a fixture file.
-
-| Option | Description |
-|--------|-------------|
-| `--output FILE` | Output file path |
-| `--format FMT` | Output format (json, yaml) |
-| `--all` | Include all apps |
-| `--indent N` | JSON indentation |
-
-### loaddata
-
-> **Planned** — not yet available.
-
-```bash
-aksara loaddata FIXTURE [OPTIONS]
-```
-
-Load fixture data into the database.
-
----
-
-## Auth Commands
-
-### createsuperuser
-
-Create admin user.
-
-```bash
-aksara createsuperuser [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--database-url`, `-d` | PostgreSQL connection URL |
-| `--email EMAIL`, `-e` | User email |
-| `--password PASSWORD`, `-p` | User password |
-| `--no-input` | Use provided values without prompts *(planned)* |
-| `--username USERNAME` | Username for username-based auth *(planned)* |
-
-**Example:**
-
-```bash
-aksara createsuperuser
-aksara createsuperuser --email admin@example.com
-```
-
-### changepassword
-
-> **Planned** — not yet available.
-
-```bash
-aksara changepassword <email>
-```
-
-Change the password for an existing user.
-
----
-
-## AI Commands
-
-### ai query
-
-Query data with natural language.
-
-```bash
-aksara ai query "QUERY" [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--output FMT` | Output format (table, json, csv) |
-| `--limit N` | Result limit |
-
-**Example:**
-
-```bash
-aksara ai query "Show all active users"
-aksara ai query "Posts created this week" --output json
-```
-
-### ai generate
-
-Generate code.
-
-```bash
-aksara ai generate TYPE DESCRIPTION [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--output FILE` | Output file |
-| `--preview` | Preview only |
-
-**Example:**
-
-```bash
-aksara ai generate model "User with email, name, role"
-aksara ai generate viewset User
-aksara ai generate test User --output tests/test_users.py
-```
-
-### ai doctor
-
-Analyze schema for issues.
-
-```bash
-aksara ai doctor [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--fix` | Auto-fix issues |
-| `--interactive` | Confirm each fix |
-
-**Example:**
-
-```bash
-aksara ai doctor
-aksara ai doctor --fix --interactive
-```
-
-### ai plan
-
-Plan complex tasks.
-
-```bash
-aksara ai plan "TASK" [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--execute` | Execute the plan |
-| `--preview` | Preview only |
-
-**Example:**
-
-```bash
-aksara ai plan "Add user profile feature with avatar upload"
-aksara ai plan "Refactor auth to use JWT" --preview
-```
-
-### ai agent
-
-Run AI agent.
-
-```bash
-aksara ai agent "TASK" [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--tools TOOLS` | Allowed tools (comma-separated) |
-| `--max-steps N` | Maximum steps |
-
-**Example:**
-
-```bash
-aksara ai agent "Analyze the codebase and suggest improvements"
-aksara ai agent "Fix failing tests" --max-steps 10
-```
-
-### ai patch
-
-Apply code changes.
-
-```bash
-aksara ai patch "CHANGE" [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--preview` | Preview changes |
-| `--dry-run` | Don't apply |
-
-**Example:**
-
-```bash
-aksara ai patch "Add logging to all viewsets" --preview
-```
-
-### ai ask
-
-Ask questions about the codebase.
-
-```bash
-aksara ai ask "QUESTION"
-```
-
-**Example:**
-
-```bash
-aksara ai ask "How is authentication implemented?"
-aksara ai ask "What models have soft delete?"
-```
-
-### ai config
-
-Configure AI settings.
-
-```bash
-aksara ai config [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--provider NAME` | Set provider |
-| `--model NAME` | Set model |
-| `--show` | Show current config |
-
-**Example:**
-
-```bash
-aksara ai config --show
-aksara ai config --provider openai --model gpt-4
-```
-
----
-
-## Task Queue Commands
-
-### tasks stats
-
-Show task queue counts grouped by status and queue.
-
-```bash
-aksara tasks stats
-```
-
-**Example output:**
-
-```
-  Queue: default
-    pending          3
-    running          1
-    completed      412
-    failed           2
-
-  Queue: emails
-    pending          0
-    running          0
-    completed       87
-    failed           1
-
-  Total
-    pending          3
-    running          1
-    completed      499
-    failed           3
-```
-
-### tasks list
-
-List task records. Defaults to showing `failed` tasks.
-
-```bash
-aksara tasks list [OPTIONS]
-```
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--status`, `-s` | `failed` | Filter by status (`pending`, `running`, `completed`, `failed`) |
-| `--queue`, `-q` | — | Filter by queue name |
-| `--task-name`, `-t` | — | Substring match on `task_name` |
-| `--limit`, `-n` | `20` | Maximum rows returned |
-
-**Examples:**
-
-```bash
-aksara tasks list
-aksara tasks list --status pending
-aksara tasks list --status failed --queue emails --limit 50
-aksara tasks list --task-name send_welcome
-```
-
-### tasks reenqueue
-
-Re-enqueue a failed task by ID, or all failed tasks at once.
-Re-enqueuing resets `attempts`, `locked_at`, `last_error`, and `available_at`
-so the task is treated as brand-new.
-
-```bash
-aksara tasks reenqueue [TASK_ID] [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--all` | Re-enqueue all failed tasks |
-| `--queue`, `-q` | Filter by queue when using `--all` |
-| `--yes`, `-y` | Skip confirmation prompt |
-
-**Examples:**
-
-```bash
-aksara tasks reenqueue 3f2a1c4e-...          # one task by UUID
-aksara tasks reenqueue --all                  # all failed tasks
-aksara tasks reenqueue --all --queue emails
-aksara tasks reenqueue --all --yes            # skip confirmation
-```
-
-### tasks purge
-
-Delete old task records from the database.
-
-```bash
-aksara tasks purge [OPTIONS]
-```
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--status`, `-s` | `completed` | Status(es) to purge (repeatable) |
-| `--older-than-days`, `-d` | `7` | Delete rows last updated more than N days ago |
-| `--yes`, `-y` | — | Skip confirmation prompt |
-
-**Examples:**
-
-```bash
-aksara tasks purge                                           # completed, >7 days
-aksara tasks purge --status failed --older-than-days 30
-aksara tasks purge --status completed --status failed -d 1 --yes
-```
-
----
-
-## Custom Commands
-
-### Creating Commands
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# myapp/management/commands/mycommand.py
-from aksara.cli import Command, argument, option
-
-class MyCommand(Command):
-    """Description of my command."""
-    
-    name = "mycommand"
-    
-    @argument("name", help="The name argument")
-    @option("--count", "-c", default=1, help="Count option")
-    async def handle(self, name: str, count: int):
-        for i in range(count):
-            self.output(f"Hello, {name}!")
-```
-
-### Running Custom Commands
-
-```bash
-aksara mycommand World --count 3
-```
-
----
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `AKSARA_SETTINGS_MODULE` | Settings module path |
-| `AKSARA_DEBUG` | Enable debug mode |
-| `DATABASE_URL` | Database connection URL |
-
----
-
-## Exit Codes
-
-| Code | Description |
-|------|-------------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Command not found |
-| `3` | Invalid arguments |
-
----
-
-## Related Documentation
-
-- [CLI Guide](../cli/index.md)
-- [Commands](../cli/commands.md)
-- [Dev Tools](../cli/dev-tools.md)
+| Parameter | Kind / type | Required | Literal default | Environment |
+|---|---|---|---|---|
+| `path` | argument / text | no | `"."` | — |
+| `--strict` | option / boolean | no | `false` | — |
+| `--help` | option / boolean | no | `false` | — |

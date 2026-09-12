@@ -1,5 +1,11 @@
 # Studio CLI Commands
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Command-line tools for testing and managing Aksara Studio integration.
 
 ## Commands Overview
@@ -54,7 +60,7 @@ aksara studio handshake --format json | jq '.checksums'
   Project:
     Name:           My API
     Version:        1.0.0
-    Aksara:         0.5.0
+    Aksara:         0.7.1rc1
     Python:         3.11.5
     Environment:    development
     Debug:          True
@@ -87,12 +93,47 @@ aksara studio handshake --format json | jq '.checksums'
   "project": {
     "name": "My API",
     "version": "1.0.0",
-    "aksara_version": "0.5.0",
+    "aksara_version": "0.7.1rc1",
     "python_version": "3.11.5",
     "debug_mode": true,
     "environment": "development"
   },
-  ...
+  "database": {
+    "connected": true,
+    "dialect": "postgresql",
+    "pool_size": 10,
+    "pool_available": 8,
+    "latency_ms": null,
+    "last_error": null
+  },
+  "capabilities": [
+    "read_schema",
+    "read_data",
+    "ai_tools",
+    "admin_access",
+    "debug_panels"
+  ],
+  "checksums": {
+    "schema_checksum": "abc123def456789",
+    "migrations_checksum": "def456abc123789",
+    "settings_checksum": "789abc123def456",
+    "routes_checksum": "123def456abc789"
+  },
+  "endpoints": {
+    "context_full": "/ai/context/full",
+    "context_summary": "/studio/context/summary",
+    "health": "/studio/health",
+    "tools": "/ai/tools",
+    "tools_mcp": "/ai/tools/mcp",
+    "query_execute": "/ai/query/execute",
+    "codegen_preview": "/ai/codegen/preview",
+    "patch_preview": "/ai/patch/preview",
+    "patch_apply": "/ai/patch/apply",
+    "plan_preview": "/ai/plan/preview",
+    "plan_apply": "/ai/plan/apply",
+    "schema_health": "/ai/schema/health"
+  },
+  "metadata": {}
 }
 ```
 
@@ -101,6 +142,10 @@ aksara studio handshake --format json | jq '.checksums'
 ## aksara studio url
 
 Display the URLs for Studio integration endpoints.
+
+The command only formats URLs; it does not verify that Studio is mounted,
+authenticated, or reachable. See [configuration](configuration.md) before
+opening or calling an enabled Studio surface.
 
 ### Usage
 

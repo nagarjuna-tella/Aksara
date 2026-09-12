@@ -1,7 +1,7 @@
 # Aksara Studio
 
 !!! warning "Experimental development surface"
-    Studio's UI and internal APIs are experimental in v0.6 and are not the
+    Studio's UI and internal APIs are experimental in v0.7.0 and are not the
     production administration contract. Keep Studio disabled in production.
     Use generated REST APIs, your application permissions, and the built-in
     Admin where appropriate for operational workflows.
@@ -14,13 +14,15 @@ Enable it with the settings below, start the app with `aksara dev`, then open
 
 ## What is Aksara Studio?
 
-Studio is a visual dashboard embedded in your Aksara application. It gives you a live view of everything happening in your backend:
+Studio is a visual dashboard embedded in your Aksara application. It exposes selected model declarations, routes, retained diagnostics and
+experimental AI tools. Coverage depends on enabled features and current process
+state; it is not a complete live view of the backend:
 
-- **Model Browser** — Explore your database schema and field definitions
-- **Query Explorer** — Inspect live queries, query plans, and N+1 alerts
-- **Migration Manager** — View pending and applied migrations
+- **Model Browser** — Inspect model declarations and field definitions
+- **Query Explorer** — Inspect retained query traces and heuristic alerts; verify plan provenance
+- **Migration Manager** — Inspect available migration metadata
 - **API Inspector** — Browse your auto-generated REST endpoints
-- **AI Console** — Ask questions about your data in plain English
+- **AI Console** — Use configured experimental AI providers for analysis
 - **Runtime Panel** — View settings, connection pool status, and health checks
 
 !!! info "Studio docs vs AI Mode docs"
@@ -85,7 +87,7 @@ aksara studio url
 
     ---
 
-    Complete API reference for Studio endpoints
+    Selected core Studio endpoints and access boundary
 
 -   :material-console: **[CLI Commands](cli.md)**
 

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "status": "scoped_author_review_complete",
+  "scope": "Final cross-manual author review of all inventoried public pages and the six reader journeys. It checks explicit reading coverage, terminology, task orientation, navigation and stability boundaries. It is not an independent user study, candidate-wheel execution, provider certification or release approval.",
+  "inventory": {
+    "public_pages": 163,
+    "docs_pages": 162,
+    "repository_readmes": 1,
+    "reading_artifacts": 15,
+    "pages_with_explicit_reading_disposition": 163,
+    "missing_pages": []
+  },
+  "review_conclusions": {
+    "reader_journeys": "Evaluator, new developer, application developer, AI/tool developer, operator and contributor routes are present and separated in navigation.",
+    "task_orientation": "The progressive Ticket Desk owns the learning sequence; how-to pages solve bounded tasks and reference pages hold signatures, flags and configuration detail.",
+    "terminology": "Principal, tenant, permission, policy, Task, Operation, Attempt, Action, Worker, approval, MCP Tool and DurableStep retain distinct meanings; historical terms are marked as history.",
+    "stability": "Stable v0.6 backend, stable v0.7 Durable Operations, evolving helpers and experimental AI/Studio surfaces remain visibly distinct.",
+    "mcp": "Streamable HTTP /mcp/, the /ai/tools/mcp inspection catalog and unimplemented protocol MCP Tasks are not conflated.",
+    "database": "PostgreSQL is the required supported database and its RLS/locking/transaction guarantees are not generalized to SQLite or MySQL.",
+    "history": "Changelog and v0.5.49 notes preserve dated claims behind direct-entry notices; current roadmap and release contracts own present guidance.",
+    "remaining_limit": "An author review cannot measure independent comprehension or replace final candidate installation, runtime regression and hosted CI."
+  },
+  "contradictions": {
+    "registered": 80,
+    "latest": "PT-080"
+  },
+  "functional_findings": {
+    "registered": 22,
+    "latest": "AIFLOW002",
+    "runtime_fixes_included": false
+  },
+  "fresh_checks": {
+    "strict_mkdocs": "pass",
+    "rendered_pages": 162,
+    "rendered_local_links_assets": 42322,
+    "rendered_link_errors": 0,
+    "installed_python_fences": 348,
+    "installed_json_fences": 15,
+    "current_public_fences": 595,
+    "execution_artifacts_indexed": 31,
+    "documented_cli_forms_parsed": 295,
+    "documented_cli_forms_excluded": 7,
+    "external_links_reachable": 41,
+    "external_links_broken": 0,
+    "external_links_unverified": 0,
+    "post_merge_local_targets": 1
+  },
+  "source_sha256": {
+    "audit-evidence/v071/admin-reading-review.json": "3a41cf63a878ddd0b204839b13f3d9bf863a91d0e16ea0ba12de0fb87eb5e77f",
+    "audit-evidence/v071/advanced-reading-review.json": "0e37be00829ee9ffecc6d16e29caa757ed86ba2c4f8def5ca3c058e25413edb4",
+    "audit-evidence/v071/ai-studio-reading-review.json": "f9830acdd5ff9e3c0588005495d6eb8ab10f53e82277664c42e5dabc26626ff7",
+    "audit-evidence/v071/api-reading-review.json": "5e681e0541a1c662e7c722fc1dd8014c1b9d7f6eecc8cc9f9875de0e67a10a38",
+    "audit-evidence/v071/concepts-reading-review.json": "79972c9bf81ad41ef08894384b02aa4a01553eadcbd682d6ff7f4b7eccb0a04a",
+    "audit-evidence/v071/debugging-reading-review.json": "452617042db8f0427a43df0788571997c9edde632311c7ad61fb06f30bc196e9",
+    "audit-evidence/v071/entry-reading-review.json": "ea5aae964651fb53df1e40067aa3fcaedc3f99ba3065c5bc8a088acf8927dbdf",
+    "audit-evidence/v071/middleware-reading-review.json": "9be2ebdc5a12664e525879cb4fa21066eaf93cb37a6b28e49e36e7b590475ef7",
+    "audit-evidence/v071/operator-reading.json": "a7db9677e23188b2354f0f7ab3d5058b3c2c0afb5f4ae6b69afd650553ef117c",
+    "audit-evidence/v071/orm-reading-review.json": "77f0908543cb786ac817380c9504621882fc681540bb87d23f46c6cc6624f71e",
+    "audit-evidence/v071/patterns-howto-glossary-reading-review.json": "7f5caa95e72f6a9245e7ab461f097709b5e75a42fdbee301724195aa3cdbe763",
+    "audit-evidence/v071/project-history-reading-review.json": "b5d8227e73ec5cb9f008173c99a4320493e8a14f60a8aa9a41f35c3b4606db7a",
+    "audit-evidence/v071/reference-tooling-reading-review.json": "07507ff4fe2ab859153a31b79d17b7fb48bf097b3cfcdd7592e1af9a7552d804",
+    "audit-evidence/v071/security-reading-review.json": "7fd691e259c10352cb62de9665cf9a6e2cff03ba891d89e077432f6d836bf730",
+    "audit-evidence/v071/start-tutorial-reading-review.json": "9d2175076818bcb822f71660f25a4695d37d54b81cd9cf04b97cdbab8a99e6df",
+    "audit-evidence/v071/public-page-review-inventory.json": "e5ae436aac28cbacf2c02de714ac5903221eebfa02d781aa93a0d7b57ed811d4",
+    "audit-evidence/v071/installed-doc-imports.json": "a0199c758030a64192ac2b5dc88339e69017082a358340b091c702cf8e7c5783",
+    "audit-evidence/v071/snippet-coverage-review.json": "7df55f8755e5961d85d1e4320db2730389ccd0540d491f9d7e9f3f9d03b22eff"
+  },
+  "candidate_acceptance": false
+}

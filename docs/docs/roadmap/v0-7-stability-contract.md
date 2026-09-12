@@ -65,11 +65,12 @@ to perform a blind replacement mutation.
 
 ### Scoped idempotency
 
-A client key is scoped by application namespace, tenant, stable initiating
-principal, action/version, and normalized semantic input. During the configured
-window, identical submissions return the same Operation, including under
-concurrency. Reusing the identity with changed input or action version fails
-with a deterministic conflict. No infinite deduplication promise is made.
+The lookup identity combines a client key with the application namespace,
+tenant and stable initiating-principal reference. Within that identity, the
+action name/version and normalized semantic input must match. During the
+configured window, identical submissions return the same Operation, including
+under concurrency. Reusing the identity with a changed action, version or input
+fails with a deterministic conflict. No infinite deduplication promise is made.
 
 ### Claims, leases, and fencing
 
@@ -168,7 +169,10 @@ The following remain outside the stable v0.7 contract:
 
 ## Upgrade and operation
 
-1. Install the release and run `aksara migrate` with the migration role.
+1. Install the release and apply versioned migrations with the migration role.
+   For legacy projects without migration files, use the
+   [explicit internal-migration procedure](../operations/upgrade-v07.md#2-apply-versioned-migrations-before-startup)
+   rather than assuming the model-based CLI fallback installs the durable schema.
 2. Grant the restricted application role required DML and sequence privileges
    on the newly migrated internal tables.
 3. Register every durable action and principal resolver version before workers

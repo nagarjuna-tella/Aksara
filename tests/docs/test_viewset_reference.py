@@ -1,0 +1,289 @@
+"""Check the documented ViewSet registration against real generated routes."""
+
+import ast
+import inspect
+import re
+from pathlib import Path
+
+from fastapi import FastAPI
+
+from aksara import Model, ModelViewSet, fields, include_viewset
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_viewset_example_registers_documented_routes():
+    page = (ROOT / "docs/docs/api/viewsets.md").read_text()
+    source = re.search(r'```python title="app/views.py"\n(.*?)```', page, re.DOTALL).group(1)
+    tree = ast.parse(source)
+    # Supply the tutorial model prerequisite; execute the ViewSet body unchanged.
+    tree.body = [node for node in tree.body if not (isinstance(node, ast.ImportFrom) and node.level)]
+
+    class ReferenceTicket(Model):
+        subject = fields.String(max_length=200)
+
+    namespace = {"Ticket": ReferenceTicket}
+    exec(compile(tree, "documented-viewset", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+    app = FastAPI()
+    include_viewset(app, namespace["TicketViewSet"])
+    routes = {(route.path, method) for route in app.routes for method in route.methods
+              if route.path.startswith("/api/tickets")}
+    assert routes == {
+        ("/api/tickets/", "GET"), ("/api/tickets/", "POST"),
+        ("/api/tickets/{pk}", "GET"), ("/api/tickets/{pk}", "PATCH"),
+        ("/api/tickets/{pk}", "DELETE"),
+    }
+    schema = app.openapi()
+    assert "201" in schema["paths"]["/api/tickets/"]["post"]["responses"]
+    assert "200" in schema["paths"]["/api/tickets/{pk}"]["delete"]["responses"]
+    view = namespace["TicketViewSet"]()
+    assert [type(p).__name__ for p in view.get_permissions()] == ["IsAuthenticated"]
+    assert not view.ai_exposed and not view.stream_enabled
+
+
+def test_documented_viewset_defaults_and_hooks():
+    assert ModelViewSet.default_limit == 20
+    assert ModelViewSet.max_limit == 100
+    assert ModelViewSet.ai_exposed and ModelViewSet.stream_enabled
+    assert not inspect.iscoroutinefunction(ModelViewSet.get_queryset)
+    assert not inspect.iscoroutinefunction(ModelViewSet.check_permissions)
+    for name in ("list_serializer_class", "retrieve_serializer_class",
+                 "create_serializer_class", "update_serializer_class"):
+        assert getattr(ModelViewSet, name) is None
+    for name in ("serializer_class", "authentication_classes", "queryset", "filterset_fields",
+                 "allowed_actions", "excluded_actions", "page_size", "get_request_data"):
+        assert not hasattr(ModelViewSet, name)
+
+
+def _load_documented_class(page_name, title, model):
+    page = (ROOT / page_name).read_text()
+    source = re.search(r'```python title="' + re.escape(title) + r'"\n(.*?)```', page, re.DOTALL).group(1)
+    tree = ast.parse(source)
+    tree.body = [node for node in tree.body if not (isinstance(node, ast.ImportFrom) and node.level)]
+    namespace = {"Ticket": model}
+    exec(compile(tree, "documented-api", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+    return namespace
+
+
+def test_documented_serializer_validation():
+    from aksara.exceptions import ValidationError
+
+    class SerializerTicket(Model):
+        subject = fields.String(max_length=200)
+        description = fields.Text(default="")
+        resolved = fields.Boolean(default=False)
+
+    namespace = _load_documented_class("docs/docs/api/serializers.md", "app/serializers.py", SerializerTicket)
+    serializer_class = namespace["TicketCreateSerializer"]
+    serializer = serializer_class(data={"subject": "  A ticket  ", "resolved": True})
+    assert serializer.is_valid()
+    assert serializer.validated_data["subject"] == "A ticket"
+    assert "resolved" not in serializer.validated_data
+    try:
+        serializer_class(data={"subject": "  "}).is_valid()
+    except ValidationError as exc:
+        assert exc.errors == {"subject": "A visible subject is required"}
+    else:
+        raise AssertionError("Blank subject was accepted")
+    assert "partial" not in inspect.signature(serializer_class).parameters
+    assert not hasattr(serializer_class.Meta, "write_only_fields")
+
+
+def test_custom_action_example_checks_anonymous_identity():
+    from fastapi.testclient import TestClient
+
+    class ActionTicket(Model):
+        subject = fields.String(max_length=200)
+
+    view = _load_documented_class("docs/docs/api/actions.md", "app/views.py", ActionTicket)["TicketViewSet"]
+    app = FastAPI()
+
+    @app.middleware("http")
+    async def anonymous(request, call_next):
+        request.state.user = None
+        return await call_next(request)
+
+    include_viewset(app, view)
+    with TestClient(app) as client:
+        response = client.get("/api/tickets/00000000-0000-0000-0000-000000000001/summary")
+    assert response.status_code == 403
+
+
+def test_documented_routing_registration_and_discovery():
+    from types import ModuleType
+
+    from aksara.api import discover_viewsets
+
+    class RoutingTicket(Model):
+        subject = fields.String(max_length=200)
+
+    view = _load_documented_class("docs/docs/api/viewsets.md", "app/views.py", RoutingTicket)["TicketViewSet"]
+    module = ModuleType("documented_views")
+    module.TicketViewSet = view
+    module.ModelViewSet = ModelViewSet
+    module._PrivateViewSet = view
+    assert discover_viewsets(module) == [view]
+    assert discover_viewsets("documented_views") == []
+    for title in ("app/urls.py", "app/discovered_urls.py"):
+        page = (ROOT / "docs/docs/api/routing.md").read_text()
+        source = re.search(r'```python title="' + re.escape(title) + r'"\n(.*?)```', page, re.DOTALL).group(1)
+        tree = ast.parse(source)
+        tree.body = [node for node in tree.body if not (isinstance(node, ast.ImportFrom) and node.level)]
+        namespace = {"TicketViewSet": view, "views": module}
+        exec(compile(tree, "documented-routing", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+        app = FastAPI()
+        assert namespace["register_routes"](app) is None
+        paths = {(route.path, method) for route in app.routes for method in route.methods
+                 if route.path.startswith("/api/tickets")}
+        assert paths == {
+            ("/api/tickets/", "GET"), ("/api/tickets/", "POST"),
+            ("/api/tickets/{pk}", "GET"), ("/api/tickets/{pk}", "PATCH"),
+            ("/api/tickets/{pk}", "DELETE"),
+        }
+
+
+def test_documented_signal_dispatch_example():
+    import asyncio
+
+    page = (ROOT / "docs/docs/orm/signals.md").read_text()
+    source = re.search(r'```python title="check_signals.py"\n(.*?)```', page, re.DOTALL).group(1)
+    namespace = {"__name__": "documented_signal_probe"}
+    exec(compile(source, "documented-signals", "exec"), namespace)  # noqa: S102 - trusted repository documentation
+    asyncio.run(namespace["main"]())
+
+
+def test_documented_orm_query_shape():
+    page = (ROOT / "docs/docs/reference/orm-reference.md").read_text()
+    source = re.search(r'```python title="query_shape.py"\n(.*?)```', page, re.DOTALL).group(1)
+    exec(compile(source, "documented-query-shape", "exec"), {})  # noqa: S102 - trusted repository documentation
+
+
+def test_documented_model_defaults():
+    from uuid import UUID
+
+    for name, table in (("Article", "articles"), ("Category", "categories"), ("UserProfile", "user_profiles")):
+        model = type(name, (Model,), {"__module__": "documented_model_defaults", "title": fields.String(max_length=20)})
+        assert model.__tablename__ == table
+        assert {"id", "created_at", "updated_at"} <= set(model._fields)
+        instance = model(title="Example")
+        assert isinstance(instance.id, UUID)
+        assert instance.created_at is None
+        assert model._fields["created_at"].auto_now_add
+        assert model._fields["updated_at"].auto_now
+
+
+def test_documented_admin_mount():
+    from starlette.testclient import TestClient
+
+    from aksara.contrib.admin import AdminSite, ModelAdmin, include_admin
+
+    class AdminPost(Model):
+        title = fields.String(max_length=100)
+
+    site = AdminSite(name='docs-admin')
+    site.register(AdminPost, ModelAdmin)
+    app = FastAPI()
+    include_admin(app, prefix='/ops', site=site)
+    with TestClient(app) as client:
+        response = client.get('/ops/', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/ops/login/' in response.headers['location']
+        login = client.get('/ops/login/')
+        assert login.status_code == 200
+        assert 'csrf_token' in login.text
+        assert 'Path=/ops' in login.headers['set-cookie']
+
+
+def test_documented_relation_access_shapes():
+    from aksara.fields import ManyToManyManager
+    from aksara.relations import ReverseFKManager, ReverseM2MManager, ReverseO2OAccessor
+
+    assert not inspect.iscoroutinefunction(Model.get_related)
+    assert inspect.iscoroutinefunction(ReverseFKManager.filter)
+    assert inspect.iscoroutinefunction(ReverseO2OAccessor.__call__)
+    assert inspect.iscoroutinefunction(ReverseO2OAccessor.get)
+    assert not hasattr(ReverseM2MManager, 'filter')
+    assert not hasattr(ManyToManyManager, 'contains')
+    assert inspect.iscoroutinefunction(ManyToManyManager.ids)
+
+
+def test_documented_field_reference_contracts():
+    """Exercise declarations and conversion, not database/HTTP field lifecycle."""
+    from enum import Enum
+
+    from aksara import fields
+
+    page = (ROOT / 'docs/docs/orm/fields.md').read_text()
+    source = re.search(r'```python title="app/catalog_models.py"\n(.*?)```', page, re.DOTALL)[1]
+    namespace = {'__name__': 'documented_catalog'}
+    exec(compile(source, 'documented-catalog', 'exec'), namespace)  # noqa: S102 - trusted repository documentation
+    product = namespace['Product']
+    category = namespace['Category']
+    instance = product(name='Example', slug='example', price='12.34', sku='SKU-1')
+    assert instance.quantity == 0 and instance.metadata == {}
+    assert product._fields['category'].to_model is category
+    assert product._fields['category'].nullable
+    assert product._fields['price'].sql_type == 'NUMERIC(10, 2)'
+    assert str(product._fields['price'].to_db('12.34')) == '12.34'
+    assert product._fields['status'].sql_type == 'TEXT'
+    assert product._fields['status'].to_db(namespace['ProductStatus'].DRAFT) == 'draft'
+    assert inspect.signature(fields.Field).parameters['ai_description'].default is None
+    assert 'precision' not in inspect.signature(fields.Decimal).parameters
+    assert 'scale' not in inspect.signature(fields.Decimal).parameters
+    assert fields.Binary().ai_sensitive and not fields.Binary().ai_agent_writable
+
+    # Execute the Vector declaration, then validate the literal used by its create fragment.
+    vector_section = page.split('### Vector\n', 1)[1].split('### Enum\n', 1)[0]
+    blocks = re.findall(r'```python\n(.*?)```', vector_section, re.DOTALL)
+    vector_namespace = {'Model': Model, 'fields': fields}
+    exec(blocks[0], vector_namespace)  # noqa: S102 - trusted repository documentation
+    tree = ast.parse(blocks[1])
+    create_call = tree.body[0].value.value
+    values = ast.literal_eval(next(k.value for k in create_call.keywords if k.arg == 'embedding'))
+    vector = vector_namespace['Document']._fields['embedding']
+    assert len(values) == vector.dimensions
+    assert vector.validate(values) == values
+
+    # These typed values cover the reference's conversion claims, not persistence.
+    class ExampleStatus(str, Enum):
+        DRAFT = 'draft'
+
+    assert fields.Enum(ExampleStatus).sql_type == 'TEXT'
+    assert fields.String(strip_whitespace=True, min_length=1, max_length=3).to_db(' a ') == 'a'
+    assert fields.Email().sql_type == 'VARCHAR(254)'
+
+    sections = re.findall(r'^### ([^\n]+)\n(.*?)(?=^### |^## |\Z)', page, re.MULTILINE | re.DOTALL)
+    checked = 0
+    for heading, body in sections:
+        rows = re.findall(r'^\| `([^`]+)` \| [^|]+ \| `([^`]+)` \|', body, re.MULTILINE)
+        if not rows:
+            continue
+        field_name = {'IPAddress / GenericIPAddress': 'IPAddress'}.get(heading, heading)
+        constructor = getattr(fields, field_name)
+        parameters = inspect.signature(constructor).parameters
+        for name, written in rows:
+            expected = {'str': str, 'CASCADE': 'CASCADE'}.get(written)
+            if expected is None:
+                expected = ast.literal_eval(written)
+            assert parameters[name].default == expected, (heading, name, written)
+            checked += 1
+    assert checked >= 30, 'Field default tables were not exercised'
+
+
+def test_explicit_admin_mount_disables_automatic_mount():
+    from starlette.testclient import TestClient
+
+    from aksara import Aksara
+    from aksara.contrib.admin import AdminSite, include_admin
+    from aksara.contrib.admin.mount import AdminRateLimitMiddleware
+
+    app = Aksara(database_url=None, auto_discover_views=False, debug=True, enable_admin=False)
+
+    assert not any(m.cls is AdminRateLimitMiddleware for m in app.user_middleware)
+    site = AdminSite(name='staff', login_url='/accounts/login', logout_url='/accounts/signed-out')
+    include_admin(app, prefix='/staff', site=site)
+    assert sum(m.cls is AdminRateLimitMiddleware for m in app.user_middleware) == 1
+    with TestClient(app) as client:
+        response = client.get('/staff/', follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers['location'] == '/accounts/login?next=%2Fstaff%2F'

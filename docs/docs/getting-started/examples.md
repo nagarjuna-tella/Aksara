@@ -1,42 +1,45 @@
-# Golden-Path Examples
+# Choose an example
 
-Aksara ships example apps for the first ten minutes and for common backend shapes.
+Use the [ticket desk](first-project.md) for the complete beginner-to-durable
+application path. Repository examples are supplementary demonstrations with
+different boundaries; a template is not a production security profile.
 
-Validate them:
+| Example | Purpose | Current scope |
+| --- | --- | --- |
+| `basic_app` | Models, serializers and legacy/manual versus generated APIs | Starts locally; its old unauthenticated seed request is denied. Replaced by the ticket desk as the minimal starter |
+| `blog` | Post/Comment relationship and custom publishing actions | Starts after generating migrations; requires an application identity adapter for generated writes |
+| `crm` | Customer/Deal/Activity model and action patterns | Starts after generating migrations; API-key examples do not supply a Principal |
+| `support_desk` | Production-oriented reference with restricted-role RLS, tasks and synchronous MCP | Has a packaged execution gate; application identities remain an example adapter |
+| `multitenant` | Historical tenant-routing code | Known middleware exemption defect; use Support Desk or the ticket-desk tenancy chapter for isolation |
+| `ai_providers` | Application-owned provider adapters | Experimental configuration/status demo; no live provider quality or availability guarantee |
+
+Read the [repository example catalog](https://github.com/nagarjuna-tella/Aksara/tree/main/examples)
+for exact setup and limitations. Source-checkout examples use explicit package
+entry points such as `examples.blog.main:app`; installed framework code and
+copied application examples are different things.
+
+## What the structural validator proves
 
 ```bash
 aksara examples validate
 aksara examples validate --format json
 ```
 
-## Examples
+This checks bundled structure, selected imports and README conventions. It does
+not execute migrations and authenticated requests or validate tenant isolation.
+A successful report does not override an example's documented limitations.
 
-| Example | Demonstrates |
-|---|---|
-| `basic_app` | Smallest working Aksara app |
-| `blog` | Models, relations, APIs, Studio, MCP |
-| `crm` | Business data model and reporting queries |
-| `multitenant` | Tenant-aware app structure |
-| `ai_providers` | Local and remote AI setup |
+## Three learning tiers
 
-## Run an Example
+1. **Minimal:** the [first project](first-project.md) supplies a model, migration,
+   protected REST API and positive/negative tests.
+2. **Production-oriented:** the [deployment guide](../tutorials/deployment.md)
+   connects the Support Desk reference to restricted roles, RLS and diagnostics.
+3. **Durable:** the [ticket-desk durable chapter](../tutorials/ticket-desk-durable.md)
+   supplies registration, admission, worker, idempotency, status, retry,
+   cancellation and current-authorization tests.
 
-```bash
-cd examples/blog
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ../..
-aksara doctor launch-check
-aksara migrate
-aksara dev
-```
-
-Open:
-
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
-
-## AI Provider Note
-
-Examples do not require paid providers. Configure AI only when you want AI Console, AI Debugger, Architecture Review, Performance Analyzer, Investigation Sessions, or Daily Briefing to call a model.
+Optional [MCP access](../tutorials/ticket-desk-mcp.md) uses the official protocol
+client. `/mcp/` is its Streamable HTTP endpoint; `/ai/tools/mcp` is an inspection
+catalog. Studio, AI Console and provider-backed experiments are separate from
+these backend guarantees.

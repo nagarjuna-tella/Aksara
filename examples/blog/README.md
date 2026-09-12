@@ -1,75 +1,72 @@
-# Aksara Example: Blog
+# Blog example
 
-This example demonstrates:
-- Models
-- ViewSets
-- Migrations
-- Studio
-- MCP tools
-- AI Console usage
+**Application demonstration.** This example contains Post and Comment. For a complete
+protected application, use the [Ticket Desk tutorial](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/).
 
-Classic relational app. It includes author-style user data, posts, comments, category/tag metadata, relationships, filtering, Studio graph inspection, and AI Console explanation prompts.
+This is a domain demonstration, not a complete authenticated publishing backend. Valid anonymous generated writes return 403; the example API-key helper does not establish a server-owned Principal. Custom publish/moderation actions need explicit authorization before exposure.
 
-## Run
+## Repository source or generated copy?
+
+If you are reading the repository's example source, first
+[install Aksara](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/)
+in an activated environment and generate a standalone copy in your working
+directory:
 
 ```bash
-cd examples/blog
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ../..
+aksara startproject blog_demo --template blog
+cd blog_demo
+```
+
+If this README is already inside a project created by `startproject`, skip those
+two commands and work in that project's directory. The generated copy has flat
+`models.py`, `views.py`, `settings.py` and `main.py` modules. It does not contain
+an `app/` package, `.env`, or a `pyproject.toml` for editable installation.
+The repository source uses package-relative imports; it is not the same layout
+as a generated standalone copy.
+
+## Run the generated copy locally
+
+Use an environment with Aksara installed. Export `DATABASE_URL` for a dedicated
+local PostgreSQL database before running these commands. This example prefers
+it over `AKSARA_DATABASE_URL`; keep both values consistent if both are set.
+Do not use a production database for example migrations.
+
+```bash
+aksara makemigrations --app models --output migrations
+aksara migrate --migrations-dir migrations
 aksara doctor launch-check
-aksara migrate
-aksara dev
+aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
-Set `DATABASE_URL` if your local PostgreSQL credentials differ from the development default:
+Review generated migrations before applying them. A successful command does not
+prove every model is present; the historical multitenant example has the
+explicit omission described above.
+
+In another terminal:
 
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aksara_blog"
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-## Seed
+Use `/docs` for registered API routes. Health and OpenAPI success are startup
+checks, not positive CRUD, custom-action authorization, tenant isolation, or
+production readiness evidence. Do not disable permissions to make an old
+unauthenticated seed command succeed.
 
-No seed command is required. Create a first post through the API:
+The generic scaffold also offers `aksara dev`; this example uses the explicit
+`aksara run` command above so its import target is visible. It does not enable
+`/studio/ui` or the AI Console.
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/posts/ \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Hello Aksara","slug":"hello-aksara","content":"First post","tags":["intro"]}'
-```
+## Adapt with the public guide
 
-## Open
+Read the [blog pattern guide](https://nagarjuna-tella.github.io/Aksara/patterns/blog/)
+for purpose, limitations and next steps. For tenant isolation, use
+[Ticket Desk tenancy](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-tenancy/)
+and the [production guide](https://nagarjuna-tella.github.io/Aksara/tutorials/deployment/).
 
-* API docs: http://127.0.0.1:8000/docs
-* Studio: http://127.0.0.1:8000/studio/ui
-* Tool inspection catalog: http://127.0.0.1:8000/ai/tools/mcp (HTTP JSON; protocol clients use `/mcp/` when enabled)
-
-## Test API
-
-```bash
-curl http://127.0.0.1:8000/api/posts/
-curl http://127.0.0.1:8000/api/comments/
-curl http://127.0.0.1:8000/api/posts/published/
-```
-
-## Inspect generated tool metadata
-
-```bash
-curl http://127.0.0.1:8000/ai/tools/mcp
-```
-
-This curl request does not exercise the MCP protocol. Use the official client against `/mcp/` after the application installs server-side Principal resolution.
-
-Confirm the catalog describes post/comment tools and marks sensitive fields as protected.
-
-## Try in AI Console
-
-Ask:
-
-```text
-Explain the BlogPost model
-Review the blog architecture
-Investigate this project
-```
-
-AI provider setup is optional for first launch. For local-first AI later, configure Ollama through AI Hub instead of committing provider secrets.
+Optional Studio and AI surfaces are experimental. The `/ai/tools/mcp` inspection
+catalog is not the MCP protocol transport or an authorization test. Follow the
+[official MCP client tutorial](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-mcp/)
+for server-owned identity and tool execution. No provider integration is proved
+by the local startup checks.

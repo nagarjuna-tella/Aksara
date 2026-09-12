@@ -16,7 +16,7 @@ AKSARA_AI_ENABLED=true
 Then configure a provider with the current AI Hub path:
 
 ```bash
-aksara ai-hub configure
+aksara ai-hub configure openai
 aksara ai-hub status
 aksara ai-hub doctor
 ```
@@ -47,8 +47,8 @@ stable `AgentRuntime` class, or durable provider budget in v0.7.0.
 
 ## MCP is separate
 
-MCP tool execution is a stable v0.6 boundary and does not require a model
-provider. Enable its Streamable HTTP server separately:
+MCP tool execution is a stable boundary retained in v0.7 and does not require a
+model provider. Enable its Streamable HTTP server separately:
 
 ```dotenv
 AKSARA_MCP_ENABLED=true

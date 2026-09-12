@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "confirmed by installed 0.7.0 PostgreSQL reproduction",
+  "scope": "cleanup=True on normal and exceptional exit: Database.execute writes remain committed and helper pool remains usable; not HTTP, model-level ORM, RLS or sustained leak measurement",
+  "source_sha256": {
+    "aksara/testing.py": "18717d039c79158248adc231d94cc5a6c7c4d07d7ba96cd47aff6c6e2541cbc7"
+  },
+  "findings": [
+    {
+      "id": "TESTING-001",
+      "severity": "P1",
+      "observations": [
+        "Raw acquired connection transaction is not bound to application queries",
+        "cleanup=True branch does not disconnect its Database pool"
+      ],
+      "disposition": "Documented; separately scoped runtime patch recommended"
+    }
+  ],
+  "runtime_evidence": "audit-evidence/v071/testing-helper-execution.json",
+  "runtime_evidence_sha256": "cc054c703869e5af2eeca3583c4c499fb9214133fd07d24688bec1fd96c69864"
+}

@@ -1,5 +1,11 @@
 # AI Performance Analyzer
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **AI Performance Analyzer** automatically analyses your application's
 query patterns, detects performance issues, and recommends improvements —
 all without modifying any code.

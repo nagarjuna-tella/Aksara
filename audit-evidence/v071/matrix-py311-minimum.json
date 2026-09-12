@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "exit_code": 0,
+  "head": "f7547fed5d9190d110f90177bbb76d60bc630171",
+  "command": [
+    "/tmp/aksara-v071-matrix-py311/bin/python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "web_boundary": "minimum",
+  "versions": {
+    "python": "3.11.5",
+    "fastapi": "0.136.1",
+    "starlette": "1.0.1",
+    "asyncpg": "0.31.0"
+  },
+  "database_tests_required": true,
+  "security_matrix_required": false,
+  "summary": "8313 passed, 2 skipped, 25 warnings in 102.66s (0:01:42)",
+  "log": "audit-evidence/v071/matrix-py311-minimum.log",
+  "log_sha256": "9339d485c6a0e7d3fea49b921a4b3d641814d34536dd5fcc42000d29a73085c8",
+  "runner_sha256": "fd1f5cf98e6ea8ece8437d967b22c631cca286e45be829b703d431eb6ab9eb67",
+  "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or installed-wheel candidate evidence"
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "defects": [
+    {
+      "id": "EX-001",
+      "severity": "P1",
+      "file": "examples/multitenant/middleware.py",
+      "verified_behavior": {
+        "request_path": "/api/projects/",
+        "tenant_resolver_calls": 0,
+        "downstream_calls": 1,
+        "response_status": 204
+      },
+      "cause": "Root exemption / is tested with startswith and matches every absolute request path.",
+      "probe": "TenantMiddleware.dispatch with a Starlette Request, mocked _resolve_tenant and mocked downstream returning 204; no database required.",
+      "scope_limit": "Does not prove data disclosure or behavior of other tenant implementations.",
+      "runtime_fix_performed": false,
+      "recommendation": "Separate patch with exact exemption matching, authenticated membership review, tenant denial and cross-tenant database tests."
+    }
+  ]
+}

@@ -1,32 +1,51 @@
 # Glossary
 
-Common terms used in Aksara documentation.
+Common terms used in Aksara documentation. Read the
+[application boundaries](concepts/application-boundaries.md) for how these terms
+fit together, and [stability](concepts/stability.md) for their supported scope.
+AI development tools below remain experimental; a glossary entry is not a
+stability promise.
 
 ---
 
 ## A
 
 ### Action
-A custom endpoint on a ViewSet, defined with the `@action` decorator. Actions can be detail routes (operating on a single object) or list routes (operating on the collection).
+A ViewSet action is a custom endpoint defined with `@action`, operating on an
+object or collection. A **durable action** is a separately registered
+`DurableAction` with a name/version, effect class, handler and policy. Registering
+one does not automatically turn a ViewSet action into durable execution.
+
+### Approval
+Recorded intent to permit a particular invocation or Operation to proceed. It is
+not permanent permission: current authorization still applies. Synchronous MCP
+grants and durable Operation decisions have different storage/replay boundaries.
+
+### Attempt
+One physical execution claim for a durable Operation. A retry or replacement
+worker creates a new Attempt; the logical Operation remains the same.
 
 ### AI Mode
-Aksara's integrated AI-powered development features including natural language queries, code generation, and intelligent debugging.
+Experimental planning, structured query plans, code generation and debugging assistance; separate from stable backend and MCP execution. Aksara does not itself turn arbitrary natural language into authorized database queries.
 
 ### Agent
-An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](ai-mode/agent-runtime.md).
+A machine actor represented by a server-owned Principal when it invokes an
+application tool. Experimental Agent Mode can assemble context, prompts,
+playbooks, and ordered development-workflow data; Aksara v0.7 does not provide
+an autonomous multi-step agent runtime. See [Agent Runtime](ai-mode/agent-runtime.md).
 
 ### Annotation
 Adding computed values to queryset results, typically using aggregate functions like `Count`, `Sum`, `Avg`.
 
 ### Authentication
-The process of verifying user identity. Aksara supports token-based and custom authentication backends.
+The process of verifying identity. Application credential verification supplies a server-owned Principal; account/session primitives do not automatically install login routes.
 
 ---
 
 ## B
 
 ### Backend
-A pluggable component that handles specific functionality. Examples: cache backend, authentication backend.
+A component that supplies a particular service, such as a storage or email backend. It can also mean the application server as a whole; the surrounding context should distinguish them.
 
 ### Bulk Operations
 Database operations that affect multiple records at once (`bulk_create`, `bulk_update`).
@@ -36,10 +55,10 @@ Database operations that affect multiple records at once (`bulk_create`, `bulk_u
 ## C
 
 ### Cache
-Temporary storage for frequently accessed data to improve performance. Aksara supports memory and Redis backends.
+Temporary storage used to avoid repeated work. Internal schema/content caches do not imply a supported general-purpose Redis cache service.
 
 ### Codegen
-AI-powered code generation for models, viewsets, serializers, and tests.
+Experimental generation of code artifacts. Some handlers are deterministic templates; generated code still requires review and tests.
 
 ### Context Engine
 Component that gathers relevant code context for AI operations.
@@ -52,10 +71,20 @@ Create, Read, Update, Delete — the four basic operations for persistent storag
 ## D
 
 ### Decorator
-A Python pattern that wraps functions or classes. Aksara uses decorators for actions, caching, signals, etc.
+A Python pattern that wraps functions or classes. Aksara uses decorators such as `@action` and `@task`; this does not imply a public cache decorator or signal-decorator API.
 
 ### Defer
-Loading a model instance without specific fields, loading them on-demand when accessed.
+A term for omitting fields from a query in some ORMs. Aksara does not expose a QuerySet `defer()` method; use the documented projection methods instead.
+
+### Durable Operation
+A persisted logical application command with identity, bounded retention and
+authoritative execution state. It can survive request or worker loss. It is not
+a generic workflow graph. See [Durable Operations](advanced/durable-operations.md).
+
+### DurableStep
+An evolving higher-level workflow/checkpoint abstraction. It does not inherit
+v0.7 Operation ownership, authorization and recovery guarantees merely because
+its name includes "durable."
 
 ### Detail Route
 A ViewSet endpoint that operates on a single object, using the lookup field (usually `id`).
@@ -74,6 +103,11 @@ A URL path that accepts HTTP requests and returns responses.
 
 ## F
 
+### Fence
+A monotonically increasing ownership value for an Operation claim. When a newer
+Attempt owns the Operation, a stale worker cannot write through the supported
+guarded mutation/finalization boundary.
+
 ### Field
 A class that defines a database column and its behavior. Examples: `String`, `Integer`, `ForeignKey`.
 
@@ -81,7 +115,7 @@ A class that defines a database column and its behavior. Examples: `String`, `In
 Constraining queryset results based on field values.
 
 ### FilterSet
-A class that defines available filters for a ViewSet.
+A class-based filter configuration concept used by some frameworks. Aksara does not provide a public `FilterSet` class; see its [filtering reference](api/filtering.md).
 
 ### Foreign Key (FK)
 A database relationship where one model references another model's primary key.
@@ -91,7 +125,7 @@ A database relationship where one model references another model's primary key.
 ## G
 
 ### Generator
-A Python construct that yields values lazily. Used in async iteration over querysets.
+A Python construct that yields values lazily. Do not infer support for asynchronous QuerySet iteration from this term; execute documented terminal methods.
 
 ---
 
@@ -106,6 +140,11 @@ A point in the lifecycle where custom code can be executed. Example: `pre_save`,
 ---
 
 ## I
+
+### Idempotency
+For durable admission, a scoped identity makes repeated identical submissions
+return the same Operation during its window. Reusing the identity with changed
+input conflicts. It is not unlimited deduplication or exactly-once external delivery.
 
 ### Index
 A database structure that improves query performance on specific columns.
@@ -137,8 +176,12 @@ The unique identifier for a model instance, usually a UUID.
 
 ## L
 
+### Lease
+Temporary worker ownership measured against database time. Expiry permits
+recovery; it does not kill an old process. Fencing rejects the old owner's writes.
+
 ### Lazy Loading
-Deferring data loading until it's actually needed.
+Deferring data loading until needed. Aksara forward foreign-key attributes expose stored IDs, not lazily fetched objects.
 
 ### List Route
 A ViewSet endpoint that operates on the entire collection of objects.
@@ -188,6 +231,15 @@ A performance issue where querying N related objects results in N+1 database que
 
 ## O
 
+### Operation
+See **Durable Operation**. Use "operation" generically only where it cannot be
+confused with this persisted application command.
+
+### Outbox
+Transactional export intent recorded with a durable state change. An exporter
+delivers it to an application-owned destination. It is not an indefinite,
+tamper-resistant audit archive.
+
 ### ORM
 Object-Relational Mapping — the system that maps Python objects to database tables.
 
@@ -202,7 +254,18 @@ Loading a model instance with only specific fields, ignoring others.
 Dividing large result sets into smaller pages.
 
 ### Patch Engine
-AI component that applies code modifications safely with preview and rollback.
+Experimental AI development component for proposing/applying code changes. It is outside the stable backend contract.
+
+### PolicyEngine
+The shared application policy surface for resource decisions, query filtering
+and field read/write rules. Applications supply their business policy and must
+invoke it through the supported entry points.
+
+### Principal
+Server-owned identity and authority context used for permission decisions. It
+can represent a human, service or agent; client-supplied roles are not authority.
+A durable PrincipalReference is a locator for resolving current identity, not a
+persisted credential or permanent permission.
 
 ### Permission
 A class that determines whether a user can perform an action.
@@ -221,10 +284,10 @@ The unique identifier field for a model instance.
 A request to retrieve or modify data in the database.
 
 ### Query Engine
-AI component that converts natural language to database queries.
+Aksara's experimental structured `AiQueryPlan` executor. It does not export a `QueryEngine` class or parse natural language; application authorization is required before use.
 
 ### QuerySet
-An object representing a database query that can be chained and lazily evaluated.
+An object describing a database query. Chain supported builders, then await a terminal method such as `all()`; do not await QuerySet itself.
 
 ---
 
@@ -253,7 +316,7 @@ The process of connecting ViewSets to the application. In Aksara, this is done v
 AI tool that analyzes database schema and suggests improvements.
 
 ### Select Related
-Loading foreign key relations efficiently using a JOIN query.
+Requesting batched loading of foreign-key/one-to-one objects after the parent query. Use the documented `all()` path; it is not a single-JOIN guarantee.
 
 ### Serializer
 A class that converts between Python objects and JSON (and validates input).
@@ -268,6 +331,11 @@ A URL-friendly string, typically derived from a title (e.g., "hello-world").
 
 ## T
 
+### Task
+Queued background function execution. Ordinary task records retain tenant
+context, not a complete requester Principal. A task may be explicitly linked to
+an Operation; queue scheduling alone is not durable authorization.
+
 ### Tenant
 An organization or customer in a multi-tenant application.
 
@@ -275,7 +343,7 @@ An organization or customer in a multi-tenant application.
 Rate limiting to prevent abuse of API endpoints.
 
 ### Through Model
-An intermediate model in a many-to-many relationship for storing extra data.
+An intermediate model in a many-to-many relationship for storing extra data. Custom through models remain outside Aksara's declared supported relation contract.
 
 ### Token
 A string used to authenticate API requests.
@@ -307,10 +375,27 @@ A class that groups related API endpoints (list, create, retrieve, update, delet
 
 ## W
 
+### Worker
+A process or component that claims and executes work. `TaskWorker` runs ordinary
+tasks; `DurableOperationWorker` executes registered Operations for an explicitly
+selected tenant. They are not interchangeable names for an AI agent.
+
 ### Write-Only
-A serializer field that can only accept input, not appear in output (e.g., passwords).
+An input-only field concept. Aksara ModelSerializer does not support a `write_only_fields` option; explicitly select safe output fields instead.
 
 ---
+
+## Other execution terms
+
+**MCP tool:** a callable exposed through the Model Context Protocol. Aksara's
+stable synchronous transport is Streamable HTTP at `/mcp/`; the inspection
+catalog is a different endpoint. Tool registration is not blanket authorization.
+
+**Cancellation:** a recorded request to stop future eligible work, not undo of
+committed database changes or external effects.
+
+**External outcome unknown:** the provider effect cannot safely be classified
+as confirmed or absent. Preserve uncertainty and reconcile; do not blindly retry.
 
 ## Related
 

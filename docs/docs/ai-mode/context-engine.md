@@ -2,7 +2,7 @@
 
 !!! warning "Experimental"
     Context export feeds evolving Studio and external-agent workflows. Its
-    detailed schema is not part of the stable v0.6 contract.
+    detailed schema is not part of the stable v0.7 contract.
 
 Aksara exports registered model, ViewSet, route, migration, admin, settings,
 middleware, and generated-tool metadata through `build_full_ai_context()`.

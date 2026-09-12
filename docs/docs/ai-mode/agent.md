@@ -1,5 +1,11 @@
 # Agent Mode
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 Agent Mode gathers structured context from your entire Aksara project and
 assembles it into a system prompt that any LLM can consume. It covers
 models, routes, migrations, diagnostics, AI profiles, AI hints, DB

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "package": {
+    "version": "0.7.1rc1",
+    "database_options": [
+      "database_url",
+      "min_size",
+      "max_size"
+    ]
+  },
+  "source_checkout_framework_imports": false,
+  "checks": [
+    "installed package/version and Database option names verified",
+    "18 basic files and 5 startapp files; settings/routes not auto-edited",
+    "interactive dbsetup retains existing aksara_test and writes only temporary .env",
+    "exact read-only database probe loads .env, connects and exits cleanly",
+    "AKSARA_DATABASE_URL wins over DATABASE_URL and the .env value"
+  ],
+  "basic_file_inventory": [
+    ".editorconfig",
+    ".env",
+    ".env.example",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    "README.md",
+    "app/__init__.py",
+    "app/admin.py",
+    "app/models.py",
+    "app/serializers.py",
+    "app/urls.py",
+    "app/views.py",
+    "main.py",
+    "migrations/__init__.py",
+    "pyproject.toml",
+    "requirements.txt",
+    "settings.py",
+    "static/welcome.html"
+  ],
+  "startapp_file_inventory": [
+    "__init__.py",
+    "admin.py",
+    "models.py",
+    "serializers.py",
+    "views.py"
+  ],
+  "temporary_files_removed": true,
+  "existing_database_recreated": false,
+  "page_sha256": {
+    "docs/docs/getting-started/installation.md": "e9a9c7a3b74582775d065fe0b4b3d06219af9d303cf63c0d1b7512e8006b1ca4",
+    "docs/docs/getting-started/project-layout.md": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
+    "docs/docs/getting-started/database-setup.md": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
+    "docs/docs/getting-started/running-your-app.md": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",
+    "docs/docs/reference/runtime-compatibility.md": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c"
+  },
+  "runner_sha256": "30f4be57702010c4d06fdfa8b2acba1d8dfcc2421ddec9495bd6ff88b19dc21b",
+  "scope": "Installed version/package inspection, real CLI file generation, interactive existing-database dbsetup, exact read-only PostgreSQL probe and URL precedence. No server provisioning, new database creation, operating-system installer, source editable install, production role, RLS or candidate certification."
+}

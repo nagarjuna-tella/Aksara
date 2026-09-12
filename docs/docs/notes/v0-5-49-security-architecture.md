@@ -1,5 +1,11 @@
 # v0.5.49 Security Architecture Note
 
+!!! note "Historical release note"
+    This page records v0.5.49's claims and plans. For current guarantees and
+    deployment requirements, use the [security guide](../security/overview.md),
+    [stability contracts](../concepts/stability.md), and
+    [production guide](../tutorials/deployment.md).
+
 *May 2026 — Nagarjuna Tella, Aksara maintainer*
 
 ---

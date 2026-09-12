@@ -12,6 +12,13 @@ wait for the result and request loss does not require restart-safe recovery.
 Durable operations are an application execution primitive; they do not require
 an LLM, planner, Studio, or agent.
 
+For complete runnable files, continue the
+[ticket-desk durable tutorial](../tutorials/ticket-desk-durable.md). It mounts the
+router on the application's database, supplies a current identity resolver,
+checks admission permissions, and tests retry, rollback, cancellation and
+revocation with an installed package. The snippets below explain individual
+integration points; `identity_store` represents your application's identity source.
+
 ## Operation and Attempt
 
 An **Operation** is one logical request. Its opaque ID, state, result or error,
@@ -112,6 +119,13 @@ revoked.
 ## Dispatch and status API
 
 Mount the explicit router. It does not alter any generated synchronous route.
+The router requires an authenticated Principal, but your application must also
+restrict who may dispatch each command. `DurableOperationService.admit()` stores
+validated input and provenance; it does not invoke the action authorizer as an
+admission permission check. Use a router dependency or application endpoint to
+apply the appropriate admission permission. The registered authorizer runs at
+execution and on protected status/cancellation paths. The complete tutorial
+shows both layers; accepting a command is not a claim it will remain authorized.
 
 ```python
 from aksara.durable import PrincipalReference, create_durable_operations_router
@@ -154,14 +168,16 @@ During the configured idempotency window:
 - the same key, initiating principal, tenant, action version, and canonical
   input return the same Operation;
 - a terminal duplicate returns the existing terminal representation;
-- changed input or action version returns `409` with
+- changed action, action version, or canonical input returns `409` with
   `idempotency_conflict`; and
 - concurrent identical submissions create one logical Operation.
 
-The idempotency value is hashed before storage. Its scope includes the
-application namespace, tenant scope, stable initiating-principal reference,
-action name and version, and canonical normalized input. Dedupe is bounded by
-the configured window; it is not permanent.
+The lookup identity hashes the client key together with the application
+namespace, tenant scope, and stable initiating-principal reference. Within that
+identity, Aksara separately checks the action name/version and canonical input
+hash. Reusing a key for a different action therefore conflicts; it does not
+create an independent operation. Dedupe is bounded by the configured window;
+it is not permanent.
 
 Status retrieval, cancellation, and decisions reauthorize the current caller.
 An unknown ID and an ID hidden by another tenant both return the same
@@ -298,6 +314,6 @@ service.
 Existing synchronous MCP tools continue over Streamable HTTP at `/mcp/` with
 their v0.6 authorization, approval-grant, transaction, budget, and audit
 contract. Protocol-level durable MCP Tasks are deferred because the official
-MCP Python SDK used by this candidate does not yet implement the current
+MCP Python SDK used by v0.7.0 does not yet implement the current
 `io.modelcontextprotocol/tasks` extension. Aksara does not ship a competing
 wire protocol.

@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all eight Reference pages, all five CLI pages, all three Inspector pages and all three Search pages, reconciled with the isolated-wheel CLI declaration generator, settings tests, package/workflow bounds and focused search/inspector tests. This does not execute every CLI callback, certify every internal symbol as public or establish production search/diagnostic behavior.",
+  "page_sha256": {
+    "docs/docs/reference/api-reference.md": "1cd22f4acd7556a66101816d1f2c06cef7b10919b84e67f37782fec8c5256955",
+    "docs/docs/reference/cli-reference.md": "4703bc41baf2bacdf18c0a8db25322dfc205f4a41fb808aaf52b8359f38769d8",
+    "docs/docs/reference/exceptions.md": "7953cad79424ea89820e34e7b08041d78101cefda3f6e97e99cd884b4dc80cd5",
+    "docs/docs/reference/index.md": "5e7b15c1f9d207d091769a82bc34fed16e46b3ace71c4d41646286e979c24e34",
+    "docs/docs/reference/orm-reference.md": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
+    "docs/docs/reference/runtime-compatibility.md": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c",
+    "docs/docs/reference/settings-reference.md": "828ca2b0bbfa3acb600d6d597c94c056861b990128a42d93f1e6d28217aaaa82",
+    "docs/docs/reference/types.md": "f0a04c4d50d44b067c09d5978c6e655a66d257b25793a55d2495d7b139e8cc84",
+    "docs/docs/cli/ai-commands.md": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
+    "docs/docs/cli/commands.md": "4cbcf3d5a998a0b52d5927dea39e3623f2e33c4ddf4d205429dd1f98e8032ade",
+    "docs/docs/cli/dev-tools.md": "8e0a5dd79e619668c23283505683a4990ebea3b1893bc5e39e38b8fe2f612612",
+    "docs/docs/cli/extending.md": "ffda8909a05de89b341f71441f84cf7e9ba35a0bdec611959fbc2d9514aa51fb",
+    "docs/docs/cli/index.md": "8aec1d338b490f9dcf0db3ea14334e79c454c0fb4d067136ecf564a059af0f98",
+    "docs/docs/inspectors/index.md": "2a2da56a981635013e6b3652364dd08c9246a0a72fd0b96e72f1222c781e8705",
+    "docs/docs/inspectors/models.md": "58c9274945882cdaecdf74db04cb925a7cee7315ec7edd6c92932e0909a1edb9",
+    "docs/docs/inspectors/query.md": "e062d96729b5b54cfc9180b7a7dabf4335cb46502b6a0d4d3b5608e987d9924b",
+    "docs/docs/search/index.md": "39c27f06f986aa57c97d8342e2256f30c957e0da20d0265b0dde807e377b0230",
+    "docs/docs/search/semantic.md": "19b0f77670a44c864926e8dd29e56f3853222f40690fb5816ecec704ef0e2375",
+    "docs/docs/search/studio.md": "b6ede422cdab4cb46b1b1f7aa6fa3ffcb02dca6ef2f076888e899c5f837c4343"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/reference/index.md",
+      "disposition": "retain_as_lookup_hub",
+      "reason": "Routes readers by contract and explicitly separates parser/import evidence from runtime behavior and stable API status."
+    },
+    {
+      "page": "docs/docs/reference/runtime-compatibility.md",
+      "disposition": "retain_after_package_and_ci_reconciliation",
+      "reason": "Matches Python and web dependency bounds, the PostgreSQL 16 matrix and route/session cleanup qualifications."
+    },
+    {
+      "page": "docs/docs/reference/api-reference.md",
+      "disposition": "retain_as_selected_public_contract",
+      "reason": "Summarizes actual ViewSet, serializer, permission, authentication, HTTP and action boundaries without presenting a complete internal catalog."
+    },
+    {
+      "page": "docs/docs/reference/orm-reference.md",
+      "disposition": "retain_as_selected_public_contract",
+      "reason": "Matches supported query builders and terminals, write and relation behavior, migrations, transactions and manager limitations."
+    },
+    {
+      "page": "docs/docs/reference/exceptions.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates ORM, driver, validation and HTTP families, including the generic CHECK mapping and transport-specific response shapes."
+    },
+    {
+      "page": "docs/docs/reference/types.md",
+      "disposition": "retain_after_reading",
+      "reason": "Documents real sync/async boundaries and py.typed support without claiming strict typing, a mypy plugin or fictional public result types."
+    },
+    {
+      "page": "docs/docs/reference/settings-reference.md",
+      "disposition": "retain_after_declaration_and_precedence_checks",
+      "reason": "Provides the authoritative global settings, environment and constructor map, including the known origin-list defect and explicit-list workaround."
+    },
+    {
+      "page": "docs/docs/reference/cli-reference.md",
+      "disposition": "retain_as_generated_declaration_reference",
+      "reason": "Exactly matches 117 command/group declarations from isolated installed 0.7.0 and states that parser metadata does not execute callbacks."
+    },
+    {
+      "page": "docs/docs/cli/index.md",
+      "disposition": "retain_as_cli_task_hub",
+      "reason": "Separates common stable commands, Doctor exit policy, global flag placement and optional experimental families."
+    },
+    {
+      "page": "docs/docs/cli/commands.md",
+      "disposition": "retain_after_reading",
+      "reason": "Connects scaffold, migration, serving, Doctor, task and client generation commands to the prerequisites and known boundaries in their guides."
+    },
+    {
+      "page": "docs/docs/cli/ai-commands.md",
+      "disposition": "retain_as_experimental_command_guide",
+      "reason": "Uses registered nested command names and distinguishes local output, provider execution, plan application, MCP and Durable Operations."
+    },
+    {
+      "page": "docs/docs/cli/dev-tools.md",
+      "disposition": "retain_after_reading",
+      "reason": "Accurately treats format/lint/typecheck/test as external-tool wrappers and bounds shell, query inspection, generators and absent Django-like aliases."
+    },
+    {
+      "page": "docs/docs/cli/extending.md",
+      "disposition": "retain_as_application_owned_pattern",
+      "reason": "Replaces nonexistent framework command-extension APIs with a normal application entry point and explicit lifecycle, authority and test ownership."
+    },
+    {
+      "page": "docs/docs/inspectors/index.md",
+      "disposition": "retain_as_diagnostic_hub",
+      "reason": "Separates declaration/process diagnostics from deployed-schema and production-performance proof."
+    },
+    {
+      "page": "docs/docs/inspectors/models.md",
+      "disposition": "retain_after_source_and_test_reconciliation",
+      "reason": "Matches declaration-derived summaries and silent registry skips while disclosing synthetic constraints and schema limits."
+    },
+    {
+      "page": "docs/docs/inspectors/query.md",
+      "disposition": "retain_with_INSPECTOR001",
+      "reason": "Explains process-local traces and the synthetic EXPLAIN fallback, including misleading analyze labeling retained as a separate runtime defect."
+    },
+    {
+      "page": "docs/docs/search/index.md",
+      "disposition": "retain_as_experimental_project_search",
+      "reason": "Defines the indexed artifacts, in-memory lifecycle and local TF-IDF semantics without promising record search, provider embeddings or authorization."
+    },
+    {
+      "page": "docs/docs/search/semantic.md",
+      "disposition": "retain_after_source_and_test_reconciliation",
+      "reason": "Matches add, replace, token cache, filters, keyword/TF-IDF/hybrid weights and result-limit behavior and leaves relevance to application validation."
+    },
+    {
+      "page": "docs/docs/search/studio.md",
+      "disposition": "retain_as_experimental_studio_surface",
+      "reason": "Lists the implemented search routes and discloses the process-global, non-tenant-partitioned cache and descriptive local provider label."
+    }
+  ],
+  "validation": {
+    "isolated_cli_declaration_check": "117 command/group declarations passed",
+    "focused_tests": "237 passed",
+    "new_contradictions": 0
+  },
+  "candidate_acceptance": false
+}

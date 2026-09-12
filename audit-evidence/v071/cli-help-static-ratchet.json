@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "exit_code": 0,
+  "command": [
+    "/tmp/aksara-v071-cli-help-env/bin/python",
+    "scripts/check_static_baseline.py"
+  ],
+  "python": "3.11.5",
+  "tool_versions": {
+    "ruff": "0.16.6",
+    "mypy": "2.3.1"
+  },
+  "output": "Ruff: 7207/7218 allowed; mypy: 495/501 allowed\nStatic-analysis debt is at or below the reviewed baseline.\n",
+  "baseline_sha256": "058c987ad4bc51c3ded1b1c04342e516a72c4711e62704d7e6bd94519834c2ee",
+  "scope": "Python 3.11 hosted static-check version, pinned tools, no accepted-baseline edit; not a full release matrix"
+}

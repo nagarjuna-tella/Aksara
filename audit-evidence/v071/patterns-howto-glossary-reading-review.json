@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of the glossary, all four Pattern pages and all five How-to pages, reconciled with existing domain-template, TypeScript, durable history, approval, external-effect and outbox execution evidence. This does not certify the defective historical multitenant example, a real external provider, remote outbox delivery or the known generated TypeScript output.",
+  "page_sha256": {
+    "docs/docs/glossary.md": "744d80e3dfbbdc4c064eb7ddf00384e10229af535245f82759397ee9ed9f8ab4",
+    "docs/docs/patterns/blog.md": "99967584944f763d2fd66a8e6fdf15e65c3b19756de3f37a4b0e1f12b40373b8",
+    "docs/docs/patterns/crm.md": "7cd38ce71bea7c197c6fd1c070b0be96fb772e6b16763f56db87be541069bd66",
+    "docs/docs/patterns/index.md": "b02108d5fb89be6af6d990eaa2703211c5e9fe592821316ef10ee672525e370e",
+    "docs/docs/patterns/multitenant.md": "756187067c0fce611b54deb8fa3ec77a175edc89996c5f8a271a620cfa915161",
+    "docs/docs/how-to/export-durable-transitions.md": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
+    "docs/docs/how-to/handle-external-effects.md": "46b785f7cc40bf7f08ccd84d837312d127963b9de320e9c97670c33cca004eb0",
+    "docs/docs/how-to/inspect-durable-history.md": "e329687f5cc19a332c0c752617247fa9c8dd23d6094e7ab8da8daaf27d2b166a",
+    "docs/docs/how-to/require-durable-approval.md": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
+    "docs/docs/how-to/typescript-client.md": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/glossary.md",
+      "disposition": "retain_after_agent_boundary_correction",
+      "reason": "Distinguishes the named application, task, durable, MCP and experimental terms and no longer implies that Aksara ships an autonomous multi-step Agent runtime."
+    },
+    {
+      "page": "docs/docs/patterns/index.md",
+      "disposition": "retain_as_scoped_pattern_hub",
+      "reason": "Separates domain demonstrations from the tested Ticket Desk and describes basic versus flat template structure and authorization ownership."
+    },
+    {
+      "page": "docs/docs/patterns/blog.md",
+      "disposition": "retain_with_documented_limits",
+      "reason": "Accurately describes the Post/Comment example, flat setup and denied unauthenticated seed path while requiring explicit custom-action authorization."
+    },
+    {
+      "page": "docs/docs/patterns/crm.md",
+      "disposition": "retain_with_documented_limits",
+      "reason": "Matches Customer/Deal/Activity source and startup behavior and avoids presenting pipeline calculations as prediction, accounting or tenant security."
+    },
+    {
+      "page": "docs/docs/patterns/multitenant.md",
+      "disposition": "retain_as_historical_warning",
+      "reason": "Keeps EX-001 and MIGRATION-001 visible, limits execution to inspection and routes production isolation work to the tested tenant tutorial."
+    },
+    {
+      "page": "docs/docs/how-to/inspect-durable-history.md",
+      "disposition": "retain_as_bounded_history_recipe",
+      "reason": "Uses public service methods and states ordering, limit, non-snapshot, retired-action and retention boundaries without promising an event-sourced compliance ledger."
+    },
+    {
+      "page": "docs/docs/how-to/require-durable-approval.md",
+      "disposition": "retain_as_current_authority_recipe",
+      "reason": "Separates reviewer and requester authorization, server-owned references, approval intent, expiry/conflict outcomes and later worker reauthorization."
+    },
+    {
+      "page": "docs/docs/how-to/handle-external-effects.md",
+      "disposition": "retain_as_external_uncertainty_recipe",
+      "reason": "Uses effect classes, stable downstream keys and reconciliation honestly and leaves provider idempotency, timeouts and delivery guarantees to the integration."
+    },
+    {
+      "page": "docs/docs/how-to/export-durable-transitions.md",
+      "disposition": "retain_as_at_least_once_export_recipe",
+      "reason": "Matches claim, sink and acknowledgement transactions, duplicate-delivery risk, tenant selection and application-owned retention/observability."
+    },
+    {
+      "page": "docs/docs/how-to/typescript-client.md",
+      "disposition": "retain_with_SDK001",
+      "reason": "Shows explicit generation while preserving the TypeScript 5.9.3 compile failure, import-discovery limitation and client authentication/error-handling responsibilities."
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "PT-074",
+      "severity": "P1",
+      "boundary": "The glossary defined Agent as a multi-step tool executor despite the linked page and stable contract excluding an autonomous Agent runtime.",
+      "disposition": "Agent now means a machine actor at the application boundary; experimental prompt/workflow helpers and autonomous runtime scope are stated separately."
+    }
+  ],
+  "execution_evidence": [
+    "domain-template-execution.json",
+    "history-execution.json",
+    "approval-execution.json",
+    "external-execution.json",
+    "outbox-execution.json",
+    "typescript-sdk-probe.json"
+  ],
+  "candidate_acceptance": false
+}

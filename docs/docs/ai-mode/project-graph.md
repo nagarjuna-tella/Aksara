@@ -1,5 +1,11 @@
 # Project Context Graph
 
+!!! warning "Experimental development surface"
+    This analysis, provider or Studio surface is outside the stable backend
+    contract. Review its outputs and application integration before use. It is
+    not required for REST, synchronous MCP or Durable Operations. See
+    [stability labels](../concepts/stability.md).
+
 The **Project Context Graph** is a structured representation of your entire
 application — models, routes, queries, migrations, diagnostics, gap analysis
 results, AI Hub configuration, and AI flow actions — assembled into a single
@@ -121,19 +127,19 @@ from aksara.ai.graph_context import (
 
 ```bash
 # Text summary (default)
-aksara ai graph
+aksara ai flows graph
 
 # Compact summary
-aksara ai graph --summary
+aksara ai flows graph --summary
 
 # Full JSON output
-aksara ai graph --json
+aksara ai flows graph --json
 
 # Recent events only
-aksara ai graph --events
+aksara ai flows graph --events
 
 # Force cache bypass
-aksara ai graph --rebuild
+aksara ai flows graph --rebuild
 ```
 
 ## Graph Explorer UI

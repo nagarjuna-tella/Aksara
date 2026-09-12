@@ -32,8 +32,10 @@ scenarios and does not provide the full file-based migration integrity model.
 In particular, it does not make the same checksum-verification claims as the
 file-based executor.
 
-The `aksara migrate --dry-run` preview path does not apply anything — it only
-shows what would run — and is unchanged.
+The `aksara migrate --dry-run` path does not execute or record pending application
+migrations. It still imports their modules, connects to PostgreSQL and can
+initialize migration-tracking metadata. It does not run the full executor or
+prove that SQL, integrity checks, or bundled internal migrations will succeed.
 
 ---
 
@@ -47,9 +49,11 @@ run inside a **single transaction**.
 - If any operation fails, the entire migration rolls back. Partial operations are
   not left behind, and the migration is **not** recorded as applied.
 
-This means a failed migration leaves your schema as it was before that migration
-started. You fix the cause and re-run; you do not have to manually undo a
-half-applied migration.
+This covers supported PostgreSQL changes inside that transaction. Earlier
+migrations in the run remain committed. External side effects and PostgreSQL
+operations disallowed inside a transaction are outside this guarantee; for
+example, `CREATE INDEX CONCURRENTLY` cannot be put in this transaction.
+Investigate the failure before rerunning.
 
 ---
 
@@ -70,9 +74,9 @@ lock is always released when the run finishes, including when a run fails.
 SQL migrations are split into individual statements and executed one at a time,
 inside the same transaction as the recording step.
 
-This matters because the underlying driver runs only the first statement of a
-multi-statement string. Splitting ensures a SQL migration with several statements
-applies completely, not just up to the first `;`.
+This makes statement handling explicit in the migration executor while keeping
+the operations in one transaction. It is an executor contract, not a general
+claim that asyncpg supports only one SQL statement per call.
 
 ---
 
@@ -80,8 +84,9 @@ applies completely, not just up to the first `;`.
 
 When a migration is applied, Aksara stores a checksum of the migration (both
 Python and SQL migrations store one). Before running any pending migrations, the
-executor verifies the checksum of every **already-applied** migration against the
-file currently on disk.
+executor verifies recorded checksums for **already-applied files still present**
+on disk. Applied entries whose files are missing produce warnings rather than
+blocking the run; keep historical files in version control.
 
 If an already-applied migration file has changed since it was applied, the
 checksums no longer match and the run fails with the migration name and clear next
@@ -146,7 +151,7 @@ The DDL Aksara generates is hardened against malformed and unsafe identifiers:
 - **Partial-index predicates.** An index `where` predicate is validated when it
   is defined. Obvious unsafe patterns — statement terminators, comments, and
   DDL/DML keywords — are rejected. Ordinary predicates such as
-  `created_at > NOW()` are unaffected.
+  `archived_at IS NULL` are unaffected.
 - **Array field types.** An array field's SQL type is validated against an
   allowlist of PostgreSQL base types and normalised to a canonical form. For
   example, `ArrayField(sql_type="text[]")` normalises to `"TEXT[]"`. A base type

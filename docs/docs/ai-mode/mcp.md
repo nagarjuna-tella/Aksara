@@ -1,13 +1,13 @@
 # MCP protocol server
 
-Aksara v0.6 exposes generated application capabilities through the official
+Aksara v0.7 retains generated application capabilities through the official
 Model Context Protocol Python SDK. When `mcp_enabled=True`, a Streamable HTTP
 server is mounted at `/mcp/`. The existing JSON catalog remains available at
 `GET /ai/tools/mcp` for inspection and compatibility.
 
 The protocol server supports initialization, capability negotiation,
 `tools/list`, `tools/call`, structured results and errors, sessions, request
-cancellation, and clean application lifecycle shutdown. Aksara v0.6 uses
+cancellation, and clean application lifecycle shutdown. Aksara v0.7 uses
 `mcp>=2.0.0,<2.1.0`; that SDK negotiates the MCP protocol version with the
 client. Streamable HTTP is the supported deployment transport.
 
@@ -59,7 +59,9 @@ mass assignment.
 
 Discovery is filtered for convenience. Every invocation rechecks the actual
 principal, scope, audience, expiry, tenant, ViewSet permissions, object rules,
-`PolicyEngine` field policy, ORM validation, and PostgreSQL RLS. MCP invokes the
+`PolicyEngine` field policy, and ORM validation on the integrated route.
+PostgreSQL RLS adds database enforcement when the deployment configures it with
+a restricted role and the required policies. MCP invokes the
 same generated API route in-process, so it does not maintain a second, weaker
 authorization implementation.
 
@@ -91,10 +93,13 @@ arguments, principal, tenant, approver, and expiry. Changed arguments, another
 principal or tenant, rejection, expiry, and invalid signatures fail before any
 mutation. Authorization runs again when the approved operation executes.
 
-This is a signed, stateless execution grant. Aksara v0.6 does not claim durable
-approval workflow storage, cross-worker single use, or restart-safe replay
-state. Applications needing those properties should store workflow state in a
-durable system and issue the bounded grant only after that system approves.
+This is a signed, stateless execution grant. It does not provide durable approval
+workflow storage, cross-worker single use, or restart-safe replay state. v0.7
+adds a separate [Durable Operations](../advanced/durable-operations.md) path with
+persisted, input-bound approval decisions and reauthorization at execution.
+A synchronous `_approval_token` does not turn a normal tool call into a Durable
+Operation. Applications still own the human approval interface and decision
+authority.
 
 ## Audit and errors
 
@@ -111,7 +116,7 @@ roll back when the API rejects or fails the request.
 
 ## Stable and experimental surfaces
 
-The v0.6 stable contract covers `Principal` propagation, generated MCP CRUD
+The stable synchronous MCP contract covers `Principal` propagation, generated MCP CRUD
 tools, protocol discovery and invocation, execution-time authorization,
 tenant and field enforcement, structured errors, audit events, runtime limits,
 and the stateless approval grant described above.
@@ -122,4 +127,5 @@ durable autonomous workflows, and Studio AI internals remain experimental.
 Investigation and MCP session/replay state is process-local.
 
 See the [security boundary](../security/ai-mcp-boundaries.md) and
-[v0.6 stability contract](../roadmap/v0-6-stability-contract.md).
+[v0.7 stability contract](../roadmap/v0-7-stability-contract.md). Protocol-level
+MCP Tasks are not provided; synchronous MCP sessions are not durable workers.
