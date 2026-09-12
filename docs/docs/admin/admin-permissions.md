@@ -89,14 +89,26 @@ class PostAdmin(ModelAdmin):
 
 When a check needs a database lookup, define it as `async def`:
 
-```python
-class ProjectAdmin(ModelAdmin):
+```python title="app/admin_permissions.py"
+from aksara.contrib.admin import ModelAdmin
+
+
+class PostAdmin(ModelAdmin):
     async def has_change_permission(self, request, obj=None):
         user = request.state.user
+        if not user or not user.is_staff:
+            return False
         if obj is None or user.is_superuser:
-            return user.is_staff
-        return await obj.team.members.filter(id=str(user.id)).exists()
+            return True
+        author = await obj.get_related("author")
+        return author is not None and str(author.id) == str(user.id)
 ```
+
+This example assumes `Post.author` is a forward foreign key. Its stored value
+is an identifier; `get_related("author")` explicitly loads the related object.
+A missing nullable author denies editing. For this simple ownership rule,
+comparing the stored author identifier is cheaper; the asynchronous example
+illustrates how to perform a related-object lookup when your policy needs one.
 
 ---
 

@@ -95,8 +95,8 @@ to remove a registration.
 
 ## Mounting the Admin
 
-`include_admin()` attaches the routes, session + CSRF + rate-limit middleware,
-and static files to your app.
+`include_admin()` attaches routes, session and rate-limit middleware, and static
+files to your app. CSRF validation runs in the Admin form handlers.
 
 ```python
 from aksara.contrib.admin import include_admin

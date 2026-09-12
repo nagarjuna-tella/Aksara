@@ -119,6 +119,7 @@ Full page-by-page usability review is still pending.
 | PT-028 | P1 | Type reference invents async permission/serializer interfaces, return shapes and mypy plugin/stub guarantees | Replaced sketches with actual sync/async contracts and qualified annotation support | Docs fixed; existing installed signature and import checks |
 | PT-029 | P1 | Performance guide promises missing projection/profiling/explain APIs, lazy relations and unsupported serializer patterns | Replaced with supported query controls and scoped measurement/transaction guidance | Docs fixed; no performance improvement or capacity claim |
 | PT-030 | P2 | Model guide omits inherited timestamps, implies schema creation from declaration, and uses undeclared fields in a uniqueness example | Clarified defaults/migration boundary and removed invalid example constraint | Docs fixed; installed model-default checks |
+| PT-031 | P1 | Admin async permission example treats a forward FK as a loaded object | Replaced with explicit get_related and fail-closed staff/owner checks; clarified form CSRF and process-local rate limits | Exact hook and anonymous custom-prefix mount verified against installed wheel |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
@@ -696,3 +697,25 @@ runner hashes are bound by `history-execution.json` and a freshness test. The
 owned schema is removed and its absence checked. This admin-role service fixture
 does not prove HTTP authentication, restricted-role RLS, a retention campaign,
 a tamper-resistant audit store or atomic multi-read snapshots.
+
+## Admin Permission and Mount Audit
+
+Reviewed Admin registration, permission, action and mounting guidance against
+the corresponding implementation. Corrected the asynchronous related-object permission example,
+clarified that form handlers enforce CSRF, qualified process-local rate limiting,
+and labeled Studio experimental in the Admin comparison. Installed public-wheel
+checks execute the exact permission hook using a controlled async related-object
+fixture and verify owner/non-owner/nonstaff/anonymous decisions. They also mount
+a custom site on FastAPI and check anonymous redirect, login rendering and the
+prefix-scoped CSRF cookie. These checks run in the existing installed import
+contract runner. They do not prove database-backed relation loading,
+authenticated Admin CRUD, every widget, or tenant/RLS isolation. Those remain
+separate reference-application and regression evidence, not implied by a page
+render or a hook fixture.
+
+Admin validation at this checkpoint: `.venv/bin/python -m pytest tests/admin -q`
+with local PostgreSQL and required database tests enabled passed **142 tests**
+(1 dependency deprecation warning). The docs/packaging set passed **160 tests**;
+strict MkDocs, installed imports/selected contracts, CLI parsing and rendered
+local links passed. These are source regression and public-wheel checks, not
+final candidate-wheel validation.

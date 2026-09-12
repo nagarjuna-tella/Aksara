@@ -170,3 +170,53 @@ def test_documented_model_defaults():
         assert instance.created_at is None
         assert model._fields["created_at"].auto_now_add
         assert model._fields["updated_at"].auto_now
+
+
+def test_documented_admin_permission_and_mount():
+    import asyncio
+    from types import SimpleNamespace
+
+    from starlette.testclient import TestClient
+
+    from aksara.contrib.admin import AdminSite, include_admin
+
+    page = (ROOT / 'docs/docs/admin/admin-permissions.md').read_text()
+    source = re.search(r'```python title="app/admin_permissions.py"\n(.*?)```', page, re.DOTALL).group(1)
+    namespace = {}
+    exec(compile(source, 'documented-admin-permission', 'exec'), namespace)  # noqa: S102 - trusted repository documentation
+
+    class AdminPost(Model):
+        title = fields.String(max_length=100)
+
+    site = AdminSite(name='docs-admin')
+    site.register(AdminPost, namespace['PostAdmin'])
+    admin = site.get_model_admin(AdminPost)
+    calls = []
+
+    class RelatedPost:
+        async def get_related(self, name):
+            calls.append(name)
+            return SimpleNamespace(id='owner')
+
+    async def check():
+        request = SimpleNamespace(state=SimpleNamespace(user=None))
+        assert not await admin.has_change_permission(request, RelatedPost())
+        request.state.user = SimpleNamespace(id='owner', is_staff=True, is_superuser=False)
+        assert await admin.has_change_permission(request, RelatedPost())
+        request.state.user.id = 'other'
+        assert not await admin.has_change_permission(request, RelatedPost())
+        request.state.user.is_staff = False
+        assert not await admin.has_change_permission(request, RelatedPost())
+        assert calls == ['author', 'author']
+
+    asyncio.run(check())
+    app = FastAPI()
+    include_admin(app, prefix='/ops', site=site)
+    with TestClient(app) as client:
+        response = client.get('/ops/', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/ops/login/' in response.headers['location']
+        login = client.get('/ops/login/')
+        assert login.status_code == 200
+        assert 'csrf_token' in login.text
+        assert 'Path=/ops' in login.headers['set-cookie']

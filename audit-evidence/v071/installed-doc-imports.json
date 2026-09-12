@@ -4,9 +4,9 @@
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
-    "docs/docs/admin/admin-permissions.md": "67bafe4c1b5023e40d4b5198cb7454b227401d5352e0372d5e346c8dac0c3aed",
-    "docs/docs/admin/admin-site.md": "ce7adc9395924764d06d4d964fc9c25284810b3b6820eeace9394a4e0dbcef4f",
-    "docs/docs/admin/index.md": "a0b1fd8fd0b18f9d106c7d50e3f8e774554a7e40fe119b265783c74d6d0b005b",
+    "docs/docs/admin/admin-permissions.md": "244870468212a1f15a6231d4cf25be597e9ecc9de527584e77d17d30f136b7bf",
+    "docs/docs/admin/admin-site.md": "492b4b2572e7d990f7be1acfc209d0cc332edf1826b6c06280641605b8e7e558",
+    "docs/docs/admin/index.md": "de119ad4a4fd8f13f7c2afef3ea6950771088ba670d3dd1dd1d4168435908930",
     "docs/docs/admin/model-admin.md": "4caf967cf1c1499c73f24f93ccc013df84e34e671b28ec3b63116da7a69792e1",
     "docs/docs/admin/widgets.md": "c8448324f75b2bce043246226fb8a8ee5f4f153ea7619938b4d173f41e8d3d5e",
     "docs/docs/advanced/background-tasks.md": "a51f6b806382e13de2610faf24dc4c0623a016a56a838f8ec47509a8684a0e5e",
@@ -171,9 +171,9 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, and standalone signal dispatch; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin hook/anonymous mount checks; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
-  "viewset_contract_sha256": "5577f6703c8f379604c4543ba29d996bec6b1c420b22d2a9f01bed8bbeab3402",
+  "viewset_contract_sha256": "e97464a7e66083be81c42227bbf1b1ab4fe50f89359aa834ff5c508431a2d456",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "2a22f55fa168c35d182f5bf58f58b023bcebd1c94d8c99312b9d48ab1d0d76cd"
+  "runner_sha256": "9791874ce7de8bf0b72983732fad33aa58f57d8600b8c6a9014ccca35462cefb"
 }
