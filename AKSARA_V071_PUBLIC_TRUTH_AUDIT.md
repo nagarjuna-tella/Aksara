@@ -1871,3 +1871,20 @@ tests/test_v048_packaging_sanity.py -q` — 376 passed, one existing dependency
 deprecation warning. Strict docs, 359 Python fences/imports, 292 CLI forms, and
 42,287 local references across 162 pages passed. Ruff passed. This is scoped
 search validation; whole-manual and candidate acceptance remain open.
+
+## Studio access follow-up (2026-09-12)
+
+PT060 / P1: Studio setup/configuration needed explicit distinction between the
+required secret and router bearer authentication, origin policy exceptions,
+and local credential bypass. The quickstart now binds development to loopback;
+the overview no longer claims a complete live backend view or uses v0.6 status.
+Eight in-process HTTP requests verify absent/wrong credentials, exact bearer,
+same/allowed/denied origins, empty allowlist and disabled credential checks.
+The dependency test passes in checkout and installed wheel. It does not prove
+staff-session database lookup, full Studio mounting, browser UI, or production
+exposure. The installed import gate now runs the access cases.
+`.venv/bin/python -m pytest tests/docs tests/api/test_studio_auth.py
+tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q` — 210 passed,
+one existing dependency deprecation warning. Strict docs, 359 Python fences,
+292 CLI forms, and 42,291 local references across 162 pages passed. Ruff passed.
+No production settings or behavior changed; final whole-manual review remains open.

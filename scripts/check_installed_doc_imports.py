@@ -21,6 +21,7 @@ WIDGET_CONTRACT = ROOT / "tests/docs/test_admin_widget_boundaries.py"
 ADMIN_ACTION_CONTRACT = ROOT / "tests/docs/test_admin_action_reference.py"
 SUGGESTION_CONTRACT = ROOT / "tests/docs/test_diagnostic_suggestions.py"
 SEARCH_CONTRACT = ROOT / "tests/docs/test_search_reference.py"
+STUDIO_ACCESS_CONTRACT = ROOT / "tests/docs/test_studio_access_reference.py"
 PROBE = r'''
 import hashlib, json, runpy, sys
 import aksara
@@ -67,6 +68,8 @@ suggestions['test_diagnostic_suggestion_example']()
 suggestions['test_filtered_fix_plan_is_not_release_gate']()
 search = runpy.run_path(sys.argv[12])
 search['test_local_search_example']()
+studio_access = runpy.run_path(sys.argv[13])
+studio_access['test_studio_origin_and_bearer_boundaries']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -83,14 +86,14 @@ def main():
     env = {k: v for k, v in os.environ.items()
            if k not in {"PYTHONPATH", "DATABASE_URL"} and not k.startswith("AKSARA_")}
     with tempfile.TemporaryDirectory(prefix="aksara-doc-imports-") as directory:
-        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT), str(LOCALIZATION_CONTRACT), str(EXCEPTION_CONTRACT), str(AI_DEBUG_CONTRACT), str(MIDDLEWARE_CONTRACT), str(MODEL_META_CONTRACT), str(INSPECTOR_CONTRACT), str(WIDGET_CONTRACT), str(ADMIN_ACTION_CONTRACT), str(SUGGESTION_CONTRACT), str(SEARCH_CONTRACT)],
+        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT), str(LOCALIZATION_CONTRACT), str(EXCEPTION_CONTRACT), str(AI_DEBUG_CONTRACT), str(MIDDLEWARE_CONTRACT), str(MODEL_META_CONTRACT), str(INSPECTOR_CONTRACT), str(WIDGET_CONTRACT), str(ADMIN_ACTION_CONTRACT), str(SUGGESTION_CONTRACT), str(SEARCH_CONTRACT), str(STUDIO_ACCESS_CONTRACT)],
                              cwd=directory, env=env, text=True, capture_output=True,
                              timeout=60, check=True)
     evidence = json.loads(run.stdout)
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "localization_contract_sha256": hashlib.sha256(LOCALIZATION_CONTRACT.read_bytes()).hexdigest(),
@@ -116,6 +119,8 @@ def main():
                      "diagnostic_suggestion_checks": "passed",
                      "search_contract_sha256": hashlib.sha256(SEARCH_CONTRACT.read_bytes()).hexdigest(),
                      "local_search_checks": "passed",
+                     "studio_access_contract_sha256": hashlib.sha256(STUDIO_ACCESS_CONTRACT.read_bytes()).hexdigest(),
+                     "studio_access_dependency_checks": "passed",
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")
     print(f"PASS: {evidence['python_blocks']} Python fences; all documented Aksara imports resolve")

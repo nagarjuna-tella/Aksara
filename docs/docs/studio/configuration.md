@@ -62,8 +62,28 @@ configure(
 | Production plus `enable_studio=True` and `studio_expose_in_production=False` | Studio routes are not mounted |
 | Production plus both exposure flags | Studio routes are mounted and require the configured application security boundary |
 
-Allowed origins control browser cross-origin access. They do not replace
-credential verification, authorization, network policy, or TLS.
+## Origin and credential checks
+
+The Studio router checks Origin separately from authentication:
+
+- A missing Origin header is allowed by the origin check.
+- The server's own origin is allowed, even when absent from the list.
+- An empty list or a list containing `"*"` allows every origin.
+- Other origins require an exact match; rejection returns HTTP 403.
+
+These rules do not constitute a network allowlist or tenant boundary. A caller
+can omit Origin, so credential verification and network controls remain essential.
+
+With `studio_require_auth=True`, the router accepts a matching case-sensitive
+`Authorization: Bearer <studio_auth_token>` header or a valid database-backed
+staff session cookie named `session_token`. Otherwise it returns HTTP 401.
+`studio_secret_token` is required for enabled settings construction; it is not
+the bearer credential checked by this router. Do not confuse the two settings.
+These checks gate developer access, not per-record application permissions.
+
+With `studio_require_auth=False`, the router bypasses credential checking.
+The local quickstart uses that mode only on loopback; never infer production
+security merely from having set the required Studio secret.
 
 Check the configured deployment with:
 

@@ -719,11 +719,11 @@
     },
     {
       "path": "docs/docs/getting-started/studio.md",
-      "sha256": "285768ff7508b8130b966716ed68278aeada5fd7df20dd53bbf3a21c4ec5a034",
-      "changed_since_release": false,
+      "sha256": "36cd8cad229583ba4ca5d6c27ee4a949a8c6b90221191b04758567e6bc3a8c02",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 32
+      "lines": 37
     },
     {
       "path": "docs/docs/getting-started/ten-minutes.md",
@@ -1299,19 +1299,19 @@
     },
     {
       "path": "docs/docs/studio/configuration.md",
-      "sha256": "a26383c648be42cc3564bd51442e78f4873b95dbc69cdbd9a8216829ef7a7057",
-      "changed_since_release": false,
+      "sha256": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 73
+      "lines": 93
     },
     {
       "path": "docs/docs/studio/index.md",
-      "sha256": "1b0d8a2907ad8ec80c3783cd593395c52fb872c1f7980706d19658b6dfeb9e3c",
-      "changed_since_release": false,
+      "sha256": "ffb4f80e2c9b9bf1d5c8aa477603be71a9f43c733b319ed85c9851f929fec8fb",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 137
+      "lines": 139
     },
     {
       "path": "docs/docs/studio/ui.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 28,
+    "unchanged_since_release": 25,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

@@ -235,3 +235,10 @@ PT059 corrects three search pages and explicitly identifies experimental local
 retrieval. Installed import evidence executes the controlled collection example;
 the search regression suite passes. No relevance benchmark, tenant isolation,
 cross-worker persistence, or Studio browser workflow certification is implied.
+
+## Studio access checkpoint
+
+PT060 clarifies three Studio setup/configuration/overview pages. Installed import
+evidence runs eight dependency-level HTTP cases; related authentication tests
+pass. This does not certify browser workflows, shared-host deployment, or a
+production authorization model. The experimental boundary remains explicit.

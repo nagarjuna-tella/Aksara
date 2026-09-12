@@ -85,7 +85,7 @@
     "docs/docs/getting-started/project-layout.md": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
     "docs/docs/getting-started/running-your-app.md": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",
     "docs/docs/getting-started/settings.md": "111caa8e9daf54dabf9c7869ca3610894911914edda7b9e0151c0b4c745e0c01",
-    "docs/docs/getting-started/studio.md": "285768ff7508b8130b966716ed68278aeada5fd7df20dd53bbf3a21c4ec5a034",
+    "docs/docs/getting-started/studio.md": "36cd8cad229583ba4ca5d6c27ee4a949a8c6b90221191b04758567e6bc3a8c02",
     "docs/docs/getting-started/ten-minutes.md": "4b53953cccd437d7be2fe27c79911b659d2c5baae0669b9857446a8d317f47c8",
     "docs/docs/glossary.md": "6e27cf9b94359d3c8f53af4a881d2234a94e2268103a2b64bd3ab5fcd0041821",
     "docs/docs/how-to/export-durable-transitions.md": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
@@ -148,8 +148,8 @@
     "docs/docs/security/threat-model.md": "5d9a54d513ca6da480c4482d16030eea0de6c5c7da3906f18822bf21719d58ec",
     "docs/docs/studio/api.md": "6cbb4059ace95de187b41681b8b52728e1e6ccd66a5440ed7210a1211b548a94",
     "docs/docs/studio/cli.md": "94165fb06ed3e11cfe5e20a577c8d44353e914838cc45e14f04c613b97b14328",
-    "docs/docs/studio/configuration.md": "a26383c648be42cc3564bd51442e78f4873b95dbc69cdbd9a8216829ef7a7057",
-    "docs/docs/studio/index.md": "1b0d8a2907ad8ec80c3783cd593395c52fb872c1f7980706d19658b6dfeb9e3c",
+    "docs/docs/studio/configuration.md": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
+    "docs/docs/studio/index.md": "ffb4f80e2c9b9bf1d5c8aa477603be71a9f43c733b319ed85c9851f929fec8fb",
     "docs/docs/studio/ui.md": "d650c3c3be3f280c20f14dfd9f4ea72ec865b2f5a0b7e0784c2e85889262710b",
     "docs/docs/tutorials/ai-integration.md": "7a8ed10512195a3e608d6ac32d3f855e36fd5bf18df9a51ea1f41150fce3ae25",
     "docs/docs/tutorials/blog-api.md": "9d35111dde0bdc5845fcebb489819a0e038036e7f4bc361c46cb2546d1f34479",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -197,5 +197,7 @@
   "diagnostic_suggestion_checks": "passed",
   "search_contract_sha256": "a0f48e2ca41d8cbb15c3c4b911cdaf99c7c1f6a081f5fcee71800a6bc0f3a782",
   "local_search_checks": "passed",
-  "runner_sha256": "afa85d31742087088178f4f35dcf92d6267397553c350004ee9f7c9f21261b45"
+  "studio_access_contract_sha256": "d3b2aaa3ea3c4584733197b342629706081d2ca2c6074de61f70a85cd420bb1b",
+  "studio_access_dependency_checks": "passed",
+  "runner_sha256": "b097a85402f4eb7da05065b874d195a4df5e1fc730f27f436d4f62f111d60890"
 }
