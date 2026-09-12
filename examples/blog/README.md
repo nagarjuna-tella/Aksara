@@ -34,6 +34,7 @@ Do not use a production database for example migrations.
 ```bash
 aksara makemigrations --app models --output migrations
 aksara migrate --migrations-dir migrations
+aksara doctor launch-check
 aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
