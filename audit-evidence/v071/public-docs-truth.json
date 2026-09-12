@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "fa73a75239da407c5ae7a3da0d5eaa4760dd0122",
+  "reviewed_head": "0b3ada971a9517c2adb6fefa79bbc117085821f9",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "bb4cde05c9bad98b76231b3ff0b9eb936328b7e9003508c289a29a0ea922fc74",
+    "sha256": "46a3469103e7e4a370c0daa79966b41c92aadf6ac12e6504580e2d604c74c66b",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -404,9 +404,9 @@
     },
     {
       "artifact": "audit-evidence/v071/advanced-field-execution.json",
-      "sha256": "c49e646c6c8a518f1dc342c940dfd2ead671d95eafeb3bfd8eeef0417eae9572",
+      "sha256": "8e10dfddbb9960e44598aef415df3a2bbd755b7e271a576a7c3d436d7f7a41db",
       "recorded_result": true,
-      "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
+      "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections plus the exact validation fragment and catalog model declarations; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
       "checked_linked_page_hashes": 1,
       "stale_linked_pages": [],
       "historical_head": null

@@ -20,4 +20,8 @@ def test_advanced_field_evidence_is_current():
     assert {'all JSON guide blocks execute', 'all Array guide blocks execute',
             'all Vector guide blocks execute', 'nested JSON query returns created row',
             'array append persists through save', 'explicit vector CASE cast persists',
-            'vector dimension bool nonfinite and empty values rejected'} <= set(evidence['checks'])
+            'vector dimension bool nonfinite and empty values rejected',
+            'validation fragment catches both field errors',
+            'catalog model decimal and enum persist',
+            'catalog model defaults and nullable fields',
+            'catalog model foreign key persists'} <= set(evidence['checks'])

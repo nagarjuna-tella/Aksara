@@ -78,6 +78,22 @@ async def main():
         document.embedding=[4,5,6]
         await Document.objects.bulk_update([document],fields=['embedding'])
         passed('explicit vector CASE cast persists',(await Document.objects.get(id=document.id)).embedding==[4,5,6])
+        messages=[]
+        validation={'Model':Model,'fields':fields,'print':lambda value: messages.append(str(value))}
+        code=compile(Path('validation.py').read_text(),'documented-validation','exec',flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        await eval(code,validation)
+        passed('validation fragment catches both field errors',len(messages)==2 and 'email' in messages[0] and 'age' in messages[1])
+        catalog={'__name__':'catalog_models'}
+        exec(Path('catalog_models.py').read_text(),catalog)
+        Category,Product=catalog['Category'],catalog['Product']
+        for model in (Category,Product):
+            await model_to_create_table_operation(model).apply(db)
+        category=await Category.objects.create(name='Tools')
+        product=await Product.objects.create(name='Hammer',slug='hammer',price='12.34',sku='HAMMER-1',category=category)
+        loaded=await Product.objects.get(id=product.id)
+        passed('catalog model decimal and enum persist',str(loaded.price)=='12.34' and loaded.status==catalog['ProductStatus'].DRAFT)
+        passed('catalog model defaults and nullable fields',loaded.quantity==0 and loaded.metadata=={} and loaded.compare_at_price is None and loaded.description is None)
+        passed('catalog model foreign key persists',loaded.category_id==category.id)
     finally:
         await db.disconnect()
     print('ADVANCED_FIELDS_EVIDENCE='+json.dumps({'checks':checks,'package_version':aksara.__version__,'package_path':aksara.__file__}))
@@ -115,6 +131,10 @@ async def main():
                     sections[name] = re.findall(r'```python\n(.*?)```', body, re.DOTALL)
                 assert {name: len(blocks) for name, blocks in sections.items()} == {'JSON': 3, 'Array': 2, 'Vector': 2}
                 (root / 'sections.json').write_text(json.dumps(sections))
+                validation = text.split('## Field Validation',1)[1].split('## Complete Example',1)[0]
+                (root / 'validation.py').write_text(re.search(r'```python\n(.*?)```',validation,re.DOTALL).group(1))
+                catalog = re.search(r'```python title="app/catalog_models.py"\n(.*?)```',text,re.DOTALL).group(1)
+                (root / 'catalog_models.py').write_text(catalog)
                 run = await asyncio.to_thread(
                     subprocess.run, [str(args.python.absolute()), "-I", "-c", PROBE],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60, check=False,
@@ -132,7 +152,7 @@ async def main():
         await connection.close()
     evidence.update({"schema_version": 1, "pass": True, "pgvector_version": extension["extversion"],
                      "source_checkout_framework_imports": False, "disposable_schema_removed": True,
-                     "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
+                     "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections plus the exact validation fragment and catalog model declarations; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
                      "page_sha256": {PAGE: hashlib.sha256((ROOT / PAGE).read_bytes()).hexdigest()},
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")

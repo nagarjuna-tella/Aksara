@@ -358,3 +358,11 @@ Blog relation checks, relevant source entries and the retained RELATION001
 failure flag. Three in-memory omissions/inversion controls were rejected.
 207 docs/packaging tests and Ruff pass. This guards the existing execution proof;
 remaining manual and actual candidate requirements are unchanged.
+
+## Field validation/catalog coverage checkpoint
+
+D3/A15: exact validation and catalog declarations now run in the installed
+PostgreSQL gate, bringing advanced-field-execution.json to 19 checks. Evidence
+guards require the new assertions. 207 docs/packaging tests and Ruff pass.
+This closes those two snippet gaps without claiming all field behavior or
+candidate execution. No public page or production code changed.

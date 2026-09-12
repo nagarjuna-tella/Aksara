@@ -50,7 +50,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk create, text update and upsert now have installed evidence; Boolean/timestamp bulk_update fails (BULK-001). Candidate coverage remains open. |
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
-| Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
+| Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven advanced-field blocks, the validation fragment and complete catalog declarations execute; separate full field regressions and candidate coverage remain required. |
 | Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable/eager FK plus complete FK/O2O/self/M2M example ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. The gate now executes M2M membership/reverse access; it does not prove every M2M operation or migration. RELATION001: first() omits requested eager loading; use the documented all() path. |
 | Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. MIGRATION-001: CLI model-name collision omits the historical template User table; domain-template evidence records that failure. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
@@ -2200,3 +2200,18 @@ Validation: two focused tests and Ruff passed; the broader docs/packaging set
 passed 207 tests with one dependency warning. This strengthens evidence
 acceptance without claiming fresh PostgreSQL execution or whole-manual approval.
 No public page, production code or historical evidence changed in this checkpoint.
+
+## Field validation and catalog example execution (2026-09-12)
+
+The advanced-field runner now extracts the exact field-validation fragment and
+complete app/catalog_models.py declarations in addition to the seven advanced
+blocks. Both caught validation errors are observed, then autodetected CreateTable
+operations set up the catalog fixture. Persistence checks cover Decimal/Enum,
+quantity/JSON defaults, nullable fields and the stored FK. All 19 installed
+PostgreSQL/pgvector checks pass; disposable-schema removal is verified.
+No documentation correction was required by these additional examples.
+
+The evidence test requires all four new checks. Ruff and the full 207-test
+docs/packaging set pass (one dependency warning). The gate uses an admin-role
+fixture, not RLS, full migration CLI/history or every field/write-path proof.
+No production code or public page changed; final candidate acceptance is open.
