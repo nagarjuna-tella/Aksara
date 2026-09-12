@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "4c2058d370e35e46615ab4fff9b898b63ffd78be",
+  "reviewed_head": "d94df7a5a5c3ceb75ca985f7f4e89c41b623b5d1",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "53a92b6bbd6ce43cd90739157b1a67260a5a8ccecaaec6d712990b3b5d9ec6dd",
+    "sha256": "c751443800b747a63dc1a57a542e43a7dd119ac75c69c6abf6e092230ba3a77a",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "345a0e1853d8c1de774d438af672225e4dd41798278ade12f1a95a635eee4517",
+      "sha256": "783785caf748eae7340aa62e136768f9f81ed181657b3a8d848289650ad2eb46",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -674,9 +674,9 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "f06990d8c27fce8760e1f60208cdfb469338df466234317872317f81cf73aeb6",
+      "sha256": "b523ae0cbe271222d3a9908a71a4efa13c7f2a93576477eed3850b7071625112",
       "recorded_result": true,
-      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; not full CRUD, arbitrary snippet execution, or API stability",
+      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
       "stale_linked_pages": [],
       "historical_head": null
@@ -800,7 +800,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "07efd0b2146623ac797bcbbc04fd2bff3359c94a8354160f0b719ef0dc62eef6",
+      "sha256": "a1249f48ea03b2928b592feec2c197ca3adf0b316f74c0555fbfefbbea3fffc4",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -827,7 +827,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "c3514400fac5117e40e70569a97f016b5cb73c345f46286a2a1f8dd62aefcff0",
+      "sha256": "9448623e4c1e08fc7b1e1cb838c67eec6cfd038ff131495be1830214dc3c83e4",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

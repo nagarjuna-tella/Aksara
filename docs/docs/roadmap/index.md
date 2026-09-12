@@ -13,3 +13,6 @@ Release planning, stability contracts, and direction notes for Aksara.
   experimental, and unsupported v0.6 surfaces
   contract defining stable vs. evolving areas, compatibility policy, and
   migration note expectations for v0.6.
+
+- [v0.7 Durable Operations Stability Contract](v0-7-stability-contract.md) —
+  Released durable-operation guarantees, production profile, and explicit limits.

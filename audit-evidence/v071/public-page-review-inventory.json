@@ -600,11 +600,11 @@
     },
     {
       "path": "docs/docs/gapanalysis.md",
-      "sha256": "9125ecfab0414e91715456e98039a38faa0a0a601de7336ddcfe79dcdc4e85f5",
-      "changed_since_release": false,
+      "sha256": "9ba448bc84bd85747b58ec6517b35b6261fe4438f4a98f5e5b928fb572c7f9fb",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 342
+      "lines": 341
     },
     {
       "path": "docs/docs/getting-started/ai-quickstart.md",
@@ -1153,11 +1153,11 @@
     },
     {
       "path": "docs/docs/roadmap/index.md",
-      "sha256": "eb5890ddae4f71d6a1b81f1b790e0618a5499cf8229e12c8471d8e30dcd270b7",
-      "changed_since_release": false,
+      "sha256": "459efac9c33d784227927877241981d8f1a9f86fe729603d34d4679abd65181d",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 15
+      "lines": 18
     },
     {
       "path": "docs/docs/roadmap/v0-6-stability-contract.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 20,
+    "unchanged_since_release": 18,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

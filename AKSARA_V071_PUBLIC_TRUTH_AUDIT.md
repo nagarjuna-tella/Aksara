@@ -1910,3 +1910,22 @@ tests/ai/test_v049_patch_safety.py tests/ai/test_patch_security.py -q` — 500 p
 one existing dependency deprecation warning. Strict docs, 359 Python fences,
 292 CLI forms, and 42,293 local references across 162 pages passed. Ruff passed.
 No production code changed; final whole-manual acceptance remains open.
+
+## Gap analysis and historical navigation follow-up (2026-09-12)
+
+PT062 / P2: gap analysis described eight parallel categories; the implementation
+has nine and awaits each checker sequentially. The guide now states those facts,
+warning-on-checker-failure behavior, unknown-category validation, empty-list default,
+and the difference between fix suggestions and production release policy.
+The roadmap index now links the released v0.7 stability contract. Historical
+release notes, contracts, and evidence are preserved; no history was rewritten.
+The page also corrects GET-only category selection and removes unsupported
+custom-checker registration advice. The single-category helper logs checker
+failures and returns an empty list, unlike the full report's warning issue.
+Controlled installed-package tests prove both behaviors and invalid-category
+handling; they do not certify live deployment health. The first test rejected
+the draft unknown-category-skipping claim, which was corrected before commit.
+Validation: 348 docs/packaging/gap tests passed with one dependency deprecation
+warning; Ruff passed; 358 Python fences/imports and 292 CLI forms passed;
+strict docs and 42,286 local references across 162 pages passed.
+No runtime changes. Final whole-manual acceptance remains open.

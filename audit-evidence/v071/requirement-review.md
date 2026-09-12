@@ -249,3 +249,12 @@ PT061 reconciles experimental AI lifetimes with released v0.7 durable operations
 Installed import evidence covers deterministic planner validation, generated
 Python and patch previews in a disposable project. Selected regressions pass;
 provider quality and autonomous workflows remain outside the claim.
+
+## Gap analysis checkpoint
+
+PT062 corrects category count/order, full-report versus single-category failure
+handling, Studio category selection and unsupported extension advice. Installed
+package orchestration checks and 348 related documentation/gap tests pass.
+Strict docs, imports, CLI syntax and rendered links were refreshed. This proves
+the named scanner contracts, not deployment correctness or whole-manual
+acceptance; release-candidate gates remain incomplete.
