@@ -605,7 +605,9 @@
       "path": "docs/docs/debugging/ai-debug.md",
       "sha256": "d10a4615c25a714b587fe06d318da826a43f2f0498d7cfddb189a09bb2ba1423",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "debugging-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 86
     },
@@ -613,7 +615,9 @@
       "path": "docs/docs/debugging/autoremediation.md",
       "sha256": "9946cd5fd9ce3a69e77f2ff09e5c9a2479bf4a5124e54f617695360751ce90c5",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "debugging-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 76
     },
@@ -621,7 +625,9 @@
       "path": "docs/docs/debugging/error-pages.md",
       "sha256": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "debugging-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 91
     },
@@ -629,7 +635,9 @@
       "path": "docs/docs/debugging/index.md",
       "sha256": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "debugging-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 46
     },
@@ -638,6 +646,7 @@
       "sha256": "667b35ba844a1de5439f93d823fd2ebd671963b214762480132314c3eba10c2a",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "debugging-reading-review.json",
         "query-profiling-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -1518,7 +1527,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 81
+    "with_scoped_evidence_candidates": 85
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

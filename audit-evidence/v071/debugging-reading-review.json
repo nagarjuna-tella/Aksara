@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all five debugging pages, with source comparison of debug response exposure and AI-advisor enablement plus the existing scoped exception, query-tracing, AI-context and diagnostic-suggestion tests. This is not production monitoring, comprehensive redaction, provider diagnosis, or final candidate certification.",
+  "page_sha256": {
+    "docs/docs/debugging/ai-debug.md": "d10a4615c25a714b587fe06d318da826a43f2f0498d7cfddb189a09bb2ba1423",
+    "docs/docs/debugging/autoremediation.md": "9946cd5fd9ce3a69e77f2ff09e5c9a2479bf4a5124e54f617695360751ce90c5",
+    "docs/docs/debugging/error-pages.md": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
+    "docs/docs/debugging/index.md": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
+    "docs/docs/debugging/query-profiling.md": "667b35ba844a1de5439f93d823fd2ebd671963b214762480132314c3eba10c2a"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/debugging/index.md",
+      "disposition": "retain_after_reading",
+      "reason": "Routes by failure type and immediately states debug exposure, tracing opt-in and experimental AI-assistance boundaries."
+    },
+    {
+      "page": "docs/docs/debugging/error-pages.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates HTML and JSON behavior, states that rich HTML is not loopback-restricted, and limits fixed-name masking without claiming authentication or monitoring."
+    },
+    {
+      "page": "docs/docs/debugging/query-profiling.md",
+      "disposition": "retain_after_reading",
+      "reason": "Distinguishes process-global capture from contextual trace sessions, explains caps and timing, and treats SQL/parameters as unredacted private diagnostics."
+    },
+    {
+      "page": "docs/docs/debugging/ai-debug.md",
+      "disposition": "retain_after_reading",
+      "reason": "Labels the advisor experimental and rule-based, explains its two-setting enablement and context exposure, and makes external sharing a separate reviewed action."
+    },
+    {
+      "page": "docs/docs/debugging/autoremediation.md",
+      "disposition": "retain_after_reading",
+      "reason": "Describes fix plans as structured suggestions, preserves filtered versus unfiltered exit semantics, and does not claim commands or repairs execute automatically."
+    }
+  ],
+  "candidate_acceptance": false,
+  "execution_contracts": [
+    "tests/docs/test_ai_debug_reference.py",
+    "tests/docs/test_diagnostic_suggestions.py",
+    "tests/docs/test_exception_reference.py",
+    "tests/docs/test_query_profiling_evidence.py"
+  ]
+}

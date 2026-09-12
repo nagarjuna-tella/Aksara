@@ -2482,3 +2482,16 @@ and that Aksara handled all database work. It now says mapping follows an
 applied migration and names the application's schema-migration, authorization
 and transaction responsibilities. This finishes the ORM author-reading scope,
 not every ORM method or the candidate regression. No production source changed.
+
+## Debugging section reading assessment — 2026-09-12
+
+Read all five debugging pages completely and compared the debug handler's HTML,
+JSON and AI-advisor branches with the published exposure statements. The pages
+distinguish local error presentation, process-local query tracing, rule-based AI
+suggestions and diagnostic fix-plan data. They do not present loopback JSON
+detail as protection for rich HTML, or masking as comprehensive redaction.
+
+`debugging-reading-review.json` records current hashes and page-specific
+dispositions. Existing focused tests remain the scoped behavior evidence; this
+reading does not certify production monitoring, a live provider or final
+candidate behavior. No page or production source change was required.

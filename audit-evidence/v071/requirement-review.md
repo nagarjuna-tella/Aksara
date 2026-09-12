@@ -510,3 +510,12 @@ introduction now makes migration application, authorization and transaction
 ownership explicit. Known bulk, migration discovery, fixture, soft-delete and
 relation defects remain documented and deferred. This closes ORM author
 reading, not candidate execution, every ORM method, or the remaining manual.
+
+## Debugging section reading — 2026-09-12
+
+A8/A10/A12/C6: all five debugging pages were read completely and compared with
+debug-handler, trace and diagnostic contracts. `debugging-reading-review.json`
+records current hashes and per-page dispositions. The section keeps error-page
+exposure, incomplete redaction, process-local trace storage and rule-based AI
+advice explicit. This closes debugging author reading, not production monitoring,
+provider behavior, the remaining manual, or candidate execution.

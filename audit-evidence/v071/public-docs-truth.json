@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "83a4e2beeba560a5bdf795f4a79470a111ee27c6",
+  "reviewed_head": "b0f4752723ee11d90c920d8ca9a4055bba83b9b5",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "e5d8b1a849e6bf992f86e8d683f7817f3d4c128681e1126363b024f1c703c026",
+    "sha256": "46eb9a3ac88cace5d3191a5c2ab578083f5478c2654065eb46b3cc0974a22046",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -579,6 +579,15 @@
       "recorded_result": true,
       "scope": "Exact field/model conversion, autodetected CreateTable operation and PostgreSQL persistence paths; admin-role fixture, not full migration CLI/history, RLS, HTTP serializer or arbitrary custom-type support",
       "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/debugging-reading-review.json",
+      "sha256": "452617042db8f0427a43df0788571997c9edde632311c7ad61fb06f30bc196e9",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all five debugging pages, with source comparison of debug response exposure and AI-advisor enablement plus the existing scoped exception, query-tracing, AI-context and diagnostic-suggestion tests. This is not production monitoring, comprehensive redaction, provider diagnosis, or final candidate certification.",
+      "checked_linked_page_hashes": 5,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -863,7 +872,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "4ac6f6d5fc08a47a7f7b0ec8858997adf3cc22f5b62c765a59e549a77d987dbc",
+      "sha256": "1deb1701b0087013bb14661e9297642f19b5fbe8189aa2149fda5238013c9664",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
