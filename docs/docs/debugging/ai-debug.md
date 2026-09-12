@@ -61,32 +61,17 @@ Actionable fixes ranked by likelihood:
    ↳ Wrap in try/except to return proper 404 response
 ```
 
-### Code Examples
+### Reviewing suggested exception handling
 
-Each suggestion includes working code:
+Treat suggested code as a proposal to verify against the current application.
+Aksara query lookup failures use `aksara.manager.DoesNotExist`, not a
+model-specific `User.DoesNotExist`. The older `aksara.shortcuts.get_object_or_404`
+example is not an installed public API.
 
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# Suggestion 1: Use get_or_404
-from aksara.shortcuts import get_object_or_404
-
-@app.get("/api/users/{user_id}")
-async def get_user(request, user_id: str):
-    user = await get_object_or_404(User, id=user_id)
-    return {"id": str(user.id), "email": user.email}
-```
-
-```python
-# Suggestion 2: Handle explicitly
-@app.get("/api/users/{user_id}")
-async def get_user(request, user_id: str):
-    try:
-        user = await User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"id": str(user.id), "email": user.email}
-```
+Use the [exception reference](../reference/exceptions.md) for an executable
+handler example, correct imports and actual response formats. Check identity,
+object access and input validation before adapting any suggested lookup. A debug
+suggestion is not proof that the resulting endpoint enforces those boundaries.
 
 ### Documentation Links
 

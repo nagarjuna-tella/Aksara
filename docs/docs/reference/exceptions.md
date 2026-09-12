@@ -1,469 +1,188 @@
-# Exceptions
+# Exceptions and error responses
 
-Complete reference for Aksara exceptions.
+Aksara has several error boundaries: ORM/database exceptions, query lookup
+exceptions, Python/Pydantic validation, and HTTP errors. They do not share one
+universal base class or response shape. Catch the specific error that your
+operation can produce, and preserve unexpected failures.
 
----
+## ORM exception families
 
-## Exception Hierarchy
+These classes are in `aksara.exceptions`:
 
-```
-BaseException
-└── Exception
-    └── AksaraError
-        ├── ConfigurationError
-        ├── DatabaseError
-        │   ├── ConnectionError
-        │   ├── IntegrityError
-        │   └── OperationalError
-        ├── ValidationError
-        ├── PermissionDenied
-        ├── NotAuthenticated
-        ├── NotFound
-        ├── MethodNotAllowed
-        ├── Throttled
-        └── APIException
-```
+| Class | Base | Purpose / useful attributes |
+| --- | --- | --- |
+| `AksaraError` | `Exception` | Base for this module's ORM/configuration family; `message` |
+| `ConfigurationError` | `AksaraError` | Invalid configuration |
+| `ImproperlyConfigured` | `ConfigurationError` | Feature configuration error |
+| `DatabaseError` | `AksaraError` | Mapped database failure; `original_exception`, `query`, `params` |
+| `ConnectionError` | `DatabaseError` | Pool connection failure; distinct from Python's built-in `ConnectionError` |
+| `UniqueConstraintError` | `DatabaseError` | Unique violation; optional `field_name`, `value` |
+| `ForeignKeyConstraintError` | `DatabaseError` | Foreign-key violation; optional `field_name`, `referenced_table` |
+| `NotNullConstraintError` | `DatabaseError` | Not-null violation; optional `field_name` |
+| `CheckConstraintError` | `DatabaseError` | Available class with optional `constraint_name`; see mapping limitation below |
+| `QueryError` | `DatabaseError` | Available query-error class; not a promise that all SQL errors use it |
+| `ValidationError` | `AksaraError` | `message`, `errors` mapping and optional `field_name` |
+| `RestrictedError` | `AksaraError` | Protected deletion; `model_name`, `related_model`, `related_count` |
 
----
+This is the application ORM/configuration family, not every exception exported
+by experimental or durable subsystems. In particular, `aksara.manager.DoesNotExist`
+and `MultipleObjectsReturned` inherit directly from `Exception`, not
+`AksaraError`. There are no model-specific `User.DoesNotExist` classes to catch.
 
-## Core Exceptions
+`await Model.objects.get(...)` raises `DoesNotExist` for no match and
+`MultipleObjectsReturned` for multiple matches. Use unique lookup criteria.
+`get_or_none(...)` currently returns the first match or `None`; it does not
+assert uniqueness. See [querying](../orm/querying.md).
 
-### AksaraError
+The module does **not** provide the legacy `IntegrityError`, `OperationalError`,
+`APIException`, `NotFound`, `PermissionDenied`, `NotAuthenticated`,
+`MethodNotAllowed`, `Throttled`, `MigrationError`, `ConflictingMigrations`, or
+`MigrationNotFound` APIs shown in older conceptual examples.
 
-Base exception for all Aksara errors.
+## Database mapping
 
-```python
-from aksara.exceptions import AksaraError
+Aksara's database execute/fetch helpers wrap underlying failures through
+`map_database_error()`. The mapper recognizes asyncpg unique, foreign-key,
+not-null and PostgreSQL connection errors; it also has message-based fallback
+matching for some constraints. Otherwise it returns `DatabaseError`.
 
-try:
-    # some operation
+**A PostgreSQL CHECK violation currently maps to generic `DatabaseError`, even
+though `CheckConstraintError` exists.** When an application specifically needs
+to distinguish it, inspect `original_exception` for the actual asyncpg
+`CheckViolationError`. Do not infer a mapper branch merely from a class name.
+Likewise, using a raw asyncpg connection can expose driver exceptions directly.
+
+`DatabaseError` can retain SQL, parameters and driver messages. Do not send
+`str(exc)`, `query`, `params` or an original exception to an untrusted client.
+Use an application-owned public message; keep diagnostic data in appropriately
+protected logs. `field_name` and similar parsed metadata can be `None` and must
+not be required for recovery logic.
+
+Catch transaction failures outside the transaction context so it can roll back.
+A retry policy must account for the specific error and operation's idempotency;
+catching every database error and repeating writes is not a recovery guarantee.
+See [transactions](../orm/expressions-and-transactions.md).
+
+## Validation is layer-specific
+
+Construct Aksara validation errors using keyword `errors`, for example
+`ValidationError("Invalid ticket", errors={"subject": "Required"})`. Its fields
+are `message`, `errors`, and `field_name`; it has no automatic `detail` or
+`status_code` attribute. Passing a dictionary positionally is not the documented
+field-error constructor.
+
+`ModelSerializer.is_valid(raise_exception=True)` is **synchronous**. Its schema
+validation can raise `pydantic.ValidationError`; missing data or a hook can raise
+`ValueError`; a hook may deliberately raise `aksara.exceptions.ValidationError`.
+These are distinct classes. Do not assume all validation is converted to one
+exception or that `except AksaraError` catches them all. Follow the
+[serializer contract](../api/serializers.md) and [validation guide](../advanced/validation.md).
+
+## HTTP handlers on Aksara
+
+With the standard `Aksara` application, these registered ORM handlers return:
+
+| Exception | Status | JSON fields |
+| --- | --- | --- |
+| `aksara.manager.DoesNotExist` | 404 | `detail` |
+| `aksara.manager.MultipleObjectsReturned` | 500 | `detail` |
+| `UniqueConstraintError` | 409 | `detail`, `field`, `code="unique_constraint_violated"` |
+| `aksara.exceptions.ValidationError` | 422 | `detail`, `errors`, `code="validation_error"` |
+| `RestrictedError` | 409 | `detail`, `model`, `related_model`, `related_count`, `code="delete_restricted"` |
+
+These mappings belong to the app, not to the exception objects themselves.
+A bare FastAPI application or custom handlers can behave differently. Generated
+ViewSets also translate some failures into `fastapi.HTTPException`, so the same
+underlying lookup need not produce the same body through every route.
+
+For explicit HTTP errors use `fastapi.HTTPException(status_code=..., detail=...)`.
+In standard Aksara JSON responses, HTTP errors use an `error` object containing
+`status`, `message` and `type="http_exception"`. Request-schema validation also
+uses an `error` object, status 422, with a validation-error list. This differs
+from Aksara's ORM `ValidationError` response above.
+
+Send `Accept: application/json` when requesting the JSON HTTP-error format.
+Browser-like Accept headers can select HTML error pages. Debug configuration
+also affects diagnostic output. Keep debug disabled in production and test the
+actual route, middleware, exception and Accept header used by your client.
+There is no universal `{detail, code}` envelope across all failures.
+
+## Executable handler example
+
+This small application deliberately raises sample exceptions to demonstrate
+response contracts; it performs no database operation. It is a reference
+example, not an error endpoint to deploy in your application.
+
+```python title="error_examples.py"
+from fastapi import HTTPException
+from starlette.responses import JSONResponse
+from aksara import Aksara
+from aksara.exceptions import UniqueConstraintError, ValidationError
+from aksara.manager import DoesNotExist
+
+app = Aksara(database_url=None, auto_discover_views=False, debug=False)
+
+
+@app.get("/validation")
+async def validation_example():
+    raise ValidationError("Invalid ticket", errors={"subject": "Required"})
+
+
+@app.get("/conflict")
+async def conflict_example():
+    raise UniqueConstraintError(field_name="reference")
+
+
+@app.get("/missing")
+async def missing_example():
+    raise DoesNotExist("Ticket not found")
+
+
+@app.get("/http")
+async def http_example():
+    raise HTTPException(status_code=403, detail="Not permitted")
+
+
+class TicketClosed(Exception):
     pass
-except AksaraError as e:
-    print(f"Aksara error: {e}")
-```
 
-### ConfigurationError
 
-Raised when configuration is invalid.
-
-```python
-from aksara.exceptions import ConfigurationError
-
-raise ConfigurationError("DATABASE_URL is required")
-```
-
----
-
-## Database Exceptions
-
-### DatabaseError
-
-Base exception for database errors.
-
-```python
-from aksara.exceptions import DatabaseError
-
-try:
-    await Model.objects.raw("INVALID SQL")
-except DatabaseError as e:
-    print(f"Database error: {e}")
-```
-
-### ConnectionError
-
-Raised when database connection fails.
-
-```python
-from aksara.exceptions import ConnectionError
-
-try:
-    await database.connect()
-except ConnectionError as e:
-    print("Could not connect to database")
-```
-
-### IntegrityError
-
-Raised when database integrity constraints are violated.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import IntegrityError
-
-try:
-    await User.objects.create(email="existing@example.com")
-except IntegrityError as e:
-    print("Duplicate email address")
-```
-
-### OperationalError
-
-Raised for operational database errors.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import OperationalError
-
-try:
-    await Model.objects.execute("...")
-except OperationalError as e:
-    print(f"Operational error: {e}")
-```
-
----
-
-## Model Exceptions
-
-### DoesNotExist
-
-Raised when a query expects a single object but finds none.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import DoesNotExist
-
-# Model-specific exception
-try:
-    user = await User.objects.get(id="nonexistent")
-except User.DoesNotExist:
-    print("User not found")
-
-# Generic exception
-from aksara.exceptions import DoesNotExist
-try:
-    user = await User.objects.get(id="nonexistent")
-except DoesNotExist:
-    print("Object not found")
-```
-
-### MultipleObjectsReturned
-
-Raised when a query expects a single object but finds multiple.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import MultipleObjectsReturned
-
-try:
-    user = await User.objects.get(name="John")
-except MultipleObjectsReturned:
-    print("Multiple users named John")
-```
-
----
-
-## Validation Exceptions
-
-### ValidationError
-
-Raised when data validation fails.
-
-```python
-from aksara.exceptions import ValidationError
-
-# Single error
-raise ValidationError("Invalid value")
-
-# Field-specific errors
-raise ValidationError({
-    "email": "Invalid email format",
-    "password": "Password too short",
-})
-
-# Multiple errors per field
-raise ValidationError({
-    "password": [
-        "Password too short",
-        "Password must contain a digit",
-    ],
-})
-
-# Non-field errors
-raise ValidationError({
-    "__all__": "Invalid credentials",
-})
-```
-
-#### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `detail` | dict/str | Error details |
-| `status_code` | int | HTTP status (400) |
-
-#### Handling
-
-```python
-from aksara.exceptions import ValidationError
-
-try:
-    await serializer.is_valid(raise_exception=True)
-except ValidationError as e:
-    print(e.detail)
-    # {"email": ["Invalid email format"]}
-```
-
----
-
-## API Exceptions
-
-### APIException
-
-Base exception for API errors.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import APIException
-
-raise APIException(
-    detail="Something went wrong",
-    status_code=500
-)
-```
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `detail` | str | Required | Error message |
-| `status_code` | int | 500 | HTTP status code |
-| `code` | str | None | Error code |
-
-### NotFound
-
-Raised when a resource is not found (404).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import NotFound
-
-raise NotFound("User not found")
-raise NotFound(detail="Post not found")
-```
-
-### PermissionDenied
-
-Raised when user lacks permission (403).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import PermissionDenied
-
-raise PermissionDenied("You do not have permission to edit this post")
-```
-
-### NotAuthenticated
-
-Raised when authentication is required (401).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import NotAuthenticated
-
-raise NotAuthenticated("Authentication required")
-```
-
-### MethodNotAllowed
-
-Raised when HTTP method is not allowed (405).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import MethodNotAllowed
-
-raise MethodNotAllowed("GET")
-```
-
-### Throttled
-
-Raised when rate limit is exceeded (429).
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import Throttled
-
-raise Throttled(wait=60)  # Retry after 60 seconds
-```
-
-#### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `wait` | int | Seconds until retry allowed |
-
----
-
-## Migration Exceptions
-
-### MigrationError
-
-Raised for migration errors.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import MigrationError
-
-raise MigrationError("Migration failed")
-```
-
-### ConflictingMigrations
-
-Raised when migrations conflict.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import ConflictingMigrations
-
-raise ConflictingMigrations(["0002_add_email", "0002_add_name"])
-```
-
-### MigrationNotFound
-
-Raised when migration is not found.
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import MigrationNotFound
-
-raise MigrationNotFound("0003_update_users")
-```
-
----
-
-## Custom Exceptions
-
-### Creating Custom Exceptions
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import APIException
-
-class PaymentError(APIException):
-    status_code = 402
-    default_detail = "Payment required"
-    default_code = "payment_required"
-
-class InsufficientFunds(PaymentError):
-    default_detail = "Insufficient funds"
-    default_code = "insufficient_funds"
-
-# Usage
-raise InsufficientFunds()
-raise PaymentError("Card declined")
-```
-
-### Exception Handler
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.exceptions import exception_handler
-
-@app.exception_handler(PaymentError)
-async def handle_payment_error(request, exc):
+@app.exception_handler(TicketClosed)
+async def ticket_closed_handler(request, exc):
     return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": exc.detail,
-            "code": exc.default_code,
-        }
+        status_code=409,
+        content={"code": "ticket_closed", "detail": "Ticket is closed"},
     )
+
+
+@app.get("/custom")
+async def custom_example():
+    raise TicketClosed()
 ```
 
----
-
-## Error Response Format
-
-Default API error response:
+For `/validation`, the registered handler returns status 422 and:
 
 ```json
 {
-    "detail": "Error message",
-    "code": "error_code"
+  "detail": "Invalid ticket (subject: Required)",
+  "errors": {"subject": "Required"},
+  "code": "validation_error"
 }
 ```
 
-Validation error response:
+The custom handler exposes a fixed application message instead of serializing
+arbitrary exception details. Register it on the actual app handling the route;
+creating an exception subclass alone does not install an HTTP contract.
 
-```json
-{
-    "detail": {
-        "email": ["Invalid email format"],
-        "password": ["Too short", "Needs digit"]
-    }
-}
-```
+## Other boundaries
 
----
+Migration graph/executor failures use their actual Python/driver errors; consult
+the [migration guide](../orm/migrations.md) rather than importing the legacy
+fictional migration classes. Preserve the original failure when reporting a
+failed migration.
 
-## HTTP Status Codes
-
-| Exception | Status Code |
-|-----------|-------------|
-| `ValidationError` | 400 |
-| `NotAuthenticated` | 401 |
-| `PermissionDenied` | 403 |
-| `NotFound` | 404 |
-| `MethodNotAllowed` | 405 |
-| `Throttled` | 429 |
-| `APIException` | 500 |
-
----
-
-## Best Practices
-
-### Catching Exceptions
-
-```python
-# Specific exceptions first
-try:
-    user = await User.objects.get(id=user_id)
-except User.DoesNotExist:
-    raise NotFound("User not found")
-except DatabaseError:
-    raise APIException("Database error")
-```
-
-### Re-raising Exceptions
-
-```python
-try:
-    result = await external_service.call()
-except ExternalError as e:
-    raise APIException(f"External service error: {e}")
-```
-
-### Logging Exceptions
-
-```python
-import logging
-
-logger = logging.getLogger(__name__)
-
-try:
-    await dangerous_operation()
-except AksaraError as e:
-    logger.exception("Operation failed")
-    raise
-```
-
----
-
-## Related Documentation
-
-- [API Reference](api-reference.md)
-- [Validation](../advanced/validation.md)
+MCP tool failure categories and Durable Operation states have their own
+structured contracts. An HTTP 409 is not a durable retry decision, and catching
+a Python exception does not resolve an unknown external outcome. See
+[MCP boundaries](../security/ai-mcp-boundaries.md) and
+[Durable Operations](../advanced/durable-operations.md).

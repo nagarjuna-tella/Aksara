@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 540,
+  "python_blocks": 531,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -66,7 +66,7 @@
     "docs/docs/cli/index.md": "8aec1d338b490f9dcf0db3ea14334e79c454c0fb4d067136ecf564a059af0f98",
     "docs/docs/concepts/application-boundaries.md": "1e6c387ad82af91b0f37d4f4d8455b9762ae4950d347aafa1cb2ec8a14e61530",
     "docs/docs/concepts/stability.md": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
-    "docs/docs/debugging/ai-debug.md": "dfbd14c15fd7378a8a20ce21aefa200ad70fccc066bca7422c6fec126d27ba94",
+    "docs/docs/debugging/ai-debug.md": "a6b328bb13a3f105c5a6a02c3e2ec6070fad8629e87ec3bdbc402c144c6b351b",
     "docs/docs/debugging/autoremediation.md": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
     "docs/docs/debugging/error-pages.md": "08cff19ae2e9265c3ca59a31557c505ff37d3e7e3b651ed897bde328c9c949e2",
     "docs/docs/debugging/index.md": "1d96e68bb6d21fffc00794de4857d6d7ff251fc406a65531cad7a4aae0176e82",
@@ -123,7 +123,7 @@
     "docs/docs/quickstart.md": "ea79958457e14f1ef7062835b472dac50608a1529ae58efeca8ad7127b836ae4",
     "docs/docs/reference/api-reference.md": "1cd22f4acd7556a66101816d1f2c06cef7b10919b84e67f37782fec8c5256955",
     "docs/docs/reference/cli-reference.md": "0e08093f9f861b32b50ee21e976dd4a81a49e5c58df302064a902eda9483dc2e",
-    "docs/docs/reference/exceptions.md": "12369deead12db343f163a4c559a7af57fe5754c98b77bb857465164308e3aa4",
+    "docs/docs/reference/exceptions.md": "7953cad79424ea89820e34e7b08041d78101cefda3f6e97e99cd884b4dc80cd5",
     "docs/docs/reference/index.md": "0c1f7ca8f67d5073661754be6344a81288daf3305115efeaa67ff7004598d0e2",
     "docs/docs/reference/orm-reference.md": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
     "docs/docs/reference/runtime-compatibility.md": "47a3415e4e2b4caca9ccc273104bf7294a1bc8fb19902a5b2644d1e858536c40",
@@ -171,11 +171,13 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response contracts without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
   "localization_http_and_conversion_checks": "passed",
+  "exception_contract_sha256": "b39f35552de191702ef2683cc4e959149b156229841dc907e2585526accfc15f",
+  "exception_types_and_http_checks": "passed",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "b40c56db3936d9b9bc79a57406ad2e7b912b6e8cb20b255b25cbb96cb5246833"
+  "runner_sha256": "081ef373a00bbd43f1db859bbfadf5a7fc4d10c7eb29753d611c7d66491e4ee2"
 }

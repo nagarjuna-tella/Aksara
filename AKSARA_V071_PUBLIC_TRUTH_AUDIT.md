@@ -282,7 +282,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. The current isolated-wheel
-syntax/import gate checks 540 Python fences and documented Aksara imports.
+syntax/import gate checks 531 Python fences and documented Aksara imports.
 `installed-doc-imports.json` binds that result to the public pages and selected
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -1240,3 +1240,31 @@ Validation: `pytest tests/docs tests/test_v048_docs_lock.py
 189 tests with one upstream AnyIO warning. Ruff and strict MkDocs passed;
 540 Python fences/imports, 316 CLI parses (11 exclusions), and 46,719 rendered
 local links/assets passed. The 51-artifact index has zero stale linked inputs.
+
+## Exception Reference and HTTP Error Contracts
+
+**PT-042 / P1:** the exception reference claimed one universal hierarchy,
+listed nonexistent DRF-style and migration classes, imported lookup exceptions
+from the wrong module, assigned status 400 and `detail` to ORM ValidationError,
+and awaited synchronous serializer validation. Its generic response examples
+also concealed the distinct ORM and HTTP error envelopes. Replaced with actual
+classes, constructor fields, mapper limits and registered HTTP handlers. The
+AI-debug page's duplicate invalid lookup example now points to this reference.
+
+`tests/docs/test_exception_reference.py` checks the documented hierarchy and
+executes the exact five-route application example, plus direct registered
+handler/schema and HTML-negotiation observations. The installed import runner
+executes these checks against public 0.7.0 outside checkout. It verifies 404,
+409, 422, explicit 403, a 500 multiple-match response, custom fixed-message
+handling and distinct request-validation JSON. The CHECK mapper check constructs
+a driver exception without executing SQL; real database CHECK behavior is
+separately recorded by the existing bulk gate. No production change or new
+functional defect is claimed by correcting the documentation.
+
+Validation: `pytest tests/docs tests/test_v048_docs_lock.py
+ tests/test_v048_packaging_sanity.py tests/test_v02_features.py::TestExceptions
+ tests/test_debug_error_pages.py -q` passed 247 tests with one upstream AnyIO
+warning. Ruff, strict MkDocs, 531 Python fence/import checks, 316 CLI parses
+(11 exclusions), and 46,483 rendered local links/assets passed. The evidence
+index retains 51 artifacts with no stale linked inputs. Final candidate gates
+remain open.

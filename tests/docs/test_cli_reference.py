@@ -77,6 +77,8 @@ def test_installed_import_evidence_matches_public_pages():
         for path in module["_public_markdown"]()
     }
     assert evidence["viewset_route_and_default_checks"] == "passed"
+    assert evidence["exception_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_exception_reference.py").read_bytes()).hexdigest()
+    assert evidence["exception_types_and_http_checks"] == "passed"
     assert evidence["localization_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_localization_reference.py").read_bytes()).hexdigest()
     assert evidence["localization_http_and_conversion_checks"] == "passed"
     assert evidence["viewset_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_viewset_reference.py").read_bytes()).hexdigest()

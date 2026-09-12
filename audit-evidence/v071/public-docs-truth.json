@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "ce2c799b9a21578ee4cda424d5a42a24a2136762",
+  "reviewed_head": "0a13e7385ee7be3bb6f1e197ad78ba2a07182df0",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "f7084bbcd50d36b3e70157b7dc7671ade8cdd02895cbea9544bc0b437135ba65",
+      "sha256": "fe41cf11346103a1741d52756576e2bde763d5f228859887873359236cb6a6cd",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -611,9 +611,9 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "07edde0126489c855e31449b20ae1760890fec191ca772413736452efbd45f5e",
+      "sha256": "6a1ef932e9f39ed17d1242fd0402fb876996d7bfff567b6f389a8c2c1c2b480f",
       "recorded_result": true,
-      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
+      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response contracts without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
       "stale_linked_pages": [],
       "historical_head": null
@@ -737,7 +737,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "2e3e6b9e70054674ed81ed0f52bb045086434d5d15ed06f62c8b18e94b2147b2",
+      "sha256": "8cef5558060fe3491686ad5e3dedee6f566ee172f9871855053153f561c97b4e",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
