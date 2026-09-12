@@ -117,8 +117,9 @@ unique tie-breaker such as `id`.
 The generated default list envelope contains `count`, `results`, `limit` and
 `offset`. `count` describes the filtered result set. Default limit is 20, maximum
 100; the generated route rejects limits below 1 or above the configured maximum,
-and negative offsets, with HTTP 422. A custom pagination class can define a
-different response contract.
+and negative offsets, with HTTP 422. Custom pagination classes select rows differently, but the generated response
+schema currently drops page/cursor metadata; see the
+[pagination limitation](pagination.md#current-custom-pagination-integration-limitation).
 
 Permissions are checked before the list query. PolicyEngine's required query
 filters are reapplied after filter backends so client parameters cannot replace

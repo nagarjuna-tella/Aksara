@@ -1123,3 +1123,35 @@ passed** with one upstream AnyIO deprecation warning. Ruff, strict MkDocs, 552
 Python-fence syntax/import checks, 316 CLI parses with 11 exclusions, and 46,761
 rendered local links/assets passed. The evidence index records 49 artifacts
 with no stale linked inputs. Release readiness is still not established.
+
+## Pagination Integration and Reference Correction
+
+**PT-039 / P1:** the pagination reference claimed universal O(1) cursor cost,
+stability under data changes and HTTP response metadata that the generated
+router does not preserve. Replaced it with the verified default path, actual
+paginator defaults/parsing, ascending-ID cursor restrictions, remaining-row
+counts and explicit concurrency/performance limits.
+
+**PAGINATION-001 / P1, reproduced on the installed public 0.7.0 wheel:** the
+fixed generated paginated response schema discards `page`, `size`,
+`total_pages` and `next_cursor`. Direct ViewSet calls retain those fields; real
+HTTP calls lose them and can return null limit/offset. This prevents a normal
+generated cursor client from getting its continuation token. A separate patch
+should preserve the selected paginator's response contract and OpenAPI shape,
+with HTTP-level tests for every built-in paginator. No runtime fix is included.
+
+The new gate records **8 HTTP/direct-call checks**, including the two expected
+defect reproductions. Default and explicit limit/offset work; direct ascending-ID
+cursor continuation advances and counts remaining rows. The evidence explicitly
+marks custom-pagination metadata false while its documentation probe passes.
+Synthetic identity and an admin-role disposable schema are test prerequisites,
+not credential, RLS, load or changing-dataset certification. The filtering guide
+now links the same limitation instead of implying arbitrary metadata survives.
+
+Pagination checkpoint validation: **217 docs/packaging and related pagination/
+ordering tests passed**, with one upstream AnyIO deprecation warning. The exact
+filtering HTTP gate was rerun (**11 checks**) after its limitation link changed.
+Ruff, strict MkDocs, 549 Python-fence syntax/import checks, 316 CLI parses with
+11 exclusions, and 46,729 rendered local links/assets passed. The index contains
+50 artifacts with no stale linked inputs. PAGINATION-001 remains an explicit
+unfixed runtime issue; green unit tests do not establish the missing HTTP metadata.

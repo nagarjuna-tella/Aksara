@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "9959c76780987645b6c2138e8d14049a618b0423",
+  "reviewed_head": "66920834311e8e91f9bc3a132a134e6c883c43db",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -462,7 +462,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "613196d4f3ea12724263d9b10dc0ffa587977e4b13edc9ecdea3beea101c9685",
+      "sha256": "07f7a7b0f339be25177ada594e1d700d93044403207287af6bd4b0d2f9a8a263",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -561,7 +561,7 @@
     },
     {
       "artifact": "audit-evidence/v071/filter-doc-execution.json",
-      "sha256": "711060a547e1487c2a5f513b107090f42f6835f0e3a5214def2d6badae2af7fa",
+      "sha256": "f3969bd6931a8f0f3e9ef7a1ede6e2f5b4f72911971f273d3b7c3cfaa2576393",
       "recorded_result": true,
       "scope": "Exact model/ViewSet with real ASGI requests and PostgreSQL filtering/search/ordering/pagination; synthetic test identity and admin-role fixture, not credential validation, RLS, every coercion or adversarial filter syntax",
       "checked_linked_page_hashes": 3,
@@ -597,7 +597,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "6f88e313dfc59b5ebea13506487e7904f6eb747b61d8f9d098d8631bc4741460",
+      "sha256": "fae7f18acc270b61528f4bd367ad8f7bdf5be29dbb8dc706c8f920afb7832287",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -695,6 +695,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/pagination-doc-execution.json",
+      "sha256": "26978c4136dfc7b6785021b672b565079d1a51070f6248107887c7bae073701d",
+      "recorded_result": true,
+      "scope": "Default/limit-offset success and reproduced page/cursor response metadata loss through real HTTP versus direct calls; synthetic identity, admin role, not credential validation, RLS, concurrency or performance proof",
+      "checked_linked_page_hashes": 3,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/public-docs-inventory.json",
       "sha256": "e110dc11f60b89b0ca893aac957049d54dfe95f2029896733afe43716c60810d",
       "recorded_result": "baseline_only_not_candidate_validation",
@@ -714,7 +723,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "83179791691f1ee77f3ddc0c4bf136e239106afe7c0514b5732d7443835bff5d",
+      "sha256": "271ddd29294f3de5eee4f0fa0672fc63f9d9e84197a8a2ef6419b6738a228660",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -856,6 +865,11 @@
       "id": "ACTION-001",
       "evidence": "custom-action-boundary.json",
       "boundary": "Custom HTTP action authorization metadata"
+    },
+    {
+      "id": "PAGINATION-001",
+      "evidence": "pagination-doc-execution.json",
+      "boundary": "Generated HTTP response discards page/cursor metadata"
     },
     {
       "id": "BULK-001",
