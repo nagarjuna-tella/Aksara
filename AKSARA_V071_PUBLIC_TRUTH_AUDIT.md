@@ -282,7 +282,7 @@ caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
 application-owned Python command pattern. The current isolated-wheel
-syntax/import gate checks 543 Python fences and documented Aksara imports.
+syntax/import gate checks 540 Python fences and documented Aksara imports.
 `installed-doc-imports.json` binds that result to the public pages and selected
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
@@ -1213,3 +1213,30 @@ fence/import checks, 316 CLI parses with 11 exclusions, and 46,714 rendered loca
 link/asset checks passed. The index now contains 51 scoped artifacts with no
 stale linked inputs. These are public 0.7.0/checkpoint results, not a candidate
 or production workflow certification.
+
+## Locale and Timezone Guide Verification
+
+**PT-041 / P2:** the localization guide used separate incomplete application
+fragments, legacy phase language and `TIME_ZONE` without distinguishing the
+actual setting from the timezone middleware's independent UTC default. Replaced
+with one complete no-database request example and an exact standalone field
+conversion example. Clarified explicit middleware installation, valid default
+configuration, lazy translation/catalog ownership, context reset, storage versus
+output conversion and application ownership of scheduling preferences.
+
+`tests/docs/test_localization_reference.py` executes both named guide blocks.
+The installed import runner now executes this contract in its isolated public
+0.7.0 process: real ASGI requests select French/New York, then default English/UTC,
+and an unsupported locale/unknown zone falls back. The exact conversion example
+normalizes the specified New York local time to UTC and resets its context.
+Evidence is included in `installed-doc-imports.json`, with the localization
+contract hash checked by the evidence-integrity suite. This does not exercise
+PostgreSQL persistence, real translation catalogs, daylight-saving business
+policy or malformed-header conformance. No production changes were made.
+
+Validation: `pytest tests/docs tests/test_v048_docs_lock.py
+ tests/test_v048_packaging_sanity.py tests/test_i18n.py
+ tests/middleware/test_locale.py tests/middleware/test_timezone.py -q` passed
+189 tests with one upstream AnyIO warning. Ruff and strict MkDocs passed;
+540 Python fences/imports, 316 CLI parses (11 exclusions), and 46,719 rendered
+local links/assets passed. The 51-artifact index has zero stale linked inputs.

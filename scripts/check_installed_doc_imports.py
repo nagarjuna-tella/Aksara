@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "tests/docs/test_installed_package_truth.py"
 VIEWSET_CONTRACT = ROOT / "tests/docs/test_viewset_reference.py"
+LOCALIZATION_CONTRACT = ROOT / "tests/docs/test_localization_reference.py"
 PROBE = r'''
 import hashlib, json, runpy, sys
 import aksara
@@ -29,6 +30,8 @@ viewsets['test_documented_model_defaults']()
 viewsets['test_documented_admin_mount']()
 viewsets['test_documented_relation_access_shapes']()
 viewsets['test_documented_field_reference_contracts']()
+localization = runpy.run_path(sys.argv[3])
+localization['test_localization_examples']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -45,16 +48,18 @@ def main():
     env = {k: v for k, v in os.environ.items()
            if k not in {"PYTHONPATH", "DATABASE_URL"} and not k.startswith("AKSARA_")}
     with tempfile.TemporaryDirectory(prefix="aksara-doc-imports-") as directory:
-        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT)],
+        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT), str(LOCALIZATION_CONTRACT)],
                              cwd=directory, env=env, text=True, capture_output=True,
                              timeout=60, check=True)
     evidence = json.loads(run.stdout)
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
+                     "localization_contract_sha256": hashlib.sha256(LOCALIZATION_CONTRACT.read_bytes()).hexdigest(),
+                     "localization_http_and_conversion_checks": "passed",
                      "viewset_route_and_default_checks": "passed",
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")
