@@ -1235,7 +1235,9 @@
       "path": "docs/docs/security/ai-mcp-boundaries.md",
       "sha256": "8df6c81e9e748484bdb2c19106ff87be9a58a819d3f734b04ef4b327e7f4b230",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 95
     },
@@ -1243,7 +1245,9 @@
       "path": "docs/docs/security/authentication.md",
       "sha256": "7b0801b27c400f4bcf01b11a6b02746e85ccb1c19d1c00de52b8f1c9ec54bac6",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 90
     },
@@ -1251,7 +1255,9 @@
       "path": "docs/docs/security/field-level-permissions.md",
       "sha256": "64bf0d399ef188d0000e8ab66013556102f8781b60ca445fa1778dbe506a363b",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 81
     },
@@ -1260,7 +1266,8 @@
       "sha256": "9cd9a37e720e97f681905288c7062ecd6cd9d0fc9b1cd4f36f7c965980810894",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "middleware-page-review.json"
+        "middleware-page-review.json",
+        "security-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 83
@@ -1269,7 +1276,9 @@
       "path": "docs/docs/security/overview.md",
       "sha256": "3bdba7d248acc03e4d7f5f11bb737cbb7d9a5e4ee39fad1b268d921d1f61aaa4",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 75
     },
@@ -1277,7 +1286,9 @@
       "path": "docs/docs/security/production-hardening.md",
       "sha256": "001c1e7d35e5a3b8e457f94e17103d720de6f5d56c45c5eec8bbc3d3df5634f3",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 154
     },
@@ -1285,7 +1296,9 @@
       "path": "docs/docs/security/release-security.md",
       "sha256": "639588c59af54bce640646f1b4656640bea7ef9c3efcd33e7dbf323d5da92e17",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 106
     },
@@ -1293,7 +1306,9 @@
       "path": "docs/docs/security/security-coverage.md",
       "sha256": "8e6bab52f2b0372586e84cfd2217c57fde80f91e377b048b220e58fbc768bafb",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 60
     },
@@ -1301,7 +1316,9 @@
       "path": "docs/docs/security/threat-model.md",
       "sha256": "011693e5119441a779d9a47eeb0845207c472867e0c2d88d7428c8c3679ef265",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "security-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 97
     },
@@ -1444,7 +1461,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 55
+    "with_scoped_evidence_candidates": 63
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

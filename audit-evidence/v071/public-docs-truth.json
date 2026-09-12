@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "fcf7f679411e604f49ec5b216915d16478236b27",
+  "reviewed_head": "157a0e1fefc796d771ed3d736781ca09121fa593",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "2042157aa1aae9f1f3aa8253028297c68fbd36279cff79fa1f05374f973e4aff",
+    "sha256": "32eb5e1632b502e67cc8c9f41968456394984e66a42a7d793d726b2a05dbe699",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -818,7 +818,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "8c19b092275405c0a7ec3f6434c169593c3f87694c94de52076ee7e59bed43a6",
+      "sha256": "a6bb6897599549fa5fd38e32f7d0366b81fd332401a8a0e695d5de9d34b3f613",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -894,6 +894,15 @@
       "recorded_result": true,
       "scope": "Read the artifact and audit report for scope; no inferred pass",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/security-reading-review.json",
+      "sha256": "7fd691e259c10352cb62de9665cf9a6e2cff03ba891d89e077432f6d836bf730",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all nine security-section pages, including the earlier identity review; source/workflow comparison supports diagnostic and release descriptions. Not an external security audit, deployment certification or final candidate campaign.",
+      "checked_linked_page_hashes": 9,
       "stale_linked_pages": [],
       "historical_head": null
     },

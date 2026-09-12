@@ -2378,3 +2378,18 @@ production API path.
 Validation: six existing AdminRateLimitMiddleware tests pass, exercising POST
 budget, disablement, GET/outside-prefix behavior, Retry-After and defaults.
 They do not prove distributed quotas or the actual deployment's proxy chain.
+
+## Security section reading assessment (2026-09-12)
+
+Completed the nine-page security reading pass: the four identity/field/tenant
+pages from the earlier review plus threat model, coverage, release security,
+production hardening and MCP boundaries. Compared diagnostic matrix handling
+and the security/release/publication workflow declarations. The pages distinguish
+configuration assertions from real adversarial tests, process-local MCP from
+durable decisions, and a named publish environment from configured protection.
+No new contradiction required a page change. security-reading-review.json
+records current page hashes and individual dispositions. This is author reading
+and scoped source review, not an external audit or candidate security approval.
+
+Validation: 39 production-check/MCP-security diagnostic tests pass. These check
+policy behavior; they do not perform a production deployment or certify RLS.

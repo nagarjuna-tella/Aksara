@@ -457,3 +457,10 @@ C6/A10: all ten current API pages now have a recorded reading disposition and
 page hash in api-reading-review.json. Core, identity and list/limit boundaries
 are coherent, including explicit known limitations. This completes the API
 section reading pass; other manual sections and candidate execution remain open.
+
+## Security section author-reading complete
+
+C6/A10/A12: all nine security pages have current-hash reading dispositions in
+security-reading-review.json. Diagnostics, matrix and publication descriptions
+were compared with code/workflows. Retained explicit application and external
+review responsibilities. Full-manual and actual candidate acceptance remain open.
