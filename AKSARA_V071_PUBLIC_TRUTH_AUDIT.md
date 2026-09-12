@@ -69,7 +69,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 312 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 308 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
@@ -1477,3 +1477,33 @@ Validation and evidence:
 The build artifact records the wheel and all six instructional input hashes.
 These checks close this CLI/README gap; whole-site semantic/usability review,
 final requirement acceptance and actual candidate release gates remain open.
+
+
+## Entry-hub usability review — PT-047 / P1
+
+Reviewed getting-started/index.md, tutorials/index.md, cli/index.md,
+advanced/index.md and reference/index.md for entry tasks, jargon, duplication,
+copyable examples and links to prerequisites. The first three already provide
+clear tutorial/workflow routes and explicit optional-AI boundaries. The latter
+two retained misleading duplicated examples despite corrected destination pages.
+
+The Advanced hub advertised a decorator-style signal example with an undefined
+slugify, a custom field skeleton and several nonexistent legacy APIs. Merely
+labeling the latter pseudocode still left the section teaching unsupported
+approaches. It now groups actual guides by work/recovery, data behavior and
+measurement. Ordinary tasks, durable Operations and evolving persisted steps
+have distinct descriptions. Caching is explicitly application-owned.
+
+The Reference hub claimed completeness for every class and option while
+repeating partial model/ViewSet code and context-free migration commands. It
+now supplies a concise lookup table, directs installation to the complete
+first-project or template flow, distinguishes declarations from command effects,
+and uses the installed version command rather than a hard-coded version claim.
+No underlying API, example implementation or navigation destination was changed.
+
+Installed documentation validation now checks 457 Python fences and 308 CLI
+forms (zero errors, 11 exclusions). Strict MkDocs passed and 162 rendered pages
+contain 44,452 checked local links/assets, with zero errors. The first focused
+test run raced the link-artifact refresh and reported one stale-hash assertion;
+the completed rerun of `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py -q` passed all 150 tests with one upstream deprecation warning. This five-page review is scoped
+progress toward C6, not a whole-manual usability certification.

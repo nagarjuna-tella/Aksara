@@ -1,157 +1,43 @@
-# Advanced Topics
+# Application patterns beyond the basics
 
-Deep dives into advanced Aksara features.
+Choose a guide when your application needs the behavior below. Start with the
+[ticket desk tutorial](../getting-started/first-project.md) if you have not yet
+created models, applied migrations and exposed a protected API.
 
----
+## Work and recovery
 
-## Overview
+| You need to… | Read | Boundary |
+| --- | --- | --- |
+| Queue work outside a request | [Background tasks](background-tasks.md) | Ordinary tasks have their own retry and delivery contract. |
+| Recover an authorized operation after failure | [Durable Operations](durable-operations.md) | Application mutations are atomic only within the supported same-database transaction boundary. |
+| Reuse a persisted step result | [Generic relations and persisted steps](generic-relations-and-durable-workflows.md) | DurableStep is evolving and is distinct from a durable Operation. |
+| React to an individual model save or delete | [Signals](signals.md) | A callback is not proof that the surrounding transaction committed. |
 
-These guides cover advanced patterns and features:
+For a working example that grows the tutorial application, follow
+[background reports](../tutorials/ticket-desk-reports.md), then
+[durable ticket resolution](../tutorials/ticket-desk-durable.md).
 
-| Topic | Description |
-|-------|-------------|
-| [Signals](signals.md) | Model lifecycle hooks |
-| [Custom Fields](custom-fields.md) | Creating custom field types |
-| [Generic relations and persisted steps](generic-relations-and-durable-workflows.md) | Generic target references and evolving step-result reuse |
-| [Background Tasks](background-tasks.md) | PostgreSQL-backed queueing and worker lifecycle |
-| [Validation](validation.md) | Advanced validation patterns |
-| [Caching](caching.md) | Query and response caching |
-| [Testing](testing.md) | Testing patterns and fixtures |
-| [Performance](performance.md) | Optimization techniques |
+## Data and application behavior
 
----
+| You need to… | Read |
+| --- | --- |
+| Reject or normalize input | [Validation](validation.md) and [serializer hooks](../api/serializers.md) |
+| Define a custom field | [Custom fields](custom-fields.md) |
+| Store files or send application email | [Media and email](media-and-email.md) |
+| Select request language and timezone | [Internationalization and timezones](internationalization-and-timezones.md) |
+| Reference different model types | [Generic relations](generic-relations-and-durable-workflows.md) |
 
-## Prerequisites
+## Testing and performance
 
-These guides assume familiarity with:
+Use [testing](testing.md) for application fixtures and isolation boundaries,
+[performance](performance.md) for measurement and query design, and
+[query profiling](../debugging/query-profiling.md) for the available diagnostics.
 
-- [Models](../orm/models.md)
-- [ViewSets](../api/viewsets.md)
-- [Middleware](../middleware/index.md)
+The [caching guide](caching.md) explains application-owned caching. Aksara does
+not provide a public general-purpose `aksara.cache` API.
 
----
-
-## Quick Links
-
-### Signals
-
-Hook into model lifecycle events:
-
-```python
-from aksara import Model, fields
-from aksara.signals import pre_save, post_save
-
-class Post(Model):
-    title = fields.String(max_length=200)
-    slug = fields.String(max_length=200)
-
-@pre_save(Post)
-async def generate_slug(sender, instance, **kwargs):
-    if not instance.slug:
-        instance.slug = slugify(instance.title)
-```
-
-→ [Learn about Signals](signals.md)
-
-### Custom Fields
-
-Create specialized field types:
-
-```python
-from aksara.fields import Field
-
-class PhoneField(Field):
-    def __init__(self, region="US", **kwargs):
-        self.region = region
-        super().__init__(**kwargs)
-    
-    def validate(self, value):
-        # Custom validation
-        pass
-```
-
-→ [Create Custom Fields](custom-fields.md)
-
-### Validation
-
-Complex validation patterns:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.validation import validator, ValidationError
-
-class Order(Model):
-    @validator("quantity")
-    def validate_quantity(cls, v):
-        if v <= 0:
-            raise ValidationError("Must be positive")
-        return v
-```
-
-→ [Advanced Validation](validation.md)
-
-### Caching
-
-Speed up your application:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.cache import cached, cache
-
-# Cache query results
-@cached(ttl=300)
-async def get_popular_posts():
-    return await Post.objects.filter(is_popular=True).all()
-```
-
-→ [Caching Guide](caching.md)
-
-### Testing
-
-Comprehensive testing:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import AksaraTestCase, factory
-
-class UserFactory(factory.Factory):
-    class Meta:
-        model = User
-    
-    email = factory.Faker("email")
-    name = factory.Faker("name")
-```
-
-→ [Testing Patterns](testing.md)
-
-### Performance
-
-Optimize your application:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# N+1 prevention
-posts = await Post.objects.select_related("author").prefetch_related("comments").all()
-
-# Query profiling
-from aksara.debug import profile_queries
-
-@profile_queries
-async def my_view():
-    # Queries are logged and analyzed
-    pass
-```
-
-→ [Performance Guide](performance.md)
-
----
-
-## Related Documentation
-
-- [ORM Guide](../orm/index.md)
-- [API Guide](../api/index.md)
-- [Reference](../reference/index.md)
+These guides build on [models](../orm/models.md),
+[ViewSets](../api/viewsets.md) and [application boundaries](../concepts/application-boundaries.md).
+Consult [stability](../concepts/stability.md) before relying on an evolving or
+experimental surface, and the [production guide](../tutorials/deployment.md)
+when moving a working application into service.

@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "264aaf60904a7a3dfb9e5206e09642e87007bb9b",
+  "reviewed_head": "360911ff004350bf59fc375678e1027bf30d1c55",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "62b1e3d13a445c6ee151b09526658ca4445dce30936be0056cd528f41dbcd533",
+    "sha256": "5a6fcb14981bd239607f227efad699e2c379738a8038a0896de3fa7796e9767b",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "5ef6b681beb34c45879775fba05acd49a824abce4e107b7e13ea12e43f2dc943",
+      "sha256": "24facc7d60a4161a4b6ed6d7608157d48c3f5864603a200b118249aa1b77484f",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -665,7 +665,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "f1f2534296c9d0493f9e289bc5f85d5a1aa40835a31077bb1fa0c5b5d51af942",
+      "sha256": "4d64177dc010d0da7744d40de0141440ea8cd308b67b12e4b67fc7dec6232db5",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -800,7 +800,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "1a7b8157d458b48a0191744915b66c710561ac9b4cc7cb0dffff6c4371f58b48",
+      "sha256": "6bf0e0594ad039fd643258c283b5c2fd2a90f303bb67d089fbe9eab0628f8266",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
