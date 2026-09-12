@@ -167,3 +167,11 @@ Line numbers below refer to that exact objective.
    the one final PR and inspect hosted CI. Leave it unmerged and unpublished.
 
 No external blocker prevents these next actions. The goal remains active.
+
+## Soft-delete reference checkpoint
+
+PT052 corrects inheritance, evaluation, restoration and deletion semantics.
+`soft-delete-execution.json` records 10 installed-wheel PostgreSQL observations
+including the SOFTDELETE001 filter-loss negative controls. The guide does not
+claim tenant authorization or RLS from soft deletion. This adds scoped evidence
+for A3/A8/A10/D3; it does not complete the remaining ORM or whole-manual review.

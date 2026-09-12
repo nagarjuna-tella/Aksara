@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 388,
+  "python_blocks": 386,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -115,7 +115,7 @@
     "docs/docs/orm/querying.md": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
     "docs/docs/orm/relations.md": "5ef927577e7f3da2732e45e5584301748620cae300cf608288421a7fc95ab970",
     "docs/docs/orm/signals.md": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
-    "docs/docs/orm/soft-deletes.md": "45ad65393460a79988149a91fc4179e6b56aa91e9d623b66628246bd1d46f192",
+    "docs/docs/orm/soft-deletes.md": "d8b29f39cc839a646e7c1e382af332a7cff8683f244bd5e15d88631073f824da",
     "docs/docs/patterns/blog.md": "99967584944f763d2fd66a8e6fdf15e65c3b19756de3f37a4b0e1f12b40373b8",
     "docs/docs/patterns/crm.md": "7cd38ce71bea7c197c6fd1c070b0be96fb772e6b16763f56db87be541069bd66",
     "docs/docs/patterns/index.md": "b02108d5fb89be6af6d990eaa2703211c5e9fe592821316ef10ee672525e370e",

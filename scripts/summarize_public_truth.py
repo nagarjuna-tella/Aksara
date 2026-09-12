@@ -66,6 +66,7 @@ def main():
         },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
+            {'id':'SOFTDELETE001','evidence':'soft-delete-execution.json','boundary':'Module-level visibility helpers discard existing queryset filters'},
             {'id':'EX-001','evidence':'example-defects.json','boundary':'Example middleware exemption matching'},
             {'id':'CFG-001','evidence':'configuration-findings.json','boundary':'POSIX environment list parsing'},
             {'id':'SDK-001','evidence':'typescript-sdk-probe.json','boundary':'Generated TypeScript strict compilation'},

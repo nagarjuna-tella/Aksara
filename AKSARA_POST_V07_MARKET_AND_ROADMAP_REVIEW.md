@@ -468,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the ten audit findings for separately scoped functional maintenance; do
+Track the eleven audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
@@ -629,3 +629,14 @@ backend, show delayed authorized mutations as its distinctive example, and make
 that example deployable and recoverable. Use the resulting user evidence to
 decide the exact v0.8 scope. Preserve the bounded 1.0 path and decline adjacent
 platform work until integration demonstrably cannot meet a real need.
+
+### Additional ORM adoption defect (2026-09-11)
+
+SOFTDELETE001 / P1: the module-level soft-delete visibility helpers discard
+existing queryset restrictions. Installed-wheel PostgreSQL execution returned
+both rows after an identifier-filtered queryset was passed to either helper.
+This can drop application tenant filters; no RLS bypass was demonstrated.
+The public guide now starts visibility selection from the manager and applies
+filters afterwards. Recommend a separate narrowly scoped runtime patch.
+Evidence: `audit-evidence/v071/soft-delete-execution.json`. This reinforces the
+existing correctness/adoption priority without changing the roadmap thesis.

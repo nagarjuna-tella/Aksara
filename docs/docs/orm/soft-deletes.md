@@ -1,65 +1,77 @@
-# Soft Deletes
+# Soft deletes
 
-Real applications rarely delete data permanently. Audit trails, compliance requirements, and data recovery all require logical deletion rather than hard removal. 
+Soft deletion keeps a row and marks it with `deleted_at`. It supports application
+recovery, but is not an audit trail, retention policy, or authorization boundary.
+Database constraints still apply to retained rows, including unique constraints.
 
-Aksara provides a native `SoftDeleteModel` pattern.
+## Define the model
 
----
+Put the mixin before `Model` so its instance deletion method takes precedence.
+Generate and review a migration before using the added nullable timestamp column.
 
-## Usage
+```python title="soft_delete_models.py"
+from aksara import Model, fields
+from aksara.contrib.soft_delete import SoftDeleteModel
 
-Inherit from `SoftDeleteModel` instead of `Model`.
 
-```python
-from aksara.contrib.soft_delete import SoftDeleteModel, with_deleted, only_deleted
-from aksara import fields
-
-class User(SoftDeleteModel):
-    email = fields.String(unique=True)
-    name = fields.String()
-    # A `deleted_at` DateTime field is automatically added
+class ArchivedDocument(SoftDeleteModel, Model):
+    title = fields.String()
 ```
 
-### Deleting Records
+## Delete and restore one record
 
-Calling `.delete()` on a soft-delete model will set the `deleted_at` timestamp instead of removing the record from the database.
+The following application function assumes the model above has been imported,
+its migration has been applied, and the application's database is connected.
+Pass the UUID of an existing record.
 
-```python
-user = await User.objects.get(id=123)
+```python title="restore_document.py"
+async def delete_and_restore(document_id):
+    document = await ArchivedDocument.objects.get(id=document_id)
+    await document.delete()
 
-# Sets deleted_at, doesn't remove record from PostgreSQL
-await user.delete() 
+    deleted = await ArchivedDocument.objects.only_deleted().filter(
+        id=document_id
+    ).first()
+    if deleted is None:
+        raise LookupError("Deleted document was not found")
+    await deleted.undelete()
+    return deleted
 ```
 
-### Querying
+Instance `delete()` sets a UTC timestamp and sends `pre_delete` and `post_delete`
+signals. `undelete()` clears the timestamp. Both reject an unsaved instance with
+`ValueError`. They update by primary key; perform your application's permission
+and tenant checks before calling them, and retain database RLS where required.
 
-Standard ORM queries automatically filter out soft-deleted records.
+## Select active, deleted, or all rows
 
-```python
-# Only returns users where deleted_at IS NULL
-active_users = await User.objects.all()  
+Start with the manager's desired visibility mode, then apply every application
+filter. These expressions are query builders; call and await `.all()` to fetch lists.
+
+```python title="soft_delete_queries.py"
+active = ArchivedDocument.objects.filter(title="Draft")
+including_deleted = ArchivedDocument.objects.with_deleted().filter(title="Draft")
+deleted_only = ArchivedDocument.objects.only_deleted().filter(title="Draft")
 ```
 
-### Accessing Deleted Records
+Ordinary manager queries exclude deleted rows. `with_deleted()` includes active
+and deleted rows; `only_deleted()` selects rows with a non-null timestamp.
+A queryset is not directly awaitable. `await queryset.all()` returns a list. Use `first()`
+and handle `None` when restoring a selected record.
 
-Aksara provides helper functions to bypass the automatic filtering:
+!!! warning "Existing queryset helpers lose query restrictions"
+    In v0.7.0, the module-level `with_deleted(queryset)` and
+    `only_deleted(queryset)` helpers create a fresh queryset. They discard prior
+    filters, ordering, and other query state. This can broaden a selection,
+    including application tenant filters. Start from the manager as shown above
+    and apply restrictions afterwards. A runtime correction requires a separate
+    patch; this guide does not change that behavior.
 
-```python
-from aksara.contrib.soft_delete import with_deleted, only_deleted
+!!! warning "Queryset deletion is physical deletion"
+    `ArchivedDocument.objects.filter(...).delete()` executes SQL `DELETE`.
+    It does not call each instance's soft-delete method. To mark a record deleted,
+    load the authorized instance and call its `delete()` method as shown above.
+    Soft deletion also does not make database cascades into logical deletion.
 
-# Include soft-deleted records alongside active ones
-all_users = await with_deleted(User.objects.all())
-
-# Query ONLY deleted records
-deleted_users = await only_deleted(User.objects.all())
-```
-
-### Restoring Records
-
-You can restore a soft-deleted record by querying for it with `with_deleted` and calling `.undelete()`.
-
-```python
-# Restore a soft-deleted record
-user = await with_deleted(User.objects.filter(id=123))
-await user.undelete()  # Clears the deleted_at timestamp
-```
+See [transactions](expressions-and-transactions.md) for transaction boundaries and
+[multi-tenancy](../security/multi-tenancy.md) for tenant enforcement.

@@ -1683,3 +1683,34 @@ Validation:
 
 This closes the identified startapp help debt. Whole-site semantic/usability
 review, final requirement acceptance and release-candidate gates remain open.
+
+## Soft-delete reference follow-up (2026-09-11)
+
+PT052 / P1: `orm/soft-deletes.md` previously instructed inheritance from the
+mixin alone and awaited a queryset before calling an instance method; that queryset is not directly awaitable. The guide now uses `(SoftDeleteModel, Model)`, UUID lookup,
+`first()` with a missing-row check, and manager visibility modes before filters.
+It explicitly distinguishes instance soft deletion from queryset SQL deletion.
+
+SOFTDELETE001 / P1 — separate runtime patch recommended: module-level
+`with_deleted(existing_queryset)` and `only_deleted(existing_queryset)` discard
+existing restrictions by constructing a fresh manager queryset. Source inspection
+and `tests/docs/test_soft_delete_reference.py` reproduce loss of the title
+predicate in compiled SQL. The same mechanism can discard application tenant
+predicates; this is not a demonstrated RLS bypass. Use manager visibility modes
+before applying restrictions. No production fix is included.
+
+Focused checkout validation: `python -m pytest
+tests/docs/test_soft_delete_reference.py tests/test_soft_delete.py -q` — 4 passed.
+The new test executes the guide's exact model and query-builder fences and retains
+an explicit negative control. It does not execute the delete/restore function
+against PostgreSQL. The installed-wheel PostgreSQL runner now executes deletion/restoration, all three
+visibility modes, both helper filter-loss negative controls, physical queryset
+deletion, and unsaved-instance rejection: 10 checks passed. Evidence is in
+`audit-evidence/v071/soft-delete-execution.json`; its disposable schema was removed.
+Broader validation: `.venv/bin/python -m pytest tests/docs
+tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py
+tests/test_soft_delete.py -q` — 197 passed, one existing dependency deprecation
+warning. Strict docs, 43,016 local link/asset references across 162 pages,
+42 selected external URLs, 386 Python fences/imports, and 302 CLI command forms
+passed. Ruff passed for the added runner/test and evidence indexer. This closes
+the scoped reference correction; whole-manual acceptance remains open.
