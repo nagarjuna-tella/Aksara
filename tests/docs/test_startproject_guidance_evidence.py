@@ -35,7 +35,8 @@ def test_runtime_scope_evidence_is_current():
     assert data['pass'] and data['runtime_logic_changed'] is False
     assert data['dependencies_changed'] is False
     assert set(data['changed_production_files']) == {
-        'aksara/cli/main.py', 'aksara/cli/scaffold.py', 'aksara/cli/templates/__init__.py',
+        'aksara/_version.py', 'aksara/cli/main.py', 'aksara/cli/scaffold.py',
+        'aksara/cli/templates/__init__.py', 'pyproject.toml',
     }
     for name, digest in data['source_sha256'].items():
         assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest

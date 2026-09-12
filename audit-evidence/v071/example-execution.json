@@ -23,7 +23,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.0",
+      "package_version": "0.7.1rc1",
       "startup": "completed",
       "responses": [
         {
@@ -55,7 +55,7 @@
     {
       "example": "blog",
       "files": {
-        "examples/blog/README.md": "09374a9fa826951990ff897867a3505b867d75a97a60c9cb8dd13badb3a119f7",
+        "examples/blog/README.md": "5ba191c02bfc6670844c31705d28065bbac82988ede6e8289b9956f13b0a495c",
         "examples/blog/__init__.py": "9fa0b0f63ae6f7e5b2bfa5791134b5ccafc5cdd7ae8dea1232a42d67d3fd0f0b",
         "examples/blog/admin.py": "f58f9bc21975a0ce1258c194b1b2eac812d3233220adac3fc12f9aebac4470d7",
         "examples/blog/auth.py": "6278a487bb3e7446352cb594bf031b9b92a6a45b5e3b666c3b9cef3f8c44e603",
@@ -78,7 +78,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.0",
+      "package_version": "0.7.1rc1",
       "startup": "completed",
       "responses": [
         {
@@ -110,7 +110,7 @@
     {
       "example": "crm",
       "files": {
-        "examples/crm/README.md": "9b6b3077acbaf27eddaad4412976fccf5d95685982d5ced1619bb8936222aa0c",
+        "examples/crm/README.md": "3fe0a9c3bfc887196010d97c11af606a0b3119e1a224822f06f17f003502edaf",
         "examples/crm/__init__.py": "8093ac53c55fd091e42ad907ba353724c93db4863b7017a311bfd3197b2a2127",
         "examples/crm/admin.py": "73d886f08736d802c033f9d561bc8124134445985bcea29f331a0bd93a7c46f7",
         "examples/crm/auth.py": "06b2b3398c74065ff19f327c22e23db3bee60303ae24826ce352cbd9189243f3",
@@ -133,7 +133,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.0",
+      "package_version": "0.7.1rc1",
       "startup": "completed",
       "responses": [
         {
@@ -165,7 +165,7 @@
     {
       "example": "multitenant",
       "files": {
-        "examples/multitenant/README.md": "5b7df846a6fe6fd645f1d57f41c14fd383b6d966368bd16cb5cb1f6d679c0ce4",
+        "examples/multitenant/README.md": "8a29e5359605617440d78b66524cc50f604a12ce0a7e16b1888aaefc7e4b690e",
         "examples/multitenant/__init__.py": "c7d2f64bb41a925b1502d85bb5e3f161e955ac68beef2738e9f88ef24096626d",
         "examples/multitenant/admin.py": "e17ea211e27f815369c925b60cf99912270ade69f3b33de5d207a0379ab346d2",
         "examples/multitenant/main.py": "87d95a9975c1001a3d0820d77eb4e39d8fde7afeaacde49678141d4332cfac53",
@@ -188,7 +188,7 @@
         }
       ],
       "probe_exit": 0,
-      "package_version": "0.7.0",
+      "package_version": "0.7.1rc1",
       "startup": "completed",
       "responses": [
         {
@@ -218,7 +218,7 @@
       },
       "migrations": [],
       "probe_exit": 0,
-      "package_version": "0.7.0",
+      "package_version": "0.7.1rc1",
       "startup": "completed",
       "responses": [
         {

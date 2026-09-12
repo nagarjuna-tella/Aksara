@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -106,7 +107,8 @@ def test_gap_analysis_version_defect_evidence_is_current():
 
     assert evidence["pass"] is True
     assert evidence["source_checkout_framework_imports"] is False
-    assert evidence["package_version"] == "0.7.0"
+    expected_version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    assert evidence["package_version"] == expected_version
     assert evidence["installed_requires_python"] == ">=3.11"
     observations = evidence["observations"]
     assert observations["python_3_9"]["too_old_issue_present"] is True

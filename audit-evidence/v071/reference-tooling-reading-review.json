@@ -4,7 +4,7 @@
   "scope": "Complete author reading of all eight Reference pages, all five CLI pages, all three Inspector pages and all three Search pages, reconciled with the isolated-wheel CLI declaration generator, settings tests, package/workflow bounds and focused search/inspector tests. This does not execute every CLI callback, certify every internal symbol as public or establish production search/diagnostic behavior.",
   "page_sha256": {
     "docs/docs/reference/api-reference.md": "1cd22f4acd7556a66101816d1f2c06cef7b10919b84e67f37782fec8c5256955",
-    "docs/docs/reference/cli-reference.md": "0e08093f9f861b32b50ee21e976dd4a81a49e5c58df302064a902eda9483dc2e",
+    "docs/docs/reference/cli-reference.md": "4703bc41baf2bacdf18c0a8db25322dfc205f4a41fb808aaf52b8359f38769d8",
     "docs/docs/reference/exceptions.md": "7953cad79424ea89820e34e7b08041d78101cefda3f6e97e99cd884b4dc80cd5",
     "docs/docs/reference/index.md": "5e7b15c1f9d207d091769a82bc34fed16e46b3ace71c4d41646286e979c24e34",
     "docs/docs/reference/orm-reference.md": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",

@@ -9,7 +9,7 @@
     "PAGINATION-001 HTTP next cursor discarded",
     "ascending id cursor advances and counts remaining"
   ],
-  "package_version": "0.7.0",
+  "package_version": "0.7.1rc1",
   "schema_version": 1,
   "pass": true,
   "runtime_custom_pagination_metadata_pass": false,
@@ -17,7 +17,7 @@
   "disposable_schema_removed": true,
   "scope": "Default/limit-offset success and reproduced page/cursor response metadata loss through real HTTP versus direct calls; synthetic identity, admin role, not credential validation, RLS, concurrency or performance proof",
   "page_sha256": {
-    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
+    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60",
     "docs/docs/api/pagination.md": "25cc91529487dcd14fa5a1139b4907033d2159ad636ebb86abe6baca27f34c90",
     "docs/docs/api/viewsets.md": "288777c8284b76148bd227851fb4ecf68f9f4b43ba1040278360418d8cd64d9f"
   },

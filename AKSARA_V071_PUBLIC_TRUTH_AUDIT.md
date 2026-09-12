@@ -71,7 +71,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 292 documented commands parse; installed Gap Analysis version probe ([CLI evidence](audit-evidence/v071/cli-docs-syntax.json), [gap evidence](audit-evidence/v071/gap-analysis-version-contract.json)) | Parsing does not execute callbacks; 7 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. GAP001 means the static environment check accepts Python 3.10 although the package requires 3.11 or newer. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 295 documented commands parse; installed Gap Analysis version probe ([CLI evidence](audit-evidence/v071/cli-docs-syntax.json), [gap evidence](audit-evidence/v071/gap-analysis-version-contract.json)) | Parsing does not execute callbacks; 7 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. GAP001 means the static environment check accepts Python 3.10 although the package requires 3.11 or newer. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy, fix-plan filters and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
@@ -605,7 +605,7 @@ dated historical entry points from current-example assertions. The remaining
 165 files contain 595 fences: all 348 Python fences compile, their Aksara imports
 resolve against the isolated public wheel, all 15 JSON fences parse, and five
 selected JSON request/response objects validate against installed models. The
-corrected Agent Workflow block also executes in a fresh process. The 292 literal
+corrected Agent Workflow block also executes in a fresh process. The 295 literal
 CLI forms, six repository example dispositions, five example startups, packaged
 Support Desk, six-stage tutorial, scaffold and 23 focused DB/provider-free gate
 families are reconciled in `snippet-coverage-review.json`. That artifact states
@@ -2676,7 +2676,7 @@ study, provider certification, or candidate execution result. No production
 source or runtime behavior changed in this checkpoint.
 
 Validation: strict MkDocs passes; 348 Python fences/imports resolve against the
-isolated public wheel; 292 CLI forms parse with seven documented exclusions;
+isolated candidate wheel; 295 CLI forms parse with seven documented exclusions;
 162 rendered pages contain 42,195 valid local links/assets; 41 selected live
 external targets are reachable, while the one post-merge `main` target is
 verified locally and recorded as excluded; and 227 documentation/packaging

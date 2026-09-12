@@ -12,14 +12,14 @@
     "unallowed ordering ignored without rejection",
     "relation search path rejected"
   ],
-  "package_version": "0.7.0",
+  "package_version": "0.7.1rc1",
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
   "disposable_schema_removed": true,
   "scope": "Exact model/ViewSet with real ASGI requests and PostgreSQL filtering/search/ordering/pagination; synthetic test identity and admin-role fixture, not credential validation, RLS, every coercion or adversarial filter syntax",
   "page_sha256": {
-    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
+    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60",
     "docs/docs/api/filtering.md": "a15859943c8b4dafce0646c52a179fca36699b8787b15cbc8dffa7355373916d",
     "docs/docs/api/viewsets.md": "288777c8284b76148bd227851fb4ecf68f9f4b43ba1040278360418d8cd64d9f"
   },

@@ -30,12 +30,16 @@ def main():
             packages.append(package)
             subprocess.run([str(python.absolute().parent/'aksara'),'startproject','scaffold_probe'],cwd=root,env=env,capture_output=True,text=True,check=True)
             project=root/'scaffold_probe'
+            packages[-1]['readme_sha256']=hashlib.sha256((project/'README.md').read_bytes()).hexdigest()
             files={}
             for path in project.rglob('*'):
                 if path.is_file():
                     data=path.read_bytes()
                     if path.name in ('.env','.env.example'):
                         data=re.sub(rb'(?m)^AKSARA_STUDIO_SECRET_TOKEN=.*$',b'AKSARA_STUDIO_SECRET_TOKEN=[NORMALIZED]',data)
+                    data=data.replace(b'0.7.1-rc1',b'[RELEASE_VERSION]')
+                    data=data.replace(b'0.7.1rc1',b'[RELEASE_VERSION]')
+                    data=data.replace(b'0.7.0',b'[RELEASE_VERSION]')
                     files[str(path.relative_to(project))]=hashlib.sha256(data).hexdigest()
             outputs.append(files)
     assert outputs[0].keys()==outputs[1].keys()
@@ -44,7 +48,7 @@ def main():
     evidence={'schema_version':1,'pass':True,'packages':packages,'changed_generated_files':changed,
               'files_compared':len(outputs[0]),'baseline_file_sha256':outputs[0],
               'development_file_sha256':outputs[1],
-              'normalization':'Generated Studio token value in .env/.env.example only; no executable/config/dependency normalization',
+              'normalization':'Generated Studio token value in .env/.env.example plus exact 0.7.0/0.7.1rc1 version spellings; no other executable/config/dependency normalization',
               'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     args.output.write_text(json.dumps(evidence,indent=2)+'\n')
     print(f'PASS: {len(outputs[0])} generated files compared; only README differs')

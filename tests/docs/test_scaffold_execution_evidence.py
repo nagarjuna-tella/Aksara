@@ -16,7 +16,7 @@ def test_scaffold_execution_evidence_is_current():
     assert comparison['pass'] and comparison['packages'][1]['scaffold_sha256'] == source_hash
     assert comparison['changed_generated_files'] == ['README.md']
     assert comparison['files_compared'] == 18
-    assert startup['readme_sha256'] == comparison['development_file_sha256']['README.md']
+    assert startup['readme_sha256'] == comparison['packages'][1]['readme_sha256']
     assert startup['surfaces']['/mcp/'] == startup['surfaces']['/studio/ui'] == 404
     for evidence, script in ((startup, 'check_scaffold_startup.py'), (comparison, 'check_scaffold_equivalence.py')):
         assert evidence['runner_sha256'] == hashlib.sha256((ROOT / 'scripts' / script).read_bytes()).hexdigest()

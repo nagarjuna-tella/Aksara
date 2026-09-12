@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import tempfile
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -105,7 +106,8 @@ def main() -> None:
     )
     package_path = Path(evidence.pop("package_path"))
     observations = evidence["observations"]
-    assert evidence["package_version"] == "0.7.0"
+    expected_version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    assert evidence["package_version"] == expected_version
     assert evidence["installed_requires_python"] == ">=3.11"
     assert observations["python_3_9"]["too_old_issue_present"] is True
     assert observations["python_3_10"]["too_old_issue_present"] is False

@@ -155,7 +155,7 @@ def main() -> None:
     examples = json.loads((EVIDENCE / "example-review.json").read_text())
     assert installed["python_blocks"] == counts["python"]
     assert installed["json_blocks"] == counts["json"]
-    assert cli["checked_commands"] == 292
+    assert cli["checked_commands"] == 295
     assert len(cli["skipped"]) == 7
     assert cli["errors"] == []
     assert len(examples["examples"]) == 6
