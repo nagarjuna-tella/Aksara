@@ -9,17 +9,23 @@
     "unloaded related access raises ValueError",
     "eager accessor is synchronous model",
     "eager null relation is None",
-    "reverse FK filter executes and returns rows"
+    "reverse FK filter executes and returns rows",
+    "relation example created the post",
+    "relation example M2M membership",
+    "relation example reverse FK",
+    "relation example reverse O2O",
+    "relation example self reference",
+    "relation example reverse M2M"
   ],
   "package_version": "0.7.0",
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
   "disposable_schema_removed": true,
-  "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, not migrations, HTTP authentication, RLS or M2M execution proof",
+  "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, plus exact complete relation example with FK/O2O/self/M2M execution; not migrations, HTTP authentication or RLS proof",
   "page_sha256": {
     "docs/docs/admin/admin-permissions.md": "d0964f3db14ea1423c0b4615094d65ddb9c8fb20dda421302046aa87f2feb744",
-    "docs/docs/orm/relations.md": "3e3b239e9b03f47eb05ef2ca17b305d10c360c118741847ce4a131d6d4490952"
+    "docs/docs/orm/relations.md": "4b2e4ccb5911c760a0bbfc7c897f47f89414fb18ee39d1981c8609ef38d23a12"
   },
-  "runner_sha256": "16f99cfa52c645fc02f958554b496f433ce91a774497393442816cf188cac8cd"
+  "runner_sha256": "3198e75733fd0c8d680995c3575f129ceb793a64c0ab73a774cb8f981bea8a4b"
 }

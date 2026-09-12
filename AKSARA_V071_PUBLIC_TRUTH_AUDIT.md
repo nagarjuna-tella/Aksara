@@ -51,7 +51,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk create, text update and upsert now have installed evidence; Boolean/timestamp bulk_update fails (BULK-001). Candidate coverage remains open. |
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
-| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. RELATION001: first() omits requested eager loading; use the documented all() path. |
+| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable/eager FK plus complete FK/O2O/self/M2M example ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. The gate now executes M2M membership/reverse access; it does not prove every M2M operation or migration. RELATION001: first() omits requested eager loading; use the documented all() path. |
 | Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. MIGRATION-001: CLI model-name collision omits the historical template User table; domain-template evidence records that failure. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
 | Generated REST/ViewSets | Yes | Stable declared surface; known defects | `aksara.ModelViewSet`, `include_viewset`, `action` | Registration, filters and pagination corrected | Ticket desk; exact search and pagination ViewSets | CRUD plus 11 filter checks and 8 pagination observations ([filter evidence](audit-evidence/v071/filter-doc-execution.json), [pagination evidence](audit-evidence/v071/pagination-doc-execution.json)) | PAGINATION-001 strips page/cursor metadata at HTTP serialization; ACTION-001 requires explicit custom-action checks. Full candidate regressions remain required. |
@@ -62,7 +62,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Field-level policy | Yes | Stable covered write paths | `PolicyEngine.validate_payload`, enforcement helpers | Reviewed metadata and path-dependent enforcement | Tenant-owned field; durable resolved field | Owned-field denial | Schema 422 and runtime permission denial are distinct; absent field metadata allows payload after action checks. Custom handlers own integration. |
 | Multi-tenancy | Yes | Stable covered context paths | `TenantModel`, `aksara.middleware.context` | Runnable chapter added | Two-customer ticket desk | HTTP and ordinary-task context | Tenant identity comes from server-owned membership, not request headers. |
 | PostgreSQL RLS | Yes | Stable restricted-role contract | `aksara.tenancy` helpers; migration SQL | Runnable chapter added | Forced-RLS ticket tables | Raw SQL plus HTTP denial | Actual NOSUPERUSER/NOBYPASSRLS posture checked; raw cross-tenant INSERT rejected. |
-| Admin | Yes | Evolving details | `aksara.contrib.admin` | Mount, permission, relation, widget and action guidance corrected | Anonymous mount/login; exact owner permission hook | Mount plus 10 real database relation checks ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Installed action fragment and widget checks add mocked update/message and escaping/mutation evidence; not full authenticated Admin CRUD or RLS coverage. ADMINWIDGET001 preserves the input-mutation defect. |
+| Admin | Yes | Evolving details | `aksara.contrib.admin` | Mount, permission, relation, widget and action guidance corrected | Anonymous mount/login; exact owner permission hook | Mount plus 16 real database relation/example checks ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Installed action fragment and widget checks add mocked update/message and escaping/mutation evidence; not full authenticated Admin CRUD or RLS coverage. ADMINWIDGET001 preserves the input-mutation defect. |
 | Ordinary tasks | Yes | Stable unlinked behavior | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result | Persists tenant, not full Principal; separate task recovery/retention gates remain. |
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
@@ -2164,3 +2164,25 @@ disposable schema removed. 207 docs/packaging tests passed with one dependency
 warning; strict docs, 348 Python fences/imports, 292 CLI forms, 42,152 local
 references and 42 selected external links passed. External reachability is not
 a new market-research claim. The model-example negative control remains false.
+
+## Complete relation example execution (2026-09-12)
+
+Follow-up to PT032/PT026: reading and running the full relation guide exposed
+unsupported forward M2M `tags__name` filters and the unrecognized `"self"`
+shortcut. The guide now resolves a tag and uses its reverse manager, and uses
+the explicit category model name. The complete example uses distinct Blog*
+model names and states setup/finalization prerequisites. No query API was added.
+
+The Admin/relation runner extracts the exact complete example before finalizing
+all models, creates test-owned tables/junction DDL, and executes demo(). Six new
+assertions cover persisted post, M2M membership/reverse access, reverse FK/O2O
+and self-reference. All 16 checks pass against installed 0.7.0 and local
+PostgreSQL; schema removal is verified. The first harness attempt finalized the
+initial fixture before loading the example; loading all models first corrected
+that setup error. The unsupported filter/self examples were documentation errors
+and were corrected rather than adding runtime features.
+
+Ruff passed. Docs/packaging: 207 passed with one dependency warning. Strict docs,
+348 Python fences/imports, 292 CLI forms and 42,153 local references passed.
+This does not certify migration generation, delete-constraint behavior, RLS,
+every relation operation or final candidate readiness.

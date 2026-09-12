@@ -32,6 +32,8 @@ class Post(Model):
     title=fields.String(max_length=200)
     author=fields.ForeignKey(Author,nullable=True,related_name='posts')
     class Meta: table_name='admin_probe_posts'
+example = {'__name__': 'relation_guide_example'}
+exec(Path('relation_example.py').read_text(), example)
 finalize_relations()
 module=types.ModuleType('app.models');module.Author=Author
 sys.modules['app']=types.ModuleType('app');sys.modules['app.models']=module
@@ -70,6 +72,28 @@ async def main():
         null_loaded=(await Post.objects.filter(id=unassigned.id).select_related('author').all())[0]
         passed('eager null relation is None',null_loaded.get_related('author') is None)
         passed('reverse FK filter executes and returns rows',[row.id for row in await author.posts.filter(title='Owned')]==[post.id])
+        models = [example[name] for name in ('BlogAuthor', 'BlogCategory', 'BlogTag', 'BlogPost', 'BlogProfile')]
+        # Test-owned DDL; this does not validate migration discovery or generation.
+        for model in models:
+            columns = [field.get_column_definition() for field in model._fields.values()]
+            definitions = [value for value in columns if value]
+            await db.execute('CREATE TABLE "' + model.__tablename__ + '" (' + ', '.join(definitions) + ')')
+        BlogAuthor, BlogCategory, BlogTag, BlogPost, BlogProfile = models
+        m2m = BlogPost._m2m_fields['tags']
+        await db.execute(m2m.get_join_table_sql())
+        await example['demo']()
+        user = await BlogAuthor.objects.get(email='jane@example.com')
+        blog = await BlogPost.objects.get(title='Getting Started with Python')
+        passed('relation example created the post', await BlogPost.objects.count() == 1)
+        passed('relation example M2M membership', {tag.name for tag in await blog.tags.all()} == {'Tutorial', 'Beginner'})
+        passed('relation example reverse FK', [row.id for row in await user.posts.all()] == [blog.id])
+        profile = await user.profile()
+        passed('relation example reverse O2O', profile.bio == 'Tech writer')
+        category = await BlogCategory.objects.get(slug='tech')
+        passed('relation example self reference', [row.slug for row in await category.children.all()] == ['python'])
+        tag = await BlogTag.objects.get(name='Tutorial')
+        passed('relation example reverse M2M', [row.id for row in await tag.posts.all()] == [blog.id])
+
     finally:
         await db.disconnect()
     print('ADMIN_RELATION_EVIDENCE='+json.dumps({'checks':checks,'package_version':aksara.__version__,'package_path':aksara.__file__}))
@@ -101,6 +125,10 @@ async def main():
                     text = (ROOT / page).read_text()
                     source = re.search(r'```python title="' + re.escape(title) + r'"\n(.*?)```', text, re.DOTALL).group(1)
                     (root / filename).write_text(source)
+                relation_page = (ROOT / "docs/docs/orm/relations.md").read_text()
+                complete = relation_page.split('## Complete relation example', 1)[1]
+                source = re.search(r'```python\n(.*?)```', complete, re.DOTALL).group(1)
+                (root / 'relation_example.py').write_text(source)
                 run = await asyncio.to_thread(
                     subprocess.run, [str(args.python.absolute()), "-I", "-c", PROBE],
                     cwd=root, env=env, capture_output=True, text=True, timeout=60,
@@ -118,7 +146,7 @@ async def main():
         await connection.close()
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False, "disposable_schema_removed": True,
-                     "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, not migrations, HTTP authentication, RLS or M2M execution proof",
+                     "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, plus exact complete relation example with FK/O2O/self/M2M execution; not migrations, HTTP authentication or RLS proof",
                      "page_sha256": {page: hashlib.sha256((ROOT / page).read_bytes()).hexdigest() for page in [*(page for page, _ in SNIPPETS.values()), "docs/docs/orm/relations.md"]},
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")

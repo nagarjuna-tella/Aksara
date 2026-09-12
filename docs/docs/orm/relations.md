@@ -331,13 +331,14 @@ class Post(Model):
 
 ## Self-Referential Relations
 
-Models can reference themselves:
+Models can reference themselves by their explicit registered class name. The
+string `"self"` is not a supported shortcut:
 
 ```python
 class Category(Model):
     name = fields.String(max_length=100)
     parent = fields.ForeignKey(
-        "self",  # or "Category"
+        "Category",  # explicit registered model name
         on_delete=CASCADE,
         nullable=True,
         related_name="children",
@@ -369,8 +370,13 @@ posts = await Post.objects.filter(author=author).all()
 posts = await Post.objects.filter(author__email="jane@example.com").all()
 
 # Posts with a specific tag (M2M)
-posts = await Post.objects.filter(tags__name="python").all()
+tag = await Tag.objects.get(name="python")
+posts = await tag.posts.all()
 ```
+
+Forward M2M traversal in a filter such as `tags__name` is not supported by
+the current query builder. Resolve the tag and use its reverse M2M manager,
+as above.
 
 ### Select Related (Eager Loading)
 
@@ -411,44 +417,51 @@ for post in posts:
 
 ---
 
-## Complete Example
+## Complete relation example
+
+These models use distinct names to avoid collisions with framework models.
+In an application, import them for migration discovery and apply migrations,
+including the M2M junction table, before calling `demo()` on a connected database.
+For a standalone script, call `finalize_relations()` after all declarations and
+before using reverse accessors. The example is not a standalone setup script
+or an authentication implementation.
 
 ```python
 from aksara import Model, fields, CASCADE, SET_NULL
 
-class User(Model):
+class BlogAuthor(Model):
     email = fields.Email(unique=True)
     name = fields.String(max_length=100)
 
-class Category(Model):
+class BlogCategory(Model):
     name = fields.String(max_length=50)
     slug = fields.String(max_length=50, unique=True)
     parent = fields.ForeignKey(
-        "self",
+        "BlogCategory",
         on_delete=CASCADE,
         nullable=True,
         related_name="children",
     )
 
-class Tag(Model):
+class BlogTag(Model):
     name = fields.String(max_length=30, unique=True)
     slug = fields.String(max_length=30, unique=True)
 
-class Post(Model):
+class BlogPost(Model):
     title = fields.String(max_length=200)
     content = fields.Text()
     published = fields.Boolean(default=False)
     
     # Many-to-one: Many posts per author
     author = fields.ForeignKey(
-        User,
+        BlogAuthor,
         on_delete=CASCADE,
         related_name="posts",
     )
     
     # Many-to-one: Many posts per category (optional)
     category = fields.ForeignKey(
-        Category,
+        BlogCategory,
         on_delete=SET_NULL,
         nullable=True,
         related_name="posts",
@@ -456,16 +469,16 @@ class Post(Model):
     
     # Many-to-many: Posts have multiple tags
     tags = fields.ManyToMany(
-        Tag,
+        BlogTag,
         related_name="posts",
     )
     
     created_at = fields.DateTime(auto_now_add=True)
 
-class UserProfile(Model):
+class BlogProfile(Model):
     # One-to-one: Each user has one profile
     user = fields.OneToOne(
-        User,
+        BlogAuthor,
         on_delete=CASCADE,
         related_name="profile",
     )
@@ -476,19 +489,19 @@ class UserProfile(Model):
 # Usage examples
 async def demo():
     # Create user with profile
-    user = await User.objects.create(email="jane@example.com", name="Jane")
-    profile = await UserProfile.objects.create(user=user, bio="Tech writer")
+    user = await BlogAuthor.objects.create(email="jane@example.com", name="Jane")
+    profile = await BlogProfile.objects.create(user=user, bio="Tech writer")
     
     # Create category hierarchy
-    tech = await Category.objects.create(name="Technology", slug="tech")
-    python = await Category.objects.create(name="Python", slug="python", parent=tech)
+    tech = await BlogCategory.objects.create(name="Technology", slug="tech")
+    python = await BlogCategory.objects.create(name="Python", slug="python", parent=tech)
     
     # Create tags
-    tutorial = await Tag.objects.create(name="Tutorial", slug="tutorial")
-    beginner = await Tag.objects.create(name="Beginner", slug="beginner")
+    tutorial = await BlogTag.objects.create(name="Tutorial", slug="tutorial")
+    beginner = await BlogTag.objects.create(name="Beginner", slug="beginner")
     
     # Create post with relations
-    post = await Post.objects.create(
+    post = await BlogPost.objects.create(
         title="Getting Started with Python",
         content="Learn Python basics...",
         author=user,
@@ -501,10 +514,10 @@ async def demo():
     # Query examples
     jane_posts = await user.posts.all()
     tech_posts = await tech.posts.all()  # Direct category only; not descendants
-    tutorial_posts = await Post.objects.filter(tags__name="Tutorial").all()
+    tutorial_posts = await tutorial.posts.all()
     
     # Efficient loading
-    posts = await Post.objects.select_related("author", "category").all()
+    posts = await BlogPost.objects.select_related("author", "category").all()
 ```
 
 ---

@@ -342,3 +342,11 @@ include RELATION001. The new finding's publication follow-up is complete; its
 runtime fix remains separately scoped. Current inventory is seventeen findings.
 Ten installed relation checks and 207 docs tests pass; all affected link/import
 artifacts were refreshed. Final manual/candidate acceptance remains open.
+
+## Complete relation example checkpoint
+
+The complete relation example now executes verbatim in the installed package;
+its stale self-reference and forward-M2M-filter forms were replaced with supported
+APIs. The expanded Admin/relation gate passes 16 checks with owned schema cleanup.
+207 docs tests and all affected docs gates pass. Migration/delete/RLS acceptance
+and full final candidate checks remain distinct from this example proof.
