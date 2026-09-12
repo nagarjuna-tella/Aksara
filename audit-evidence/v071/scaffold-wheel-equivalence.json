@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "packages": [
+    {
+      "version": "0.7.0",
+      "scaffold_sha256": "d5be77cbb3a65f134c00285139a2f4ca5649692a9a2ae58fa3df575f4076acab"
+    },
+    {
+      "version": "0.7.0",
+      "scaffold_sha256": "2455a972df0050029a52aaa815a05586b8bb1d4b3b0ddaa5fc9ce19feb7f945a"
+    }
+  ],
+  "changed_generated_files": [
+    "README.md"
+  ],
+  "files_compared": 18,
+  "baseline_file_sha256": {
+    "requirements.txt": "38680cef9e8c784eb6d5cca78a1dfc74ffcc052949b001c81db35543db257ae8",
+    ".pre-commit-config.yaml": "d344bfdabc034fe0b7344772dbb38d709799aed198581b8ec27c095ea888c951",
+    "pyproject.toml": "fb080a69608b320cee9b6272565fe43a9d61ccf390e155cb8e63b9f0c76c00e1",
+    ".editorconfig": "a4cb982114210df5f0477d9be523c19c12e70dace435059b10b94ab392211bba",
+    "README.md": "5bf391526da864e688b89a0933b7525f3d70e8eab7a95d7e214263da057544b9",
+    ".gitignore": "00ced19a1700ac03e6514f4623db166a7b1ef6b6f316e1c88445f39f0155da0d",
+    ".env": "a5995a4e56de83044ff0e1072e98e9d91824ba0ff50b59fd510c6ba2c5ab7d63",
+    "settings.py": "d41c38fcf34f2fcaabd78e524dfc634677e926673c971a9145fea9c53af0eded",
+    ".env.example": "5de803c803cec035c619ec5433e4955c15756322662ebfdf07c26a944351713d",
+    "main.py": "9e8a5d237ac2e26f8533a2d9f8bcd180025bfa57b84bd5fed171f3bf1eace394",
+    "migrations/__init__.py": "4e15556da0f44835d651b385d9e9be126a54c82048f49d6848a418ac568d8363",
+    "app/models.py": "d2f300678a375a3326c01fb84ef8c84ccc28674707b3e23bf9ac98449790e81c",
+    "app/serializers.py": "9663b9200bae21ecf391ebd46e87fe5faee69a5786d6cf7d93a168028ddf5074",
+    "app/__init__.py": "bd74aa66ed553754570d2754ce7b0c8313b04eef5015f0a22ae7f88b7eb9fcd0",
+    "app/admin.py": "cc63b168295b241160daa5ea87d8df0d693347046ff12f185faa978a3cc20c2d",
+    "app/urls.py": "ca73d951bec627ebe60f4cda567709c6bb09240ff061ba0443f26359a9c39ff1",
+    "app/views.py": "de67e5aed6208bab217eda6653c58afb6e7f6e7c65779a6892bc13e5916f638b",
+    "static/welcome.html": "82f11e95b4a41fda8bd4ccb1f35ec182e2abcc30d77f9198602b4354f7dd2f8e"
+  },
+  "development_file_sha256": {
+    "requirements.txt": "38680cef9e8c784eb6d5cca78a1dfc74ffcc052949b001c81db35543db257ae8",
+    ".pre-commit-config.yaml": "d344bfdabc034fe0b7344772dbb38d709799aed198581b8ec27c095ea888c951",
+    "pyproject.toml": "fb080a69608b320cee9b6272565fe43a9d61ccf390e155cb8e63b9f0c76c00e1",
+    ".editorconfig": "a4cb982114210df5f0477d9be523c19c12e70dace435059b10b94ab392211bba",
+    "README.md": "16669dfa6ecfdaf8965286eedf69c104d17c4af1125fbcf04398915ff02f1113",
+    ".gitignore": "00ced19a1700ac03e6514f4623db166a7b1ef6b6f316e1c88445f39f0155da0d",
+    ".env": "a5995a4e56de83044ff0e1072e98e9d91824ba0ff50b59fd510c6ba2c5ab7d63",
+    "settings.py": "d41c38fcf34f2fcaabd78e524dfc634677e926673c971a9145fea9c53af0eded",
+    ".env.example": "5de803c803cec035c619ec5433e4955c15756322662ebfdf07c26a944351713d",
+    "main.py": "9e8a5d237ac2e26f8533a2d9f8bcd180025bfa57b84bd5fed171f3bf1eace394",
+    "migrations/__init__.py": "4e15556da0f44835d651b385d9e9be126a54c82048f49d6848a418ac568d8363",
+    "app/models.py": "d2f300678a375a3326c01fb84ef8c84ccc28674707b3e23bf9ac98449790e81c",
+    "app/serializers.py": "9663b9200bae21ecf391ebd46e87fe5faee69a5786d6cf7d93a168028ddf5074",
+    "app/__init__.py": "bd74aa66ed553754570d2754ce7b0c8313b04eef5015f0a22ae7f88b7eb9fcd0",
+    "app/admin.py": "cc63b168295b241160daa5ea87d8df0d693347046ff12f185faa978a3cc20c2d",
+    "app/urls.py": "ca73d951bec627ebe60f4cda567709c6bb09240ff061ba0443f26359a9c39ff1",
+    "app/views.py": "de67e5aed6208bab217eda6653c58afb6e7f6e7c65779a6892bc13e5916f638b",
+    "static/welcome.html": "82f11e95b4a41fda8bd4ccb1f35ec182e2abcc30d77f9198602b4354f7dd2f8e"
+  },
+  "normalization": "Generated Studio token value in .env/.env.example only; no executable/config/dependency normalization",
+  "runner_sha256": "5237f4eb6f61c0ab453741eb6b94ae95286e8a2ba20e9b0b6bbcf04e45691daf"
+}

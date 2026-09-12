@@ -757,3 +757,31 @@ application code or framework runtime was changed. A separately scoped scaffold
 packaging patch should establish an intentional application package layout and
 verify editable and wheel installation. Full fresh-wheel execution of the
 corrected README startup path remains required before candidate readiness.
+
+## Current-Wheel Scaffold Startup Checkpoint
+
+A development wheel built at `f43c198` (still version `0.7.0`, not a release
+candidate) is identified by SHA256 in `development-wheel-build.json`. Installed
+in an isolated Python 3.11 environment, it generated a project whose exact README
+dependency-install command succeeded. Editing only DATABASE_URL in its `.env`
+selected a unique schema in local `aksara_test`; `makemigrations --app app.models`
+and `migrate` succeeded on the generated stubs. `aksara dev --no-reload` on an
+ephemeral port served welcome/docs/Admin login/catalog, while MCP transport and
+Studio remained 404. The process stopped and the schema was removed and checked.
+Doctor returned **PARTIAL (exit 1)** solely for disabled Studio and no AI provider;
+database, registry and migration checks passed. This is not production Doctor
+release readiness, interactive dbsetup or reload-watcher validation.
+
+`scaffold-startup.json` records these five checks. Comparing generated output
+against the public 0.7.0 wheel verified **18 files**, with **only README changed**.
+The comparison normalizes only generated Studio tokens, not executable code,
+settings or dependency declarations (`scaffold-wheel-equivalence.json`).
+
+The six-stage progressive tutorial also ran against this development wheel:
+**86 test executions**, **28 tests in the final stage**, with required local
+PostgreSQL and an ephemeral restricted application role. The separate
+`development-wheel-tutorial.json` preserves that current-wheel result without
+overwriting historical public-wheel evidence. Its earlier documented limits
+remain: no real external provider, full crash campaign or production upgrade
+claim. Freshness tests bind these results to templates, guide files and runners.
+The SCAFFOLD-001 editable packaging failure remains documented and unfixed.
