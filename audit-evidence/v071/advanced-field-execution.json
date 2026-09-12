@@ -1,0 +1,30 @@
+{
+  "checks": [
+    "all JSON guide blocks execute",
+    "all Array guide blocks execute",
+    "all Vector guide blocks execute",
+    "nested JSON query returns created row",
+    "JSON round trip str",
+    "JSON round trip float",
+    "JSON round trip bool",
+    "JSON round trip dict",
+    "nonfinite JSON rejected before insertion",
+    "array append persists through save",
+    "array null bool wrong type and nested values rejected",
+    "vector reload has configured dimensions",
+    "vector dimension bool nonfinite and empty values rejected",
+    "vector queryset update persists",
+    "explicit vector CASE cast persists"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "pgvector_version": "0.8.2",
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
+  "page_sha256": {
+    "docs/docs/orm/fields.md": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4"
+  },
+  "runner_sha256": "22c4acafd2f7b0af6be65b4d291304c6c4d1fb774d00438c9dd4ed124e1c5a44"
+}

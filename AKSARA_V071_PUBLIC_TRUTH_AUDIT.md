@@ -45,7 +45,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk create, text update and upsert now have installed evidence; Boolean/timestamp bulk_update fails (BULK-001). Candidate coverage remains open. |
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
-| Fields | Yes | Stable declared types | `aksara.fields` | Partial audit | Ticket desk | String/Boolean/UUID slice | Advanced Array/Vector/JSON contracts require their separate field suite. |
+| Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
 | Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
 | Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Core journey rewritten | Ticket desk; upgrade recipe | Additive relation and tenant backfill | Full historical/data-bearing upgrade and failure campaigns remain candidate gates. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
@@ -1032,3 +1032,34 @@ upstream AnyIO deprecation warning). Ruff, strict MkDocs, 569 Python-fence
 syntax/import checks, 335 CLI parses with 11 exclusions, and 47,160 local
 rendered links/assets passed. The index records 46 scoped artifacts with no
 stale linked inputs. Production code and release behavior remain unchanged.
+
+## Advanced Field Persistence Evidence
+
+All seven Python blocks in the field reference's JSON, Array and Vector sections
+now execute against the installed public 0.7.0 wheel and local PostgreSQL with
+an existing pgvector extension. The runner applies an autodetected CreateTable
+operation immediately after each documented model declaration, supplying the
+page's explicit prerequisite of an installed schema. It executes the remaining
+statements unchanged, including the JSON nested-key query and Array append/save.
+
+**15 checks** also cover JSON scalar/nested round trips, nonfinite JSON rejection,
+Array invalid element shapes/types, Vector reload and invalid dimensions/values,
+queryset Vector update, and Vector's explicitly cast CASE update. This does not
+contradict BULK-001: the failing Boolean/timestamp branches do not use that cast.
+The gate requires pgvector rather than silently skipping it; its installed
+version is recorded. It uses an isolated schema before the extension's namespace
+in the search path and verifies schema removal afterward.
+
+This is real persistence evidence for the documented examples and selected
+negative cases, not all write paths, API serializers, RLS, extension installation
+or complete migration history. No documentation or runtime change was needed
+to make the seven blocks pass. The capability matrix now links this evidence
+instead of describing only the original String/Boolean/UUID slice.
+
+Advanced-field checkpoint validation: **91 related Array/JSON/Vector policy
+regressions passed** with required local PostgreSQL enabled; **171 docs/packaging
+tests passed** with one upstream AnyIO deprecation warning. Ruff and whitespace
+checks passed. Public documentation bytes were unchanged, so the existing strict
+docs/link artifacts remain applicable; the evidence index has 47 artifacts and
+no stale linked inputs. The known Boolean/timestamp bulk-update defect remains
+unfixed and separately reported.

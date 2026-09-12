@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "3063003089ad74dd73a298a74ac5445161a4d993",
+  "reviewed_head": "7fe75c9dd64518f601700546e2b07fe0b6d4bb25",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -394,6 +394,15 @@
       "recorded_result": true,
       "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, not migrations, HTTP authentication, RLS or M2M execution proof",
       "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/advanced-field-execution.json",
+      "sha256": "c49e646c6c8a518f1dc342c940dfd2ead671d95eafeb3bfd8eeef0417eae9572",
+      "recorded_result": true,
+      "scope": "All seven JSON/Array/Vector guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
+      "checked_linked_page_hashes": 1,
       "stale_linked_pages": [],
       "historical_head": null
     },
