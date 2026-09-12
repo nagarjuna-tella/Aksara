@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "852dc854310e5bcbe84dc69c17ec9b5cb8948d88",
+  "reviewed_head": "64cd5d52c993a6a2980f788f7a23dac07f137e09",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "25a59ae2010faf21d6521100a576880bb72c6ccc3c46aab787f7faeb06d7117c",
+    "sha256": "66b4ef2f0bde432b150d9432a1d77378b08d5dc4fa64243f8068144770fc9a3f",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -845,7 +845,7 @@
     },
     {
       "artifact": "audit-evidence/v071/runtime-scope.json",
-      "sha256": "d05f2be5752d59fe9524afb00f643528ac3acac4b33d7fe7692068a2494a1d85",
+      "sha256": "cd4b7328324c3b4d998a203ba0561e0d070fb9206f042e316a9a32ae496fd53f",
       "recorded_result": true,
       "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
       "checked_linked_page_hashes": 3,

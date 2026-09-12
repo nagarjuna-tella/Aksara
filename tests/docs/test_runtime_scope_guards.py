@@ -29,6 +29,10 @@ def startapp(app_name):
     assert normalize(source) != normalize(changed_generation)
     executable_help_argument = source.replace('"Original text"', 'run_something()')
     assert normalize(source) != normalize(executable_help_argument)
+    interpolated = source.replace('"Original text"', 'f"Original {lookup(\'first\')}"')
+    assert normalize(interpolated) != normalize(interpolated.replace("'first'", "'second'"))
+    rendered = source.replace('"Original text"', 'render("first")')
+    assert normalize(rendered) != normalize(rendered.replace('"first"', '"second"'))
     extra_call = source + '\n    another_action()\n'
     assert normalize(source) != normalize(extra_call)
     assert normalize(source) != normalize(source.replace('create_app_scaffold(app_name)', 'create_app_scaffold("different")'))
@@ -43,3 +47,20 @@ def test_template_normalizer_rejects_source_and_name_changes():
     assert normalize(source) == normalize(source.replace('Original', 'Updated'))
     assert normalize(source) != normalize(source.replace("'source': 'blog'", "'source': 'crm'"))
     assert normalize(source) != normalize(source.replace("'name': 'blog'", "'name': 'crm'"))
+
+
+def test_readme_normalizer_preserves_executable_interpolations():
+    normalize = MODULE['normalized']
+    source = 'def get_readme_template(project_name):\n    return f"Original {project_name}"\n'
+    assert normalize(source) == normalize(source.replace('Original', 'Updated instructions'))
+    for expression in (
+        'other_name',
+        'run_something(project_name)',
+        'project_name!r',
+        'project_name:>20',
+        'project_name:{width()}',
+    ):
+        changed = source.replace('{project_name}', '{' + expression + '}')
+        assert normalize(source) != normalize(changed), expression
+    assert normalize(source) != normalize(source.replace('{project_name}', '{project_name}{project_name}'))
+    assert normalize(source) != normalize(source.replace('{project_name}', 'literal project name'))

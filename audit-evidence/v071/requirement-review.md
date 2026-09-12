@@ -409,3 +409,11 @@ Reopened the cited FastAPI features, Temporal workflow execution and LangGraph
 persistence primary pages on September 12. Their category boundaries remain
 consistent with the report; this is a three-source spot check, not a fresh
 26-source research campaign or evidence of customer demand.
+
+## Current source-scope verification
+
+E4: full production diff read against v0.7.0; three instruction-only files and
+no dependency change. Tightened the AST normalizer to preserve executable
+f-string content and nested CLI expression arguments. Negative controls and
+the current branch pass; 208 docs/packaging tests and Ruff pass. Final candidate
+classification/version and runtime/generated-output gates remain open.

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "pass": true,
   "baseline": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
-  "reviewed_head": "f2ac29820c9be47b7734e25956df91cc67dec963",
+  "reviewed_head": "64cd5d52c993a6a2980f788f7a23dac07f137e09",
   "changed_production_files": [
     "aksara/cli/main.py",
     "aksara/cli/scaffold.py",
@@ -21,5 +21,5 @@
     "aksara/cli/main.py": "3e39eb15de76617effa5cb1fb8c24ec9e1f757e1b7d73438067d37e7b0803e8c",
     "aksara/cli/templates/__init__.py": "91ba33b2db8642666d5d9b636e38fde016cfda2ea46254326f02d393e63b80a3"
   },
-  "runner_sha256": "e5aedd2a17ba194f25ac035f7dc9c2d3d8f38cbb1a58509b4d2e784955f92b62"
+  "runner_sha256": "9400c91735b3cd3ca1525e36d553ac57257415d55178662bceab68d1e7bf057a"
 }

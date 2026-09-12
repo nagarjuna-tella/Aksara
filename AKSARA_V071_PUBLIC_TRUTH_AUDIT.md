@@ -2274,3 +2274,22 @@ claiming candidate acceptance. Consolidated later defect notes into Technical
 Debt and made correctness prerequisite to the reference-path investment.
 The proposed v0.8 direction, PostgreSQL-first decision and bounded 1.0 remain
 unchanged. The public roadmap already gives correctness priority.
+
+## Executable interpolation scope audit (2026-09-12)
+
+Reviewed the full production-source and pyproject diff against v0.7.0. Only
+three production files differ: scaffold README prose, startproject/startapp
+help/output text and four template descriptions. Settings, imports, generated
+application code, command options/defaults and dependencies are unchanged.
+
+The source-audit normalizer previously erased the entire README f-string; it
+now preserves interpolation expressions, conversions and format specifications.
+CLI text normalization also preserves expressions and nested call arguments.
+Negative controls reject changed expressions, function calls, conversions,
+format specs, interpolation multiplicity/removal and nested string arguments.
+The stricter audit still passes the current branch against the release.
+
+Three focused guard tests and the broader 208-test docs/packaging suite pass
+(one dependency warning); Ruff passes. runtime-scope.json is regenerated.
+This strengthens current no-functional-change evidence; final candidate version,
+generated-file equivalence and runtime regression remain separately required.

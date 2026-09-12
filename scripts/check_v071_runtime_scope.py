@@ -20,7 +20,12 @@ def normalized(source):
     assert len(matches) == 1
     returns = [n for n in ast.walk(matches[0]) if isinstance(n, ast.Return)]
     assert len(returns) == 1 and isinstance(returns[0].value, ast.JoinedStr)
-    returns[0].value = ast.Constant(value="DOCUMENTATION_TEMPLATE")
+    # Ignore prose, but preserve every interpolation, conversion and format spec.
+    # Evaluating an f-string can execute code even when its result is a README.
+    returns[0].value.values = [
+        value for value in returns[0].value.values
+        if isinstance(value, ast.FormattedValue)
+    ]
     return ast.dump(tree, include_attributes=False)
 
 
@@ -30,6 +35,13 @@ class HelpStrings(ast.NodeTransformer):
     def visit_Constant(self, node):
         if isinstance(node.value, str):
             return ast.Constant(value="HELP_TEXT")
+        return node
+
+    def visit_FormattedValue(self, node):
+        # Expressions and their literal arguments are executable, not help text.
+        return node
+
+    def visit_Call(self, node):
         return node
 
 
