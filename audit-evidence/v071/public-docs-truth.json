@@ -3,7 +3,7 @@
   "assessment": "READY FOR HUMAN REVIEW",
   "candidate_ready": true,
   "input_integrity_pass": true,
-  "reviewed_head": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9",
+  "reviewed_head": "6a2a4a08708fb9d82baa67143875f4121a3f63d4",
   "package_version": "0.7.1",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [

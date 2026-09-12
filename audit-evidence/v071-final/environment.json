@@ -13,7 +13,10 @@
   "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
   "hosted_postgresql": {
     "version": "16",
-    "status": "pending"
+    "status": "pass",
+    "validated_head_sha": "6a2a4a08708fb9d82baa67143875f4121a3f63d4",
+    "checks_passed": 21,
+    "checks_total": 21
   },
   "platform": "macOS-26.6.2-arm64-arm-64bit",
   "mcp_dependency": "mcp>=2.0.0,<2.1.0",
@@ -66,5 +69,5 @@
     "github_release": false,
     "pypi": false
   },
-  "scope": "Final local source and artifact environment. Hosted PostgreSQL 16 remains pending until the finalization PR runs."
+  "scope": "Final source and artifact environment. Hosted PostgreSQL 16 validation passed on the finalization PR evidence head."
 }

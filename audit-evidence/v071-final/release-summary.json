@@ -2,7 +2,7 @@
   "schema_version": 1,
   "release": "v0.7.1",
   "package_version": "0.7.1",
-  "status": "local_validation_passed_hosted_pending",
+  "status": "ready_for_v0.7.1_release",
   "merged_candidate_base_sha": "c84c1a3a40c4f7868ce536b242ac537f87f5db9c",
   "validation_source_sha": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9",
   "no_functional_change": {
@@ -72,13 +72,16 @@
     "performance_invariants": 7
   },
   "hosted_ci": {
-    "status": "pending",
-    "postgresql": "16"
+    "status": "pass",
+    "postgresql": "16",
+    "validated_head_sha": "6a2a4a08708fb9d82baa67143875f4121a3f63d4",
+    "checks_passed": 21,
+    "checks_total": 21
   },
   "publication": {
     "tag": "absent",
     "github_release": "absent",
     "pypi_0_7_1": "absent"
   },
-  "scope": "Final v0.7.1 local release validation. Publication is not authorized; hosted finalization PR validation remains required."
+  "scope": "Final v0.7.1 source, artifact, and hosted validation. Publication is not authorized; human merge and merged-tree verification remain required."
 }

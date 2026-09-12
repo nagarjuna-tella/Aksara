@@ -2,12 +2,13 @@
 
 ## Recommendation
 
-**READY FOR HOSTED FINALIZATION REVIEW.**
+**READY FOR v0.7.1 RELEASE.**
 
 The exact reviewed and merged `0.7.1rc1` documentation/DX candidate is promoted
 to package version `0.7.1`. All local release gates pass against fresh final
-artifacts. Hosted PostgreSQL 16 and the finalization PR checks remain pending.
-No tag, GitHub Release, or PyPI publication has occurred.
+artifacts. All 21 hosted checks on the finalization PR's validated evidence head
+pass, including PostgreSQL 16. No tag, GitHub Release, or PyPI publication has
+occurred.
 
 ## Evaluated release source
 
@@ -50,7 +51,7 @@ have different commit identities.
 | Python 3.11 latest | FastAPI 0.141.1 / Starlette 1.6.0 | **PASS:** 8,389 passed, 2 skipped | [`record`](audit-evidence/v071-final/matrix-py311-latest.json), [`log`](audit-evidence/v071-final/matrix-py311-latest.log) |
 | Python 3.14 minimum | FastAPI 0.136.1 / Starlette 1.0.1 | **PASS:** 8,389 passed, 2 skipped | [`record`](audit-evidence/v071-final/matrix-py314-minimum.json), [`log`](audit-evidence/v071-final/matrix-py314-minimum.log) |
 | Python 3.14 latest | FastAPI 0.141.1 / Starlette 1.6.0 | **PASS:** 8,389 passed, 2 skipped | [`record`](audit-evidence/v071-final/matrix-py314-latest.json), [`log`](audit-evidence/v071-final/matrix-py314-latest.log) |
-| Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PENDING:** finalization PR not yet opened | To be recorded after hosted validation |
+| Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks on `6a2a4a08708fb9d82baa67143875f4121a3f63d4` | [`hosted-ci.json`](audit-evidence/v071-final/hosted-ci.json) |
 | Durable operation campaign | Durable and production-bound invariant suites | **PASS:** 258 passed | [`durable-targeted.log`](audit-evidence/v071-final/durable-targeted.log) |
 | Invariant prototype | Production-bound v0.7 invariants | **PASS:** 24 passed | [`invariant-prototype.log`](audit-evidence/v071-final/invariant-prototype.log) |
 | MCP | Protocol, lifecycle, schema, credential, and diagnostic boundary tests | **PASS:** 68 passed | [`mcp-targeted.log`](audit-evidence/v071-final/mcp-targeted.log) |
@@ -64,7 +65,7 @@ have different commit identities.
 | Static ratchet | Python 3.11.15; Ruff 0.16.6 and mypy 2.3.1 | **PASS:** Ruff 7,207 <= 7,218; mypy 465 <= 501 | [`static-analysis.log`](audit-evidence/v071-final/static-analysis.log) |
 | Bandit | Production source, high-severity gate | **PASS:** no high-severity findings | [`bandit.log`](audit-evidence/v071-final/bandit.log) |
 | Dependency audit | Final dependency graph | **PASS:** no known vulnerabilities | [`pip-audit.log`](audit-evidence/v071-final/pip-audit.log) |
-| Secret scan | Exact intended finalization tree | **PASS:** Gitleaks 8.28.0 scanned 13.23 MB with no leaks found | `audit-evidence/v071-final/gitleaks.log` and `.sarif` |
+| Secret scan | Exact intended finalization tree | **PASS:** Gitleaks 8.28.0 scanned 13.30 MB with no leaks found | `audit-evidence/v071-final/gitleaks.log` and `.sarif` |
 | Package validation | Fresh sdist, wheel from sdist, and Twine | **PASS** | [`package-build.log`](audit-evidence/v071-final/package-build.log), [`twine.log`](audit-evidence/v071-final/twine.log) |
 | Installed package | Isolated final wheel, generated app, PostgreSQL, official MCP client | **PASS:** 15 checks | [`installed-package-gate.json`](audit-evidence/v071-final/installed-package-gate.json) |
 | Packaged Support Desk | Wheel-only app, restricted role, RLS, REST/MCP/durable journeys | **PASS:** 66 checks | [`support-desk-gate.json`](audit-evidence/v071-final/support-desk-gate.json) |
