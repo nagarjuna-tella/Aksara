@@ -1226,11 +1226,11 @@
     },
     {
       "path": "docs/docs/security/authentication.md",
-      "sha256": "20028e1ad7ccd1ae6e117fcf4fa615fbdf7a51d41058ee34038dbc4bb3700333",
+      "sha256": "7b0801b27c400f4bcf01b11a6b02746e85ccb1c19d1c00de52b8f1c9ec54bac6",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 83
+      "lines": 90
     },
     {
       "path": "docs/docs/security/field-level-permissions.md",

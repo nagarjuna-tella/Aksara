@@ -443,3 +443,10 @@ a usable pool after cleanup=True on normal and exceptional exit. The control
 cleanup=False path disconnects. Five checks pass with explicit failed-runtime
 flags and owned-schema cleanup. This closes the source-only evidence gap;
 it neither fixes the defect nor proves all ORM/HTTP fixture paths.
+
+## Identity-path reading checkpoint
+
+A8/A10/C6: six identity/security pages reviewed together. Existing account/owner
+evidence remains source-current; no new credential-provider or RLS proof is
+inferred. Security authentication now links directly to the implementation
+guide, permission hooks and conceptual map. Other reviewed content retained.

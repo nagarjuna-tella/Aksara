@@ -2345,3 +2345,19 @@ negative flags remain false; the harness closes its connections and verifies
 schema removal. This is not an HTTP/model-ORM/RLS or sustained leak-rate test.
 No production fix is included; recommend a separately scoped transaction-binding
 and cleanup patch. Existing public fixture-ownership guidance remains accurate.
+
+## Identity and permission manual review (2026-09-12)
+
+Read API authentication/permissions, security authentication, field permissions,
+multi-tenancy and security overview completely. The six-page path distinguishes
+credential verification from Principal construction, user-shaped compatibility
+state from policy identity, synchronous request/object hooks from list filtering,
+and tenant declarations from restricted-role forced RLS. Account/session and
+explicit owner examples have 19 installed checks in auth-permission-execution;
+the evidence scope does not claim a complete external identity-provider login.
+
+Added links from the security model to the application adapter/permission guides
+and conceptual boundary. Retained the other five pages after reading: they
+state custom-path responsibilities, ordinary task limits, field enforcement
+scope and diagnostic limits without requiring the ADR. This closes the missing
+security-to-implementation navigation, not a new authentication capability.

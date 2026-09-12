@@ -1,5 +1,12 @@
 # Authentication and Principals
 
+For application setup, follow [authentication and request identity](../api/authentication.md)
+and the [permissions guide](../api/permissions.md). They explain credential
+verification, the required request state and synchronous permission hooks.
+This page describes the security model; its identity labels do not install an
+authentication adapter. See [application boundaries](../concepts/application-boundaries.md)
+for the relationship between Principal, policy, tenancy and delayed work.
+
 ## Principal Model
 
 Aksara represents actors through a centralized `Principal` object:
