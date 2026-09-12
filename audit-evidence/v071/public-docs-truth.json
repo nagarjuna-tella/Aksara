@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "1f535abe111819902c385e043c08f670a598acdf",
+  "reviewed_head": "9f3a2660e5237104b6e585e8243036197e9997ea",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "b3a1d0c21572087257696031029c3b40c3b97e6561a8a101584651d15554a25d",
+    "sha256": "173ca2c9a7d1934e06202791aceaf487f8a0685463e5c3b787d9af45cd7738e9",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "27553322531fc8a39f4e97e73d7e24023a53366babe3ed78ead5eadd430a09cf",
+      "sha256": "41ed5c709b22732771954b30d99990555c321fbf1c65c6c30c363a2cc3bfba77",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -611,10 +611,10 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "a661f937ac61a863f5a8cc5823cdbdff66b940489037ed752325bb84d863308c",
+      "sha256": "f2afef066e44018847a5f641c5196ab7080b4a399549ae59480f8322a5aa34ef",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
-      "checked_linked_page_hashes": 7,
+      "checked_linked_page_hashes": 8,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -665,7 +665,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "8c91867732511073ba737e5d7938e28af36d1e335958a0dfb956872768e46bb9",
+      "sha256": "5f3ae5200f6d9bcb9dbe88384aeee51d46da0477cd55b5ba5e177ce1b5a2ad3d",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -809,7 +809,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "8b31a2e9fc68b9d1447ec640d7b805853edaa64b6bb754c8673af057d9fcceb8",
+      "sha256": "da19dbd402c3c9a2a1289da4c0e32dfdc1f2f6dda4bfb03104ae080c58070a3c",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -858,6 +858,15 @@
       "recorded_result": true,
       "scope": "Read the artifact and audit report for scope; no inferred pass",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/setup-doc-execution.json",
+      "sha256": "aa0fe1920ab2ea1517363ebba628792241a0c18440b8fe74d00505f2487035bf",
+      "recorded_result": true,
+      "scope": "Installed version/package inspection, real CLI file generation, interactive existing-database dbsetup, exact read-only PostgreSQL probe and URL precedence. No server provisioning, new database creation, operating-system installer, source editable install, production role, RLS or candidate certification.",
+      "checked_linked_page_hashes": 5,
       "stale_linked_pages": [],
       "historical_head": null
     },

@@ -1,6 +1,6 @@
 # Runtime compatibility
 
-The v0.6 release line supports Python 3.11–3.14. The release matrix runs
+The v0.7 release line retains support for Python 3.11–3.14. The release matrix runs
 Python 3.11 and 3.14 with PostgreSQL 16 plus pgvector at both supported web
 dependency boundaries. The packaged reference gate also runs against local
 PostgreSQL 18.4. This is the tested matrix, not certification of every operating
@@ -40,12 +40,12 @@ session context and return owned pool capacity. Cleanup errors are attached to
 an existing error rather than replacing it. Real-pool regressions exercise
 repeated failures with a one-connection pool.
 
-The v0.6 production profile also requires migrations as a separate deployment
+The production profile also requires migrations as a separate deployment
 step, a non-superuser/non-BYPASSRLS application role, forced RLS for tenant
 tables, and a clean `aksara doctor production-check --release`. Studio,
 process-local investigation state, and autonomous AI durability remain outside
 the production stability guarantee. Investigation state does not survive
 restart or provide multi-worker continuity.
 
-See the [v0.6 stability and production contract](../roadmap/v0-6-stability-contract.md)
-for the complete boundary.
+See the [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) and
+[production guide](../tutorials/deployment.md) for the current boundary.

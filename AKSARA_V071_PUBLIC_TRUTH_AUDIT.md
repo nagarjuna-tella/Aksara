@@ -69,7 +69,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 308 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 302 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
@@ -1571,3 +1571,71 @@ shortcut; using its general `request` method fixed the test harness before the
 successful installed and focused runs. No production source changed in this
 review. Whole-site semantic/readability acceptance and candidate gates remain
 open; this five-page slice does not stand in for them.
+
+## Installation, layout and database setup review
+
+Reviewed installation.md, project-layout.md, database-setup.md,
+running-your-app.md and reference/runtime-compatibility.md against package
+metadata, the CLI, scaffold generators, settings precedence and Database
+construction/lifecycle. The installed setup gate records current hashes for
+all five pages in setup-doc-execution.json.
+
+### PT-050 / P1 — starter instructions diverged from generated files
+
+Installation troubleshooting used `pip show/uninstall aksara` rather than the
+actual distribution `aksara-framework`. The source clone and subsequent `cd`
+used different case, extras were unquoted, and optional development/runtime
+package roles were mixed. The corrected guide uses a virtual environment, the
+actual distribution, quoted extras and an explicit source directory. It points
+to one configuration reference and the full Ticket Desk tutorial.
+
+The layout guide omitted generated files, supplied unrelated replacement
+entry/settings code and invalid manual migration constructors, and claimed
+`startapp` created urls.py and a route-registration function. The installed CLI
+now verifies the exact trees parsed from the page: 18 basic files and five new
+application files, with no settings or route edits. The guide explains stubs,
+explicit registration, tests and the separate flat-domain layouts without
+inventing another application tutorial.
+
+`startapp` itself still prints legacy AksaraSettings/apps instructions. This is
+remaining CLI instructional debt, explicitly identified in the page and A18
+checkpoint. Its text must be corrected within the help-only scope before
+candidate acceptance; generation/runtime semantics need not change.
+
+### PT-051 / P1 — database and startup examples overstated behavior
+
+The database guide passed unsupported pool_min_size/pool_max_size keywords to
+Database, presented additional Database instances as transparent replicas,
+suggested automatic environment-file variants and showed a health handler that
+returned raw database errors with HTTP 200. Fixed traffic-based pool sizing and
+libpq-style parameter assumptions were not a supported performance/driver
+contract. The replacement identifies all three pool interfaces and the
+singleton/lifecycle boundary, provides a read-only standalone connectivity
+probe and links real migrations/RLS/role separation to their canonical guides.
+
+The interactive helper was executed against the existing local aksara_test
+database. It connected through postgres, retained the existing database and
+wrote only a temporary .env. The exact documented probe then loaded that file,
+ran SELECT 1 and closed its pool. A separate process verified that
+AKSARA_DATABASE_URL overrides DATABASE_URL and the file value. No application
+table, role or migration was created by this setup gate.
+
+The running guide distinguishes development surfaces from readiness, describes
+the generated health endpoint's actual limitations, separates migration-role
+and application-role commands and avoids promising cleanup after forced process
+loss. The compatibility page now names the v0.7 line and current contract while
+preserving the already tested Python/web boundaries.
+
+### Validation
+
+- `.venv/bin/python scripts/check_setup_docs.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/setup-doc-execution.json`, with the local database supplied privately: five checks passed. This is an installed public 0.7.0 environment; no framework imports from the checkout. It verifies CLI/file/database paths, not OS installation, new database creation, source editable installation or production RLS.
+- The reused baseline environment initially lacked pip. Standard-library `ensurepip` supplied it, after which the documented package inspection succeeded. This environment preparation did not change Aksara or its runtime dependencies.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py tests/cli/test_dbsetup.py tests/dx/test_startapp_scaffold.py tests/dx/test_scaffold_importable.py -q`: 283 passed, one upstream deprecation warning. The first run correctly rejected stale external-link hashes; the final run passed after regeneration.
+- Ruff passed for check_setup_docs.py, check_external_doc_links.py and test_setup_evidence.py.
+- Installed documentation checks: 388 Python fences/imports plus selected behavior contracts; 302 CLI forms, zero errors and 11 exclusions.
+- Strict MkDocs passed. Rendered validation checked 162 pages and 43,023 local links/assets with zero errors.
+- The selected external-link gate was expanded to database-setup.md and regenerated: all 42 targets reachable. The official PostgreSQL download page was inspected directly for the platform-installer link; no untested OS installer commands are presented as local execution evidence.
+
+No production source, migration or runtime defaults changed in this review.
+Whole-site review, the identified startapp help correction, final subitem
+acceptance and actual candidate release gates remain required.

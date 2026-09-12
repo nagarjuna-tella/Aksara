@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGES = (
     'README.md', 'docs/docs/index.md',
     'docs/docs/getting-started/installation.md',
+    'docs/docs/getting-started/database-setup.md',
     'docs/docs/tutorials/deployment.md', 'docs/docs/roadmap.md',
     'docs/docs/reference/runtime-compatibility.md',
     'AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md',
