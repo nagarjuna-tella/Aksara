@@ -1,0 +1,29 @@
+{
+  "checks": [
+    "built-in SQL representation inherited",
+    "normalization round trip",
+    "nullable conversion preserved",
+    "invalid type format and length rejected",
+    "autodetected schema uses VARCHAR24",
+    "save preparation updates instance",
+    "database reload uses conversion",
+    "generated unique constraint rejects normalized duplicate",
+    "model rejects nonnullable value",
+    "query update applies conversion",
+    "bulk create prepares and reloads",
+    "text bulk update converts database value",
+    "upsert converts insert values",
+    "upsert normalized conflict returns existing"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Exact field/model conversion, autodetected CreateTable operation and PostgreSQL persistence paths; admin-role fixture, not full migration CLI/history, RLS, HTTP serializer or arbitrary custom-type support",
+  "page_sha256": {
+    "docs/docs/advanced/custom-fields.md": "d61b7a0302ed390ace1f255210d632e2d2a6a6ca130d586337ba9a847dc4e169",
+    "docs/docs/orm/bulk-operations.md": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344"
+  },
+  "runner_sha256": "edf5b79ef945305419205c7d51c53262b02c8bf91bc1b9e44025fd058ab56c91"
+}

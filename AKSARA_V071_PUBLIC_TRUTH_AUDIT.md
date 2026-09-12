@@ -945,3 +945,35 @@ warning. Ruff, strict MkDocs, 578 Python-fence syntax/import checks, 335 literal
 CLI parses (11 explicit exclusions), and 47,596 local rendered links/assets
 passed. The index records 44 artifacts with no stale linked inputs. Candidate
 readiness remains unproven; the production defect needs its own patch scope.
+
+## Custom Field Extension Guide
+
+**PT-035 / P1:** the custom-field page taught nonexistent `from_db()`,
+`get_db_type()`, `contribute_to_class()` and Django-style `deconstruct()` hooks,
+`self.null`/`null=True`, generic `Field[T]`, and invented encrypted-field
+configuration. Several examples could not even instantiate the abstract base
+field. Removed these recipes and replaced them with one complete built-in
+String subclass and model, using the actual synchronous conversion and async
+preparation contracts. The guide distinguishes validation from normalization,
+model validation from HTTP input, and SQL representation from custom migration
+or serializer support.
+
+The exact field and model execute against the public 0.7.0 wheel and PostgreSQL:
+**14 checks** cover conversion, invalid inputs, nullable conversion, autodetected
+VARCHAR(24) schema, normalized uniqueness, save/reload, direct update, text bulk
+update, bulk create and upsert. The fixture applies the autodetected CreateTable
+operation; it does not prove the entire migration CLI/history workflow or HTTP
+serializer behavior. The first upsert probe omitted the inherited non-null
+`updated_at`; supplying it, as required by the existing upsert contract, fixed
+the fixture. This requirement is now explicit in the guide. No runtime change
+was made to accommodate the example. The broader built-in field reference audit
+remains incomplete.
+
+Custom-field checkpoint validation: **469 tests passed** across docs/packaging
+and the four field unit suites (`test_fields`, `test_field_params`,
+`test_fields_new`, `test_fields_extended`), with one upstream AnyIO deprecation
+warning. The installed probe separately supplies real PostgreSQL evidence.
+Ruff, strict MkDocs, 569 Python-fence syntax/import checks, 335 CLI parses
+(11 explicit exclusions), and 47,155 local rendered links/assets passed.
+The truth index contains 45 artifacts with no stale linked inputs; this remains
+a pre-candidate checkpoint.

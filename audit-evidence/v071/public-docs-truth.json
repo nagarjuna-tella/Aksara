@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "ab2d95619dd75096194c5a5ecaf5808da20146ca",
+  "reviewed_head": "747835609e57242a3958802eb0f275e6acffb586",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -453,7 +453,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "e99640c91132abba8f340bf29e7e49657f39a758bd450e1ff9da41ac4c3c6f9f",
+      "sha256": "a0eea3eaea5917981a1b113ece807674c82f011580f8f835a6193b36a5670b29",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -475,6 +475,15 @@
       "recorded_result": "not a boolean gate",
       "scope": "Anonymous in-process HTTP request to inert custom action; no database, network provider, or data mutation",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/custom-field-execution.json",
+      "sha256": "998c61c63652806a559894d7c0902eed616dd4e3fc48fdef0577308231cc0a76",
+      "recorded_result": true,
+      "scope": "Exact field/model conversion, autodetected CreateTable operation and PostgreSQL persistence paths; admin-role fixture, not full migration CLI/history, RLS, HTTP serializer or arbitrary custom-type support",
+      "checked_linked_page_hashes": 2,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -570,7 +579,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "6109520bd7b617c8c072b54428620045afbd0914c3b10e70707aac4ce12eea46",
+      "sha256": "161aea4c3574c86d361fdd67a2a6313ff86372482e4420da7572077611ae61d3",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -669,7 +678,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "b342cde40c1b4d71e5310ec88a941decd61a91c24566d11d1aac5d8d5ccd9dcb",
+      "sha256": "ec345a2a446c7618483ca2fa2804bd8b495144d02b1b4039b33782ab8aaa587f",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
