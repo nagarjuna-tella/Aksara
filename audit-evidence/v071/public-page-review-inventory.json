@@ -1,0 +1,1426 @@
+{
+  "schema_version": 1,
+  "base_sha": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
+  "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
+  "pages": [
+    {
+      "path": "README.md",
+      "sha256": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 217
+    },
+    {
+      "path": "docs/docs/admin/actions.md",
+      "sha256": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 95
+    },
+    {
+      "path": "docs/docs/admin/admin-permissions.md",
+      "sha256": "d0964f3db14ea1423c0b4615094d65ddb9c8fb20dda421302046aa87f2feb744",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "admin-relation-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 272
+    },
+    {
+      "path": "docs/docs/admin/admin-site.md",
+      "sha256": "492b4b2572e7d990f7be1acfc209d0cc332edf1826b6c06280641605b8e7e558",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 237
+    },
+    {
+      "path": "docs/docs/admin/index.md",
+      "sha256": "de119ad4a4fd8f13f7c2afef3ea6950771088ba670d3dd1dd1d4168435908930",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 203
+    },
+    {
+      "path": "docs/docs/admin/model-admin.md",
+      "sha256": "4caf967cf1c1499c73f24f93ccc013df84e34e671b28ec3b63116da7a69792e1",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 375
+    },
+    {
+      "path": "docs/docs/admin/widgets.md",
+      "sha256": "c8448324f75b2bce043246226fb8a8ee5f4f153ea7619938b4d173f41e8d3d5e",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 81
+    },
+    {
+      "path": "docs/docs/advanced/background-tasks.md",
+      "sha256": "a51f6b806382e13de2610faf24dc4c0623a016a56a838f8ec47509a8684a0e5e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 463
+    },
+    {
+      "path": "docs/docs/advanced/caching.md",
+      "sha256": "28e132784a9a130162838bc0c6ee95c62e1823c6b423c9ce6ba65f34789289f5",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 13
+    },
+    {
+      "path": "docs/docs/advanced/custom-fields.md",
+      "sha256": "d61b7a0302ed390ace1f255210d632e2d2a6a6ca130d586337ba9a847dc4e169",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "custom-field-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 139
+    },
+    {
+      "path": "docs/docs/advanced/durable-operations.md",
+      "sha256": "f78faeebd816ae31228145d85d88c6b342692e101ae07530ce7204e73b203d30",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 317
+    },
+    {
+      "path": "docs/docs/advanced/generic-relations-and-durable-workflows.md",
+      "sha256": "2bee26b94f01166089839a66bd848bb63304fa77a39eef44be539e8b1ca3809e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "generic-step-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 192
+    },
+    {
+      "path": "docs/docs/advanced/index.md",
+      "sha256": "a8791013dda67713756f1182479c838ce70715fc1e8d7962cd24b8980d50bad3",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 43
+    },
+    {
+      "path": "docs/docs/advanced/internationalization-and-timezones.md",
+      "sha256": "d2e29a2fc5e369cff4a1b41c43bde107f96f6dc073f7fac7c7052cecbf21cff7",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 136
+    },
+    {
+      "path": "docs/docs/advanced/media-and-email.md",
+      "sha256": "2ad02c5e56ce26e5f693cba114944ea4eb75717a540330cb1ac5ab26e88d19d7",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "media-lifecycle.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 182
+    },
+    {
+      "path": "docs/docs/advanced/performance.md",
+      "sha256": "97aef7e3bb0c6a3a6c1f956a3ce60628867556e545d8d742dad582ed36e26c1e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 91
+    },
+    {
+      "path": "docs/docs/advanced/signals.md",
+      "sha256": "2b0b6e92e2773bb548bf8dd9b4f1b53e613ca6033b75081594aef4f324d9f096",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 35
+    },
+    {
+      "path": "docs/docs/advanced/testing.md",
+      "sha256": "267870d1dac0c8e30eb0ee9ecdb9a8031354958bdc3552df18c8913274bbfa3f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "testing-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 187
+    },
+    {
+      "path": "docs/docs/advanced/validation.md",
+      "sha256": "feadb5a7d02ff1b984b16e05120c80164eebc1cb577b84cd154dbf323ef34abe",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 91
+    },
+    {
+      "path": "docs/docs/ai-mode/agent-runtime.md",
+      "sha256": "cf9a0e6e05b61852ef20fb7341f9ec976312b3a7246cd0075d9e1e1eadaf1c2d",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 69
+    },
+    {
+      "path": "docs/docs/ai-mode/agent.md",
+      "sha256": "37641cf372a4ff4e98cf24f5b41e3f9168f04d282c117dbc49a458783469220b",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 218
+    },
+    {
+      "path": "docs/docs/ai-mode/architecture-review.md",
+      "sha256": "f885513ed5a36088bf31f48705c4fa307449a82ad09a2a86a5a08bbf2b0542a4",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 188
+    },
+    {
+      "path": "docs/docs/ai-mode/bring-your-own-llm.md",
+      "sha256": "ba32fe17126c54c5721bd2033304edd3d44403e5ca64daebe5ce94c2a13d0c39",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 363
+    },
+    {
+      "path": "docs/docs/ai-mode/codegen.md",
+      "sha256": "c34c3d034f29dc36bd5882c96a1cd09ddd5e6ea43d42a17783c22dab734d37c2",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 39
+    },
+    {
+      "path": "docs/docs/ai-mode/config.md",
+      "sha256": "c67ed1042020265bbbdedc1b559a00355a329b242b99bb6405e183588b6cddb8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 60
+    },
+    {
+      "path": "docs/docs/ai-mode/connectors.md",
+      "sha256": "4e1f1bfa46c9ea350439e5e814c90e58c0bee0ac5a88841c8a2227ebde3893e1",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 122
+    },
+    {
+      "path": "docs/docs/ai-mode/console.md",
+      "sha256": "a5c29bcd9118c40574e7368316d7f9bfc42346f47bdcefafc94a2584f21dd06f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "ai-cli-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 73
+    },
+    {
+      "path": "docs/docs/ai-mode/context-engine.md",
+      "sha256": "8e2ab38f0257da63e38bfdfc43ba95f010514d3e065bdce86c4a0f7b55a7913d",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 33
+    },
+    {
+      "path": "docs/docs/ai-mode/custom-http.md",
+      "sha256": "d10417fb7c390c85a16d415569240217ef364da75b0409fbc1a0415beb8fa8b6",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 69
+    },
+    {
+      "path": "docs/docs/ai-mode/debugger.md",
+      "sha256": "990c858c3771e06beb4ed1ca9f0abf845e43889888e4ce8a9622e2ab7e20354d",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 218
+    },
+    {
+      "path": "docs/docs/ai-mode/flows.md",
+      "sha256": "b3b53f203f1e04f14372d1da984b4573b49f5761d98175afb923eab99c6fc182",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 196
+    },
+    {
+      "path": "docs/docs/ai-mode/hints.md",
+      "sha256": "780416f4667f41fa834e68a9675f41fb17354d7583301b80ec01a27708f34928",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 50
+    },
+    {
+      "path": "docs/docs/ai-mode/hub.md",
+      "sha256": "871d54440c58df4b3bd3c88c786e4b9ccd3f203233495d37bedaeb8a2412201e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 77
+    },
+    {
+      "path": "docs/docs/ai-mode/index.md",
+      "sha256": "aac7277e71dc1af1727470639d8cc70d9084f045ea8421a12921d714c00acdae",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 63
+    },
+    {
+      "path": "docs/docs/ai-mode/mcp.md",
+      "sha256": "abe31d10e1f6ce7c51bc11aabcd33f2fc168ed3350bbcdbbfb01457235f1ab30",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 125
+    },
+    {
+      "path": "docs/docs/ai-mode/ollama.md",
+      "sha256": "e577c0c99983cebebed70a143fb24fa5642290be3710e40b701aca74c44c1e8b",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 62
+    },
+    {
+      "path": "docs/docs/ai-mode/patch-engine.md",
+      "sha256": "b754bfd23c0c1ec3134b2d08520cf9283a9e7c6840592e97a7d1cf4cef14c2c1",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 50
+    },
+    {
+      "path": "docs/docs/ai-mode/performance-analyzer.md",
+      "sha256": "f545291081acda2b5886c357e5e6a0a4bbf23fe40f214f508712f9b37bd36d6e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 95
+    },
+    {
+      "path": "docs/docs/ai-mode/planner.md",
+      "sha256": "4be3134ad220e1c8d01cc45a4c8d99421bbc415b193dc471f2a5def8e1aa79b9",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 61
+    },
+    {
+      "path": "docs/docs/ai-mode/project-graph.md",
+      "sha256": "12beff834d89d31e9372140083b1dcf7b681166a7f42d894f2a6de1bbc3bb53a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 182
+    },
+    {
+      "path": "docs/docs/ai-mode/providers.md",
+      "sha256": "f024c26ef5b2d40759ba2a376930867596b21f5370d24177986a21745c2327b9",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 75
+    },
+    {
+      "path": "docs/docs/ai-mode/query-engine.md",
+      "sha256": "eb10da5f73a25dcfdbf32256bc67fec44a79079579279628e4f7a697e74909d1",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 36
+    },
+    {
+      "path": "docs/docs/ai-mode/runtime.md",
+      "sha256": "86b0e7e1abe7ebbdb6b12394e03ddff2a296f27a620d19715f07cf4104f9ae2e",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 36
+    },
+    {
+      "path": "docs/docs/ai-mode/safety.md",
+      "sha256": "7a6e1674a45918bf3ea37f053be84de583b528b5a8c8e7e18be6bbe2a1d45751",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 58
+    },
+    {
+      "path": "docs/docs/ai-mode/schema-doctor.md",
+      "sha256": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 50
+    },
+    {
+      "path": "docs/docs/ai-mode/tools.md",
+      "sha256": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 42
+    },
+    {
+      "path": "docs/docs/ai-mode/workflows.md",
+      "sha256": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 211
+    },
+    {
+      "path": "docs/docs/api/actions.md",
+      "sha256": "c660898508e97efe4caaa18e8e5d293b08e37b157ffb623ab6b4693942bb3343",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 95
+    },
+    {
+      "path": "docs/docs/api/authentication.md",
+      "sha256": "77224e95b81fc4b9f7664f63632efdada7349f1644a23b64dfd4b81244655dd2",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "auth-permission-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 128
+    },
+    {
+      "path": "docs/docs/api/filtering.md",
+      "sha256": "a15859943c8b4dafce0646c52a179fca36699b8787b15cbc8dffa7355373916d",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "filter-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 128
+    },
+    {
+      "path": "docs/docs/api/index.md",
+      "sha256": "3d04d739d8d5e52a7158c290c9fc9b9b478343daf44c020f8076cfc549b99a30",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 70
+    },
+    {
+      "path": "docs/docs/api/pagination.md",
+      "sha256": "25cc91529487dcd14fa5a1139b4907033d2159ad636ebb86abe6baca27f34c90",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "pagination-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 105
+    },
+    {
+      "path": "docs/docs/api/permissions.md",
+      "sha256": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "auth-permission-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 127
+    },
+    {
+      "path": "docs/docs/api/routing.md",
+      "sha256": "9ea30c5840d8948ac90d18c332731d1b197b86f40f60b4c941331dc073f979fb",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 119
+    },
+    {
+      "path": "docs/docs/api/serializers.md",
+      "sha256": "98a7d8144900010044fef0219584bac52f8a63539e07f123397352bc50c9eb4a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 114
+    },
+    {
+      "path": "docs/docs/api/throttling.md",
+      "sha256": "5474e92f6bacd1de21d44bf5ec1f1b9059c2f0f8d42c4a6e7a252c4b04c88561",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 58
+    },
+    {
+      "path": "docs/docs/api/viewsets.md",
+      "sha256": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "filter-doc-execution.json",
+        "pagination-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 147
+    },
+    {
+      "path": "docs/docs/changelog.md",
+      "sha256": "c50882f04b2961984226abe66eff55f2907c8889579add87b54ed35880cdcb77",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 2627
+    },
+    {
+      "path": "docs/docs/cli/ai-commands.md",
+      "sha256": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "ai-cli-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 92
+    },
+    {
+      "path": "docs/docs/cli/commands.md",
+      "sha256": "4cbcf3d5a998a0b52d5927dea39e3623f2e33c4ddf4d205429dd1f98e8032ade",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 109
+    },
+    {
+      "path": "docs/docs/cli/dev-tools.md",
+      "sha256": "8e0a5dd79e619668c23283505683a4990ebea3b1893bc5e39e38b8fe2f612612",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 85
+    },
+    {
+      "path": "docs/docs/cli/extending.md",
+      "sha256": "ffda8909a05de89b341f71441f84cf7e9ba35a0bdec611959fbc2d9514aa51fb",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 69
+    },
+    {
+      "path": "docs/docs/cli/index.md",
+      "sha256": "8aec1d338b490f9dcf0db3ea14334e79c454c0fb4d067136ecf564a059af0f98",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 41
+    },
+    {
+      "path": "docs/docs/concepts/application-boundaries.md",
+      "sha256": "1e6c387ad82af91b0f37d4f4d8455b9762ae4950d347aafa1cb2ec8a14e61530",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 105
+    },
+    {
+      "path": "docs/docs/concepts/stability.md",
+      "sha256": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 26
+    },
+    {
+      "path": "docs/docs/debugging/ai-debug.md",
+      "sha256": "d10a4615c25a714b587fe06d318da826a43f2f0498d7cfddb189a09bb2ba1423",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 86
+    },
+    {
+      "path": "docs/docs/debugging/autoremediation.md",
+      "sha256": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 182
+    },
+    {
+      "path": "docs/docs/debugging/error-pages.md",
+      "sha256": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 91
+    },
+    {
+      "path": "docs/docs/debugging/index.md",
+      "sha256": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 46
+    },
+    {
+      "path": "docs/docs/debugging/query-profiling.md",
+      "sha256": "667b35ba844a1de5439f93d823fd2ebd671963b214762480132314c3eba10c2a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "query-profiling-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 165
+    },
+    {
+      "path": "docs/docs/diagnostics.md",
+      "sha256": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 103
+    },
+    {
+      "path": "docs/docs/gapanalysis.md",
+      "sha256": "9125ecfab0414e91715456e98039a38faa0a0a601de7336ddcfe79dcdc4e85f5",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 342
+    },
+    {
+      "path": "docs/docs/getting-started/ai-quickstart.md",
+      "sha256": "ba42ee718cc133d5a348cf2e2054aa5a71cea75aed96c6c8eb80ff169172345f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 39
+    },
+    {
+      "path": "docs/docs/getting-started/database-setup.md",
+      "sha256": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "setup-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 136
+    },
+    {
+      "path": "docs/docs/getting-started/examples.md",
+      "sha256": "348de5410ecac5a95ca2877a1f9110f1f663d89a1412bc960b9b380be6cc8b4f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 45
+    },
+    {
+      "path": "docs/docs/getting-started/first-app.md",
+      "sha256": "c2d8ceb1115da2becf71ac73bba39681e0f7f3cc06376a61e0c1379c5a71ff2e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 25
+    },
+    {
+      "path": "docs/docs/getting-started/first-project.md",
+      "sha256": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "bulk-execution.json",
+        "development-wheel-tutorial.json",
+        "filter-doc-execution.json",
+        "first-project-journey.json",
+        "pagination-doc-execution.json",
+        "query-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 264
+    },
+    {
+      "path": "docs/docs/getting-started/index.md",
+      "sha256": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 46
+    },
+    {
+      "path": "docs/docs/getting-started/installation.md",
+      "sha256": "faff577c4600d96db91fc029342956e5852dcfcdc1fd3cf086ee7c5756a4c910",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "setup-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 85
+    },
+    {
+      "path": "docs/docs/getting-started/mcp.md",
+      "sha256": "be82c4c7721a5cecc3865d22b5ed234875da2862ab33a015404a22c724d80894",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 68
+    },
+    {
+      "path": "docs/docs/getting-started/patterns.md",
+      "sha256": "ea302702480f9888ffc704aceb98254c6290aa438d8614c33677033e975898a3",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 48
+    },
+    {
+      "path": "docs/docs/getting-started/project-layout.md",
+      "sha256": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "setup-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 112
+    },
+    {
+      "path": "docs/docs/getting-started/running-your-app.md",
+      "sha256": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "setup-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 81
+    },
+    {
+      "path": "docs/docs/getting-started/settings.md",
+      "sha256": "111caa8e9daf54dabf9c7869ca3610894911914edda7b9e0151c0b4c745e0c01",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 72
+    },
+    {
+      "path": "docs/docs/getting-started/studio.md",
+      "sha256": "285768ff7508b8130b966716ed68278aeada5fd7df20dd53bbf3a21c4ec5a034",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 32
+    },
+    {
+      "path": "docs/docs/getting-started/ten-minutes.md",
+      "sha256": "4b53953cccd437d7be2fe27c79911b659d2c5baae0669b9857446a8d317f47c8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 27
+    },
+    {
+      "path": "docs/docs/glossary.md",
+      "sha256": "6e27cf9b94359d3c8f53af4a881d2234a94e2268103a2b64bd3ab5fcd0041821",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 413
+    },
+    {
+      "path": "docs/docs/how-to/export-durable-transitions.md",
+      "sha256": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "outbox-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 93
+    },
+    {
+      "path": "docs/docs/how-to/handle-external-effects.md",
+      "sha256": "46b785f7cc40bf7f08ccd84d837312d127963b9de320e9c97670c33cca004eb0",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "external-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 129
+    },
+    {
+      "path": "docs/docs/how-to/inspect-durable-history.md",
+      "sha256": "e329687f5cc19a332c0c752617247fa9c8dd23d6094e7ab8da8daaf27d2b166a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "history-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 100
+    },
+    {
+      "path": "docs/docs/how-to/require-durable-approval.md",
+      "sha256": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "approval-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 108
+    },
+    {
+      "path": "docs/docs/how-to/typescript-client.md",
+      "sha256": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 80
+    },
+    {
+      "path": "docs/docs/index.md",
+      "sha256": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 74
+    },
+    {
+      "path": "docs/docs/inspectors/index.md",
+      "sha256": "bb7e60035b83e676f7eeafb973f4e3963cb7e9559df24f3480526e56aafbfeb1",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 42
+    },
+    {
+      "path": "docs/docs/inspectors/models.md",
+      "sha256": "1d0fc4cc93c394fe118ce35c3216c651dacc2139bd2c3bd3237e57de09720b5d",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 160
+    },
+    {
+      "path": "docs/docs/inspectors/query.md",
+      "sha256": "74f7724fa87bc970af72b31699809b5b1500b1554483f7b23ce66615d0e9bad1",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 127
+    },
+    {
+      "path": "docs/docs/middleware/index.md",
+      "sha256": "58004483e3bd88f8eb6bbc4d1f85cebf0f9b7fb83223e1c61de3867776adab1f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "middleware-page-review.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 83
+    },
+    {
+      "path": "docs/docs/middleware/logging.md",
+      "sha256": "6f346b6a0094cbee9df6e63ee95f835a4813722cd37565cdf46420507a9cd10d",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "middleware-page-review.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 110
+    },
+    {
+      "path": "docs/docs/middleware/request-id.md",
+      "sha256": "d0b9fc2eeeba44141110b50a15d36c3b458396d7fb1ec31cefd70f557d6cd158",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "middleware-page-review.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 64
+    },
+    {
+      "path": "docs/docs/middleware/tenant.md",
+      "sha256": "32068510e5d59a6becf97c6f6d48b383dc0756a28302531d0fd11b78947cbd1f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "middleware-page-review.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 85
+    },
+    {
+      "path": "docs/docs/notes/index.md",
+      "sha256": "d5537b15c202d609ae52781b441eb8c379420fa57e31a0bea62a351861c4d936",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 13
+    },
+    {
+      "path": "docs/docs/notes/v0-5-49-announcement.md",
+      "sha256": "ab96addaa9487b1b44764918d5edbd35f335f4cba7da5fdb092424324f0a7d8e",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 121
+    },
+    {
+      "path": "docs/docs/notes/v0-5-49-security-architecture.md",
+      "sha256": "daf5bdfb5d3ed0bb608729fa40807f342c6d2116960ecb2b83f80fb1e6afd508",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 284
+    },
+    {
+      "path": "docs/docs/operations/upgrade-v07.md",
+      "sha256": "74650455e39076a015f4365feb74256165ad41a7437ed57ceaafa12f9357ae6c",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 157
+    },
+    {
+      "path": "docs/docs/orm/advanced-field-policy.md",
+      "sha256": "8641cc15aedc39d952932016c66f17c1d94afaa54328229bd71ba913bd519c1b",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 384
+    },
+    {
+      "path": "docs/docs/orm/bulk-operations.md",
+      "sha256": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "bulk-execution.json",
+        "custom-field-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 170
+    },
+    {
+      "path": "docs/docs/orm/expressions-and-transactions.md",
+      "sha256": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "bulk-execution.json",
+        "query-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 215
+    },
+    {
+      "path": "docs/docs/orm/fields.md",
+      "sha256": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "advanced-field-execution.json",
+        "media-lifecycle.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 1024
+    },
+    {
+      "path": "docs/docs/orm/fixtures.md",
+      "sha256": "e3051b0e2c12c3c6c14b424b22b6de49600ac72b2be606038190664d1d1d2c69",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "fixture-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 89
+    },
+    {
+      "path": "docs/docs/orm/index.md",
+      "sha256": "7f0077444977daa2bbb70a286633b93af74fa5312f8551f931a384aa3b25a68c",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 299
+    },
+    {
+      "path": "docs/docs/orm/migration-safety.md",
+      "sha256": "3eadacd87734c980dd441a757c091a92d670947586e0faf2422892a44257c960",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "migration-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 188
+    },
+    {
+      "path": "docs/docs/orm/migrations.md",
+      "sha256": "55d4c4188c13a3798cfe5e758ca5bf1d6c3e064fa143c0d0d9ae99b830707083",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "migration-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 193
+    },
+    {
+      "path": "docs/docs/orm/model-meta.md",
+      "sha256": "7f8acb6243bc2578473a539f5466489662652c873343c7586c78f415dd6a346b",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 103
+    },
+    {
+      "path": "docs/docs/orm/models.md",
+      "sha256": "dc5626cb90c648c33ed2d87a236cc9b42ba8de3aec1a4248b7660e2b5fdd6759",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 516
+    },
+    {
+      "path": "docs/docs/orm/querying.md",
+      "sha256": "4784ac4e738801594422a5c874eec37afa2e0618ad105a5efd37cd106d26be46",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "query-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 160
+    },
+    {
+      "path": "docs/docs/orm/relations.md",
+      "sha256": "5ef927577e7f3da2732e45e5584301748620cae300cf608288421a7fc95ab970",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "admin-relation-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 549
+    },
+    {
+      "path": "docs/docs/orm/signals.md",
+      "sha256": "513d2677153948f839c57f0d8b1dd3a40633fa78878c2cb2ccc1eed51934acf2",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "query-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 120
+    },
+    {
+      "path": "docs/docs/orm/soft-deletes.md",
+      "sha256": "d8b29f39cc839a646e7c1e382af332a7cff8683f244bd5e15d88631073f824da",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "soft-delete-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 77
+    },
+    {
+      "path": "docs/docs/patterns/blog.md",
+      "sha256": "99967584944f763d2fd66a8e6fdf15e65c3b19756de3f37a4b0e1f12b40373b8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "cli-help-domain-template-execution.json",
+        "domain-template-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 76
+    },
+    {
+      "path": "docs/docs/patterns/crm.md",
+      "sha256": "7cd38ce71bea7c197c6fd1c070b0be96fb772e6b16763f56db87be541069bd66",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "cli-help-domain-template-execution.json",
+        "domain-template-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 80
+    },
+    {
+      "path": "docs/docs/patterns/index.md",
+      "sha256": "b02108d5fb89be6af6d990eaa2703211c5e9fe592821316ef10ee672525e370e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 50
+    },
+    {
+      "path": "docs/docs/patterns/multitenant.md",
+      "sha256": "756187067c0fce611b54deb8fa3ec77a175edc89996c5f8a271a620cfa915161",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "cli-help-domain-template-execution.json",
+        "domain-template-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 81
+    },
+    {
+      "path": "docs/docs/quickstart.md",
+      "sha256": "ea79958457e14f1ef7062835b472dac50608a1529ae58efeca8ad7127b836ae4",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 35
+    },
+    {
+      "path": "docs/docs/reference/api-reference.md",
+      "sha256": "1cd22f4acd7556a66101816d1f2c06cef7b10919b84e67f37782fec8c5256955",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 85
+    },
+    {
+      "path": "docs/docs/reference/cli-reference.md",
+      "sha256": "0e08093f9f861b32b50ee21e976dd4a81a49e5c58df302064a902eda9483dc2e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 1032
+    },
+    {
+      "path": "docs/docs/reference/exceptions.md",
+      "sha256": "7953cad79424ea89820e34e7b08041d78101cefda3f6e97e99cd884b4dc80cd5",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 188
+    },
+    {
+      "path": "docs/docs/reference/index.md",
+      "sha256": "5e7b15c1f9d207d091769a82bc34fed16e46b3ace71c4d41646286e979c24e34",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 44
+    },
+    {
+      "path": "docs/docs/reference/orm-reference.md",
+      "sha256": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 113
+    },
+    {
+      "path": "docs/docs/reference/runtime-compatibility.md",
+      "sha256": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "setup-doc-execution.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 51
+    },
+    {
+      "path": "docs/docs/reference/settings-reference.md",
+      "sha256": "828ca2b0bbfa3acb600d6d597c94c056861b990128a42d93f1e6d28217aaaa82",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 288
+    },
+    {
+      "path": "docs/docs/reference/types.md",
+      "sha256": "f0a04c4d50d44b067c09d5978c6e655a66d257b25793a55d2495d7b139e8cc84",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 71
+    },
+    {
+      "path": "docs/docs/releasing.md",
+      "sha256": "0c46ebc9942e8c6b7896a1a3ee3e2d0d5e40b0b3042b57398fc5a953ab7798a9",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 81
+    },
+    {
+      "path": "docs/docs/roadmap/index.md",
+      "sha256": "eb5890ddae4f71d6a1b81f1b790e0618a5499cf8229e12c8471d8e30dcd270b7",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 15
+    },
+    {
+      "path": "docs/docs/roadmap/v0-6-stability-contract.md",
+      "sha256": "cab1c54f24762268d49626412f61e03ee88e5393f5e4e09000f98b47675dd6d4",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 219
+    },
+    {
+      "path": "docs/docs/roadmap/v0-7-stability-contract.md",
+      "sha256": "b63ea55d9e2e48e2072024973370e86bdbf46cacc1f5a94d98a7012cdc955ad7",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 183
+    },
+    {
+      "path": "docs/docs/roadmap.md",
+      "sha256": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 162
+    },
+    {
+      "path": "docs/docs/search/index.md",
+      "sha256": "18ea9e75126a35b4f93566a1500307af87d71018eee91447019a4012cdbdeacf",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 109
+    },
+    {
+      "path": "docs/docs/search/semantic.md",
+      "sha256": "ed6d01cabce02628a7301c4431a61d6ea5cb9c083caacef317a03279ee60d0b2",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 114
+    },
+    {
+      "path": "docs/docs/search/studio.md",
+      "sha256": "3dafaef00fcfce634b0af00789e7c98de4b489d396986afdd86eacae45ccb6f2",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 77
+    },
+    {
+      "path": "docs/docs/security/ai-mcp-boundaries.md",
+      "sha256": "8df6c81e9e748484bdb2c19106ff87be9a58a819d3f734b04ef4b327e7f4b230",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 95
+    },
+    {
+      "path": "docs/docs/security/authentication.md",
+      "sha256": "2f25538995d4b65badf0212331d59f925da6f2b7b474875dcfe13845a1c62586",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 76
+    },
+    {
+      "path": "docs/docs/security/field-level-permissions.md",
+      "sha256": "0e332b83f5b396f81dc48f02d9e61974eaecf1e61e6e1021f88a77244ef145c4",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 68
+    },
+    {
+      "path": "docs/docs/security/multi-tenancy.md",
+      "sha256": "9cd9a37e720e97f681905288c7062ecd6cd9d0fc9b1cd4f36f7c965980810894",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "middleware-page-review.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 83
+    },
+    {
+      "path": "docs/docs/security/overview.md",
+      "sha256": "6e24f935f84750c305d4b17a6315660796ea442fc5baa16af300e899007c01d2",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 71
+    },
+    {
+      "path": "docs/docs/security/production-hardening.md",
+      "sha256": "001c1e7d35e5a3b8e457f94e17103d720de6f5d56c45c5eec8bbc3d3df5634f3",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 154
+    },
+    {
+      "path": "docs/docs/security/release-security.md",
+      "sha256": "043fa047e1bcbc06b898aa5398a1791527839b441184d25adf9b76f382c51fb4",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 101
+    },
+    {
+      "path": "docs/docs/security/security-coverage.md",
+      "sha256": "1e1999728e325bfe336ecf1e90a2c5355a64a0777017f55d5494523e815b4966",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 58
+    },
+    {
+      "path": "docs/docs/security/threat-model.md",
+      "sha256": "5d9a54d513ca6da480c4482d16030eea0de6c5c7da3906f18822bf21719d58ec",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 86
+    },
+    {
+      "path": "docs/docs/studio/api.md",
+      "sha256": "6cbb4059ace95de187b41681b8b52728e1e6ccd66a5440ed7210a1211b548a94",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 428
+    },
+    {
+      "path": "docs/docs/studio/cli.md",
+      "sha256": "94165fb06ed3e11cfe5e20a577c8d44353e914838cc45e14f04c613b97b14328",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 201
+    },
+    {
+      "path": "docs/docs/studio/configuration.md",
+      "sha256": "a26383c648be42cc3564bd51442e78f4873b95dbc69cdbd9a8216829ef7a7057",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 73
+    },
+    {
+      "path": "docs/docs/studio/index.md",
+      "sha256": "1b0d8a2907ad8ec80c3783cd593395c52fb872c1f7980706d19658b6dfeb9e3c",
+      "changed_since_release": false,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 137
+    },
+    {
+      "path": "docs/docs/studio/ui.md",
+      "sha256": "d650c3c3be3f280c20f14dfd9f4ea72ec865b2f5a0b7e0784c2e85889262710b",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 364
+    },
+    {
+      "path": "docs/docs/tutorials/ai-integration.md",
+      "sha256": "7a8ed10512195a3e608d6ac32d3f855e36fd5bf18df9a51ea1f41150fce3ae25",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 62
+    },
+    {
+      "path": "docs/docs/tutorials/blog-api.md",
+      "sha256": "9d35111dde0bdc5845fcebb489819a0e038036e7f4bc361c46cb2546d1f34479",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 47
+    },
+    {
+      "path": "docs/docs/tutorials/deployment.md",
+      "sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 170
+    },
+    {
+      "path": "docs/docs/tutorials/index.md",
+      "sha256": "1245efd2021cc4f92e1ed217e3013f345c4314c02af22d84c47ce0844c0bcf1a",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 30
+    },
+    {
+      "path": "docs/docs/tutorials/multi-tenant.md",
+      "sha256": "c2d147dabe773f3e68afb76f9bca60ad4c07a441e9f5642d176acf28eb57a828",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 82
+    },
+    {
+      "path": "docs/docs/tutorials/ticket-desk-durable.md",
+      "sha256": "09f5935e6b448ae083f7ef2daec6615b714d3a533df8e2f76e307f7dfa993e24",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "development-wheel-tutorial.json",
+        "first-project-journey.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 605
+    },
+    {
+      "path": "docs/docs/tutorials/ticket-desk-mcp.md",
+      "sha256": "4774a52f60049f505a61425337775fd4dcce0d5558de4036df974223fd5c60b8",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "development-wheel-tutorial.json",
+        "first-project-journey.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 474
+    },
+    {
+      "path": "docs/docs/tutorials/ticket-desk-reports.md",
+      "sha256": "d3ccf9328064682545bc71f1c9dd19e59ad675e5325d9c199f023d9eba2c579c",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "development-wheel-tutorial.json",
+        "first-project-journey.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 287
+    },
+    {
+      "path": "docs/docs/tutorials/ticket-desk-tenancy.md",
+      "sha256": "323fee8bf4542b37eaf4610ba5d691571b65d28194d9d41180ac431e0e26943f",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "development-wheel-tutorial.json",
+        "first-project-journey.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 484
+    },
+    {
+      "path": "docs/docs/tutorials/ticket-desk.md",
+      "sha256": "7e351c827dc827b1501f3733e50620865e05b095e829b7b75871a8918da2890e",
+      "changed_since_release": true,
+      "scoped_evidence_candidates": [
+        "development-wheel-tutorial.json",
+        "first-project-journey.json"
+      ],
+      "semantic_acceptance": "requires_explicit_review",
+      "lines": 234
+    }
+  ],
+  "counts": {
+    "pages": 163,
+    "unchanged_since_release": 38,
+    "with_scoped_evidence_candidates": 46
+  },
+  "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
+}

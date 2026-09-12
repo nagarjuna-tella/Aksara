@@ -1759,3 +1759,14 @@ tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q` — 196 pas
 one existing dependency deprecation warning. Strict docs, 367 Python fences/imports,
 302 CLI command forms, and 42,623 local references across 162 pages passed.
 Ruff passed for the changed runner and new test. Whole-manual review remains open.
+
+## Current page inventory reconciliation (2026-09-11)
+
+The historical 157-page baseline remains unchanged. A new current census,
+`public-page-review-inventory.json`, records 163 README/manual Markdown pages,
+38 unchanged since v0.7.0 and 46 with matching scoped evidence candidates.
+Those counts are navigation for the remaining audit, not acceptance claims:
+changed files can still contain errors and an artifact may cover only one example.
+All entries retain an explicit semantic-review requirement. The next review
+queue starts with inspector model/query/overview pages, including query-plan
+fallback and execution claims. No new product behavior is introduced.

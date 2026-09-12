@@ -189,3 +189,13 @@ acceptance. FIXTURE001–003 remain separate functional patch recommendations.
 PT054 replaces invented introspection APIs with `Model.meta` and an exact
 installed-wheel inspection example. Scoped A3/A8/A10/D1/D3 evidence is included
 in `installed-doc-imports.json`; this does not complete whole-site semantic review.
+
+## Current page census and next review queue
+
+`public-page-review-inventory.json` supplements the untouched historical baseline
+with every current README/manual page, its current hash, release diff status, and
+matching scoped evidence candidates. Neither modification nor a matching hash
+proves semantic acceptance; each entry intentionally requires explicit review.
+This avoids mistaking the old baseline's pending flags for a current work list.
+The next source-grounded review covers the three inspector pages: their examples
+and live-versus-synthetic plan claims need comparison with the current module.

@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "b01b8f37e90d72687168b60acb0c50b8a7eb555e",
+  "reviewed_head": "9b63860ee3a1d0a9866bbd6b2c58604a442c6c50",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "9e9ff3b4ad0f750a7ee908a7a8e42a8f7803cdbc0eac01135a1a9cf9d5c8afa9",
+    "sha256": "5610263dedfc28bcad307cb5bd93fc14051ea718a55abdf4f7eb8a0405a0e057",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -794,6 +794,15 @@
       "sha256": "e110dc11f60b89b0ca893aac957049d54dfe95f2029896733afe43716c60810d",
       "recorded_result": "baseline_only_not_candidate_validation",
       "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/public-page-review-inventory.json",
+      "sha256": "6dc215e83654bbb9d12381132ae5d52025661a56d3b9e24b32722ba29bd0955b",
+      "recorded_result": "not a boolean gate",
+      "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
       "stale_linked_pages": [],
       "historical_head": null
