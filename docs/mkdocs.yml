@@ -66,6 +66,7 @@ nav:
     - Stability Labels: concepts/stability.md
     - Glossary: glossary.md
     - Durable Operations: advanced/durable-operations.md
+    - Handle External Effects: how-to/handle-external-effects.md
     - Require Durable Approval: how-to/require-durable-approval.md
     - Export Durable Transitions: how-to/export-durable-transitions.md
     - Background Tasks: advanced/background-tasks.md

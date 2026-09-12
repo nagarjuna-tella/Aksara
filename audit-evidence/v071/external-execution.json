@@ -1,0 +1,27 @@
+{
+  "checks": [
+    "internal migrations applied",
+    "lost acknowledgement schedules retry",
+    "provider accepted before first response loss",
+    "replacement advances fence",
+    "retry succeeds",
+    "retry supplies identical downstream key",
+    "simulated provider deduplicates",
+    "public helper result persisted",
+    "unsafe recovery fails explicitly",
+    "unknown does not imply unsent",
+    "unknown outcome not automatically reclaimed",
+    "revoked scope prevents provider call",
+    "revoked scope records authorization denial"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Installed external helper with PostgreSQL and simulated provider acceptance/acknowledgement loss; admin-role fixture, not real provider, restricted RLS or process-crash proof",
+  "page_sha256": {
+    "docs/docs/how-to/handle-external-effects.md": "46b785f7cc40bf7f08ccd84d837312d127963b9de320e9c97670c33cca004eb0"
+  },
+  "runner_sha256": "edd8aded76b6d7700768284ac8d6707b71565f6e32264604c03dca7a56c4bd15"
+}

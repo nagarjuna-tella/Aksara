@@ -59,7 +59,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Ordinary tasks | Yes | Stable unlinked behavior | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result | Persists tenant, not full Principal; separate task recovery/retention gates remain. |
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
-| External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Concept reviewed; examples pending | Durable reference guide | Pending new journey | No exactly-once external-effect promise; uncertainty can remain explicit. |
+| External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | Needs how-to audit | Durable guide | Pending new journey | Not a tamper-resistant ledger or application retention service. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
 | CLI | Yes | Stable core commands | `aksara` command groups | Partial help audit | Tutorial commands | Startproject/run/migrate/launch-check slice | Every major subcommand still needs discoverability and documented-command review. |
@@ -655,3 +655,25 @@ runner hashes; a documentation test detects stale evidence. The fixture uses an
 admin database role and service calls. It does not prove restricted-role RLS,
 HTTP authentication, reviewer UI usability, worker execution or process loss.
 Those are separate tutorial/regression or application responsibilities.
+
+## External Effect How-to Evidence
+
+`how-to/handle-external-effects.md` explains honest adapter capability flags,
+effect classes, stable effect identities, provider idempotency windows,
+reconciliation outcomes, current authority and explicit uncertainty. Its
+notification adapter expects an application-owned provider client rather than
+claiming Aksara bundles one. The guide calls out recipient validation, command
+normalization and domain authorization as application responsibilities.
+
+`scripts/check_public_external_effects.py` extracts the exact adapter/action
+helper and runs against the isolated 0.7.0 wheel with PostgreSQL. Thirteen checks
+cover internal migrations, acceptance followed by simulated acknowledgement
+loss, a replacement Attempt with an advanced fence and identical downstream
+key, one simulated provider effect, persisted result, unsafe recovery becoming
+`external_outcome_unknown`, no automatic reclaim of that failed Operation,
+and current-scope revocation preventing a send. Evidence hashes bind the helper
+page and runner; a docs test checks freshness. The disposable schema is removed
+and absence verified. This admin-role, simulated-client test does not establish
+real-provider delivery/retention, restricted-role RLS or process-loss behavior.
+Reconciliation is described from implementation but is not exercised by this
+particular public helper gate; existing dedicated regressions remain separate.
