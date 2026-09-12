@@ -1,6 +1,7 @@
 # Aksara after v0.7: market and roadmap review
 
-Research date: **2026-09-11**. Framework baseline: released **v0.7.0**,
+Research date: **2026-09-11**; capability/roadmap consistency reviewed
+**2026-09-12**. Framework baseline: released **v0.7.0**,
 `b7ac75f4b1bd4b262824e828601168336b4ecf7f`.
 
 This is a strategy recommendation, not an implementation authorization, release
@@ -32,8 +33,9 @@ correlated operational evidence. Add framework APIs only where real deployments
 show that existing public seams are insufficient. Do not implement this thesis
 in v0.7.1.
 
-The main adoption blocker currently demonstrated is public usability, followed
-by the amount of integration and operating knowledge users must supply.
+The demonstrated adoption blockers are correctness on the affected paths and
+public usability, followed by the integration and operating knowledge users
+must supply.
 Independent production demand remains unproven. A technically unusual boundary
 is not yet a commercial moat.
 
@@ -204,7 +206,7 @@ implementation is identified. Component existence is not certification.
 
 | Area | Assessment | Evidence / work needed |
 | --- | --- | --- |
-| PostgreSQL, ORM and migration safety | Already strong within declared scope | Source, regression suites and release evidence; retain explicit relation exclusions |
+| PostgreSQL, ORM and migration safety | Substantial foundation with verified correctness gaps | Release tests support bounded contracts; BULK-001, MIGRATION-001, SOFTDELETE001, FIXTURE001–003 and RELATION001 require separate fixes before certifying affected paths |
 | Generated REST, validation, OpenAPI | Adequate | Existing implementation; prove common customization and error handling from docs |
 | Principals, permissions, RLS | Already strong bounded contract | Security and durable authorization tests; operator configuration remains essential |
 | Authentication integration | Weak adoption path | Auth/session primitives exist; this audit has not verified a turnkey external OIDC lifecycle |
@@ -217,11 +219,11 @@ implementation is identified. Component existence is not certification.
 | Cache | No generalized cache contract verified here | Application/library integration before a framework-wide cache abstraction |
 | Testing | Already strong release campaign; weak beginner bridge | Turn tests into public workflows, without presenting test counts as user success |
 | Observability | Adequate primitives; weak end-to-end operational story | Query tracing, Doctor and outbox exist; correlate API → Operation → Attempt → effect |
-| Deployment and upgrades | Weak reader journey | Reference app exists; independent reproducible rollout/rollback and restore instructions needed |
-| Configuration/secrets | Adequate implementation; weak consistency | Global settings and environment precedence must have one authoritative reference |
-| SDKs | Adequate narrow TypeScript generation | Test generated client against real documented endpoints; other languages can start with HTTP |
-| CLI/scaffold | Adequate commands; instructional gaps | Fresh public install works; starter must explain auth, migrations and tests |
-| Docs and integrations | Weak | Measured audit contradictions and pending complete learning path |
+| Deployment and upgrades | Documented path; independent operating proof remains open | Author reading and installed reference checks exist; independent rollout, data-bearing upgrade and restore evidence remain necessary |
+| Configuration/secrets | Implemented with a verified parsing defect | CFG-001 affects origin/host environment lists; tested explicit-list configuration is documented, while the runtime fix remains separate |
+| SDKs | Generated TypeScript currently fails strict compilation | SDK-001 is reproduced; generation alone is not a usable-client claim. Direct HTTP remains available |
+| CLI/scaffold | Commands work; generated application packaging is defective | SCAFFOLD-001 prevents editable installation; the dependency-install/startup route is tested, but does not repair project packaging |
+| Docs and integrations | Improved in this branch; acceptance incomplete | Executed tutorial and corrected references exist; final manual/candidate checks and independent user observation remain open |
 | Plugin ecosystem | Not established by this review | Prefer a few versioned integration contracts over promising an ecosystem |
 | Managed hosting, generic identity service | Intentionally out of scope | Use existing services; no need to operate a cloud platform to reach 1.0 |
 
@@ -286,11 +288,59 @@ pending; do not describe a measured leak. EX-001 remains the historical
 multitenant example's exemption-matching defect. The domain-template audit
 additionally reproduces MIGRATION-001: discovery of
 the built-in auth `User` replaces a same-named application model, omitting its
-declared table despite successful migration commands. Together these are ten
-separately tracked findings, with different proof scopes, rather than evidence
-that the entire backend is unusable. Their reproductions and alternatives are
+declared table despite successful migration commands. These first ten findings and the seven additional findings below have different
+proof scopes; they do not establish that the entire backend is unusable. Their reproductions and alternatives are
 in the public-truth audit. Closing the relevant functional defects needs a
 separate maintenance scope before stronger production/adoption claims.
+
+### Additional ORM adoption defect (2026-09-11)
+
+SOFTDELETE001 / P1: the module-level soft-delete visibility helpers discard
+existing queryset restrictions. Installed-wheel PostgreSQL execution returned
+both rows after an identifier-filtered queryset was passed to either helper.
+This can drop application tenant filters; no RLS bypass was demonstrated.
+The public guide now starts visibility selection from the manager and applies
+filters afterwards. Recommend a separate narrowly scoped runtime patch.
+Evidence: `audit-evidence/v071/soft-delete-execution.json`. This reinforces the
+existing correctness/adoption priority without changing the roadmap thesis.
+
+### Fixture import/export adoption defects (2026-09-11)
+
+FIXTURE001–003 / P1 are reproduced installed-wheel limitations: exported primary
+keys cannot recreate missing rows, single-model YAML UUID output fails safe
+loading, and default whole-registry export fails on model names. The public guide
+now limits its example to JSON seeding and selected exports, distinguishes imports
+from backups, and explains strict-mode transaction ownership. Separate patches
+should establish tested identity/serialization contracts; no runtime fixes belong
+in this documentation release. Evidence: `audit-evidence/v071/fixture-execution.json`.
+
+### Inspector provenance defect (2026-09-11)
+
+INSPECTOR001 / P1: offline query-plan fallback can label fabricated results
+EXPLAIN ANALYZE with no warning, even for invalid SQL. Documentation now directs
+measured analysis to the database-backed profiling procedure and distinguishes
+model declarations from verified catalog state. Recommend a separate provenance
+and error-reporting patch; no production semantics change in this release.
+The installed import gate preserves the offline negative control, not a live
+pool/thread safety certification.
+
+### Admin widget rendering side effect (2026-09-11)
+
+ADMINWIDGET001 / P2: rendering an array with fewer entries than min_rows
+appends blanks to the supplied list. Recommend a separate defensive-copy patch.
+The installed widget negative control proves in-memory mutation, not persistence
+or permission bypass. JSON value escaping was separately verified and is not
+a defect. This does not change the existing adoption-focused roadmap thesis.
+
+### Eager-loading terminal consistency (2026-09-12)
+
+RELATION001 / P1: installed `select_related(...).first()` returns the parent
+without populating its requested related object, while the documented `all()`
+path loads it. The exact model example passes; the additional negative control
+in `query-execution.json` retains the failure flag. Recommend a separate narrow
+terminal-method consistency patch with empty/nonempty FK/O2O and prefetch cases.
+This strengthens the existing correctness/adoption priority, not a proposal for
+more database backends or a broader ORM rewrite. No runtime change is made here.
 
 Prioritize debt by user-visible failure and change risk. Static-analysis ratchets
 contain accepted debt; they are not a claim of a clean type/lint baseline.
@@ -563,8 +613,9 @@ operator criteria.
 
 ## Top 5 Adoption Blockers
 
-1. **Incomplete public learning path:** demonstrated by the audit and unresolved
-   clean-room journeys; prevents evaluating existing capabilities.
+1. **Correctness and public-truth gaps:** reproduced runtime defects can break
+   affected application paths. The tutorial now executes, but final manual and
+   candidate acceptance remain open; corrected prose alone cannot fix the runtime.
 2. **Integration and operational assembly:** real identity, workers, export and
    recovery still require application knowledge across multiple modules.
 3. **Unproven independent trust:** release evidence is not a replacement for
@@ -592,9 +643,11 @@ operator criteria.
 
 ## Highest-Leverage Technical Investment
 
-One executable production reference path that connects real identity, current
-authorization, durable worker lifecycle, diagnostics/export and recovery. This
-both tests the product distinction and reveals the minimum necessary APIs.
+Close the verified correctness/security defects affecting the chosen production
+reference path in separately reviewed maintenance patches, using that path to
+prove real identity, current authorization, worker lifecycle and recovery. This
+keeps the operating-experience investment grounded in working application
+behavior; new operational APIs come only after the existing path is dependable.
 
 ## Highest-Leverage Nontechnical Investment
 
@@ -629,52 +682,3 @@ backend, show delayed authorized mutations as its distinctive example, and make
 that example deployable and recoverable. Use the resulting user evidence to
 decide the exact v0.8 scope. Preserve the bounded 1.0 path and decline adjacent
 platform work until integration demonstrably cannot meet a real need.
-
-### Additional ORM adoption defect (2026-09-11)
-
-SOFTDELETE001 / P1: the module-level soft-delete visibility helpers discard
-existing queryset restrictions. Installed-wheel PostgreSQL execution returned
-both rows after an identifier-filtered queryset was passed to either helper.
-This can drop application tenant filters; no RLS bypass was demonstrated.
-The public guide now starts visibility selection from the manager and applies
-filters afterwards. Recommend a separate narrowly scoped runtime patch.
-Evidence: `audit-evidence/v071/soft-delete-execution.json`. This reinforces the
-existing correctness/adoption priority without changing the roadmap thesis.
-
-### Fixture import/export adoption defects (2026-09-11)
-
-FIXTURE001–003 / P1 are reproduced installed-wheel limitations: exported primary
-keys cannot recreate missing rows, single-model YAML UUID output fails safe
-loading, and default whole-registry export fails on model names. The public guide
-now limits its example to JSON seeding and selected exports, distinguishes imports
-from backups, and explains strict-mode transaction ownership. Separate patches
-should establish tested identity/serialization contracts; no runtime fixes belong
-in this documentation release. Evidence: `audit-evidence/v071/fixture-execution.json`.
-
-### Inspector provenance defect (2026-09-11)
-
-INSPECTOR001 / P1: offline query-plan fallback can label fabricated results
-EXPLAIN ANALYZE with no warning, even for invalid SQL. Documentation now directs
-measured analysis to the database-backed profiling procedure and distinguishes
-model declarations from verified catalog state. Recommend a separate provenance
-and error-reporting patch; no production semantics change in this release.
-The installed import gate preserves the offline negative control, not a live
-pool/thread safety certification.
-
-### Admin widget rendering side effect (2026-09-11)
-
-ADMINWIDGET001 / P2: rendering an array with fewer entries than min_rows
-appends blanks to the supplied list. Recommend a separate defensive-copy patch.
-The installed widget negative control proves in-memory mutation, not persistence
-or permission bypass. JSON value escaping was separately verified and is not
-a defect. This does not change the existing adoption-focused roadmap thesis.
-
-### Eager-loading terminal consistency (2026-09-12)
-
-RELATION001 / P1: installed `select_related(...).first()` returns the parent
-without populating its requested related object, while the documented `all()`
-path loads it. The exact model example passes; the additional negative control
-in `query-execution.json` retains the failure flag. Recommend a separate narrow
-terminal-method consistency patch with empty/nonempty FK/O2O and prefetch cases.
-This strengthens the existing correctness/adoption priority, not a proposal for
-more database backends or a broader ORM rewrite. No runtime change is made here.

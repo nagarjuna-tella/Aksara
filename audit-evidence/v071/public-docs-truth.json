@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "8086a8ed1a5893b030b0404bb8954bcfd740e523",
+  "reviewed_head": "852dc854310e5bcbe84dc69c17ec9b5cb8948d88",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "78435f31e78e99ab52fc215c5587f2b57c701877a6771badffe1df1ccb00ae56",
+    "sha256": "25a59ae2010faf21d6521100a576880bb72c6ccc3c46aab787f7faeb06d7117c",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -620,7 +620,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "8ca109a5cee40e81602022d2ffcab0144d454d441408f61ddd08f0079fc92174",
+      "sha256": "29298172a57d20f2216b9614d2acf5b034c4f27a1fd0c12343a13befd09b3509",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 8,

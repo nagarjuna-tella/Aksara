@@ -71,7 +71,7 @@ Line numbers below refer to that exact objective.
 | B12: Capability-gap analysis (line 1542) | SCOPED | Capability Gaps table has all eight requested qualitative dimensions and eleven gaps. | No summed numerical precision; prioritization explicitly weighs risk and integration alternatives. |
 | B13: Roadmap principles (line 1565) | SCOPED | Roadmap Principles records eight evidence-based rules before version sequencing. | No further feature commitments inferred. |
 | B14: Roadmap horizons (line 1586) | SCOPED | Now, Next, Later, Explore and Not Planned horizons exist in report and public roadmap. | Dates and speculative later versions remain uncommitted. |
-| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Ten findings require separate functional scope; no quiet fixes here. |
+| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Seventeen findings require separate functional scope; no quiet fixes here. |
 | B16: Determine v0.8 thesis (line 1635) | SCOPED | v0.8 Thesis proposes operating existing authorized work, with acceptance scenario and conditions for reconsideration. | Recommendation only; no v0.8 implementation. |
 | B17: Longer release sequence (line 1658) | SCOPED | Possible Later Release Sequence leaves v0.9 unassigned and uses evidence-gated stabilization. | No arbitrary feature allocation or schedule. |
 | B18: Define v1.0 cutoff (line 1675) | SCOPED | v1.0 Readiness Criteria bounds supported API, migrations, security, operations, docs, compatibility, integrations and defect closure. | These are future criteria, not a current 1.0 claim. |
@@ -393,3 +393,19 @@ conclusions are recorded in operator-reading.json. All required operator topics
 are discoverable without the ADR. No new contradiction required a page edit.
 This does not mark C6's entire manual review, a live restore/deployment exercise,
 or E5's candidate campaign complete.
+
+## Strategy consistency review
+
+Read the complete market/roadmap report and public roadmap together. Reconciled
+the Table Stakes, executive blocker statement and ranked recommendations with
+the seventeen recorded functional findings. Moved late defect notes into the
+main Technical Debt section; the report now ends with its recommendation.
+The public roadmap already makes correctness interrupt its sequence and needs
+no change. v0.8 remains a proposed operating outcome, not an implementation
+authorization. Primary/secondary users, database/AI decisions, qualitative gap
+dimensions, horizons and bounded 1.0 criteria remain consistent.
+
+Reopened the cited FastAPI features, Temporal workflow execution and LangGraph
+persistence primary pages on September 12. Their category boundaries remain
+consistent with the report; this is a three-source spot check, not a fresh
+26-source research campaign or evidence of customer demand.

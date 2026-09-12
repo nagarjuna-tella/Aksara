@@ -2263,3 +2263,14 @@ operator-reading.json records current hashes, reasons and all named C5 answers.
 C5's reading requirement is verified; this is not a live production deployment,
 restore drill, independent user study or whole-manual acceptance. No page or
 production code changed in this review.
+
+## Strategy consistency review (2026-09-12)
+
+The full strategic report and public roadmap were read together. Corrected
+optimistic Table Stakes wording for ORM/migrations, configuration, SDK and
+scaffold packaging to reflect their recorded defects; updated deployment/docs
+assessments to recognize completed author reading and tutorial execution without
+claiming candidate acceptance. Consolidated later defect notes into Technical
+Debt and made correctness prerequisite to the reference-path investment.
+The proposed v0.8 direction, PostgreSQL-first decision and bounded 1.0 remain
+unchanged. The public roadmap already gives correctness priority.
