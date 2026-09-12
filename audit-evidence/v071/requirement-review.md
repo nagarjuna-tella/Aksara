@@ -31,7 +31,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 68-row PT-001 through PT-068 register with detailed sections, plus seventeen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 69-row PT-001 through PT-069 register with detailed sections, plus eighteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
@@ -123,7 +123,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Seventeen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 now has a scoped installed Database.execute reproduction |
+| Functional defects: document, classify, preserve, separate patch | Eighteen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -137,7 +137,7 @@ Line numbers below refer to that exact objective.
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
 | AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
-| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all seventeen findings and source/date qualifications |
+| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all eighteen findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
 | Runnable Quick Start and progressive tutorial | Exact installed-wheel six-stage Ticket Desk | Actual candidate rerun |
@@ -340,7 +340,8 @@ sixteen-finding counts exclude this newly observed seventeenth finding.
 
 Public relations/glossary guidance and strategic maintenance priorities now
 include RELATION001. The new finding's publication follow-up is complete; its
-runtime fix remains separately scoped. Current inventory is seventeen findings.
+runtime fix remains separately scoped. At this checkpoint the inventory was
+seventeen findings; the later TASK-001 finding raises the current total to eighteen.
 Ten installed relation checks and 207 docs tests pass; all affected link/import
 artifacts were refreshed. Final manual/candidate acceptance remains open.
 
@@ -398,7 +399,7 @@ or E5's candidate campaign complete.
 
 Read the complete market/roadmap report and public roadmap together. Reconciled
 the Table Stakes, executive blocker statement and ranked recommendations with
-the seventeen recorded functional findings. Moved late defect notes into the
+the seventeen findings recorded at that checkpoint. Moved late defect notes into the
 main Technical Debt section; the report now ends with its recommendation.
 The public roadmap already makes correctness interrupt its sequence and needs
 no change. v0.8 remains a proposed operating outcome, not an implementation
@@ -488,3 +489,14 @@ transaction reference. Stability definitions and links remain unchanged.
 `concepts-reading-review.json` records page-specific dispositions and hashes.
 This closes the two-page author reading scope; final candidate validation and
 remaining manual sections are still open. No production source changed.
+
+## Advanced manual reading and task recovery — 2026-09-12
+
+A8/A10/A11/A12/A22/C6: all twelve advanced pages were read completely and have
+current-hash, per-page dispositions in `advanced-reading-review.json`. The
+background-task pass corrected manual-worker lifecycle instructions and exposed
+PT-069/TASK-001: ordinary stale-lock recovery has no heartbeat or completion
+fence. `task-stale-recovery.json` reproduces two calls and a stale overwrite
+using the installed 0.7.0 wheel and an owned PostgreSQL schema, then verifies
+cleanup. This advances the manual review but does not complete remaining docs
+sections, final candidate execution, or the full regression campaign.

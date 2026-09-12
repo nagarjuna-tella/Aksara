@@ -145,21 +145,38 @@ app = Aksara(database_url=settings.database_url)
 
 Run the worker directly for full control:
 
-```python
+```python title="run_task_worker.py"
+import asyncio
+
 from aksara.tasks import TaskWorker
 from aksara.db import Database
 
-db = Database("postgresql://localhost/myapp")
-await db.connect()
 
-worker = TaskWorker(
-    db,
-    poll_interval=0.25,
-    retry_delay_seconds=5.0,
-    concurrency=4,
-)
-await worker.start()
+async def main():
+    db = Database("postgresql://localhost/myapp")
+    await db.connect()
+    worker = TaskWorker(
+        db,
+        poll_interval=0.25,
+        retry_delay_seconds=5.0,
+        concurrency=4,
+    )
+    await worker.start()
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await worker.stop()
+        await db.disconnect()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
+
+`start()` starts the polling task and returns. The process that owns a manual
+worker must stay alive, call `stop()` during shutdown, and then disconnect its
+database pool. `stop()` waits for in-flight callables to finish; choose a
+separate process supervisor and shutdown deadline appropriate to the deployment.
 
 ### Queue Binding
 
@@ -254,6 +271,14 @@ row stays `status='running'` indefinitely. Aksara detects this automatically:
 Every `lock_recovery_interval_seconds` (default: 60 s) the worker queries for
 tasks whose `locked_at` is older than `stale_lock_timeout_seconds` (default:
 300 s / 5 min) and resets them to `pending` so another worker can retry them.
+
+For an ordinary unlinked task, this age test is not a heartbeat or ownership
+fence. A callable that is still running beyond `stale_lock_timeout_seconds` can
+be reclaimed and executed by another worker, and the older callable can later
+overwrite the stored result. Set the timeout above the longest expected runtime,
+make ordinary tasks safe to repeat, and split long work where practical. Use a
+[Durable Operation](durable-operations.md) when fenced ownership, current
+reauthorization, or guarded application writes are required.
 
 ```python
 worker = TaskWorker(

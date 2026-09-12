@@ -1,0 +1,20 @@
+{
+  "package_version": "0.7.0",
+  "duplicate_calls_observed": 2,
+  "recovered_while_first_callable_active": true,
+  "reclaimed_result_before_stale_completion": "reclaimed_second",
+  "final_result_after_stale_completion": "stale_first",
+  "ordinary_task_stale_fence_pass": false,
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Negative installed-wheel probe for one ordinary unlinked task: recovery is forced while its first callable is active, a second call executes, and the unfenced first completion overwrites the stored second result. Admin role and owned schema; not a durable Operation, process-death, tenant/RLS, or external-effect test.",
+  "source_sha256": {
+    "aksara/tasks.py": "a4d01babc386a3e958647eeeb2301f080502275685ebfffe8dcc2db653743d22"
+  },
+  "page_sha256": {
+    "docs/docs/advanced/background-tasks.md": "9b56a874a5f8d2fd9a1fe75b0c829f9f7d47484f9b5770596644a25ea91b51d5"
+  },
+  "runner_sha256": "cc6ba715f0915d2b2821b6ef10cf042fc81cb814e2eff91cc0705ac1ac521fc2"
+}

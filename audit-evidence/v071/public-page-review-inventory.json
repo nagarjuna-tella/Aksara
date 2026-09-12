@@ -76,17 +76,22 @@
     },
     {
       "path": "docs/docs/advanced/background-tasks.md",
-      "sha256": "1b66759cec96bcea83a8e79222125dfb50b19d534f7693ac62f8b2704ae0cd8a",
+      "sha256": "9b56a874a5f8d2fd9a1fe75b0c829f9f7d47484f9b5770596644a25ea91b51d5",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json",
+        "task-stale-recovery.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 465
+      "lines": 490
     },
     {
       "path": "docs/docs/advanced/caching.md",
       "sha256": "28e132784a9a130162838bc0c6ee95c62e1823c6b423c9ce6ba65f34789289f5",
       "changed_since_release": false,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 13
     },
@@ -95,6 +100,7 @@
       "sha256": "d61b7a0302ed390ace1f255210d632e2d2a6a6ca130d586337ba9a847dc4e169",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "advanced-reading-review.json",
         "custom-field-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -104,7 +110,9 @@
       "path": "docs/docs/advanced/durable-operations.md",
       "sha256": "f1d42e1040f5d0fb9180525003c20389a0bab6d2ca84f93f2b2709086c98bdd7",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 319
     },
@@ -113,6 +121,7 @@
       "sha256": "2bee26b94f01166089839a66bd848bb63304fa77a39eef44be539e8b1ca3809e",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "advanced-reading-review.json",
         "generic-step-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -122,7 +131,9 @@
       "path": "docs/docs/advanced/index.md",
       "sha256": "a8791013dda67713756f1182479c838ce70715fc1e8d7962cd24b8980d50bad3",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 43
     },
@@ -130,7 +141,9 @@
       "path": "docs/docs/advanced/internationalization-and-timezones.md",
       "sha256": "d2e29a2fc5e369cff4a1b41c43bde107f96f6dc073f7fac7c7052cecbf21cff7",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 136
     },
@@ -139,6 +152,7 @@
       "sha256": "2ad02c5e56ce26e5f693cba114944ea4eb75717a540330cb1ac5ab26e88d19d7",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "advanced-reading-review.json",
         "media-lifecycle.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -148,7 +162,9 @@
       "path": "docs/docs/advanced/performance.md",
       "sha256": "97aef7e3bb0c6a3a6c1f956a3ce60628867556e545d8d742dad582ed36e26c1e",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 91
     },
@@ -156,7 +172,9 @@
       "path": "docs/docs/advanced/signals.md",
       "sha256": "2b0b6e92e2773bb548bf8dd9b4f1b53e613ca6033b75081594aef4f324d9f096",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 35
     },
@@ -165,6 +183,7 @@
       "sha256": "267870d1dac0c8e30eb0ee9ecdb9a8031354958bdc3552df18c8913274bbfa3f",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "advanced-reading-review.json",
         "testing-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -174,7 +193,9 @@
       "path": "docs/docs/advanced/validation.md",
       "sha256": "feadb5a7d02ff1b984b16e05120c80164eebc1cb577b84cd154dbf323ef34abe",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "advanced-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 91
     },
@@ -1480,7 +1501,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 70
+    "with_scoped_evidence_candidates": 78
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

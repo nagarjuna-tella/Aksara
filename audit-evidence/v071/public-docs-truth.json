@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "a28de75c41d6050b80798b82d5d7726c3a73d36d",
+  "reviewed_head": "8a2661d0f7efbc533ec2e70e6afc60f67a30fb6a",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "b7739d828a642710dbfcfa151a3e9db78f89bc460a7b6c62ecc5ba623c750576",
+    "sha256": "f45e2abb97b6567d81bb33abc82e63908d85b8b5c184ef99df4c61e4c067159d",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -417,6 +417,15 @@
       "recorded_result": true,
       "scope": "All eleven JSON/Array/Vector/Time/Duration guide blocks, autodetected CreateTable operations and selected PostgreSQL writes/rejections plus the exact validation fragment and catalog model declarations; existing pgvector, admin role, not full migration CLI/history, RLS, HTTP serializer or all advanced-field paths",
       "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/advanced-reading-review.json",
+      "sha256": "0e37be00829ee9ffecc6d16e29caa757ed86ba2c4f8def5ca3c058e25413edb4",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all twelve advanced pages, with source comparison for ordinary-task recovery and manual worker lifecycle plus existing scoped evidence references. This is not final candidate execution or certification of live providers, external effects, RLS, SMTP, S3, or every persistence path.",
+      "checked_linked_page_hashes": 12,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -485,7 +494,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "5f33a50577c560a13f6e76e9e192e1a56451d3943720a95742ffcc254c33c122",
+      "sha256": "c56974873830228d9ab5f0d59a8bcd9adb5d67d011fc9dc00c01a4a1dc13042e",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -647,7 +656,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "836d01f7e1a61c19aa6b9a92b18e75ea33ad65814826abb64b2044f28e724245",
+      "sha256": "aff514810f0afbf67e78c82b74ba84f9542eae6ba6df235e37d9ea994ea3a3a7",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 8,
@@ -710,7 +719,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "a595948caa0705a6ca21011ee423ddcdd99c418b1e6c89c40274c325d00335f1",
+      "sha256": "dc82d5121215e2fcfd4448ec608901f940552bf886f5e09f2d68c7c8e6d5a404",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -845,7 +854,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "a98ba488e0a7d650a64023d92953b0effe37305d0033d25662abb4fe8022bead",
+      "sha256": "10872db506d826b2620683e1d6e5e070fc2b2fe05f599edad791ecd0891221cc",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -872,7 +881,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "cf8fc18155fd289195dfad9de7fae4f4cde5e41e567f00e313ba3a9dc401be3d",
+      "sha256": "c0ead7773380d7c91f1c166eba0ec4023a24ca4889262a1674d12964fda1fff6",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -984,6 +993,15 @@
       "recorded_result": "passed",
       "scope": "Read the artifact and audit report for scope; no inferred pass",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/task-stale-recovery.json",
+      "sha256": "d01279553e876e1dc7e1cc091266bb365b93d2999401b7b2ca2df76e4aabd490",
+      "recorded_result": true,
+      "scope": "Negative installed-wheel probe for one ordinary unlinked task: recovery is forced while its first callable is active, a second call executes, and the unfenced first completion overwrites the stored second result. Admin role and owned schema; not a durable Operation, process-death, tenant/RLS, or external-effect test.",
+      "checked_linked_page_hashes": 2,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -1119,6 +1137,11 @@
       "id": "SCAFFOLD-001",
       "evidence": "scaffold-editable-defect.json",
       "boundary": "Generated application editable packaging"
+    },
+    {
+      "id": "TASK-001",
+      "evidence": "task-stale-recovery.json",
+      "boundary": "Ordinary stale-lock recovery can duplicate active work and permits an older completion to overwrite the newer result"
     }
   ],
   "remaining_before_candidate": [

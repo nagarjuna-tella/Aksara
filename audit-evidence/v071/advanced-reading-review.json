@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all twelve advanced pages, with source comparison for ordinary-task recovery and manual worker lifecycle plus existing scoped evidence references. This is not final candidate execution or certification of live providers, external effects, RLS, SMTP, S3, or every persistence path.",
+  "page_sha256": {
+    "docs/docs/advanced/background-tasks.md": "9b56a874a5f8d2fd9a1fe75b0c829f9f7d47484f9b5770596644a25ea91b51d5",
+    "docs/docs/advanced/caching.md": "28e132784a9a130162838bc0c6ee95c62e1823c6b423c9ce6ba65f34789289f5",
+    "docs/docs/advanced/custom-fields.md": "d61b7a0302ed390ace1f255210d632e2d2a6a6ca130d586337ba9a847dc4e169",
+    "docs/docs/advanced/durable-operations.md": "f1d42e1040f5d0fb9180525003c20389a0bab6d2ca84f93f2b2709086c98bdd7",
+    "docs/docs/advanced/generic-relations-and-durable-workflows.md": "2bee26b94f01166089839a66bd848bb63304fa77a39eef44be539e8b1ca3809e",
+    "docs/docs/advanced/index.md": "a8791013dda67713756f1182479c838ce70715fc1e8d7962cd24b8980d50bad3",
+    "docs/docs/advanced/internationalization-and-timezones.md": "d2e29a2fc5e369cff4a1b41c43bde107f96f6dc073f7fac7c7052cecbf21cff7",
+    "docs/docs/advanced/media-and-email.md": "2ad02c5e56ce26e5f693cba114944ea4eb75717a540330cb1ac5ab26e88d19d7",
+    "docs/docs/advanced/performance.md": "97aef7e3bb0c6a3a6c1f956a3ce60628867556e545d8d742dad582ed36e26c1e",
+    "docs/docs/advanced/signals.md": "2b0b6e92e2773bb548bf8dd9b4f1b53e613ca6033b75081594aef4f324d9f096",
+    "docs/docs/advanced/testing.md": "267870d1dac0c8e30eb0ee9ecdb9a8031354958bdc3552df18c8913274bbfa3f",
+    "docs/docs/advanced/validation.md": "feadb5a7d02ff1b984b16e05120c80164eebc1cb577b84cd154dbf323ef34abe"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/advanced/index.md",
+      "disposition": "retain_after_reading",
+      "reason": "Routes readers by task and distinguishes ordinary tasks, Durable Operations, DurableStep, signals, caching and production concerns."
+    },
+    {
+      "page": "docs/docs/advanced/background-tasks.md",
+      "disposition": "retain_after_worker_lifecycle_and_recovery_corrections",
+      "reason": "Shows a complete manual worker lifecycle and now discloses that ordinary stale-lock recovery has neither heartbeat nor fence; TASK-001 is reproduced separately."
+    },
+    {
+      "page": "docs/docs/advanced/caching.md",
+      "disposition": "retain_after_reading",
+      "reason": "States that no general cache API exists and keeps tenant, policy and invalidation ownership with the application."
+    },
+    {
+      "page": "docs/docs/advanced/custom-fields.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses actual field hooks, bounds migration/API implications, and links the known bulk-update limitation."
+    },
+    {
+      "page": "docs/docs/advanced/durable-operations.md",
+      "disposition": "retain_after_reading",
+      "reason": "Explains Operation/Attempt, idempotency, leases, fencing, reauthorization, approval, cancellation, PostgreSQL atomicity, external uncertainty and task integration without requiring ADR 0001."
+    },
+    {
+      "page": "docs/docs/advanced/generic-relations-and-durable-workflows.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates generic references from DurableStep and both from the stable Operation contract; force, cancellation, authority and DDL limits are explicit."
+    },
+    {
+      "page": "docs/docs/advanced/internationalization-and-timezones.md",
+      "disposition": "retain_after_reading",
+      "reason": "Explains request preference context, fallback catalogs, timezone conversion and persistence boundaries without treating locale as identity."
+    },
+    {
+      "page": "docs/docs/advanced/media-and-email.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates stored references, object bytes and external email, states authorization/lifecycle ownership, and exposes STORAGE-001."
+    },
+    {
+      "page": "docs/docs/advanced/performance.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses supported query controls and calls for workload measurement without inventing projection, explain, relation or cache APIs."
+    },
+    {
+      "page": "docs/docs/advanced/signals.md",
+      "disposition": "retain_after_reading",
+      "reason": "Links the canonical signal contract and distinguishes callback delivery from database commit and durable external effects."
+    },
+    {
+      "page": "docs/docs/advanced/testing.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates unit, HTTP, PostgreSQL, task and RLS isolation and discloses TESTING-001 instead of promising automatic rollback."
+    },
+    {
+      "page": "docs/docs/advanced/validation.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates shape validation, authorization, tenant checks and concurrent database invariants while using supported synchronous serializer hooks."
+    }
+  ],
+  "candidate_acceptance": false,
+  "task_recovery_evidence": "task-stale-recovery.json"
+}

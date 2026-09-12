@@ -83,6 +83,7 @@ def main():
             {'id':'BULK-001','evidence':'bulk-execution.json','boundary':'Boolean/timestamp bulk_update CASE type inference'},
             {'id':'TESTING-001','evidence':'testing-helper-findings.json','boundary':'Installed helper cleanup leaves Database.execute writes committed and pool usable on normal/exceptional exit; not a sustained leak measurement'},
             {'id':'SCAFFOLD-001','evidence':'scaffold-editable-defect.json','boundary':'Generated application editable packaging'},
+            {'id':'TASK-001','evidence':'task-stale-recovery.json','boundary':'Ordinary stale-lock recovery can duplicate active work and permits an older completion to overwrite the newer result'},
         ],
         'remaining_before_candidate':[
             'Finish semantic public-page/reference audit and reconcile stale capability-matrix descriptions with the scoped evidence.',

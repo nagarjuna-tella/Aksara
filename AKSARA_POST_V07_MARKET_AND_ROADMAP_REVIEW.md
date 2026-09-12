@@ -212,7 +212,7 @@ implementation is identified. Component existence is not certification.
 | Authentication integration | Weak adoption path | Auth/session primitives exist; this audit has not verified a turnkey external OIDC lifecycle |
 | OAuth/social-provider breadth | Missing verified integration evidence | Do not claim the package contains none based only on a text search; select a provider from actual user need |
 | Admin | Adequate foundation | Avoid promising Django plugin parity or stable Studio internals |
-| Tasks and durable actions | Already strong semantics; weak discoverability | Separate Task from Operation and demonstrate both from installed wheel |
+| Tasks and durable actions | Durable semantics are strong; ordinary recovery has a correctness limitation | Separate Task from Operation, disclose TASK-001, and demonstrate both from installed wheel |
 | Scheduling | Adequate for documented task paths | No reason yet for a new universal workflow/scheduling service |
 | WebSockets/SSE | Existing underlying/specific surfaces | `aksara/api/streaming.py` exists; no hosted realtime-sync platform claim |
 | Storage and email | Existing integrations | `aksara/storage.py` and media/email docs; independently execute the recommended configuration |
@@ -270,7 +270,9 @@ HTTP action permission metadata does not automatically enforce authorization),
 STORAGE-001 (filesystem sibling-prefix containment), CFG-001 (origin/host list
 parsing), SDK-001 (generated TypeScript strict-compilation failure), and
 SCAFFOLD-001 (fresh generated projects cannot install editable because Hatch
-file selection is missing). The local dependency-install path is now documented
+file selection is missing). TASK-001 shows that an ordinary long-running task
+can be reclaimed without a heartbeat or fence, execute twice, and let its older
+completion overwrite the newer result. The local dependency-install path is now documented
 and tested, but application packaging still needs a separate scoped patch. The
 public-truth audit contains the reproductions and scoped evidence. These findings
 raise the priority of separately reviewed correctness/security maintenance
@@ -519,7 +521,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the seventeen audit findings for separately scoped functional maintenance; do
+Track the eighteen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 

@@ -63,7 +63,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Multi-tenancy | Yes | Stable covered context paths | `TenantModel`, `aksara.middleware.context` | Runnable chapter added | Two-customer ticket desk | HTTP and ordinary-task context | Tenant identity comes from server-owned membership, not request headers. |
 | PostgreSQL RLS | Yes | Stable restricted-role contract | `aksara.tenancy` helpers; migration SQL | Runnable chapter added | Forced-RLS ticket tables | Raw SQL plus HTTP denial | Actual NOSUPERUSER/NOBYPASSRLS posture checked; raw cross-tenant INSERT rejected. |
 | Admin | Yes | Evolving details | `aksara.contrib.admin` | Mount, permission, relation, widget and action guidance corrected | Anonymous mount/login; exact owner permission hook | Mount plus 16 real database relation/example checks ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Installed action fragment and widget checks add mocked update/message and escaping/mutation evidence; not full authenticated Admin CRUD or RLS coverage. ADMINWIDGET001 preserves the input-mutation defect. |
-| Ordinary tasks | Yes | Stable unlinked behavior | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result | Persists tenant, not full Principal; separate task recovery/retention gates remain. |
+| Ordinary tasks | Yes | Stable unlinked behavior with documented limitation | `aksara.task`, `aksara.tasks.TaskWorker` | Guide corrected; runnable chapter | Queued ticket report | Enqueue, worker, guarded result; stale-recovery negative probe ([evidence](audit-evidence/v071/task-stale-recovery.json)) | Persists tenant, not full Principal. TASK-001: ordinary stale recovery has no heartbeat/fence; long handlers can execute twice and an older completion can overwrite the result. |
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
@@ -168,8 +168,9 @@ Full page-by-page usability review is still pending.
 | PT-066 | P2 | Release guide omitted candidate-specific validation | Exact-ref evidence and historical guidance clarified; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-067 | P1 | ORM overview and glossary retained unsupported query, relation, database and helper claims | Rebuilt overview around the tutorial and corrected terminology; see conceptual review below | Docs fixed; candidate validation open |
 | PT-068 | P2 | Task guide described released durability as future work; durable idempotency scope wording obscured cross-action conflicts | Corrected task/Operation boundary and lookup identity versus semantic conflict checks | Docs fixed; candidate validation open |
+| PT-069 | P1 | Ordinary-task recovery described an old lock as a crashed worker without warning that a still-running long task may be reclaimed and overwrite a newer result | Added the unfenced timeout boundary, repeat-safety guidance and a complete manual-worker lifecycle | Docs fixed; TASK-001 runtime defect retained |
 
-The register consolidates all 67 findings. “Docs fixed” describes the recorded
+The register consolidates all 69 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -220,6 +221,19 @@ requires explicit checks or delegation to a checked handler; its example denies
 anonymous access in an installed-wheel HTTP check. Recommend a separate shared
 HTTP action authorization patch with view/action override, object, tenant,
 field-write, and REST/MCP parity regressions. No runtime fix is included.
+
+**TASK-001 / P1:** ordinary unlinked task recovery treats `locked_at` age as
+proof that the owner is stale, but it has no heartbeat, owner token, attempt
+condition or completion fence. An isolated installed-0.7.0 PostgreSQL probe
+kept the first callable active, aged its lock, recovered and executed a second
+call, then released the first call. Both calls ran and the older completion
+overwrote the second result. `task-stale-recovery.json` records the two calls,
+both result states, source hash, installed-package boundary and disposable-schema
+cleanup. This is not a durable Operation, process-death, RLS or external-effect
+test. The guide now requires a timeout longer than expected runtime and
+repeat-safe ordinary tasks, and points to Durable Operations for fenced work.
+Recommend a separate task ownership/heartbeat design and regression patch; no
+runtime behavior changes here.
 
 **PT-019 / P1:** serializer guidance advertised unsupported `partial=True`,
 `write_only_fields`, nested field declarations, and misleading validation/error
@@ -2157,7 +2171,9 @@ finding. Strategy/public-reference follow-up for RELATION001 remains open.
 RELATION001 is now disclosed in the public relation guide and strategy report.
 The guide/glossary also correct the single-JOIN claim: all() loads parent rows,
 then batches requested FK/O2O relations. The roadmap thesis remains focused on
-correctness/adoption; the seventeenth finding does not justify scope expansion.
+correctness/adoption; at that checkpoint, the seventeenth finding did not justify
+scope expansion. TASK-001 was added later and is likewise deferred to a separate
+functional patch.
 No production fix was made. This updates the earlier pending follow-up.
 
 Validation: 10 installed Admin/relation checks passed against local PostgreSQL;
@@ -2433,3 +2449,21 @@ transaction reference. Stability definitions and links remain unchanged.
 `concepts-reading-review.json` records page-specific dispositions and hashes.
 This closes the two-page author reading scope; final candidate validation and
 remaining manual sections are still open. No production source changed.
+
+## Advanced manual reading and ordinary-task recovery — 2026-09-12
+
+Read all twelve advanced pages completely. Their task-oriented index, validation,
+testing, performance, signals, custom-field, locale, storage, cache, DurableStep
+and Durable Operations boundaries are coherent after earlier corrections.
+`advanced-reading-review.json` records current page hashes and a disposition for
+each page. This is an author reading assessment, not final candidate execution
+or certification of live external services.
+
+The background-task review exposed PT-069/TASK-001. The manual-worker example
+now owns process lifetime, `stop()` and database disconnection. The stale-lock
+section no longer equates age with certain worker death: it tells readers that
+ordinary task recovery is unfenced, how to set the timeout and repeat-safety
+boundary, and when Durable Operations are the appropriate path. The isolated
+installed-wheel PostgreSQL probe observed two calls and an older completion
+overwriting the reclaimed call's result; its disposable schema was removed.
+No production source or task behavior changed.
