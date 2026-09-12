@@ -281,10 +281,11 @@ these gaps, not merely polishing their documentation.
 
 The subsequent reference audit also reproduced BULK-001 (Boolean/timestamp
 `bulk_update` CASE type inference) and PAGINATION-001 (generated HTTP responses
-strip page/cursor metadata). TESTING-001 is source-confirmed only: the database
-test helper does not bind application queries to its rollback transaction and
-its cleanup branch omits pool disconnection. A negative runtime probe is still
-pending; do not describe a measured leak. EX-001 remains the historical
+strip page/cursor metadata). TESTING-001 is now reproduced against installed 0.7.0: writes through the yielded
+Database remain committed and its pool remains usable after cleanup=True on
+normal and exceptional exit. The control with cleanup=False disconnects.
+This is not a sustained leak measurement; the probe closes its own connections
+and removes its schema (`audit-evidence/v071/testing-helper-execution.json`). EX-001 remains the historical
 multitenant example's exemption-matching defect. The domain-template audit
 additionally reproduces MIGRATION-001: discovery of
 the built-in auth `User` replaces a same-named application model, omitting its

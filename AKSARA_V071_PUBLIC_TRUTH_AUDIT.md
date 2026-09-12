@@ -82,7 +82,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Configuration | Yes | Stable documented contract | `Settings`, `settings`, `configure` | Reference rewritten and checked | Settings/upgrade examples | Explicit overrides and upgrade recipe | POSIX origin-list env parsing defect documented with explicit-list workaround. |
 | Durable persistence internals | Yes | Internal | Repositories, raw rows and failure hooks | Separated from public contract | Framework tests only | Not a public API gate | Do not expose raw provenance/fences as application contract merely because imports exist. |
 | Legacy provider configuration | Yes | Deprecated | `Settings.ai_default_provider`, `ai_providers`, `ai_secret_hints` | Reference labels compatibility fields | Settings reference | Not recommended example | Retained metadata fields, not recommended provider setup. |
-| Application testing | Yes, limited helpers | Evolving | `aksara.testing`; standard pytest/unittest | Rewritten with explicit fixture ownership | Exact standalone serializer/permission tests | 3 development-wheel tests ([evidence](audit-evidence/v071/testing-execution.json)) | TESTING-001: cleanup helper is not general rollback isolation; source-confirmed, negative runtime probe pending. |
+| Application testing | Yes, limited helpers | Evolving | `aksara.testing`; standard pytest/unittest | Rewritten with explicit fixture ownership | Exact standalone serializer/permission tests | 3 development-wheel tests ([evidence](audit-evidence/v071/testing-execution.json)) | TESTING-001: cleanup helper is not general rollback isolation; installed Database.execute writes survive cleanup and pool remains usable; see testing-helper-execution.json. |
 
 ## Documentation Architecture
 
@@ -2332,3 +2332,16 @@ Regenerated both artifacts by running their installed PostgreSQL gates: 11
 filtering and 8 pagination checks pass, with schema cleanup. The known pagination
 metadata failure remains explicitly recorded. Strict docs, 348 Python fences,
 292 CLI forms and 42,168 local links pass.
+
+## Testing-helper runtime reproduction (2026-09-12)
+
+TESTING-001 is no longer source-only. An isolated installed 0.7.0 process uses
+an owned PostgreSQL schema and verifies cleanup=True on both normal exit and
+a deliberate exception. An independent connection observes each committed
+write after context exit; a query on the yielded Database proves its pool is
+still usable. cleanup=False is a normal-disconnection control. All five checks
+pass as defect reproductions, not successful isolation guarantees. Explicit
+negative flags remain false; the harness closes its connections and verifies
+schema removal. This is not an HTTP/model-ORM/RLS or sustained leak-rate test.
+No production fix is included; recommend a separately scoped transaction-binding
+and cleanup patch. Existing public fixture-ownership guidance remains accurate.

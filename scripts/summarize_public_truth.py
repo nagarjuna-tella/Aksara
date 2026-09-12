@@ -81,7 +81,7 @@ def main():
             {'id':'MIGRATION-001','evidence':'domain-template-execution.json','boundary':'CLI model-name collision omits application User table'},
             {'id':'PAGINATION-001','evidence':'pagination-doc-execution.json','boundary':'Generated HTTP response discards page/cursor metadata'},
             {'id':'BULK-001','evidence':'bulk-execution.json','boundary':'Boolean/timestamp bulk_update CASE type inference'},
-            {'id':'TESTING-001','evidence':'testing-helper-findings.json','boundary':'Test helper rollback isolation and pool cleanup; source inspection only'},
+            {'id':'TESTING-001','evidence':'testing-helper-findings.json','boundary':'Installed helper cleanup leaves Database.execute writes committed and pool usable on normal/exceptional exit; not a sustained leak measurement'},
             {'id':'SCAFFOLD-001','evidence':'scaffold-editable-defect.json','boundary':'Generated application editable packaging'},
         ],
         'remaining_before_candidate':[

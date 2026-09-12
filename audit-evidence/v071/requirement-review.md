@@ -123,7 +123,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Seventeen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 remains source-only |
+| Functional defects: document, classify, preserve, separate patch | Seventeen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 now has a scoped installed Database.execute reproduction |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -435,3 +435,11 @@ response guidance and links from the API entry/ViewSet pages; retained the
 existing layer-specific contracts and explicit HTTP action limitation. Source
 declaration/HTTP contract tests support these examples, not every application
 policy or all database-error paths. Remaining full-manual work stays open.
+
+## Testing-helper evidence gap closed
+
+The pending TESTING-001 runtime probe now demonstrates committed writes and
+a usable pool after cleanup=True on normal and exceptional exit. The control
+cleanup=False path disconnects. Five checks pass with explicit failed-runtime
+flags and owned-schema cleanup. This closes the source-only evidence gap;
+it neither fixes the defect nor proves all ORM/HTTP fixture paths.

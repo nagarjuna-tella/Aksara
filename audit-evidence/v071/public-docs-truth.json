@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "d31c5dc7e5c11bd9e5a279b1c09bfc29e6508dcf",
+  "reviewed_head": "af4da45dec77ef00351d3200fa37fee04856d3e5",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "ea297c0c6312f69118f421fb956da6788d38a62c486d2006f27d123caa2a167e",
+    "sha256": "0fa340529725143fb6ac7f010c23979f9d071cd6b294ef97af78bb81d8ddf219",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -620,7 +620,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "29298172a57d20f2216b9614d2acf5b034c4f27a1fd0c12343a13befd09b3509",
+      "sha256": "836d01f7e1a61c19aa6b9a92b18e75ea33ad65814826abb64b2044f28e724245",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 8,
@@ -952,10 +952,19 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/testing-helper-execution.json",
+      "sha256": "cc054c703869e5af2eeca3583c4c499fb9214133fd07d24688bec1fd96c69864",
+      "recorded_result": true,
+      "scope": "Negative cleanup=True probe on normal and exceptional exit: direct Database.execute writes persist and the helper pool remains usable. cleanup=False disconnection is a control. Admin role, owned schema; not HTTP, ORM model writes, RLS or a sustained resource-leak measurement",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/testing-helper-findings.json",
-      "sha256": "b6ff1e523621ecc0b0508b3bf77f8288ef0904a9b7c48466be9aae476b45ba7d",
-      "recorded_result": "source-confirmed limitation; runtime reproduction pending",
-      "scope": "Source inspection of cleanup=True; not a negative runtime database or measured leak probe",
+      "sha256": "257fe45a369dd81cc6c482b39574a05ac6bfea492f573fa6d7ee1deaebbaa58e",
+      "recorded_result": "confirmed by installed 0.7.0 PostgreSQL reproduction",
+      "scope": "cleanup=True on normal and exceptional exit: Database.execute writes remain committed and helper pool remains usable; not HTTP, model-level ORM, RLS or sustained leak measurement",
       "checked_linked_page_hashes": 1,
       "stale_linked_pages": [],
       "historical_head": null
@@ -1059,7 +1068,7 @@
     {
       "id": "TESTING-001",
       "evidence": "testing-helper-findings.json",
-      "boundary": "Test helper rollback isolation and pool cleanup; source inspection only"
+      "boundary": "Installed helper cleanup leaves Database.execute writes committed and pool usable on normal/exceptional exit; not a sustained leak measurement"
     },
     {
       "id": "SCAFFOLD-001",
