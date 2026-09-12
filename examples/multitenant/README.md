@@ -16,6 +16,13 @@ and the [ticket-desk tenancy chapter](../../docs/docs/tutorials/ticket-desk-tena
 It remains in the repository for inspection; its startup success is not tenant
 isolation evidence.
 
+A second limitation was reproduced in the installed template's migration flow:
+the built-in auth `User` replaces the same-named example model in discovery,
+so `tenant_users` is missing despite successful migration commands
+(MIGRATION-001). See the [pattern status](../../docs/docs/patterns/multitenant.md)
+for the exact boundary. Verify generated operations and actual tables; this
+example is not a complete working tenant application.
+
 ## Run for local inspection only
 
 From the repository root, with `DATABASE_URL` set to a dedicated disposable

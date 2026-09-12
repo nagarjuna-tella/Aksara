@@ -1,206 +1,48 @@
-# Choosing a Pattern
+# Choose a starting point
 
-Aksara offers several ways to start a project. This guide helps you pick the right one.
+For a first application, use [Ticket Desk](first-project.md). It starts from the
+basic scaffold and grows one tested application through relations, permissions,
+tenancy, background reports, durable actions, and an optional MCP client.
 
----
+| Your goal | Start here |
+|---|---|
+| Learn the basic application lifecycle | [First project](first-project.md) and [project layout](project-layout.md). |
+| Study posts, comments, and state-changing actions | [Blog example](../patterns/blog.md), with its documented authentication limitations. |
+| Study customer/deal relationships and pipeline actions | [CRM example](../patterns/crm.md), an application demonstration. |
+| Build tenant-isolated data access | [Ticket Desk tenancy](../tutorials/ticket-desk-tenancy.md), not the historical multitenant template. |
+| Run a production-oriented reference | [Example tiers](examples.md) and [production deployment](../tutorials/deployment.md). |
+| Explore optional model providers | [Bring your own LLM](../ai-mode/bring-your-own-llm.md), explicitly experimental. |
 
-## Quick Decision Guide
-
-| If you want to... | Start with... |
-|-------------------|---------------|
-| Learn Aksara from scratch | **Blank Project** |
-| Build a content-based app | **Blog Pattern** |
-| Build internal tools or CRM | **CRM Pattern** |
-| Build a SaaS with tenants | **Multitenant Pattern** |
-| See AI/LLM wiring examples | **AI Providers Example** |
-
----
-
-## 1. Blank Project
-
-**Command:**
+## Generate a basic shell
 
 ```bash
 aksara startproject myapp
 ```
 
-**Use when:**
+The default template provides the application layout and commented model/API
+examples. It does not create a finished domain application or automatically
+start a durable worker. Studio and MCP are optional and disabled by default.
+Follow the generated README and the first-project tutorial for dependency,
+database, migration, and test instructions.
 
-- You know exactly what you're building
-- You want full control over the structure
-- You're following a tutorial or learning
-
-**What you get:**
-
-- A minimal app with one example model
-- Pre-configured Admin and Studio
-- Ready-to-use project structure
-
-**Next steps:**
-
-- Follow [Your First 10 Minutes](ten-minutes.md)
-- Or jump to [Quickstart](../quickstart.md)
-
----
-
-## 2. Blog Pattern
-
-**Command:**
+## Inspect a domain template
 
 ```bash
-aksara startproject myblog --template blog
+aksara templates list
 ```
 
-**Use when:**
+The available names are `basic`, `blog`, `crm`, and `multitenant`. The three domain
+templates copy bundled example modules into a flat directory, rather than
+producing the basic template's `app/` package and `pyproject.toml`. Their settings
+also differ. Follow each pattern page's checked commands instead of assuming
+that all templates share one install/startup flow.
 
-- You're building content-focused apps
-- You want to see CRUD, list/detail views, and workflows
-- You need posts, comments, tags, and publish states
+The blog copy contains `Post` and `Comment`. CRM contains `Customer`, `Deal`,
+and `Activity`; it does not contain separate `Pipeline` and `Stage` models.
+The historical multitenant copy contains `Tenant`, `User`, and `Project` and has
+a [known resolver defect](../patterns/multitenant.md). It is retained for study,
+not recommended as a SaaS security foundation.
 
-**What you get:**
-
-- `Post` model with title, content, slug, published state
-- `Comment` model linked to posts
-- Full ViewSets for both
-- Admin registrations
-- Sample queries and workflows
-
-**Key concepts demonstrated:**
-
-- ForeignKey relationships
-- Query filtering and ordering
-- Boolean workflow fields (draft → published)
-- Slug generation
-
-**Docs:** [Blog Pattern](../patterns/blog.md)
-
----
-
-## 3. CRM Pattern
-
-**Command:**
-
-```bash
-aksara startproject mycrm --template crm
-```
-
-**Use when:**
-
-- You're building internal tools or dashboards
-- You need customers, deals, and pipeline stages
-- You want to see reporting patterns
-
-**What you get:**
-
-- `Customer` model
-- `Deal` model with stage tracking
-- `Pipeline` and `Stage` models
-- ViewSets with custom actions
-- Admin with list filters
-
-**Key concepts demonstrated:**
-
-- Multiple related models
-- Enum-like stage fields
-- Custom ViewSet actions (e.g., close deal)
-- Aggregation queries
-
-**Docs:** [CRM Pattern](../patterns/crm.md)
-
----
-
-## 4. Multitenant Pattern
-
-**Command:**
-
-```bash
-aksara startproject saas --template multitenant
-```
-
-**Use when:**
-
-- You're building a SaaS application
-- Each customer (tenant) needs isolated data
-- You need tenant-aware middleware and queries
-
-**What you get:**
-
-- `Tenant` model
-- `TenantUser` model
-- Tenant middleware for request scoping
-- Base model class with tenant FK
-- Example tenant-aware ViewSets
-
-**Key concepts demonstrated:**
-
-- Middleware for tenant resolution
-- Automatic query scoping by tenant
-- Tenant-aware model base class
-- User-tenant relationships
-
-**Docs:** [Multitenant Pattern](../patterns/multitenant.md)
-
----
-
-## 5. AI Providers Example
-
-**Location:** `examples/ai_providers/`
-
-**Note:** This is not a `--template` option. It's an example package you can copy.
-
-**Use when:**
-
-- You want to wire Aksara's AI contracts to real providers
-- You're integrating OpenAI, Azure, or Anthropic
-- You need to see the adapter pattern in action
-
-**What you get:**
-
-- Protocol-based LLM client adapters
-- Environment-based configuration
-- Prompt building from route hints
-- Example AI-powered ViewSet actions
-
-**How to use:**
-
-```bash
-# Copy examples to your project
-aksara ai examples -o ./ai_adapters
-
-# Or browse them directly
-ls examples/ai_providers/
-```
-
-**Key concepts demonstrated:**
-
-- Soft SDK imports (no hard dependencies)
-- Protocol-based adapter pattern
-- Environment variable configuration
-- Using AI route hints in prompts
-
-**Docs:** [Bring Your Own LLM](../ai-mode/bring-your-own-llm.md)
-
----
-
-## Comparison Table
-
-| Feature | Blank | Blog | CRM | Multitenant |
-|---------|-------|------|-----|-------------|
-| Models included | 1 example | 2+ | 4+ | 3+ |
-| Relationships | None | ForeignKey | Multiple FKs | FK + Middleware |
-| Admin setup | Basic | Full | Full | Full |
-| Middleware | None | None | None | Tenant resolution |
-| Best for | Learning | Content apps | Internal tools | SaaS |
-
----
-
-## Next Steps
-
-After creating your project:
-
-1. **Configure your database** – Run `aksara dbsetup` locally, or edit `.env` directly for remote/production environments
-2. **Run migrations** – `aksara migrate`
-3. **Start the server** – `aksara dev`
-4. **Explore** – Visit `/admin/` and `/studio/ui`
-
-Need more guidance? Start with [Your First 10 Minutes](ten-minutes.md).
+The provider-adapter example is a separate experimental example, not another
+`--template` choice. Consult the [example catalog](examples.md) for the purpose,
+execution coverage, and limitations of every repository example.

@@ -165,7 +165,7 @@
     {
       "example": "multitenant",
       "files": {
-        "examples/multitenant/README.md": "1f2d7b24cc1f3d0e0046b1428682953d6b7c2be0be2435017d0e28b2bed26e16",
+        "examples/multitenant/README.md": "801e3d24602f22e9a3f1bce1d3431275ce03fb5829d610133f759c2529f0828c",
         "examples/multitenant/__init__.py": "c7d2f64bb41a925b1502d85bb5e3f161e955ac68beef2738e9f88ef24096626d",
         "examples/multitenant/admin.py": "e17ea211e27f815369c925b60cf99912270ade69f3b33de5d207a0379ab346d2",
         "examples/multitenant/main.py": "87d95a9975c1001a3d0820d77eb4e39d8fde7afeaacde49678141d4332cfac53",

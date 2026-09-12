@@ -44,6 +44,18 @@ PostgreSQL table: articles
 
 ---
 
+## Model names and discovery
+
+Use distinct model class names across loaded applications, including framework
+models. The registry keys classes by their Python name, not their module or
+`Meta.table_name`. In the historical multitenant example, CLI discovery of the
+built-in auth `User` replaces the example's `User`, so its `tenant_users` table
+is omitted from generated migrations even though the commands succeed. This
+known limitation is not fixed in the documentation release. Inspect generated
+operations and actual tables; do not treat a successful command as proof that
+every declared model was included. See the
+[historical example's status](../patterns/multitenant.md).
+
 ## Creating a Model
 
 ### Step 1: Import the Base Class and Fields

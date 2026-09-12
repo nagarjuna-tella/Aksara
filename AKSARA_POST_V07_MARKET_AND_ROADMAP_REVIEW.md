@@ -283,7 +283,10 @@ strip page/cursor metadata). TESTING-001 is source-confirmed only: the database
 test helper does not bind application queries to its rollback transaction and
 its cleanup branch omits pool disconnection. A negative runtime probe is still
 pending; do not describe a measured leak. EX-001 remains the historical
-multitenant example's exemption-matching defect. Together these are nine
+multitenant example's exemption-matching defect. The domain-template audit
+additionally reproduces MIGRATION-001: discovery of
+the built-in auth `User` replaces a same-named application model, omitting its
+declared table despite successful migration commands. Together these are ten
 separately tracked findings, with different proof scopes, rather than evidence
 that the entire backend is unusable. Their reproductions and alternatives are
 in the public-truth audit. Closing the relevant functional defects needs a
@@ -465,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the nine audit findings for separately scoped functional maintenance; do
+Track the ten audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 

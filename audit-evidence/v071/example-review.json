@@ -31,9 +31,9 @@
       "example": "multitenant",
       "classification": "REPLACE",
       "decision": "Replace recommended isolation role with Support Desk and ticket-desk tenancy; retain historical code.",
-      "limits": "Known EX-001 middleware exemption; startup is not RLS or tenant authorization evidence.",
+      "limits": "Known EX-001 middleware exemption and MIGRATION-001 model-discovery collision in installed template flow; startup is not complete schema, RLS or tenant authorization evidence.",
       "execution_evidence": "example-execution.json",
-      "readme_sha256": "1f2d7b24cc1f3d0e0046b1428682953d6b7c2be0be2435017d0e28b2bed26e16"
+      "readme_sha256": "801e3d24602f22e9a3f1bce1d3431275ce03fb5829d610133f759c2529f0828c"
     },
     {
       "example": "ai_providers",

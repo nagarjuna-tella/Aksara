@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "989b3d6fdb024e1ea1d2b273269c686f7a9a8908",
+  "reviewed_head": "c4637b25f03a9ca5872047d85a9cf786da61689d",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "8398685cd771b696c195f600dcd9a8f884894171a043c3b739fa9f32f2b9d942",
+    "sha256": "fa0040e4cebd14ce9f234ece4142c37969a7d218c16db306a405a6ca5c60e11b",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -467,7 +467,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "9243da2599e2f5631379d6dd230cd1e077075aa4465978e368eb315ac2d05cf0",
+      "sha256": "74c39c18ca7f9c090b572f4e6ac95121ca1e45436e6f2e39b7eacb8eaf198268",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -520,6 +520,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/domain-template-execution.json",
+      "sha256": "60ff6579ea8d6b05572dae5aa54b1fbecc60b013d7f2c2f646b6758c685cdcb6",
+      "recorded_result": true,
+      "scope": "Three installed domain-template copies, exact setup commands with ephemeral ports, real PostgreSQL migrations including expected multitenant missing-table defect, health/OpenAPI and blog/CRM anonymous create denial; not positive CRUD, custom action authorization, tenant isolation, provider execution or production readiness",
+      "checked_linked_page_hashes": 3,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/example-defects.json",
       "sha256": "dbe8ef7490596b225b652f0a3b0cd9c1a08da874c74c48c1f641019784a2e634",
       "recorded_result": "not a boolean gate",
@@ -530,7 +539,7 @@
     },
     {
       "artifact": "audit-evidence/v071/example-execution.json",
-      "sha256": "86b2c66cf0f3fdf97f69b9c250e12d6e96174c8c5822d276b76b4e23905bb410",
+      "sha256": "364387a5eb712342ccdd40a20f609651e56636705bfc5f8d4216d3f6533bb066",
       "recorded_result": true,
       "scope": "Local PostgreSQL startup and selected routes; schema-owner credentials, not RLS/security certification; providers not called",
       "checked_linked_page_hashes": 0,
@@ -539,7 +548,7 @@
     },
     {
       "artifact": "audit-evidence/v071/example-review.json",
-      "sha256": "17b974e231efd0f9cf4c0069a8cd91a4b8cbb84bb317c7f13ce43785c627b938",
+      "sha256": "3d633c58a45bdcab4eb7a21d6fa91040a4558ad7e11908e8f503a21f15f17b3c",
       "recorded_result": "not a boolean gate",
       "scope": "All six repository example applications classified; selected startup/HTTP contracts executed, not every action or provider",
       "checked_linked_page_hashes": 0,
@@ -557,7 +566,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "3fe6bad328c1f9d0b63f8239df9f67cdbf76e237d4eb0be761473a6943661196",
+      "sha256": "a661f937ac61a863f5a8cc5823cdbdff66b940489037ed752325bb84d863308c",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 7,
@@ -611,7 +620,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "2544483dd2502e6868ee6d8278747fc400fd286eebb8fee3861a742413c06dd4",
+      "sha256": "f3dabd575a49ff08ec73bacdaf3b8e9a34abdb73e3cd3b01e68af25ed28e3599",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -746,7 +755,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "98a6c80d6a2c31055e8e9e4cd9b40cc9df75115d4385b562cdca24f18a3bdea6",
+      "sha256": "bfc978cd22a22681048a14cddf0a01a2af2f64ac43b37f55a1a88bad6c18ef9e",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -888,6 +897,11 @@
       "id": "ACTION-001",
       "evidence": "custom-action-boundary.json",
       "boundary": "Custom HTTP action authorization metadata"
+    },
+    {
+      "id": "MIGRATION-001",
+      "evidence": "domain-template-execution.json",
+      "boundary": "CLI model-name collision omits application User table"
     },
     {
       "id": "PAGINATION-001",

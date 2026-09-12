@@ -52,7 +52,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
 | Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
-| Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. |
+| Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. MIGRATION-001: CLI model-name collision omits the historical template User table; domain-template evidence records that failure. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
 | Generated REST/ViewSets | Yes | Stable declared surface; known defects | `aksara.ModelViewSet`, `include_viewset`, `action` | Registration, filters and pagination corrected | Ticket desk; exact search and pagination ViewSets | CRUD plus 11 filter checks and 8 pagination observations ([filter evidence](audit-evidence/v071/filter-doc-execution.json), [pagination evidence](audit-evidence/v071/pagination-doc-execution.json)) | PAGINATION-001 strips page/cursor metadata at HTTP serialization; ACTION-001 requires explicit custom-action checks. Full candidate regressions remain required. |
 | Authentication | Yes | Stable covered backend paths | `aksara.contrib.auth`, application adapters | Account/session and adapter boundaries corrected | Exact account/session helper; local HTTP adapter | 19 primitive/permission checks ([evidence](audit-evidence/v071/auth-permission-execution.json)) | Database account/session behavior is exercised; no production HTTP login, JWT or provider certification. |
@@ -69,8 +69,8 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 316 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
-| Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). This is not a candidate wheel. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 309 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
 | Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | This nine-check storage gate does not cover SMTP/S3; the separate File/Image row covers persisted local lifecycle. Direct filesystem containment needs a separate patch. |
@@ -1363,3 +1363,68 @@ The debugging section's four pages now have source-backed public treatment and
 selected installed execution evidence. This does not complete the remaining
 site-wide semantic/usability audit, candidate versioning, final regression
 campaign, or release PR. No production source or database schema changed.
+
+## Domain Patterns and Template Setup
+
+**PT-046 / P0:** the pattern/selection pages presented historical examples as
+complete protected applications and the multitenant template as an isolation
+foundation. They also mixed the basic scaffold with flat domain copies,
+listed nonexistent CRM Pipeline/Stage models, advertised PUT updates, and
+prescribed `pip install -e` and `app.models` for copies without that package
+layout or build metadata. The five pattern/selection pages now distinguish the
+canonical protected tutorial from domain demonstrations and historical code.
+Duplicated, inaccurate model/action sketches were replaced with the actual
+example inventory, checked setup commands, links to the validated contracts,
+and explicit authentication/custom-action/tenant limitations.
+
+The generic tree and next steps printed by `startproject` still do not describe
+the domain copies correctly; this is remaining CLI instructional debt. The
+pattern pages explicitly direct users to the correct flat-module commands. No
+CLI callback or generation logic was altered by this correction.
+
+`scripts/check_domain_template_docs.py` runs the exact page command blocks
+against an installed public 0.7.0 wheel outside the checkout. It executes template
+listing, generation, migration generation/application and the local server;
+substitutes only an ephemeral port; and executes the documented curl checks.
+All three copies serve health/OpenAPI and register PATCH updates. Blog/CRM
+valid anonymous creates return 403. The initial blog probe omitted required
+content and correctly returned 422; supplying a valid request tests the intended
+permission boundary. This is not positive CRUD or custom-action certification.
+All three owned PostgreSQL schemas and server processes are cleaned up.
+
+### MIGRATION-001 / P1 — discovery silently replaces an application model
+
+The installed multitenant template declares `models.User` with table
+`tenant_users`. Before discovery, that class occupies the `User` registry entry.
+`discover_models('models')` then imports configured built-ins; the entry becomes
+`aksara.contrib.auth.models.User` with table `aksara_users`. The registry is keyed
+by Python class name, not module or table name. Both migration CLI commands exit
+zero, but the resulting schema lacks `tenant_users`.
+
+`domain-template-execution.json` records the before/after class identities,
+actual PostgreSQL table list, `missing_declared_tables: ["tenant_users"]`,
+`template_schema_complete: false`, and `all_template_schemas_complete: false`.
+The gate's pass means these observations reproduced; it does not mean that the
+multitenant schema is complete. The existing example startup gate had never
+claimed per-model schema completeness and did not expose this omission.
+
+The model guide, historical pattern page and example README now describe the
+limitation. Recommend a separate reviewed model-discovery/migration fix with
+same-name and import-order coverage that prevents silent model omission.
+Do not change registry semantics in v0.7.1. Choosing distinct application model
+names avoids this particular collision; it is not a general migration or
+isolation guarantee. The strategic review and machine-readable defect index now
+track ten functional findings without changing the roadmap thesis.
+
+### Validation
+
+- `.venv/bin/python scripts/check_domain_template_docs.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/domain-template-execution.json`: three generated-template observations verified, with the multitenant schema failure explicitly retained.
+- `.venv/bin/python scripts/audit_public_examples.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/example-execution.json`: five application startups, 12 selected GETs returning 200, six generated-create attempts returning 403; no provider calls. Local test database supplied privately to both runners.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py tests/patterns/test_startproject_templates.py -q`: 202 passed, three upstream deprecation warnings.
+- `.venv/bin/python -m pytest tests/cli/test_migrations_cli.py tests/cli/test_models_cli.py tests/migrations/test_autodetector.py -q` with required local database configuration: 43 passed. These regressions do not negate MIGRATION-001.
+- Installed doc checks: 463 Python fences/imports; 309 CLI forms parsed, zero errors and 11 exclusions.
+- Strict MkDocs passed; 162 rendered pages and 44,576 local links/assets validated. All 42 selected important external links reachable.
+- Ruff passed for the new runner/test and updated evidence indexer. No production source, migration semantics, or example runtime code changed.
+
+The remaining whole-site semantic/usability review, final requirement audit,
+CLI instructional debt, actual candidate build and release campaign remain open.

@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schemas_removed": true,
+  "templates": [
+    {
+      "template": "blog",
+      "package": {
+        "version": "0.7.0"
+      },
+      "generated_files": [
+        "README.md",
+        "__init__.py",
+        "admin.py",
+        "auth.py",
+        "main.py",
+        "migrations/__init__.py",
+        "models.py",
+        "serializers.py",
+        "settings.py",
+        "urls.py",
+        "views.py"
+      ],
+      "flat_layout_without_package_metadata": true,
+      "documented_commands": [
+        [
+          "aksara",
+          "startproject",
+          "blog_demo",
+          "--template",
+          "blog"
+        ],
+        [
+          "cd",
+          "blog_demo"
+        ],
+        [
+          "aksara",
+          "makemigrations",
+          "--app",
+          "models",
+          "--output",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "migrate",
+          "--migrations-dir",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "run",
+          "main:app",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "8000"
+        ]
+      ],
+      "documented_curl_commands_executed": true,
+      "template_listing_executed": true,
+      "port_substitution": "ephemeral local port for server isolation",
+      "migration_commands_exit_zero": true,
+      "tables": [
+        "aksara_content_types",
+        "aksara_cron_state",
+        "aksara_migrations",
+        "aksara_operation_approval_decisions",
+        "aksara_operation_attempts",
+        "aksara_operation_commands",
+        "aksara_operation_effects",
+        "aksara_operation_idempotency",
+        "aksara_operation_outbox",
+        "aksara_operation_transitions",
+        "aksara_operations",
+        "aksara_sessions",
+        "aksara_tasks",
+        "aksara_users",
+        "comments",
+        "posts"
+      ],
+      "missing_declared_tables": [],
+      "template_schema_complete": true,
+      "model_discovery": null,
+      "health_status": 200,
+      "openapi_status": 200,
+      "generated_update_method": "PATCH",
+      "unauthenticated_create_status": 403,
+      "server_stopped": true
+    },
+    {
+      "template": "crm",
+      "package": {
+        "version": "0.7.0"
+      },
+      "generated_files": [
+        "README.md",
+        "__init__.py",
+        "admin.py",
+        "auth.py",
+        "main.py",
+        "migrations/__init__.py",
+        "models.py",
+        "serializers.py",
+        "settings.py",
+        "urls.py",
+        "views.py"
+      ],
+      "flat_layout_without_package_metadata": true,
+      "documented_commands": [
+        [
+          "aksara",
+          "startproject",
+          "crm_demo",
+          "--template",
+          "crm"
+        ],
+        [
+          "cd",
+          "crm_demo"
+        ],
+        [
+          "aksara",
+          "makemigrations",
+          "--app",
+          "models",
+          "--output",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "migrate",
+          "--migrations-dir",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "run",
+          "main:app",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "8000"
+        ]
+      ],
+      "documented_curl_commands_executed": true,
+      "template_listing_executed": true,
+      "port_substitution": "ephemeral local port for server isolation",
+      "migration_commands_exit_zero": true,
+      "tables": [
+        "activities",
+        "aksara_content_types",
+        "aksara_cron_state",
+        "aksara_migrations",
+        "aksara_operation_approval_decisions",
+        "aksara_operation_attempts",
+        "aksara_operation_commands",
+        "aksara_operation_effects",
+        "aksara_operation_idempotency",
+        "aksara_operation_outbox",
+        "aksara_operation_transitions",
+        "aksara_operations",
+        "aksara_sessions",
+        "aksara_tasks",
+        "aksara_users",
+        "customers",
+        "deals"
+      ],
+      "missing_declared_tables": [],
+      "template_schema_complete": true,
+      "model_discovery": null,
+      "health_status": 200,
+      "openapi_status": 200,
+      "generated_update_method": "PATCH",
+      "unauthenticated_create_status": 403,
+      "server_stopped": true
+    },
+    {
+      "template": "multitenant",
+      "package": {
+        "version": "0.7.0"
+      },
+      "generated_files": [
+        "README.md",
+        "__init__.py",
+        "admin.py",
+        "main.py",
+        "middleware.py",
+        "migrations/__init__.py",
+        "models.py",
+        "serializers.py",
+        "settings.py",
+        "urls.py",
+        "views.py"
+      ],
+      "flat_layout_without_package_metadata": true,
+      "documented_commands": [
+        [
+          "aksara",
+          "startproject",
+          "tenant_demo",
+          "--template",
+          "multitenant"
+        ],
+        [
+          "cd",
+          "tenant_demo"
+        ],
+        [
+          "aksara",
+          "makemigrations",
+          "--app",
+          "models",
+          "--output",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "migrate",
+          "--migrations-dir",
+          "migrations"
+        ],
+        [
+          "aksara",
+          "run",
+          "main:app",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "8000"
+        ]
+      ],
+      "documented_curl_commands_executed": true,
+      "template_listing_executed": true,
+      "port_substitution": "ephemeral local port for server isolation",
+      "migration_commands_exit_zero": true,
+      "tables": [
+        "aksara_content_types",
+        "aksara_cron_state",
+        "aksara_migrations",
+        "aksara_operation_approval_decisions",
+        "aksara_operation_attempts",
+        "aksara_operation_commands",
+        "aksara_operation_effects",
+        "aksara_operation_idempotency",
+        "aksara_operation_outbox",
+        "aksara_operation_transitions",
+        "aksara_operations",
+        "aksara_sessions",
+        "aksara_tasks",
+        "aksara_users",
+        "projects",
+        "tenants"
+      ],
+      "missing_declared_tables": [
+        "tenant_users"
+      ],
+      "template_schema_complete": false,
+      "model_discovery": {
+        "declared_user": {
+          "module": "models",
+          "table": "tenant_users"
+        },
+        "before": {
+          "module": "models",
+          "table": "tenant_users"
+        },
+        "after": {
+          "module": "aksara.contrib.auth.models",
+          "table": "aksara_users"
+        }
+      },
+      "health_status": 200,
+      "openapi_status": 200,
+      "generated_update_method": "PATCH",
+      "unauthenticated_create_status": null,
+      "server_stopped": true
+    }
+  ],
+  "all_template_schemas_complete": false,
+  "known_defects": [
+    "MIGRATION-001: multitenant User name collision omits tenant_users"
+  ],
+  "scope": "Three installed domain-template copies, exact setup commands with ephemeral ports, real PostgreSQL migrations including expected multitenant missing-table defect, health/OpenAPI and blog/CRM anonymous create denial; not positive CRUD, custom action authorization, tenant isolation, provider execution or production readiness",
+  "page_sha256": {
+    "docs/docs/patterns/blog.md": "278dbb7c110f2762237147e1d4d3083986e675cce6384098ab7e5b392141dc7d",
+    "docs/docs/patterns/crm.md": "5f05fc08948770c5580289139f43312ec7c8a8ac6316190f255e968106b39bc5",
+    "docs/docs/patterns/multitenant.md": "eb338d6837a0c02f870d817d82d76fa28bf85191092b81e1aa3abf28db00d52d"
+  },
+  "runner_sha256": "0bb5a7aa41922954c4422d85b9f4edbcc3c98e54d140fbe2577d2e44168eb9b2"
+}
