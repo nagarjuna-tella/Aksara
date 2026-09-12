@@ -1,469 +1,165 @@
-# Query Profiling
+# Query profiling
 
-Analyze and optimize database queries.
+**Evolving — development diagnostics.** Use query capture to check a small test's
+query count, or tracing to inspect timed database calls. These tools help find
+work to investigate; they are not a production monitoring or audit service.
 
----
+`Aksara(debug=True)` does not enable trace collection. Tracing requires
+`Settings(db_trace_enabled=True)` and a manual session or
+`QueryTraceMiddleware`. Query capture works independently of that setting.
 
-## Overview
+## Count and time a small database operation
 
-Aksara's Query Profiler helps you:
+Save this complete script as `query_examples.py`. It uses the `DATABASE_URL`
+already configured for your [local PostgreSQL installation](../getting-started/installation.md).
+It issues two parameterized, read-only queries and creates no tables.
 
-- **Identify slow queries** — Find queries that take too long
-- **Detect N+1 problems** — Catch relationship loading issues
-- **Analyze query plans** — Understand how queries execute
-- **Track query counts** — Monitor per-request query volume
+```python title="query_examples.py"
+import asyncio
+import os
 
----
-
-## Enabling Query Profiling
-
-### Debug Mode
-
-Query profiling is automatic in debug mode:
-
-```python
-app = Aksara(debug=True)
-```
-
-### Production Profiling
-
-For selective profiling in production:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import QueryProfiler
-
-@app.get("/api/posts")
-async def list_posts(request):
-    async with QueryProfiler() as profiler:
-        posts = await Post.objects.all()
-    
-    print(f"Queries: {profiler.count}")
-    print(f"Time: {profiler.total_time_ms}ms")
-    return posts
-```
-
----
-
-## Debug Error Page Integration
-
-When an error occurs, the **Queries** tab shows:
-
-| # | Query | Time | Rows |
-|---|-------|------|------|
-| 1 | SELECT * FROM posts | 12ms | 50 |
-| 2 | SELECT * FROM users WHERE id = ? | 3ms | 1 |
-| 3 | SELECT * FROM users WHERE id = ? | 2ms | 1 |
-| ... | | | |
-
-Click any query to see:
-
-- **Full SQL** with parameters
-- **Query plan** (EXPLAIN output)
-- **Stack trace** showing where it was issued
-- **Duplicate detection** alerts
-
----
-
-## Query Analysis
-
-### Query Count
-
-Track total queries per request:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import get_query_log
-
-@app.middleware("http")
-async def log_queries(request, call_next):
-    response = await call_next(request)
-    
-    query_log = get_query_log()
-    if query_log.count > 20:
-        logger.warning(
-            f"High query count: {query_log.count} queries "
-            f"for {request.url.path}"
-        )
-    
-    return response
-```
-
-### Slow Query Detection
-
-Identify queries over a threshold:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import get_query_log
-
-query_log = get_query_log()
-slow_queries = [q for q in query_log.queries if q.time_ms > 100]
-
-for query in slow_queries:
-    logger.warning(f"Slow query ({query.time_ms}ms): {query.sql}")
-```
-
-### N+1 Detection
-
-Automatic detection of N+1 patterns:
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import get_query_log
-
-query_log = get_query_log()
-for pattern in query_log.n_plus_one_patterns:
-    logger.warning(
-        f"N+1 detected: {pattern.count} queries to {pattern.table}\n"
-        f"Fix with: .select_related('{pattern.relation}')"
-    )
-```
-
----
-
-## N+1 Query Problems
-
-### The Problem
-
-```python
-# BAD: N+1 queries
-@app.get("/api/posts")
-async def list_posts(request):
-    posts = await Post.objects.all()  # 1 query
-    results = []
-    for post in posts:
-        author = await post.author  # N queries!
-        results.append({
-            "title": post.title,
-            "author": author.name,
-        })
-    return results
-```
-
-With 100 posts, this runs **101 queries**.
-
-### The Solution
-
-```python
-# GOOD: 1 query with select_related
-@app.get("/api/posts")
-async def list_posts(request):
-    posts = await Post.objects.select_related("author").all()  # 1 query
-    return [{
-        "title": post.title,
-        "author": post.author.name,  # Already loaded!
-    } for post in posts]
-```
-
-### Detection in Profiler
-
-The profiler shows:
-
-```
-⚠️ N+1 Pattern Detected
-
-50 similar queries to 'users' table:
-  SELECT * FROM users WHERE id = ?
-
-Triggered from: api/views.py:25
-  author = await post.author
-
-Suggestion: Use .select_related('author') on the Post query
-```
-
----
-
-## Query Plan Analysis
-
-### View Query Plans
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import explain_query
-
-# Get EXPLAIN output
-plan = await explain_query(
-    User.objects.filter(email__contains="@example.com")
+from aksara.conf import Settings, configure
+from aksara.db import (
+    Database,
+    capture_queries,
+    start_trace_session,
+    stop_trace_session,
 )
-print(plan)
+
+
+async def inspect_queries(db):
+    start_trace_session(request_id="local-example")
+    try:
+        async with capture_queries() as log:
+            value = await db.fetchval("SELECT $1::integer", 7)
+            rows = await db.fetch("SELECT $1::text AS label", "example")
+    finally:
+        batch = stop_trace_session()
+
+    assert value == 7 and rows[0]["label"] == "example"
+    assert log.count == 2
+    assert batch is not None and batch.total_queries == 2
+    return log, batch
+
+
+async def main():
+    configure(Settings(db_trace_enabled=True))
+    db = Database(os.environ["DATABASE_URL"])
+    await db.connect()
+    try:
+        log, batch = await inspect_queries(db)
+        print(f"Captured calls: {log.count}")
+        print(f"Recorded duration: {batch.total_duration_ms:.3f} ms")
+    finally:
+        await db.disconnect()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-Output:
-```
-EXPLAIN ANALYZE:
-Seq Scan on users (cost=0.00..15.00 rows=5 width=200)
-  Filter: (email ~~ '%@example.com%')
-Planning Time: 0.1 ms
-Execution Time: 2.5 ms
+Run `python query_examples.py` in the environment where Aksara is installed.
+The count is two; timing varies. In an existing application, configure tracing
+at startup alongside your other settings and pass its connected `Database`
+instance to the helper. Do not replace application settings per request.
 
-⚠️ Warning: Sequential scan on large table
-Suggestion: Add index on 'email' column
-```
+`capture_queries()` is an **async** context manager exported from `aksara.db`.
+Its `QueryLog` has `.count` and `.queries`; events contain SQL and parameters,
+but their `duration_ms` is not populated by this capture path. Use the trace
+batch for timing. There is no `aksara.testing.QueryCounter` API.
 
-### Automatic Suggestions
+Query capture uses one process-global active log. Use it in isolated tests:
+unrelated concurrent tasks can contribute calls, and nested captures temporarily
+replace the outer log rather than counting their calls in both. It is not a
+per-request collector. See the [testing guide](../advanced/testing.md) for
+application test setup.
 
-The profiler suggests indexes:
+## Correlate a request with its queries
 
-```
-Missing Index Detected
+Use request-ID middleware outside trace middleware, in the order below. Call
+this factory with your application's connected database and manage its lifetime
+through your application's startup/shutdown flow.
 
-Query: SELECT * FROM posts WHERE created_at > ?
-Scan: Sequential (slow on 100K+ rows)
+```python title="request_queries.py"
+from aksara import Aksara
+from aksara.middleware import QueryTraceMiddleware, RequestIDMiddleware
 
-Suggested: CREATE INDEX idx_posts_created_at ON posts(created_at);
-```
 
----
-
-## QueryProfiler API
-
-### Basic Usage
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import QueryProfiler
-
-async with QueryProfiler() as profiler:
-    users = await User.objects.filter(is_active=True).all()
-    posts = await Post.objects.filter(author__in=users).all()
-
-print(f"Total queries: {profiler.count}")
-print(f"Total time: {profiler.total_time_ms}ms")
-print(f"Slowest: {profiler.slowest.sql} ({profiler.slowest.time_ms}ms)")
-```
-
-### Profiler Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `count` | `int` | Total number of queries |
-| `total_time_ms` | `float` | Total query time |
-| `queries` | `list[Query]` | All captured queries |
-| `slowest` | `Query` | Slowest query |
-| `n_plus_one_patterns` | `list[N1Pattern]` | Detected N+1 patterns |
-| `duplicate_queries` | `list[Query]` | Exact duplicate queries |
-
-### Query Object
-
-```python
-for query in profiler.queries:
-    print(query.sql)           # SQL statement
-    print(query.params)        # Bound parameters
-    print(query.time_ms)       # Execution time
-    print(query.rows)          # Rows returned/affected
-    print(query.stack_trace)   # Where it was issued
-```
-
----
-
-## Middleware Integration
-
-### Query Logging Middleware
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.middleware import QueryLoggingMiddleware
-
-app.add_middleware(
-    QueryLoggingMiddleware,
-    log_slow_queries=True,
-    slow_threshold_ms=100,
-    log_query_count=True,
-    max_queries_warning=20,
-)
-```
-
-### Automatic Logging
-
-```
-INFO: GET /api/posts - 5 queries, 45ms total
-WARNING: GET /api/users - 52 queries, 230ms total (threshold: 20)
-WARNING: Slow query (150ms): SELECT * FROM posts WHERE ...
-```
-
----
-
-## Testing Query Counts
-
-### Assert Query Count
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import QueryCounter
-
-async def test_list_posts_efficient():
-    async with QueryCounter() as counter:
-        response = await client.get("/api/posts")
-    
-    assert counter.count <= 3, f"Too many queries: {counter.count}"
-```
-
-### Capture Queries in Tests
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.testing import capture_queries
-
-async def test_select_related_works():
-    async with capture_queries() as queries:
-        posts = await Post.objects.select_related("author").all()
-        # Access authors (should not trigger queries)
-        for post in posts:
-            _ = post.author.name
-    
-    # Should be exactly 1 query (the initial select_related)
-    assert len(queries) == 1
-```
-
----
-
-## Configuration
-
-### Settings
-
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
-
-```text title="Conceptual legacy configuration"
-# settings.py
-AKSARA = {
-    "DEBUG": True,
-    
-    # Query profiling settings
-    "QUERY_PROFILING": True,
-    "SLOW_QUERY_THRESHOLD_MS": 100,
-    "MAX_QUERY_COUNT_WARNING": 20,
-    "LOG_ALL_QUERIES": False,  # Only slow queries by default
-    "DETECT_N_PLUS_ONE": True,
-    "DETECT_MISSING_INDEXES": True,
-}
-```
-
-### Per-Request Control
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-from aksara.debug import enable_profiling, disable_profiling
-
-@app.get("/api/debug/posts")
-async def debug_posts(request):
-    enable_profiling()  # Force profiling for this request
-    posts = await Post.objects.all()
-    return posts
-
-@app.get("/api/health")
-async def health(request):
-    disable_profiling()  # Skip profiling for health checks
-    return {"status": "ok"}
-```
-
----
-
-## Best Practices
-
-### 1. Set Query Budgets
-
-```python
-# Establish expected query counts
-async def test_endpoints_have_reasonable_queries():
-    budgets = {
-        "/api/posts": 5,
-        "/api/users": 3,
-        "/api/dashboard": 10,
-    }
-    
-    for endpoint, max_queries in budgets.items():
-        async with QueryCounter() as counter:
-            await client.get(endpoint)
-        assert counter.count <= max_queries
-```
-
-### 2. Profile in CI
-
-```python
-# pytest plugin for query budgets
-@pytest.fixture(autouse=True)
-async def enforce_query_limits(request):
-    async with QueryCounter() as counter:
-        yield
-    
-    # Fail if too many queries
-    if counter.count > 50:
-        pytest.fail(f"Too many queries: {counter.count}")
-```
-
-### 3. Monitor in Production
-
-**Conceptual or legacy pseudocode (not an installed-package API):**
-
-```text title="Conceptual or legacy pseudocode"
-# Metrics integration
-from aksara.debug import get_query_log
-
-@app.middleware("http")
-async def report_query_metrics(request, call_next):
-    response = await call_next(request)
-    
-    query_log = get_query_log()
-    metrics.histogram(
-        "request_query_count",
-        query_log.count,
-        tags={"path": request.url.path}
+def create_query_example(db):
+    app = Aksara(
+        database_url=None,
+        auto_discover=False,
+        enable_admin=False,
+        middlewares=[
+            (RequestIDMiddleware, {}),
+            (QueryTraceMiddleware, {}),
+        ],
     )
-    
-    return response
+
+    @app.get("/query-example")
+    async def query_example():
+        value = await db.fetchval("SELECT $1::integer", 7)
+        return {"value": value}
+
+    return app
 ```
 
----
+With tracing enabled, a successful request returns `{"value": 7}` and an
+`X-Request-ID` header. After the response, inspect that batch **in the same
+server process** with `aksara.db.get_trace_by_request_id(request_id)`.
+`get_recent_traces()` returns recent batches and `clear_traces()` clears that
+process's stored batches. A separate Python process or CLI invocation does not
+share the server's in-memory history.
 
-## Troubleshooting
+Request IDs are correlation values, not authenticated identities. An incoming
+`X-Request-ID` can be reused by a client; storing the same ID replaces its prior
+batch. Without an ID, a manual session still returns a batch, but it is not
+retained in recent history. The request middleware stops collection when the
+response is produced; do not use its totals to certify streaming or background
+work after that point.
 
-### Profiler Shows No Queries
+## Interpret the measurements
 
-```python
-# Ensure profiling is enabled
-app = Aksara(debug=True)  # or
-enable_profiling()
-```
+| Setting / result | Meaning |
+|---|---|
+| `db_trace_enabled` | Defaults to `False`; enables starting and recording trace sessions. |
+| `db_trace_slow_threshold_ms` | Defaults to `100.0`; a recorded duration at or above this value is slow. |
+| `db_trace_max_queries` | Defaults to `500`; additional calls are omitted from a session after this count. Configure a positive limit. |
+| `batch.total_queries` | Recorded calls, which may be capped; not necessarily every database operation. |
+| `batch.total_duration_ms` | Sum of recorded call durations; not total request duration or database-server execution time alone. |
+| `batch.slow_queries` | Number of recorded calls meeting the snapshotted threshold. |
+| `batch.n_plus_one_suspicions` | Heuristic messages for repeated query shapes; investigate rather than assuming a relation-loading defect. |
 
-### Missing Stack Traces
+The instrumented `Database.execute`, `fetch`, `fetchrow`, and `fetchval` paths
+record calls, including failed calls. Timings include connection acquisition
+and client-side work within those methods. Row counts are not automatically
+populated by these paths. SQL and table classification are best-effort, not a
+SQL parser. Direct asyncpg connection calls bypass this instrumentation.
 
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+Tracing uses the current context, but it is not a nested-session stack. Finish
+a manual session in `finally`, avoid overlapping sessions in the same context,
+and keep traced work within its lifetime. The threshold and count limit are
+snapshotted when a session starts. Stored history holds at most 100 identified
+batches in each process and disappears on restart.
 
-```text title="Conceptual legacy configuration"
-# Enable detailed stack traces
-AKSARA = {
-    "QUERY_PROFILING": True,
-    "QUERY_STACK_TRACES": True,  # May impact performance
-}
-```
+## Investigate the cause
 
-### High Memory Usage
+For repeated relation reads, compare an actual query count before and after
+using [eager loading](../orm/relations.md). A forward foreign-key attribute
+is its stored ID; it is not an awaitable object accessor. Follow the relationship
+guide for `select_related()` and `get_related()` rather than assuming that
+reading `post.author` performs a query.
 
-**Conceptual legacy configuration (the runtime does not read an `AKSARA` dictionary):**
+For a query plan, run explicit PostgreSQL `EXPLAIN` through a database tool or
+`Database.fetch`; the trace batch does not automatically contain plans. For
+example, `EXPLAIN (FORMAT JSON) SELECT 1` explains a read-only query. `EXPLAIN
+ANALYZE` executes the statement being analyzed, so choose the statement and
+environment deliberately. Tracing does not automatically create indexes or
+apply query optimizations.
 
-```text title="Conceptual legacy configuration"
-# Limit query log size
-AKSARA = {
-    "MAX_LOGGED_QUERIES": 100,  # Keep last 100 queries
-}
-```
-
----
-
-## Related Documentation
-
-- [Error Pages](error-pages.md) — Debug error pages
-- [AI Debug](ai-debug.md) — AI-powered debugging
-- [Querying](../orm/querying.md) — QuerySet optimization
-- [Testing](../advanced/testing.md) — Test utilities
+Keep raw traces private. SQL literals and bound parameters are retained without
+secret redaction. Avoid exporting entire batches to responses or general logs;
+prefer selected counts and timing summaries. Process-local tracing does not
+supply access control, tenant-safe retention, durable audit storage, or a shared
+cross-worker view. See [production guidance](../tutorials/deployment.md) for the
+operator responsibilities beyond local diagnostics.

@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 515,
+  "python_blocks": 502,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -66,11 +66,11 @@
     "docs/docs/cli/index.md": "8aec1d338b490f9dcf0db3ea14334e79c454c0fb4d067136ecf564a059af0f98",
     "docs/docs/concepts/application-boundaries.md": "1e6c387ad82af91b0f37d4f4d8455b9762ae4950d347aafa1cb2ec8a14e61530",
     "docs/docs/concepts/stability.md": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
-    "docs/docs/debugging/ai-debug.md": "a6b328bb13a3f105c5a6a02c3e2ec6070fad8629e87ec3bdbc402c144c6b351b",
+    "docs/docs/debugging/ai-debug.md": "d10a4615c25a714b587fe06d318da826a43f2f0498d7cfddb189a09bb2ba1423",
     "docs/docs/debugging/autoremediation.md": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
     "docs/docs/debugging/error-pages.md": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
     "docs/docs/debugging/index.md": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
-    "docs/docs/debugging/query-profiling.md": "78eac3352ff2e55a96a632ffd017dde3d63afcd36400656959afaad260286f76",
+    "docs/docs/debugging/query-profiling.md": "667b35ba844a1de5439f93d823fd2ebd671963b214762480132314c3eba10c2a",
     "docs/docs/diagnostics.md": "6da0476bd30740444f68dc8c3f78e2ddcaf914230218792df29fa9bb013beaa6",
     "docs/docs/gapanalysis.md": "9125ecfab0414e91715456e98039a38faa0a0a601de7336ddcfe79dcdc4e85f5",
     "docs/docs/getting-started/ai-quickstart.md": "ba42ee718cc133d5a348cf2e2054aa5a71cea75aed96c6c8eb80ff169172345f",
@@ -171,13 +171,15 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
   "localization_http_and_conversion_checks": "passed",
   "exception_contract_sha256": "dff4306396198e052a649dbe4a6dcb7e12f702073f411ef6607d4ea08a287de4",
   "exception_types_and_http_checks": "passed",
+  "ai_debug_contract_sha256": "769b3b58b553be1c0bd908344654ae1adfb6b3bb0cd8c7d704e6d50754adb6c3",
+  "ai_debug_local_advisor_checks": "passed",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "f410417fa4698403fc75eb467bd066bc869e9b417d479d4387f4909f55558ef2"
+  "runner_sha256": "1a7e9c6c1948eec455fd86d211fcb6fc352b106f03475d485d3593a26fda0f7a"
 }

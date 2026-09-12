@@ -13,6 +13,7 @@ CONTRACT = ROOT / "tests/docs/test_installed_package_truth.py"
 VIEWSET_CONTRACT = ROOT / "tests/docs/test_viewset_reference.py"
 LOCALIZATION_CONTRACT = ROOT / "tests/docs/test_localization_reference.py"
 EXCEPTION_CONTRACT = ROOT / "tests/docs/test_exception_reference.py"
+AI_DEBUG_CONTRACT = ROOT / "tests/docs/test_ai_debug_reference.py"
 PROBE = r'''
 import hashlib, json, runpy, sys
 import aksara
@@ -37,6 +38,8 @@ exceptions = runpy.run_path(sys.argv[4])
 exceptions['test_exception_reference_types']()
 exceptions['test_exception_http_example']()
 exceptions['test_debug_page_example_boundaries']()
+ai_debug = runpy.run_path(sys.argv[5])
+ai_debug['test_ai_debug_example_and_context']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -53,20 +56,22 @@ def main():
     env = {k: v for k, v in os.environ.items()
            if k not in {"PYTHONPATH", "DATABASE_URL"} and not k.startswith("AKSARA_")}
     with tempfile.TemporaryDirectory(prefix="aksara-doc-imports-") as directory:
-        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT), str(LOCALIZATION_CONTRACT), str(EXCEPTION_CONTRACT)],
+        run = subprocess.run([str(args.python.absolute()), "-I", "-c", PROBE, str(CONTRACT), str(VIEWSET_CONTRACT), str(LOCALIZATION_CONTRACT), str(EXCEPTION_CONTRACT), str(AI_DEBUG_CONTRACT)],
                              cwd=directory, env=env, text=True, capture_output=True,
                              timeout=60, check=True)
     evidence = json.loads(run.stdout)
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "localization_contract_sha256": hashlib.sha256(LOCALIZATION_CONTRACT.read_bytes()).hexdigest(),
                      "localization_http_and_conversion_checks": "passed",
                      "exception_contract_sha256": hashlib.sha256(EXCEPTION_CONTRACT.read_bytes()).hexdigest(),
                      "exception_types_and_http_checks": "passed",
+                     "ai_debug_contract_sha256": hashlib.sha256(AI_DEBUG_CONTRACT.read_bytes()).hexdigest(),
+                     "ai_debug_local_advisor_checks": "passed",
                      "viewset_route_and_default_checks": "passed",
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")

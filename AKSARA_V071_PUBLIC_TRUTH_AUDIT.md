@@ -1311,3 +1311,55 @@ started before rendered evidence regeneration and correctly rejected its stale
 page hash; the sequential rerun after regeneration passed all 179 documentation
 and packaging tests (one upstream AnyIO deprecation warning). No Python or
 runtime source changed in this checkpoint.
+
+## Query Profiling and AI Advisor Public Contracts
+
+**PT-044 / P1:** the profiling guide described automatic debug-mode profiling,
+nonexistent `aksara.debug` helpers and `aksara.testing.QueryCounter`, automatic
+EXPLAIN output, and invalid forward-relation access. Replaced those recipes with
+an exact standalone read-only script and an explicit request middleware factory.
+The guide separates process-global query capture from context-based tracing,
+explains positive count limits and timing scope, and states that raw driver calls
+bypass instrumentation. It documents unredacted parameters, bounded per-process
+history, and client-controlled correlation IDs without presenting these as
+production observability or authorization guarantees.
+
+`query-profiling-execution.json` records 19 observations against the installed
+public 0.7.0 wheel and PostgreSQL with `default_transaction_read_only=on`.
+The standalone script is also executed as a file. Coverage includes exact query
+results/counts, capture events without timing, trace timing/parameters, absent
+row-count population, identified/anonymous retention, disabled tracing,
+snapshotted cap/threshold, raw-driver bypass, actual failed SQL recording,
+nested/global capture behavior, HTTP correlation and ID replacement, explicit
+EXPLAIN, and clearing history. No database objects are created; no N+1 benchmark,
+streaming/cancellation guarantee or Studio execution is claimed.
+
+**PT-045 / P0:** the AI Debug guide described automatic provider analysis and
+unsupported `debug_ai_privacy`/provider constructor settings, alongside a claim
+that credentials and request bodies could not be shared. Replaced it with the
+actual rule-based local advisor, separate constructor/global debug controls,
+`Settings.ai_debug_enabled`, and explicit context disclosure limits. This fixes
+a false privacy/configuration promise; it does not add a runtime privacy feature.
+
+The exact advisor factory now executes in the installed-wheel contract runner.
+Six HTTP requests cover advisor enabled, disabled and global-debug-disabled
+states with HTML/JSON responses. Socket connection attempts are blocked during
+the example/context test. A direct context-builder check confirms masked
+Authorization and preserved deliberate query/body/exception markers, with no
+populated local-variable previews. This verifies the default local path, not
+provider integration, comprehensive redaction or production access controls.
+
+Validation commands:
+
+- `.venv/bin/python scripts/check_public_query_profiling.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/query-profiling-execution.json` with the local test database supplied privately: 19 checks and standalone script passed.
+- `.venv/bin/python scripts/check_installed_doc_imports.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/installed-doc-imports.json`: 502 Python fences/imports plus selected contracts passed.
+- `.venv/bin/python scripts/check_public_cli_docs.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/cli-docs-syntax.json`: 316 parses, zero errors, 11 exclusions.
+- `/Users/nagarjunatella/miniconda3/bin/mkdocs build --strict -f docs/mkdocs.yml -d /tmp/aksara-v071-profiling-site`: passed.
+- `.venv/bin/python scripts/check_rendered_docs_links.py --site /tmp/aksara-v071-profiling-site --base-url https://nagarjuna-tella.github.io/Aksara/ --output audit-evidence/v071/rendered-links.json`: 162 pages, 45,819 local links/assets, zero errors.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py tests/db/test_tracing.py tests/ai/test_ai_debug.py -q`: 242 passed, one upstream AnyIO deprecation warning.
+- Ruff on the five changed/new Python files: passed.
+
+The debugging section's four pages now have source-backed public treatment and
+selected installed execution evidence. This does not complete the remaining
+site-wide semantic/usability audit, candidate versioning, final regression
+campaign, or release PR. No production source or database schema changed.
