@@ -2,7 +2,7 @@
 
 !!! warning "Experimental in v0.7.0"
     Provider-backed prompts, planners, investigations, and Studio AI internals
-    are outside the stable v0.6 contract. MCP generated-tool execution is a
+    are outside the stable v0.7 contract. MCP generated-tool execution is a
     separate stable surface and does not require a model provider.
 
 Inspect the current AI Hub configuration:

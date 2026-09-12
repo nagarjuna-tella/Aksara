@@ -172,8 +172,9 @@ Full page-by-page usability review is still pending.
 | PT-070 | P1 | AI provider pages and compatibility CLI help named environment variables the implementation does not read, and the Custom HTTP page documented different adapter defaults | Replaced names and defaults with installed behavior and bounded protocol compatibility | Docs/help fixed; installed-wheel provider contract |
 | PT-071 | P2 | Provider discovery described configured providers and connectivity even though its heuristics produce a default Ollama false positive and keyless-custom false negative | Reframed detection as a hint, required `ping` for reachability and documented AIPROVIDER001 | Docs fixed; runtime defect retained |
 | PT-072 | P1 | Studio pages described a partial endpoint list as complete, treated Origin as the only API access check, implied offline live data and omitted required production mounting/authentication inputs | Documented selected endpoint scope, conditional capabilities, independent authentication, live-backend requirement and complete production prerequisites | Docs fixed; source/dependency checks retained |
+| PT-073 | P2 | Two experimental AI entry/tutorial pages still defined exclusions against the superseded v0.6 stable contract | Anchored the exclusions to the released v0.7 contract | Docs fixed; complete Start/tutorial reading |
 
-The register consolidates all 72 findings. “Docs fixed” describes the recorded
+The register consolidates all 73 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -2524,8 +2525,7 @@ experimental. The MCP page remains the explicit stable synchronous boundary and
 does not imply protocol MCP Tasks or durable sessions.
 
 PT070 corrected the Ollama and custom-provider environment names printed in the
-guides and compatibility help, the Custom HTTP adapter defaults, and remaining
-v0.6 wording in current v0.7 entry pages. A fresh installed development wheel
+guides and compatibility help and the Custom HTTP adapter defaults. A fresh installed development wheel
 loads the corrected environment names and exposes the corrected help labels.
 The same provider-free probe records AIPROVIDER001: clean-environment detection
 reports the built-in Ollama default, while a keyless custom endpoint is detected
@@ -2544,3 +2544,20 @@ This completes the AI/Studio author-reading scope, not live provider quality,
 autonomous behavior, browser usability or final candidate validation. The only
 production-source delta is two CLI string literals, covered by the no-runtime-
 logic AST check; no runtime semantics changed.
+
+## Start and tutorial reading assessment — 2026-09-12
+
+Read the public quickstart, all fourteen Getting Started pages and all ten
+tutorial pages completely. `start-tutorial-reading-review.json` records current
+hashes and a disposition for every page. The path moves from one protected REST
+application through relations, tenant isolation, an ordinary report task, a
+`postgres_atomic` Durable Operation and optional synchronous MCP. Supplemental
+Blog and multitenant pages route readers to the tested path and retain their
+known limitations instead of offering a second incomplete tutorial.
+
+PT073 corrected the two remaining experimental AI entry pages that still
+described exclusions relative to v0.6. They now use the released v0.7 stable
+contract. This is a version/trust correction only; no AI or MCP behavior changed.
+The existing installed-wheel and PostgreSQL journey artifacts remain the
+execution evidence. Complete reading does not replace an independent novice
+study or the final candidate rerun.

@@ -59,4 +59,4 @@ result = await run_prompt_pack(
 
 Treat provider output as untrusted. Provider selection and quality, session
 persistence, autonomous workflows, memory, and durable orchestration are not
-stable v0.6 guarantees.
+stable v0.7 guarantees.

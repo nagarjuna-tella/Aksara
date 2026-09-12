@@ -29,14 +29,14 @@ Line numbers below refer to that exact objective.
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
-| A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline; the current inventory has 163 pages and 117 scoped-evidence candidates. | Finish semantic dispositions for the remaining pages; baseline records still say content review pending. |
+| A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline; the current inventory has 163 pages and 131 scoped-evidence candidates. Start/tutorial reading is now explicit for 25 pages. | Finish semantic dispositions for the remaining pages; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 72-row PT-001 through PT-072 register with detailed sections, plus nineteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
-| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 73-row PT-001 through PT-073 register with detailed sections, plus nineteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | The complete Start/tutorial route has an author-reading record; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
-| A8: Conceptual user manual (line 618) | PARTIAL | Concepts, API, security, middleware, Admin, advanced, ORM, debugging, AI and Studio pages now have explicit author-reading dispositions; execution artifacts cover major backend paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
+| A8: Conceptual user manual (line 618) | PARTIAL | Start/tutorial, concepts, API, security, middleware, Admin, advanced, ORM, debugging, AI and Studio pages now have explicit author-reading dispositions; execution artifacts cover major backend paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
 | A9: How-to guides (line 680) | SCOPED | Auth, tenancy/RLS, reports, durability, approval, external effect, MCP, diagnostics, SDK, media, deployment and upgrade guides exist with scoped gates. | Candidate reruns; SDK compilation is a documented failure, not successful end-to-end client use. |
 | A10: Reference quality (line 707) | PARTIAL | Settings and CLI declarations, installed imports, route/default/serializer contracts, AI provider environment/default checks and dedicated DB gates exist. | Middleware signatures, request-ID/logging behavior and tenant trust are checked; review remaining references. Syntax coverage is not universal behavior proof. |
 | A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts. | Final plain-language review and candidate execution; no arbitrary Python/external exactly-once promise. |
@@ -87,19 +87,19 @@ Line numbers below refer to that exact objective.
 | C3: Durable Operation journey (line 1821) | SCOPED | Durable chapter tests registration, admission, worker, idempotency/status, post-SQL retry, cancel and current role revocation. | Repeat candidate; full crash campaign belongs to broader established regression. |
 | C4: MCP journey (line 1840) | SCOPED | Official MCP SDK 2.0.1 journey verifies negotiation, authentication adapter, CRUD/denial and REST parity; no MCP Tasks. | Repeat candidate; no external OAuth provider certification. |
 | C5: Production deployment reading test (line 1854) | VERIFIED | operator-reading.json answers all named operator questions and records complete reading of deployment, upgrade and Doctor, with per-page hashes and usability assessment. | Author reading satisfies the requested reading test; live deployment, restore execution and candidate regression remain separate requirements. |
-| C6: Documentation usability review (line 1872) | PARTIAL | Entry, operator, API, security, middleware, Admin, concepts, advanced, ORM, debugging, AI and Studio sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete remaining sections and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
+| C6: Documentation usability review (line 1872) | PARTIAL | Entry, full Start/tutorial path, operator, API, security, middleware, Admin, concepts, advanced, ORM, debugging, AI and Studio sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete remaining sections and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
 
 ## Workstream D
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
 | D1: Public import tests (line 1895) | SCOPED | installed-doc-imports.json verifies 348 Python fences/imports plus selected contracts with an isolated public wheel. | Repeat final sources/candidate; valid import is not proof of public stability. |
-| D2: CLI documentation tests (line 1903) | SCOPED | cli-docs-syntax.json verifies 302 literal forms with 11 explicit exclusions; tutorial/scaffold gates execute selected flows. | Repeat final sources/candidate; do not treat parser-only commands as run. |
+| D2: CLI documentation tests (line 1903) | SCOPED | cli-docs-syntax.json verifies 292 literal forms with 7 explicit exclusions; tutorial/scaffold gates execute selected flows. | Repeat final sources/candidate; do not treat parser-only commands as run. |
 | D3: Snippet tests (line 1909) | PARTIAL | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; local advisor visibility/context is checked with network connections blocked. | Complete high-value snippet coverage audit; no arbitrary partial-snippet execution claim. |
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
 | D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,152 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
-| D7: Public API contract scan (line 1933) | PARTIAL | Every AI/Studio page now has a reading disposition; stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all remaining public-page semantic dispositions; baseline inventory is not that audit. |
+| D7: Public API contract scan (line 1933) | PARTIAL | Every Start/tutorial and AI/Studio page now has a reading disposition; stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all remaining public-page semantic dispositions; baseline inventory is not that audit. |
 | D8: Documentation truth report (line 1939) | SCOPED | public-docs-truth.json indexes artifacts, hashes, scopes, defects and open work; candidate_ready remains false. | Link this requirement checkpoint without converting SCOPED into completion. |
 
 ## Workstream E
@@ -534,3 +534,15 @@ Ollama false positive and keyless-custom false negative rather than changing the
 experimental provider runtime. The only production-source edit is two CLI help
 strings; the no-runtime-logic audit covers them. Final provider, browser and
 candidate execution remain open.
+
+## Start and tutorial section reading — 2026-09-12
+
+A1/A3/A4/A6/A7/A8/A12/A22/C1–C6/D7: read the public quickstart, all
+fourteen Getting Started pages and all ten tutorial pages completely.
+`start-tutorial-reading-review.json` records current hashes and per-page
+dispositions. The canonical Ticket Desk path remains one progressive application
+and its installed-wheel/PostgreSQL evidence remains separately scoped. PT073
+updates two experimental AI entry pages from the old v0.6 exclusion wording to
+the released v0.7 contract. No runtime source or behavior changed. This closes
+Start/tutorial author reading, not an independent novice study or candidate
+execution.

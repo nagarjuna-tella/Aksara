@@ -731,9 +731,11 @@
     },
     {
       "path": "docs/docs/getting-started/ai-quickstart.md",
-      "sha256": "ba42ee718cc133d5a348cf2e2054aa5a71cea75aed96c6c8eb80ff169172345f",
+      "sha256": "8f9e06186af0cf362840985be0620a9870aec3004185f6cf75831ebd3447ef86",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 39
     },
@@ -742,7 +744,8 @@
       "sha256": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "setup-doc-execution.json"
+        "setup-doc-execution.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 136
@@ -751,7 +754,9 @@
       "path": "docs/docs/getting-started/examples.md",
       "sha256": "348de5410ecac5a95ca2877a1f9110f1f663d89a1412bc960b9b380be6cc8b4f",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 45
     },
@@ -759,7 +764,9 @@
       "path": "docs/docs/getting-started/first-app.md",
       "sha256": "c2d8ceb1115da2becf71ac73bba39681e0f7f3cc06376a61e0c1379c5a71ff2e",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 25
     },
@@ -774,7 +781,8 @@
         "filter-doc-execution.json",
         "first-project-journey.json",
         "pagination-doc-execution.json",
-        "query-execution.json"
+        "query-execution.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 264
@@ -784,7 +792,8 @@
       "sha256": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "entry-reading-review.json"
+        "entry-reading-review.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 46
@@ -794,7 +803,8 @@
       "sha256": "faff577c4600d96db91fc029342956e5852dcfcdc1fd3cf086ee7c5756a4c910",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "setup-doc-execution.json"
+        "setup-doc-execution.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 85
@@ -803,7 +813,9 @@
       "path": "docs/docs/getting-started/mcp.md",
       "sha256": "be82c4c7721a5cecc3865d22b5ed234875da2862ab33a015404a22c724d80894",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 68
     },
@@ -811,7 +823,9 @@
       "path": "docs/docs/getting-started/patterns.md",
       "sha256": "ea302702480f9888ffc704aceb98254c6290aa438d8614c33677033e975898a3",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 48
     },
@@ -820,7 +834,8 @@
       "sha256": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "setup-doc-execution.json"
+        "setup-doc-execution.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 112
@@ -830,7 +845,8 @@
       "sha256": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "setup-doc-execution.json"
+        "setup-doc-execution.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 81
@@ -839,7 +855,9 @@
       "path": "docs/docs/getting-started/settings.md",
       "sha256": "111caa8e9daf54dabf9c7869ca3610894911914edda7b9e0151c0b4c745e0c01",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 72
     },
@@ -847,7 +865,9 @@
       "path": "docs/docs/getting-started/studio.md",
       "sha256": "36cd8cad229583ba4ca5d6c27ee4a949a8c6b90221191b04758567e6bc3a8c02",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 37
     },
@@ -855,7 +875,9 @@
       "path": "docs/docs/getting-started/ten-minutes.md",
       "sha256": "4b53953cccd437d7be2fe27c79911b659d2c5baae0669b9857446a8d317f47c8",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 27
     },
@@ -1224,7 +1246,9 @@
       "path": "docs/docs/quickstart.md",
       "sha256": "ea79958457e14f1ef7062835b472dac50608a1529ae58efeca8ad7127b836ae4",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 35
     },
@@ -1501,9 +1525,11 @@
     },
     {
       "path": "docs/docs/tutorials/ai-integration.md",
-      "sha256": "7a8ed10512195a3e608d6ac32d3f855e36fd5bf18df9a51ea1f41150fce3ae25",
+      "sha256": "8242dca09fc6d0a057cdfbe073ee43ed5ec635278673e12c3ff71d8b095a240b",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 62
     },
@@ -1511,7 +1537,9 @@
       "path": "docs/docs/tutorials/blog-api.md",
       "sha256": "9d35111dde0bdc5845fcebb489819a0e038036e7f4bc361c46cb2546d1f34479",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 47
     },
@@ -1519,7 +1547,9 @@
       "path": "docs/docs/tutorials/deployment.md",
       "sha256": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 170
     },
@@ -1527,7 +1557,9 @@
       "path": "docs/docs/tutorials/index.md",
       "sha256": "1245efd2021cc4f92e1ed217e3013f345c4314c02af22d84c47ce0844c0bcf1a",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 30
     },
@@ -1535,7 +1567,9 @@
       "path": "docs/docs/tutorials/multi-tenant.md",
       "sha256": "c2d147dabe773f3e68afb76f9bca60ad4c07a441e9f5642d176acf28eb57a828",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "start-tutorial-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 82
     },
@@ -1545,7 +1579,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "development-wheel-tutorial.json",
-        "first-project-journey.json"
+        "first-project-journey.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 605
@@ -1556,7 +1591,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "development-wheel-tutorial.json",
-        "first-project-journey.json"
+        "first-project-journey.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 474
@@ -1567,7 +1603,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "development-wheel-tutorial.json",
-        "first-project-journey.json"
+        "first-project-journey.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 287
@@ -1578,7 +1615,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "development-wheel-tutorial.json",
-        "first-project-journey.json"
+        "first-project-journey.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 484
@@ -1589,7 +1627,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "development-wheel-tutorial.json",
-        "first-project-journey.json"
+        "first-project-journey.json",
+        "start-tutorial-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 234
@@ -1598,7 +1637,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 117
+    "with_scoped_evidence_candidates": 131
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }
