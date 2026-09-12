@@ -43,7 +43,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 
 | Capability | Exists? | Stability | Public API / source anchor | Docs quality | Runnable example / test anchor | Installed wheel evidence | Notes / remaining proof |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk methods and candidate coverage remain open. |
+| ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk create, text update and upsert now have installed evidence; Boolean/timestamp bulk_update fails (BULK-001). Candidate coverage remains open. |
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Partial audit | Ticket desk | String/Boolean/UUID slice | Advanced Array/Vector/JSON contracts require their separate field suite. |
 | Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
@@ -900,3 +900,48 @@ lifecycles, enabled Studio workflows, a data-bearing historical application
 upgrade, and final candidate-wide regression. Provider quality and experimental
 workflow behavior are not promoted into stable guarantees. This reconciliation
 is an evidence inventory, not the final requirement-by-requirement audit.
+
+## Bulk Write Contracts and PostgreSQL Type Failure
+
+**PT-034 / P1:** the bulk guide implied all-batches atomicity, fixed query
+counts, and normal scalar CASE updates without qualification. It omitted
+signal/validation differences, partial-return hydration, database-default
+requirements for upsert, and the non-read-only keys-only upsert path. Replaced
+it with a complete Ticket helper, explicit transaction ownership, current
+method contracts and supported text-update behavior. The expression reference
+now explicitly excludes `bulk_update()` from supported F-expression paths.
+
+**BULK-001 / P1, reproduced on the installed public 0.7.0 wheel and PostgreSQL:**
+`bulk_update()` generates CASE branches with untyped parameters; ordinary
+Boolean and timestamp updates fail with asyncpg `DatatypeMismatchError` mapped
+to Aksara `DatabaseError`. PostgreSQL infers the CASE result as text. The first
+probe failed while updating `resolved`; separate probes reproduce both
+`resolved` and `updated_at`. The guide now states this failure prominently.
+The replacement text-only helper does not certify other scalar types. A
+separate patch should provide correct typed CASE generation with real database
+coverage across the declared field types; no production fix is included here.
+
+The new installed PostgreSQL gate executes the exact bulk helper and records
+**16 checks**, including the two expected defect reproductions. It exercises
+create/update/upsert results, input validation, returned defaults, no save
+signals, ignored-conflict hydration, explicit timestamp behavior, an atomic
+helper rolling back its first batch after a later CHECK failure, and an
+unwrapped call retaining its first batch. The CHECK failures must unwrap to
+actual asyncpg `CheckViolationError`; unrelated exceptions cannot satisfy them.
+
+The evidence marks the Boolean/timestamp runtime contract false even though
+the documentation probe passes. The fixture owns a disposable schema and
+adds a CHECK solely for failure injection; it is not application migration,
+RLS, advanced-field, concurrency or remote-storage proof. Schema removal is
+verified. No package, dependency, runtime or security default changed.
+
+Bulk-guide checkpoint validation: the installed query/signal gate was rerun
+because the transaction reference changed (**25 checks passed**). The related
+`tests/test_manager.py`, `tests/test_v044_features.py`, and
+`tests/test_bug_hunt_phase1_fixes.py` set passed **76 tests** with required local
+PostgreSQL enabled. Their green result does not cover away BULK-001.
+Docs/packaging checks passed **167 tests**, with one upstream AnyIO deprecation
+warning. Ruff, strict MkDocs, 578 Python-fence syntax/import checks, 335 literal
+CLI parses (11 explicit exclusions), and 47,596 local rendered links/assets
+passed. The index records 44 artifacts with no stale linked inputs. Candidate
+readiness remains unproven; the production defect needs its own patch scope.

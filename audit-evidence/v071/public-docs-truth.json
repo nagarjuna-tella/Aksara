@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "bb5a3e021b81bed659b81955feeaf5094ce66e76",
+  "reviewed_head": "ab2d95619dd75096194c5a5ecaf5808da20146ca",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -434,6 +434,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/bulk-execution.json",
+      "sha256": "e7cc3432f7be5c8af1a58cd68cb248621e8f014a859e6ac29c565a0601ec2516",
+      "recorded_result": true,
+      "scope": "Exact bulk helper with real PostgreSQL create/update/upsert, conflict handling, signals and across-batch CHECK failure; Boolean/timestamp bulk_update failure is a reproduced defect, not a passing runtime contract; owned DDL and admin role, not migrations, RLS, advanced fields or concurrency proof",
+      "checked_linked_page_hashes": 3,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/cli-contract.json",
       "sha256": "e501e2b0cd07e31e416d3cfe20714495f30117e3bd9e1328a7047355ea8faae8",
       "recorded_result": "not a boolean gate",
@@ -444,7 +453,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "cb60d5ad30ac41c84c7f25a892817667dd7ccbe8d921ed531fec299e9e33ba01",
+      "sha256": "e99640c91132abba8f340bf29e7e49657f39a758bd450e1ff9da41ac4c3c6f9f",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -561,7 +570,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "0db76c21bfbece5ce4392e7a31e537b9fae38a149f58858fee994611769560d4",
+      "sha256": "6109520bd7b617c8c072b54428620045afbd0914c3b10e70707aac4ce12eea46",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -651,7 +660,7 @@
     },
     {
       "artifact": "audit-evidence/v071/query-execution.json",
-      "sha256": "60752fe3a82cf36de2fab9efb80b8885b65145313920470c0a033dbe8c3e5ed7",
+      "sha256": "a623859deccc142829ef9b5c4448cf081d50bd46cff7e3d07851011dd9eaace7",
       "recorded_result": true,
       "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
       "checked_linked_page_hashes": 4,
@@ -660,7 +669,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "e1ef5b4492f0d0f5213462a99eeed7e9d0fdd94a8617a574f05b99fbeaf62114",
+      "sha256": "b342cde40c1b4d71e5310ec88a941decd61a91c24566d11d1aac5d8d5ccd9dcb",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,
@@ -802,6 +811,11 @@
       "id": "ACTION-001",
       "evidence": "custom-action-boundary.json",
       "boundary": "Custom HTTP action authorization metadata"
+    },
+    {
+      "id": "BULK-001",
+      "evidence": "bulk-execution.json",
+      "boundary": "Boolean/timestamp bulk_update CASE type inference"
     },
     {
       "id": "TESTING-001",

@@ -55,7 +55,8 @@ posts = await Post.objects.filter(views__gt=F("likes")).all()
 
 ### Create-path restriction
 
-Expressions are intentionally rejected in insert-style operations such as `create()`, `bulk_create()`, and `upsert()` input values. They are supported in update-oriented flows and annotations.
+Expressions are intentionally rejected in insert-style operations such as `create()`, `bulk_create()`, and `upsert()` input values. They are supported in `QuerySet.update()` and annotations. `bulk_update()`
+also rejects expression values; it is not the expression-update path.
 
 ---
 
