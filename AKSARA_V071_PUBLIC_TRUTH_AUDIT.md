@@ -119,7 +119,7 @@ Full page-by-page usability review is still pending.
 | PT-028 | P1 | Type reference invents async permission/serializer interfaces, return shapes and mypy plugin/stub guarantees | Replaced sketches with actual sync/async contracts and qualified annotation support | Docs fixed; existing installed signature and import checks |
 | PT-029 | P1 | Performance guide promises missing projection/profiling/explain APIs, lazy relations and unsupported serializer patterns | Replaced with supported query controls and scoped measurement/transaction guidance | Docs fixed; no performance improvement or capacity claim |
 | PT-030 | P2 | Model guide omits inherited timestamps, implies schema creation from declaration, and uses undeclared fields in a uniqueness example | Clarified defaults/migration boundary and removed invalid example constraint | Docs fixed; installed model-default checks |
-| PT-031 | P1 | Admin async permission example treats a forward FK as a loaded object | Replaced with explicit get_related and fail-closed staff/owner checks; clarified form CSRF and process-local rate limits | Exact hook and anonymous custom-prefix mount verified against installed wheel |
+| PT-031 | P1 | Admin async permission example treats a forward FK as a loaded object | Replaced with explicit Author query and fail-closed staff/owner checks; clarified form CSRF and process-local rate limits | Exact hook now verified with installed PostgreSQL; initial get_related mock was invalid and superseded |
 
 ## Runtime Defects Exposed by the Documentation Audit
 
@@ -809,3 +809,37 @@ The strategy's adoption-debt assessment now includes SCAFFOLD-001 alongside the
 previously documented boundaries. Important external references were rechecked
 after that change: 42 reachable, 0 broken, 0 unverified. No production source or
 release behavior changed in this reporting checkpoint.
+
+## Relation Access Corrections and Stronger Admin Evidence
+
+**PT-032 / P1:** the relation guide advertised nonexistent forward M2M
+`contains()` and reverse M2M `filter()`, described callable reverse one-to-one
+absence incorrectly, used an inaccurate hand-written junction schema and
+claimed direct category queries include descendants. Corrected these to actual
+manager methods, callable-versus-get absence behavior, migration-generated
+junction naming, and direct-category semantics. Clarified standalone reverse
+relation finalization and synchronous eager access. The delete example now
+requires reloading an object to observe a SET NULL change.
+
+The earlier PT-031 Admin edit introduced an error: it awaited `get_related()`,
+and its mock incorrectly made that method asynchronous. That mock did not prove
+the installed ORM contract. It has been removed. The example now explicitly
+queries `Author.objects.get_or_none(id=obj.author_id)`. The new installed
+PostgreSQL gate executes this exact hook against real Author/Post models.
+Ten checks prove staff/owner denial paths, nullable absence, stored FK values,
+unloaded-access errors, synchronous eager access, eager NULL and reverse-FK
+filtering. The first probe omitted standalone `finalize_relations()`; adding
+the public setup call resolved the missing reverse descriptor and the guide now
+explains it. No runtime change was made to accommodate the example.
+
+`admin-relation-execution.json` binds the two pages and runner; its fixture uses
+owned DDL and an admin database role, not migrations, HTTP authentication, RLS
+or full M2M execution. Installed shape checks separately confirm which manager
+methods exist. This supersedes the earlier synthetic Admin relation-hook claim;
+the independently exercised anonymous Admin mount/login check remains valid.
+
+Relation correction validation: **77 passed** across `tests/test_relations.py`,
+`tests/test_v038_relations.py`, and `tests/perf/test_select_related.py` with
+required local PostgreSQL; **165 docs/packaging tests passed**. Strict MkDocs,
+Ruff and rendered links passed. The consolidated report indexes 41 artifacts
+with no stale linked page hashes; candidate readiness remains unproven.

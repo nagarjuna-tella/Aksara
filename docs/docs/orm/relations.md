@@ -77,9 +77,15 @@ author = await Author.objects.get(id=author_id)
 
 Today, `post.author` and `post.author_id` expose the same stored FK value/id;
 `post.author` is not a lazy-loaded related object. For eager loading, use
-`select_related()` and then read the loaded object with `get_related("author")`.
+`select_related()` and then read the loaded object synchronously with
+`get_related("author")`. Calling it without preloading raises `ValueError`; it
+does not issue a query.
 
 ### Reverse Access
+
+Aksara finalizes reverse descriptors after loading models during application
+startup. In a standalone script, import all related models and call the public
+`aksara.finalize_relations()` before using reverse accessors.
 
 Access related objects from the parent:
 
@@ -147,7 +153,7 @@ class Post(Model):
     )
 
 # When category is deleted, posts remain but category becomes NULL
-await category.delete()  # post.category becomes None
+await category.delete()  # Reload the post to observe category=None
 ```
 
 ### RESTRICT / PROTECT
@@ -159,7 +165,7 @@ class Post(Model):
     author = fields.ForeignKey(Author, on_delete=RESTRICT)
 
 # This raises an error if the author has posts
-await author.delete()  # Raises ForeignKeyConstraintError
+await author.delete()  # ORM precheck raises RestrictedError
 ```
 
 ### Import on_delete Constants
@@ -214,7 +220,8 @@ print(profile.bio)
 ```
 
 !!! note "OneToOne Reverse is a Single Object"
-    Unlike ForeignKey's reverse which returns a manager (`.all()`, `.filter()`), OneToOne reverse returns a single object (or raises `DoesNotExist`).
+    Unlike ForeignKey's reverse which returns a manager (`.all()`, `.filter()`), `await user.profile()` returns one object or `None`. Use
+    `await user.profile.get()` when absence should raise `DoesNotExist`.
 
 ### When to Use OneToOne
 
@@ -271,7 +278,7 @@ await post.tags.clear()
 await post.tags.set([tag1, tag2, tag3])
 
 # Check membership
-has_tag = await post.tags.contains(tag)
+has_tag = tag.id in await post.tags.ids()
 ```
 
 ### Reverse Access
@@ -282,23 +289,17 @@ tag = await Tag.objects.get(name="python")
 # Get all posts with this tag
 posts = await tag.posts.all()
 
-# Filter
-recent = await tag.posts.filter(created_at__gt=last_week)
+# Filter the returned list; the reverse M2M manager has no filter() method.
+recent = [post for post in await tag.posts.all() if post.created_at > last_week]
 ```
 
 ### Junction Table
 
-Aksara automatically creates a junction table:
-
-```sql
--- Auto-generated for Post.tags -> Tag
-CREATE TABLE post_tags (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    UNIQUE (post_id, tag_id)
-);
-```
+Generate and apply migrations to create the junction table. Declaring a model
+alone does not create it. The default name is `{source_table}_{field_name}`:
+`posts_tags` for a `posts` table with a `tags` field. It contains source/target
+UUID references, a unique pair, its own ID and a creation timestamp. Inspect
+the generated migration rather than copying a separate hand-written schema.
 
 ### Custom Through Model
 
@@ -489,7 +490,7 @@ async def demo():
     
     # Query examples
     jane_posts = await user.posts.all()
-    tech_posts = await tech.posts.all()  # Including child categories
+    tech_posts = await tech.posts.all()  # Direct category only; not descendants
     tutorial_posts = await Post.objects.filter(tags__name="Tutorial").all()
     
     # Efficient loading
@@ -524,7 +525,7 @@ editor = fields.ForeignKey(User, related_name="posts2")  # ❌
 ### Use select_related for Performance
 
 ```python
-# Always use when accessing related objects
+# Use when you need these related objects; measure the resulting query
 posts = await Post.objects.select_related("author").all()
 ```
 

@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "9ae422c4090d3e5183ec99728fc0c7bbba70e2ce",
+  "reviewed_head": "234f957f48cc6d6cfd8591538d04081f4794d66b",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,6 +389,15 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "evidence": [
     {
+      "artifact": "audit-evidence/v071/admin-relation-execution.json",
+      "sha256": "c43d69c32f58ec58d28f175c89ea6277d651dc381af3c74f07d128f56bbc7815",
+      "recorded_result": true,
+      "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, not migrations, HTTP authentication, RLS or M2M execution proof",
+      "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/ai-cli-execution.json",
       "sha256": "eb4488f1ce97c0dd22aa935e5ee7acd0fcdad88fcd621aa0597c1ba41e4d6ff5",
       "recorded_result": true,
@@ -435,7 +444,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "52340253afc1104abdb0b2255ca5342d3faeb1b56c9736d349be61b91abc038a",
+      "sha256": "ed63cf3d0098a5680ca6f80d4002e3b753d7d828396f5fddbd68e0873fde7b6b",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -552,9 +561,9 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "8265beb9d73ea3612a734d3573001c694e995c261eaa524e365ced15ffe49df3",
+      "sha256": "b171a8b8cb27255e8a8aa5f9c0d1760abb13cd15aea3883bbb9df1aab793e6f8",
       "recorded_result": true,
-      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin hook/anonymous mount checks; not full CRUD, arbitrary snippet execution, or API stability",
+      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
       "stale_linked_pages": [],
       "historical_head": null
@@ -651,7 +660,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "b77b540eaaa3f4d26edf63e7ee1af91d60131288493a4275c1256385c83adf9e",
+      "sha256": "a1c5a88e71204dab2917ef62af1c62f389a209272d63354627805ad64b20ee3b",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

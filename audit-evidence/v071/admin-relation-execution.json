@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "anonymous denied",
+    "owner allowed with database lookup",
+    "nullable missing author denied",
+    "other staff denied",
+    "nonstaff denied",
+    "forward access is stored id",
+    "unloaded related access raises ValueError",
+    "eager accessor is synchronous model",
+    "eager null relation is None",
+    "reverse FK filter executes and returns rows"
+  ],
+  "package_version": "0.7.0",
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Installed exact Admin hook and real forward/reverse/eager FK access; test-owned DDL and admin-role fixture, not migrations, HTTP authentication, RLS or M2M execution proof",
+  "page_sha256": {
+    "docs/docs/admin/admin-permissions.md": "d0964f3db14ea1423c0b4615094d65ddb9c8fb20dda421302046aa87f2feb744",
+    "docs/docs/orm/relations.md": "5ef927577e7f3da2732e45e5584301748620cae300cf608288421a7fc95ab970"
+  },
+  "runner_sha256": "16f99cfa52c645fc02f958554b496f433ce91a774497393442816cf188cac8cd"
+}
