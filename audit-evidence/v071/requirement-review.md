@@ -417,3 +417,12 @@ no dependency change. Tightened the AST normalizer to preserve executable
 f-string content and nested CLI expression arguments. Negative controls and
 the current branch pass; 208 docs/packaging tests and Ruff pass. Final candidate
 classification/version and runtime/generated-output gates remain open.
+
+## Unchanged-page disposition
+
+A1/A11/A12/A22: read six remaining unchanged pages completely. Retain caching
+and experimental planner/runtime guidance; add historical-entry notices to the
+two v0.5.49 notes; clarify existing idempotency and migration prerequisites in
+the v0.7 contract. The changelog body is historical release data and remains
+preserved; its introduction now directs readers to current instructions. This
+does not certify its historical snippets as current runnable application code.

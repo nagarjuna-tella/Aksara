@@ -486,11 +486,11 @@
     },
     {
       "path": "docs/docs/changelog.md",
-      "sha256": "c50882f04b2961984226abe66eff55f2907c8889579add87b54ed35880cdcb77",
-      "changed_since_release": false,
+      "sha256": "a58d548d7b3e7dd27733c4420e792d6a8a292442e1db68fa5c9278e675f1b0f9",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 2627
+      "lines": 2630
     },
     {
       "path": "docs/docs/cli/ai-commands.md",
@@ -878,19 +878,19 @@
     },
     {
       "path": "docs/docs/notes/v0-5-49-announcement.md",
-      "sha256": "ab96addaa9487b1b44764918d5edbd35f335f4cba7da5fdb092424324f0a7d8e",
-      "changed_since_release": false,
+      "sha256": "9a77b57591726bd0d1fde6c157d9275316911054f92c1148771195413fe23765",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 121
+      "lines": 127
     },
     {
       "path": "docs/docs/notes/v0-5-49-security-architecture.md",
-      "sha256": "daf5bdfb5d3ed0bb608729fa40807f342c6d2116960ecb2b83f80fb1e6afd508",
-      "changed_since_release": false,
+      "sha256": "a8df677e9aa6efa615c39e616234b1e6be0675df3910f838889992000a3aece3",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 284
+      "lines": 290
     },
     {
       "path": "docs/docs/operations/upgrade-v07.md",
@@ -1178,11 +1178,11 @@
     },
     {
       "path": "docs/docs/roadmap/v0-7-stability-contract.md",
-      "sha256": "b63ea55d9e2e48e2072024973370e86bdbf46cacc1f5a94d98a7012cdc955ad7",
-      "changed_since_release": false,
+      "sha256": "d30e0618317288865b4663394b8a575e7c92814999a624f71c7dcf021ee45c4e",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 183
+      "lines": 187
     },
     {
       "path": "docs/docs/roadmap.md",
@@ -1428,7 +1428,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 7,
+    "unchanged_since_release": 3,
     "with_scoped_evidence_candidates": 50
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

@@ -2,7 +2,10 @@
 
 Aksara is maintained by [Nagarjuna Tella](https://github.com/nagarjuna-tella).
 
-All notable changes to Aksara.
+All notable changes to Aksara. Entries describe their named release, including
+historical APIs and plans; they are not current setup instructions. Start with
+the [current guide](getting-started/first-project.md) and
+[stability contracts](concepts/stability.md) for supported behavior.
 
 ---
 

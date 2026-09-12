@@ -2293,3 +2293,20 @@ Three focused guard tests and the broader 208-test docs/packaging suite pass
 (one dependency warning); Ruff passes. runtime-scope.json is regenerated.
 This strengthens current no-functional-change evidence; final candidate version,
 generated-file equivalence and runtime regression remain separately required.
+
+## Unchanged-page review (2026-09-12)
+
+Read caching, planner, prompt runtime, the v0.7 stability contract and both
+v0.5.49 notes completely. Retained the caching and experimental pages: they
+state absent public classes/APIs, preview limits and provider ownership. This
+reading does not claim live provider execution. The release notes remain
+historical; added direct-entry notices linking current security, stability and
+production guidance without rewriting their original claims or plans.
+
+PT068 follow-up: the v0.7 contract now distinguishes idempotency lookup identity
+from semantic conflict checks, matching service.py and the corrected guide.
+Its upgrade checklist links the already documented explicit internal-migration
+path for legacy projects. These clarify existing behavior, not a new contract.
+The changelog's introduction now labels historical entries and links current
+instructions; its 2,600-line historical body was preserved, not re-certified as
+current API guidance. No ADR, production behavior or release evidence changed.
