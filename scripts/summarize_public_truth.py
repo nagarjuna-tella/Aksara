@@ -26,11 +26,12 @@ def main():
     for number, line in enumerate(objective.splitlines(),1):
         match = re.match(r'^#{1,3} Phase ([A-E]\d+)\s+[—–-]\s+(.+)$',line)
         if match:
-            review_state = (
-                'scoped acceptance recorded in requirement-review.md'
-                if match[1][0] in 'ABCD'
-                else 'candidate phase remains open'
-            )
+            if match[1][0] in 'ABCD':
+                review_state = 'scoped acceptance recorded in requirement-review.md'
+            elif match[1] == 'E6':
+                review_state = 'final PR and hosted validation remain pending'
+            else:
+                review_state = 'local candidate acceptance recorded in requirement-review.md'
             phases.append({'id':match[1], 'title':match[2], 'objective_line':number,
                            'final_requirement_audit':review_state})
     assert len(phases)==63, 'Objective phase structure changed; review explicitly'
@@ -58,8 +59,8 @@ def main():
                         'historical_head':data.get('head',data.get('source_head'))})
     metadata=tomllib.loads((ROOT/'pyproject.toml').read_text())
     result={
-        'schema_version':1,'assessment':'NOT READY: candidate release gates remain open',
-        'candidate_ready':False,'input_integrity_pass':not stale,
+        'schema_version':1,'assessment':'READY FOR FINAL PR AND HOSTED VALIDATION',
+        'candidate_ready':True,'input_integrity_pass':not stale,
         'reviewed_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'package_version':metadata['project']['version'],
         'objective_sha256':digest(args.objective),'objective_phase_index':phases,
@@ -95,16 +96,13 @@ def main():
             {'id':'AIFLOW002','evidence':'snippet-coverage-review.json','boundary':'Workflow diagnostics can render malformed set_env display commands with a duplicated export prefix'},
         ],
         'remaining_before_candidate':[
-            'Bump once to 0.7.1rc1 and write the candidate changelog now that the scoped A-D documentation acceptance is complete.',
-            'Build and validate candidate wheel/sdist and run the established final regression, security, Doctor, migration, MCP, durable, task, RLS and reference-application gates.',
-            'Repeat installed examples/scaffold/journeys against the actual candidate; current development/public-wheel successes are not candidate evidence.',
-            'Create RELEASE_EVIDENCE_v0.7.1-rc1.md, open the one final PR, inspect hosted checks, and leave it unmerged/unpublished.',
+            'Open the one final PR, inspect hosted PostgreSQL 16 and release checks, and leave it unmerged, untagged and unpublished for human review.',
         ],
         'release_evidence_exists':(ROOT/'RELEASE_EVIDENCE_v0.7.1-rc1.md').exists(),
         'scope':'Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval.',
     }
     args.output.write_text(json.dumps(result,indent=2)+'\n')
-    print(f'{len(entries)} artifacts indexed; {len(phases)} objective phases; {len(stale)} stale linked inputs; candidate not ready')
+    print(f'{len(entries)} artifacts indexed; {len(phases)} objective phases; {len(stale)} stale linked inputs; ready for final PR and hosted validation')
     raise SystemExit(bool(stale))
 
 

@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.1-rc1",
+  "package_version": "0.7.1rc1",
+  "branch": "codex/v071-public-truth-and-roadmap",
+  "release_base_sha": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
+  "validation_source_sha": "b751187d77af0486dda656e3b28d33cfe3efe981",
+  "recommendation": "ready_for_final_pr_and_hosted_validation",
+  "publication_performed": false,
+  "merge_performed": false,
+  "tag_created": false,
+  "runtime_change_assessment": {
+    "status": "pass",
+    "intentional_semantic_changes": false,
+    "dependencies_changed": false,
+    "changed_production_files": [
+      "aksara/_version.py",
+      "aksara/cli/main.py",
+      "aksara/cli/scaffold.py",
+      "aksara/cli/templates/__init__.py",
+      "pyproject.toml"
+    ]
+  },
+  "public_truth": {
+    "contradictions_registered": 80,
+    "functional_findings_registered": 22,
+    "python_fences": 348,
+    "json_fences": 15,
+    "cli_forms_parsed": 295,
+    "cli_forms_excluded": 7,
+    "examples_classified": 6,
+    "execution_artifacts_indexed": 31,
+    "rendered_pages": 162,
+    "rendered_local_links_assets": 42322,
+    "external_links_reachable": 41
+  },
+  "validation": {
+    "full_suite": {
+      "status": "pass",
+      "passed": 8389,
+      "skipped": 2,
+      "warnings": 25
+    },
+    "runtime_matrix": {
+      "status": "pass",
+      "cells": 4,
+      "passed_per_cell": 8389,
+      "skipped_per_cell": 2
+    },
+    "durable_targeted": {
+      "status": "pass",
+      "passed": 258
+    },
+    "invariant_prototype": {
+      "status": "pass",
+      "passed": 24
+    },
+    "security": {
+      "status": "pass",
+      "passed": 429
+    },
+    "fuzz": {
+      "status": "pass",
+      "passed": 165
+    },
+    "diagnostics": {
+      "status": "pass",
+      "passed": 314
+    },
+    "migrations": {
+      "status": "pass",
+      "passed": 455
+    },
+    "mcp_targeted": {
+      "status": "pass",
+      "passed": 68
+    },
+    "task_targeted": {
+      "status": "pass",
+      "passed": 40
+    },
+    "rls_targeted": {
+      "status": "pass",
+      "passed": 21
+    },
+    "doctor_release": {
+      "status": "pass",
+      "checks": 12
+    },
+    "docs_contract": {
+      "status": "pass",
+      "passed": 123
+    },
+    "strict_docs": {
+      "status": "pass"
+    },
+    "installed_package": {
+      "status": "pass",
+      "checks": 15
+    },
+    "support_desk": {
+      "status": "pass",
+      "checks": 66
+    },
+    "performance_sanity": {
+      "status": "pass",
+      "invariants": 7
+    },
+    "static_ratchet": {
+      "status": "pass",
+      "ruff": 7207,
+      "ruff_limit": 7218,
+      "mypy": 465,
+      "mypy_limit": 501
+    },
+    "bandit": {
+      "status": "pass",
+      "high_severity": 0
+    },
+    "dependency_audit": {
+      "status": "pass",
+      "known_vulnerabilities": 0
+    },
+    "secret_scan": {
+      "status": "pass",
+      "findings": 0,
+      "reviewed_false_positive_fingerprints": 41
+    },
+    "package_build": {
+      "status": "pass",
+      "twine": "pass"
+    },
+    "sbom": {
+      "status": "pass",
+      "format": "CycloneDX 1.6",
+      "components": 96
+    },
+    "hosted_ci": {
+      "status": "pending_final_pr"
+    }
+  },
+  "known_functional_findings": [
+    "RELATION001",
+    "ADMINWIDGET001",
+    "INSPECTOR001",
+    "FIXTURE001",
+    "FIXTURE002",
+    "FIXTURE003",
+    "SOFTDELETE001",
+    "EX-001",
+    "CFG-001",
+    "SDK-001",
+    "STORAGE-001",
+    "ACTION-001",
+    "MIGRATION-001",
+    "PAGINATION-001",
+    "BULK-001",
+    "TESTING-001",
+    "SCAFFOLD-001",
+    "TASK-001",
+    "AIPROVIDER001",
+    "GAP001",
+    "AIFLOW001",
+    "AIFLOW002"
+  ],
+  "scope": "Local v0.7.1rc1 candidate decision. No production runtime feature or semantic change is claimed; hosted final-PR checks and human review remain required."
+}

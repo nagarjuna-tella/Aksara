@@ -2712,3 +2712,29 @@ diagrams, formulas and displayed output remain under their owning setup,
 journey, schema or rendering checks. This closes the current-source A15/D3
 acceptance without inventing universal execution. Candidate repetition remains
 an E-phase release gate. No production source or runtime behavior changed.
+
+## v0.7.1-rc1 candidate validation — 2026-09-12
+
+The one-time candidate bump is complete and the installed candidate repeats the
+public sample, example, tutorial and scaffold evidence. All 348 current Python
+fences compile and import from the installed wheel, all 15 JSON fences parse,
+five selected JSON objects validate against installed models, 295 literal CLI
+forms parse with seven explicit exclusions, five retained examples start, the
+six-stage Ticket Desk passes 86 public API assertions, the scaffold passes five
+startup checks, the installed package passes 15 checks and packaged Support Desk
+passes all 66 checks. Strict MkDocs produces 162 pages, 42,322 rendered local
+links/assets pass, and all 41 selected external links are reachable.
+
+The complete supported matrix passes 8,389 tests with two expected provider
+skips in each of Python 3.11/3.14 × minimum/latest FastAPI/Starlette. Separately
+attributable durable, invariant, MCP, task, RLS, migration, security, fuzz,
+diagnostics, Doctor, static-analysis, Bandit, dependency-audit, Gitleaks,
+package/Twine, performance and SBOM gates pass. The semantic diff guard reports
+no runtime logic or dependency change; the only production/package files differ
+through candidate version metadata or existing CLI/scaffold instructional text.
+
+The local verdict is **READY FOR FINAL PR AND HOSTED VALIDATION**. Hosted
+PostgreSQL 16 and human review remain pending. All 22 functional findings remain
+disclosed and unfixed. No merge, tag, release, publication or v0.8 implementation
+is authorized by this result. Exact evidence is in
+`RELEASE_EVIDENCE_v0.7.1-rc1.md` and `audit-evidence/v071-rc1/`.

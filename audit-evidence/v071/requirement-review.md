@@ -108,26 +108,26 @@ Line numbers below refer to that exact objective.
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
-| E1: Version (line 1957) | OPEN | pyproject.toml remains 0.7.0 as required before readiness. | Bump once to 0.7.1rc1 only after A-D acceptance. |
-| E2: Changelog (line 1969) | OPEN | Candidate changelog has not been finalized. | Add requested v0.7.1 Documentation & Developer Experience entry, explicitly no new runtime capability/semantics. |
-| E3: Release evidence (line 1997) | OPEN | RELEASE_EVIDENCE_v0.7.1-rc1.md is absent. | Create from actual candidate evidence, including all named documentation and runtime gates. |
-| E4: No-functional-change audit (line 2020) | PARTIAL | runtime-scope.json AST check permits scaffold README return text, startproject/startapp instructional strings and template descriptions; pyproject dependencies unchanged. | Re-run final candidate-aware audit, inspect every production-source/package/default change and generated output. |
-| E5: Full compatibility regression (line 2053) | OPEN | Four historical compatibility cells each passed 8,313 tests with two skips; current docs tests have grown. | Run full final candidate matrix and named security/fuzz/diagnostics/Doctor/MCP/durable/task/RLS/migrations/build/installed/reference gates. |
-| E6: Branch and PR (line 2079) | PARTIAL | Correct branch exists and checkpoints are normally pushed; no final candidate PR created. | Logical final commits, one final PR, inspect hosted checks; no merge/tag/publication. |
+| E1: Version (line 1957) | SCOPED | The version moved once from 0.7.0 to 0.7.1rc1 after A–D acceptance; package, CLI, scaffold and version-sensitive tests agree. | Final PR and hosted checks; no further bump in this candidate. |
+| E2: Changelog (line 1969) | SCOPED | Root and documentation changelogs contain the requested Documentation & Developer Experience entry and state no new runtime capability or intentional production semantic change. | Human editorial review remains. |
+| E3: Release evidence (line 1997) | SCOPED | RELEASE_EVIDENCE_v0.7.1-rc1.md and audit-evidence/v071-rc1 record the actual local candidate gates, artifact hashes, environment and limits. | Add hosted status only after the final PR checks exist. |
+| E4: No-functional-change audit (line 2020) | SCOPED | Candidate-aware AST/package audit classifies all five production/package files as version or instructional text only; runtime logic and dependency declarations are unchanged. Candidate startup and 18-file scaffold equivalence pass. | Hosted regression and human diff review remain independent checks. |
+| E5: Full compatibility regression (line 2053) | SCOPED | All four matrix cells pass 8,389 tests with two expected provider skips. Security 429, fuzz 165, diagnostics 314, migrations 455, durable 258, invariant 24, MCP 68, tasks 40 and RLS 21 pass. Doctor, build/Twine, installed wheel, Support Desk, strict docs, static, dependency, secret and SBOM gates pass. | Hosted PostgreSQL 16 remains pending on the final PR. |
+| E6: Branch and PR (line 2079) | PARTIAL | Correct branch and logical checkpoints are pushed normally; the local candidate is ready for its one final PR. | Open the final PR, inspect hosted checks, and leave it unmerged, untagged and unpublished for human review. |
 
 ## Requirements outside the phase headings
 
 | Requirement | Current evidence / disposition | What remains |
 | --- | --- | --- |
-| Outcome A and Outcome B both required | Documentation and strategy artifacts exist; roadmap populated | Neither a strategy-only result nor green docs build substitutes for final release gates |
+| Outcome A and Outcome B both required | Documentation, strategy and roadmap artifacts are complete within their recorded scopes; the local candidate release suite passes | Hosted final-PR checks and human review remain |
 | Test/refine product hypothesis | Report rejects automatic universal actor-boundary claim; ordinary tasks and custom paths qualified | Final README/manual/roadmap consistency review |
-| No intentional runtime changes | AST check against released v0.7.0 confines production diff to scaffold README and CLI instructional text; dependency file unchanged | Repeat on final candidate, including version-only classification |
+| No intentional runtime changes | Final AST/package check against released v0.7.0 confines the diff to candidate version metadata and scaffold/CLI instructional text; dependency declarations are unchanged | Hosted regression and human diff review |
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
-| No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
-| Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
+| No new mandatory dependency or unrelated range expansion | Candidate pyproject differs only in project version; package build, Twine and dependency audit pass | Hosted dependency audit |
+| Scaffold instruction-only changes | Candidate generation/startup passes; 18-file public/candidate comparison permits only README after exact token/version normalization and records the raw candidate README digest | Hosted installed-wheel and reference-app checks |
 | Functional defects: document, classify, preserve, separate patch | Twenty-two findings recorded with scoped evidence; no runtime fix in this branch | Final candidate freshness; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001, GAP001 and AIFLOW001/AIFLOW002 are provider-free |
-| Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
-| Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
+| Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ remain preserved untracked | Preserve through final commit; do not sweep them into candidate |
+| Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; all candidate checkpoints are pushed normally | Open and inspect the final PR; no merge, tag or publication |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
 | Databases, AI, durability and bounded 1.0 questions | Dedicated strategy discussions explain PostgreSQL dependence, SQLite tradeoff, backend-first category, delayed-action wedge and explicit cutoff | Maintain distinction between source-backed capability and user-demand hypotheses |
 | Required report structures | Public-truth report has all required subject sections; strategy covers all subjects, with several combined/renamed headings | Final content audit of each requested section, not only heading matching |
@@ -614,3 +614,24 @@ claim live-provider, callback-wide CLI or external TypeScript-toolchain
 execution. Those boundaries are explicit in `snippet-coverage-review.json`.
 A15 and D3 therefore move from PARTIAL to SCOPED. With every A–D phase now
 VERIFIED or SCOPED, the one-time candidate bump and E-phase campaign may begin.
+
+## v0.7.1-rc1 local candidate checkpoint — 2026-09-12
+
+E1–E5 are complete within their stated local scopes. The version was bumped
+once to `0.7.1rc1`; both changelogs state the documentation/DX scope and absence
+of new runtime capability; and `RELEASE_EVIDENCE_v0.7.1-rc1.md` records the
+candidate artifacts and gates. The semantic audit classifies every production
+or package-metadata change as candidate version metadata or existing CLI/
+scaffold instructional text. It reports no runtime logic or dependency change.
+
+All four supported Python/web cells pass 8,389 tests with two expected provider
+skips. The separately attributable migration, security, fuzz, diagnostics,
+Doctor, MCP, durable, invariant, task, RLS, build, installed-wheel, Support Desk,
+strict-docs, static-analysis, dependency-audit, secret-scan and SBOM gates pass.
+Installed candidate evidence also repeats the examples, six-stage tutorial,
+scaffold startup, 348 Python fences, 15 JSON fences and 295 CLI forms.
+
+E6 remains PARTIAL only because the one final pull request and its hosted
+PostgreSQL 16 checks do not exist yet. The local recommendation is ready for
+that PR and hosted validation, with merge, tag, publication and any functional
+defect implementation still unauthorized.
