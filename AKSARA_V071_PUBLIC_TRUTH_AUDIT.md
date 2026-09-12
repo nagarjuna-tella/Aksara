@@ -1995,3 +1995,23 @@ Validation: `pytest tests/mcp tests/docs/test_ai_developer_examples.py -q`:
 warning. Strict docs, 358 Python fences/imports, 292 CLI forms and 42,297 local
 references passed. No production code changed. These dispositions do not imply
 all 163 public pages have completed semantic acceptance.
+
+## Release guide and historical entry points (2026-09-12)
+
+PT066 / P2: the release guide omitted the established compatibility dimensions,
+required database setting and packaged/reference journeys, and did not make
+candidate-specific evidence ownership explicit. It now names the actual
+Python 3.11/3.14 × minimum/latest-supported matrix, hosted PostgreSQL 16 profile,
+installed-wheel separation and exact-ref checks before manual publication.
+Workflow configuration was inspected; hosted protection is not inferred.
+
+The notes index now identifies its entries as dated historical records. The
+v0.5.49 note/announcement bodies, release changelog and v0.7 stability contract
+are preserved. The latter remains the authoritative released contract, not a
+new v0.7.1 guarantee. Historical narrative is not used as current setup advice.
+
+Validation: 207 docs/packaging tests passed with one dependency warning; strict
+docs, 358 Python fences/imports, 292 CLI forms and 42,302 local links/assets
+passed. No production-source change and no publication action. The requirement
+checkpoint's stale counts were reconciled without treating scoped evidence as
+final candidate completion.

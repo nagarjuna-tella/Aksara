@@ -1,7 +1,10 @@
 # Notes
 
 Technical notes, architecture write-ups, and release commentary from the
-Aksara maintainer.
+Aksara maintainer. These are dated historical records, not the current
+installation or security contract. Start with the [current manual](../index.md)
+and [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) for present
+usage and guarantees.
 
 ## v0.5.49
 

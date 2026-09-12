@@ -863,11 +863,11 @@
     },
     {
       "path": "docs/docs/notes/index.md",
-      "sha256": "d5537b15c202d609ae52781b441eb8c379420fa57e31a0bea62a351861c4d936",
-      "changed_since_release": false,
+      "sha256": "98a1586459d7a78f76e783fa097f1c458b1dfca1d98941c8f21aa8daf09c315f",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 13
+      "lines": 16
     },
     {
       "path": "docs/docs/notes/v0-5-49-announcement.md",
@@ -1145,11 +1145,11 @@
     },
     {
       "path": "docs/docs/releasing.md",
-      "sha256": "0c46ebc9942e8c6b7896a1a3ee3e2d0d5e40b0b3042b57398fc5a953ab7798a9",
-      "changed_since_release": false,
+      "sha256": "3bd4f8ed878b1c731a6e987743f4fdae083433ae0f0d429b7cc44f251db56c64",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 81
+      "lines": 105
     },
     {
       "path": "docs/docs/roadmap/index.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 9,
+    "unchanged_since_release": 7,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
