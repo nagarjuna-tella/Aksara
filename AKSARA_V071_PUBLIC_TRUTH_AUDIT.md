@@ -1097,3 +1097,29 @@ Python-fence syntax/import checks, 316 CLI parses (11 explicit exclusions),
 and 46,807 local rendered links/assets passed. The evidence index has 48
 artifacts with no stale linked inputs. No migration engine, production schema,
 package metadata or runtime default changed.
+
+## Generated Filter and Search Reference
+
+**PT-038 / P1:** the filtering reference implied `filterable_fields` alone
+restricted generated URL filters and claimed model-aware coercion and relation
+search. The router actually uses `get_filter_fields()` independently; its default
+includes all model fields. The replacement Ticket ViewSet shares an explicit
+allowlist across both entry points. The guide describes heuristic coercion,
+unsupported relation search, ignored parameters/order terms and pagination
+bounds without inventing uniform invalid-filter status codes.
+
+The exact documented model and ViewSet pass **11 installed HTTP/PostgreSQL
+checks** for anonymous denial, boolean filters, direct text search, combined
+parameters, ascending/default and descending ordering, router allowlist,
+pagination/counts, invalid pagination bounds, ignored ordering and rejection of
+a relation search path. The fixture attaches a test identity and owns an admin-
+role schema; it does not prove credential validation, RLS, every coercion or
+adversarial filter syntax. The schema is removed and verified afterward.
+No production filter/default behavior changed to match the documentation.
+
+Filtering-reference checkpoint validation: **93 related filtering/pagination/
+ordering regression and fuzz tests passed**, and **173 docs/packaging tests
+passed** with one upstream AnyIO deprecation warning. Ruff, strict MkDocs, 552
+Python-fence syntax/import checks, 316 CLI parses with 11 exclusions, and 46,761
+rendered local links/assets passed. The evidence index records 49 artifacts
+with no stale linked inputs. Release readiness is still not established.
