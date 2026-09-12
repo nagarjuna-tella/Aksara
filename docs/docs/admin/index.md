@@ -56,15 +56,17 @@ from aksara import Aksara
 from aksara.contrib.admin import include_admin
 import myapp.admin  # noqa: F401 — registers models with `site`
 
-app = Aksara(database_url="postgresql://localhost/myapp")
+app = Aksara(database_url="postgresql://localhost/myapp", enable_admin=False)
 include_admin(app)              # Admin at /admin/
 # include_admin(app, prefix="/manage")   # …or a custom prefix
 ```
 
 !!! note "Auto-mount in development"
     When `debug=True` (and the auth contrib is available), Aksara auto-mounts the
-    admin at `/admin/`, so an explicit `include_admin(app)` is optional in
-    development. Set `enable_admin=True` to mount it in production.
+    admin at `/admin/`. Choose that automatic path or the explicit mounting
+    shown above, which sets `enable_admin=False` before calling `include_admin()`.
+    Do not mount the same site/prefix twice. `enable_admin=True` selects automatic
+    mounting outside debug mode too; it is not needed for explicit mounting.
 
 ### 3. Access the Admin
 
@@ -140,7 +142,14 @@ abuse resistance, not a shared fleet quota. See the
 
 ---
 
-## Complete Example
+## Registration example
+
+This configuration assumes `myapp.models` already defines the Post, Author,
+Category and Tag fields referenced below, the database is configured, and their
+migrations have been applied. It is not a standalone application. For initial
+model/migration setup, use the [first-project guide](../getting-started/first-project.md);
+for account creation and password verification, see
+[authentication](../api/authentication.md).
 
 ```python
 # admin.py
@@ -187,7 +196,7 @@ from aksara import Aksara
 from aksara.contrib.admin import include_admin
 import myapp.admin  # noqa: F401
 
-app = Aksara(database_url="postgresql://localhost/myapp")
+app = Aksara(database_url="postgresql://localhost/myapp", enable_admin=False)
 include_admin(app)
 ```
 

@@ -471,3 +471,10 @@ A10/A19/C6: the four middleware pages and their exact-example tests were read.
 Four focused ASGI tests pass; record current-hash dispositions in
 middleware-reading-review.json. Configuration and trust boundaries are coherent.
 This completes section reading, not the remaining manual/candidate campaign.
+
+## Admin section reading pass
+
+Read all six Admin pages. Corrected explicit-versus-automatic mounting guidance,
+custom-prefix setup and registration prerequisites after checking the mount
+implementation. No production behavior changed; final candidate and complete
+Admin application execution remain distinct from this reading pass.

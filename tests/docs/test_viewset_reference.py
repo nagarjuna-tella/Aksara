@@ -268,3 +268,22 @@ def test_documented_field_reference_contracts():
             assert parameters[name].default == expected, (heading, name, written)
             checked += 1
     assert checked >= 30, 'Field default tables were not exercised'
+
+
+def test_explicit_admin_mount_disables_automatic_mount():
+    from starlette.testclient import TestClient
+
+    from aksara import Aksara
+    from aksara.contrib.admin import AdminSite, include_admin
+    from aksara.contrib.admin.mount import AdminRateLimitMiddleware
+
+    app = Aksara(database_url=None, auto_discover_views=False, debug=True, enable_admin=False)
+
+    assert not any(m.cls is AdminRateLimitMiddleware for m in app.user_middleware)
+    site = AdminSite(name='staff', login_url='/accounts/login', logout_url='/accounts/signed-out')
+    include_admin(app, prefix='/staff', site=site)
+    assert sum(m.cls is AdminRateLimitMiddleware for m in app.user_middleware) == 1
+    with TestClient(app) as client:
+        response = client.get('/staff/', follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers['location'] == '/accounts/login?next=%2Fstaff%2F'

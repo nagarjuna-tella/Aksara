@@ -2406,3 +2406,20 @@ showing an extracted unverified tenant is not a membership decision.
 Four focused tests pass. middleware-reading-review.json records current hashes
 and per-page conclusions. No production/proxy/RLS or cross-process authority
 guarantee is inferred; no page or runtime change was required.
+
+## Admin section reading corrections (2026-09-12)
+
+Read all six Admin pages and inspected app._maybe_mount_admin() plus
+include_admin(). Explicit-mount examples now set enable_admin=False before
+mounting; otherwise debug auto-mounting can register the default site first.
+The custom login example now shows its /staff prefix instead of implying the
+site name selects the path. The larger registration fragment names its model,
+migration and identity prerequisites rather than claiming to be standalone.
+These are example/instruction changes only. Admin action transaction/name limits,
+widget rendering side effects and async permission semantics remain explicit.
+
+The new mounting check uses an actual HTTP redirect and the single installed
+Admin limiter rather than assuming FastAPI's route storage is flat. It also
+identified the encoded next parameter in the login redirect; the displayed URL
+now matches /accounts/login?next=%2Fstaff%2F. The initial raw-route assertion and
+unencoded expectation were test assumptions, not new production defects.
