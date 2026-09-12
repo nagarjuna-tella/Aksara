@@ -289,11 +289,11 @@
     },
     {
       "path": "docs/docs/ai-mode/mcp.md",
-      "sha256": "abe31d10e1f6ce7c51bc11aabcd33f2fc168ed3350bbcdbbfb01457235f1ab30",
-      "changed_since_release": false,
+      "sha256": "11534bf4167fcdd4f80bcdcdef67eab33096eaad3cfe6c9f56a6f4d9fed141e2",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 125
+      "lines": 131
     },
     {
       "path": "docs/docs/ai-mode/ollama.md",
@@ -345,11 +345,11 @@
     },
     {
       "path": "docs/docs/ai-mode/query-engine.md",
-      "sha256": "eb10da5f73a25dcfdbf32256bc67fec44a79079579279628e4f7a697e74909d1",
-      "changed_since_release": false,
+      "sha256": "690876a387385d402db2990bc1b6090239ad2e97ddf19042330666d39050a38c",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 36
+      "lines": 38
     },
     {
       "path": "docs/docs/ai-mode/runtime.md",
@@ -895,11 +895,11 @@
     },
     {
       "path": "docs/docs/orm/advanced-field-policy.md",
-      "sha256": "8641cc15aedc39d952932016c66f17c1d94afaa54328229bd71ba913bd519c1b",
-      "changed_since_release": false,
+      "sha256": "d8510ede1461d64a5eac643f53e08d6e4cc5ff6c10bcb4397277b82a5b2cf201",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 384
+      "lines": 392
     },
     {
       "path": "docs/docs/orm/bulk-operations.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 12,
+    "unchanged_since_release": 9,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

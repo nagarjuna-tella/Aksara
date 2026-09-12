@@ -274,3 +274,11 @@ policy. 69 matrix/production-policy tests and 207 docs/packaging tests pass.
 Current docs/import/CLI/link evidence refreshed. Workflow definitions support
 only the described configuration, not verified hosted protection or candidate
 success. No publication action; final release gates remain open.
+
+## Conceptual boundary and retained-page checkpoint
+
+PT065 clarifies synchronous MCP versus durable approval, deployment-dependent
+RLS, the historical advanced-field design and experimental query memory scope.
+Caching/planner/prompt-runtime pages were retained after source/installed review,
+with reasons in the audit. 23 MCP/preview and 207 docs/packaging tests passed.
+No candidate readiness claim; whole-manual acceptance and release gates remain.

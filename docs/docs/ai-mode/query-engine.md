@@ -28,7 +28,9 @@ print(result.rows)
 
 The executor resolves a registered model, validates field names and supported
 lookups, applies ORM filters and ordering, and returns serialized rows. It does
-not parse natural language or call an LLM.
+not parse natural language or call an LLM. It currently fetches all matching
+rows before slicing the result in Python. `pagination.limit` bounds returned
+rows, not database work or memory use; do not treat it as a query resource limit.
 
 This low-level helper does not receive a request `Principal`; do not expose it
 directly to untrusted callers. Application code must establish authorization,

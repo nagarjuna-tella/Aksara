@@ -1,5 +1,13 @@
 # Advanced Field Policy
 
+!!! info "Historical design and compatibility record"
+    This page records the v0.5.55 field-policy design, including proposals phrased
+    as “should” and the candidate clarifications below. It is not a complete
+    current API reference. Use [Fields](fields.md), [Relations](relations.md),
+    [Bulk operations](bulk-operations.md), and the
+    [v0.7 stability contract](../roadmap/v0-7-stability-contract.md) for current
+    usage and supported boundaries.
+
 Advanced Field Policy defines Aksara's runtime contract for advanced ORM fields
 in v0.5.55 and later. It describes how `Array`, `Vector`, `JSON`,
 `FileField`, and `ImageField` values are validated, serialized, and exposed

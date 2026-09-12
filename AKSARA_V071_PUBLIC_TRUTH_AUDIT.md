@@ -1970,3 +1970,28 @@ dependency warning. Strict docs, 358 Python fences/imports, 292 CLI forms and
 42,292 local references across 162 pages passed. No production code changed.
 These are page corrections and scoped checks; final candidate acceptance remains
 incomplete, and publication was not dispatched.
+
+## Remaining conceptual boundaries review (2026-09-12)
+
+PT065 / P1: synchronous MCP approval limitations were phrased as a framework-wide
+v0.6 limitation and the execution description implied RLS without deployment
+configuration. The MCP page now distinguishes stateless grants from v0.7 durable
+approval, states RLS prerequisites and explicitly excludes protocol MCP Tasks.
+The advanced-field policy is labeled as a historical design/compatibility record
+and links current references rather than presenting every “should” as current API.
+The experimental query page now states its fetch-all-then-slice behavior, verified
+in `execute_ai_query_plan`; no resource-bounded query claim is made.
+
+Retained unchanged after review:
+
+| Page | Disposition | Evidence and bounds |
+| --- | --- | --- |
+| `advanced/caching.md` | RETAIN | Installed 0.7.0 isolated `find_spec('aksara.cache')` returns None; no general cache contract claimed. |
+| `ai-mode/planner.md` | RETAIN | `aksara/ai/planner.py` validation/handler execution and existing exact preview example checks; experimental, no planner-quality or persistence guarantee. |
+| `ai-mode/runtime.md` | RETAIN | `run_prompt_pack` signature, connector dispatch, override resolution, timeout/token handling inspected; provider quality explicitly excluded. |
+
+Validation: `pytest tests/mcp tests/docs/test_ai_developer_examples.py -q`:
+23 passed with one dependency warning. Docs/packaging: 207 passed with the same
+warning. Strict docs, 358 Python fences/imports, 292 CLI forms and 42,297 local
+references passed. No production code changed. These dispositions do not imply
+all 163 public pages have completed semantic acceptance.
