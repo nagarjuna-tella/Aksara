@@ -11,7 +11,9 @@
   "local_postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
   "hosted_postgresql": {
     "version": "16",
-    "status": "pending_final_pr"
+    "status": "pass",
+    "checks": 21,
+    "sha": "71e034dc0bf53d8c99a7a72e468b1ad181b96ec5"
   },
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "mcp_dependency": "mcp>=2.0.0,<2.1.0",
@@ -59,5 +61,5 @@
       "sha256": "4a22a7455ab0e074887fcac2e7d65f059dd7798a1838d3d719d97c016014cf0e"
     }
   },
-  "scope": "Local release-candidate environment and artifact record. Hosted PostgreSQL 16 remains the independent final-PR check."
+  "scope": "Release-candidate environment and artifact record. The hosted PostgreSQL 16 result is tied to PR #30 and its exact checked source SHA."
 }

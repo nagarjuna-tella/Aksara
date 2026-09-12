@@ -5,7 +5,7 @@
   "branch": "codex/v071-public-truth-and-roadmap",
   "release_base_sha": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
   "validation_source_sha": "b751187d77af0486dda656e3b28d33cfe3efe981",
-  "recommendation": "ready_for_final_pr_and_hosted_validation",
+  "recommendation": "ready_for_human_review",
   "publication_performed": false,
   "merge_performed": false,
   "tag_created": false,
@@ -136,7 +136,10 @@
       "components": 96
     },
     "hosted_ci": {
-      "status": "pending_final_pr"
+      "status": "pass",
+      "checks": 21,
+      "sha": "71e034dc0bf53d8c99a7a72e468b1ad181b96ec5",
+      "pr": 30
     }
   },
   "known_functional_findings": [
@@ -163,5 +166,5 @@
     "AIFLOW001",
     "AIFLOW002"
   ],
-  "scope": "Local v0.7.1rc1 candidate decision. No production runtime feature or semantic change is claimed; hosted final-PR checks and human review remain required."
+  "scope": "v0.7.1rc1 candidate decision after local and hosted checks. No production runtime feature or semantic change is claimed; human review remains required."
 }

@@ -2,13 +2,14 @@
 
 ## Recommendation
 
-**READY FOR FINAL PR AND HOSTED VALIDATION.**
+**READY FOR HUMAN REVIEW.**
 
 The v0.7.1 release candidate is a public-truth, documentation, developer-
 experience, and roadmap release. It adds no runtime capability and makes no
 intentional production semantic change. The complete local release suite passes
-against PostgreSQL with required database tests enabled. Hosted PostgreSQL 16
-and human review remain required before any release decision.
+against PostgreSQL with required database tests enabled, and all 21 hosted checks
+pass on PR #30, including PostgreSQL 16. Human review remains required before any
+release decision.
 
 No merge, tag, GitHub release, or package publication has occurred.
 
@@ -23,7 +24,7 @@ No merge, tag, GitHub release, or package publication has occurred.
 | Local database | PostgreSQL 18.4 database `aksara_test` |
 | Supported Python | 3.11 and 3.14 |
 | Supported web boundary | FastAPI 0.136.1 / Starlette 1.0.1 through FastAPI 0.141.1 / Starlette 1.6.0 |
-| Hosted PostgreSQL 16 | Pending the final pull request |
+| Hosted PostgreSQL 16 | **PASS:** 21/21 checks on PR #30 at `71e034dc0bf53d8c99a7a72e468b1ad181b96ec5` |
 
 Database credentials and complete connection URLs are absent from committed
 evidence.
@@ -72,6 +73,7 @@ Evidence: [runtime scope](audit-evidence/v071-rc1/runtime-scope.json),
 | Gate | Environment or scope | Result | Evidence |
 | --- | --- | --- | --- |
 | Full source regression | Python 3.14.4, latest supported web stack, required local PostgreSQL | **PASS:** 8,389 passed, 2 expected provider skips | [log](audit-evidence/v071-rc1/matrix-py314-latest.log), [record](audit-evidence/v071-rc1/matrix-py314-latest.json) |
+| Hosted release matrix | GitHub Actions with PostgreSQL 16 | **PASS:** 21/21 checks on PR #30 | [record](audit-evidence/v071-rc1/hosted-ci.json) |
 | Minimum web stack | Python 3.11.15; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,389 passed, 2 skipped | [log](audit-evidence/v071-rc1/matrix-py311-minimum.log), [record](audit-evidence/v071-rc1/matrix-py311-minimum.json) |
 | Latest web stack | Python 3.11.15; FastAPI 0.141.1; Starlette 1.6.0 | **PASS:** 8,389 passed, 2 skipped | [log](audit-evidence/v071-rc1/matrix-py311-latest.log), [record](audit-evidence/v071-rc1/matrix-py311-latest.json) |
 | Minimum web stack | Python 3.14.4; FastAPI 0.136.1; Starlette 1.0.1 | **PASS:** 8,389 passed, 2 skipped | [log](audit-evidence/v071-rc1/matrix-py314-minimum.log), [record](audit-evidence/v071-rc1/matrix-py314-minimum.json) |
@@ -146,6 +148,6 @@ not pass strict compilation, and editable installation of a generated applicatio
 remains unsupported. The complete register and evidence boundaries are in
 [AKSARA_V071_PUBLIC_TRUTH_AUDIT.md](AKSARA_V071_PUBLIC_TRUTH_AUDIT.md).
 
-Hosted GitHub Actions, including PostgreSQL 16, remain the independent final
-environment check. Human review is required. This document authorizes no merge,
-tag, release, or publication.
+Hosted GitHub Actions, including PostgreSQL 16, pass on the exact final local-
+evidence commit recorded above. Human review is required. This document
+authorizes no merge, tag, release, or publication.

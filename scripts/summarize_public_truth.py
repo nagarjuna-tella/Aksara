@@ -29,7 +29,7 @@ def main():
             if match[1][0] in 'ABCD':
                 review_state = 'scoped acceptance recorded in requirement-review.md'
             elif match[1] == 'E6':
-                review_state = 'final PR and hosted validation remain pending'
+                review_state = 'PR #30 open and 21 hosted checks passed; human review remains'
             else:
                 review_state = 'local candidate acceptance recorded in requirement-review.md'
             phases.append({'id':match[1], 'title':match[2], 'objective_line':number,
@@ -59,7 +59,7 @@ def main():
                         'historical_head':data.get('head',data.get('source_head'))})
     metadata=tomllib.loads((ROOT/'pyproject.toml').read_text())
     result={
-        'schema_version':1,'assessment':'READY FOR FINAL PR AND HOSTED VALIDATION',
+        'schema_version':1,'assessment':'READY FOR HUMAN REVIEW',
         'candidate_ready':True,'input_integrity_pass':not stale,
         'reviewed_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'package_version':metadata['project']['version'],
@@ -96,13 +96,13 @@ def main():
             {'id':'AIFLOW002','evidence':'snippet-coverage-review.json','boundary':'Workflow diagnostics can render malformed set_env display commands with a duplicated export prefix'},
         ],
         'remaining_before_candidate':[
-            'Open the one final PR, inspect hosted PostgreSQL 16 and release checks, and leave it unmerged, untagged and unpublished for human review.',
+            'Complete human review; keep PR #30 unmerged, untagged and unpublished until a separately authorized release decision.',
         ],
         'release_evidence_exists':(ROOT/'RELEASE_EVIDENCE_v0.7.1-rc1.md').exists(),
         'scope':'Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval.',
     }
     args.output.write_text(json.dumps(result,indent=2)+'\n')
-    print(f'{len(entries)} artifacts indexed; {len(phases)} objective phases; {len(stale)} stale linked inputs; ready for final PR and hosted validation')
+    print(f'{len(entries)} artifacts indexed; {len(phases)} objective phases; {len(stale)} stale linked inputs; ready for human review')
     raise SystemExit(bool(stale))
 
 

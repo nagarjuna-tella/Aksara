@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "assessment": "READY FOR FINAL PR AND HOSTED VALIDATION",
+  "assessment": "READY FOR HUMAN REVIEW",
   "candidate_ready": true,
   "input_integrity_pass": true,
-  "reviewed_head": "0b50b8e2e4e6668e9aa3a942a7250bc2db0f100a",
+  "reviewed_head": "71e034dc0bf53d8c99a7a72e468b1ad181b96ec5",
   "package_version": "0.7.1rc1",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -383,13 +383,13 @@
       "id": "E6",
       "title": "Branch and PR",
       "objective_line": 2079,
-      "final_requirement_audit": "final PR and hosted validation remain pending"
+      "final_requirement_audit": "PR #30 open and 21 hosted checks passed; human review remains"
     }
   ],
   "phase_index_scope": "Preserves phase identities and records the scoped A-D acceptance state from requirement-review.md; E remains open and this index does not replace the objective or individual evidence limits",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "b6ecb6cd50a5ee184cf328131d097c73bfb5366e52d8c8ae66f19f09a5f029a7",
+    "sha256": "b1dcba4f35f9621be8623191ab3ffec0be6b4cfd734b846d2d1cf5644652534d",
     "scope": "Final current-source A-D review covering all phase identities, non-phase boundaries and named deliverables; all A-D phases are accepted within their recorded evidence scopes, while candidate release approval remains open"
   },
   "evidence": [
@@ -1264,7 +1264,7 @@
     }
   ],
   "remaining_before_candidate": [
-    "Open the one final PR, inspect hosted PostgreSQL 16 and release checks, and leave it unmerged, untagged and unpublished for human review."
+    "Complete human review; keep PR #30 unmerged, untagged and unpublished until a separately authorized release decision."
   ],
   "release_evidence_exists": true,
   "scope": "Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval."

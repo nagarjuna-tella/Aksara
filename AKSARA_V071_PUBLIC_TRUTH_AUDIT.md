@@ -2733,8 +2733,9 @@ package/Twine, performance and SBOM gates pass. The semantic diff guard reports
 no runtime logic or dependency change; the only production/package files differ
 through candidate version metadata or existing CLI/scaffold instructional text.
 
-The local verdict is **READY FOR FINAL PR AND HOSTED VALIDATION**. Hosted
-PostgreSQL 16 and human review remain pending. All 22 functional findings remain
-disclosed and unfixed. No merge, tag, release, publication or v0.8 implementation
-is authorized by this result. Exact evidence is in
+The candidate verdict is **READY FOR HUMAN REVIEW**. PR #30 is open and all 21
+hosted checks pass on `71e034dc0bf53d8c99a7a72e468b1ad181b96ec5`,
+including PostgreSQL 16. All 22 functional findings remain disclosed and unfixed.
+No merge, tag, release, publication or v0.8 implementation is authorized by this
+result. Exact evidence is in
 `RELEASE_EVIDENCE_v0.7.1-rc1.md` and `audit-evidence/v071-rc1/`.
