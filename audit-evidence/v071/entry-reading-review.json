@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "review_date": "2026-09-12",
-  "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final candidate execution.",
+  "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final release certification.",
   "page_sha256": {
-    "README.md": "7471a8b6c7d635ed7377afd86397510e6cf588e6a834d3db39c576c2b1dabd32",
+    "README.md": "a00e9eb59b3435e65a60a1ec013a7b8343073ae2a5b0df5ca81078649131fb57",
     "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
     "docs/docs/getting-started/index.md": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
-    "docs/docs/getting-started/first-project.md": "b998ad684569dde3439d3445a2d697afb5b514d8f9ffd6b4f4af97419b8a3b60"
+    "docs/docs/getting-started/first-project.md": "c987488eaf2008328583c4c389bc6ed25f9b1836e115e46908a7e85725b4e330"
   },
   "reviews": [
     {

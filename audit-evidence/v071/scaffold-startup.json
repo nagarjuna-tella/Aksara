@@ -2,8 +2,8 @@
   "schema_version": 1,
   "pass": true,
   "package": {
-    "version": "0.7.1rc1",
-    "scaffold_sha256": "c0ad6c2099d7f1ca681caba390b516835c2196b9b9c3f6e1a8110679e95ba41e"
+    "version": "0.7.1",
+    "scaffold_sha256": "a6d2b1935c4ddce576414fead664e28dafab3fd975f88523f3a5358dd54bd7f3"
   },
   "checks": [
     "exact README dependency install succeeds",
@@ -21,8 +21,8 @@
     "/studio/ui": 404
   },
   "doctor_exit": 1,
-  "doctor_output": "\n  \u26a1 Aksara Launch Check\n\n  Environment\n    \u2713 Python 3.11.15 detected\n    \u2713 Aksara 0.7.1rc1 installed\n\n  Project\n    \u2713 aksara project detected\n    \u2713 settings module found\n    \u2713 app registry loaded\n\n  Database\n    \u2713 DATABASE_URL configured\n    \u2713 PostgreSQL connection successful\n    \u2713 Migrations are up to date\n\n  Studio\n    \u26a0 Studio UI route not registered\n      Next: Enable Studio in local debug mode and run aksara dev\n    \u2713 API docs available\n    \u2713 MCP catalog route registered\n\n  AI\n    \u26a0 No AI provider configured\n      Next: Run aksara ai-hub configure\n\n  Examples\n    \u2713 basic_app available\n    \u2713 blog available\n    \u2713 crm available\n    \u2713 multitenant available\n    \u2713 ai_providers available\n\n  Security\n    \u2713 Development mode enabled\n\n  Result\n    Launch readiness: PARTIAL\n\n  Next steps\n    1. Start Studio with aksara dev\n    2. Configure AI provider optionally\n\n",
-  "readme_sha256": "f36689e5c6b5c9f9ddc9d24ff93616529d9cef5d61338323ad02982710af1a87",
+  "doctor_output": "\n  \u26a1 Aksara Launch Check\n\n  Environment\n    \u2713 Python 3.11.15 detected\n    \u2713 Aksara 0.7.1 installed\n\n  Project\n    \u2713 aksara project detected\n    \u2713 settings module found\n    \u2713 app registry loaded\n\n  Database\n    \u2713 DATABASE_URL configured\n    \u2713 PostgreSQL connection successful\n    \u2713 Migrations are up to date\n\n  Studio\n    \u26a0 Studio UI route not registered\n      Next: Enable Studio in local debug mode and run aksara dev\n    \u2713 API docs available\n    \u2713 MCP catalog route registered\n\n  AI\n    \u26a0 No AI provider configured\n      Next: Run aksara ai-hub configure\n\n  Examples\n    \u2713 basic_app available\n    \u2713 blog available\n    \u2713 crm available\n    \u2713 multitenant available\n    \u2713 ai_providers available\n\n  Security\n    \u2713 Development mode enabled\n\n  Result\n    Launch readiness: PARTIAL\n\n  Next steps\n    1. Start Studio with aksara dev\n    2. Configure AI provider optionally\n\n",
+  "readme_sha256": "9ff18c3e801316392e4ae997d90abc9d691b24dd5c6463553716149754599484",
   "runner_sha256": "113c2ef180e234da8f013cd1f346a581bad331d7ad16cdd2913f5c418660bd02",
   "scope": "Generated stubs, exact dependency install, .env database edit, migrations, Doctor and dev --no-reload with ephemeral port; no application resource, interactive dbsetup, production role, reload watcher or application packaging claim",
   "disposable_schema_removed": true

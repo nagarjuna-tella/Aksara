@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.1",
+  "package_version": "0.7.1",
+  "status": "local_validation_passed_hosted_pending",
+  "merged_candidate_base_sha": "c84c1a3a40c4f7868ce536b242ac537f87f5db9c",
+  "validation_source_sha": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9",
+  "no_functional_change": {
+    "runtime_logic_changed": false,
+    "dependencies_changed": false,
+    "schema_or_migrations_changed": false,
+    "functional_findings_fixed": 0,
+    "disclosed_functional_findings": 22
+  },
+  "runtime_matrix": {
+    "cells_passed": 4,
+    "cells_total": 4,
+    "passed_per_cell": 8389,
+    "expected_skips_per_cell": 2
+  },
+  "documentation": {
+    "contract_tests_passed": 123,
+    "current_markdown_files": 165,
+    "current_fences": 595,
+    "python_fences": 348,
+    "json_fences": 15,
+    "cli_forms": 295,
+    "cli_exclusions": 7,
+    "retained_examples": 5,
+    "tutorial_stages": 6,
+    "tutorial_assertions": 86,
+    "scaffold_checks": 5,
+    "rendered_pages": 162,
+    "rendered_links_and_assets": 42322,
+    "external_links_reachable": 41
+  },
+  "targeted": {
+    "durable_and_invariants_passed": 258,
+    "invariant_prototype_passed": 24,
+    "mcp_passed": 68,
+    "tasks_passed": 40,
+    "rls_and_tenancy_passed": 21,
+    "security_passed": 429,
+    "fuzz_passed": 165,
+    "diagnostics_passed": 314,
+    "migrations_passed": 455
+  },
+  "doctor": {
+    "status": "pass",
+    "checks": 12,
+    "warnings": 0,
+    "failures": 0
+  },
+  "static_analysis": {
+    "ruff": 7207,
+    "ruff_limit": 7218,
+    "mypy": 465,
+    "mypy_limit": 501,
+    "bandit_high": 0,
+    "dependency_vulnerabilities": 0
+  },
+  "packaging": {
+    "twine": "pass",
+    "wheel": "aksara_framework-0.7.1-py3-none-any.whl",
+    "wheel_sha256": "42a3a42be08ee5be1075d4f6da3b22fea6acaa5bf678a57db7ecc00ce4fdd197",
+    "sdist": "aksara_framework-0.7.1.tar.gz",
+    "sdist_sha256": "d3ce8e4b8c735bfcf61b41f2df90c7cc7a448722e8329b7f074bb9840653cb94",
+    "sbom_spec": "CycloneDX 1.6",
+    "sbom_components": 74,
+    "installed_wheel_checks": 15,
+    "support_desk_checks": 66,
+    "performance_invariants": 7
+  },
+  "hosted_ci": {
+    "status": "pending",
+    "postgresql": "16"
+  },
+  "publication": {
+    "tag": "absent",
+    "github_release": "absent",
+    "pypi_0_7_1": "absent"
+  },
+  "scope": "Final v0.7.1 local release validation. Publication is not authorized; hosted finalization PR validation remains required."
+}

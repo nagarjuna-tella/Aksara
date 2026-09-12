@@ -3,13 +3,13 @@
   "review_date": "2026-09-12",
   "scope": "Complete author reading of the current changelog, gap-analysis and release pages, the public roadmap and roadmap index, both released stability contracts, and all three historical-note entry pages. Historical release narratives were assessed as dated records rather than current setup instructions. This review verifies page truth and installed-wheel version-check behavior; it does not approve the candidate, recertify every historical API, or run deployment and release workflows.",
   "page_sha256": {
-    "docs/docs/changelog.md": "4a6cac162e63f2fde95bc4b71c10789f73ce8b0cae997f2b01d5779eea45804b",
+    "docs/docs/changelog.md": "acbcd8e133d15efb3b7fa9caf102b233a2f7de11a2c042215d67656dc706d674",
     "docs/docs/gapanalysis.md": "8aab1a2864604e10d6fb1ae35348f22ba19ea7e385fcf4ca6eb8e9bcef796276",
     "docs/docs/releasing.md": "3bd4f8ed878b1c731a6e987743f4fdae083433ae0f0d429b7cc44f251db56c64",
     "docs/docs/notes/index.md": "98a1586459d7a78f76e783fa097f1c458b1dfca1d98941c8f21aa8daf09c315f",
     "docs/docs/notes/v0-5-49-announcement.md": "9a77b57591726bd0d1fde6c157d9275316911054f92c1148771195413fe23765",
     "docs/docs/notes/v0-5-49-security-architecture.md": "a8df677e9aa6efa615c39e616234b1e6be0675df3910f838889992000a3aece3",
-    "docs/docs/roadmap.md": "29544b6023ea06e5f9b5aaea45b401679bbe8a59646d41307053612e93952be2",
+    "docs/docs/roadmap.md": "1d77fbfe9f063c8ef85614e5c5c4be7251014aeb179e32f9cfb1c6c6222d6a45",
     "docs/docs/roadmap/index.md": "2fa4bd7149ec949ae268308169d313db7044e8b76e7738e10eb55d47aaecfd96",
     "docs/docs/roadmap/v0-6-stability-contract.md": "f0b6693fabcfb50686750ecd89d41e76873df8d62f4587f94040926257971b38",
     "docs/docs/roadmap/v0-7-stability-contract.md": "d30e0618317288865b4663394b8a575e7c92814999a624f71c7dcf021ee45c4e"

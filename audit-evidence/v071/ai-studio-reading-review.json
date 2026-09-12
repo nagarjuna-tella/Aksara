@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "review_date": "2026-09-12",
-  "scope": "Complete author reading of all twenty-eight AI Mode pages and all five Studio pages, compared with provider, adapter, runtime, planner, query, patch, context, MCP, Studio router/settings/CLI and static-UI source plus existing scoped execution evidence. This does not certify provider quality, network reachability, browser interaction, autonomous workflows, production Studio exposure or final candidate behavior.",
+  "scope": "Complete author reading of all twenty-eight AI Mode pages and all five Studio pages, compared with provider, adapter, runtime, planner, query, patch, context, MCP, Studio router/settings/CLI and static-UI source plus existing scoped execution evidence. This does not certify provider quality, network reachability, browser interaction, autonomous workflows, production Studio exposure or final release behavior.",
   "page_sha256": {
     "docs/docs/ai-mode/agent-runtime.md": "88aeb6ac365bbca6097be05a37cf16eaa134fe49fd4bd2b91d79a5ebb134957f",
     "docs/docs/ai-mode/agent.md": "37641cf372a4ff4e98cf24f5b41e3f9168f04d282c117dbc49a458783469220b",
@@ -31,8 +31,8 @@
     "docs/docs/ai-mode/schema-doctor.md": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56",
     "docs/docs/ai-mode/tools.md": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
     "docs/docs/ai-mode/workflows.md": "7f225fd3d1aa613cd41082e2e76fd7f8608cc6f66b5b9aca7daa654af6ce799d",
-    "docs/docs/studio/api.md": "850469d367632874c4e6af9e6ea80e18fd11968d3fdfcb22b823fcda11a098bf",
-    "docs/docs/studio/cli.md": "fe044f8e4c0913a7b9d451776f1a545595b49a1de4356792f6169d8c19edc90f",
+    "docs/docs/studio/api.md": "0aaae64432c66276f865f85e9d2f3679c7810c14bcd57a4e32e48858c46090ad",
+    "docs/docs/studio/cli.md": "8c7590da758320a6c79e071c68482639996940a3dc3cb08d486b635f9a14e35c",
     "docs/docs/studio/configuration.md": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
     "docs/docs/studio/index.md": "7b55c33fab7ec91a2e52535f9c719e74d0d00d0c85e6270f84074578c7d3fb86",
     "docs/docs/studio/ui.md": "0d5090d457f95ce87777185fd880cacec23ed922333117aad06d0540cbc045e0"

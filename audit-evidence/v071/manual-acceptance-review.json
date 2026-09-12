@@ -49,22 +49,22 @@
   "source_sha256": {
     "audit-evidence/v071/admin-reading-review.json": "3a41cf63a878ddd0b204839b13f3d9bf863a91d0e16ea0ba12de0fb87eb5e77f",
     "audit-evidence/v071/advanced-reading-review.json": "0e37be00829ee9ffecc6d16e29caa757ed86ba2c4f8def5ca3c058e25413edb4",
-    "audit-evidence/v071/ai-studio-reading-review.json": "f9830acdd5ff9e3c0588005495d6eb8ab10f53e82277664c42e5dabc26626ff7",
+    "audit-evidence/v071/ai-studio-reading-review.json": "d26dd395127ef0ced585a29281af4d67223d89aa422950eda9b4dac2328d49a6",
     "audit-evidence/v071/api-reading-review.json": "5e681e0541a1c662e7c722fc1dd8014c1b9d7f6eecc8cc9f9875de0e67a10a38",
     "audit-evidence/v071/concepts-reading-review.json": "79972c9bf81ad41ef08894384b02aa4a01553eadcbd682d6ff7f4b7eccb0a04a",
     "audit-evidence/v071/debugging-reading-review.json": "452617042db8f0427a43df0788571997c9edde632311c7ad61fb06f30bc196e9",
-    "audit-evidence/v071/entry-reading-review.json": "ea5aae964651fb53df1e40067aa3fcaedc3f99ba3065c5bc8a088acf8927dbdf",
+    "audit-evidence/v071/entry-reading-review.json": "99ed34c89eb1caf3f0d462e30ae23a9882180d3ccdd05ceff54930b6d31c237b",
     "audit-evidence/v071/middleware-reading-review.json": "9be2ebdc5a12664e525879cb4fa21066eaf93cb37a6b28e49e36e7b590475ef7",
     "audit-evidence/v071/operator-reading.json": "a7db9677e23188b2354f0f7ab3d5058b3c2c0afb5f4ae6b69afd650553ef117c",
     "audit-evidence/v071/orm-reading-review.json": "77f0908543cb786ac817380c9504621882fc681540bb87d23f46c6cc6624f71e",
     "audit-evidence/v071/patterns-howto-glossary-reading-review.json": "7f5caa95e72f6a9245e7ab461f097709b5e75a42fdbee301724195aa3cdbe763",
-    "audit-evidence/v071/project-history-reading-review.json": "b5d8227e73ec5cb9f008173c99a4320493e8a14f60a8aa9a41f35c3b4606db7a",
-    "audit-evidence/v071/reference-tooling-reading-review.json": "07507ff4fe2ab859153a31b79d17b7fb48bf097b3cfcdd7592e1af9a7552d804",
+    "audit-evidence/v071/project-history-reading-review.json": "8e119f18686211fbe91bd201475ff6deb496582d4a54f6e5973f92a8fbc6fb85",
+    "audit-evidence/v071/reference-tooling-reading-review.json": "51a76098803345c79acc3710541f71a7cb8fb582c556e1c9beb4764ae7fadcc5",
     "audit-evidence/v071/security-reading-review.json": "7fd691e259c10352cb62de9665cf9a6e2cff03ba891d89e077432f6d836bf730",
-    "audit-evidence/v071/start-tutorial-reading-review.json": "9d2175076818bcb822f71660f25a4695d37d54b81cd9cf04b97cdbab8a99e6df",
+    "audit-evidence/v071/start-tutorial-reading-review.json": "782360d3f737227e3572d6591ddf5c44fcd01425e97c71a95933bead482ca67e",
     "audit-evidence/v071/public-page-review-inventory.json": "e5ae436aac28cbacf2c02de714ac5903221eebfa02d781aa93a0d7b57ed811d4",
-    "audit-evidence/v071/installed-doc-imports.json": "a0199c758030a64192ac2b5dc88339e69017082a358340b091c702cf8e7c5783",
-    "audit-evidence/v071/snippet-coverage-review.json": "7df55f8755e5961d85d1e4320db2730389ccd0540d491f9d7e9f3f9d03b22eff"
+    "audit-evidence/v071/installed-doc-imports.json": "8fa6df0dabb0230359d7a84a74b19860e9e5cd162064d4029a46bc59ded47472",
+    "audit-evidence/v071/snippet-coverage-review.json": "63f4fb97e7d367eed453411cdd4bac6ef1c118b2eab897c0d40dde07df0611ef"
   },
   "candidate_acceptance": false
 }

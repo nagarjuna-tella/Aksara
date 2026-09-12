@@ -1,5 +1,5 @@
 {
-  "package_version": "0.7.1rc1",
+  "package_version": "0.7.1",
   "installed_requires_python": ">=3.11",
   "observations": {
     "python_3_9": {
@@ -38,7 +38,7 @@
   "scope": "Negative provider-free installed-wheel probe. It patches the reported interpreter tuple in the environment checker and proves the 3.10 threshold mismatch; it does not run Aksara on Python 3.10, test deployment health, or change production behavior.",
   "source_sha256": {
     "aksara/gapanalysis.py": "86be90586c785e4aa7a319564dea9d6387b7a20ccd8a1686ec5b5194af7f5829",
-    "pyproject.toml": "fce5c96d3705d9ec2fea7f96981bed30368612acaf1721e6e76ca2ccacec1786"
+    "pyproject.toml": "921182671c08d861a822739eb1d92e7968af9c94ad23b9bd783e741f63db155f"
   },
   "page_sha256": {
     "docs/docs/gapanalysis.md": "8aab1a2864604e10d6fb1ae35348f22ba19ea7e385fcf4ca6eb8e9bcef796276",

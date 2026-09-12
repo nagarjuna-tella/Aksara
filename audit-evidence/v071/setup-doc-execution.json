@@ -2,7 +2,7 @@
   "schema_version": 1,
   "pass": true,
   "package": {
-    "version": "0.7.1rc1",
+    "version": "0.7.1",
     "database_options": [
       "database_url",
       "min_size",
@@ -47,7 +47,7 @@
   "temporary_files_removed": true,
   "existing_database_recreated": false,
   "page_sha256": {
-    "docs/docs/getting-started/installation.md": "e9a9c7a3b74582775d065fe0b4b3d06219af9d303cf63c0d1b7512e8006b1ca4",
+    "docs/docs/getting-started/installation.md": "b39b144835c7dd604f721da71f1365f050602be961d2e45f29d841bba7945284",
     "docs/docs/getting-started/project-layout.md": "5b4a8b4b6733cd91438b25489d4364dd07a856bbb4b8312c1a5ccf389ec33ed8",
     "docs/docs/getting-started/database-setup.md": "2ae7e296cbef96e351dc1328a5ab2a3682ed4b03e5ffa42cd3842b8615d4ac8a",
     "docs/docs/getting-started/running-your-app.md": "32410bdbfd1bf122ff94edffab64778668aa64d543af8af5526588ba29b2bd60",

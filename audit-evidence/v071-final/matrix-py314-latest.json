@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "exit_code": 0,
+  "head": "e2ef47dd32a67229a55e2f0e2047d196ec2071e9",
+  "command": [
+    "/Users/nagarjunatella/Desktop/Desktop - Nagarjuna\u2019s MacBook Pro/projects/Aksara/.venv/bin/python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "web_boundary": "latest-supported",
+  "versions": {
+    "python": "3.14.4",
+    "fastapi": "0.141.1",
+    "starlette": "1.6.0",
+    "asyncpg": "0.31.0"
+  },
+  "database_tests_required": true,
+  "security_matrix_required": false,
+  "summary": "8389 passed, 2 skipped, 25 warnings in 97.17s (0:01:37)",
+  "log": "audit-evidence/v071-final/matrix-py314-latest.log",
+  "log_sha256": "cd70dbf8ac8d31c36ea90140fb7dda7b7e7386358b8910db981c90d3ed7c042d",
+  "runner_sha256": "fd1f5cf98e6ea8ece8437d967b22c631cca286e45be829b703d431eb6ab9eb67",
+  "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or installed-wheel candidate evidence"
+}
