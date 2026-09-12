@@ -66,6 +66,7 @@ def main():
         },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
+            {'id':'RELATION001','evidence':'query-execution.json','boundary':'first does not populate requested eager relation'},
             {'id':'ADMINWIDGET001','evidence':'installed-doc-imports.json','boundary':'Array widget padding mutates caller list'},
             {'id':'INSPECTOR001','evidence':'installed-doc-imports.json','boundary':'Offline synthetic ANALYZE result lacks provenance warning'},
             {'id':'FIXTURE001','evidence':'fixture-execution.json','boundary':'Exported primary keys cannot restore absent rows'},

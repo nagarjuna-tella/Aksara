@@ -2130,3 +2130,23 @@ Strict docs, 348 Python fences, 292 CLI forms and 42,152 local references passed
 This turn does not claim database execution of the complete Product/Category
 example; that remains a high-value snippet coverage item for final acceptance.
 No production code changed.
+
+## Complete model example execution (2026-09-12)
+
+Extended check_public_queries.py to extract the exact complete Product/Category
+block. Installed 0.7.0 execution on local PostgreSQL persists both records,
+checks Decimal/stock/Array/JSON values, confirms forward FK IDs and eager access.
+The combined gate now passes 31 checks and verifies disposable-schema removal.
+Schema setup is test-owned DDL, not a migration or RLS proof. Ruff and 207
+docs/packaging tests passed; no production implementation changed.
+
+RELATION001 / P1: an additional installed probe found that
+select_related(...).first() returns a model without the requested related
+object; get_related raises ValueError. Source confirms first() calls _from_record
+without the loading steps in all(). The runner records
+runtime_first_populates_requested_relation=false and preserves this negative
+control. Recommend a separate terminal-method relation-loading consistency patch
+with first/all, empty-result, FK/O2O and prefetch tests. The documented complete
+example uses select_related(...).all() and passes unchanged. The initial harness
+also tried nonexistent QuerySet.get; that was a test mistake, not a framework
+finding. Strategy/public-reference follow-up for RELATION001 remains open.

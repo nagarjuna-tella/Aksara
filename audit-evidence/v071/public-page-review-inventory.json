@@ -991,7 +991,9 @@
       "path": "docs/docs/orm/models.md",
       "sha256": "9ee5f303e2bc3afee7681f8d116f317ecbc53c2acb6f5b4ea2195925274efec3",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "query-execution.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 508
     },
@@ -1427,7 +1429,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 7,
-    "with_scoped_evidence_candidates": 49
+    "with_scoped_evidence_candidates": 50
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

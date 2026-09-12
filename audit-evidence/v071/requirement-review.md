@@ -325,3 +325,12 @@ Meta options removed, explicit ordering/migration responsibilities stated, and
 eager relation access corrected. Existing installed contracts plus 207 docs tests
 pass. Complete Product/Category example database execution remains to be added;
 syntax/import coverage is not used as proof of that remaining item.
+
+## Complete model example execution checkpoint
+
+The formerly unexecuted Product/Category block now runs verbatim against the
+installed package and local PostgreSQL. query-execution.json records 31 checks,
+including a new RELATION001 negative control: first() does not populate a
+requested eager relation. No runtime fix. Update the strategic defect inventory
+and public relation guidance for this finding before final acceptance; earlier
+sixteen-finding counts exclude this newly observed seventeenth finding.

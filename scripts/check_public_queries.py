@@ -16,7 +16,7 @@ import asyncpg
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = ("docs/docs/orm/querying.md", "docs/docs/getting-started/first-project.md", "docs/docs/orm/signals.md",
-         "docs/docs/orm/expressions-and-transactions.md")
+         "docs/docs/orm/expressions-and-transactions.md", "docs/docs/orm/models.md")
 PROBE = r'''
 import ast, asyncio, inspect, json, os, sys, types
 from pathlib import Path
@@ -112,6 +112,28 @@ async def main():
             pre_save.disconnect(before, sender=Ticket)
             post_save.disconnect(after, sender=Ticket)
             passed('documented signal disconnection', signal_module.disconnect_signals())
+        # Execute the complete model-guide example with test-owned schema setup.
+        model_example = {'__name__': 'model_guide_example'}
+        exec(Path('model_example.py').read_text(), model_example)
+        Category, Product = model_example['Category'], model_example['Product']
+        await db.execute("CREATE TABLE categories (id UUID PRIMARY KEY, name VARCHAR(100) UNIQUE NOT NULL, slug VARCHAR(100) UNIQUE NOT NULL, description TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)")
+        await db.execute("CREATE TABLE products (id UUID PRIMARY KEY, name VARCHAR(200) NOT NULL, slug VARCHAR(200) UNIQUE NOT NULL, description TEXT NOT NULL, price NUMERIC(10,2) NOT NULL, sale_price NUMERIC(10,2), sku VARCHAR(50) UNIQUE NOT NULL, stock_quantity INTEGER NOT NULL, is_active BOOLEAN NOT NULL, is_featured BOOLEAN NOT NULL, category_id UUID NOT NULL REFERENCES categories(id), tags TEXT[], attributes JSONB, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)")
+        await model_example['example']()
+        category = await Category.objects.get(slug='electronics')
+        product = await Product.objects.get(sku='PHONE-001')
+        passed('complete model example persisted both records', await Category.objects.count() == 1 and await Product.objects.count() == 1)
+        passed('model example decimal and stock values', str(product.price) == '999.99' and product.stock_quantity == 100)
+        passed('model example array and JSON values', product.tags == ['smartphone', 'mobile', '5g'] and product.attributes == {'color': 'black', 'storage': '256GB'})
+        passed('model example forward relation is an ID', product.category == category.id)
+        eager = (await Product.objects.filter(sku='PHONE-001').select_related('category').all())[0]
+        passed('model example eager relation is available', eager.get_related('category').name == 'Electronics')
+        first = await Product.objects.filter(sku='PHONE-001').select_related('category').first()
+        try:
+            first.get_related('category')
+        except ValueError as exc:
+            passed('first does not populate requested eager relation', 'was not prefetched' in str(exc))
+        else:
+            raise AssertionError('Reassess RELATION001: first now loads the relation')
     finally:
         await db.disconnect()
     print('QUERY_EVIDENCE=' + json.dumps({'checks': checks, 'package_version': aksara.__version__, 'package_path': aksara.__file__}))
@@ -142,6 +164,9 @@ async def main():
                 model_page = (ROOT / PAGES[1]).read_text()
                 model_source = re.search(r'```python title="app/models.py"\n(.*?)```', model_page, re.DOTALL).group(1)
                 (root / "models.py").write_text(model_source)
+                complete = (ROOT / PAGES[4]).read_text().split('## Complete model example', 1)[1]
+                example_source = re.search(r'```python\n(.*?)```', complete, re.DOTALL).group(1)
+                (root / "model_example.py").write_text(example_source)
                 signal_source = re.search(r'```python title="app/signals.py"\n(.*?)```', (ROOT / PAGES[2]).read_text(), re.DOTALL).group(1)
                 (root / "signals.py").write_text(signal_source)
                 blocks = re.findall(r'```python\n(.*?)```', (ROOT / PAGES[0]).read_text(), re.DOTALL)
@@ -163,7 +188,8 @@ async def main():
         await connection.close()
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False, "disposable_schema_removed": True,
-                     "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
+                     "runtime_first_populates_requested_relation": False,
+                     "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; plus the exact complete Product/Category model example; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
                      "page_sha256": {page: hashlib.sha256((ROOT / page).read_bytes()).hexdigest() for page in PAGES},
                      "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     args.output.write_text(json.dumps(evidence, indent=2) + "\n")

@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "66c8e8b87697c4d4b30b4502f6db510d31c038de",
+  "reviewed_head": "6790e2ff53154658e94da12629437d77262f3dde",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "6204d8bfee29c15eca37bb8f59932f09adf29ada2ebc2f08ec352f5a423f41da",
+    "sha256": "421ad34a4213c6045f4aff8d80abead1421946f8219f904f9dcd2145b9d3b926",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -809,7 +809,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "98e645b636d10293780217065aa68bf6305aee788d9c68f5fcb979b43d8f8cc2",
+      "sha256": "269264d38cfb4ccf2f647134db7843fec7f27af94f326f37daf5aba5d856478e",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -818,10 +818,10 @@
     },
     {
       "artifact": "audit-evidence/v071/query-execution.json",
-      "sha256": "a623859deccc142829ef9b5c4448cf081d50bd46cff7e3d07851011dd9eaace7",
+      "sha256": "b2346717eaa1cf6abb391da861c9b6e4f0be2056a7a049f4a7da3d535d81e2bd",
       "recorded_result": true,
-      "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
-      "checked_linked_page_hashes": 4,
+      "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; plus the exact complete Product/Category model example; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
+      "checked_linked_page_hashes": 5,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -981,6 +981,11 @@
   ],
   "stale_linked_inputs": [],
   "known_defects": [
+    {
+      "id": "RELATION001",
+      "evidence": "query-execution.json",
+      "boundary": "first does not populate requested eager relation"
+    },
     {
       "id": "ADMINWIDGET001",
       "evidence": "installed-doc-imports.json",
