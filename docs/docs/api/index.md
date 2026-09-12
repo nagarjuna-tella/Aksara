@@ -46,6 +46,7 @@ examples and the actual customization hooks.
 | Restrict requests and objects | [Permissions](permissions.md) | Hooks are synchronous; list filtering and object access are separate concerns. |
 | Add a custom endpoint | [Actions](actions.md) | Custom HTTP handlers must explicitly enforce authorization. |
 | Register endpoints | [Routing](routing.md) | Registration makes routes available; it does not establish caller identity. |
+| Handle rejected or failed requests | [Exceptions and responses](../reference/exceptions.md) | Validation, HTTP and database errors do not share one response envelope. |
 | Understand identity, tenancy, and policy together | [Identity concepts](../concepts/application-boundaries.md) | Resolve identity and tenant membership on the server. |
 
 ## Custom HTTP action boundary
@@ -60,6 +61,17 @@ examples and the actual customization hooks.
 Generated CRUD and MCP execution have their own enforcement paths. MCP approval
 metadata does not install an HTTP approval workflow, and exposing a method over
 both transports does not prove equivalent authorization behavior.
+
+## Handle errors at the right boundary
+
+A malformed request, a denied action and a database constraint failure are
+separate cases. Generated permission checks return 403; request validation and
+Aksara validation errors return 422 with different JSON structures. Send
+`Accept: application/json` and test the actual endpoint's response instead of
+assuming one universal error object. The [error reference](../reference/exceptions.md)
+includes executable examples and explains which exception families to catch.
+Unexpected failures should remain visible to application diagnostics; a blanket
+retry is not a recovery policy for writes.
 
 ## Test the application boundary
 

@@ -426,3 +426,12 @@ two v0.5.49 notes; clarify existing idempotency and migration prerequisites in
 the v0.7 contract. The changelog body is historical release data and remains
 preserved; its introduction now directs readers to current instructions. This
 does not certify its historical snippets as current runnable application code.
+
+## Core API manual review
+
+A8/A10/C6: read the overview, ViewSets, routing, serializers, custom actions and
+exception reference as one application-developer path. Added direct error
+response guidance and links from the API entry/ViewSet pages; retained the
+existing layer-specific contracts and explicit HTTP action limitation. Source
+declaration/HTTP contract tests support these examples, not every application
+policy or all database-error paths. Remaining full-manual work stays open.

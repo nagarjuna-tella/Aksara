@@ -136,7 +136,8 @@ Generated permission denials are HTTP 403. Route input validation and Aksara
 records return 404, invalid detail identifiers can return 400, uniqueness
 violations map to 409, and foreign-key violations map to 400. Database errors
 map to 500. Application exceptions outside these mappings are not automatically
-converted into validation errors.
+converted into validation errors. See the [error-response reference](../reference/exceptions.md)
+for exception families, JSON shapes and content negotiation.
 
 Generated REST and MCP share important execution checks, including policy and
 field restrictions. A direct ORM call or arbitrary custom endpoint does not

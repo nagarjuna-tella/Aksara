@@ -19,7 +19,7 @@
   "page_sha256": {
     "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12",
     "docs/docs/api/pagination.md": "25cc91529487dcd14fa5a1139b4907033d2159ad636ebb86abe6baca27f34c90",
-    "docs/docs/api/viewsets.md": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306"
+    "docs/docs/api/viewsets.md": "288777c8284b76148bd227851fb4ecf68f9f4b43ba1040278360418d8cd64d9f"
   },
   "runner_sha256": "24553fe5a08926b67876c11912ed47345e3cd5f88f826cc1d5de47e28027a503"
 }

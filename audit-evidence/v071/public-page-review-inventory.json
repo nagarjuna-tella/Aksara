@@ -423,11 +423,11 @@
     },
     {
       "path": "docs/docs/api/index.md",
-      "sha256": "3d04d739d8d5e52a7158c290c9fc9b9b478343daf44c020f8076cfc549b99a30",
+      "sha256": "e9e5c4e38e1f3772a88eb4c693297616ad1dffd048ec082ae3a8e78b90f95504",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 70
+      "lines": 82
     },
     {
       "path": "docs/docs/api/pagination.md",
@@ -475,14 +475,14 @@
     },
     {
       "path": "docs/docs/api/viewsets.md",
-      "sha256": "943c8e7686b0ef6755704b8772fe079e797511d09b9d61d34c3b695422bec306",
+      "sha256": "288777c8284b76148bd227851fb4ecf68f9f4b43ba1040278360418d8cd64d9f",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "filter-doc-execution.json",
         "pagination-doc-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 147
+      "lines": 148
     },
     {
       "path": "docs/docs/changelog.md",

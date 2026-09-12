@@ -2310,3 +2310,25 @@ path for legacy projects. These clarify existing behavior, not a new contract.
 The changelog's introduction now labels historical entries and links current
 instructions; its 2,600-line historical body was preserved, not re-certified as
 current API guidance. No ADR, production behavior or release evidence changed.
+
+## Core API reading review (2026-09-12)
+
+Read API overview, ViewSets, routing, serializers, custom actions and exception
+reference completely. The pages share the Ticket Desk prerequisite, distinguish
+registration from identity, use operation-specific serializer hooks, and disclose
+the custom HTTP permission limitation. Routing/discovery and serializer tests
+execute the reference declarations; exception tests exercise distinct HTTP
+response shapes and content negotiation. Their scope is not every database
+constraint or application policy.
+
+Added error-response navigation and a short boundary explanation to the API
+overview, plus a reference link from ViewSets. This closes the discoverability
+gap between API construction and client error handling without adding a second
+exception catalog. The remaining pages were retained after reading. No runtime
+change or new universal response contract is claimed.
+
+Validation: the ViewSet edit invalidated the filtering/pagination page hashes.
+Regenerated both artifacts by running their installed PostgreSQL gates: 11
+filtering and 8 pagination checks pass, with schema cleanup. The known pagination
+metadata failure remains explicitly recorded. Strict docs, 348 Python fences,
+292 CLI forms and 42,168 local links pass.
