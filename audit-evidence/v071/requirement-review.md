@@ -30,7 +30,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 67-row PT-001 through PT-067 register with detailed sections, plus seventeen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 68-row PT-001 through PT-068 register with detailed sections, plus seventeen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
@@ -373,3 +373,13 @@ D3/A15: four more exact field-guide blocks execute against installed 0.7.0 and
 PostgreSQL; persisted clock/interval assertions bring the gate to 23 checks.
 207 docs/packaging tests and Ruff pass. No public page or runtime change was
 needed. Full manual acceptance and final candidate gates remain open.
+
+## Execution-path reading checkpoint
+
+A8/A11/A22/C6: read the complete application-boundaries, stability, durable
+operations and ordinary-task guides. Retained the conceptual sequence and
+explicit application responsibilities. Corrected PT068: released durable
+authorization is available only through opt-in Operations, and idempotency
+lookup identity is distinct from action/version/input conflict checks.
+Source comparison confirms these descriptions; no runtime change is included.
+The audit records the author reading and its limits.

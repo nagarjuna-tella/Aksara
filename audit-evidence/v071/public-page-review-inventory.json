@@ -65,11 +65,11 @@
     },
     {
       "path": "docs/docs/advanced/background-tasks.md",
-      "sha256": "a51f6b806382e13de2610faf24dc4c0623a016a56a838f8ec47509a8684a0e5e",
+      "sha256": "1b66759cec96bcea83a8e79222125dfb50b19d534f7693ac62f8b2704ae0cd8a",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 463
+      "lines": 465
     },
     {
       "path": "docs/docs/advanced/caching.md",
@@ -91,11 +91,11 @@
     },
     {
       "path": "docs/docs/advanced/durable-operations.md",
-      "sha256": "f78faeebd816ae31228145d85d88c6b342692e101ae07530ce7204e73b203d30",
+      "sha256": "f1d42e1040f5d0fb9180525003c20389a0bab6d2ca84f93f2b2709086c98bdd7",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 317
+      "lines": 319
     },
     {
       "path": "docs/docs/advanced/generic-relations-and-durable-workflows.md",

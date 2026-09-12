@@ -167,6 +167,7 @@ Full page-by-page usability review is still pending.
 | PT-065 | P1 | MCP/field/query guidance mixed versions and limits | Synchronous approval, historical policy and query limits clarified; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-066 | P2 | Release guide omitted candidate-specific validation | Exact-ref evidence and historical guidance clarified; see detailed checkpoint below | Docs fixed; scope retained |
 | PT-067 | P1 | ORM overview and glossary retained unsupported query, relation, database and helper claims | Rebuilt overview around the tutorial and corrected terminology; see conceptual review below | Docs fixed; candidate validation open |
+| PT-068 | P2 | Task guide described released durability as future work; durable idempotency scope wording obscured cross-action conflicts | Corrected task/Operation boundary and lookup identity versus semantic conflict checks | Docs fixed; candidate validation open |
 
 The register consolidates all 67 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
@@ -2227,3 +2228,26 @@ No public-page correction or runtime change was required.
 Evidence guards require the new block and persistence assertions. Ruff passes;
 207 docs/packaging tests pass with one dependency deprecation warning. This is
 selected field-example execution, not all field paths, RLS, or candidate proof.
+
+## Execution-path reading review (2026-09-12)
+
+Read the complete application-boundaries, stability, durable-operations and
+background-tasks pages. The conceptual path explains identity before effects,
+chooses synchronous/task/durable execution by need, and separates application
+responsibilities from framework guarantees. Retained the conceptual/stability
+pages: their short sections, comparison table and links support that sequence.
+The durable guide introduces Operation/Attempt before registration and links
+complete runnable tutorial files; its fragments explicitly require application
+setup. This is an author reading review, not an independent user study.
+
+PT068 / P2 corrects two descriptions: the task guide no longer calls released
+v0.7 provenance future work, and durable idempotency now distinguishes lookup
+identity from action/version/input conflict checks. Verified against
+aksara/durable/service.py admit() and _resolve_duplicate(); changing action
+under the same identity conflicts rather than creating a new identity. No
+production behavior changed. Final candidate execution remains required.
+
+Validation: 207 docs/packaging tests pass with one dependency warning; strict
+MkDocs, 348 Python fences/imports, 292 CLI forms and 42,154 rendered local
+references pass. The evidence index reports no stale linked inputs. These are
+documentation checks, not a fresh PostgreSQL or final compatibility campaign.

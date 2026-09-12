@@ -168,14 +168,16 @@ During the configured idempotency window:
 - the same key, initiating principal, tenant, action version, and canonical
   input return the same Operation;
 - a terminal duplicate returns the existing terminal representation;
-- changed input or action version returns `409` with
+- changed action, action version, or canonical input returns `409` with
   `idempotency_conflict`; and
 - concurrent identical submissions create one logical Operation.
 
-The idempotency value is hashed before storage. Its scope includes the
-application namespace, tenant scope, stable initiating-principal reference,
-action name and version, and canonical normalized input. Dedupe is bounded by
-the configured window; it is not permanent.
+The lookup identity hashes the client key together with the application
+namespace, tenant scope, and stable initiating-principal reference. Within that
+identity, Aksara separately checks the action name/version and canonical input
+hash. Reusing a key for a different action therefore conflicts; it does not
+create an independent operation. Dedupe is bounded by the configured window;
+it is not permanent.
 
 Status retrieval, cancellation, and decisions reauthorize the current caller.
 An unknown ID and an ID hidden by another tenant both return the same

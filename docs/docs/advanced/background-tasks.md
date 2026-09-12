@@ -342,8 +342,10 @@ A task record does not persist the complete request `Principal`, roles, scopes,
 credential, or authorization decision. Applications must authorize who may
 enqueue work and who may inspect task status. Task code that performs a delayed
 side effect must apply the application's current authorization rule itself.
-Durable Principal provenance and framework-managed reauthorization are planned
-for v0.7 rather than implied by the v0.6 task contract.
+For framework-managed current reauthorization, register an opt-in
+[Durable Operation](durable-operations.md). Released in v0.7, that contract
+applies to linked Operation execution; it does not automatically extend to
+ordinary unlinked `@task` jobs.
 
 ---
 
