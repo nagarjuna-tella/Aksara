@@ -562,17 +562,21 @@
     },
     {
       "path": "docs/docs/concepts/application-boundaries.md",
-      "sha256": "1e6c387ad82af91b0f37d4f4d8455b9762ae4950d347aafa1cb2ec8a14e61530",
+      "sha256": "5d00fbfab586b37ac93e16f49e8e8b9bae5b3fbb8bd6113df24d70e8b374157b",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "concepts-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 105
+      "lines": 109
     },
     {
       "path": "docs/docs/concepts/stability.md",
       "sha256": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "concepts-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 26
     },
@@ -1476,7 +1480,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 68
+    "with_scoped_evidence_candidates": 70
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

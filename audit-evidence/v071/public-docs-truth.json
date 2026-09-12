@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "1d1d5f653ebf9b0fa6c0abb9e15f768e5e907f32",
+  "reviewed_head": "a28de75c41d6050b80798b82d5d7726c3a73d36d",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "30075c1bbad9c27867ded7f133341f00bd0644e1d03d07943650239ede0c5220",
+    "sha256": "b7739d828a642710dbfcfa151a3e9db78f89bc460a7b6c62ecc5ba623c750576",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -485,7 +485,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "e3d75d47b4ffeb40e5f054c4ad8e0d8f96418acecd4d955135e2eb345bc0f4cc",
+      "sha256": "5f33a50577c560a13f6e76e9e192e1a56451d3943720a95742ffcc254c33c122",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -536,6 +536,15 @@
       "checked_linked_page_hashes": 6,
       "stale_linked_pages": [],
       "historical_head": "f2ac29820c9be47b7734e25956df91cc67dec963"
+    },
+    {
+      "artifact": "audit-evidence/v071/concepts-reading-review.json",
+      "sha256": "79972c9bf81ad41ef08894384b02aa4a01553eadcbd682d6ff7f4b7eccb0a04a",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of both conceptual pages, with source inspection of REST create/update handlers and comparison to the transaction reference. This is a semantic and readability review, not final candidate execution.",
+      "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
     },
     {
       "artifact": "audit-evidence/v071/configuration-findings.json",
@@ -701,7 +710,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "a4e2f5225b046422601d4996d6245f25f8eae190fa262d8189694ff73106f1be",
+      "sha256": "a595948caa0705a6ca21011ee423ddcdd99c418b1e6c89c40274c325d00335f1",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -836,7 +845,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "affb4a38d222a5465c3334d508627e56c4422b246b9cd0ad79a5fd82d9d2c00c",
+      "sha256": "a98ba488e0a7d650a64023d92953b0effe37305d0033d25662abb4fe8022bead",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -863,7 +872,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "aceca0b7d694373d431dbbee93446caf98a275bf64c2a3748a410df566b7d2a1",
+      "sha256": "cf8fc18155fd289195dfad9de7fae4f4cde5e41e567f00e313ba3a9dc401be3d",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

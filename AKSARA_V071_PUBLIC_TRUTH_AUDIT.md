@@ -2423,3 +2423,13 @@ Admin limiter rather than assuming FastAPI's route storage is flat. It also
 identified the encoded next parameter in the login redirect; the displayed URL
 now matches /accounts/login?next=%2Fstaff%2F. The initial raw-route assertion and
 unencoded expectation were test assumptions, not new production defects.
+
+## Conceptual manual reading — 2026-09-12
+
+Read both conceptual pages completely. Clarified that synchronous HTTP does not
+automatically provide request-wide atomicity: related writes require an explicit
+`transaction.atomic()` boundary. Compared REST create/update source with the
+transaction reference. Stability definitions and links remain unchanged.
+`concepts-reading-review.json` records page-specific dispositions and hashes.
+This closes the two-page author reading scope; final candidate validation and
+remaining manual sections are still open. No production source changed.

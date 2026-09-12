@@ -50,11 +50,15 @@ See [models](../orm/models.md), [serializers](../api/serializers.md),
 
 | Need | Start with | Boundary to understand |
 | --- | --- | --- |
-| Return a result while the caller waits | Synchronous REST | The request's current authority and transaction |
+| Return a result while the caller waits | Synchronous REST | Current request authority; explicit transaction scope for multi-write atomicity |
 | Let an MCP client invoke exposed application actions | Synchronous `/mcp/` tools | Authentication plus execution-time tool authorization |
 | Queue an ordinary application job | Background task | Application code owns authorization beyond persisted tenant context |
 | Retain an accepted action across worker loss or approval delay | Durable Operation | Persisted identity reference, current reauthorization, bounded retry and ownership |
 | Cache successful workflow steps | `DurableStep` | Evolving helper; not the Operation contract |
+
+An HTTP request does not automatically make all application writes one atomic
+unit. Use `transaction.atomic()` when related PostgreSQL writes must commit or
+roll back together; see the [transaction guide](../orm/expressions-and-transactions.md).
 
 MCP is an optional client interface. It does not require an AI provider.
 `/mcp/` is the Streamable HTTP protocol endpoint; `/ai/tools/mcp` is the

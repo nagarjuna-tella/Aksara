@@ -478,3 +478,13 @@ Read all six Admin pages. Corrected explicit-versus-automatic mounting guidance,
 custom-prefix setup and registration prerequisites after checking the mount
 implementation. No production behavior changed; final candidate and complete
 Admin application execution remain distinct from this reading pass.
+
+## Conceptual manual reading — 2026-09-12
+
+Read both conceptual pages completely. Clarified that synchronous HTTP does not
+automatically provide request-wide atomicity: related writes require an explicit
+`transaction.atomic()` boundary. Compared REST create/update source with the
+transaction reference. Stability definitions and links remain unchanged.
+`concepts-reading-review.json` records page-specific dispositions and hashes.
+This closes the two-page author reading scope; final candidate validation and
+remaining manual sections are still open. No production source changed.
