@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 593,
+  "python_blocks": 594,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
@@ -90,6 +90,7 @@
     "docs/docs/glossary.md": "6e27cf9b94359d3c8f53af4a881d2234a94e2268103a2b64bd3ab5fcd0041821",
     "docs/docs/how-to/export-durable-transitions.md": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
     "docs/docs/how-to/handle-external-effects.md": "46b785f7cc40bf7f08ccd84d837312d127963b9de320e9c97670c33cca004eb0",
+    "docs/docs/how-to/inspect-durable-history.md": "e329687f5cc19a332c0c752617247fa9c8dd23d6094e7ab8da8daaf27d2b166a",
     "docs/docs/how-to/require-durable-approval.md": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
     "docs/docs/how-to/typescript-client.md": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
     "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",

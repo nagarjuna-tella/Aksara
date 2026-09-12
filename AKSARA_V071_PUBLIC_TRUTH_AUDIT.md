@@ -60,7 +60,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Durable Operations | Yes | Stable v0.7 semantic contract | `aksara.durable` action/service/router/worker exports | Runnable chapter added | Durable ticket resolution | Admission, rollback/retry, cancel, revocation | New process per one-shot attempt; not a full crash campaign or fleet scheduler. |
 | Approvals | Yes | Stable distinct boundaries | Signed MCP grants; durable approval decisions | Durable decision how-to added | Exact decision helper | 12 installed PostgreSQL checks | Service decisions tested; no approval UI or HTTP/worker execution claim. Sync grants remain distinct. |
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
-| Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | Needs how-to audit | Durable guide | Pending new journey | Not a tamper-resistant ledger or application retention service. |
+| Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
 | CLI | Yes | Stable core commands | `aksara` command groups | Partial help audit | Tutorial commands | Startproject/run/migrate/launch-check slice | Every major subcommand still needs discoverability and documented-command review. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README rewritten | Generated ticket_desk | Executed; equivalence baseline recorded | v0.6 contract explicitly excludes template layout from stability; no defaults changed. |
@@ -677,3 +677,22 @@ and absence verified. This admin-role, simulated-client test does not establish
 real-provider delivery/retention, restricted-role RLS or process-loss behavior.
 Reconciliation is described from implementation but is not exercised by this
 particular public helper gate; existing dedicated regressions remain separate.
+
+## Durable History How-to Evidence
+
+`how-to/inspect-durable-history.md` explains current state versus retained
+transitions, default/maximum limits, newest-first order, absent cursor pagination,
+JSON projection and separate-read consistency. It explicitly documents that
+terminal records remain readable after their action code is unregistered:
+authentication and tenant checks remain, while the removed action's scope/custom
+policy does not execute. Stricter product access policies require an application
+boundary; stored requester provenance does not imply owner-only access.
+
+`scripts/check_public_history.py` runs the exact helper with the isolated public
+0.7.0 wheel and PostgreSQL. Thirteen checks cover migrations, initial/cancelled
+state, JSON serialization, registered-action scope denial, tenant/non-tenant and
+namespace isolation, order, limits and retired terminal-action reads. Page and
+runner hashes are bound by `history-execution.json` and a freshness test. The
+owned schema is removed and its absence checked. This admin-role service fixture
+does not prove HTTP authentication, restricted-role RLS, a retention campaign,
+a tamper-resistant audit store or atomic multi-read snapshots.
