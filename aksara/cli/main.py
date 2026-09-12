@@ -6868,8 +6868,8 @@ def ai_provider_detect():
         click.echo("    OPENAI_API_KEY         → OpenAI")
         click.echo("    ANTHROPIC_API_KEY      → Anthropic")
         click.echo("    AZURE_OPENAI_API_KEY   → Azure OpenAI")
-        click.echo("    OLLAMA_HOST            → Ollama (or localhost:11434)")
-        click.echo("    AKSARA_CUSTOM_LLM_URL  → Custom HTTP endpoint")
+        click.echo("    OLLAMA_BASE_URL        → Ollama (or localhost:11434)")
+        click.echo("    CUSTOM_LLM_BASE_URL    → Custom HTTP endpoint")
     else:
         click.echo(f"  Found {len(configured)} provider(s):")
         click.echo()

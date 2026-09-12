@@ -6,7 +6,9 @@
     not required for REST, synchronous MCP or Durable Operations. See
     [stability labels](../concepts/stability.md).
 
-This page documents the HTTP API endpoints for Aksara Studio integration.
+This page documents selected core HTTP endpoints for Aksara Studio integration.
+Studio also exposes experimental panel-specific endpoints that can change with
+the UI; inspect the running application's routes when integrating with them.
 
 ## Endpoints Overview
 
@@ -22,7 +24,12 @@ This page documents the HTTP API endpoints for Aksara Studio integration.
 
 ## Security (v0.5.1)
 
-All Studio endpoints validate the incoming `Origin` header against `studio_allowed_origins` setting.
+All Studio endpoints validate the incoming `Origin` header against the
+`studio_allowed_origins` setting and then apply Studio authentication when
+`studio_require_auth=True`. Origin filtering is not authentication: a caller
+without an `Origin` header passes that check and must still present the matching
+bearer token or a valid staff session cookie. See
+[Studio configuration](configuration.md#origin-and-credential-checks).
 
 - **Allowed origin**: Request proceeds normally
 - **No origin header**: Request allowed (same-origin, CLI, server-to-server)
@@ -41,7 +48,9 @@ settings.studio_allowed_origins = [
 
 ## GET /studio/handshake
 
-Complete handshake endpoint for Studio IDE. Returns everything Studio needs to understand your project.
+Core handshake endpoint for Studio. The capability list is conditional on the
+loaded application, database connection, debug mode, and enabled AI/Admin
+features. It is descriptive metadata, not per-record authorization.
 
 ### Response
 
@@ -129,7 +138,8 @@ Complete handshake endpoint for Studio IDE. Returns everything Studio needs to u
 
 #### capabilities
 
-Available capabilities that Studio can use:
+Possible capability values are listed below. A response contains only the
+values inferred for the current process:
 
 | Capability | Description |
 |------------|-------------|

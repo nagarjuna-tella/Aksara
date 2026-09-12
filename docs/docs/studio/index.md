@@ -87,7 +87,7 @@ aksara studio url
 
     ---
 
-    Complete API reference for Studio endpoints
+    Selected core Studio endpoints and access boundary
 
 -   :material-console: **[CLI Commands](cli.md)**
 

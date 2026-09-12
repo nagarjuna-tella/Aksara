@@ -76,8 +76,8 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | This nine-check storage gate does not cover SMTP/S3; the separate File/Image row covers persisted local lifecycle. Direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
-| AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status, CLI examples and execution lifetimes corrected | Route hint; local greeting and plan template | 12 local CLI checks ([evidence](audit-evidence/v071/ai-cli-execution.json)) | Sockets forbidden in this gate; no provider/planner quality or autonomous execution claim. Installed deterministic planner/codegen/patch-preview checks also pass; full experimental behavior is not certified. |
-| Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Experimental boundary, origin and credential behavior clarified | Scaffold default-route probe; Studio guides | Default UI disabled ([evidence](audit-evidence/v071/scaffold-startup.json)) | Eight installed dependency-level HTTP cases cover Origin and bearer rules; neither these nor disabled-route proof certify enabled Studio workflows. Not a production investigation or audit store. |
+| AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status, provider configuration, CLI examples and execution lifetimes corrected | Route hint; local greeting and plan template | 12 local CLI checks plus 6 provider-contract checks ([CLI evidence](audit-evidence/v071/ai-cli-execution.json), [provider evidence](audit-evidence/v071/ai-provider-contract.json)) | Sockets are unused in the provider contract gate; no provider/planner quality or autonomous execution claim. AIPROVIDER001 records misleading configured-state heuristics. Installed deterministic planner/codegen/patch-preview checks also pass; full experimental behavior is not certified. |
+| Studio | Yes | Experimental | Studio UI and internal HTTP surfaces | Experimental boundary, selected API scope, mounting, browser lifecycle, Origin and credential behavior clarified | Scaffold default-route probe; Studio guides | Default UI disabled ([evidence](audit-evidence/v071/scaffold-startup.json)) | Eight installed dependency-level HTTP cases cover Origin and bearer rules; neither these nor disabled-route proof certify enabled Studio workflows. The browser UI uses same-origin staff-session cookies, while explicit API clients may use the bearer token. Not a production investigation or audit store. |
 | Workflows/DurableStep | Yes | Evolving | `aksara.workflows.DurableStep` | Force, cancellation, identity and codec boundaries corrected | Exact generic/step helpers | 23 installed PostgreSQL observations ([evidence](audit-evidence/v071/generic-step-execution.json)) | Normal claim exclusion, forced overlap and cancelled running state are exercised; no process-death, RLS, authorization or Operation guarantee. |
 | Configuration | Yes | Stable documented contract | `Settings`, `settings`, `configure` | Reference rewritten and checked | Settings/upgrade examples | Explicit overrides and upgrade recipe | POSIX origin-list env parsing defect documented with explicit-list workaround. |
 | Durable persistence internals | Yes | Internal | Repositories, raw rows and failure hooks | Separated from public contract | Framework tests only | Not a public API gate | Do not expose raw provenance/fences as application contract merely because imports exist. |
@@ -169,8 +169,11 @@ Full page-by-page usability review is still pending.
 | PT-067 | P1 | ORM overview and glossary retained unsupported query, relation, database and helper claims | Rebuilt overview around the tutorial and corrected terminology; see conceptual review below | Docs fixed; candidate validation open |
 | PT-068 | P2 | Task guide described released durability as future work; durable idempotency scope wording obscured cross-action conflicts | Corrected task/Operation boundary and lookup identity versus semantic conflict checks | Docs fixed; candidate validation open |
 | PT-069 | P1 | Ordinary-task recovery described an old lock as a crashed worker without warning that a still-running long task may be reclaimed and overwrite a newer result | Added the unfenced timeout boundary, repeat-safety guidance and a complete manual-worker lifecycle | Docs fixed; TASK-001 runtime defect retained |
+| PT-070 | P1 | AI provider pages and compatibility CLI help named environment variables the implementation does not read, and the Custom HTTP page documented different adapter defaults | Replaced names and defaults with installed behavior and bounded protocol compatibility | Docs/help fixed; installed-wheel provider contract |
+| PT-071 | P2 | Provider discovery described configured providers and connectivity even though its heuristics produce a default Ollama false positive and keyless-custom false negative | Reframed detection as a hint, required `ping` for reachability and documented AIPROVIDER001 | Docs fixed; runtime defect retained |
+| PT-072 | P1 | Studio pages described a partial endpoint list as complete, treated Origin as the only API access check, implied offline live data and omitted required production mounting/authentication inputs | Documented selected endpoint scope, conditional capabilities, independent authentication, live-backend requirement and complete production prerequisites | Docs fixed; source/dependency checks retained |
 
-The register consolidates all 69 findings. “Docs fixed” describes the recorded
+The register consolidates all 72 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -234,6 +237,20 @@ test. The guide now requires a timeout longer than expected runtime and
 repeat-safe ordinary tasks, and points to Durable Operations for fenced work.
 Recommend a separate task ownership/heartbeat design and regression patch; no
 runtime behavior changes here.
+
+**AIPROVIDER001 / P2:** the experimental compatibility provider detector uses
+the adapter's default values as configured-state evidence. In a clean installed
+0.7.0 process, `aksara ai-provider detect` reports Ollama as configured because
+`UnifiedAiProvider.from_env("ollama")` supplies the default localhost URL even
+when no Ollama variable or server exists. Conversely, a custom provider selected
+only by `CUSTOM_LLM_BASE_URL` is detected as the active provider but
+`is_configured()` returns false until an API key is present, even though
+`CustomHttpAdapter` accepts a keyless endpoint. `ai-provider-contract.json`
+records both negative controls without opening a socket. The provider guides now
+treat detection as a hint, require `ping` for reachability and explain direct
+construction for keyless custom endpoints. Recommend a separately scoped
+configured-state fix for the experimental compatibility layer; no provider
+runtime behavior changed here.
 
 **PT-019 / P1:** serializer guidance advertised unsupported `partial=True`,
 `write_only_fields`, nested field declarations, and misleading validation/error
@@ -618,7 +635,8 @@ finds zero leftover tutorial schemas or roles after the journey.
 **No functional runtime changes.** Three production files have instructional
 changes: `aksara/cli/scaffold.py` changes generated README text;
 `aksara/cli/main.py` changes the `startproject` and `startapp` docstrings and existing
-UI/Click message string literals; `aksara/cli/templates/__init__.py` changes four template
+UI/Click message string literals, plus two provider-help labels in
+`ai_provider_detect`; `aksara/cli/templates/__init__.py` changes four template
 descriptions. The AST audit preserves all other logic, template names/sources,
 flags, defaults and dependencies. Four-template installed-wheel comparison
 permits only the prior README changes in generated output. Package version
@@ -2495,3 +2513,34 @@ detail as protection for rich HTML, or masking as comprehensive redaction.
 dispositions. Existing focused tests remain the scoped behavior evidence; this
 reading does not certify production monitoring, a live provider or final
 candidate behavior. No page or production source change was required.
+
+## AI and Studio section reading assessment — 2026-09-12
+
+Read all twenty-eight AI Mode pages and all five Studio pages completely.
+`ai-studio-reading-review.json` records current hashes and an individual
+disposition for every page. Each direct entry keeps provider-backed execution,
+analysis, planners, patches, project graphs, workflows and Studio internals
+experimental. The MCP page remains the explicit stable synchronous boundary and
+does not imply protocol MCP Tasks or durable sessions.
+
+PT070 corrected the Ollama and custom-provider environment names printed in the
+guides and compatibility help, the Custom HTTP adapter defaults, and remaining
+v0.6 wording in current v0.7 entry pages. A fresh installed development wheel
+loads the corrected environment names and exposes the corrected help labels.
+The same provider-free probe records AIPROVIDER001: clean-environment detection
+reports the built-in Ollama default, while a keyless custom endpoint is detected
+but not considered configured. The docs expose that behavior; provider logic is
+unchanged.
+
+PT072 narrows the Studio API page to its selected core endpoints, separates
+Origin from credentials, marks handshake capabilities as conditional metadata,
+and corrects UI lifecycle and production prerequisites. The browser UI's actual
+fetch path sends same-origin cookies and has no bearer-token entry field, so the
+guide now assigns staff sessions to browser use and the shared bearer token to
+explicit API clients. Existing dependency tests remain the access-boundary
+evidence; no browser workflow or production Studio deployment was executed.
+
+This completes the AI/Studio author-reading scope, not live provider quality,
+autonomous behavior, browser usability or final candidate validation. The only
+production-source delta is two CLI string literals, covered by the no-runtime-
+logic AST check; no runtime semantics changed.

@@ -1,7 +1,7 @@
 # Aksara Studio UI
 
 !!! warning "Experimental development surface"
-    Studio UI and its internal endpoints are experimental in v0.6. Keep Studio
+    Studio UI and its internal endpoints are experimental in v0.7.0. Keep Studio
     disabled in production. They are not the stable Admin or application API
     contract.
 
@@ -52,7 +52,8 @@ This means:
 
 1. No node_modules or build artifacts
 2. Instant loading (no bundle parsing)
-3. Works offline with cached responses
+3. Retains selected UI preferences in browser storage; live data still requires
+   the running Aksara backend
 4. Easy to customize (edit HTML/CSS/JS directly)
 
 ## Dashboard Sections
@@ -271,15 +272,25 @@ AKSARA_STUDIO_ALLOWED_ORIGINS=https://myapp.com,http://localhost:3000
 
 By default, Studio UI is **disabled in production** mode. To enable:
 
-1. Set `debug=False` (production mode)
-2. Set `studio_expose_in_production=True`
+1. Set `enable_studio=True` and provide `studio_secret_token`.
+2. Set `studio_expose_in_production=True`.
+3. Keep `studio_require_auth=True` and provide either a staff session path or a
+   separate `studio_auth_token` for API clients.
 
 ```python
 configure(
     debug=False,
+    enable_studio=True,
+    studio_secret_token=os.environ["AKSARA_STUDIO_SECRET_TOKEN"],
     studio_expose_in_production=True,
+    studio_require_auth=True,
+    studio_auth_token=os.environ["AKSARA_STUDIO_AUTH_TOKEN"],
 )
 ```
+
+The built-in browser UI sends same-origin cookies and does not provide a field
+for entering the shared bearer token. Use a database-backed staff session for
+the browser UI. The bearer token is suitable for explicit Studio API clients.
 
 !!! warning "Security Considerations"
     Only expose Studio UI in production if:

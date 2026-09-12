@@ -18,7 +18,7 @@
 
 ```bash
 # Optional — defaults to localhost:11434
-export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_BASE_URL=http://localhost:11434
 export OLLAMA_MODEL=llama3
 ```
 
@@ -60,3 +60,6 @@ for chunk in adapter.generate_stream("Tell me a story"):
 - Default base URL: `http://localhost:11434`
 - Uses `/api/generate` endpoint (not the OpenAI-compatible endpoint)
 - Streaming uses newline-delimited JSON
+- The experimental compatibility command `aksara ai-provider detect` can list
+  the default Ollama profile even when the server is absent. Use
+  `aksara ai-provider ping --provider ollama` to test reachability.

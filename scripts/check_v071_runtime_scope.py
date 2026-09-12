@@ -50,6 +50,7 @@ def normalized_cli(source):
     for name, owner, methods in (
         ("startproject", "ui", {"text", "bullet", "next_steps"}),
         ("startapp", "click", {"echo"}),
+        ("ai_provider_detect", "click", {"echo"}),
     ):
         matches = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name]
         assert len(matches) == 1
@@ -107,7 +108,7 @@ def main():
         "changed_production_files": names,
         "classification": {
             SCAFFOLD: "Scaffold README return template only",
-            CLI: "startproject/startapp docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
+            CLI: "startproject/startapp/ai_provider_detect docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
             TEMPLATES: "Four template description string values only; names, sources and copy logic unchanged",
         },
         "runtime_logic_changed": False,

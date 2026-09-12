@@ -60,7 +60,7 @@ aksara studio handshake --format json | jq '.checksums'
   Project:
     Name:           My API
     Version:        1.0.0
-    Aksara:         0.5.0
+    Aksara:         0.7.0
     Python:         3.11.5
     Environment:    development
     Debug:          True
@@ -93,7 +93,7 @@ aksara studio handshake --format json | jq '.checksums'
   "project": {
     "name": "My API",
     "version": "1.0.0",
-    "aksara_version": "0.5.0",
+    "aksara_version": "0.7.0",
     "python_version": "3.11.5",
     "debug_mode": true,
     "environment": "development"
@@ -107,6 +107,10 @@ aksara studio handshake --format json | jq '.checksums'
 ## aksara studio url
 
 Display the URLs for Studio integration endpoints.
+
+The command only formats URLs; it does not verify that Studio is mounted,
+authenticated, or reachable. See [configuration](configuration.md) before
+opening or calling an enabled Studio surface.
 
 ### Usage
 

@@ -1,9 +1,9 @@
 # v0.7.1 requirement review checkpoint
 
 This is a verification checkpoint, **not a completion or release approval**.
-The current review is based on source head `3dd3a81` and the accompanying
-release-guide documentation changes. Earlier checkpoint sections below retain
-their original scoped evidence; the table is refreshed where current artifacts
+The current table incorporates the AI and Studio reading checkpoint prepared
+after source head `2886e85`. Earlier checkpoint sections below retain their
+original scoped evidence; the table is refreshed where current artifacts
 provide a stronger or newer result.
 
 The objective's original scope remains authoritative. This table preserves all
@@ -29,18 +29,18 @@ Line numbers below refer to that exact objective.
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
-| A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
+| A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline; the current inventory has 163 pages and 117 scoped-evidence candidates. | Finish semantic dispositions for the remaining pages; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 69-row PT-001 through PT-069 register with detailed sections, plus eighteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 72-row PT-001 through PT-072 register with detailed sections, plus nineteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
-| A8: Conceptual user manual (line 618) | PARTIAL | Concepts, API, security, middleware, Admin, advanced and all fourteen ORM pages now have explicit author-reading dispositions; execution artifacts cover major ORM paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
+| A8: Conceptual user manual (line 618) | PARTIAL | Concepts, API, security, middleware, Admin, advanced, ORM, debugging, AI and Studio pages now have explicit author-reading dispositions; execution artifacts cover major backend paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
 | A9: How-to guides (line 680) | SCOPED | Auth, tenancy/RLS, reports, durability, approval, external effect, MCP, diagnostics, SDK, media, deployment and upgrade guides exist with scoped gates. | Candidate reruns; SDK compilation is a documented failure, not successful end-to-end client use. |
-| A10: Reference quality (line 707) | PARTIAL | Settings and CLI declarations, installed imports, route/default/serializer contracts and dedicated DB gates exist. | Middleware signatures, request-ID/logging behavior and tenant trust are now checked; review remaining references. Syntax coverage is not universal behavior proof. |
+| A10: Reference quality (line 707) | PARTIAL | Settings and CLI declarations, installed imports, route/default/serializer contracts, AI provider environment/default checks and dedicated DB gates exist. | Middleware signatures, request-ID/logging behavior and tenant trust are checked; review remaining references. Syntax coverage is not universal behavior proof. |
 | A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts. | Final plain-language review and candidate execution; no arbitrary Python/external exactly-once promise. |
-| A12: Stable vs experimental visibility (line 788) | PARTIAL | concepts/stability.md plus ai-docs-review.json identify experimental AI/Studio and stable synchronous MCP versus Operations. | Finish direct-entry page scan; labeling a page does not certify all its examples. |
+| A12: Stable vs experimental visibility (line 788) | SCOPED | concepts/stability.md and ai-studio-reading-review.json cover every AI/Studio direct-entry page and distinguish stable synchronous MCP and Durable Operations. | Labeling and author reading do not certify every experimental example or final candidate output. |
 | A13: Examples audit (line 816) | SCOPED | example-review.json classifies all six apps; example-execution.json checks five startups/selected HTTP, Support Desk has its own gate. | Retained historical examples have explicit limits; no live provider or every-custom-action proof. |
 | A14: Canonical example applications (line 844) | SCOPED | Minimal Ticket Desk, production-oriented Support Desk, durable Ticket Desk with separate approval/external recipes provide three tiers. | Candidate application gates; avoid treating historical multi-tenant demo as an isolation reference. |
 | A15: Example execution gate (line 884) | PARTIAL | Exact fence runners, installed imports/CLI and example application gates execute important examples. | Finish public sample audit and cover remaining high-value executable examples; import-only samples are not execution-certified. |
@@ -71,7 +71,7 @@ Line numbers below refer to that exact objective.
 | B12: Capability-gap analysis (line 1542) | SCOPED | Capability Gaps table has all eight requested qualitative dimensions and eleven gaps. | No summed numerical precision; prioritization explicitly weighs risk and integration alternatives. |
 | B13: Roadmap principles (line 1565) | SCOPED | Roadmap Principles records eight evidence-based rules before version sequencing. | No further feature commitments inferred. |
 | B14: Roadmap horizons (line 1586) | SCOPED | Now, Next, Later, Explore and Not Planned horizons exist in report and public roadmap. | Dates and speculative later versions remain uncommitted. |
-| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Seventeen findings require separate functional scope; no quiet fixes here. |
+| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Nineteen findings require separate functional scope; no quiet fixes here. |
 | B16: Determine v0.8 thesis (line 1635) | SCOPED | v0.8 Thesis proposes operating existing authorized work, with acceptance scenario and conditions for reconsideration. | Recommendation only; no v0.8 implementation. |
 | B17: Longer release sequence (line 1658) | SCOPED | Possible Later Release Sequence leaves v0.9 unassigned and uses evidence-gated stabilization. | No arbitrary feature allocation or schedule. |
 | B18: Define v1.0 cutoff (line 1675) | SCOPED | v1.0 Readiness Criteria bounds supported API, migrations, security, operations, docs, compatibility, integrations and defect closure. | These are future criteria, not a current 1.0 claim. |
@@ -87,19 +87,19 @@ Line numbers below refer to that exact objective.
 | C3: Durable Operation journey (line 1821) | SCOPED | Durable chapter tests registration, admission, worker, idempotency/status, post-SQL retry, cancel and current role revocation. | Repeat candidate; full crash campaign belongs to broader established regression. |
 | C4: MCP journey (line 1840) | SCOPED | Official MCP SDK 2.0.1 journey verifies negotiation, authentication adapter, CRUD/denial and REST parity; no MCP Tasks. | Repeat candidate; no external OAuth provider certification. |
 | C5: Production deployment reading test (line 1854) | VERIFIED | operator-reading.json answers all named operator questions and records complete reading of deployment, upgrade and Doctor, with per-page hashes and usability assessment. | Author reading satisfies the requested reading test; live deployment, restore execution and candidate regression remain separate requirements. |
-| C6: Documentation usability review (line 1872) | PARTIAL | Entry, operator, API, security, middleware, Admin, concepts, advanced and ORM sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete remaining sections and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
+| C6: Documentation usability review (line 1872) | PARTIAL | Entry, operator, API, security, middleware, Admin, concepts, advanced, ORM, debugging, AI and Studio sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete remaining sections and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
 
 ## Workstream D
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
-| D1: Public import tests (line 1895) | SCOPED | installed-doc-imports.json verifies 388 Python fences/imports plus selected contracts with an isolated public wheel. | Repeat final sources/candidate; valid import is not proof of public stability. |
+| D1: Public import tests (line 1895) | SCOPED | installed-doc-imports.json verifies 348 Python fences/imports plus selected contracts with an isolated public wheel. | Repeat final sources/candidate; valid import is not proof of public stability. |
 | D2: CLI documentation tests (line 1903) | SCOPED | cli-docs-syntax.json verifies 302 literal forms with 11 explicit exclusions; tutorial/scaffold gates execute selected flows. | Repeat final sources/candidate; do not treat parser-only commands as run. |
 | D3: Snippet tests (line 1909) | PARTIAL | Dedicated exact-source DB and non-DB gates cover core tutorial, fields, bulk, migrations, API, durable/media helpers and query diagnostics; local advisor visibility/context is checked with network connections blocked. | Complete high-value snippet coverage audit; no arbitrary partial-snippet execution claim. |
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
 | D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,152 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
-| D7: Public API contract scan (line 1933) | PARTIAL | AI labels, stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all current public page semantic dispositions; baseline inventory is not that audit. |
+| D7: Public API contract scan (line 1933) | PARTIAL | Every AI/Studio page now has a reading disposition; stability pages and corrected API/ORM references separate many unsupported/internal surfaces. | Finish all remaining public-page semantic dispositions; baseline inventory is not that audit. |
 | D8: Documentation truth report (line 1939) | SCOPED | public-docs-truth.json indexes artifacts, hashes, scopes, defects and open work; candidate_ready remains false. | Link this requirement checkpoint without converting SCOPED into completion. |
 
 ## Workstream E
@@ -123,7 +123,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Eighteen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions |
+| Functional defects: document, classify, preserve, separate patch | Nineteen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001 is provider-free |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -137,7 +137,7 @@ Line numbers below refer to that exact objective.
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
 | AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
-| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all eighteen findings and source/date qualifications |
+| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all nineteen findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
 | Runnable Quick Start and progressive tutorial | Exact installed-wheel six-stage Ticket Desk | Actual candidate rerun |
@@ -341,7 +341,8 @@ sixteen-finding counts exclude this newly observed seventeenth finding.
 Public relations/glossary guidance and strategic maintenance priorities now
 include RELATION001. The new finding's publication follow-up is complete; its
 runtime fix remains separately scoped. At this checkpoint the inventory was
-seventeen findings; the later TASK-001 finding raises the current total to eighteen.
+seventeen findings; TASK-001 later raised it to eighteen and AIPROVIDER001 now
+raises the current total to nineteen.
 Ten installed relation checks and 207 docs tests pass; all affected link/import
 artifacts were refreshed. Final manual/candidate acceptance remains open.
 
@@ -519,3 +520,17 @@ records current hashes and per-page dispositions. The section keeps error-page
 exposure, incomplete redaction, process-local trace storage and rule-based AI
 advice explicit. This closes debugging author reading, not production monitoring,
 provider behavior, the remaining manual, or candidate execution.
+
+## AI and Studio section reading — 2026-09-12
+
+A8/A10/A12/C6/D7: all twenty-eight AI Mode pages and all five Studio pages
+were read completely. `ai-studio-reading-review.json` records current hashes and
+per-page dispositions. PT070–PT072 correct provider environment/default
+guidance, configured-state claims, v0.7 boundary wording, selected Studio API
+scope, independent Origin/authentication behavior and production browser
+prerequisites. A fresh installed development wheel passes six provider-contract
+checks without network access. That evidence retains AIPROVIDER001's default-
+Ollama false positive and keyless-custom false negative rather than changing the
+experimental provider runtime. The only production-source edit is two CLI help
+strings; the no-runtime-logic audit covers them. Final provider, browser and
+candidate execution remain open.

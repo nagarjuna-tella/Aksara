@@ -2,7 +2,7 @@
 
 !!! warning "Experimental"
     Provider selection, connector behavior, model quality, and live-provider
-    accounting are not part of the stable v0.6 contract.
+    accounting are not part of the stable v0.7 contract.
 
 Aksara contains two provider layers because newer execution configuration was
 added without deleting the older discovery contract.
@@ -33,6 +33,14 @@ Environment credentials remain provider-specific:
 | Azure OpenAI | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
 | Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` |
 | Custom HTTP | `CUSTOM_LLM_API_KEY`, `CUSTOM_LLM_BASE_URL`, `CUSTOM_LLM_MODEL` |
+
+The compatibility command `aksara ai-provider detect` reports configuration
+heuristically. It currently lists the default local Ollama profile even when no
+Ollama environment variable or running server exists, and it does not consider
+a keyless custom endpoint configured. Treat `detect` as a configuration hint;
+use `ping` to test reachability. A keyless custom endpoint can still be used by
+constructing `UnifiedAiProvider` directly. These limitations are confined to
+the experimental provider surface.
 
 For example, a local Ollama setup is:
 

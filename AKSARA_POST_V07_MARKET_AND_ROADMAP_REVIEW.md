@@ -79,7 +79,7 @@ candidate audit owns the full stability matrix and installed-wheel results.
 | API and query diagnostics | `aksara/middleware/tracing.py`, `aksara/db/tracing.py` | `tests/db/test_tracing.py`, `tests/diagnostics/` | Do not describe observability as absent; integration and correlation need evaluation |
 | MCP | `aksara/mcp/` | `tests/mcp/`, installed-wheel reference checks | An application access surface, not a reason to build another agent planner |
 | Client generation | `aksara/sdk/typescript.py` | SDK and CLI tests | Useful convenience; generated-client usability needs its own journey |
-| AI, Studio, DurableStep | `aksara/ai/`, `aksara/studio/`, `aksara/workflows.py` | Component tests, separate stability exclusions | Existence and component tests do not make these v0.7 durable guarantees |
+| AI, Studio, DurableStep | `aksara/ai/`, `aksara/studio/`, `aksara/workflows.py` | Component tests, installed provider-contract checks and separate stability exclusions | Existence and component tests do not make these v0.7 durable guarantees; provider detection remains heuristic |
 
 ## Product Hypotheses Considered
 
@@ -223,6 +223,7 @@ implementation is identified. Component existence is not certification.
 | Configuration/secrets | Implemented with a verified parsing defect | CFG-001 affects origin/host environment lists; tested explicit-list configuration is documented, while the runtime fix remains separate |
 | SDKs | Generated TypeScript currently fails strict compilation | SDK-001 is reproduced; generation alone is not a usable-client claim. Direct HTTP remains available |
 | CLI/scaffold | Commands work; generated application packaging is defective | SCAFFOLD-001 prevents editable installation; the dependency-install/startup route is tested, but does not repair project packaging |
+| Experimental provider DX | Configuration loads, but readiness reporting is unreliable | AIPROVIDER001 reports default Ollama without reachability and rejects keyless custom endpoints; keep providers experimental and fix separately before stronger DX claims |
 | Docs and integrations | Improved in this branch; acceptance incomplete | Executed tutorial and corrected references exist; final manual/candidate checks and independent user observation remain open |
 | Plugin ecosystem | Not established by this review | Prefer a few versioned integration contracts over promising an ecosystem |
 | Managed hosting, generic identity service | Intentionally out of scope | Use existing services; no need to operate a cloud platform to reach 1.0 |
@@ -291,8 +292,9 @@ and removes its schema (`audit-evidence/v071/testing-helper-execution.json`). EX
 multitenant example's exemption-matching defect. The domain-template audit
 additionally reproduces MIGRATION-001: discovery of
 the built-in auth `User` replaces a same-named application model, omitting its
-declared table despite successful migration commands. These first ten findings and the seven additional findings below have different
-proof scopes; they do not establish that the entire backend is unusable. Their reproductions and alternatives are
+declared table despite successful migration commands. These findings and the
+additional findings below have different proof scopes; they do not establish
+that the entire backend is unusable. Their reproductions and alternatives are
 in the public-truth audit. Closing the relevant functional defects needs a
 separate maintenance scope before stronger production/adoption claims.
 
@@ -344,6 +346,17 @@ in `query-execution.json` retains the failure flag. Recommend a separate narrow
 terminal-method consistency patch with empty/nonempty FK/O2O and prefetch cases.
 This strengthens the existing correctness/adoption priority, not a proposal for
 more database backends or a broader ORM rewrite. No runtime change is made here.
+
+### Experimental provider readiness classification (2026-09-12)
+
+AIPROVIDER001 / P2: the compatibility detector reports the built-in default
+Ollama URL as configured in a clean process without checking reachability, while
+a custom base URL without an API key selects the custom provider but fails its
+configured-state check. The adapter itself permits keyless operation. The public
+guides now call detection a hint and require a separate ping; a provider-free
+installed-wheel probe preserves both negative controls. This is an experimental
+DX defect, not evidence for expanding provider scope or stabilizing AI. Fix it
+separately if provider setup becomes a supported adoption path.
 
 Prioritize debt by user-visible failure and change risk. Static-analysis ratchets
 contain accepted debt; they are not a claim of a clean type/lint baseline.
@@ -521,7 +534,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the eighteen audit findings for separately scoped functional maintenance; do
+Track the nineteen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 

@@ -22,6 +22,10 @@ def startapp(app_name):
     files = create_app_scaffold(app_name)
     click.echo("Original instructions")
     write_scaffold_files(files)
+
+def ai_provider_detect():
+    """Original help."""
+    click.echo("Original provider instructions")
 '''
     changed_help = source.replace('Original', 'Updated')
     assert normalize(source) == normalize(changed_help)
@@ -37,6 +41,7 @@ def startapp(app_name):
     assert normalize(source) != normalize(extra_call)
     assert normalize(source) != normalize(source.replace('create_app_scaffold(app_name)', 'create_app_scaffold("different")'))
     assert normalize(source) != normalize(source.replace('click.echo("Original instructions")', 'click.echo(run_something())'))
+    assert normalize(source) != normalize(source.replace('click.echo("Original provider instructions")', 'click.echo(run_something())'))
 
 
 def test_template_normalizer_rejects_source_and_name_changes():

@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Complete author reading of all twenty-eight AI Mode pages and all five Studio pages, compared with provider, adapter, runtime, planner, query, patch, context, MCP, Studio router/settings/CLI and static-UI source plus existing scoped execution evidence. This does not certify provider quality, network reachability, browser interaction, autonomous workflows, production Studio exposure or final candidate behavior.",
+  "page_sha256": {
+    "docs/docs/ai-mode/agent-runtime.md": "88aeb6ac365bbca6097be05a37cf16eaa134fe49fd4bd2b91d79a5ebb134957f",
+    "docs/docs/ai-mode/agent.md": "37641cf372a4ff4e98cf24f5b41e3f9168f04d282c117dbc49a458783469220b",
+    "docs/docs/ai-mode/architecture-review.md": "f885513ed5a36088bf31f48705c4fa307449a82ad09a2a86a5a08bbf2b0542a4",
+    "docs/docs/ai-mode/bring-your-own-llm.md": "ba32fe17126c54c5721bd2033304edd3d44403e5ca64daebe5ce94c2a13d0c39",
+    "docs/docs/ai-mode/codegen.md": "897eb4fa3af33923bc9355f6933a620fb287d1bab99edc101e63b99e10ce1720",
+    "docs/docs/ai-mode/config.md": "b629ef5d8d495447973405509b607ec1ebe1e1de94914dd4c129e244b4009f30",
+    "docs/docs/ai-mode/connectors.md": "4e1f1bfa46c9ea350439e5e814c90e58c0bee0ac5a88841c8a2227ebde3893e1",
+    "docs/docs/ai-mode/console.md": "a5c29bcd9118c40574e7368316d7f9bfc42346f47bdcefafc94a2584f21dd06f",
+    "docs/docs/ai-mode/context-engine.md": "ed92e8ba90269fdb4059c755683cf7918fe2b9355bfb6d060e68457e417fc88a",
+    "docs/docs/ai-mode/custom-http.md": "208812d2a03af90f6f0d5dd0b092512672c62f610559652996a7e612e829a12a",
+    "docs/docs/ai-mode/debugger.md": "990c858c3771e06beb4ed1ca9f0abf845e43889888e4ce8a9622e2ab7e20354d",
+    "docs/docs/ai-mode/flows.md": "b3b53f203f1e04f14372d1da984b4573b49f5761d98175afb923eab99c6fc182",
+    "docs/docs/ai-mode/hints.md": "780416f4667f41fa834e68a9675f41fb17354d7583301b80ec01a27708f34928",
+    "docs/docs/ai-mode/hub.md": "d7325ab4af1e28eda5b9f4db19bdd4002e0d3723736298eb52cb6e54c17bd69f",
+    "docs/docs/ai-mode/index.md": "8550bec64885019150822c9770cc7447ddd404754f497d12d5591ea0a24cfee2",
+    "docs/docs/ai-mode/mcp.md": "11534bf4167fcdd4f80bcdcdef67eab33096eaad3cfe6c9f56a6f4d9fed141e2",
+    "docs/docs/ai-mode/ollama.md": "e84d4833f74030742d112a760e11c892afb21d5dd0baffa975f00016de13a933",
+    "docs/docs/ai-mode/patch-engine.md": "f19d5145ed94b57b86750d0025329f80fdef4f724db3893df693403cd4667e89",
+    "docs/docs/ai-mode/performance-analyzer.md": "f545291081acda2b5886c357e5e6a0a4bbf23fe40f214f508712f9b37bd36d6e",
+    "docs/docs/ai-mode/planner.md": "4be3134ad220e1c8d01cc45a4c8d99421bbc415b193dc471f2a5def8e1aa79b9",
+    "docs/docs/ai-mode/project-graph.md": "12beff834d89d31e9372140083b1dcf7b681166a7f42d894f2a6de1bbc3bb53a",
+    "docs/docs/ai-mode/providers.md": "67cafdec34af91c737d23039252be5decac695f5a63ecdf3aa42e8e27c3e3c55",
+    "docs/docs/ai-mode/query-engine.md": "690876a387385d402db2990bc1b6090239ad2e97ddf19042330666d39050a38c",
+    "docs/docs/ai-mode/runtime.md": "86b0e7e1abe7ebbdb6b12394e03ddff2a296f27a620d19715f07cf4104f9ae2e",
+    "docs/docs/ai-mode/safety.md": "608c00dc841ad44ddccb91d42a4c36be7ce145d6477b279a48fbc77846df0633",
+    "docs/docs/ai-mode/schema-doctor.md": "8fb1166bcfd7ec924e243de73d2ba679d3fce0ee5bae00a167979a28b75f5d56",
+    "docs/docs/ai-mode/tools.md": "0e34609debdf7220c4f235ddee2c7f6aa82bf5b49fd02d5c7a2a3b4db126d762",
+    "docs/docs/ai-mode/workflows.md": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
+    "docs/docs/studio/api.md": "705a82ae3f30a1cbab512467663fc1f28f1b914e78b3d957302d32a915033076",
+    "docs/docs/studio/cli.md": "761e216e3cf741e555ac449d2bfd7d43fcac3b3fd1d459a899a2d1a1f49d39d1",
+    "docs/docs/studio/configuration.md": "f3a67166077e167e48b54385987fea5a17c748eb779c8091dece778f315f65d7",
+    "docs/docs/studio/index.md": "7b55c33fab7ec91a2e52535f9c719e74d0d00d0c85e6270f84074578c7d3fb86",
+    "docs/docs/studio/ui.md": "0d5090d457f95ce87777185fd880cacec23ed922333117aad06d0540cbc045e0"
+  },
+  "reviews": [
+    {
+      "page": "docs/docs/ai-mode/index.md",
+      "disposition": "retain_after_v07_boundary_correction",
+      "reason": "Separates experimental provider and development helpers from the stable synchronous MCP boundary and routes readers to concrete entry points."
+    },
+    {
+      "page": "docs/docs/ai-mode/config.md",
+      "disposition": "retain_after_v07_boundary_correction",
+      "reason": "Uses global settings, current AI Hub commands and actual per-call limit objects while excluding durable provider state and a nonexistent AgentRuntime."
+    },
+    {
+      "page": "docs/docs/ai-mode/providers.md",
+      "disposition": "retain_after_provider_contract_correction",
+      "reason": "Distinguishes current, compatibility and deprecated provider layers, lists implementation-read environment names and discloses heuristic detection false positive and false negative behavior."
+    },
+    {
+      "page": "docs/docs/ai-mode/bring-your-own-llm.md",
+      "disposition": "retain_as_experimental_integration_guide",
+      "reason": "Keeps external provider adapters and illustrative client code outside the stable backend contract; live SDK and provider behavior remain application-tested responsibilities."
+    },
+    {
+      "page": "docs/docs/ai-mode/ollama.md",
+      "disposition": "retain_after_environment_correction",
+      "reason": "Uses OLLAMA_BASE_URL and OLLAMA_MODEL, matches the installed adapter entry points and warns that detection is not reachability."
+    },
+    {
+      "page": "docs/docs/ai-mode/custom-http.md",
+      "disposition": "retain_after_environment_and_default_corrections",
+      "reason": "Uses the environment names and adapter defaults actually loaded, explains dotted response paths and bounds compatibility to explicitly configured endpoint protocols."
+    },
+    {
+      "page": "docs/docs/ai-mode/hub.md",
+      "disposition": "retain_after_detection_clarification",
+      "reason": "Describes the existing CLI, Studio endpoints and provider workflow while treating compatibility detection as a hint rather than connectivity proof."
+    },
+    {
+      "page": "docs/docs/ai-mode/connectors.md",
+      "disposition": "retain_after_reading",
+      "reason": "Documents exported connector adapters and their separate environment contract without treating generated text or connector metadata as authorization."
+    },
+    {
+      "page": "docs/docs/ai-mode/console.md",
+      "disposition": "retain_after_reading",
+      "reason": "The provider-free greeting is installed-wheel verified and the page distinguishes local routing from provider execution, persistence and application authority."
+    },
+    {
+      "page": "docs/docs/ai-mode/flows.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates deterministic prompt-pack construction from optional provider execution and lists existing CLI and Studio endpoints as experimental."
+    },
+    {
+      "page": "docs/docs/ai-mode/workflows.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses the actual ordered development-workflow structures and limits without presenting them as Durable Operations or a persistent workflow engine."
+    },
+    {
+      "page": "docs/docs/ai-mode/agent-runtime.md",
+      "disposition": "retain_after_reading",
+      "reason": "Replaces a nonexistent AgentRuntime with real process-local tracking and bounded-execution primitives and keeps durable execution separate."
+    },
+    {
+      "page": "docs/docs/ai-mode/agent.md",
+      "disposition": "retain_after_reading",
+      "reason": "Describes project-context and playbook prompt assembly as read-only development output, with CLI entry points and no autonomous-session claim."
+    },
+    {
+      "page": "docs/docs/ai-mode/runtime.md",
+      "disposition": "retain_after_reading",
+      "reason": "Matches run_prompt_pack dispatch and limit inputs while excluding provider quality, durable counters and agent orchestration."
+    },
+    {
+      "page": "docs/docs/ai-mode/planner.md",
+      "disposition": "retain_after_reading",
+      "reason": "Documents structured plan validation and registered handler execution rather than LLM planning, persistence or autonomous goal selection."
+    },
+    {
+      "page": "docs/docs/ai-mode/architecture-review.md",
+      "disposition": "retain_after_reading",
+      "reason": "Presents the rule-based read-only analyzer, score categories and existing CLI/Studio paths as experimental review output."
+    },
+    {
+      "page": "docs/docs/ai-mode/codegen.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses actual structured code-generation models, leaves output unwritten and requires review, migrations, tests and source control."
+    },
+    {
+      "page": "docs/docs/ai-mode/patch-engine.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses declarative preview/apply functions and explicit confirmation while bounding validation as a damage-reduction layer rather than autonomous maintenance."
+    },
+    {
+      "page": "docs/docs/ai-mode/project-graph.md",
+      "disposition": "retain_after_reading",
+      "reason": "Matches the in-process graph, bounded event timeline, five-second cache, context builders and existing Studio/CLI integrations, all labeled experimental."
+    },
+    {
+      "page": "docs/docs/ai-mode/query-engine.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses a structured query plan, discloses fetch-before-slice behavior and requires application authorization and tenancy before this low-level helper."
+    },
+    {
+      "page": "docs/docs/ai-mode/performance-analyzer.md",
+      "disposition": "retain_after_reading",
+      "reason": "Describes the heuristic read-only analyzer, fixed thresholds, score model and existing CLI/Studio paths without promising measured application performance."
+    },
+    {
+      "page": "docs/docs/ai-mode/context-engine.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses actual context builders and distinguishes ai_sensitive filtering from permission, policy, tenant and RLS enforcement."
+    },
+    {
+      "page": "docs/docs/ai-mode/safety.md",
+      "disposition": "retain_after_reading",
+      "reason": "Places stable MCP, experimental code helpers, process-local state and Durable Operations on separate authority and lifetime boundaries."
+    },
+    {
+      "page": "docs/docs/ai-mode/hints.md",
+      "disposition": "retain_after_reading",
+      "reason": "The executable decorator example and installed CLI forms match metadata-only behavior and explicitly deny authorization or approval semantics."
+    },
+    {
+      "page": "docs/docs/ai-mode/tools.md",
+      "disposition": "retain_after_reading",
+      "reason": "Separates discovered synchronous MCP tools from JSON inspection and experimental development helpers, including custom-handler authorization ownership."
+    },
+    {
+      "page": "docs/docs/ai-mode/schema-doctor.md",
+      "disposition": "retain_after_reading",
+      "reason": "Uses the installed schema-health/schema-issues commands and analyzer import, and keeps analysis distinct from migrations and production Doctor."
+    },
+    {
+      "page": "docs/docs/ai-mode/mcp.md",
+      "disposition": "retain_after_reading",
+      "reason": "Explains the stable synchronous protocol boundary, current authorization, approval, audit and limits while excluding protocol MCP Tasks and durable sessions."
+    },
+    {
+      "page": "docs/docs/ai-mode/debugger.md",
+      "disposition": "retain_after_reading",
+      "reason": "Keeps heuristic analysis and suggestions read-only, process-local and outside provider or production-monitoring guarantees."
+    },
+    {
+      "page": "docs/docs/studio/index.md",
+      "disposition": "retain_after_api_scope_clarification",
+      "reason": "Keeps Studio opt-in and experimental, provides a loopback quickstart and describes selected live process state without claiming complete backend visibility."
+    },
+    {
+      "page": "docs/docs/studio/configuration.md",
+      "disposition": "retain_after_reading",
+      "reason": "Matches enablement, production exposure, required secret, Origin, bearer and staff-session behavior while warning that Studio access is not record authorization."
+    },
+    {
+      "page": "docs/docs/studio/api.md",
+      "disposition": "retain_after_scope_and_access_correction",
+      "reason": "Reframes the page as selected core endpoints, states authentication independently from Origin and identifies capability metadata as conditional and descriptive."
+    },
+    {
+      "page": "docs/docs/studio/cli.md",
+      "disposition": "retain_after_sample_and_reachability_correction",
+      "reason": "Installed help confirms the five Studio commands; samples use v0.7.0 and URL formatting is no longer described as a mount or reachability check."
+    },
+    {
+      "page": "docs/docs/studio/ui.md",
+      "disposition": "retain_after_lifecycle_and_security_correction",
+      "reason": "Uses the v0.7 experimental boundary, requires a live backend, gives complete production mount prerequisites and distinguishes browser staff cookies from API bearer clients."
+    }
+  ],
+  "candidate_acceptance": false,
+  "execution_evidence": [
+    "ai-cli-execution.json",
+    "ai-docs-review.json",
+    "ai-provider-contract.json",
+    "installed-doc-imports.json",
+    "studio access dependency cases in installed-doc-imports.json"
+  ],
+  "functional_findings": [
+    {
+      "id": "AIPROVIDER001",
+      "severity": "P2",
+      "boundary": "The experimental compatibility provider detector reports default Ollama as configured without environment or reachability, and rejects a keyless custom endpoint even though the adapter accepts one.",
+      "runtime_fix_deferred": true
+    }
+  ]
+}

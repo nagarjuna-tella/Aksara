@@ -9,12 +9,12 @@ Aksara includes useful experimental primitives for provider calls, bounded
 prompt-pack execution, plan data structures, project context, declarative
 patches, and query-plan validation. These APIs are documented so developers can
 experiment with what the package actually exports; their presence does not make
-them part of the stable v0.6 contract.
+them part of the stable v0.7 contract.
 
 ## Stable MCP is separate
 
-Generated MCP tool execution is stable within the v0.6 execution boundary and
-does not require provider-backed AI:
+Generated MCP tool execution is retained as a stable v0.7 boundary and does not
+require provider-backed AI:
 
 | Path | Purpose |
 | --- | --- |
