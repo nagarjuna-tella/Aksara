@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 366,
+  "python_blocks": 364,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "570cd2d6b2f6b8f4f51813502770df390da20787f20e65c8c94827c84786fe63",
@@ -67,7 +67,7 @@
     "docs/docs/concepts/application-boundaries.md": "1e6c387ad82af91b0f37d4f4d8455b9762ae4950d347aafa1cb2ec8a14e61530",
     "docs/docs/concepts/stability.md": "247d95ebbf7cfc8ab7e21d0d079ac4b0415cfeb3268b8760ae3dbefa4d0fe2a2",
     "docs/docs/debugging/ai-debug.md": "d10a4615c25a714b587fe06d318da826a43f2f0498d7cfddb189a09bb2ba1423",
-    "docs/docs/debugging/autoremediation.md": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
+    "docs/docs/debugging/autoremediation.md": "9946cd5fd9ce3a69e77f2ff09e5c9a2479bf4a5124e54f617695360751ce90c5",
     "docs/docs/debugging/error-pages.md": "84f1f6bd6afa377285f9f46c7a4ce422c26e76114a881ac2ea682d7b01a17b12",
     "docs/docs/debugging/index.md": "2dc6a00973bca3e5143cd2bf07a7dd6388bd7edb0e67a6ce86c04fa9bdcaf9a8",
     "docs/docs/debugging/query-profiling.md": "667b35ba844a1de5439f93d823fd2ebd671963b214762480132314c3eba10c2a",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -193,5 +193,7 @@
   "runtime_array_render_preserves_input": false,
   "admin_action_contract_sha256": "7b969c621cd1b4e38d1806ad0d33df0f20280edfcf2953c3b695e569c5f09218",
   "admin_action_fragment_checks": "passed",
-  "runner_sha256": "10b903804f70f9fba6087b8d95d0929e354200709ce8cc6ead62ce026f5d50a0"
+  "diagnostic_suggestion_contract_sha256": "224b173ccfe0e8ee7dc07841271c9343d9fa5e859d62cfb3d0af5fb2aebef5b7",
+  "diagnostic_suggestion_checks": "passed",
+  "runner_sha256": "0fa6491f6bd66f8f3b215fa6c64fb1bf63e91bbee2f659f18794c3007d6bfc65"
 }

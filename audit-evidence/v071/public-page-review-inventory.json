@@ -558,11 +558,11 @@
     },
     {
       "path": "docs/docs/debugging/autoremediation.md",
-      "sha256": "55a24cecfde15b31b41876421d015e5822d609f41fe7651eee4b5c58cfffa6ed",
-      "changed_since_release": false,
+      "sha256": "9946cd5fd9ce3a69e77f2ff09e5c9a2479bf4a5124e54f617695360751ce90c5",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 182
+      "lines": 76
     },
     {
       "path": "docs/docs/debugging/error-pages.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 32,
+    "unchanged_since_release": 31,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

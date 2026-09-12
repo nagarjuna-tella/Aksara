@@ -1835,3 +1835,22 @@ one existing dependency deprecation warning. Strict docs, 366 Python fences,
 296 CLI forms and 42,510 local references across 162 pages passed. Ruff passed.
 No production code changed. This establishes the scoped action clarification;
 it is not final whole-manual or release-candidate acceptance.
+
+## Diagnostic suggestion follow-up (2026-09-11)
+
+PT058 / P1: the autoremediation page implied every issue had executable fixes
+and did not distinguish filtered exit status from unfiltered report statistics.
+The replacement documents optional suggestions, operator responsibility, service
+inspection, checker-failure warnings, and the separate production release gate.
+A deterministic CLI check proves that an error without actions is excluded by
+`--only-with-actions`, producing exit 0 while JSON stats retain one error. This
+is documented filter behavior, not a new functional defect or repair capability.
+The exact suggestion example and focused diagnostics tests passed (44 checkout
+checks; two installed-wheel checks). No real diagnostic commands or repairs were
+executed by the focused mock-report tests. The installed import gate now
+executes both checks. `.venv/bin/python -m pytest tests/docs
+tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py
+tests/diagnostics/test_cli_fix_plan.py tests/diagnostics/test_actions_model.py -q`
+— 245 passed, one existing dependency deprecation warning. Strict docs, 364
+Python fences/imports, 295 CLI forms, and 42,431 local references across 162 pages
+passed. Ruff passed. No production code changed; whole-manual acceptance remains open.

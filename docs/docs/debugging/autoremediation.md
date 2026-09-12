@@ -1,182 +1,76 @@
-# Autoremediation Hints
+# Diagnostic fix suggestions
 
-> Every diagnostic issue includes structured **fix actions**
-> that the Studio UI, CLI, and future agents can surface and apply.
+Doctor can attach structured suggestions to diagnostic issues. A fix plan helps
+you review what to change; it does not execute commands, edit files, or grant an
+agent permission to apply a repair. Individual issues may have an empty action
+list. Studio or experimental AI consumers do not turn these suggestions into a
+validated production repair workflow.
 
----
+## Read a fix plan
 
-## Overview
+Run diagnostics in your configured application environment:
 
-Aksara's Doctor Mode includes `DiagnosticIssue` objects
-containing free-text `hint` strings. Every issue also carries
-a list of **`DiagnosticAction`** objects — machine-readable instructions
-that UIs and automation tools can render, copy, or execute.
-
-```python
-from aksara.diagnostics import run_all_checks
-
-report = await run_all_checks()
-for issue in report.issues:
-    print(f"[{issue.severity}] {issue.title}")
-    for action in issue.actions:
-        print(f"  → [{action.kind}] {action.title}")
-        if action.example:
-            print(f"    $ {action.example}")
+```bash
+aksara doctor fix-plan
+aksara doctor fix-plan --format json
+aksara doctor fix-plan --only-errors
+aksara doctor fix-plan --only-with-actions
 ```
 
----
+The command runs diagnostic checks before filtering their results. Those checks
+may inspect configured services and filesystem access; filtering is not a way to
+avoid running particular checks.
 
-## DiagnosticAction Model
+An exit status of 1 means the **filtered issue list** contains errors; otherwise
+the status is 0. Consequently `--only-with-actions` can hide an error that has no
+suggested action and return 0. JSON `stats` still describe the unfiltered report,
+whereas `issues` contains the selected subset. An empty filtered plan is not proof
+that the application is healthy.
 
-| Field         | Type                          | Description                          |
-|---------------|-------------------------------|--------------------------------------|
-| `kind`        | `Literal[...]`                | Action type (see below)              |
-| `target`      | `str`                         | Env var, command, URL, file, setting |
-| `title`       | `str`                         | Human-readable title                 |
-| `example`     | `Optional[str]`               | Full runnable/pasteable example      |
-| `description` | `Optional[str]`               | Extra details                        |
+For the production release policy, use
+[Doctor's production checks](../diagnostics.md), including
+`aksara doctor production-check --release --format json`. Do not substitute a
+filtered fix plan for that gate.
 
-### Action Kinds
+## Represent a suggestion
 
-| Kind           | Meaning                           | Target example           |
-|----------------|-----------------------------------|--------------------------|
-| `set_env`      | Set an environment variable       | `DATABASE_URL`           |
-| `run_command`   | Run a shell command               | `aksara migrate`         |
-| `open_doc`     | Open a documentation URL          | `https://aksara.dev/...` |
-| `edit_file`    | Edit a specific file              | `settings.py`            |
-| `add_setting`  | Add/change an Aksara setting      | `pool_max_size`          |
+`DiagnosticAction` is a data model. `build_action()` constructs and validates its
+shape; it does not verify that the example is suitable for your environment.
+This complete example performs no diagnostics and executes no command:
 
----
+```python title="diagnostic_suggestion.py"
+from aksara.diagnostics import DiagnosticIssue, build_action
 
-## build_action() Helper
-
-```python
-from aksara.diagnostics import build_action
-
-action = build_action(
-    kind="set_env",
-    target="DATABASE_URL",
-    title="Set DATABASE_URL",
-    example='export DATABASE_URL="postgresql://user:pass@localhost:5432/db"',
+suggestion = build_action(
+    kind="run_command",
+    target="aksara doctor production-check",
+    title="Inspect production readiness",
+    example="aksara doctor production-check --release --format json",
+    description="Review the report before changing deployment settings.",
+)
+issue = DiagnosticIssue(
+    kind="application_review",
+    severity="info",
+    title="Review deployment configuration",
+    message="This application requires an operator review.",
+    actions=[suggestion],
 )
 ```
 
----
+| Field | Meaning |
+| --- | --- |
+| `kind` | One of `set_env`, `edit_file`, `run_command`, `open_doc`, `add_setting` |
+| `target` | Environment name, file, command, URL, or setting |
+| `title` | Display label |
+| `example` | Optional suggested text; may require adaptation |
+| `description` | Optional explanation |
 
-## Studio UI
+For programmatic diagnosis, `await run_all_checks()` returns a `DiagnosticReport`;
+iterate `report.issues` and each issue's `actions`. Checkers that fail are reported
+as warning issues. The result includes system metadata and elapsed time, so it is
+not a byte-stable artifact across runs.
 
-Every issue card now has an expandable **"Fix This Issue"** section showing
-action cards with:
-
-- **Kind icon** and label (ENV, CMD, DOC, FILE, CFG)
-- **Title** describing the fix
-- **Example snippet** with a **Copy** button for one-click clipboard copy
-
-Click the toggle to expand/collapse actions per issue.
-
----
-
-## CLI: `aksara doctor fix-plan`
-
-Generate a full remediation plan:
-
-```bash
-# Text output (default)
-aksara doctor fix-plan
-
-# JSON output for scripts/CI
-aksara doctor fix-plan --format json
-
-# Only errors
-aksara doctor fix-plan --only-errors
-
-# Only issues with fix actions
-aksara doctor fix-plan --only-with-actions
-
-# Combined
-aksara doctor fix-plan --only-errors --only-with-actions
-```
-
-### Text Output Example
-
-```
-  ⚡ Aksara Doctor — Fix Plan
-
-  ✗ 1. [ERROR] No database URL configured
-     DATABASE_URL or database_url setting is not set.
-     Hint: Set DATABASE_URL environment variable...
-     Actions:
-       → [ENV] Set DATABASE_URL
-         $ export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
-       → [DOC] Open database configuration docs
-
-  1 issue(s), 2 fix action(s)
-```
-
-### JSON Output Structure
-
-```json
-{
-  "issues": [
-    {
-      "kind": "database_connectivity",
-      "severity": "error",
-      "title": "No database URL configured",
-      "message": "...",
-      "hint": "...",
-      "actions": [
-        {
-          "kind": "set_env",
-          "target": "DATABASE_URL",
-          "title": "Set DATABASE_URL",
-          "example": "export DATABASE_URL=\"...\"",
-          "description": null
-        }
-      ]
-    }
-  ],
-  "stats": { "errors": 1, "warnings": 0, "info": 0 },
-  "duration_ms": 42.0,
-  "system": { ... }
-}
-```
-
----
-
-## Actions by Checker
-
-| Checker                       | Action Kinds Emitted                  |
-|-------------------------------|---------------------------------------|
-| `check_database_connectivity` | `set_env`, `open_doc`, `run_command`  |
-| `check_migrations_status`     | `run_command`                         |
-| `check_ai_profiles`           | `add_setting`                         |
-| `check_ai_provider_secrets`   | `set_env`                             |
-| `check_required_settings`     | `set_env`, `add_setting`              |
-| `check_cache_available`       | `set_env`                             |
-| `check_file_system_permissions`| `run_command`                        |
-| `check_security`              | `set_env`, `add_setting`              |
-
----
-
-## CI/CD Integration
-
-Use the JSON fix-plan in CI pipelines:
-
-```bash
-# Fail CI on errors, capture fix plan
-aksara doctor fix-plan --format json --only-errors > fix-plan.json
-```
-
-Parse in scripts:
-
-```python
-import json
-
-with open("fix-plan.json") as f:
-    plan = json.load(f)
-
-for issue in plan["issues"]:
-    for action in issue["actions"]:
-        if action["kind"] == "run_command":
-            print(f"Suggested: {action['example']}")
-```
+Review suggested commands and URLs before using them. A command can affect
+schema, configuration, or files; diagnostic metadata is not authorization for
+those changes. Keep reports private when they reveal deployment details, and
+preserve exit codes when collecting them in CI.

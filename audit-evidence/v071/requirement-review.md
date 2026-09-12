@@ -221,3 +221,10 @@ PT057 clarifies action registration, known permission-hook requirements and
 transaction ownership. The installed import gate covers the exact action
 fragment, while the separately reported required-database Admin suite covers
 existing behavior. Final full-page usability/semantic acceptance remains open.
+
+## Diagnostic suggestions checkpoint
+
+PT058 separates diagnostic suggestions from automatic repairs and production
+release policy. The installed import gate executes the example and controlled
+CLI filtering checks. This is scoped D1/D3/reference validation, not actual
+operator deployment certification. The final whole-manual review remains open.
