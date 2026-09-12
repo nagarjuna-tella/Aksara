@@ -24,3 +24,14 @@ def test_operator_evidence_matches_reviewed_sources():
         page = ROOT / answer["page"]
         assert answer["page_sha256"] == hashlib.sha256(page.read_bytes()).hexdigest()
         assert answer["heading"] in page.read_text()
+    assert {entry["page"] for entry in reading["complete_page_reading"]} == {
+        "docs/docs/tutorials/deployment.md",
+        "docs/docs/operations/upgrade-v07.md",
+        "docs/docs/diagnostics.md",
+    }
+    for entry in reading["complete_page_reading"]:
+        assert entry["page_sha256"] == hashlib.sha256(
+            (ROOT / entry["page"]).read_bytes()
+        ).hexdigest()
+    assert reading["live_deployment_verified"] is False
+    assert reading["candidate_regression_verified"] is False

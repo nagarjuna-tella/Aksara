@@ -2251,3 +2251,15 @@ Validation: 207 docs/packaging tests pass with one dependency warning; strict
 MkDocs, 348 Python fences/imports, 292 CLI forms and 42,154 rendered local
 references pass. The evidence index reports no stale linked inputs. These are
 documentation checks, not a fresh PostgreSQL or final compatibility campaign.
+
+## Operator reading acceptance (2026-09-12)
+
+Read the complete production deployment, v0.6-to-v0.7 upgrade and Doctor pages.
+Their sequence covers configuration, migration ownership and application grants,
+authenticated tenant isolation, diagnostics, ordinary and durable workers,
+retention, reconciliation, backups and upgrade recovery. Reviewed the eight C6
+usability dimensions for these pages and retained their current content.
+operator-reading.json records current hashes, reasons and all named C5 answers.
+C5's reading requirement is verified; this is not a live production deployment,
+restore drill, independent user study or whole-manual acceptance. No page or
+production code changed in this review.

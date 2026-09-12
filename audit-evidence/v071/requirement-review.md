@@ -12,6 +12,7 @@ subitems within those phases or the requirements elsewhere in the objective.
 The final audit must inspect each subitem, command, invariant and deliverable;
 no phase is marked fully complete here merely because a file or green check exists.
 
+- **VERIFIED:** the named requirement is directly established within its requested scope; this does not establish unrelated candidate gates.
 - **SCOPED:** inspected evidence establishes the stated part of the requirement;
   listed limitations and final candidate checks still apply.
 - **PARTIAL:** some requested work is demonstrably missing or not yet verified.
@@ -85,7 +86,7 @@ Line numbers below refer to that exact objective.
 | C2: Intermediate application journey (line 1805) | SCOPED | Ticket Desk relations/tenancy/report chapters exercise permissions, task and protected CSV export as common feature alternative. | Repeat candidate; separate media lifecycle probe does not claim protected upload integration. |
 | C3: Durable Operation journey (line 1821) | SCOPED | Durable chapter tests registration, admission, worker, idempotency/status, post-SQL retry, cancel and current role revocation. | Repeat candidate; full crash campaign belongs to broader established regression. |
 | C4: MCP journey (line 1840) | SCOPED | Official MCP SDK 2.0.1 journey verifies negotiation, authentication adapter, CRUD/denial and REST parity; no MCP Tasks. | Repeat candidate; no external OAuth provider certification. |
-| C5: Production deployment reading test (line 1854) | SCOPED | operator-reading.json answers eleven public-documentation questions and records fixed friction. | Author reading only, not independently observed production deployment. |
+| C5: Production deployment reading test (line 1854) | VERIFIED | operator-reading.json answers all named operator questions and records complete reading of deployment, upgrade and Doctor, with per-page hashes and usability assessment. | Author reading satisfies the requested reading test; live deployment, restore execution and candidate regression remain separate requirements. |
 | C6: Documentation usability review (line 1872) | OPEN | Five entry hubs, five middleware/security pages and five setup/compatibility pages reviewed; unsupported examples replaced with checked workflows. No complete final readability review is recorded. | Review walls of text, jargon, nesting, duplication, navigation, task orientation, cross-links and tutorial/reference separation. |
 
 ## Workstream D
@@ -383,3 +384,12 @@ authorization is available only through opt-in Operations, and idempotency
 lookup identity is distinct from action/version/input conflict checks.
 Source comparison confirms these descriptions; no runtime change is included.
 The audit records the author reading and its limits.
+
+## Operator reading acceptance
+
+C5 is verified for its requested public-documentation reading scope. The current
+deployment, upgrade and Doctor pages were read completely; their hashes and
+conclusions are recorded in operator-reading.json. All required operator topics
+are discoverable without the ADR. No new contradiction required a page edit.
+This does not mark C6's entire manual review, a live restore/deployment exercise,
+or E5's candidate campaign complete.
