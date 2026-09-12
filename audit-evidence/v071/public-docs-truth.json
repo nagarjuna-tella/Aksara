@@ -1,0 +1,796 @@
+{
+  "schema_version": 1,
+  "assessment": "NOT READY: final requirement audit and release gates remain open",
+  "candidate_ready": false,
+  "input_integrity_pass": true,
+  "reviewed_head": "9ae422c4090d3e5183ec99728fc0c7bbba70e2ce",
+  "package_version": "0.7.0",
+  "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
+  "objective_phase_index": [
+    {
+      "id": "A1",
+      "title": "Inventory every public-facing surface",
+      "objective_line": 267,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A2",
+      "title": "Build a capability truth matrix",
+      "objective_line": 316,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A3",
+      "title": "Identify public contradictions",
+      "objective_line": 370,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A4",
+      "title": "Define the information architecture",
+      "objective_line": 404,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A5",
+      "title": "Rewrite the top-level positioning",
+      "objective_line": 511,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A6",
+      "title": "Build a real Quick Start",
+      "objective_line": 545,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A7",
+      "title": "Progressive tutorial",
+      "objective_line": 584,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A8",
+      "title": "Conceptual user manual",
+      "objective_line": 618,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A9",
+      "title": "How-to guides",
+      "objective_line": 680,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A10",
+      "title": "Reference quality",
+      "objective_line": 707,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A11",
+      "title": "Durable Operations documentation quality",
+      "objective_line": 730,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A12",
+      "title": "Stable vs experimental visibility",
+      "objective_line": 788,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A13",
+      "title": "Examples audit",
+      "objective_line": 816,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A14",
+      "title": "Canonical example applications",
+      "objective_line": 844,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A15",
+      "title": "Example execution gate",
+      "objective_line": 884,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A16",
+      "title": "Scaffold audit",
+      "objective_line": 902,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A17",
+      "title": "Scaffold improvement",
+      "objective_line": 931,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A18",
+      "title": "CLI discoverability",
+      "objective_line": 952,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A19",
+      "title": "Configuration manual",
+      "objective_line": 978,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A20",
+      "title": "Production guide",
+      "objective_line": 1009,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A21",
+      "title": "Upgrade guide",
+      "objective_line": 1034,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A22",
+      "title": "Terminology normalization",
+      "objective_line": 1055,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "A23",
+      "title": "Documentation quality gate",
+      "objective_line": 1089,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B1",
+      "title": "Start from actual capabilities",
+      "objective_line": 1123,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B2",
+      "title": "Current market research",
+      "objective_line": 1149,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B3",
+      "title": "Adjacent category analysis",
+      "objective_line": 1173,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B4",
+      "title": "Do not build a fake competitor scorecard",
+      "objective_line": 1274,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B5",
+      "title": "Identify table stakes",
+      "objective_line": 1302,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B6",
+      "title": "Identify differentiators",
+      "objective_line": 1347,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B7",
+      "title": "Identify adoption blockers",
+      "objective_line": 1376,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B8",
+      "title": "Identify strategic distractions",
+      "objective_line": 1425,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B9",
+      "title": "Define the likely user personas",
+      "objective_line": 1452,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B10",
+      "title": "Define jobs-to-be-done",
+      "objective_line": 1484,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B11",
+      "title": "Positioning conclusion",
+      "objective_line": 1506,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B12",
+      "title": "Capability-gap analysis",
+      "objective_line": 1542,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B13",
+      "title": "Roadmap principles",
+      "objective_line": 1565,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B14",
+      "title": "Roadmap horizons",
+      "objective_line": 1586,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B15",
+      "title": "Determine v0.7.x patch strategy",
+      "objective_line": 1618,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B16",
+      "title": "Determine v0.8 thesis",
+      "objective_line": 1635,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B17",
+      "title": "Longer release sequence",
+      "objective_line": 1658,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B18",
+      "title": "Define v1.0 cutoff",
+      "objective_line": 1675,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B19",
+      "title": "Populate roadmap.md",
+      "objective_line": 1706,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "B20",
+      "title": "Internal strategic recommendations",
+      "objective_line": 1738,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C1",
+      "title": "Clean-room beginner journey",
+      "objective_line": 1778,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C2",
+      "title": "Intermediate application journey",
+      "objective_line": 1805,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C3",
+      "title": "Durable Operation journey",
+      "objective_line": 1821,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C4",
+      "title": "MCP journey",
+      "objective_line": 1840,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C5",
+      "title": "Production deployment reading test",
+      "objective_line": 1854,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "C6",
+      "title": "Documentation usability review",
+      "objective_line": 1872,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D1",
+      "title": "Public import tests",
+      "objective_line": 1895,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D2",
+      "title": "CLI documentation tests",
+      "objective_line": 1903,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D3",
+      "title": "Snippet tests",
+      "objective_line": 1909,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D4",
+      "title": "Example applications",
+      "objective_line": 1915,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D5",
+      "title": "Scaffold verification",
+      "objective_line": 1921,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D6",
+      "title": "Link checking",
+      "objective_line": 1927,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D7",
+      "title": "Public API contract scan",
+      "objective_line": 1933,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "D8",
+      "title": "Documentation truth report",
+      "objective_line": 1939,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E1",
+      "title": "Version",
+      "objective_line": 1957,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E2",
+      "title": "Changelog",
+      "objective_line": 1969,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E3",
+      "title": "Release evidence",
+      "objective_line": 1997,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E4",
+      "title": "No-functional-change audit",
+      "objective_line": 2020,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E5",
+      "title": "Full compatibility regression",
+      "objective_line": 2053,
+      "final_requirement_audit": "not yet performed"
+    },
+    {
+      "id": "E6",
+      "title": "Branch and PR",
+      "objective_line": 2079,
+      "final_requirement_audit": "not yet performed"
+    }
+  ],
+  "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
+  "evidence": [
+    {
+      "artifact": "audit-evidence/v071/ai-cli-execution.json",
+      "sha256": "eb4488f1ce97c0dd22aa935e5ee7acd0fcdad88fcd621aa0597c1ba41e4d6ff5",
+      "recorded_result": true,
+      "scope": "Help, local greeting, and plan template only; socket connections forbidden",
+      "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/ai-docs-review.json",
+      "sha256": "d5bfc88e2a73ed579e666a885423baeeefa424af1a2f1e299fc98d04b7fdb16d",
+      "recorded_result": "not a boolean gate",
+      "scope": "Route hint snippet and CLI availability; not schema-drift correctness or full experimental-feature execution",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/approval-execution.json",
+      "sha256": "091cccbccf0279c339ec466088f79ea5d14c7baee97544497b7f5f97ccf0b0e5",
+      "recorded_result": true,
+      "scope": "Installed approval helper with real PostgreSQL admission, policy, decisions and expiry; admin-role fixture, not restricted-role RLS, HTTP authentication, worker execution or process-crash proof",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/auth-permission-execution.json",
+      "sha256": "06a8eafd3c38d0af89158d9d53be8c85d5cf29daa9f60ed06d9d687fe265fbfb",
+      "recorded_result": true,
+      "scope": "PostgreSQL account/session primitives and direct permission/dependency checks; not HTTP login, JWT/provider integration, RLS or complete application authorization",
+      "checked_linked_page_hashes": 2,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/cli-contract.json",
+      "sha256": "e501e2b0cd07e31e416d3cfe20714495f30117e3bd9e1328a7047355ea8faae8",
+      "recorded_result": "not a boolean gate",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/cli-docs-syntax.json",
+      "sha256": "52340253afc1104abdb0b2255ca5342d3faeb1b56c9736d349be61b91abc038a",
+      "recorded_result": true,
+      "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
+      "checked_linked_page_hashes": 165,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/configuration-findings.json",
+      "sha256": "24046086e6afe17e3702e51cfc5eda52f03aa06dc8230bba7ba200f7faee4c76",
+      "recorded_result": "not a boolean gate",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/custom-action-boundary.json",
+      "sha256": "4da1b2b0b0616fecf3140e404125711007041c873f7e94f12a307bffa8797694",
+      "recorded_result": "not a boolean gate",
+      "scope": "Anonymous in-process HTTP request to inert custom action; no database, network provider, or data mutation",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/development-wheel-build.json",
+      "sha256": "dd7f38aaff0a3832e4297dffb5358f94d55bb767fc513dbead3a168c3fcd26d3",
+      "recorded_result": "not a boolean gate",
+      "scope": "Local development wheel built for scaffold and tutorial verification; not a release candidate and not published",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "f43c1981af9e588e0a03c47fa89a54aaf7cbd5d6"
+    },
+    {
+      "artifact": "audit-evidence/v071/development-wheel-tutorial.json",
+      "sha256": "c945dc1fe9b788c75d278b84687bb87b868eb9f65c9a75d25d6d812172a84609",
+      "recorded_result": true,
+      "scope": "First-project, relationships, tenant-isolation, queued-report, durable-action and optional MCP chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization and official MCP client discovery/execution/denial are covered. No external provider, full crash campaign or production-upgrade claim.",
+      "checked_linked_page_hashes": 6,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/example-defects.json",
+      "sha256": "dbe8ef7490596b225b652f0a3b0cd9c1a08da874c74c48c1f641019784a2e634",
+      "recorded_result": "not a boolean gate",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/example-execution.json",
+      "sha256": "86b2c66cf0f3fdf97f69b9c250e12d6e96174c8c5822d276b76b4e23905bb410",
+      "recorded_result": true,
+      "scope": "Local PostgreSQL startup and selected routes; schema-owner credentials, not RLS/security certification; providers not called",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/example-review.json",
+      "sha256": "17b974e231efd0f9cf4c0069a8cd91a4b8cbb84bb317c7f13ce43785c627b938",
+      "recorded_result": "not a boolean gate",
+      "scope": "All six repository example applications classified; selected startup/HTTP contracts executed, not every action or provider",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/external-execution.json",
+      "sha256": "856079150b613cb6a68887937d1c653e3169f067cabdf8d9633e94a4819a33b4",
+      "recorded_result": true,
+      "scope": "Installed external helper with PostgreSQL and simulated provider acceptance/acknowledgement loss; admin-role fixture, not real provider, restricted RLS or process-crash proof",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/external-links.json",
+      "sha256": "540d92dc796192a99bf926ff8a79d6e6ed1eb47081c3ffdff1ef98360cd95749",
+      "recorded_result": true,
+      "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
+      "checked_linked_page_hashes": 7,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/first-project-journey.json",
+      "sha256": "c945dc1fe9b788c75d278b84687bb87b868eb9f65c9a75d25d6d812172a84609",
+      "recorded_result": true,
+      "scope": "First-project, relationships, tenant-isolation, queued-report, durable-action and optional MCP chapters, sequential migrations in one schema. Test count includes repeated earlier regressions. Ordinary tasks, protected CSV export and explicit durable action success/retry/cancellation/reauthorization and official MCP client discovery/execution/denial are covered. No external provider, full crash campaign or production-upgrade claim.",
+      "checked_linked_page_hashes": 6,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/full-regression-checkpoint.json",
+      "sha256": "7cc11a9da0e79b913760afe33af1458d975d7cee218ae23422b3c566ecf4a1e7",
+      "recorded_result": true,
+      "scope": "Full source suite checkpoint before candidate version/build; not the Python/web compatibility matrix or hosted CI",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "bb8e65cadc4d7a93e80c9804313a38eb1e95ad9b"
+    },
+    {
+      "artifact": "audit-evidence/v071/history-execution.json",
+      "sha256": "89f8b63abf7b7559ee3c06c64ba6440e9fbf6417d90df4b470a990a3bb7a432d",
+      "recorded_result": true,
+      "scope": "Installed history helper with PostgreSQL admission/cancellation, scoped reads, limits and retired-action policy; admin-role fixture, not restricted RLS, HTTP authentication, retention campaign or atomic snapshot proof",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/installed-doc-imports.json",
+      "sha256": "8265beb9d73ea3612a734d3573001c694e995c261eaa524e365ced15ffe49df3",
+      "recorded_result": true,
+      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin hook/anonymous mount checks; not full CRUD, arbitrary snippet execution, or API stability",
+      "checked_linked_page_hashes": 165,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/matrix-py311-latest.json",
+      "sha256": "89fb3f1eb66a895a75d8d6308950dea321708eda597e56e12d5970197f8c001e",
+      "recorded_result": true,
+      "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or candidate installed-wheel evidence",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "f7547fed5d9190d110f90177bbb76d60bc630171"
+    },
+    {
+      "artifact": "audit-evidence/v071/matrix-py311-minimum.json",
+      "sha256": "179b6b2f467c4d5f4f942d8993d53c1af8f4af6ec869bdb6fc5d33f7f885e05b",
+      "recorded_result": true,
+      "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or installed-wheel candidate evidence",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "f7547fed5d9190d110f90177bbb76d60bc630171"
+    },
+    {
+      "artifact": "audit-evidence/v071/matrix-py314-latest.json",
+      "sha256": "9a7f6727fd59a741b9b895c79f74a894edc0bda7dbab593f4293322920c6f9a7",
+      "recorded_result": true,
+      "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or installed-wheel candidate evidence",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "f7547fed5d9190d110f90177bbb76d60bc630171"
+    },
+    {
+      "artifact": "audit-evidence/v071/matrix-py314-minimum.json",
+      "sha256": "ed070dca3d427dc25f77eef9786683f53b27be865a6f8fce8bcd1fe79841c6d5",
+      "recorded_result": true,
+      "scope": "Local source suite checkpoint; not hosted PostgreSQL 16 or installed-wheel candidate evidence",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": "f7547fed5d9190d110f90177bbb76d60bc630171"
+    },
+    {
+      "artifact": "audit-evidence/v071/media-email.json",
+      "sha256": "6fd5773b1684574da531570940ad2e03985b0384e93375df97a25566c2408a00",
+      "recorded_result": true,
+      "scope": "Local storage and in-memory email only; no database, SMTP or S3",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/operator-cli.json",
+      "sha256": "dd62d9b73bbd621c29cc024c046a4772e15a9fe01f2b940edc586408c47d82f9",
+      "recorded_result": true,
+      "scope": "Installed command and flag availability; not live deployment validation",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/operator-reading.json",
+      "sha256": "c10280d9f058d96b880ada1b6b114314a98841f6f9103887c524b8acb4a15710",
+      "recorded_result": "not a boolean gate",
+      "scope": "Discoverability and explanation review, not an independent operator usability trial or live production deployment",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/outbox-execution.json",
+      "sha256": "489259ccc32b4fc533eebc5deb802f1110803325d4e9b815ac15a3708dba1e90",
+      "recorded_result": true,
+      "scope": "Installed helper with real PostgreSQL migrations/admission/export and simulated sink acknowledgement loss; admin-role fixture, not restricted-role RLS, process-crash or remote durable delivery proof",
+      "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/public-docs-inventory.json",
+      "sha256": "e110dc11f60b89b0ca893aac957049d54dfe95f2029896733afe43716c60810d",
+      "recorded_result": "baseline_only_not_candidate_validation",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/query-execution.json",
+      "sha256": "60752fe3a82cf36de2fab9efb80b8885b65145313920470c0a033dbe8c3e5ed7",
+      "recorded_result": true,
+      "scope": "All eight querying-guide Python blocks plus documented signal normalization, lifecycle payloads, outer rollback and nested savepoint behavior against seeded PostgreSQL; test-owned schema setup, not migration, RLS, concurrent access or HTTP authorization proof",
+      "checked_linked_page_hashes": 4,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/rendered-links.json",
+      "sha256": "b77b540eaaa3f4d26edf63e7ee1af91d60131288493a4275c1256385c83adf9e",
+      "recorded_result": true,
+      "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
+      "checked_linked_page_hashes": 167,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/runtime-scope.json",
+      "sha256": "4f49de74567140abc7218954add627563166252695ae7a43c8a71fbff95bc2d9",
+      "recorded_result": true,
+      "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/scaffold-editable-defect.json",
+      "sha256": "e69e1f593d7100bfb9320f8414e375b2fe432c77cb3b9163536b3832f86895b8",
+      "recorded_result": "not a boolean gate",
+      "scope": "Unchanged generated project editable packaging only; failure does not test server startup or dependency-only local development",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/scaffold-equivalence.json",
+      "sha256": "22a5e2abe27747e2c3ba24f82ca3fff4248ea1a6e98540405219232bfe8b52cf",
+      "recorded_result": "pass",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/scaffold-startup.json",
+      "sha256": "3afa548cd7e455369a48ef99b8eb405e1e2e21f57cb426270073f58cdb66a8b8",
+      "recorded_result": true,
+      "scope": "Generated stubs, exact dependency install, .env database edit, migrations, Doctor and dev --no-reload with ephemeral port; no application resource, interactive dbsetup, production role, reload watcher or application packaging claim",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/scaffold-wheel-equivalence.json",
+      "sha256": "07e5564d080a24c1dba8a510d6606f79e2a73e364b6c10d2c0cfedc2d8961a02",
+      "recorded_result": true,
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/storage-boundary.json",
+      "sha256": "2b9319c5a41e67a751c4ab9e9b031e627beb04735e827d6abc7f673056808723",
+      "recorded_result": "not a boolean gate",
+      "scope": "Direct storage method; no private files or application data touched, no HTTP exploit or FieldField traversal bypass claimed.",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/strategy-research.json",
+      "sha256": "02f837f805865e6e032f96801fd66d0d0d536d26374baace3539c8d46652b0c7",
+      "recorded_result": "not a boolean gate",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/support-desk-baseline.json",
+      "sha256": "e1145429d31e6fee363b0c74b37274ef68971d41ce920802fe90918359d7426e",
+      "recorded_result": "passed",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/typescript-sdk-probe.json",
+      "sha256": "0cdb9adc7ba8bf57209c5f33ae322934687b436eeeb184f659f6003f26d36897",
+      "recorded_result": "not a boolean gate",
+      "scope": "Read the artifact and audit report for scope; no inferred pass",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/upgrade-recipe.json",
+      "sha256": "22422ae55802007c89494718c91743148f9562689efa83bc6cd787c1055da693",
+      "recorded_result": true,
+      "scope": "Executes bundled migrations without application files. Not a real v0.6 application/data upgrade or candidate wheel gate.",
+      "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    }
+  ],
+  "stale_linked_inputs": [],
+  "known_defects": [
+    {
+      "id": "EX-001",
+      "evidence": "example-defects.json",
+      "boundary": "Example middleware exemption matching"
+    },
+    {
+      "id": "CFG-001",
+      "evidence": "configuration-findings.json",
+      "boundary": "POSIX environment list parsing"
+    },
+    {
+      "id": "SDK-001",
+      "evidence": "typescript-sdk-probe.json",
+      "boundary": "Generated TypeScript strict compilation"
+    },
+    {
+      "id": "STORAGE-001",
+      "evidence": "storage-boundary.json",
+      "boundary": "Direct filesystem path containment"
+    },
+    {
+      "id": "ACTION-001",
+      "evidence": "custom-action-boundary.json",
+      "boundary": "Custom HTTP action authorization metadata"
+    },
+    {
+      "id": "SCAFFOLD-001",
+      "evidence": "scaffold-editable-defect.json",
+      "boundary": "Generated application editable packaging"
+    }
+  ],
+  "remaining_before_candidate": [
+    "Finish semantic public-page/reference audit and reconcile stale capability-matrix descriptions with the scoped evidence.",
+    "Perform the final usability and requirement-by-requirement review, including every named deliverable and hard scope constraint.",
+    "Record deliberate disposition of known functional defects; do not silently fix them in this documentation release.",
+    "Only when documentation readiness is established, bump once to 0.7.1rc1 and write the candidate changelog.",
+    "Build and validate candidate wheel/sdist and run the established final regression, security, Doctor, migration, MCP, durable, task, RLS and reference-application gates.",
+    "Repeat installed examples/scaffold/journeys against the actual candidate; current development/public-wheel successes are not candidate evidence.",
+    "Create RELEASE_EVIDENCE_v0.7.1-rc1.md, open the one final PR, inspect hosted checks, and leave it unmerged/unpublished."
+  ],
+  "release_evidence_exists": false,
+  "scope": "Evidence index and linked-page freshness only. Boolean results retain their individual scopes; historical checks are not fresh-head certification. No automatic release approval."
+}

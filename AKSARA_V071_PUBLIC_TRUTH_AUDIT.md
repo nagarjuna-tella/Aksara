@@ -785,3 +785,27 @@ overwriting historical public-wheel evidence. Its earlier documented limits
 remain: no real external provider, full crash campaign or production upgrade
 claim. Freshness tests bind these results to templates, guide files and runners.
 The SCAFFOLD-001 editable packaging failure remains documented and unfixed.
+
+## Consolidated Truth and Completion Checkpoint
+
+`audit-evidence/v071/public-docs-truth.json` now indexes 40 evidence artifacts
+and the objective's 63 named phases. It records each artifact's own result and
+scope, source-head metadata where available, and hash; it checks linked page
+hashes without treating historical source-suite runs as current candidate
+validation. The first run found **0 stale linked page inputs**. This is not a
+semantic audit of every claim, nor a pass for all 63 phases.
+
+The assessment remains **NOT READY**. Remaining work is explicitly ordered in
+the report: semantic/reference and usability completion audit, current matrix
+reconciliation, known-defect disposition, candidate version/changelog,
+final candidate packaging and release-profile regression, installed candidate
+journeys, release evidence and the final unmerged PR with hosted checks.
+The machine-readable index can be regenerated with
+`scripts/summarize_public_truth.py --objective <original-goal-file> --output
+audit-evidence/v071/public-docs-truth.json`. Its successful exit only means its
+linked-page integrity check passed. It never grants release approval.
+
+The strategy's adoption-debt assessment now includes SCAFFOLD-001 alongside the
+previously documented boundaries. Important external references were rechecked
+after that change: 42 reachable, 0 broken, 0 unverified. No production source or
+release behavior changed in this reporting checkpoint.
