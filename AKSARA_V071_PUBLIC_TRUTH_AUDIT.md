@@ -2186,3 +2186,17 @@ Ruff passed. Docs/packaging: 207 passed with one dependency warning. Strict docs
 348 Python fences/imports, 292 CLI forms and 42,153 local references passed.
 This does not certify migration generation, delete-constraint behavior, RLS,
 every relation operation or final candidate readiness.
+
+## Expanded example evidence requirements (2026-09-12)
+
+The query and Admin/relation evidence tests now require the new complete-example
+checks and their source-page entries, rather than accepting only the older
+subset. The query test also requires the explicit false RELATION001 runtime
+flag. Three in-memory tampering controls removed a model check, removed a
+relation check, or inverted that flag; each was rejected. Committed evidence
+was not modified by these controls.
+
+Validation: two focused tests and Ruff passed; the broader docs/packaging set
+passed 207 tests with one dependency warning. This strengthens evidence
+acceptance without claiming fresh PostgreSQL execution or whole-manual approval.
+No public page, production code or historical evidence changed in this checkpoint.

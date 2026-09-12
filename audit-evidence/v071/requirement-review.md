@@ -350,3 +350,11 @@ its stale self-reference and forward-M2M-filter forms were replaced with support
 APIs. The expanded Admin/relation gate passes 16 checks with owned schema cleanup.
 207 docs tests and all affected docs gates pass. Migration/delete/RLS acceptance
 and full final candidate checks remain distinct from this example proof.
+
+## Expanded example evidence guards
+
+D3/D8 follow-up: evidence tests now require the complete Product/Category and
+Blog relation checks, relevant source entries and the retained RELATION001
+failure flag. Three in-memory omissions/inversion controls were rejected.
+207 docs/packaging tests and Ruff pass. This guards the existing execution proof;
+remaining manual and actual candidate requirements are unchanged.
