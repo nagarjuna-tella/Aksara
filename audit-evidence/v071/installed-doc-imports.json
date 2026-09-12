@@ -1,6 +1,6 @@
 {
   "package_version": "0.7.0",
-  "python_blocks": 364,
+  "python_blocks": 359,
   "page_sha256": {
     "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
     "docs/docs/admin/actions.md": "570cd2d6b2f6b8f4f51813502770df390da20787f20e65c8c94827c84786fe63",
@@ -134,9 +134,9 @@
     "docs/docs/roadmap/v0-6-stability-contract.md": "cab1c54f24762268d49626412f61e03ee88e5393f5e4e09000f98b47675dd6d4",
     "docs/docs/roadmap/v0-7-stability-contract.md": "b63ea55d9e2e48e2072024973370e86bdbf46cacc1f5a94d98a7012cdc955ad7",
     "docs/docs/roadmap.md": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
-    "docs/docs/search/index.md": "18ea9e75126a35b4f93566a1500307af87d71018eee91447019a4012cdbdeacf",
-    "docs/docs/search/semantic.md": "ed6d01cabce02628a7301c4431a61d6ea5cb9c083caacef317a03279ee60d0b2",
-    "docs/docs/search/studio.md": "3dafaef00fcfce634b0af00789e7c98de4b489d396986afdd86eacae45ccb6f2",
+    "docs/docs/search/index.md": "39c27f06f986aa57c97d8342e2256f30c957e0da20d0265b0dde807e377b0230",
+    "docs/docs/search/semantic.md": "19b0f77670a44c864926e8dd29e56f3853222f40690fb5816ecec704ef0e2375",
+    "docs/docs/search/studio.md": "b6ede422cdab4cb46b1b1f7aa6fa3ffcb02dca6ef2f076888e899c5f837c4343",
     "docs/docs/security/ai-mcp-boundaries.md": "8df6c81e9e748484bdb2c19106ff87be9a58a819d3f734b04ef4b327e7f4b230",
     "docs/docs/security/authentication.md": "2f25538995d4b65badf0212331d59f925da6f2b7b474875dcfe13845a1c62586",
     "docs/docs/security/field-level-permissions.md": "0e332b83f5b396f81dc48f02d9e61974eaecf1e61e6e1021f88a77244ef145c4",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -195,5 +195,7 @@
   "admin_action_fragment_checks": "passed",
   "diagnostic_suggestion_contract_sha256": "224b173ccfe0e8ee7dc07841271c9343d9fa5e859d62cfb3d0af5fb2aebef5b7",
   "diagnostic_suggestion_checks": "passed",
-  "runner_sha256": "0fa6491f6bd66f8f3b215fa6c64fb1bf63e91bbee2f659f18794c3007d6bfc65"
+  "search_contract_sha256": "a0f48e2ca41d8cbb15c3c4b911cdaf99c7c1f6a081f5fcee71800a6bc0f3a782",
+  "local_search_checks": "passed",
+  "runner_sha256": "afa85d31742087088178f4f35dcf92d6267397553c350004ee9f7c9f21261b45"
 }

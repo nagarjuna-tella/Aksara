@@ -228,3 +228,10 @@ PT058 separates diagnostic suggestions from automatic repairs and production
 release policy. The installed import gate executes the example and controlled
 CLI filtering checks. This is scoped D1/D3/reference validation, not actual
 operator deployment certification. The final whole-manual review remains open.
+
+## Search reference checkpoint
+
+PT059 corrects three search pages and explicitly identifies experimental local
+retrieval. Installed import evidence executes the controlled collection example;
+the search regression suite passes. No relevance benchmark, tenant isolation,
+cross-worker persistence, or Studio browser workflow certification is implied.

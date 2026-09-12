@@ -1,77 +1,33 @@
-# Studio Spotlight Search
+# Studio project search
 
-The Studio Spotlight is a command palette for instant project search,
-accessible via **⌘K** (macOS) or **Ctrl+K** (Windows/Linux).
+**Experimental Studio surface.** Spotlight searches indexed project descriptions.
+It does not enforce application-record tenancy or replace a protected search API.
+Use the [Studio setup guide](../getting-started/studio.md) for access configuration;
+do not expose developer diagnostics as an ordinary application feature.
 
-## Features
+## HTTP surface
 
-- **Fuzzy + Semantic search** across all indexed artifacts
-- **Category filters**: Models, Routes, Settings, Playbooks, Migrations, Queries
-- **Keyboard navigation**: Arrow keys, Enter to navigate, Tab to preview, Esc to close
-- **Preview pane**: View document details without leaving the spotlight
-- **Real-time results**: Debounced search as you type
+When Studio's router is enabled, its declared routes include:
 
-## API Endpoints
+| Route | Operation |
+| --- | --- |
+| `GET /studio/search/index` | Index counts, kinds and vocabulary information |
+| `POST /studio/search/query` | Search with query, limit, kind(s), tags, score and mode |
+| `POST /studio/search/rebuild` | Rebuild the cached index from current sources |
 
-### GET `/studio/search/index`
+Responses vary with imported models, application routes and retained process
+state. Search results contain artifact descriptions and identifiers rather than
+queried business records. The reported provider label `local_tfidf` describes
+local scoring, not an external model call.
 
-Returns index statistics:
+## Cache and scope
 
-```json
-{
-  "total_documents": 42,
-  "by_kind": {"model": 10, "route": 15, "setting": 12, "playbook": 5},
-  "vocabulary_size": 256,
-  "kinds_available": ["model", "route", "setting", "playbook"],
-  "embedding_provider": "local_tfidf"
-}
-```
+Studio uses a lazily built module-level index cache. Rebuild refreshes that cache
+in the handling process; it is not a cross-worker refresh operation. The cache is
+not partitioned by tenant or application instance. Avoid treating results as an
+authorization-filtered view, especially when multiple applications share a process.
 
-### POST `/studio/search/query`
-
-Search the index:
-
-```json
-{
-  "query": "user authentication",
-  "top_k": 10,
-  "kind": "model",
-  "mode": "hybrid",
-  "min_score": 0.1
-}
-```
-
-Response:
-
-```json
-{
-  "query": "user authentication",
-  "total_results": 3,
-  "results": [
-    {
-      "id": "abc123",
-      "kind": "model",
-      "title": "User",
-      "summary": "User model (users) with 5 fields",
-      "score": 0.92,
-      "highlights": ["...user authentication login..."],
-      "match_type": "hybrid",
-      "source": "model:User"
-    }
-  ],
-  "mode": "hybrid",
-  "index_size": 42
-}
-```
-
-### POST `/studio/search/rebuild`
-
-Force rebuild the search index:
-
-```json
-{
-  "status": "rebuilt",
-  "total_documents": 42,
-  "by_kind": {"model": 10, "route": 15}
-}
-```
+The Spotlight UI can display these results, but keyboard interactions and Studio
+internals remain experimental. For a small reproducible Python example, use the
+[local search engine](semantic.md). For ordinary application queries, start with
+[ORM querying](../orm/querying.md).

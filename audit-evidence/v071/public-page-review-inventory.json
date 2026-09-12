@@ -1185,27 +1185,27 @@
     },
     {
       "path": "docs/docs/search/index.md",
-      "sha256": "18ea9e75126a35b4f93566a1500307af87d71018eee91447019a4012cdbdeacf",
-      "changed_since_release": false,
+      "sha256": "39c27f06f986aa57c97d8342e2256f30c957e0da20d0265b0dde807e377b0230",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 109
+      "lines": 29
     },
     {
       "path": "docs/docs/search/semantic.md",
-      "sha256": "ed6d01cabce02628a7301c4431a61d6ea5cb9c083caacef317a03279ee60d0b2",
-      "changed_since_release": false,
+      "sha256": "19b0f77670a44c864926e8dd29e56f3853222f40690fb5816ecec704ef0e2375",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 114
+      "lines": 65
     },
     {
       "path": "docs/docs/search/studio.md",
-      "sha256": "3dafaef00fcfce634b0af00789e7c98de4b489d396986afdd86eacae45ccb6f2",
-      "changed_since_release": false,
+      "sha256": "b6ede422cdab4cb46b1b1f7aa6fa3ffcb02dca6ef2f076888e899c5f837c4343",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 77
+      "lines": 33
     },
     {
       "path": "docs/docs/security/ai-mcp-boundaries.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 31,
+    "unchanged_since_release": 28,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

@@ -1,109 +1,29 @@
-# Semantic Search & AI Index
+# Project search
 
-Aksara v0.5.22 introduces **Semantic Search & AI Index** — a cross-referenced
-code intelligence layer that indexes your models, routes, settings, migrations,
-queries, and playbooks into a unified searchable index.
+**Experimental developer tooling.** Aksara's project search indexes descriptions
+of models, routes, settings, migrations, retained queries, and playbooks. It is
+not an application-record search API, vector database, or authorization boundary.
 
-## Overview
+Start with the [local engine example](semantic.md) to search a small controlled
+collection without a database, provider, or network call. For project discovery,
+`build_full_index(app=None, *, include_models=True, include_routes=True,
+include_migrations=True, include_queries=True, include_settings=True,
+include_playbooks=True)` builds a fresh in-memory index from available sources.
+Import your model modules first and supply your application for route discovery.
+Results depend on what those sources expose in the current process; this is not
+a complete repository or database crawl.
 
-| Feature | Description |
-|---------|-------------|
-| **SearchDocument** | Structured document with kind, title, summary, content, metadata |
-| **SearchIndex** | In-memory TF-IDF index with keyword, semantic, and hybrid search |
-| **LocalTfIdfEmbedder** | Built-in embedding provider (no external dependencies) |
-| **Index Builders** | Auto-index models, routes, settings, playbooks, migrations, queries |
-| **Studio Spotlight** | ⌘K / Ctrl+K command palette for instant project search |
-| **CLI Search** | `aksara search query "..."` with JSON output for agent piping |
-| **Agent Integration** | 12th context section (`semantic_index`) + new playbook |
+The engine's `semantic` mode means TF-IDF cosine similarity over words. It does
+not establish understanding of synonyms, intent, or code semantics. Hybrid mode
+combines keyword and TF-IDF scores; no benchmark establishes it as universally
+better for your corpus.
 
-## Quick Start
+`SearchIndex` implements its own local scoring and does not select a provider
+from `embedding_provider`, `embedding_model`, or `embedding_dimensions` settings.
+The separate embedding-provider registry can be used directly by applications;
+registering a provider does not make the index use it. Do not infer persistence,
+remote embeddings, or service enablement from configuration names alone.
 
-### In Code
-
-```python
-from aksara.search import SearchIndex, SearchDocument, build_full_index
-
-# Build a full index from your project
-index = build_full_index()
-
-# Search across everything
-results = index.search("user authentication", mode="hybrid", top_k=5)
-
-for r in results:
-    print(f"[{r.document.kind}] {r.document.title} — score: {r.score:.2f}")
-```
-
-### CLI
-
-```bash
-# Search your project
-aksara search query "user model"
-
-# Semantic search with kind filter
-aksara search query "authentication" --kind route --semantic
-
-# JSON output (pipe to agent mode)
-aksara search query "database" --json | aksara agent
-
-# Index statistics
-aksara search index
-```
-
-### Studio Spotlight
-
-Press **⌘K** (macOS) or **Ctrl+K** (Windows/Linux) to open the Spotlight
-command palette. Type to search across all indexed project artifacts.
-
-## Architecture
-
-```
-aksara/search/
-├── __init__.py      # Package exports
-├── engine.py        # SearchDocument, SearchResult, SearchIndex
-├── embeddings.py    # BaseEmbeddingProvider, LocalTfIdfEmbedder
-└── indexers.py      # Index builders for each artifact type
-```
-
-## Configuration
-
-```python
-from aksara.conf import Settings
-
-settings = Settings(
-    semantic_search_enabled=True,    # Enable/disable search (default: True)
-    embedding_provider="local",      # Embedding backend (default: "local")
-    embedding_model="local_tfidf",   # Model name (default: "local_tfidf")
-    embedding_dimensions=512,        # Max dimensions (default: 512)
-    search_index_backend="memory",   # Index storage (default: "memory")
-)
-```
-
-Environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AKSARA_SEMANTIC_SEARCH_ENABLED` | `true` | Enable semantic search |
-| `AKSARA_EMBEDDING_PROVIDER` | `local` | Embedding provider name |
-| `AKSARA_EMBEDDING_MODEL` | `local_tfidf` | Embedding model |
-| `AKSARA_EMBEDDING_DIMENSIONS` | `512` | Vector dimensions |
-
-## Document Kinds
-
-Every indexed artifact is categorized by kind:
-
-| Kind | Source | Description |
-|------|--------|-------------|
-| `model` | ModelRegistry | Registered Aksara models with fields and relations |
-| `route` | FastAPI app | API endpoints with methods and paths |
-| `migration` | MigrationGraph | Migration files with dependencies |
-| `query` | Query Inspector | Recent slow queries with SQL and stats |
-| `setting` | Settings dataclass | Configuration settings with env var info |
-| `playbook` | Playbook registry | Agent playbooks with steps and categories |
-
-## Search Modes
-
-| Mode | Description |
-|------|-------------|
-| `keyword` | Token overlap scoring — fast and exact |
-| `semantic` | TF-IDF cosine similarity — finds related concepts |
-| `hybrid` | 40% keyword + 60% semantic — best overall (default) |
+See [Studio search](studio.md) for its process-local cache and access boundary.
+Keep indexed SQL, settings, and model details private. Search kind/tag filters
+are retrieval filters, not tenant authorization.

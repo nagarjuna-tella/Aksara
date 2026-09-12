@@ -1854,3 +1854,20 @@ tests/diagnostics/test_cli_fix_plan.py tests/diagnostics/test_actions_model.py -
 — 245 passed, one existing dependency deprecation warning. Strict docs, 364
 Python fences/imports, 295 CLI forms, and 42,431 local references across 162 pages
 passed. Ruff passed. No production code changed; whole-manual acceptance remains open.
+
+## Search reference follow-up (2026-09-11)
+
+PT059 / P1: the search pages overstated semantic quality, provider configuration
+and project-wide discovery while omitting experimental status and cache scope.
+Three pages now explain local TF-IDF, provider-registry separation, explicit
+source discovery, any-tag filtering, ID replacement, lazy vocabulary rebuild,
+and Studio's process-global cache. No tenant-filtered search guarantee is made.
+The exact local example and collection/query options pass in checkout and an
+isolated installed wheel. Studio routes/cache were source-inspected, not browser
+or HTTP-tested this turn. No new functional defect or production change is
+claimed. The installed import gate now executes the example.
+`.venv/bin/python -m pytest tests/docs tests/search tests/test_v048_docs_lock.py
+tests/test_v048_packaging_sanity.py -q` — 376 passed, one existing dependency
+deprecation warning. Strict docs, 359 Python fences/imports, 292 CLI forms, and
+42,287 local references across 162 pages passed. Ruff passed. This is scoped
+search validation; whole-manual and candidate acceptance remain open.

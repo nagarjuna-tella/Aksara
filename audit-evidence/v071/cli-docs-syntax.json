@@ -4,7 +4,7 @@
   "schema_version": 1,
   "source_checkout_framework_imports": false,
   "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
-  "checked_commands": 295,
+  "checked_commands": 292,
   "pass": true,
   "skipped": [
     {
@@ -20,11 +20,6 @@
     {
       "file": "docs/docs/gapanalysis.md",
       "command": "aksara gaps json > gaps.json",
-      "reason": "shell pipeline, redirection, or placeholder"
-    },
-    {
-      "file": "docs/docs/search/index.md",
-      "command": "aksara search query \"database\" --json | aksara agent",
       "reason": "shell pipeline, redirection, or placeholder"
     },
     {
@@ -181,9 +176,9 @@
     "docs/docs/roadmap/v0-6-stability-contract.md": "cab1c54f24762268d49626412f61e03ee88e5393f5e4e09000f98b47675dd6d4",
     "docs/docs/roadmap/v0-7-stability-contract.md": "b63ea55d9e2e48e2072024973370e86bdbf46cacc1f5a94d98a7012cdc955ad7",
     "docs/docs/roadmap.md": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
-    "docs/docs/search/index.md": "18ea9e75126a35b4f93566a1500307af87d71018eee91447019a4012cdbdeacf",
-    "docs/docs/search/semantic.md": "ed6d01cabce02628a7301c4431a61d6ea5cb9c083caacef317a03279ee60d0b2",
-    "docs/docs/search/studio.md": "3dafaef00fcfce634b0af00789e7c98de4b489d396986afdd86eacae45ccb6f2",
+    "docs/docs/search/index.md": "39c27f06f986aa57c97d8342e2256f30c957e0da20d0265b0dde807e377b0230",
+    "docs/docs/search/semantic.md": "19b0f77670a44c864926e8dd29e56f3853222f40690fb5816ecec704ef0e2375",
+    "docs/docs/search/studio.md": "b6ede422cdab4cb46b1b1f7aa6fa3ffcb02dca6ef2f076888e899c5f837c4343",
     "docs/docs/security/ai-mcp-boundaries.md": "8df6c81e9e748484bdb2c19106ff87be9a58a819d3f734b04ef4b327e7f4b230",
     "docs/docs/security/authentication.md": "2f25538995d4b65badf0212331d59f925da6f2b7b474875dcfe13845a1c62586",
     "docs/docs/security/field-level-permissions.md": "0e332b83f5b396f81dc48f02d9e61974eaecf1e61e6e1021f88a77244ef145c4",

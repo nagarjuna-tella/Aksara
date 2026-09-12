@@ -1,114 +1,65 @@
-# Semantic Search Engine
+# Local search engine
 
-Deep dive into the TF-IDF search engine powering Aksara's code intelligence.
+**Experimental developer tooling.** The local index is suitable for trying
+project-artifact retrieval; validate relevance on your own data before depending
+on it. It does not contact an embedding provider.
 
-## SearchDocument
+## Complete example
 
-Every indexed artifact becomes a `SearchDocument`:
+This module creates a private in-memory collection and searches it:
 
-```python
-from aksara.search import SearchDocument
-
-doc = SearchDocument(
-    kind="model",              # Category (model, route, setting, etc.)
-    title="User",              # Display title
-    summary="User model with auth fields",
-    content="Model: User\nTable: users\nFields: id, email, password_hash",
-    metadata={"table_name": "users", "field_count": 3},
-    tags=["model", "users", "auth"],
-    source="model:User",
-)
-```
-
-### Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `str` | Auto-generated UUID (16 hex chars) |
-| `kind` | `Literal` | Document category |
-| `title` | `str` | Human-readable title |
-| `summary` | `str` | Short description |
-| `content` | `str` | Full text for indexing |
-| `metadata` | `dict` | Arbitrary key-value pairs |
-| `tags` | `list[str]` | Filterable tags |
-| `source` | `str` | Source identifier |
-| `created_at` | `datetime` | Creation timestamp |
-
-## SearchIndex
-
-The in-memory search index:
-
-```python
-from aksara.search import SearchIndex, SearchDocument
+```python title="local_search.py"
+from aksara.search import SearchDocument, SearchIndex
 
 index = SearchIndex()
-
-# Add documents
-index.add(doc)
-index.add_many([doc1, doc2, doc3])
-
-# Search
-results = index.search(
-    "user authentication",
-    top_k=10,
-    kind="model",        # Filter by kind
-    tags=["auth"],       # Filter by tags
-    min_score=0.1,       # Score threshold
-    mode="hybrid",       # keyword, semantic, or hybrid
-)
-
-# Manage
-index.remove(doc_id)
-index.clear()
-print(index.size)
-print(index.stats())
+index.add_many([
+    SearchDocument(
+        id="auth", kind="model", title="Account authentication",
+        summary="Account login and credentials", content="Authenticate an account",
+        tags=["identity"],
+    ),
+    SearchDocument(
+        id="billing", kind="route", title="Invoice payment",
+        summary="Pay an invoice", content="Record a billing payment",
+        tags=["billing"],
+    ),
+])
+results = index.search("authentication", mode="hybrid", kind="model", top_k=5)
+matched_ids = [result.document.id for result in results]
 ```
 
-## TF-IDF Engine
+`matched_ids` is `["auth"]`. Each result contains its document, score, highlights,
+and `match_type`. Scores are ranking values, not probabilities or confidence
+that the result is correct.
 
-The built-in search uses **Term Frequency–Inverse Document Frequency** (TF-IDF):
+## Documents and updates
 
-1. **Tokenization**: Text is split into tokens, splitting camelCase and snake_case
-2. **Stop word removal**: Common English words are filtered out
-3. **TF computation**: Term frequency per document
-4. **IDF computation**: Inverse document frequency across the corpus
-5. **Cosine similarity**: Query vector compared against document vectors
+`SearchDocument` requires `kind`, `title`, `summary`, and `content`. Optional fields
+include `id`, `metadata`, `tags`, `source`, and `created_at`. Without an ID it uses
+a 16-character UUID-derived hexadecimal string; without a timestamp it records
+creation time. Supply IDs when reproducible identity matters.
 
-### Scoring
+`index.add(document)` replaces a document with the same ID. `add_many(documents)`
+returns the number supplied, not the number of new unique IDs. `get(id)` returns
+a document or `None`; `remove(id)` returns whether it existed. `clear()` empties
+the index. These are memory operations, not durable storage.
 
-- **Keyword mode**: Token overlap ratio (query tokens ∩ document tokens)
-- **Semantic mode**: TF-IDF cosine similarity
-- **Hybrid mode**: 40% keyword + 60% semantic (default, best overall)
+The index caches tokenized text. After changing a document's searchable content,
+call `add(document)` again; mutating the returned object does not refresh those
+cached tokens. `stats()` reports counts, vocabulary size and `is_dirty`; vocabulary
+is rebuilt lazily for semantic/hybrid queries and can lag additions before then.
 
-## SearchResult
+## Query options
 
-```python
-@dataclass
-class SearchResult:
-    document: SearchDocument   # The matched document
-    score: float              # 0.0 to 1.0
-    highlights: list[str]     # Matched text snippets
-    match_type: str           # "keyword", "semantic", or "hybrid"
-```
+`search(query, *, top_k=10, kind=None, kinds=None, tags=None, min_score=0.0,
+mode="hybrid")` returns results in descending score order.
 
-## Embedding Providers
+- `kind` takes precedence over `kinds` when supplied.
+- `tags` matches any supplied tag, not all tags.
+- `keyword` uses token overlap; `semantic` uses local TF-IDF cosine similarity.
+- `hybrid` weights matching keyword and semantic results 40%/60% when merged.
+- Empty queries and collections produce no results.
 
-The `BaseEmbeddingProvider` protocol allows pluggable embedding backends:
-
-```python
-from aksara.search.embeddings import get_embedding_provider
-
-# Built-in TF-IDF (default, no dependencies)
-provider = get_embedding_provider("local")
-
-# Custom provider
-from aksara.search.embeddings import register_embedding_provider
-
-class MyEmbedder:
-    provider_name = "custom"
-    dimensions = 384
-    def embed(self, text): ...
-    def embed_batch(self, texts): ...
-
-register_embedding_provider("custom", MyEmbedder)
-```
+Use valid mode names and positive result limits. The direct Python interface is
+not an input-validation or access-control layer. Populate only documents the
+caller may read, and recheck permissions before using a retrieved artifact.
