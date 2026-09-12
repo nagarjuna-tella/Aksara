@@ -719,3 +719,22 @@ with local PostgreSQL and required database tests enabled passed **142 tests**
 strict MkDocs, installed imports/selected contracts, CLI parsing and rendered
 local links passed. These are source regression and public-wheel checks, not
 final candidate-wheel validation.
+
+## Important External Reference Validation
+
+`scripts/check_external_doc_links.py --output
+ audit-evidence/v071/external-links.json` checks inline Markdown and HTML HTTP
+links in the README, docs home, installation, production deployment, roadmap,
+runtime compatibility reference and strategic review. All **42 distinct targets
+returned successful HTTP responses**, with **0 broken and 0 unverified** results.
+The evidence records UTC check time, final redirect targets, source-page hashes
+and runner hash. A docs test rejects stale evidence after those inputs change.
+Network requests run only when the explicit checker is invoked, not during the
+ordinary offline docs tests.
+
+Aksara's hosted documentation URLs are excluded from this network check because
+they target the older published site; the rendered candidate checker validates
+those paths locally. This check proves reachability at the recorded time, not
+page-content truth, fragment anchors, future availability, or every external
+link across the documentation corpus. Strategic claim verification and source
+citations remain a separate research responsibility.

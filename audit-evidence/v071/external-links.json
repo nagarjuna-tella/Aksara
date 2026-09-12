@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-12T00:20:26.797929+00:00",
+  "pass": true,
+  "counts": {
+    "reachable": 42,
+    "broken": 0,
+    "unverified": 0
+  },
+  "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
+  "page_sha256": {
+    "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
+    "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
+    "docs/docs/getting-started/installation.md": "b672ba1803c8306165b583324c4876b864cd504ae74b2c08f5a6eb8cabaf0eeb",
+    "docs/docs/tutorials/deployment.md": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
+    "docs/docs/roadmap.md": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
+    "docs/docs/reference/runtime-compatibility.md": "47a3415e4e2b4caca9ccc273104bf7294a1bc8fb19902a5b2644d1e858536c40",
+    "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md": "8c965105a61a80bcbc8b443465207aa448150d045e1e451215af8e0312fe5629"
+  },
+  "runner_sha256": "39e7055ea27f147f1ed7c9cd7d74e18744fbb441b4af85c32ef5cf7aa0d58837",
+  "excluded": {
+    "https://nagarjuna-tella.github.io/Aksara/roadmap/v0-7-stability-contract/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/getting-started/mcp/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/security/overview/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/security/production-hardening/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/reference/settings-reference/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/studio/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/ai-mode/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/getting-started/installation/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/advanced/durable-operations/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/orm/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/api/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/cli/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/reference/runtime-compatibility/": "Candidate documentation URLs are checked against the rendered site, not the older published site",
+    "https://nagarjuna-tella.github.io/Aksara/roadmap/": "Candidate documentation URLs are checked against the rendered site, not the older published site"
+  },
+  "results": [
+    {
+      "url": "https://appwrite.io/docs",
+      "status": 200,
+      "final_url": "https://appwrite.io/docs",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+      "status": 200,
+      "final_url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.convex.dev/understanding/overview",
+      "status": 200,
+      "final_url": "https://docs.convex.dev/understanding/overview",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.crewai.com/",
+      "status": 200,
+      "final_url": "https://docs.crewai.com/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.djangoproject.com/en/6.0/intro/overview/",
+      "status": 200,
+      "final_url": "https://docs.djangoproject.com/en/6.0/intro/overview/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.djangoproject.com/en/6.0/topics/migrations/",
+      "status": 200,
+      "final_url": "https://docs.djangoproject.com/en/6.0/topics/migrations/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.hatchet.run/v1",
+      "status": 200,
+      "final_url": "https://docs.hatchet.run/v1",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+      "status": 200,
+      "final_url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.litestar.dev/latest/",
+      "status": 200,
+      "final_url": "https://docs.litestar.dev/latest/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://docs.temporal.io/workflow-execution",
+      "status": 200,
+      "final_url": "https://docs.temporal.io/workflow-execution",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://dramatiq.io/guide.html",
+      "status": 200,
+      "final_url": "https://dramatiq.io/guide.html",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://fastapi.tiangolo.com/features/",
+      "status": 200,
+      "final_url": "https://fastapi.tiangolo.com/features/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://flask.palletsprojects.com/en/stable/extensions/",
+      "status": 200,
+      "final_url": "https://flask.palletsprojects.com/en/stable/extensions/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://flask.palletsprojects.com/en/stable/tutorial/database/",
+      "status": 200,
+      "final_url": "https://flask.palletsprojects.com/en/stable/tutorial/database/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://github.com/astral-sh/uv",
+      "status": 200,
+      "final_url": "https://github.com/astral-sh/uv",
+      "classification": "reachable",
+      "source_pages": [
+        "docs/docs/getting-started/installation.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/blob/codex/v071-public-truth-and-roadmap/AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/blob/codex/v071-public-truth-and-roadmap/AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md",
+      "classification": "reachable",
+      "source_pages": [
+        "docs/docs/roadmap.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/blob/main/CODE_OF_CONDUCT.md",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/blob/main/CODE_OF_CONDUCT.md",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/blob/main/CONTRIBUTING.md",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/blob/main/CONTRIBUTING.md",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/basic_app",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/basic_app",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/blog",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/blog",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/crm",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/crm",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/multitenant",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/multitenant",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/support_desk",
+      "status": 200,
+      "final_url": "https://github.com/nagarjuna-tella/Aksara/tree/main/examples/support_desk",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md",
+        "docs/docs/tutorials/deployment.md"
+      ]
+    },
+    {
+      "url": "https://google.github.io/adk-docs/",
+      "status": 200,
+      "final_url": "https://adk.dev/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://img.shields.io/badge/PostgreSQL-required-4169E1?style=flat-square&logo=postgresql&logoColor=white",
+      "status": 200,
+      "final_url": "https://img.shields.io/badge/PostgreSQL-required-4169E1?style=flat-square&logo=postgresql&logoColor=white",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://img.shields.io/badge/license-MIT-22c55e?style=flat-square",
+      "status": 200,
+      "final_url": "https://img.shields.io/badge/license-MIT-22c55e?style=flat-square",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white",
+      "status": 200,
+      "final_url": "https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://img.shields.io/badge/release-v0.7.0-22c55e?style=flat-square",
+      "status": 200,
+      "final_url": "https://img.shields.io/badge/release-v0.7.0-22c55e?style=flat-square",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/agent-framework/overview/",
+      "status": 200,
+      "final_url": "https://learn.microsoft.com/en-us/agent-framework/overview/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://openai.github.io/openai-agents-python/",
+      "status": 200,
+      "final_url": "https://openai.github.io/openai-agents-python/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://openfga.dev/docs/concepts",
+      "status": 200,
+      "final_url": "https://openfga.dev/docs/concepts",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://pocketbase.io/docs/",
+      "status": 200,
+      "final_url": "https://pocketbase.io/docs/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://pydantic.dev/docs/ai/capabilities/durable_execution/overview/",
+      "status": 200,
+      "final_url": "https://pydantic.dev/docs/ai/capabilities/durable_execution/overview/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://python-rq.org/",
+      "status": 200,
+      "final_url": "https://python-rq.org/",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/aksara/studio/static/icons/aksara-logo.svg",
+      "status": 200,
+      "final_url": "https://raw.githubusercontent.com/nagarjuna-tella/Aksara/main/aksara/studio/static/icons/aksara-logo.svg",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    },
+    {
+      "url": "https://supabase.com/docs",
+      "status": 200,
+      "final_url": "https://supabase.com/docs",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://trigger.dev/docs/introduction",
+      "status": 200,
+      "final_url": "https://trigger.dev/docs/introduction",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://v3.casbin.org/docs/supported-models",
+      "status": 200,
+      "final_url": "https://v3.casbin.org/docs/supported-models",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://www.inngest.com/docs/learn/inngest-steps",
+      "status": 200,
+      "final_url": "https://www.inngest.com/docs/learn/inngest-steps",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://www.osohq.com/docs",
+      "status": 200,
+      "final_url": "https://www.osohq.com/docs",
+      "classification": "reachable",
+      "source_pages": [
+        "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md"
+      ]
+    },
+    {
+      "url": "https://www.python.org/downloads/",
+      "status": 200,
+      "final_url": "https://www.python.org/downloads/",
+      "classification": "reachable",
+      "source_pages": [
+        "README.md"
+      ]
+    }
+  ]
+}
