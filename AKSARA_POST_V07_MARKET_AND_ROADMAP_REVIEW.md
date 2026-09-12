@@ -468,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the eleven audit findings for separately scoped functional maintenance; do
+Track the fourteen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
@@ -640,3 +640,13 @@ The public guide now starts visibility selection from the manager and applies
 filters afterwards. Recommend a separate narrowly scoped runtime patch.
 Evidence: `audit-evidence/v071/soft-delete-execution.json`. This reinforces the
 existing correctness/adoption priority without changing the roadmap thesis.
+
+### Fixture import/export adoption defects (2026-09-11)
+
+FIXTURE001–003 / P1 are reproduced installed-wheel limitations: exported primary
+keys cannot recreate missing rows, single-model YAML UUID output fails safe
+loading, and default whole-registry export fails on model names. The public guide
+now limits its example to JSON seeding and selected exports, distinguishes imports
+from backups, and explains strict-mode transaction ownership. Separate patches
+should establish tested identity/serialization contracts; no runtime fixes belong
+in this documentation release. Evidence: `audit-evidence/v071/fixture-execution.json`.

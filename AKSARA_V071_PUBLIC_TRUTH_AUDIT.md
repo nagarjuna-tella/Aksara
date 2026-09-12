@@ -1714,3 +1714,31 @@ warning. Strict docs, 43,016 local link/asset references across 162 pages,
 42 selected external URLs, 386 Python fences/imports, and 302 CLI command forms
 passed. Ruff passed for the added runner/test and evidence indexer. This closes
 the scoped reference correction; whole-manual acceptance remains open.
+
+## Fixture reference follow-up (2026-09-11)
+
+PT053 / P1: the fixture guide incorrectly promised backups, missing-primary-key
+inserts, and lenient error logging. It now distinguishes development seeding,
+existing-row updates, explicit-model export, and transaction ownership.
+
+Three separate P1 runtime defects were reproduced against the installed 0.7.0
+wheel and local PostgreSQL using an owned disposable schema:
+
+- FIXTURE001: JSON export retains primary keys, but load rejects missing keys
+  instead of restoring exported rows into an empty table.
+- FIXTURE002: single-model YAML export emits UUID tags rejected by its safe loader.
+- FIXTURE003: default `dump_database()` iterates registry names as model classes.
+
+Recommend separately scoped patches, with explicit import/identity contracts and
+safe serialization tests. No functional changes are included. Nine API-level
+observations passed, including existing-key updates, omitted-key inserts,
+explicit-model exports, strict-mode partial writes, and mapping fallback.
+`audit-evidence/v071/fixture-execution.json` records these observations and schema
+cleanup. The final runner additionally executes the exact guide seed/export helpers,
+proves outer atomic rollback, and checks malformed JSON under both strict modes:
+13 installed-wheel PostgreSQL observations passed. `.venv/bin/python -m pytest
+tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q`
+passed 195 tests with one existing dependency deprecation warning. Strict docs,
+384 Python fences/imports, 302 CLI forms, 43,002 local references across 162 pages,
+and 42 selected external URLs passed. Ruff passed for the new runner/test and
+indexer. This is scoped fixture validation, not final candidate acceptance.

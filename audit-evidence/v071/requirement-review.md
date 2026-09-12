@@ -175,3 +175,11 @@ PT052 corrects inheritance, evaluation, restoration and deletion semantics.
 including the SOFTDELETE001 filter-loss negative controls. The guide does not
 claim tenant authorization or RLS from soft deletion. This adds scoped evidence
 for A3/A8/A10/D3; it does not complete the remaining ORM or whole-manual review.
+
+## Fixture reference checkpoint
+
+PT053 replaces unsupported backup/restore claims with exact JSON seed/export
+helpers. Thirteen installed-wheel PostgreSQL observations cover the example,
+three negative controls, mapping fallback, parse failures, partial writes and
+outer atomic rollback. This is scoped A3/A8/A10/D3 evidence, not whole-ORM
+acceptance. FIXTURE001–003 remain separate functional patch recommendations.
