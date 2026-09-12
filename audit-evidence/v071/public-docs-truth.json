@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "4cb3b1163fa036e4b98b8bfa56cd3e93a39a2010",
+  "reviewed_head": "dae1d452456ac5445bb9f768dbaa5b45221a1116",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "9b08225d257e05dc4dd14381200ab41936ddb38795ca604f5690a7a503d73835",
+    "sha256": "28b4fdae5f3c347495f7102e110842c394bbe6b3292a6be8e52c9ca1814d8137",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -570,6 +570,15 @@
       "recorded_result": true,
       "scope": "Three installed domain-template copies, exact setup commands with ephemeral ports, real PostgreSQL migrations including expected multitenant missing-table defect, health/OpenAPI and blog/CRM anonymous create denial; not positive CRUD, custom action authorization, tenant isolation, provider execution or production readiness",
       "checked_linked_page_hashes": 3,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/entry-reading-review.json",
+      "sha256": "405e219177022112fc94158271b7599a31501f16e2834f55b8d803a6cceb8351",
+      "recorded_result": "not a boolean gate",
+      "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final candidate execution.",
+      "checked_linked_page_hashes": 4,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -800,7 +809,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "f8017588a395d20a4216676101a2a0787435f1286c22f86563f666a209e76e92",
+      "sha256": "b42a8277a7b9cea8e58ac7daf502bffac6995685095088690fe7f3b512ebd062",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,

@@ -7,7 +7,9 @@
       "path": "README.md",
       "sha256": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "entry-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 217
     },
@@ -647,6 +649,7 @@
       "scoped_evidence_candidates": [
         "bulk-execution.json",
         "development-wheel-tutorial.json",
+        "entry-reading-review.json",
         "filter-doc-execution.json",
         "first-project-journey.json",
         "pagination-doc-execution.json",
@@ -659,7 +662,9 @@
       "path": "docs/docs/getting-started/index.md",
       "sha256": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "entry-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 46
     },
@@ -793,7 +798,9 @@
       "path": "docs/docs/index.md",
       "sha256": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "entry-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 74
     },
@@ -1420,7 +1427,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 7,
-    "with_scoped_evidence_candidates": 46
+    "with_scoped_evidence_candidates": 49
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

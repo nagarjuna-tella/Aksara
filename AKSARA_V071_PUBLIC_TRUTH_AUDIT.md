@@ -2071,3 +2071,19 @@ Validation: identifier coverage/uniqueness and five installed-evidence status
 checks passed; 207 docs/packaging tests passed with one dependency warning.
 Public-site content did not change in this checkpoint, so its existing build
 and link evidence remains scoped to the same sources.
+
+## Evaluator-to-first-project reading acceptance (2026-09-12)
+
+Read README, docs home, getting-started index and the complete first-project
+page as one path. Retain these four pages: the category/audience/tradeoff and
+pre-1.0 limits are discoverable, the entry points lead to one six-stage Ticket
+Desk, and chapter one supplies each file/command through protected CRUD tests.
+Token sharing, loopback exposure, optional launch-check warnings and the next
+chapter are explicit. This is an author reading review, not independent user
+comprehension research or a measured ten-minute completion claim.
+
+`entry-reading-review.json` records exact page hashes and reasons. Its
+first-project source hash matches the existing installed-wheel journey's first
+stage with three API tests; no new database execution is claimed here. Navigation
+and docs-lock tests passed: 74. No public content or runtime behavior changed.
+The broader manual and actual candidate execution still require acceptance.

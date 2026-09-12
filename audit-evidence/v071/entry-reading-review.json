@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "scope": "Direct author reading of the complete four-page evaluator-to-first-project path, with existing exact-source installed-wheel evidence checked for the first project. Not independent usability measurement or final candidate execution.",
+  "page_sha256": {
+    "README.md": "13f2dd8cea4e7c3026d306006d56f754520b9cc6b52ac322e93e41cb1a8f9bd5",
+    "docs/docs/index.md": "38d0dfcdd22196b1d8185e860ff6492d2cb5ebaf02b0fca944ccd4d6cd856d93",
+    "docs/docs/getting-started/index.md": "3343cd80b375a1881e30e6496f2e9b5352c5b7b13748fbccb0fe65885900b317",
+    "docs/docs/getting-started/first-project.md": "0e5e289b7074b73572f2bf6273451e147b755384e97d30095bab5dcc639aba12"
+  },
+  "reviews": [
+    {
+      "page": "README.md",
+      "reader_role": "Evaluator entry",
+      "disposition": "retain_after_reading_review",
+      "reason": "Explains category, audience, FastAPI tradeoff, PostgreSQL operations, pre-1.0 limits and optional AI; quickstart points to the same Ticket Desk guide.",
+      "limitations": "Final candidate rerun and overall manual acceptance remain separate."
+    },
+    {
+      "page": "docs/docs/index.md",
+      "reader_role": "Manual entry",
+      "disposition": "retain_after_reading_review",
+      "reason": "Separates evaluator, builder, tool client, operator and contributor routes; states supported versus experimental boundaries and conditional RLS.",
+      "limitations": "Final candidate rerun and overall manual acceptance remain separate."
+    },
+    {
+      "page": "docs/docs/getting-started/index.md",
+      "reader_role": "Progressive tutorial navigation",
+      "disposition": "retain_after_reading_review",
+      "reason": "Orders six chapters around the same application and explicitly keeps AI and Studio optional; identifies the local token adapter as nonproduction.",
+      "limitations": "Final candidate rerun and overall manual acceptance remain separate."
+    },
+    {
+      "page": "docs/docs/getting-started/first-project.md",
+      "reader_role": "First project",
+      "disposition": "retain_after_reading_review",
+      "reason": "Includes generated-file replacement/append instructions, token sharing, migrations, loopback server, concrete API calls, three tests and the next chapter; optional launch-check warnings are explained.",
+      "limitations": "Final candidate rerun and overall manual acceptance remain separate."
+    }
+  ],
+  "candidate_acceptance": false,
+  "supporting_evidence": {
+    "artifact": "audit-evidence/v071/first-project-journey.json",
+    "sha256": "c945dc1fe9b788c75d278b84687bb87b868eb9f65c9a75d25d6d812172a84609",
+    "checked_stage": "docs/docs/getting-started/first-project.md",
+    "api_tests_passed": 3,
+    "launch_check_exit": 1
+  }
+}

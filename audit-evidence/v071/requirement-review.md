@@ -31,8 +31,8 @@ Line numbers below refer to that exact objective.
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
 | A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 66-row PT-001 through PT-066 register with detailed sections, plus sixteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
-| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Final usability review must check actual reading flow and orphaned important pages. |
-| A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Final evaluator reading review; no claim of independently measured comprehension. |
+| A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
+| A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
 | A8: Conceptual user manual (line 618) | PARTIAL | concepts/application-boundaries.md, ORM/API references, tasks, durability and MCP guides provide conceptual paths. | Complete semantic/readability review across the full manual, including remaining advanced pages. |
@@ -301,3 +301,11 @@ ordered central register; PT-012 was recovered from the existing media review.
 Five updated capability claims were checked against installed-doc-imports.json.
 207 docs/packaging tests passed. This is a summary reconciliation, not new
 runtime coverage; detailed evidence scopes and sixteen defects remain intact.
+
+## Entry-path reading checkpoint
+
+Four complete entry/first-project pages were directly read and retained, with
+page hashes and reasons in entry-reading-review.json. The matching historical
+installed first-project stage has three API tests. Navigation/docs-lock: 74
+passed. This advances explicit page disposition without treating hashes or a
+navigation test as whole-manual semantic acceptance.
