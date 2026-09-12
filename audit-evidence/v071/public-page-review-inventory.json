@@ -13,11 +13,11 @@
     },
     {
       "path": "docs/docs/admin/actions.md",
-      "sha256": "48fa55eb079e38bcbea856c3fe48060e3ab76a0074a3cc8f5fcfe7a772476266",
-      "changed_since_release": false,
+      "sha256": "570cd2d6b2f6b8f4f51813502770df390da20787f20e65c8c94827c84786fe63",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 95
+      "lines": 113
     },
     {
       "path": "docs/docs/admin/admin-permissions.md",
@@ -47,11 +47,11 @@
     },
     {
       "path": "docs/docs/admin/model-admin.md",
-      "sha256": "4caf967cf1c1499c73f24f93ccc013df84e34e671b28ec3b63116da7a69792e1",
-      "changed_since_release": false,
+      "sha256": "53e73c026b82e8ca8682cb90dbf2511e0f409bd875f46270fce2f95d101d4d54",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 375
+      "lines": 379
     },
     {
       "path": "docs/docs/admin/widgets.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 34,
+    "unchanged_since_release": 32,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

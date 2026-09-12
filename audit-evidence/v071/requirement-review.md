@@ -214,3 +214,10 @@ PT056 clarifies UI row limits and rendering side effects. Installed import
 evidence verifies JSON escaping and retains ADMINWIDGET001 as a failing runtime
 property despite the passing reproduction. Scoped widget validation is complete;
 Admin action execution and remaining ModelAdmin reference review are pending.
+
+## Admin action reference checkpoint
+
+PT057 clarifies action registration, known permission-hook requirements and
+transaction ownership. The installed import gate covers the exact action
+fragment, while the separately reported required-database Admin suite covers
+existing behavior. Final full-page usability/semantic acceptance remains open.

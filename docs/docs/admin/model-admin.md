@@ -278,7 +278,7 @@ class PostAdmin(ModelAdmin):
 ```
 
 The list view shows an action dropdown and per-row checkboxes; `delete_selected`
-is provided out of the box.
+is available when explicitly listed in `actions`; the default action list is empty.
 
 Action permissions are checked twice: once at the list level and again for each
 selected object when the permission hook accepts `obj`. This prevents bulk
@@ -286,6 +286,10 @@ actions from bypassing object-level `has_change_permission` or
 `has_delete_permission` rules.
 
 ---
+
+See [Admin actions](actions.md) for transaction ownership, permission-name
+validation limits, and per-instance versus queryset hooks. See [widgets](widgets.md)
+for UI limits and rendering side effects.
 
 ## Permissions
 

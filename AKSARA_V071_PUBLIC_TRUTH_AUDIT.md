@@ -1812,3 +1812,26 @@ tests/test_v048_packaging_sanity.py tests/admin/test_widgets.py -q` — 219 pass
 one existing dependency deprecation warning. Strict docs, 366 Python fences,
 296 CLI forms, 42,504 local references across 162 pages, and 42 selected external
 URLs passed. Ruff passed. Broader Admin action/ModelAdmin review remains open.
+
+## Admin action follow-up (2026-09-11)
+
+PT057 / P1: the action guide lacked transaction ownership and unknown-permission
+name limits; ModelAdmin implied built-in delete availability despite an empty
+default action list. The docs now distinguish explicit action registration,
+per-instance hooks, queryset writes, and all-or-nothing transaction ownership.
+Source review of `_run_list_action` confirms selection resolution and list/object
+permission checking for implemented hooks, and skipping of missing hook names.
+That last behavior is a documented sharp edge requiring denial-path tests; this
+turn does not claim a separately reproduced authorization bypass.
+
+The exact published action fragment passes in checkout and installed wheel,
+verifying method registration, update arguments and the queued message. It is a
+mocked query-write check, not proof of authorization or persistence. The existing
+Admin suite ran with required database tests enabled against local aksara_test:
+142 passed, one existing dependency deprecation warning. The installed import
+gate now executes the action fragment. `.venv/bin/python -m pytest tests/docs
+tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py -q` — 201 passed,
+one existing dependency deprecation warning. Strict docs, 366 Python fences,
+296 CLI forms and 42,510 local references across 162 pages passed. Ruff passed.
+No production code changed. This establishes the scoped action clarification;
+it is not final whole-manual or release-candidate acceptance.
