@@ -1217,19 +1217,19 @@
     },
     {
       "path": "docs/docs/security/authentication.md",
-      "sha256": "2f25538995d4b65badf0212331d59f925da6f2b7b474875dcfe13845a1c62586",
-      "changed_since_release": false,
+      "sha256": "20028e1ad7ccd1ae6e117fcf4fa615fbdf7a51d41058ee34038dbc4bb3700333",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 76
+      "lines": 83
     },
     {
       "path": "docs/docs/security/field-level-permissions.md",
-      "sha256": "0e332b83f5b396f81dc48f02d9e61974eaecf1e61e6e1021f88a77244ef145c4",
-      "changed_since_release": false,
+      "sha256": "64bf0d399ef188d0000e8ab66013556102f8781b60ca445fa1778dbe506a363b",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 68
+      "lines": 81
     },
     {
       "path": "docs/docs/security/multi-tenancy.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 18,
+    "unchanged_since_release": 16,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

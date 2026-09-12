@@ -15,7 +15,8 @@ agent ownership, token ID, expiration, and additional metadata.
 
 ## Auth Methods
 
-The security model represents these auth methods:
+These are identity labels represented by the security model, not a list of
+automatically installed credential validators:
 
 - `anonymous`
 - `session`
@@ -34,7 +35,9 @@ Generated REST endpoints also use Aksara's permission classes, including
 Studio should not be exposed in production unless intentionally configured.
 `studio_expose_in_production=False` and `studio_require_auth=True` are the safe
 defaults. If Studio is exposed, it must require authentication and use a strong
-auth token.
+auth token or the supported staff-session path. See
+[Studio configuration](../studio/configuration.md) for exact authentication and
+Origin rules.
 
 ## MCP Credentials
 
@@ -48,6 +51,10 @@ MCP credential helpers support:
 - Expiration parsing through `MCPCredentialClaims`
 - Token ID metadata through `token_id` or `jti`
 - Claim normalization through `principal_from_mcp_claims()`
+
+Claim normalization is not signature verification. Authenticate the credential
+with a trusted verifier before converting its claims into a principal; never
+treat a client-supplied claims dictionary as proof of identity.
 
 `PolicyEngine.can()` also accepts `required_scopes`, `required_audience`, and
 `tenant_required` context for authorization decisions.
@@ -67,7 +74,7 @@ context for tenant-scoped work.
 - Replay protection storage is not implemented by the core credential helpers.
 - Scoped and audience-bound token issuance is not a complete core issuance
   system; applications should issue and rotate credentials carefully.
-- The v0.6 production contract covers claims enforced on generated REST and MCP
+- The execution contract covers claims enforced on generated REST and MCP
   execution paths. Applications remain responsible for issuing, rotating, and
   revoking tokens.
 - The `/mcp/` endpoint authenticates and authorizes protocol requests at

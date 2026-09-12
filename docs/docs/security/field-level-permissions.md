@@ -1,5 +1,9 @@
 # Field-Level Permissions
 
+!!! info "Stable boundary, explicit integration"
+    Field policy applies on integrated request paths. It does not automatically
+    authorize every ORM call or application-defined write.
+
 ## Core Principle
 
 Generated schemas are not security controls. Runtime enforcement is required.
@@ -18,10 +22,13 @@ Aksara field-level policy considers:
 - Tenant-owned fields such as `tenant_id`
 - System-only/internal fields where metadata exists
 
-AI-sensitive fields are hidden from AI/MCP-visible schemas and AI context.
+AI-sensitive metadata is used by covered AI/MCP schema and context builders.
+It is not encryption or a universal response-redaction mechanism; custom
+responses and context builders must apply the appropriate visibility policy.
 Fields with `ai_agent_writable=False` are not writable by AI/MCP principals.
-Read-only, tenant, and system-only fields are denied according to the principal
-type.
+Read-only fields are never writable through this policy, including by system
+principals. System principals may write tenant and system-only fields; ordinary
+users and AI agents may not.
 
 ## Runtime Enforcement
 
@@ -53,7 +60,7 @@ Example response detail:
 
 - Generated REST create paths
 - Generated REST update/patch paths
-- MCP agents that write through the covered REST paths
+- Generated MCP tools dispatched through the corresponding REST paths
 - Helper-level bulk payload validation through `validate_bulk_payload_policy()`
 - Helper-level upsert payload validation through `validate_upsert_payload_policy()`
 
@@ -61,8 +68,14 @@ Example response detail:
 
 - Bulk/upsert manager-level principal enforcement is not universal unless the
   application path integrates the helper-level validation.
-- Direct MCP tool calls are only fully covered when they route through covered
-  REST write paths or explicitly call enforcement helpers.
+- Generated `/mcp/` execution validates tool arguments and dispatches through
+  the application ASGI routes. A custom route still owns any field enforcement
+  missing from its handler; tool discovery alone does not secure its writes.
+- If a model exposes no field metadata, `validate_payload()` allows the payload
+  after its action check. It does not infer a restrictive schema for arbitrary
+  objects. Use declared model fields and integrate enforcement explicitly.
 - Applications should ensure custom write paths call the enforcement helpers.
-- Background task mutations run as trusted internal work and need explicit
-  trusted principal/tenant context when tenant-scoped writes are performed.
+- Ordinary background task bodies own their trusted principal/tenant context
+  and write authorization. For authorization across retries and time, use the
+  explicit [Durable Operations](../advanced/durable-operations.md) path; scheduling
+  a task alone does not provide that contract.

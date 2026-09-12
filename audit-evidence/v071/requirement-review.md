@@ -258,3 +258,11 @@ package orchestration checks and 348 related documentation/gap tests pass.
 Strict docs, imports, CLI syntax and rendered links were refreshed. This proves
 the named scanner contracts, not deployment correctness or whole-manual
 acceptance; release-candidate gates remain incomplete.
+
+## Security reference checkpoint
+
+PT063 clarifies credential parsing, metadata-dependent field enforcement,
+generated MCP dispatch and custom-handler responsibility. Existing tests pass:
+199 with local PostgreSQL required, plus 207 docs/packaging checks. Public import,
+CLI and rendered-link evidence refreshed. No runtime change; remaining manual
+review and actual candidate release gates remain open.

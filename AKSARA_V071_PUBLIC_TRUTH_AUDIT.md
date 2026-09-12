@@ -1929,3 +1929,25 @@ Validation: 348 docs/packaging/gap tests passed with one dependency deprecation
 warning; Ruff passed; 358 Python fences/imports and 292 CLI forms passed;
 strict docs and 42,286 local references across 162 pages passed.
 No runtime changes. Final whole-manual acceptance remains open.
+
+## Security reference boundary review (2026-09-12)
+
+PT063 / P1: authentication labels and claim normalization could be read as
+credential-verification support, and field policy guidance omitted its no-field-
+metadata fallback. The two security references now distinguish parsing from
+verification, integrated route enforcement from arbitrary ORM writes, and
+visibility metadata from universal redaction. They describe system/read-only
+rules, generated MCP ASGI dispatch, and custom-handler responsibility. Studio
+links to its exact access rules; ordinary tasks link to the distinct durable path.
+
+Source review: `aksara/security/mcp.py`, `principal.py`, `policy.py`,
+`enforcement.py`, `aksara/mcp/server.py`, `aksara/api/viewsets.py`, and Studio
+settings/access guidance. Existing policy tests directly cover the metadata
+fallback; no production behavior was changed or newly classified as a defect.
+
+Validation: required local PostgreSQL run of policy engine, MCP credentials,
+principal, MCP protocol boundary and advanced field policy tests: 199 passed.
+The initial unconfigured run was 194 passed/5 skipped and is not the database
+validation claim. Docs/packaging tests: 207 passed, one dependency deprecation
+warning. Strict docs, 358 Python fences/imports, 292 CLI forms and 42,288 local
+references passed. This checkpoint does not claim final whole-manual acceptance.
