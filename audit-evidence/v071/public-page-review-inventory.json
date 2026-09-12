@@ -848,7 +848,8 @@
       "sha256": "58004483e3bd88f8eb6bbc4d1f85cebf0f9b7fb83223e1c61de3867776adab1f",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "middleware-page-review.json"
+        "middleware-page-review.json",
+        "middleware-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 83
@@ -858,7 +859,8 @@
       "sha256": "6f346b6a0094cbee9df6e63ee95f835a4813722cd37565cdf46420507a9cd10d",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "middleware-page-review.json"
+        "middleware-page-review.json",
+        "middleware-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 110
@@ -868,7 +870,8 @@
       "sha256": "d0b9fc2eeeba44141110b50a15d36c3b458396d7fb1ec31cefd70f557d6cd158",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "middleware-page-review.json"
+        "middleware-page-review.json",
+        "middleware-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 64
@@ -878,7 +881,8 @@
       "sha256": "32068510e5d59a6becf97c6f6d48b383dc0756a28302531d0fd11b78947cbd1f",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "middleware-page-review.json"
+        "middleware-page-review.json",
+        "middleware-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 85

@@ -2393,3 +2393,16 @@ and scoped source review, not an external audit or candidate security approval.
 
 Validation: 39 production-check/MCP-security diagnostic tests pass. These check
 policy behavior; they do not perform a production deployment or certify RLS.
+
+## Middleware section reading assessment (2026-09-12)
+
+Read all four middleware pages and their exact-example tests. Retained current
+content: ordering syntax is explicit, timing is limited to response acquisition,
+JSON logging requires formatting, request IDs are untrusted correlation, and
+tenant extraction is distinct from membership and database isolation. The tests
+exercise real ASGI context reset in the caller's async context, not merely
+TestClient isolation. They also retain the negative legacy-principal control
+showing an extracted unverified tenant is not a membership decision.
+Four focused tests pass. middleware-reading-review.json records current hashes
+and per-page conclusions. No production/proxy/RLS or cross-process authority
+guarantee is inferred; no page or runtime change was required.

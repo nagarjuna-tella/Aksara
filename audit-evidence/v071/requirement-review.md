@@ -464,3 +464,10 @@ C6/A10/A12: all nine security pages have current-hash reading dispositions in
 security-reading-review.json. Diagnostics, matrix and publication descriptions
 were compared with code/workflows. Retained explicit application and external
 review responsibilities. Full-manual and actual candidate acceptance remain open.
+
+## Middleware section author-reading complete
+
+A10/A19/C6: the four middleware pages and their exact-example tests were read.
+Four focused ASGI tests pass; record current-hash dispositions in
+middleware-reading-review.json. Configuration and trust boundaries are coherent.
+This completes section reading, not the remaining manual/candidate campaign.

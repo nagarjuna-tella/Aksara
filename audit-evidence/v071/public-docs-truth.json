@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "157a0e1fefc796d771ed3d736781ca09121fa593",
+  "reviewed_head": "7231828819e8802b9c0e0ba817da987fcd656d04",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "32eb5e1632b502e67cc8c9f41968456394984e66a42a7d793d726b2a05dbe699",
+    "sha256": "6198e2af9306ea5ba297bf29bd4c60d45763015e5bc2e86b30a3848cbbe943d2",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -763,6 +763,15 @@
       "historical_head": null
     },
     {
+      "artifact": "audit-evidence/v071/middleware-reading-review.json",
+      "sha256": "9be2ebdc5a12664e525879cb4fa21066eaf93cb37a6b28e49e36e7b590475ef7",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all four middleware pages and inspection of their exact-example tests. Not RLS, background-worker identity, production proxy or durable-log certification.",
+      "checked_linked_page_hashes": 4,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
       "artifact": "audit-evidence/v071/migration-doc-execution.json",
       "sha256": "04569302b35036f200f32576139f30c9a3bcc46f834a8db1f0699d0e4ca40b73",
       "recorded_result": true,
@@ -818,7 +827,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "a6bb6897599549fa5fd38e32f7d0366b81fd332401a8a0e695d5de9d34b3f613",
+      "sha256": "b5eef3a8e87e85306aaeee35d84fd0661789df37d3e86de8af2b2d5a450f4be9",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
