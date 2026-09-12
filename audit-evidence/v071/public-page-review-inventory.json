@@ -740,7 +740,7 @@
     },
     {
       "path": "docs/docs/glossary.md",
-      "sha256": "d05ade65fe7cd85e30c68ae396ab334a5051c6993bbf88253788b5cb7672abc2",
+      "sha256": "2b2e7d40a87e50e04a40146a11f2617e531c10140993bc2d8c7e601345588742",
       "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
@@ -1009,13 +1009,13 @@
     },
     {
       "path": "docs/docs/orm/relations.md",
-      "sha256": "5ef927577e7f3da2732e45e5584301748620cae300cf608288421a7fc95ab970",
+      "sha256": "3e3b239e9b03f47eb05ef2ca17b305d10c360c118741847ce4a131d6d4490952",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "admin-relation-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 549
+      "lines": 559
     },
     {
       "path": "docs/docs/orm/signals.md",

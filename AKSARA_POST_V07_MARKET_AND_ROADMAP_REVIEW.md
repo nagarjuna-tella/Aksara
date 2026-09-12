@@ -468,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the sixteen audit findings for separately scoped functional maintenance; do
+Track the seventeen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
@@ -668,3 +668,13 @@ appends blanks to the supplied list. Recommend a separate defensive-copy patch.
 The installed widget negative control proves in-memory mutation, not persistence
 or permission bypass. JSON value escaping was separately verified and is not
 a defect. This does not change the existing adoption-focused roadmap thesis.
+
+### Eager-loading terminal consistency (2026-09-12)
+
+RELATION001 / P1: installed `select_related(...).first()` returns the parent
+without populating its requested related object, while the documented `all()`
+path loads it. The exact model example passes; the additional negative control
+in `query-execution.json` retains the failure flag. Recommend a separate narrow
+terminal-method consistency patch with empty/nonempty FK/O2O and prefetch cases.
+This strengthens the existing correctness/adoption priority, not a proposal for
+more database backends or a broader ORM rewrite. No runtime change is made here.

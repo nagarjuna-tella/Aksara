@@ -51,7 +51,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | ORM | Yes | Stable bounded contract | `aksara.Model` | Reviewed models, query and signal guides | Ticket desk; exact signal helper | CRUD plus signal/transaction slice ([evidence](audit-evidence/v071/query-execution.json)) | Post-save runs before outer commit; rollback does not undo observed callbacks. Bulk create, text update and upsert now have installed evidence; Boolean/timestamp bulk_update fails (BULK-001). Candidate coverage remains open. |
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
-| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
+| Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. RELATION001: first() omits requested eager loading; use the documented all() path. |
 | Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. MIGRATION-001: CLI model-name collision omits the historical template User table; domain-template evidence records that failure. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
 | Generated REST/ViewSets | Yes | Stable declared surface; known defects | `aksara.ModelViewSet`, `include_viewset`, `action` | Registration, filters and pagination corrected | Ticket desk; exact search and pagination ViewSets | CRUD plus 11 filter checks and 8 pagination observations ([filter evidence](audit-evidence/v071/filter-doc-execution.json), [pagination evidence](audit-evidence/v071/pagination-doc-execution.json)) | PAGINATION-001 strips page/cursor metadata at HTTP serialization; ACTION-001 requires explicit custom-action checks. Full candidate regressions remain required. |
@@ -2150,3 +2150,17 @@ with first/all, empty-result, FK/O2O and prefetch tests. The documented complete
 example uses select_related(...).all() and passes unchanged. The initial harness
 also tried nonexistent QuerySet.get; that was a test mistake, not a framework
 finding. Strategy/public-reference follow-up for RELATION001 remains open.
+
+## Relation limitation public guidance (2026-09-12)
+
+RELATION001 is now disclosed in the public relation guide and strategy report.
+The guide/glossary also correct the single-JOIN claim: all() loads parent rows,
+then batches requested FK/O2O relations. The roadmap thesis remains focused on
+correctness/adoption; the seventeenth finding does not justify scope expansion.
+No production fix was made. This updates the earlier pending follow-up.
+
+Validation: 10 installed Admin/relation checks passed against local PostgreSQL;
+disposable schema removed. 207 docs/packaging tests passed with one dependency
+warning; strict docs, 348 Python fences/imports, 292 CLI forms, 42,152 local
+references and 42 selected external links passed. External reachability is not
+a new market-research claim. The model-example negative control remains false.

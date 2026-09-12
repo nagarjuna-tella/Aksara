@@ -313,7 +313,7 @@ The process of connecting ViewSets to the application. In Aksara, this is done v
 AI tool that analyzes database schema and suggests improvements.
 
 ### Select Related
-Loading foreign key relations efficiently using a JOIN query.
+Requesting batched loading of foreign-key/one-to-one objects after the parent query. Use the documented `all()` path; it is not a single-JOIN guarantee.
 
 ### Serializer
 A class that converts between Python objects and JSON (and validates input).

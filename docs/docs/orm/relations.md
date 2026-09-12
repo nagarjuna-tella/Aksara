@@ -77,7 +77,7 @@ author = await Author.objects.get(id=author_id)
 
 Today, `post.author` and `post.author_id` expose the same stored FK value/id;
 `post.author` is not a lazy-loaded related object. For eager loading, use
-`select_related()` and then read the loaded object synchronously with
+`select_related(...).all()` and then read the loaded object synchronously with
 `get_related("author")`. Calling it without preloading raises `ValueError`; it
 does not issue a query.
 
@@ -374,7 +374,9 @@ posts = await Post.objects.filter(tags__name="python").all()
 
 ### Select Related (Eager Loading)
 
-Avoid N+1 queries by loading related objects in one query:
+Avoid one lookup per parent by batching related-object loads. Aksara first
+fetches the parent rows, then loads the requested FK/O2O relations in additional
+queries; `select_related()` is not a promise of one SQL JOIN query.
 
 ```python
 # Without select_related: N+1 queries
@@ -382,12 +384,20 @@ posts = await Post.objects.all()
 for post in posts:
     author = await Author.objects.get(id=post.author_id)  # Query per post
 
-# With select_related: Single query
+# With select_related: batched related-object loading
 posts = await Post.objects.select_related("author").all()
 for post in posts:
     author = post.get_related("author")
     print(author.name)
 ```
+
+!!! warning "Known v0.7.0 terminal-method limitation"
+    `select_related(...).first()` does not populate the related-object cache.
+    Calling `get_related()` on that result raises `ValueError`. Use the
+    documented `select_related(...).all()` path (with an appropriately bounded
+    query) or explicitly load the related record. QuerySet has no `get()`
+    method; `Model.objects.get()` is a manager method. These names are not
+    interchangeable. A separate runtime consistency fix is required.
 
 ### Prefetch Related (For M2M)
 

@@ -30,7 +30,7 @@ Line numbers below refer to that exact objective.
 | --- | --- | --- | --- |
 | A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline, example/scaffold inventory; current import gate hashes 165 public inputs. | Refresh per-page semantic dispositions; baseline records still say content review pending. |
 | A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 67-row PT-001 through PT-067 register with detailed sections, plus sixteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 67-row PT-001 through PT-067 register with detailed sections, plus seventeen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | Evaluator-to-first-project reading flow reviewed; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
@@ -122,7 +122,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Sixteen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 remains source-only |
+| Functional defects: document, classify, preserve, separate patch | Seventeen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 remains source-only |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -136,7 +136,7 @@ Line numbers below refer to that exact objective.
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
 | AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
-| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all sixteen findings and source/date qualifications |
+| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all seventeen findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
 | Runnable Quick Start and progressive tutorial | Exact installed-wheel six-stage Ticket Desk | Actual candidate rerun |
@@ -334,3 +334,11 @@ including a new RELATION001 negative control: first() does not populate a
 requested eager relation. No runtime fix. Update the strategic defect inventory
 and public relation guidance for this finding before final acceptance; earlier
 sixteen-finding counts exclude this newly observed seventeenth finding.
+
+## Relation limitation follow-up completed
+
+Public relations/glossary guidance and strategic maintenance priorities now
+include RELATION001. The new finding's publication follow-up is complete; its
+runtime fix remains separately scoped. Current inventory is seventeen findings.
+Ten installed relation checks and 207 docs tests pass; all affected link/import
+artifacts were refreshed. Final manual/candidate acceptance remains open.
