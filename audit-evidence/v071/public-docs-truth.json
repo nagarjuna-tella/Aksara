@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "00a9c1e8ac97abd20c54fda4ed4988f79c537799",
+  "reviewed_head": "3d4f4bb8e684f1d60f288656714a40908ef8ad27",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -389,7 +389,7 @@
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
   "requirement_review": {
     "artifact": "audit-evidence/v071/requirement-review.md",
-    "sha256": "7f0b2658efc48b3490a9635706f3f90d4b9baba84de002eb22419afe90b99737",
+    "sha256": "b81f268db86da5cdf155b35b805a3e8130ba655785a05fcbf4872549e9b303b8",
     "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
   },
   "evidence": [
@@ -890,7 +890,7 @@
     },
     {
       "artifact": "audit-evidence/v071/public-page-review-inventory.json",
-      "sha256": "177b69ac8441a7291da86e913094d05683082a3e3085d1ea243e42ec278993d5",
+      "sha256": "2ddef650578e2d38f1f08bd084d44eaf8e21a95f3537a7f8e6ba7718a64c2643",
       "recorded_result": "not a boolean gate",
       "scope": "Current page census and discovery of fresh scoped evidence links. Change history, hashes and linked evidence do not prove all page claims or usability. Historical baseline is preserved.",
       "checked_linked_page_hashes": 0,
@@ -912,6 +912,15 @@
       "recorded_result": true,
       "scope": "Exact manual and HTTP examples, read-only PostgreSQL calls, capture/tracing limits and retention; no ORM N+1 benchmark, streaming/cancellation guarantee, Studio, authorization or production observability certification",
       "checked_linked_page_hashes": 1,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/reference-tooling-reading-review.json",
+      "sha256": "9dcb7b7b5dbfef1a6617a76c687337237aa530b06bf55789d75fee73b92096b3",
+      "recorded_result": "not a boolean gate",
+      "scope": "Complete author reading of all eight Reference pages, all five CLI pages, all three Inspector pages and all three Search pages, reconciled with the isolated-wheel CLI declaration generator, settings tests, package/workflow bounds and focused search/inspector tests. This does not execute every CLI callback, certify every internal symbol as public or establish production search/diagnostic behavior.",
+      "checked_linked_page_hashes": 19,
       "stale_linked_pages": [],
       "historical_head": null
     },

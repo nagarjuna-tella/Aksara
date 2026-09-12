@@ -2561,3 +2561,20 @@ contract. This is a version/trust correction only; no AI or MCP behavior changed
 The existing installed-wheel and PostgreSQL journey artifacts remain the
 execution evidence. Complete reading does not replace an independent novice
 study or the final candidate rerun.
+
+## Reference, CLI, Inspector and Search reading assessment — 2026-09-12
+
+Read all eight Reference pages, all five CLI pages, all three Inspector pages
+and all three Search pages completely. `reference-tooling-reading-review.json`
+records current hashes and an individual disposition for each page. The
+generated CLI table exactly matches 117 declarations from an isolated installed
+0.7.0 wheel, and 237 focused settings, CLI-reference, search and inspector tests
+pass.
+
+The section consistently separates a declared/importable interface from an
+executed guarantee. Search remains an in-memory experimental project-artifact
+index rather than application-record search or a provider embedding path.
+Inspector output remains diagnostic: model constraints are inferred and
+INSPECTOR001's synthetic `EXPLAIN ANALYZE` ambiguity stays visible. No new
+contradiction or page change was required. This closes author reading for these
+four sections, not every CLI callback or the final candidate campaign.

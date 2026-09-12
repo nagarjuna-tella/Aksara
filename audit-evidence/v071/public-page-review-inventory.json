@@ -605,7 +605,8 @@
       "sha256": "17f6c0d02d3ae874fbc17240104397acb97b4a44b732310557da6c7a5bb02c73",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "ai-cli-execution.json"
+        "ai-cli-execution.json",
+        "reference-tooling-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 92
@@ -614,7 +615,9 @@
       "path": "docs/docs/cli/commands.md",
       "sha256": "4cbcf3d5a998a0b52d5927dea39e3623f2e33c4ddf4d205429dd1f98e8032ade",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 109
     },
@@ -622,7 +625,9 @@
       "path": "docs/docs/cli/dev-tools.md",
       "sha256": "8e0a5dd79e619668c23283505683a4990ebea3b1893bc5e39e38b8fe2f612612",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 85
     },
@@ -630,7 +635,9 @@
       "path": "docs/docs/cli/extending.md",
       "sha256": "ffda8909a05de89b341f71441f84cf7e9ba35a0bdec611959fbc2d9514aa51fb",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 69
     },
@@ -638,7 +645,9 @@
       "path": "docs/docs/cli/index.md",
       "sha256": "8aec1d338b490f9dcf0db3ea14334e79c454c0fb4d067136ecf564a059af0f98",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 41
     },
@@ -951,7 +960,9 @@
       "path": "docs/docs/inspectors/index.md",
       "sha256": "2a2da56a981635013e6b3652364dd08c9246a0a72fd0b96e72f1222c781e8705",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 16
     },
@@ -959,7 +970,9 @@
       "path": "docs/docs/inspectors/models.md",
       "sha256": "58c9274945882cdaecdf74db04cb925a7cee7315ec7edd6c92932e0909a1edb9",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 59
     },
@@ -967,7 +980,9 @@
       "path": "docs/docs/inspectors/query.md",
       "sha256": "e062d96729b5b54cfc9180b7a7dabf4335cb46502b6a0d4d3b5608e987d9924b",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 52
     },
@@ -1256,7 +1271,9 @@
       "path": "docs/docs/reference/api-reference.md",
       "sha256": "1cd22f4acd7556a66101816d1f2c06cef7b10919b84e67f37782fec8c5256955",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 85
     },
@@ -1264,7 +1281,9 @@
       "path": "docs/docs/reference/cli-reference.md",
       "sha256": "0e08093f9f861b32b50ee21e976dd4a81a49e5c58df302064a902eda9483dc2e",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 1032
     },
@@ -1272,7 +1291,9 @@
       "path": "docs/docs/reference/exceptions.md",
       "sha256": "7953cad79424ea89820e34e7b08041d78101cefda3f6e97e99cd884b4dc80cd5",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 188
     },
@@ -1280,7 +1301,9 @@
       "path": "docs/docs/reference/index.md",
       "sha256": "5e7b15c1f9d207d091769a82bc34fed16e46b3ace71c4d41646286e979c24e34",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 44
     },
@@ -1288,7 +1311,9 @@
       "path": "docs/docs/reference/orm-reference.md",
       "sha256": "d6b3aed585cf53e6ac57d2645b240e9b448c20451ad4f8f04a7ae1deceb69fd0",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 113
     },
@@ -1297,6 +1322,7 @@
       "sha256": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json",
         "setup-doc-execution.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
@@ -1306,7 +1332,9 @@
       "path": "docs/docs/reference/settings-reference.md",
       "sha256": "828ca2b0bbfa3acb600d6d597c94c056861b990128a42d93f1e6d28217aaaa82",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 288
     },
@@ -1314,7 +1342,9 @@
       "path": "docs/docs/reference/types.md",
       "sha256": "f0a04c4d50d44b067c09d5978c6e655a66d257b25793a55d2495d7b139e8cc84",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 71
     },
@@ -1362,7 +1392,9 @@
       "path": "docs/docs/search/index.md",
       "sha256": "39c27f06f986aa57c97d8342e2256f30c957e0da20d0265b0dde807e377b0230",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 29
     },
@@ -1370,7 +1402,9 @@
       "path": "docs/docs/search/semantic.md",
       "sha256": "19b0f77670a44c864926e8dd29e56f3853222f40690fb5816ecec704ef0e2375",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 65
     },
@@ -1378,7 +1412,9 @@
       "path": "docs/docs/search/studio.md",
       "sha256": "b6ede422cdab4cb46b1b1f7aa6fa3ffcb02dca6ef2f076888e899c5f837c4343",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "reference-tooling-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 33
     },
@@ -1637,7 +1673,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 131
+    "with_scoped_evidence_candidates": 148
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }
