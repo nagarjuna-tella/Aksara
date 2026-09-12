@@ -55,11 +55,11 @@
     },
     {
       "path": "docs/docs/admin/widgets.md",
-      "sha256": "c8448324f75b2bce043246226fb8a8ee5f4f153ea7619938b4d173f41e8d3d5e",
-      "changed_since_release": false,
+      "sha256": "f0c69a7e4ebb26f50760763f4f7f7ae5a9597dd0c37980b372fcdcbe775c6fa7",
+      "changed_since_release": true,
       "scoped_evidence_candidates": [],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 81
+      "lines": 95
     },
     {
       "path": "docs/docs/advanced/background-tasks.md",
@@ -1419,7 +1419,7 @@
   ],
   "counts": {
     "pages": 163,
-    "unchanged_since_release": 35,
+    "unchanged_since_release": 34,
     "with_scoped_evidence_candidates": 46
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"

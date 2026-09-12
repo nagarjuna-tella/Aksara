@@ -207,3 +207,10 @@ model/trace examples and INSPECTOR001 offline negative control, with explicit
 false runtime warning-provenance status. This closes the scoped inspector
 reference review, not live database execution or whole-site acceptance. The
 current census now has 35 unchanged pages; that is not a count of unreviewed pages.
+
+## Admin widget reference checkpoint
+
+PT056 clarifies UI row limits and rendering side effects. Installed import
+evidence verifies JSON escaping and retains ADMINWIDGET001 as a failing runtime
+property despite the passing reproduction. Scoped widget validation is complete;
+Admin action execution and remaining ModelAdmin reference review are pending.

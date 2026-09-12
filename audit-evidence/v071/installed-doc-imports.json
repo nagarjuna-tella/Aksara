@@ -8,7 +8,7 @@
     "docs/docs/admin/admin-site.md": "492b4b2572e7d990f7be1acfc209d0cc332edf1826b6c06280641605b8e7e558",
     "docs/docs/admin/index.md": "de119ad4a4fd8f13f7c2afef3ea6950771088ba670d3dd1dd1d4168435908930",
     "docs/docs/admin/model-admin.md": "4caf967cf1c1499c73f24f93ccc013df84e34e671b28ec3b63116da7a69792e1",
-    "docs/docs/admin/widgets.md": "c8448324f75b2bce043246226fb8a8ee5f4f153ea7619938b4d173f41e8d3d5e",
+    "docs/docs/admin/widgets.md": "f0c69a7e4ebb26f50760763f4f7f7ae5a9597dd0c37980b372fcdcbe775c6fa7",
     "docs/docs/advanced/background-tasks.md": "a51f6b806382e13de2610faf24dc4c0623a016a56a838f8ec47509a8684a0e5e",
     "docs/docs/advanced/caching.md": "28e132784a9a130162838bc0c6ee95c62e1823c6b423c9ce6ba65f34789289f5",
     "docs/docs/advanced/custom-fields.md": "d61b7a0302ed390ace1f255210d632e2d2a6a6ca130d586337ba9a847dc4e169",
@@ -171,7 +171,7 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
   "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "localization_contract_sha256": "21e7159dd8f8394fd2e5198d1f57fc0df88cb75e5873aa5194df46c5d2cf7327",
@@ -188,5 +188,8 @@
   "inspector_contract_sha256": "1a71a08a9263d750991eb22102c6260dd8ec469f0ba0869f68766ac03e94929c",
   "inspector_offline_checks": "passed",
   "runtime_synthetic_analyze_warning_present": false,
-  "runner_sha256": "b8a211067ee0338172eec471f9f5c8d59dc468f95518c6bd4bae75f503d9df27"
+  "widget_contract_sha256": "289dab10ba23c3ba07b4441d7525ae68c9a86379b19a0c47da40ff58d0e5ddef",
+  "widget_checks": "passed",
+  "runtime_array_render_preserves_input": false,
+  "runner_sha256": "0e536625bd4261b7e344ce17403f9405e4cc5ec915a9f44e4bffa89eeedbad8f"
 }

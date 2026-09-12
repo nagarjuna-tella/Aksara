@@ -1793,3 +1793,22 @@ deprecation warning. Strict docs, 366 Python fences/imports, 296 CLI forms,
 42,501 local references across 162 pages, and 42 selected external URLs passed.
 Ruff passed. The strategy inventory now tracks fifteen functional findings for
 separate maintenance; this does not change the roadmap thesis or release scope.
+
+## Admin widget follow-up (2026-09-11)
+
+PT056 / P2: widget UI row limits needed explicit distinction from server-side
+validation. The guide now states that boundary and a reproduced rendering side
+effect. ADMINWIDGET001 / P2: ArrayAdminWidget.render appends blank strings to the
+caller's list when padding to min_rows. Recommend a separate defensive-copy
+patch; no persistence or permission bypass is claimed and no runtime fix is made.
+
+An initial JSON escaping concern was disproved by execution and full source
+inspection: values are HTML-escaped. The focused test positively verifies that
+an inert closing-textarea marker remains escaped; no XSS defect is claimed.
+Twenty-one checkout widget tests and two isolated installed-wheel checks pass.
+The installed import gate now runs both checks and records input preservation
+as false. `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py
+tests/test_v048_packaging_sanity.py tests/admin/test_widgets.py -q` — 219 passed,
+one existing dependency deprecation warning. Strict docs, 366 Python fences,
+296 CLI forms, 42,504 local references across 162 pages, and 42 selected external
+URLs passed. Ruff passed. Broader Admin action/ModelAdmin review remains open.

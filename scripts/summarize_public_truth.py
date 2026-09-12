@@ -66,6 +66,7 @@ def main():
         },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
+            {'id':'ADMINWIDGET001','evidence':'installed-doc-imports.json','boundary':'Array widget padding mutates caller list'},
             {'id':'INSPECTOR001','evidence':'installed-doc-imports.json','boundary':'Offline synthetic ANALYZE result lacks provenance warning'},
             {'id':'FIXTURE001','evidence':'fixture-execution.json','boundary':'Exported primary keys cannot restore absent rows'},
             {'id':'FIXTURE002','evidence':'fixture-execution.json','boundary':'Single-model YAML UUID tags rejected by safe loader'},

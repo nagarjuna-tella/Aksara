@@ -468,7 +468,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the fifteen audit findings for separately scoped functional maintenance; do
+Track the sixteen audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
@@ -660,3 +660,11 @@ model declarations from verified catalog state. Recommend a separate provenance
 and error-reporting patch; no production semantics change in this release.
 The installed import gate preserves the offline negative control, not a live
 pool/thread safety certification.
+
+### Admin widget rendering side effect (2026-09-11)
+
+ADMINWIDGET001 / P2: rendering an array with fewer entries than min_rows
+appends blanks to the supplied list. Recommend a separate defensive-copy patch.
+The installed widget negative control proves in-memory mutation, not persistence
+or permission bypass. JSON value escaping was separately verified and is not
+a defect. This does not change the existing adoption-focused roadmap thesis.
