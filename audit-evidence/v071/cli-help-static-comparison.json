@@ -1,0 +1,65 @@
+{
+  "before": {
+    "total": 497,
+    "by_code": {
+      "arg-type": 86,
+      "assignment": 45,
+      "attr-defined": 216,
+      "call-arg": 20,
+      "call-overload": 5,
+      "dict-item": 4,
+      "func-returns-value": 2,
+      "import-not-found": 8,
+      "import-untyped": 10,
+      "index": 20,
+      "misc": 2,
+      "name-defined": 30,
+      "no-redef": 1,
+      "operator": 1,
+      "return": 3,
+      "return-value": 24,
+      "str-unpack": 1,
+      "union-attr": 5,
+      "valid-type": 4,
+      "var-annotated": 10
+    }
+  },
+  "after": {
+    "total": 497,
+    "by_code": {
+      "arg-type": 86,
+      "assignment": 45,
+      "attr-defined": 216,
+      "call-arg": 20,
+      "call-overload": 5,
+      "dict-item": 4,
+      "func-returns-value": 2,
+      "import-not-found": 8,
+      "import-untyped": 10,
+      "index": 20,
+      "misc": 2,
+      "name-defined": 30,
+      "no-redef": 1,
+      "operator": 1,
+      "return": 3,
+      "return-value": 24,
+      "str-unpack": 1,
+      "union-attr": 5,
+      "valid-type": 4,
+      "var-annotated": 10
+    }
+  },
+  "added_categories": {},
+  "schema_version": 1,
+  "pass": true,
+  "baseline": "264aaf60904a7a3dfb9e5206e09642e87007bb9b",
+  "source_sha256": {
+    "aksara/cli/main.py": "299a97d65a8bf17dd5e328a82cf6b5a1a2a8ce1c0f743224c54039bda77fe0bc",
+    "aksara/cli/scaffold.py": "2455a972df0050029a52aaa815a05586b8bb1d4b3b0ddaa5fc9ce19feb7f945a",
+    "aksara/cli/templates/__init__.py": "91ba33b2db8642666d5d9b636e38fde016cfda2ea46254326f02d393e63b80a3"
+  },
+  "scope": "Python 3.14 mypy no-incremental before/after comparison using shadow files for two changed CLI modules; equal categories, but index 20 exceeds reviewed cap 19 on this interpreter. Hosted static gate uses Python 3.11.",
+  "python_version": "3.14.4",
+  "before_after_equal": true,
+  "reviewed_baseline_pass": false
+}

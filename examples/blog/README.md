@@ -1,66 +1,67 @@
-# Aksara example: Blog
+# Blog example
 
-**Application demonstration; not the canonical starter or a production template.**
-Use the [ticket desk tutorial](../../docs/docs/getting-started/first-project.md)
-for a complete protected application with executable tests.
+**Application demonstration.** This example contains Post and Comment. For a complete
+protected application, use the [Ticket Desk tutorial](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/).
 
-This example contains `Post` and `Comment`, serializers and generated REST routes.
-It is useful for inspecting model and API patterns. Optional Studio and AI
-configuration in its settings is experimental and differs from the neutral
-`startproject` defaults.
+This is a domain demonstration, not a complete authenticated publishing backend. Valid anonymous generated writes return 403; the example API-key helper does not establish a server-owned Principal. Custom publish/moderation actions need explicit authorization before exposure.
 
-## Run locally from a source checkout
+## Repository source or generated copy?
 
-Use a dedicated PostgreSQL database. Set `DATABASE_URL` to its connection URL
-in your shell before these commands; do not use a production database. The
-example's own settings prefer `DATABASE_URL` over `AKSARA_DATABASE_URL`, unlike
-the framework's normal environment precedence. Set them consistently.
-
-Run from the repository root:
+If you are reading the repository's example source, first
+[install Aksara](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/)
+in an activated environment and generate a standalone copy in your working
+directory:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-export AKSARA_DATABASE_URL="$DATABASE_URL"
-aksara makemigrations --app examples.blog.models --output examples/blog/migrations
-aksara migrate --migrations-dir examples/blog/migrations
-aksara run examples.blog.main:app --host 127.0.0.1 --port 8000
+aksara startproject blog_demo --template blog
+cd blog_demo
 ```
 
-The explicit module path preserves relative imports. `aksara dev` is a local
-project convenience; the command above makes this repository example's entry
-point unambiguous. `aksara doctor launch-check` is intended for a project layout
-and is not proof that an example's mutations or security integration work.
+If this README is already inside a project created by `startproject`, skip those
+two commands and work in that project's directory. The generated copy has flat
+`models.py`, `views.py`, `settings.py` and `main.py` modules. It does not contain
+an `app/` package, `.env`, or a `pyproject.toml` for editable installation.
+The repository source uses package-relative imports; it is not the same layout
+as a generated standalone copy.
 
-## Inspect and test
+## Run the generated copy locally
+
+Use an environment with Aksara installed. Export `DATABASE_URL` for a dedicated
+local PostgreSQL database before running these commands. This example prefers
+it over `AKSARA_DATABASE_URL`; keep both values consistent if both are set.
+Do not use a production database for example migrations.
+
+```bash
+aksara makemigrations --app models --output migrations
+aksara migrate --migrations-dir migrations
+aksara run main:app --host 127.0.0.1 --port 8000
+```
+
+Review generated migrations before applying them. A successful command does not
+prove every model is present; the historical multitenant example has the
+explicit omission described above.
+
+In another terminal:
 
 ```bash
 curl --fail http://127.0.0.1:8000/health
 curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-Browse `http://127.0.0.1:8000/docs` to inspect the generated API. A startup or
-OpenAPI success proves neither a working authenticated write path nor a safe
-production deployment.
+Use `/docs` for registered API routes. Health and OpenAPI success are startup
+checks, not positive CRUD, custom-action authorization, tenant isolation, or
+production readiness evidence. Do not disable permissions to make an old
+unauthenticated seed command succeed.
 
-## Seed and mutation boundary
+## Adapt with the public guide
 
-There is no complete authenticated seed flow in this example. The earlier
-README's unauthenticated POST to `/api/posts/` returns **403** with v0.7.0;
-it does not create a record. Do not disable permission checks to make it pass.
-The example API-key dependency does not establish a server-owned Principal. Supplying its development X-API-Key header does not make generated writes an authenticated application journey.
+Read the [blog pattern guide](https://nagarjuna-tella.github.io/Aksara/patterns/blog/)
+for purpose, limitations and next steps. For tenant isolation, use
+[Ticket Desk tenancy](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-tenancy/)
+and the [production guide](https://nagarjuna-tella.github.io/Aksara/tutorials/deployment/).
 
-The [ticket desk](../../docs/docs/getting-started/first-project.md) supplies the
-missing identity adapter and positive/negative CRUD tests. Use that flow when
-building a new application, or explicitly design equivalent authentication
-and policy for your own adaptation.
-
-## Optional development surfaces
-
-Studio at `/studio/ui` and the AI Console are experimental. Their presence in
-this example does not make them production requirements. The HTTP JSON tool
-inspection catalog is `/ai/tools/mcp`; it is not the MCP protocol endpoint.
-Official clients use `/mcp/` after server-owned Principal resolution is installed.
-The [MCP tutorial](../../docs/docs/tutorials/ticket-desk-mcp.md) demonstrates that
-full path. No provider was called by the local startup audit.
+Optional Studio and AI surfaces are experimental. The `/ai/tools/mcp` inspection
+catalog is not the MCP protocol transport or an authorization test. Follow the
+[official MCP client tutorial](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-mcp/)
+for server-owned identity and tool execution. No provider integration is proved
+by the local startup checks.

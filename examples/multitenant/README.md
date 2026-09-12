@@ -1,62 +1,67 @@
-# Aksara Example: Multitenant
+# Historical multitenant example
 
-> **Known limitation — do not use as a production isolation reference.**
-> The example middleware currently exempts every request because its `/`
-> exemption uses prefix matching. A request to `/api/projects/` therefore skips
-> tenant resolution. Header-based tenant selection also needs authenticated
-> membership verification. Use the [Support Desk reference](../support_desk/README.md)
-> for server-owned identity and restricted-role forced-RLS guidance. A behavioral
-> correction requires a separate patch; v0.7.1 does not change this middleware.
+**Application demonstration.** This example contains Tenant, User and Project. For a complete
+protected application, use the [Ticket Desk tutorial](https://nagarjuna-tella.github.io/Aksara/getting-started/first-project/).
 
-## Purpose and status
+Do not use this historical example as a production isolation reference. EX-001: its slash-prefix exemption skips tenant resolution for all normal requests. MIGRATION-001: CLI discovery replaces the example User with the built-in auth User and omits tenant_users despite successful migration commands. The application can start without a complete schema. No safe tenant seed/write flow is claimed.
 
-This historical example contains Tenant, User and Project models and routing
-ideas. It is **replaced as the recommended isolation example** by Support Desk
-and the [ticket-desk tenancy chapter](../../docs/docs/tutorials/ticket-desk-tenancy.md).
-It remains in the repository for inspection; its startup success is not tenant
-isolation evidence.
+## Repository source or generated copy?
 
-A second limitation was reproduced in the installed template's migration flow:
-the built-in auth `User` replaces the same-named example model in discovery,
-so `tenant_users` is missing despite successful migration commands
-(MIGRATION-001). See the [pattern status](../../docs/docs/patterns/multitenant.md)
-for the exact boundary. Verify generated operations and actual tables; this
-example is not a complete working tenant application.
-
-## Run for local inspection only
-
-From the repository root, with `DATABASE_URL` set to a dedicated disposable
-PostgreSQL database:
+If you are reading the repository's example source, first
+[install Aksara](https://nagarjuna-tella.github.io/Aksara/getting-started/installation/)
+in an activated environment and generate a standalone copy in your working
+directory:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-export AKSARA_DATABASE_URL="$DATABASE_URL"
-aksara makemigrations --app examples.multitenant.models --output examples/multitenant/migrations
-aksara migrate --migrations-dir examples/multitenant/migrations
-aksara run examples.multitenant.main:app --host 127.0.0.1 --port 8000
+aksara startproject tenant_demo --template multitenant
+cd tenant_demo
 ```
 
-Use the explicit package path instead of relying on `aksara dev` discovery.
-`aksara doctor launch-check` can inspect project setup, but cannot establish
-that this middleware resolves or enforces tenant membership.
+If this README is already inside a project created by `startproject`, skip those
+two commands and work in that project's directory. The generated copy has flat
+`models.py`, `views.py`, `settings.py` and `main.py` modules. It does not contain
+an `app/` package, `.env`, or a `pyproject.toml` for editable installation.
+The repository source uses package-relative imports; it is not the same layout
+as a generated standalone copy.
+
+## Run the generated copy locally
+
+Use an environment with Aksara installed. Export `DATABASE_URL` for a dedicated
+local PostgreSQL database before running these commands. This example prefers
+it over `AKSARA_DATABASE_URL`; keep both values consistent if both are set.
+Do not use a production database for example migrations.
+
+```bash
+aksara makemigrations --app models --output migrations
+aksara migrate --migrations-dir migrations
+aksara run main:app --host 127.0.0.1 --port 8000
+```
+
+Review generated migrations before applying them. A successful command does not
+prove every model is present; the historical multitenant example has the
+explicit omission described above.
+
+In another terminal:
 
 ```bash
 curl --fail http://127.0.0.1:8000/health
 curl --fail http://127.0.0.1:8000/openapi.json
 ```
 
-## Seed and tenant boundary
+Use `/docs` for registered API routes. Health and OpenAPI success are startup
+checks, not positive CRUD, custom-action authorization, tenant isolation, or
+production readiness evidence. Do not disable permissions to make an old
+unauthenticated seed command succeed.
 
-No seed flow in this README is claimed to establish safe tenancy. In particular,
-a header naming a tenant is not proof of membership, and the middleware's
-current prefix exemption bypasses its resolver. Follow the replacement tutorial
-for authenticated identities, forced RLS and denied cross-tenant requests.
+## Adapt with the public guide
 
-## Optional surfaces
+Read the [historical multitenant pattern guide](https://nagarjuna-tella.github.io/Aksara/patterns/multitenant/)
+for purpose, limitations and next steps. For tenant isolation, use
+[Ticket Desk tenancy](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-tenancy/)
+and the [production guide](https://nagarjuna-tella.github.io/Aksara/tutorials/deployment/).
 
-Studio at `/studio/ui` and AI Console features are experimental. The
-`/ai/tools/mcp` inspection catalog is not an authorization test or the protocol
-transport. Official clients use `/mcp/`; do not expose this example as a safe
-MCP tenant backend based on its model metadata.
+Optional Studio and AI surfaces are experimental. The `/ai/tools/mcp` inspection
+catalog is not the MCP protocol transport or an authorization test. Follow the
+[official MCP client tutorial](https://nagarjuna-tella.github.io/Aksara/tutorials/ticket-desk-mcp/)
+for server-owned identity and tool execution. No provider integration is proved
+by the local startup checks.

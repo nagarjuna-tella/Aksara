@@ -39,9 +39,9 @@ aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
 The copied modules are flat files, so use `models`, not `app.models`. No
-`pyproject.toml` or `.env` is generated for this domain template. The generic
-editable-install next step printed by `startproject` is not a valid installation
-path for this copy; use the framework already installed in your environment.
+`pyproject.toml` or `.env` is generated for this domain template. If an older CLI
+suggests an editable install, use the framework already installed in your
+environment instead.
 
 In another terminal:
 

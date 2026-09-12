@@ -69,7 +69,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 309 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 312 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
@@ -557,9 +557,14 @@ finds zero leftover tutorial schemas or roles after the journey.
 
 ## Runtime Changes
 
-**No functional runtime changes.** `aksara/cli/scaffold.py` changes only its
-generated README text; equivalence evidence above covers all executable files,
-settings, security defaults and dependencies. Package version remains `0.7.0` until candidate readiness is proven.
+**No functional runtime changes.** Three production files have instructional
+changes: `aksara/cli/scaffold.py` changes generated README text;
+`aksara/cli/main.py` changes the `startproject` docstring and existing UI message
+string literals; `aksara/cli/templates/__init__.py` changes four template
+descriptions. The AST audit preserves all other logic, template names/sources,
+flags, defaults and dependencies. Four-template installed-wheel comparison
+permits only the prior README changes in generated output. Package version
+remains `0.7.0` until candidate readiness is proven.
 
 ## Query Guide PostgreSQL Evidence
 
@@ -1428,3 +1433,47 @@ track ten functional findings without changing the roadmap thesis.
 
 The remaining whole-site semantic/usability review, final requirement audit,
 CLI instructional debt, actual candidate build and release campaign remain open.
+
+
+## CLI and generated README guidance follow-up
+
+The CLI instructional debt recorded above is now addressed. `startproject`
+help and existing output strings distinguish the basic package layout from
+flat domain copies, remove the broken editable-install suggestion, and direct
+users to the checked template-specific setup guide. Template descriptions no
+longer promise a complete protected application. This changes instructional
+strings only; options, callbacks, generation, defaults and dependencies remain
+unchanged.
+
+The three domain READMEs previously described repository module paths. Copying
+those instructions could produce `--app app.models` despite a flat generated
+`models.py`. Blog, CRM and multitenant READMEs now separate repository-to-copy
+steps from the generated directory startup flow and use `--app models --output
+migrations`. The generated README startup blocks match the checked public
+pattern commands. Authentication limitations and EX-001/MIGRATION-001 remain
+explicit; the historical tenant template remains unsuitable as an isolation
+reference.
+
+A rebuilt development wheel (still version 0.7.0, not a candidate) was compared
+with the public 0.7.0 wheel outside the checkout. All four templates were
+generated: 51 files in total, with only README.md differing in each template.
+The comparison normalizes only generated Studio token values. Executable
+files, settings and file inventories match. The basic documented startup
+passed five checks. All three domain README command sequences were executed
+against local PostgreSQL; the known missing tenant_users table is still
+recorded as a negative result, not interpreted as schema success.
+
+Validation and evidence:
+
+- `scripts/check_startproject_guidance.py --baseline-python /tmp/aksara-v071-public-baseline/bin/python --development-python /tmp/aksara-v071-cli-help-env/bin/python --output audit-evidence/v071/startproject-guidance.json`: four templates, 51 files, README-only differences.
+- `scripts/check_domain_template_docs.py --python /tmp/aksara-v071-cli-help-env/bin/python --require-updated-readme --output audit-evidence/v071/cli-help-domain-template-execution.json`: three observed startup flows; all generated README command blocks verified, known tenant schema omission retained.
+- `scripts/check_scaffold_startup.py --python /tmp/aksara-v071-cli-help-env/bin/python --output audit-evidence/v071/cli-help-scaffold-startup.json`: five checks passed. Runners used privately supplied local test database configuration and removed their schemas/processes.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/test_v048_packaging_sanity.py tests/patterns/test_startproject_templates.py tests/dx/test_startproject_scaffold.py tests/dx/test_scaffold_importable.py -q`: 287 passed, three upstream deprecation warnings.
+- Ruff passed on the three affected runners and two new test files. Negative controls verify that the AST scope guard rejects executable CLI argument/call changes and template source/name changes.
+- `scripts/check_v071_runtime_scope.py`: production AST unchanged outside the scaffold README return, startproject help/output string literals and four template descriptions. These are the three production-source files changed from v0.7.0; no functional runtime change is claimed.
+- Installed checks: 463 Python fences/imports and 312 CLI forms, zero CLI errors, 11 explicit exclusions. Strict MkDocs passed; rendered-link validation covers 162 pages and 44,576 local links/assets.
+- Python 3.11.5 static ratchet with Ruff 0.16.6 and mypy 2.3.1 passed: Ruff 7,207/7,218 and mypy 495/501. The Python 3.14 run has an existing category excess (20 index errors against 19 allowed). A before/after comparison reports identical 497 mypy errors and categories, proving no new debt from these changes; it does not turn that Python 3.14 ratchet failure into a pass. No accepted baseline was edited. See cli-help-static-comparison.json and cli-help-static-ratchet.json.
+
+The build artifact records the wheel and all six instructional input hashes.
+These checks close this CLI/README gap; whole-site semantic/usability review,
+final requirement acceptance and actual candidate release gates remain open.

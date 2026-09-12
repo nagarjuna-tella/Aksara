@@ -35,8 +35,8 @@ aksara run main:app --host 127.0.0.1 --port 8000
 
 The copied modules live at the project root. This is why the migration command
 uses `models`, not `app.models`. The domain template does not create a
-`pyproject.toml` or `.env`; the generic editable-install instructions printed by
-`startproject` do not apply. Use the already installed framework and the shell's
+`pyproject.toml` or `.env`. If an older CLI suggests an editable install for
+this copy, that instruction does not apply. Use the installed framework and the shell's
 database configuration.
 
 In another terminal, check the running local server:

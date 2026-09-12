@@ -22,8 +22,8 @@ same layout or defaults as `basic`.
 
 Use [Choosing a starting point](../getting-started/patterns.md) before generating
 a project. Follow the specific pattern page's commands for domain templates:
-the CLI's generic post-generation file tree and next steps do not describe their
-actual copied layout. In particular, do not assume an `app/` package,
+older CLI output can suggest the basic layout for every template. In particular,
+do not assume an `app/` package,
 `pyproject.toml`, or `.env` exists.
 
 ## Adapt a pattern deliberately

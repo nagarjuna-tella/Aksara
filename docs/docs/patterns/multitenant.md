@@ -48,8 +48,8 @@ aksara run main:app --host 127.0.0.1 --port 8000
 ```
 
 This template copies flat modules and does not generate a `pyproject.toml`,
-`.env`, or `app/` package. Use these commands rather than the generic
-editable-install and `app.models` instructions printed after generation.
+`.env`, or `app/` package. If an older CLI suggests an editable install or
+`app.models` after generation, follow the commands above instead.
 
 In another terminal, inspect startup only:
 

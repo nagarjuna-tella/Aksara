@@ -23,7 +23,7 @@
         "views.py"
       ],
       "flat_layout_without_package_metadata": true,
-      "generated_readme_commands_verified": false,
+      "generated_readme_commands_verified": true,
       "documented_commands": [
         [
           "aksara",
@@ -110,7 +110,7 @@
         "views.py"
       ],
       "flat_layout_without_package_metadata": true,
-      "generated_readme_commands_verified": false,
+      "generated_readme_commands_verified": true,
       "documented_commands": [
         [
           "aksara",
@@ -198,7 +198,7 @@
         "views.py"
       ],
       "flat_layout_without_package_metadata": true,
-      "generated_readme_commands_verified": false,
+      "generated_readme_commands_verified": true,
       "documented_commands": [
         [
           "aksara",

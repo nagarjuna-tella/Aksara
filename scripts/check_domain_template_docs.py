@@ -30,6 +30,7 @@ async def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--python', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--require-updated-readme', action='store_true', help='Require generated README commands to match the checked pattern page')
     args = parser.parse_args()
     python = str(args.python.absolute())
     cli = str(args.python.absolute().parent / 'aksara')
@@ -77,6 +78,11 @@ async def main():
                     project = root / commands[0][2]
                     await command([cli, *commands[0][1:]], root)
                     assert commands[1] == ['cd', project.name]
+                    if args.require_updated_readme:
+                        readme = (project / 'README.md').read_text()
+                        readme_blocks = re.findall(r'```bash\n(.*?)```', readme, re.DOTALL)
+                        startup = next(block for block in readme_blocks if block.startswith('aksara makemigrations'))
+                        assert [shlex.split(line) for line in startup.splitlines()] == commands[2:5]
                     files = sorted(str(p.relative_to(project)) for p in project.rglob('*') if p.is_file())
                     assert all((project / filename).is_file() for filename in ('models.py', 'main.py', 'settings.py'))
                     assert not any((project / filename).exists() for filename in ('pyproject.toml', '.env', 'app'))
@@ -162,6 +168,7 @@ print('DISCOVERY='+json.dumps({'declared_user':identity(models.User),'before':be
                     observations.append({
                         'template': name, 'package': package, 'generated_files': files,
                         'flat_layout_without_package_metadata': True,
+                        'generated_readme_commands_verified': args.require_updated_readme,
                         'documented_commands': commands, 'documented_curl_commands_executed': True,
                         'template_listing_executed': True, 'port_substitution': 'ephemeral local port for server isolation',
                         'migration_commands_exit_zero': True, 'tables': table_names,

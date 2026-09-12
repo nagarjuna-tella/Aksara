@@ -17,7 +17,7 @@
       "decision": "Rewrite setup and authorization expectations; retain relationship/custom-action example.",
       "limits": "Post and Comment only; requires migration generation; example API key does not establish Principal for generated writes.",
       "execution_evidence": "example-execution.json",
-      "readme_sha256": "b324c3ee2ed6900dedf797779cf92577ed729072559c88a4deb9f568665f58f9"
+      "readme_sha256": "09374a9fa826951990ff897867a3505b867d75a97a60c9cb8dd13badb3a119f7"
     },
     {
       "example": "crm",
@@ -25,7 +25,7 @@
       "decision": "Rewrite setup and authorization expectations; retain domain/action example.",
       "limits": "Customer, Deal and Activity; requires migration generation and real identity adaptation; not a complete CRM.",
       "execution_evidence": "example-execution.json",
-      "readme_sha256": "93ebb26923e9462b552865a6dd09db64db6da2c877f1696a56a0f36805d531d3"
+      "readme_sha256": "9b6b3077acbaf27eddaad4412976fccf5d95685982d5ced1619bb8936222aa0c"
     },
     {
       "example": "multitenant",
@@ -33,7 +33,7 @@
       "decision": "Replace recommended isolation role with Support Desk and ticket-desk tenancy; retain historical code.",
       "limits": "Known EX-001 middleware exemption and MIGRATION-001 model-discovery collision in installed template flow; startup is not complete schema, RLS or tenant authorization evidence.",
       "execution_evidence": "example-execution.json",
-      "readme_sha256": "801e3d24602f22e9a3f1bce1d3431275ce03fb5829d610133f759c2529f0828c"
+      "readme_sha256": "5b7df846a6fe6fd645f1d57f41c14fd383b6d966368bd16cb5cb1f6d679c0ce4"
     },
     {
       "example": "ai_providers",
