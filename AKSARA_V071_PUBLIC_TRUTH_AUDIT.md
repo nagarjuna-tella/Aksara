@@ -173,8 +173,9 @@ Full page-by-page usability review is still pending.
 | PT-071 | P2 | Provider discovery described configured providers and connectivity even though its heuristics produce a default Ollama false positive and keyless-custom false negative | Reframed detection as a hint, required `ping` for reachability and documented AIPROVIDER001 | Docs fixed; runtime defect retained |
 | PT-072 | P1 | Studio pages described a partial endpoint list as complete, treated Origin as the only API access check, implied offline live data and omitted required production mounting/authentication inputs | Documented selected endpoint scope, conditional capabilities, independent authentication, live-backend requirement and complete production prerequisites | Docs fixed; source/dependency checks retained |
 | PT-073 | P2 | Two experimental AI entry/tutorial pages still defined exclusions against the superseded v0.6 stable contract | Anchored the exclusions to the released v0.7 contract | Docs fixed; complete Start/tutorial reading |
+| PT-074 | P1 | The glossary defined Agent as a multi-step tool executor despite the linked page and stable contract excluding an autonomous Agent runtime | Defined the application machine actor and experimental prompt/workflow helpers separately | Docs fixed; complete glossary/pattern/how-to reading |
 
-The register consolidates all 73 findings. “Docs fixed” describes the recorded
+The register consolidates all 74 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -2578,3 +2579,19 @@ Inspector output remains diagnostic: model constraints are inferred and
 INSPECTOR001's synthetic `EXPLAIN ANALYZE` ambiguity stays visible. No new
 contradiction or page change was required. This closes author reading for these
 four sections, not every CLI callback or the final candidate campaign.
+
+## Glossary, pattern and how-to reading assessment — 2026-09-12
+
+Read the glossary, all four Pattern pages and all five How-to pages completely.
+`patterns-howto-glossary-reading-review.json` records current hashes and an
+individual disposition for each page. The domain pages preserve EX-001 and
+MIGRATION-001 rather than presenting startup as safe tenancy. The durable
+recipes keep bounded history, approval intent, external uncertainty and
+at-least-once export distinct. The TypeScript guide retains SDK-001 as a failed
+compile result.
+
+PT074 replaces the glossary's unsupported autonomous multi-step Agent definition
+with the actual server-owned machine-Principal boundary and separately names the
+experimental prompt, playbook and workflow helpers. No runtime source changed.
+This closes author reading for the conceptual task guides, not real-provider
+delivery, remote outbox durability, a repaired SDK or candidate execution.

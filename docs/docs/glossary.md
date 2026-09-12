@@ -29,7 +29,10 @@ worker creates a new Attempt; the logical Operation remains the same.
 Experimental planning, structured query plans, code generation and debugging assistance; separate from stable backend and MCP execution. Aksara does not itself turn arbitrary natural language into authorized database queries.
 
 ### Agent
-An AI agent that can execute multi-step tasks using tools. See [Agent Runtime](ai-mode/agent-runtime.md).
+A machine actor represented by a server-owned Principal when it invokes an
+application tool. Experimental Agent Mode can assemble context, prompts,
+playbooks, and ordered development-workflow data; Aksara v0.7 does not provide
+an autonomous multi-step agent runtime. See [Agent Runtime](ai-mode/agent-runtime.md).
 
 ### Annotation
 Adding computed values to queryset results, typically using aggregate functions like `Count`, `Sum`, `Avg`.

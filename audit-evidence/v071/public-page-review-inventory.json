@@ -892,18 +892,21 @@
     },
     {
       "path": "docs/docs/glossary.md",
-      "sha256": "2b2e7d40a87e50e04a40146a11f2617e531c10140993bc2d8c7e601345588742",
+      "sha256": "744d80e3dfbbdc4c064eb7ddf00384e10229af535245f82759397ee9ed9f8ab4",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "patterns-howto-glossary-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 401
+      "lines": 404
     },
     {
       "path": "docs/docs/how-to/export-durable-transitions.md",
       "sha256": "596d1ddc0d837167972d3bf3aaba784058e0cc91ba3a08c854600d7cf916a0f5",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "outbox-execution.json"
+        "outbox-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 93
@@ -913,7 +916,8 @@
       "sha256": "46b785f7cc40bf7f08ccd84d837312d127963b9de320e9c97670c33cca004eb0",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "external-execution.json"
+        "external-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 129
@@ -923,7 +927,8 @@
       "sha256": "e329687f5cc19a332c0c752617247fa9c8dd23d6094e7ab8da8daaf27d2b166a",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "history-execution.json"
+        "history-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 100
@@ -933,7 +938,8 @@
       "sha256": "e9fc4e133f0ca696aea8e79a6f235d74c1313a3ef617a7b69a0b19580ea6e864",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
-        "approval-execution.json"
+        "approval-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 108
@@ -942,7 +948,9 @@
       "path": "docs/docs/how-to/typescript-client.md",
       "sha256": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "patterns-howto-glossary-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 80
     },
@@ -1222,7 +1230,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "cli-help-domain-template-execution.json",
-        "domain-template-execution.json"
+        "domain-template-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 76
@@ -1233,7 +1242,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "cli-help-domain-template-execution.json",
-        "domain-template-execution.json"
+        "domain-template-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 80
@@ -1242,7 +1252,9 @@
       "path": "docs/docs/patterns/index.md",
       "sha256": "b02108d5fb89be6af6d990eaa2703211c5e9fe592821316ef10ee672525e370e",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "patterns-howto-glossary-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 50
     },
@@ -1252,7 +1264,8 @@
       "changed_since_release": true,
       "scoped_evidence_candidates": [
         "cli-help-domain-template-execution.json",
-        "domain-template-execution.json"
+        "domain-template-execution.json",
+        "patterns-howto-glossary-reading-review.json"
       ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 81
@@ -1673,7 +1686,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 148
+    "with_scoped_evidence_candidates": 151
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }
