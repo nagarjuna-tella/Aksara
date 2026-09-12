@@ -15,6 +15,14 @@ It imports packages and inspects available configuration/project metadata; its
 database check does not prove live connectivity, RLS, or migration application.
 Use [Doctor production checks](diagnostics.md) for the separate release policy.
 
+The v0.7.0 environment checker reports a Python-version error only below 3.10,
+while the package metadata requires Python 3.11 or newer and the supported
+runtime matrix is Python 3.11–3.14. A 3.10 result from this checker therefore
+does not establish compatibility. Use the
+[runtime compatibility matrix](reference/runtime-compatibility.md) and package
+metadata as the authority. This known `GAP001` mismatch needs a separate
+functional patch; it is documented rather than changed in v0.7.1.
+
 The categories are `imports`, `db`, `migrations`, `routers`, `providers`, `studio`,
 `environment`, `ai_pipeline`, and `ai_hub`. They run sequentially. A checker
 exception becomes a warning issue; it does not fail the whole scan. Unknown
@@ -73,7 +81,7 @@ aksara gaps fix-plan
 | `routers` | Apps in `settings.apps` have `models.py` and `views.py` |
 | `providers` | AI provider profiles, required secrets present |
 | `studio` | Studio panel enabled, static assets exist, secret key set |
-| `environment` | Required env vars present, Python version ≥ 3.10, no debug-in-prod |
+| `environment` | Required env vars present, implemented Python threshold (currently rejects only versions below 3.10; see `GAP001` above), no debug-in-prod |
 | `ai_pipeline` | AI modules importable, MCP package when enabled, exposed models |
 | `ai_hub` | AI Hub provider/default/embedding configuration; no live provider call |
 

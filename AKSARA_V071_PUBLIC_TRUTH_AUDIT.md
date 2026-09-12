@@ -26,10 +26,12 @@ proposed by this audit.
 The complete starting file inventory is recorded in
 [audit-evidence/v071/public-docs-inventory.json](audit-evidence/v071/public-docs-inventory.json):
 157 public Markdown files with 902 Python fences, headings, content hashes, and
-navigation membership. Content review is explicitly pending on those records.
-Historical changelogs and notes will be classified separately from current
-instructions. The baseline generated project contains 18 files; its hashes and
-local comparison directory are recorded there without copying generated secrets.
+navigation membership. Those baseline records intentionally retain their
+original pending flags. The current inventory has 163 pages, and fifteen
+current-hash reading artifacts give every page an explicit disposition,
+including separate treatment for historical changelogs and notes. The baseline
+generated project contains 18 files; its hashes and local comparison directory
+are recorded there without copying generated secrets.
 
 Public surfaces also include `pyproject.toml`, `aksara/_version.py`,
 `aksara/cli/scaffold.py`, CLI help, `aksara/conf.py`, and six example application
@@ -69,7 +71,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 292 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 7 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 292 documented commands parse; installed Gap Analysis version probe ([CLI evidence](audit-evidence/v071/cli-docs-syntax.json), [gap evidence](audit-evidence/v071/gap-analysis-version-contract.json)) | Parsing does not execute callbacks; 7 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. GAP001 means the static environment check accepts Python 3.10 although the package requires 3.11 or newer. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). Three domain copies now have installed command/HTTP evidence; the historical tenant schema remains incomplete (MIGRATION-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy, fix-plan filters and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
 | File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
@@ -94,7 +96,8 @@ retains release contracts and changelog. All 157 prior navigation destinations
 remain reachable. Home, Getting Started, First App, Ten Minutes and Tutorials
 now lead to the same executable application rather than competing toy projects.
 Automated navigation checks verify destinations and the principal reader routes.
-Full page-by-page usability review is still pending.
+All 163 current public pages now have an explicit author-reading disposition;
+candidate-only edits still require a final hash and navigation refresh.
 
 ## Contradictions Found
 
@@ -174,8 +177,11 @@ Full page-by-page usability review is still pending.
 | PT-072 | P1 | Studio pages described a partial endpoint list as complete, treated Origin as the only API access check, implied offline live data and omitted required production mounting/authentication inputs | Documented selected endpoint scope, conditional capabilities, independent authentication, live-backend requirement and complete production prerequisites | Docs fixed; source/dependency checks retained |
 | PT-073 | P2 | Two experimental AI entry/tutorial pages still defined exclusions against the superseded v0.6 stable contract | Anchored the exclusions to the released v0.7 contract | Docs fixed; complete Start/tutorial reading |
 | PT-074 | P1 | The glossary defined Agent as a multi-step tool executor despite the linked page and stable contract excluding an autonomous Agent runtime | Defined the application machine actor and experimental prompt/workflow helpers separately | Docs fixed; complete glossary/pattern/how-to reading |
+| PT-075 | P2 | Live roadmap and changelog navigation linked a temporary feature branch and an unrelated nonexistent GitHub release repository | Pointed both links at their durable locations in the public repository | Docs fixed; complete project-history reading |
+| PT-076 | P1 | Gap Analysis presented its Python 3.10 threshold without warning that package metadata and the supported matrix require Python 3.11 or newer | Made the implementation mismatch and authoritative compatibility sources explicit | Docs fixed; GAP001 retained |
+| PT-077 | P2 | The v0.6 historical contract called a nonexistent `AgentRuntime` class a usable experimental surface | Named the actual `run_prompt_pack`, `AgentRuntimeLimits` and `AgentRuntimeBudget` surfaces | Docs fixed; complete historical-contract reading |
 
-The register consolidates all 74 findings. “Docs fixed” describes the recorded
+The register consolidates all 77 findings. “Docs fixed” describes the recorded
 correction, not candidate acceptance or a fix to underlying runtime defects.
 Detailed sections retain commands, failures, limitations and historical results.
 
@@ -253,6 +259,17 @@ treat detection as a hint, require `ping` for reachability and explain direct
 construction for keyless custom endpoints. Recommend a separately scoped
 configured-state fix for the experimental compatibility layer; no provider
 runtime behavior changed here.
+
+**GAP001 / P1:** the static environment checker emits
+`ENV_PYTHON_VERSION_TOO_OLD` only below Python 3.10 and tells those users that
+Aksara requires 3.10 or newer. Package metadata requires Python 3.11 or newer,
+and the supported matrix is Python 3.11–3.14. A provider-free isolated 0.7.0
+wheel probe patches the reported interpreter tuple and observes an error for
+3.9 but none for 3.10 or 3.11. This does not show that Aksara runs on Python
+3.10; normal package installation should reject it. The Gap Analysis guide now
+makes package metadata and the runtime matrix authoritative. Recommend a
+separate threshold/message patch with 3.10/3.11 boundary tests; production code
+is unchanged here.
 
 **PT-019 / P1:** serializer guidance advertised unsupported `partial=True`,
 `write_only_fields`, nested field declarations, and misleading validation/error
@@ -568,21 +585,24 @@ Expand gates around complete public examples and record each coverage limit.
 
 ## Changes Made
 
-Created the v0.7.1 branch, baseline inventory, scaffold comparison snapshot, and
-this audit. Rewrote `tutorials/deployment.md` around real configuration, migration roles,
-restricted application roles, RLS, diagnostics, worker supervision and recovery.
-Added `concepts/application-boundaries.md` and `concepts/stability.md`, and
-Concepts/Operations navigation. Strict MkDocs and the eight semantic docs tests
-pass after these edits. Six progressive public-baseline chapters now execute;
-the candidate and remaining journeys still need proof. Functional runtime source
-is unchanged.
+Created the v0.7.1 branch, public inventory, capability matrix, contradiction
+register, strategy review, scaffold comparisons and scoped execution evidence.
+Rebuilt the reader paths around one progressive Ticket Desk application and
+added explicit conceptual, production, durable, configuration, upgrade and
+stability guidance. Corrected public imports, commands, configuration, runtime
+limits, historical navigation and experimental boundaries. All 163 inventoried
+pages now have current author-reading dispositions. Installed public/development
+wheel checks cover the major journeys within their recorded limits; the actual
+candidate reruns remain pending. Functional runtime source is unchanged.
 
 ## Remaining Documentation Debt
 
-Candidate journeys, remaining public-page/snippet audit, full usability review, candidate
+Final high-value snippet-coverage reconciliation, candidate journeys, candidate
 packaging, compatibility regression and hosted checks remain pending. The
-market/roadmap review is now drafted from current primary documentation; its
-user-demand and integration-cost hypotheses still require independent trials.
+author page/usability pass is complete; it is not an independent novice or
+operator study. The market/roadmap review is drafted from current primary
+documentation, while its user-demand and integration-cost hypotheses still
+require independent trials.
 
 ## Strategic Review and Roadmap
 
@@ -2595,3 +2615,40 @@ with the actual server-owned machine-Principal boundary and separately names the
 experimental prompt, playbook and workflow helpers. No runtime source changed.
 This closes author reading for the conceptual task guides, not real-provider
 delivery, remote outbox durability, a repaired SDK or candidate execution.
+
+## Project history and whole-manual reading assessment — 2026-09-12
+
+The changelog, Gap Analysis guide, release guide, Notes hub, both v0.5.49
+notes, public roadmap, roadmap hub, and both release contracts were read
+completely. `project-history-reading-review.json` records a current hash and
+individual disposition for each of these ten pages. Together with the other
+fourteen reading artifacts, it closes the explicit author-reading set for all
+163 inventoried public pages. A focused test checks exact set equality so a
+new or omitted page cannot inherit that conclusion silently.
+
+PT075 corrects two live navigation failures: the strategy report no longer
+depends on this feature branch, and the changelog no longer links an unrelated
+404 GitHub release repository. PT076 documents GAP001. The installed v0.7.0
+package declares Python 3.11 or newer, but its static environment checker emits
+a version error only below 3.10; an isolated provider-free probe observes the
+3.10 false pass. Package metadata and the Python 3.11–3.14 compatibility matrix
+are now authoritative in the guide. PT077 corrects the historical v0.6 contract:
+the tag contains `run_prompt_pack`, `AgentRuntimeLimits` and
+`AgentRuntimeBudget`, but no `AgentRuntime` class or export.
+
+The cross-manual pass also checked the evaluator, developer, application, tool,
+operator and contributor routes; tutorial/reference separation; terminology for
+Task, Operation, Attempt, approval, MCP and `DurableStep`; stable versus
+experimental labels; PostgreSQL-only guarantees; and historical-entry banners.
+The existing import, CLI, navigation, rendered-link and external-link gates
+remain the machine checks. This author review is not an independent usability
+study, provider certification, or candidate execution result. No production
+source or runtime behavior changed in this checkpoint.
+
+Validation: strict MkDocs passes; 348 Python fences/imports resolve against the
+isolated public wheel; 292 CLI forms parse with seven documented exclusions;
+162 rendered pages contain 42,195 valid local links/assets; 41 selected live
+external targets are reachable, while the one post-merge `main` target is
+verified locally and recorded as excluded; and 227 documentation/packaging
+tests pass with one upstream dependency warning. The no-runtime-change AST guard
+passes against v0.7.0.

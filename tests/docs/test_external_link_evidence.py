@@ -17,6 +17,14 @@ def test_external_link_evidence_is_current():
         assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == digest
     assert evidence['runner_sha256'] == hashlib.sha256((ROOT / 'scripts/check_external_doc_links.py').read_bytes()).hexdigest()
     assert len({item['url'] for item in evidence['results']}) == len(evidence['results'])
+    post_merge_url = (
+        'https://github.com/nagarjuna-tella/Aksara/blob/main/'
+        'AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md'
+    )
+    assert evidence['excluded'][post_merge_url] == (
+        'Target exists in this candidate and becomes reachable on main only after merge'
+    )
+    assert (ROOT / 'AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md').is_file()
     for item in evidence['results']:
         assert 200 <= item['status'] < 300
         assert item['classification'] == 'reachable'

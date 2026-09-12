@@ -2625,6 +2625,6 @@ aksara migrate
 
 ## Links
 
-- [GitHub Releases](https://github.com/aksara/aksara/releases)
+- [GitHub Releases](https://github.com/nagarjuna-tella/Aksara/releases)
 - [Roadmap](roadmap.md)
 - [Migration Guides](getting-started/index.md)

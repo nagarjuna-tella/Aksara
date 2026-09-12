@@ -166,7 +166,8 @@ change during v0.6.x without the compatibility guarantees above.
 - AI Console, AI Flows, AI Debugger, Architecture Review, Performance
   Analyzer, Schema Doctor analysis output, and provider-specific live calls
 - Investigation sessions and transcript state
-- `AgentRuntime`, planners, autonomous loops, code-generation suggestions,
+- Prompt execution through `run_prompt_pack`, `AgentRuntimeLimits` and
+  `AgentRuntimeBudget`, planners, autonomous loops, code-generation suggestions,
   patch execution, and approval callback internals
 - Generic, OpenAI, and third-party tool export adapters outside the MCP
   protocol contract stated above

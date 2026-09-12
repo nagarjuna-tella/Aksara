@@ -20,6 +20,10 @@ PAGES = (
     'docs/docs/reference/runtime-compatibility.md',
     'AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md',
 )
+POST_MERGE_LOCAL_TARGETS = {
+    'https://github.com/nagarjuna-tella/Aksara/blob/main/AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md':
+        'AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md',
+}
 
 
 def check(url):
@@ -53,6 +57,12 @@ def main():
             assert not parsed.username and not parsed.password, 'Credential-bearing link is not allowed'
             if parsed.hostname == 'nagarjuna-tella.github.io':
                 excluded[url] = 'Candidate documentation URLs are checked against the rendered site, not the older published site'
+            elif url in POST_MERGE_LOCAL_TARGETS:
+                target = ROOT / POST_MERGE_LOCAL_TARGETS[url]
+                assert target.is_file(), f'Post-merge link target is missing locally: {target}'
+                excluded[url] = (
+                    'Target exists in this candidate and becomes reachable on main only after merge'
+                )
             else:
                 sources.setdefault(url, []).append(page)
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:

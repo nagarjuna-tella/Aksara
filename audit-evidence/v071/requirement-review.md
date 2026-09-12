@@ -1,9 +1,9 @@
 # v0.7.1 requirement review checkpoint
 
 This is a verification checkpoint, **not a completion or release approval**.
-The current table incorporates the AI and Studio reading checkpoint prepared
-after source head `2886e85`. Earlier checkpoint sections below retain their
-original scoped evidence; the table is refreshed where current artifacts
+The current table incorporates the complete public-page reading assessment
+prepared after source head `17088633`. Earlier checkpoint sections below retain
+their original scoped evidence; the table is refreshed where current artifacts
 provide a stronger or newer result.
 
 The objective's original scope remains authoritative. This table preserves all
@@ -29,14 +29,14 @@ Line numbers below refer to that exact objective.
 
 | Phase / source line | Assessment | Inspected evidence and scope | Remaining verification / limitation |
 | --- | --- | --- | --- |
-| A1: Inventory every public-facing surface (line 267) | PARTIAL | public-docs-inventory.json preserves the 157-page baseline; the current inventory has 163 pages and 151 scoped-evidence candidates. Start/tutorial, reference/tooling and glossary/pattern/how-to reading artifacts cover 54 pages. | Finish semantic dispositions for the remaining pages; baseline records still say content review pending. |
-| A2: Build a capability truth matrix (line 316) | PARTIAL | Audit capability matrix has 35 rows, implementation anchors, stability, examples and scoped wheel evidence. | Complete remaining semantic rows and reconcile candidate evidence after build; existence/imports are insufficient. |
-| A3: Identify public contradictions (line 370) | PARTIAL | Audit has one ordered 74-row PT-001 through PT-074 register with detailed sections, plus nineteen functional findings. | Register consolidated; finish full-page review and verify every disposition against its stated scope, not only identifier presence. |
+| A1: Inventory every public-facing surface (line 267) | SCOPED | public-docs-inventory.json preserves the 157-page release baseline and the current inventory has 163 pages. Fifteen reading artifacts give every inventoried page a current explicit disposition. | Repeat inventory and hash reconciliation after candidate-only edits; baseline `semantic_acceptance` fields remain historical diff flags rather than the current author review. |
+| A2: Build a capability truth matrix (line 316) | SCOPED | Audit capability matrix has 35 rows, implementation anchors, stability, examples, limitations and scoped installed-wheel evidence, reconciled after the full-page pass. | Repeat candidate evidence after build; existence/imports are insufficient and every row retains its stated limits. |
+| A3: Identify public contradictions (line 370) | SCOPED | Audit has one ordered 77-row PT-001 through PT-077 register with detailed sections, plus twenty functional findings. All 163 inventoried pages have explicit reading dispositions. | Re-run contradiction/order/evidence guards after candidate-only edits; no functional finding is repaired in this branch. |
 | A4: Define the information architecture (line 404) | SCOPED | MkDocs navigation and test_navigation.py establish separate evaluator, Start, Build, Operate, MCP, Experimental and Contribute paths. | The complete Start/tutorial route has an author-reading record; continue remaining reader journeys and important-page discovery. |
 | A5: Rewrite the top-level positioning (line 511) | SCOPED | README first screen explains category, audience, FastAPI relationship, boundaries, maturity and canonical starting point. | Four-page evaluator/first-project author reading recorded in entry-reading-review.json; no independently measured comprehension claim. |
 | A6: Build a real Quick Start (line 545) | SCOPED | first-project-journey.json executes exact starter files, migrations, server, auth and three tests outside checkout. | Repeat against candidate; interactive dbsetup against the existing local test database is now checked; new database creation is not exercised. |
 | A7: Progressive tutorial (line 584) | SCOPED | Six sequential Ticket Desk chapters cover all twelve requested tutorial topics; 86 executions / 28 final-stage tests. | Candidate rerun; keep ordinary-task authority distinct from durable authority. |
-| A8: Conceptual user manual (line 618) | PARTIAL | Start/tutorial, concepts, glossary, patterns, how-tos, API, security, middleware, Admin, advanced, ORM, debugging, AI, Studio, reference, CLI, Inspector and Search pages now have explicit author-reading dispositions; execution artifacts cover major backend paths. | Complete semantic/readability review across the remaining manual sections and repeat against the candidate. |
+| A8: Conceptual user manual (line 618) | SCOPED | Start/tutorial, concepts, glossary, patterns, how-tos, API, security, middleware, Admin, advanced, ORM, debugging, AI, Studio, reference, CLI, Inspector, Search, release, history and roadmap pages have explicit author-reading dispositions; execution artifacts cover major backend paths. | Repeat against the candidate; a complete author review is not an independent user study or proof of every API path. |
 | A9: How-to guides (line 680) | SCOPED | Auth, tenancy/RLS, reports, durability, approval, external effect, MCP, diagnostics, SDK, media, deployment and upgrade guides exist with scoped gates; all five dedicated How-to pages have explicit reading dispositions. | Candidate reruns; SDK compilation is a documented failure, not successful end-to-end client use. |
 | A10: Reference quality (line 707) | SCOPED | All eight Reference and five CLI pages have explicit reading dispositions; settings and 117 CLI declarations, installed imports, route/default/serializer contracts, AI provider environment/default checks and dedicated DB gates exist. | Candidate rerun remains required. Syntax/import coverage is not universal behavior proof and generated CLI declarations do not execute callbacks. |
 | A11: Durable Operations documentation quality (line 730) | SCOPED | Durable guide and exact admission/worker, approval, external, history and outbox examples explain all named concepts. | Final plain-language review and candidate execution; no arbitrary Python/external exactly-once promise. |
@@ -50,7 +50,7 @@ Line numbers below refer to that exact objective.
 | A19: Configuration manual (line 978) | SCOPED | settings-reference.md plus configuration-findings.json and table tests cover precedence and requested setting families. | Final cross-page check; CFG-001 explicit-list workaround is tested, environment parser remains defective. |
 | A20: Production guide (line 1009) | SCOPED | deployment.md and operator-reading.json answer roles, RLS, secrets, services, workers, retention/export, Doctor, backups and upgrades. | Candidate production gate; author reading is not independent operation or backup-restore execution. |
 | A21: Upgrade guide (line 1034) | SCOPED | operations/upgrade-v07.md describes v0.6-to-v0.7 changes, opt-in durability, registrations/workers and checks; upgrade-recipe.json executes internal bootstrap. | No data-bearing historical application upgrade demonstrated; candidate regression and scope qualification required. |
-| A22: Terminology normalization (line 1055) | PARTIAL | The completely read glossary, conceptual, reference and CLI pages distinguish Model, ViewSet, Principal, tenant, policy, Task, Operation, Attempt, Action, Worker, Approval, MCP and DurableStep; PT074 removes the autonomous-Agent implication. | Finish the remaining project-history/release pages and one cross-manual terminology pass. |
+| A22: Terminology normalization (line 1055) | SCOPED | The completely read glossary and full-manual pass distinguish Model, ViewSet, Principal, tenant, policy, Task, Operation, Attempt, Action, Worker, Approval, MCP and DurableStep. PT074 removes the autonomous-Agent implication and PT077 corrects the historical runtime name. | Recheck after candidate-only edits; historical release terminology remains preserved as dated history. |
 | A23: Documentation quality gate (line 1089) | SCOPED | Strict MkDocs, navigation/import/CLI/version tests, rendered links and selected external links provide automated checks. | Refresh after final edits; internal href/src checks exclude CSS url(), external check covers selected important sources. |
 
 ## Workstream B
@@ -71,11 +71,11 @@ Line numbers below refer to that exact objective.
 | B12: Capability-gap analysis (line 1542) | SCOPED | Capability Gaps table has all eight requested qualitative dimensions and eleven gaps. | No summed numerical precision; prioritization explicitly weighs risk and integration alternatives. |
 | B13: Roadmap principles (line 1565) | SCOPED | Roadmap Principles records eight evidence-based rules before version sequencing. | No further feature commitments inferred. |
 | B14: Roadmap horizons (line 1586) | SCOPED | Now, Next, Later, Explore and Not Planned horizons exist in report and public roadmap. | Dates and speculative later versions remain uncommitted. |
-| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Nineteen findings require separate functional scope; no quiet fixes here. |
+| B15: Determine v0.7.x patch strategy (line 1618) | SCOPED | v0.7.x Maintenance Strategy separates documentation-only v0.7.1 from reviewed functional maintenance. | Twenty findings require separate functional scope; no quiet fixes here. |
 | B16: Determine v0.8 thesis (line 1635) | SCOPED | v0.8 Thesis proposes operating existing authorized work, with acceptance scenario and conditions for reconsideration. | Recommendation only; no v0.8 implementation. |
 | B17: Longer release sequence (line 1658) | SCOPED | Possible Later Release Sequence leaves v0.9 unassigned and uses evidence-gated stabilization. | No arbitrary feature allocation or schedule. |
 | B18: Define v1.0 cutoff (line 1675) | SCOPED | v1.0 Readiness Criteria bounds supported API, migrations, security, operations, docs, compatibility, integrations and defect closure. | These are future criteria, not a current 1.0 claim. |
-| B19: Populate roadmap.md (line 1706) | SCOPED | docs/docs/roadmap.md is populated with current contract, v0.7.1, horizons, non-goals and bounded 1.0. | Final external links and public/strategy consistency after edits. |
+| B19: Populate roadmap.md (line 1706) | SCOPED | docs/docs/roadmap.md is populated with current contract, v0.7.1, horizons, non-goals and bounded 1.0; its detailed research link targets the eventual main-branch location. | Candidate link refresh and final public/strategy consistency check. |
 | B20: Internal strategic recommendations (line 1738) | SCOPED | Ranked top-five lists, technical/nontechnical investment, user assumption and architectural temptation are present. | Final editorial consolidation; research recommendations are not completed customer studies. |
 
 ## Workstream C
@@ -87,7 +87,7 @@ Line numbers below refer to that exact objective.
 | C3: Durable Operation journey (line 1821) | SCOPED | Durable chapter tests registration, admission, worker, idempotency/status, post-SQL retry, cancel and current role revocation. | Repeat candidate; full crash campaign belongs to broader established regression. |
 | C4: MCP journey (line 1840) | SCOPED | Official MCP SDK 2.0.1 journey verifies negotiation, authentication adapter, CRUD/denial and REST parity; no MCP Tasks. | Repeat candidate; no external OAuth provider certification. |
 | C5: Production deployment reading test (line 1854) | VERIFIED | operator-reading.json answers all named operator questions and records complete reading of deployment, upgrade and Doctor, with per-page hashes and usability assessment. | Author reading satisfies the requested reading test; live deployment, restore execution and candidate regression remain separate requirements. |
-| C6: Documentation usability review (line 1872) | PARTIAL | Entry, Start/tutorial, operator, API, security, middleware, Admin, concepts/glossary, patterns/how-tos, advanced, ORM, debugging, AI, Studio, reference, CLI, Inspector and Search sections have explicit author-reading records. Unsupported examples are replaced or bounded; section-specific readability findings are recorded. | Complete the project-history/release section and perform one final cross-manual pass for duplication, navigation, task orientation and tutorial/reference separation. |
+| C6: Documentation usability review (line 1872) | SCOPED | All 163 public pages have explicit author-reading records. The final cross-manual pass checked duplication, navigation, task orientation, terminology, stable/experimental boundaries and tutorial/reference separation; PT075 fixes live history/roadmap links. | Author review is not an independent usability study; repeat link/navigation checks after candidate-only edits. |
 
 ## Workstream D
 
@@ -99,7 +99,7 @@ Line numbers below refer to that exact objective.
 | D4: Example applications (line 1915) | SCOPED | Five copied demonstration apps and packaged Support Desk execute outside checkout. | Repeat actual candidate and retain scope/denial limitations. |
 | D5: Scaffold verification (line 1921) | SCOPED | scaffold-startup.json executes README install/migration/Doctor/dev, verifies routes, stops process and removes schema. | Repeat candidate and matching equivalence artifact. |
 | D6: Link checking (line 1927) | SCOPED | rendered-links.json checks 162 HTML pages / 42,152 local references; external-links.json covers selected important links. | Refresh final sources; no claim of every external target or CSS URL validation. |
-| D7: Public API contract scan (line 1933) | PARTIAL | Every Start/tutorial, AI/Studio, Reference, CLI, Inspector, Search, Pattern and How-to page now has a reading disposition; stability, glossary and corrected API/ORM references separate unsupported/internal surfaces. | Finish the remaining project-history/release pages; baseline inventory is not that audit. |
+| D7: Public API contract scan (line 1933) | SCOPED | Every inventoried public page now has a current reading disposition; stability, glossary, release contracts and corrected API/ORM references separate unsupported, historical and internal surfaces. | Repeat source/import and terminology guards on the candidate; this does not stabilize experimental APIs. |
 | D8: Documentation truth report (line 1939) | SCOPED | public-docs-truth.json indexes artifacts, hashes, scopes, defects and open work; candidate_ready remains false. | Link this requirement checkpoint without converting SCOPED into completion. |
 
 ## Workstream E
@@ -123,7 +123,7 @@ Line numbers below refer to that exact objective.
 | No semantic changes to ORM/migrations/auth/permissions/policy/tenancy/durability/tasks/MCP/API/database/defaults/middleware/services | These are outside the allowed diff; no implementation change authorized by a defect finding | Final diff review must cover each named subsystem, imports and production network/background behavior |
 | No new mandatory dependency or unrelated range expansion | pyproject.toml unchanged at this checkpoint | Candidate package/dependency diff and build inspection |
 | Scaffold instruction-only changes | Four-template public/development comparison normalizes generated tokens; only each README differs | Candidate generation/equivalence and actual startup |
-| Functional defects: document, classify, preserve, separate patch | Nineteen findings recorded with scoped evidence; no runtime fix in this branch | Final explicit disposition and confirm useful public alternatives/limitations; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001 is provider-free |
+| Functional defects: document, classify, preserve, separate patch | Twenty findings recorded with scoped evidence; no runtime fix in this branch | Final candidate freshness; TESTING-001 and TASK-001 have scoped installed PostgreSQL reproductions, while AIPROVIDER001 and GAP001 are provider-free |
 | Historical evidence and working tree | current-state/, v055/ and benchmarks/results/ preserved untracked | Preserve through final commit; do not sweep them into candidate |
 | Branch, no merge/tag/publish | Work is on codex/v071-public-truth-and-roadmap; final PR not opened | Final remote/PR/publication checks at handoff |
 | Current primary research, date and citations | 26-source index and cited report, research date 2026-09-11 | Final source review; no fabricated market size, demand, adoption, benchmarks or community consensus |
@@ -137,7 +137,7 @@ Line numbers below refer to that exact objective.
 | Deliverable | Current state | Acceptance still needed |
 | --- | --- | --- |
 | AKSARA_V071_PUBLIC_TRUTH_AUDIT.md | Exists; 35-row capability matrix, contradictions, evidence and debt | Current matrix and contradiction register reconciled; finish per-requirement/current-page acceptance |
-| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all nineteen findings and source/date qualifications |
+| AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md | Exists; requested strategic subject areas covered | Final consistency with all twenty findings and source/date qualifications |
 | docs/docs/roadmap.md | Populated with horizons and bounded 1.0 | Final links/readability and consistency |
 | Documentation architecture/navigation | Implemented in docs/mkdocs.yml with destination/reader-route tests | Final usability review and orphan check |
 | Runnable Quick Start and progressive tutorial | Exact installed-wheel six-stage Ticket Desk | Actual candidate rerun |
@@ -341,8 +341,8 @@ sixteen-finding counts exclude this newly observed seventeenth finding.
 Public relations/glossary guidance and strategic maintenance priorities now
 include RELATION001. The new finding's publication follow-up is complete; its
 runtime fix remains separately scoped. At this checkpoint the inventory was
-seventeen findings; TASK-001 later raised it to eighteen and AIPROVIDER001 now
-raises the current total to nineteen.
+seventeen findings; TASK-001 later raised it to eighteen, AIPROVIDER001 raised
+it to nineteen, and GAP001 now raises the current total to twenty.
 Ten installed relation checks and 207 docs tests pass; all affected link/import
 artifacts were refreshed. Final manual/candidate acceptance remains open.
 
@@ -568,3 +568,29 @@ unsupported autonomous Agent runtime implication. Known multitenant, migration,
 SDK and inspector-related limitations remain visible; durable history, approval,
 external-effect and outbox recipes keep their distinct contracts. No production
 source changed. Candidate and real-provider/export validation remain open.
+
+## Project history and whole-manual reconciliation — 2026-09-12
+
+A1/A3/A8/A22/C6/D7: read the changelog, Gap Analysis, release guide, Notes hub,
+both v0.5.49 notes, public roadmap, roadmap hub and both release contracts
+completely. `project-history-reading-review.json` records all ten current hashes
+and page-specific dispositions. Together, the fifteen reading artifacts cover
+all 163 inventoried public pages, including the repository README and the three
+operator pages represented by `operator-reading.json`; the focused guard checks
+that exact set equality.
+
+PT075 repairs two live navigation targets: the strategy report now uses its
+eventual `main` location and the changelog links this repository's releases.
+PT076/GAP001 records that the installed 0.7.0 environment scanner accepts a
+simulated Python 3.10 even though its installed metadata requires 3.11 or newer.
+The docs make metadata/runtime compatibility authoritative; runtime source is
+unchanged. PT077 replaces a nonexistent `AgentRuntime` name in the historical
+v0.6 contract with the actual `run_prompt_pack`, `AgentRuntimeLimits` and
+`AgentRuntimeBudget` surfaces found at the v0.6.0 tag.
+
+The final cross-manual pass kept the six reader journeys discoverable, separated
+tutorial tasks from reference detail, preserved dated historical narratives,
+and reconciled Stable/Evolving/Experimental labels, Task/Operation/DurableStep,
+MCP protocol/catalog/Tasks, provider/planner limits and PostgreSQL-only scope.
+No additional architectural contradiction emerged. Candidate versioning,
+candidate-installed execution and the full release campaign remain open.

@@ -32,7 +32,7 @@ def main():
     entries = []
     stale = []
     for path in sorted(EVIDENCE.glob('*.json')):
-        if path.resolve()==args.output.resolve():
+        if path.name == 'public-docs-truth.json':
             continue
         data=json.loads(path.read_text())
         linked={}
@@ -85,6 +85,7 @@ def main():
             {'id':'SCAFFOLD-001','evidence':'scaffold-editable-defect.json','boundary':'Generated application editable packaging'},
             {'id':'TASK-001','evidence':'task-stale-recovery.json','boundary':'Ordinary stale-lock recovery can duplicate active work and permits an older completion to overwrite the newer result'},
             {'id':'AIPROVIDER001','evidence':'ai-provider-contract.json','boundary':'Experimental compatibility detection reports default Ollama without reachability and rejects keyless custom endpoints'},
+            {'id':'GAP001','evidence':'gap-analysis-version-contract.json','boundary':'Environment checker accepts Python 3.10 although package metadata requires Python 3.11 or newer'},
         ],
         'remaining_before_candidate':[
             'Finish semantic public-page/reference audit and reconcile stale capability-matrix descriptions with the scoped evidence.',

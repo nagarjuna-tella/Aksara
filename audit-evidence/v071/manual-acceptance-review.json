@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-12",
+  "status": "scoped_author_review_complete",
+  "scope": "Final cross-manual author review of all inventoried public pages and the six reader journeys. It checks explicit reading coverage, terminology, task orientation, navigation and stability boundaries. It is not an independent user study, candidate-wheel execution, provider certification or release approval.",
+  "inventory": {
+    "public_pages": 163,
+    "docs_pages": 162,
+    "repository_readmes": 1,
+    "reading_artifacts": 15,
+    "pages_with_explicit_reading_disposition": 163,
+    "missing_pages": []
+  },
+  "review_conclusions": {
+    "reader_journeys": "Evaluator, new developer, application developer, AI/tool developer, operator and contributor routes are present and separated in navigation.",
+    "task_orientation": "The progressive Ticket Desk owns the learning sequence; how-to pages solve bounded tasks and reference pages hold signatures, flags and configuration detail.",
+    "terminology": "Principal, tenant, permission, policy, Task, Operation, Attempt, Action, Worker, approval, MCP Tool and DurableStep retain distinct meanings; historical terms are marked as history.",
+    "stability": "Stable v0.6 backend, stable v0.7 Durable Operations, evolving helpers and experimental AI/Studio surfaces remain visibly distinct.",
+    "mcp": "Streamable HTTP /mcp/, the /ai/tools/mcp inspection catalog and unimplemented protocol MCP Tasks are not conflated.",
+    "database": "PostgreSQL is the required supported database and its RLS/locking/transaction guarantees are not generalized to SQLite or MySQL.",
+    "history": "Changelog and v0.5.49 notes preserve dated claims behind direct-entry notices; current roadmap and release contracts own present guidance.",
+    "remaining_limit": "An author review cannot measure independent comprehension or replace final candidate installation, runtime regression and hosted CI."
+  },
+  "contradictions": {
+    "registered": 77,
+    "latest": "PT-077"
+  },
+  "functional_findings": {
+    "registered": 20,
+    "latest": "GAP001",
+    "runtime_fixes_included": false
+  },
+  "fresh_checks": {
+    "strict_mkdocs": "pass",
+    "rendered_pages": 162,
+    "rendered_local_links_assets": 42195,
+    "rendered_link_errors": 0,
+    "installed_python_fences": 348,
+    "documented_cli_forms_parsed": 292,
+    "documented_cli_forms_excluded": 7,
+    "external_links_reachable": 41,
+    "external_links_broken": 0,
+    "external_links_unverified": 0,
+    "post_merge_local_targets": 1
+  },
+  "source_sha256": {
+    "audit-evidence/v071/admin-reading-review.json": "3a41cf63a878ddd0b204839b13f3d9bf863a91d0e16ea0ba12de0fb87eb5e77f",
+    "audit-evidence/v071/advanced-reading-review.json": "0e37be00829ee9ffecc6d16e29caa757ed86ba2c4f8def5ca3c058e25413edb4",
+    "audit-evidence/v071/ai-studio-reading-review.json": "ae334f0251d4066933d1814d2305bf46a81321276226cc6bcc3006f3130bee1f",
+    "audit-evidence/v071/api-reading-review.json": "5e681e0541a1c662e7c722fc1dd8014c1b9d7f6eecc8cc9f9875de0e67a10a38",
+    "audit-evidence/v071/concepts-reading-review.json": "79972c9bf81ad41ef08894384b02aa4a01553eadcbd682d6ff7f4b7eccb0a04a",
+    "audit-evidence/v071/debugging-reading-review.json": "452617042db8f0427a43df0788571997c9edde632311c7ad61fb06f30bc196e9",
+    "audit-evidence/v071/entry-reading-review.json": "405e219177022112fc94158271b7599a31501f16e2834f55b8d803a6cceb8351",
+    "audit-evidence/v071/middleware-reading-review.json": "9be2ebdc5a12664e525879cb4fa21066eaf93cb37a6b28e49e36e7b590475ef7",
+    "audit-evidence/v071/operator-reading.json": "a7db9677e23188b2354f0f7ab3d5058b3c2c0afb5f4ae6b69afd650553ef117c",
+    "audit-evidence/v071/orm-reading-review.json": "77f0908543cb786ac817380c9504621882fc681540bb87d23f46c6cc6624f71e",
+    "audit-evidence/v071/patterns-howto-glossary-reading-review.json": "7f5caa95e72f6a9245e7ab461f097709b5e75a42fdbee301724195aa3cdbe763",
+    "audit-evidence/v071/project-history-reading-review.json": "42c8996ce5b3c6d3aa073e231f7c38a64d266eb5a9ea092e14ba502fdbb1cd23",
+    "audit-evidence/v071/reference-tooling-reading-review.json": "9dcb7b7b5dbfef1a6617a76c687337237aa530b06bf55789d75fee73b92096b3",
+    "audit-evidence/v071/security-reading-review.json": "7fd691e259c10352cb62de9665cf9a6e2cff03ba891d89e077432f6d836bf730",
+    "audit-evidence/v071/start-tutorial-reading-review.json": "7a43885c7aad881afb5b873ae903bdd89fff3eba479b4087d75b3bb16b5451dc",
+    "audit-evidence/v071/public-page-review-inventory.json": "26979972b8c1bdfc5b82c50a3248b450f4dffc18d2fa911f5a57df0fa470c13c"
+  },
+  "candidate_acceptance": false
+}

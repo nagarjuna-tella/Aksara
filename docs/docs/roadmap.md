@@ -155,7 +155,7 @@ infrastructure. Treat public examples as executable product surface. Separate
 stored intent, scheduling and authorization. Stabilize promises only after
 upgrade and failure evidence exists.
 
-The [post-v0.7 market and roadmap review](https://github.com/nagarjuna-tella/Aksara/blob/codex/v071-public-truth-and-roadmap/AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md)
+The [post-v0.7 market and roadmap review](https://github.com/nagarjuna-tella/Aksara/blob/main/AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md)
 records the primary-source research, alternatives, capability gaps and demand
 assumptions behind this direction. It recommends a Python application-backend
 category and tests delayed authorized actions as the distinguishing use case;

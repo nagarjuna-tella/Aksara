@@ -594,9 +594,11 @@
     },
     {
       "path": "docs/docs/changelog.md",
-      "sha256": "a58d548d7b3e7dd27733c4420e792d6a8a292442e1db68fa5c9278e675f1b0f9",
+      "sha256": "97a572ec9699570a3a898c37b32640509aec73caf81e69a258009120f88b04f4",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 2630
     },
@@ -732,11 +734,14 @@
     },
     {
       "path": "docs/docs/gapanalysis.md",
-      "sha256": "9ba448bc84bd85747b58ec6517b35b6261fe4438f4a98f5e5b928fb572c7f9fb",
+      "sha256": "8aab1a2864604e10d6fb1ae35348f22ba19ea7e385fcf4ca6eb8e9bcef796276",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "gap-analysis-version-contract.json",
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 341
+      "lines": 349
     },
     {
       "path": "docs/docs/getting-started/ai-quickstart.md",
@@ -1042,7 +1047,9 @@
       "path": "docs/docs/notes/index.md",
       "sha256": "98a1586459d7a78f76e783fa097f1c458b1dfca1d98941c8f21aa8daf09c315f",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 16
     },
@@ -1050,7 +1057,9 @@
       "path": "docs/docs/notes/v0-5-49-announcement.md",
       "sha256": "9a77b57591726bd0d1fde6c157d9275316911054f92c1148771195413fe23765",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 127
     },
@@ -1058,7 +1067,9 @@
       "path": "docs/docs/notes/v0-5-49-security-architecture.md",
       "sha256": "a8df677e9aa6efa615c39e616234b1e6be0675df3910f838889992000a3aece3",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 290
     },
@@ -1335,6 +1346,7 @@
       "sha256": "95fec59a11bae52f6800080aad9e192aa76bed85fb3364ea814a9238da81df4c",
       "changed_since_release": true,
       "scoped_evidence_candidates": [
+        "gap-analysis-version-contract.json",
         "reference-tooling-reading-review.json",
         "setup-doc-execution.json"
       ],
@@ -1365,39 +1377,49 @@
       "path": "docs/docs/releasing.md",
       "sha256": "3bd4f8ed878b1c731a6e987743f4fdae083433ae0f0d429b7cc44f251db56c64",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 105
     },
     {
       "path": "docs/docs/roadmap/index.md",
-      "sha256": "459efac9c33d784227927877241981d8f1a9f86fe729603d34d4679abd65181d",
+      "sha256": "2fa4bd7149ec949ae268308169d313db7044e8b76e7738e10eb55d47aaecfd96",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 18
+      "lines": 17
     },
     {
       "path": "docs/docs/roadmap/v0-6-stability-contract.md",
-      "sha256": "cab1c54f24762268d49626412f61e03ee88e5393f5e4e09000f98b47675dd6d4",
+      "sha256": "f0b6693fabcfb50686750ecd89d41e76873df8d62f4587f94040926257971b38",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
-      "lines": 219
+      "lines": 220
     },
     {
       "path": "docs/docs/roadmap/v0-7-stability-contract.md",
       "sha256": "d30e0618317288865b4663394b8a575e7c92814999a624f71c7dcf021ee45c4e",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 187
     },
     {
       "path": "docs/docs/roadmap.md",
-      "sha256": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
+      "sha256": "9a0f7e97fd012b9ca10f493111b8217c42547bbbab5fdc9a8b535e5b085b529f",
       "changed_since_release": true,
-      "scoped_evidence_candidates": [],
+      "scoped_evidence_candidates": [
+        "project-history-reading-review.json"
+      ],
       "semantic_acceptance": "requires_explicit_review",
       "lines": 162
     },
@@ -1686,7 +1708,7 @@
   "counts": {
     "pages": 163,
     "unchanged_since_release": 3,
-    "with_scoped_evidence_candidates": 151
+    "with_scoped_evidence_candidates": 161
   },
   "runner_sha256": "408df415b82c0a84bc9b77ee4447f2e1dc33cd393cc9318685886f9480fc52a3"
 }

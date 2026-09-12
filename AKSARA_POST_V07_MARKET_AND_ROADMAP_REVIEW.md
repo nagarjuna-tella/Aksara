@@ -223,6 +223,7 @@ implementation is identified. Component existence is not certification.
 | Configuration/secrets | Implemented with a verified parsing defect | CFG-001 affects origin/host environment lists; tested explicit-list configuration is documented, while the runtime fix remains separate |
 | SDKs | Generated TypeScript currently fails strict compilation | SDK-001 is reproduced; generation alone is not a usable-client claim. Direct HTTP remains available |
 | CLI/scaffold | Commands work; generated application packaging is defective | SCAFFOLD-001 prevents editable installation; the dependency-install/startup route is tested, but does not repair project packaging |
+| Gap analysis | Useful static pre-flight with a version-threshold defect | GAP001 accepts a simulated Python 3.10 environment although package metadata requires 3.11 or newer; treat metadata and the supported matrix as authoritative and fix the checker separately |
 | Experimental provider DX | Configuration loads, but readiness reporting is unreliable | AIPROVIDER001 reports default Ollama without reachability and rejects keyless custom endpoints; keep providers experimental and fix separately before stronger DX claims |
 | Docs and integrations | Improved in this branch; acceptance incomplete | Executed tutorial and corrected references exist; final manual/candidate checks and independent user observation remain open |
 | Plugin ecosystem | Not established by this review | Prefer a few versioned integration contracts over promising an ecosystem |
@@ -357,6 +358,13 @@ guides now call detection a hint and require a separate ping; a provider-free
 installed-wheel probe preserves both negative controls. This is an experimental
 DX defect, not evidence for expanding provider scope or stabilizing AI. Fix it
 separately if provider setup becomes a supported adoption path.
+
+GAP001 / P1: the static environment checker rejects only interpreters below
+Python 3.10 even though the package metadata requires Python 3.11 or newer.
+An isolated installed-wheel probe preserves the 3.10 false pass. Keep package
+metadata and the supported compatibility matrix authoritative, and fix the
+checker threshold and message in a separate functional patch. This is an
+onboarding/trust defect, not evidence for expanding the supported matrix.
 
 Prioritize debt by user-visible failure and change risk. Static-analysis ratchets
 contain accepted debt; they are not a claim of a clean type/lint baseline.
@@ -534,7 +542,7 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track the nineteen audit findings for separately scoped functional maintenance; do
+Track the twenty audit findings for separately scoped functional maintenance; do
 not certify the affected multitenant example as an isolation reference or treat
 a passing defect-reproduction probe as proof that the runtime boundary works.
 
