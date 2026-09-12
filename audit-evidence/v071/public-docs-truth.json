@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "3b83f16f9f30be577ab9e663bbe15f85a5e6310b",
+  "reviewed_head": "3063003089ad74dd73a298a74ac5445161a4d993",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -453,7 +453,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "76782a3da39c1583b8242165ba546a4fbfab51e71ea4b32accb983bfe5c65bcd",
+      "sha256": "aa9df80f08da8f372daa00393beef5c32dc162120cf648b5795ecca5c68d63fb",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -579,7 +579,7 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "373f9525b8708a9e8ead4cce177178780716ecc21e6f69436d6d96ebc2199720",
+      "sha256": "2da5cdfef96ece0a3d6c31fee6a85ab73f317fc1f6c6eb894ae9ab9427ec8e6f",
       "recorded_result": true,
       "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
@@ -624,10 +624,19 @@
     },
     {
       "artifact": "audit-evidence/v071/media-email.json",
-      "sha256": "6fd5773b1684574da531570940ad2e03985b0384e93375df97a25566c2408a00",
+      "sha256": "e8db04a5f4b569bc007e89e299c0f90298dc5b568aa23be85e364e30bc107913",
       "recorded_result": true,
       "scope": "Local storage and in-memory email only; no database, SMTP or S3",
       "checked_linked_page_hashes": 0,
+      "stale_linked_pages": [],
+      "historical_head": null
+    },
+    {
+      "artifact": "audit-evidence/v071/media-lifecycle.json",
+      "sha256": "a8dcee2404f8de61cc5887efb3c9a09895f3659815e49c45d074b59c3b85a112",
+      "recorded_result": true,
+      "scope": "Exact media model, autodetected CreateTable operation, PostgreSQL persistence and local file/image lifecycle; not full migration history, RLS, protected HTTP uploads, S3, SMTP or content-safety certification",
+      "checked_linked_page_hashes": 2,
       "stale_linked_pages": [],
       "historical_head": null
     },
@@ -678,7 +687,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "5c8282bf7ebb31bf3e0730bd9465a84efc6078abb2799b86c72fcfc47a2c67cb",
+      "sha256": "544cf0a45d557f1231206869bda8d4a0c735affd3751069bb042374d9ee4f0eb",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

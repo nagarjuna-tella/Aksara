@@ -78,7 +78,7 @@ file lifecycle, SMTP delivery or S3 integration.
 
 ## File and image fields
 
-```python
+```python title="app/asset_models.py"
 from aksara import Model, fields
 
 
@@ -100,6 +100,21 @@ backend supports one. Async helpers include `exists()`, `size()`, `read()` and
 `delete()`. Deletion removes the stored object and clears the in-memory reference;
 it does not itself persist a database update. Do not treat file deletion or
 replacement as reversible by rolling back PostgreSQL.
+
+Replacing a file reference does not automatically delete the previous stored
+file, and `await asset.delete()` removes the model row without deleting its
+stored bytes. An upload performed before a transaction rolls back can also
+remain in storage. Own orphan detection and cleanup explicitly, retaining files
+still referenced by another row. Keep a durable record of cleanup work when
+losing it would matter; do not delete a shared object merely because one model
+stopped referencing it.
+
+For a nullable field such as `preview`, `await asset.preview.delete()` clears
+only the in-memory reference after deleting the file; save the model to persist
+that clearing. If that database write fails, the old row can still point to a
+missing object. Order and recover these two effects according to the application's
+retention requirements. Image validation proves decodability, not that arbitrary
+content is safe to serve.
 
 ## Authorization and serving
 

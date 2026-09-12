@@ -67,7 +67,7 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 335 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
-| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage boundary clarified; deeper field audit pending | Media helper; historical field suite | FileField name validation only ([evidence](audit-evidence/v071/media-email.json)) | No installed persisted File/Image lifecycle or image-processing journey proof. Separate advanced field regressions remain required. |
+| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage boundary clarified; deeper field audit pending | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
 | Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | No SMTP/S3 or persisted model-file lifecycle claim; direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
@@ -1007,3 +1007,28 @@ and selected declaration checks cover 569 Python fences; literal CLI parsing
 covers 335 commands with 11 explicit exclusions. Ruff, strict MkDocs and
 47,160 rendered local links/assets passed. The truth index has no stale linked
 inputs. No production source or package metadata changed.
+
+## Persisted Media Lifecycle Evidence
+
+The exact Asset model from the media guide now runs against the installed public
+0.7.0 wheel, PostgreSQL and disposable local storage. **14 checks** cover file
+and Pillow image uploads, FieldFile wrappers, byte/size reads, database reload,
+image decoding, replacement, explicit nullable clearing, rollback and model
+deletion, invalid image rejection, and orphan cleanup. The generated CreateTable
+operation is applied directly; this is not a full migration CLI/history campaign.
+
+The guide now explicitly explains that replacing references and deleting models
+do not automatically remove stored bytes, rollback can leave uploads behind,
+and deleting a wrapper before saving its cleared reference can leave a database
+row pointing to a missing object. These are verified external-effect boundaries,
+not new production defects or runtime changes. The test deletes its own files
+and verifies disposable schema removal. Protected uploads/downloads, RLS, S3,
+SMTP and content-safety certification remain outside this probe.
+
+Persisted-media checkpoint validation: **14 installed lifecycle checks**, the
+existing **9 local storage/email checks**, **10 related storage/schema/mounting
+regressions**, and **170 docs/packaging tests** passed (the latter with one
+upstream AnyIO deprecation warning). Ruff, strict MkDocs, 569 Python-fence
+syntax/import checks, 335 CLI parses with 11 exclusions, and 47,160 local
+rendered links/assets passed. The index records 46 scoped artifacts with no
+stale linked inputs. Production code and release behavior remain unchanged.

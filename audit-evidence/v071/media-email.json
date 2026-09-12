@@ -15,7 +15,7 @@
   "package_version": "0.7.0",
   "source_checkout_framework_imports": false,
   "scope": "Local storage and in-memory email only; no database, SMTP or S3",
-  "page_sha256": "5c2a03e67428a1c6fa38fb328c3bbff4119da8af4edce455dc7f9161d8fc3175",
+  "page_sha256": "2ad02c5e56ce26e5f693cba114944ea4eb75717a540330cb1ac5ab26e88d19d7",
   "snippet_sha256": "e99438d5ad1ddfa6c7cce87b7bfcbe70f0d25f37e02edf599f00d3d32a104c39",
   "runner_sha256": "a19caf37ca80fce427b63348fd0a12e114a4b85a72b104b30194d31e3849ad14"
 }
