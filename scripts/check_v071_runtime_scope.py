@@ -5,6 +5,7 @@ import ast
 import hashlib
 import json
 import subprocess
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,6 +13,19 @@ BASELINE = "b7ac75f4b1bd4b262824e828601168336b4ecf7f"
 SCAFFOLD = "aksara/cli/scaffold.py"
 CLI = "aksara/cli/main.py"
 TEMPLATES = "aksara/cli/templates/__init__.py"
+VERSION = "aksara/_version.py"
+
+
+class VersionStrings(ast.NodeTransformer):
+    """Normalize only the released and candidate version spellings."""
+
+    def visit_Constant(self, node):
+        if isinstance(node.value, str):
+            value = node.value.replace("0.7.1-rc1", "RELEASE_VERSION")
+            value = value.replace("0.7.1rc1", "RELEASE_VERSION")
+            value = value.replace("0.7.0", "RELEASE_VERSION")
+            return ast.Constant(value=value)
+        return node
 
 
 def normalized(source):
@@ -26,7 +40,28 @@ def normalized(source):
         value for value in returns[0].value.values
         if isinstance(value, ast.FormattedValue)
     ]
+    tree = VersionStrings().visit(tree)
     return ast.dump(tree, include_attributes=False)
+
+
+def normalized_version(source):
+    tree = ast.parse(source)
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "__version__" for target in node.targets)
+    ]
+    assert len(assignments) == 1
+    tree = VersionStrings().visit(tree)
+    return ast.dump(tree, include_attributes=False)
+
+
+def normalized_metadata(source):
+    data = tomllib.loads(source)
+    assert data["project"]["version"] in {"0.7.0", "0.7.1rc1"}
+    data["project"]["version"] = "RELEASE_VERSION"
+    return data
 
 
 class HelpStrings(ast.NodeTransformer):
@@ -91,13 +126,19 @@ def main():
         ["git", "diff", "--name-only", BASELINE, "--", "aksara", "pyproject.toml"],
         cwd=ROOT, text=True,
     ).splitlines()
-    assert names == sorted([SCAFFOLD, CLI, TEMPLATES]), names
+    assert names == sorted([VERSION, SCAFFOLD, CLI, TEMPLATES, "pyproject.toml"]), names
     untracked = subprocess.check_output(
         ["git", "ls-files", "--others", "--exclude-standard", "--", "aksara"], cwd=ROOT, text=True,
     ).splitlines()
     assert not untracked, untracked
     hashes = {}
-    for path, normalize in ((SCAFFOLD, normalized), (CLI, normalized_cli), (TEMPLATES, normalized_templates)):
+    for path, normalize in (
+        (VERSION, normalized_version),
+        (SCAFFOLD, normalized),
+        (CLI, normalized_cli),
+        (TEMPLATES, normalized_templates),
+        ("pyproject.toml", normalized_metadata),
+    ):
         before = subprocess.check_output(["git", "show", f"{BASELINE}:{path}"], cwd=ROOT, text=True)
         after = (ROOT / path).read_text()
         assert normalize(before) == normalize(after), path
@@ -107,9 +148,11 @@ def main():
         "reviewed_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "changed_production_files": names,
         "classification": {
-            SCAFFOLD: "Scaffold README return template only",
+            VERSION: "Package version declaration only",
+            SCAFFOLD: "Generated README instructional text plus candidate version labels and dependency floor only",
             CLI: "startproject/startapp/ai_provider_detect docstrings and string literals in existing UI text/bullet/next_steps or click.echo calls only",
             TEMPLATES: "Four template description string values only; names, sources and copy logic unchanged",
+            "pyproject.toml": "Project version metadata only; dependency declarations unchanged",
         },
         "runtime_logic_changed": False,
         "dependencies_changed": False,

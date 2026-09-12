@@ -53,6 +53,10 @@ checks, not positive CRUD, custom-action authorization, tenant isolation, or
 production readiness evidence. Do not disable permissions to make an old
 unauthenticated seed command succeed.
 
+The generic scaffold also offers `aksara dev`; this example uses the explicit
+`aksara run` command above so its import target is visible. It does not enable
+`/studio/ui` or the AI Console.
+
 ## Adapt with the public guide
 
 Read the [historical multitenant pattern guide](https://nagarjuna-tella.github.io/Aksara/patterns/multitenant/)

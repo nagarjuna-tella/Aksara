@@ -9,6 +9,44 @@ the [current guide](getting-started/first-project.md) and
 
 ---
 
+## v0.7.1-rc1 — Documentation & Developer Experience
+
+Prepared 2026-09-12.
+
+This is the release candidate for **Aksara v0.7.1 — Documentation & Developer
+Experience**. It adds no runtime capability and makes no intentional production
+semantic change.
+
+### Public truth and onboarding
+
+- Reframed Aksara as a PostgreSQL-backed Python application framework where
+  human and machine actors share the same identity, policy, tenant, transaction,
+  approval, audit, and durable-execution boundaries.
+- Rebuilt the Quick Start and progressive Ticket Desk tutorial around an
+  installed package, PostgreSQL, migrations, generated REST, local identity,
+  permissions, tenancy, tasks, Durable Operations, and optional MCP.
+- Added a coherent configuration reference, production runbook, v0.6-to-v0.7
+  upgrade guide, glossary, stability guidance, and task-oriented how-to paths.
+- Improved generated-project README and CLI guidance while preserving generated
+  runtime defaults, security settings, middleware, service enablement, and
+  dependency behavior.
+
+### Executable documentation and evidence
+
+- Added installed-wheel, PostgreSQL, scaffold, application-journey, import,
+  CLI, JSON, code-fence, rendered-link, and external-link gates for public docs.
+- Audited every public page and bundled example, with explicit evidence scopes
+  and retained negative controls for functional defects found during the review.
+- Kept those runtime defects out of this documentation release; each requires a
+  separately reviewed functional patch.
+
+### Strategy and roadmap
+
+- Published an evidence-driven post-v0.7 market and capability review.
+- Populated the public roadmap around operating the existing authorized-action
+  contract, targeted integrations, bounded pre-1.0 stabilization, and explicit
+  non-goals such as a general workflow engine or broad database portability.
+
 ## v0.7.0 — Durable Authorized Operations
 
 Released 2026-09-11.

@@ -38,7 +38,7 @@ optional consumers of this backend, not a prerequisite for building an app.
 
 ## Now — v0.7.1 public truth and developer experience
 
-v0.7.1 is in development. It is a documentation and developer-experience release
+v0.7.1-rc1 is the current candidate. It is a documentation and developer-experience release
 with **no intentional production semantic changes**. Its acceptance work is:
 
 - an executable Quick Start and one progressive application tutorial;
