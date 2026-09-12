@@ -2,7 +2,7 @@
   "schema_version": 1,
   "pass": true,
   "baseline": "b7ac75f4b1bd4b262824e828601168336b4ecf7f",
-  "reviewed_head": "aa9c535e8911675c4538ed8ff12f511b1dd5a52e",
+  "reviewed_head": "278cee93af54102c27931342fa01e8124fa3df31",
   "changed_production_files": [
     "aksara/cli/scaffold.py"
   ],

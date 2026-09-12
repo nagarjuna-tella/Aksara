@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "66920834311e8e91f9bc3a132a134e6c883c43db",
+  "reviewed_head": "278cee93af54102c27931342fa01e8124fa3df31",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -387,6 +387,11 @@
     }
   ],
   "phase_index_scope": "Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective",
+  "requirement_review": {
+    "artifact": "audit-evidence/v071/requirement-review.md",
+    "sha256": "b830424d70680afb82a1e63698551ef54fdce5e78b39a568fc7c3013d57cec8e",
+    "scope": "Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval"
+  },
   "evidence": [
     {
       "artifact": "audit-evidence/v071/admin-relation-execution.json",
@@ -552,7 +557,7 @@
     },
     {
       "artifact": "audit-evidence/v071/external-links.json",
-      "sha256": "540d92dc796192a99bf926ff8a79d6e6ed1eb47081c3ffdff1ef98360cd95749",
+      "sha256": "3fe6bad328c1f9d0b63f8239df9f67cdbf76e237d4eb0be761473a6943661196",
       "recorded_result": true,
       "scope": "HTTP GET reachability of selected important inline Markdown/HTML external targets; no response-body, fragment, semantic-accuracy or all-docs coverage claim",
       "checked_linked_page_hashes": 7,
@@ -732,7 +737,7 @@
     },
     {
       "artifact": "audit-evidence/v071/runtime-scope.json",
-      "sha256": "4f49de74567140abc7218954add627563166252695ae7a43c8a71fbff95bc2d9",
+      "sha256": "32b311c4ad200efc799916ce440f774f8749a2c6785db281f6df62746d879706",
       "recorded_result": true,
       "scope": "aksara source tree and pyproject.toml; does not prove candidate startup, generated-file equivalence or full runtime regression",
       "checked_linked_page_hashes": 0,

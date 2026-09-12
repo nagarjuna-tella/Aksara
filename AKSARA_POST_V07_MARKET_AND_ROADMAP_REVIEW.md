@@ -277,6 +277,18 @@ must not be generalized into automatic authorization of arbitrary custom HTTP
 action bodies. The proposed operating-experience direction depends on closing
 these gaps, not merely polishing their documentation.
 
+The subsequent reference audit also reproduced BULK-001 (Boolean/timestamp
+`bulk_update` CASE type inference) and PAGINATION-001 (generated HTTP responses
+strip page/cursor metadata). TESTING-001 is source-confirmed only: the database
+test helper does not bind application queries to its rollback transaction and
+its cleanup branch omits pool disconnection. A negative runtime probe is still
+pending; do not describe a measured leak. EX-001 remains the historical
+multitenant example's exemption-matching defect. Together these are nine
+separately tracked findings, with different proof scopes, rather than evidence
+that the entire backend is unusable. Their reproductions and alternatives are
+in the public-truth audit. Closing the relevant functional defects needs a
+separate maintenance scope before stronger production/adoption claims.
+
 Prioritize debt by user-visible failure and change risk. Static-analysis ratchets
 contain accepted debt; they are not a claim of a clean type/lint baseline.
 Documented unsupported custom M2M through models and object-valued lazy forward
@@ -453,8 +465,9 @@ Complete v0.7.1 public truth: executable onboarding, one progressive tutorial,
 concepts/configuration/operations/upgrade references, example audit, scaffold
 equivalence, stability labels, installed-wheel gates and full regression.
 Publish this researched roadmap without implying that the next features exist.
-Track EX-001 for a separately scoped functional patch; do not certify the
-affected multitenant example as an isolation reference.
+Track the nine audit findings for separately scoped functional maintenance; do
+not certify the affected multitenant example as an isolation reference or treat
+a passing defect-reproduction probe as proof that the runtime boundary works.
 
 ## Next
 

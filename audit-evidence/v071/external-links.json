@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-09-12T00:32:42.236370+00:00",
+  "checked_at": "2026-09-12T01:37:52.053510+00:00",
   "pass": true,
   "counts": {
     "reachable": 42,
@@ -15,7 +15,7 @@
     "docs/docs/tutorials/deployment.md": "092a8e394415b4cc47a6169d61255568f9331da78946eea505aff60e8333ac06",
     "docs/docs/roadmap.md": "cbc51131ae8145b3a6da9cc0d94c516f21153862df6d3752c3ea255b5267d76f",
     "docs/docs/reference/runtime-compatibility.md": "47a3415e4e2b4caca9ccc273104bf7294a1bc8fb19902a5b2644d1e858536c40",
-    "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md": "7a00da22de2b552a8c1be93f82b3daaee2a7bbbba28f983c2d4b50d9e94fd795"
+    "AKSARA_POST_V07_MARKET_AND_ROADMAP_REVIEW.md": "ca2423c37426203b5f9daee67dbf8a05784c91a5f058f0ccc201d70904a963c6"
   },
   "runner_sha256": "39e7055ea27f147f1ed7c9cd7d74e18744fbb441b4af85c32ef5cf7aa0d58837",
   "excluded": {

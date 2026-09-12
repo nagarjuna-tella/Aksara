@@ -59,6 +59,11 @@ def main():
         'package_version':metadata['project']['version'],
         'objective_sha256':digest(args.objective),'objective_phase_index':phases,
         'phase_index_scope':'Preserves phase identities for the final audit; does not mark any full phase complete or replace requirements elsewhere in the objective',
+        'requirement_review': {
+            'artifact': 'audit-evidence/v071/requirement-review.md',
+            'sha256': digest(EVIDENCE / 'requirement-review.md'),
+            'scope': 'Checkpoint covering all phase identities, non-phase boundaries and named deliverables; scoped evidence and open work, not final subitem acceptance or release approval',
+        },
         'evidence':entries,'stale_linked_inputs':stale,
         'known_defects':[
             {'id':'EX-001','evidence':'example-defects.json','boundary':'Example middleware exemption matching'},

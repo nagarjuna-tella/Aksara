@@ -2,7 +2,12 @@
 
 ## Executive Summary
 
-Work in progress; this is an audit baseline, not release approval.
+Work in progress; this is not release approval. The
+[requirement review](audit-evidence/v071/requirement-review.md) maps all 63 phases,
+release boundaries and named deliverables to current evidence and open work.
+The dated/checkpoint sections below retain historical results; they are not
+current-head or candidate certification. The capability matrix is the current
+summary; individual artifacts define each check's limits.
 
 The starting source is v0.7.0 at
 `b7ac75f4b1bd4b262824e828601168336b4ecf7f`. PyPI reports `0.7.0` and the
@@ -47,9 +52,9 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | Query API | Yes | Stable documented methods | `Model.objects`, `Q`, `F` | Query guide rewritten and executed | All eight query-guide Python blocks | Filters, Q/negation, ordering, aggregate and projection ([evidence](audit-evidence/v071/query-execution.json)) | Seeded PostgreSQL fixture; not concurrency, RLS or every query method. Full query regression remains required. |
 | Fields | Yes | Stable declared types | `aksara.fields` | Reference declarations/defaults corrected | Exact JSON/Array/Vector guide blocks | PostgreSQL/pgvector round trips and rejection slice ([evidence](audit-evidence/v071/advanced-field-execution.json)) | Seven guide blocks execute; separate full field regressions and candidate coverage remain required. |
 | Relations | Yes | Stable with exclusions | `fields.ForeignKey`, `OneToOne`, `ManyToManyField` | Forward/reverse/eager contracts corrected | Ticket assignee; real Admin relation fixture | Nullable FK, eager access and reverse filtering ([evidence](audit-evidence/v071/admin-relation-execution.json)) | Synchronous cached get_related; stored forward ID is not a lazy object. This installed gate does not prove all M2M behavior. |
-| Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Core journey rewritten | Ticket desk; upgrade recipe | Additive relation and tenant backfill | Full historical/data-bearing upgrade and failure campaigns remain candidate gates. |
+| Migrations | Yes | Stable | `aksara makemigrations`, `migrate`, `aksara.migrations` | Reference and safety boundaries corrected | Two exact versioned migrations; ticket desk | 12 executor checks: backfill, repeat, rollback and checksum ([evidence](audit-evidence/v071/migration-doc-execution.json)) | Canonical executor under an owned schema; not a historical v0.6 application upgrade, concurrent CLI or candidate certification. |
 | Serializers | Yes | Stable documented API | `aksara.api.serializers.ModelSerializer` | Core journey rewritten | Ticket subject validation | Create and PATCH validation | Public `ValidationError` gives 422; background ORM writes do not automatically run HTTP serializers. |
-| Generated REST/ViewSets | Yes | Stable | `aksara.ModelViewSet`, `include_viewset`, `action` | Core journey rewritten | Ticket desk | CRUD and custom routes | OpenAPI, pagination and every action variant still require full regression coverage. |
+| Generated REST/ViewSets | Yes | Stable declared surface; known defects | `aksara.ModelViewSet`, `include_viewset`, `action` | Registration, filters and pagination corrected | Ticket desk; exact search and pagination ViewSets | CRUD plus 11 filter checks and 8 pagination observations ([filter evidence](audit-evidence/v071/filter-doc-execution.json), [pagination evidence](audit-evidence/v071/pagination-doc-execution.json)) | PAGINATION-001 strips page/cursor metadata at HTTP serialization; ACTION-001 requires explicit custom-action checks. Full candidate regressions remain required. |
 | Authentication | Yes | Stable covered backend paths | `aksara.contrib.auth`, application adapters | Account/session and adapter boundaries corrected | Exact account/session helper; local HTTP adapter | 19 primitive/permission checks ([evidence](audit-evidence/v071/auth-permission-execution.json)) | Database account/session behavior is exercised; no production HTTP login, JWT or provider certification. |
 | Principal | Yes | Stable | `aksara.security.principal.Principal` | Reviewed identity explanation | Ticket identity + durable resolver | Human and tenant context | MCP-agent identity, scope, expiry and human-owner membership are now exercised too. |
 | Permissions | Yes | Stable | `BasePermission`, `IsAuthenticated`, `check_permissions` | Reviewed application pattern | Reader/editor ticket policy | Request/object denial | Custom endpoints must explicitly call their policy; they do not inherit ViewSet permissions. |
@@ -64,11 +69,11 @@ and the release gates are rerun. “Pending” is not an absence of historical t
 | External effects | Yes | Stable declared effect classes | `ExternalEffectAdapter`, `ExternalOperationExecutor` | Recovery how-to added | Exact notification adapter and action | 13 installed PostgreSQL checks | Simulated provider only; no real delivery, RLS or process-crash guarantee. |
 | Audit history | Yes | Stable bounded semantics | Service history; MCP audit sinks | History how-to added | Exact status/history projection | 13 installed PostgreSQL checks | Limited newest-first reads; retired terminal actions retain tenant reads without removed action policy. |
 | Outbox export | Yes | Stable bounded semantics | `DurableOutboxExporter` | Operator how-to added | Exact helper plus PostgreSQL admission/export | 12 installed-wheel checks | Admin-role fixture and simulated sink only; operator owns durable remote delivery/retention. |
-| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 335 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
+| CLI | Yes | Stable core commands | `aksara` command groups | Generated reference and literal command audit | 117 command definitions; tutorial and operator commands | 316 documented commands parse ([evidence](audit-evidence/v071/cli-docs-syntax.json)) | Parsing does not execute callbacks; 11 exclusions are explicit. Tutorial, operator and local AI executions provide narrower behavioral proof. |
 | Scaffold | Yes | Experimental template layout | `aksara startproject` output | README corrected; editable-install defect documented | Fresh generated stubs; six-stage tutorial | Development-wheel startup and 18-file comparison ([evidence](audit-evidence/v071/scaffold-wheel-equivalence.json)) | Only README differs after token normalization. Exact install/dev path runs; editable packaging still fails (SCAFFOLD-001). This is not a candidate wheel. |
 | Doctor | Yes | Stable exit/JSON contract | Doctor CLI; `check_durable_operations` | Production policy and optional-service outcomes clarified | Launch check; packaged Support Desk | Baseline production profile plus launch checks ([evidence](audit-evidence/v071/support-desk-baseline.json)) | Production acceptance is scoped to the reference configuration; final candidate profile and operator environment remain separate gates. |
-| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage boundary clarified; deeper field audit pending | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
-| Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | No SMTP/S3 or persisted model-file lifecycle claim; direct filesystem containment needs a separate patch. |
+| File/Image fields | Yes | Stable bounded field contract | `fields.FileField`, `ImageField` | Upload/storage ownership and persisted lifecycle corrected | Media helper; historical field suite | Local File/Image persistence and lifecycle ([evidence](audit-evidence/v071/media-lifecycle.json)) | Installed local lifecycle proof is recorded in media-lifecycle.json; no protected HTTP upload, S3 or complete image-processing claim. Separate advanced field regressions remain required. |
+| Storage integrations | Yes | Evolving | `aksara.storage` | Rewritten media guide and STORAGE-001 limitation | Complete local storage/email script | Nine local checks pass | This nine-check storage gate does not cover SMTP/S3; the separate File/Image row covers persisted local lifecycle. Direct filesystem containment needs a separate patch. |
 | TypeScript SDK | Yes | Evolving | `aksara.sdk.generate_typescript_sdk` | New how-to and explicit type-checking limitation | Ticket ViewSet generator script | Generation passes; TypeScript fails | SDK-001: generated list params lack required index signature; separate patch required. |
 | MCP | Yes | Stable synchronous contract | `aksara.mcp`; `/mcp/` Streamable HTTP | Quickstart consolidated; runnable chapter | Ticket desk official client | Generated execution and denial | SDK 2.0.1 verified; no protocol Tasks or automatic durable agent dispatch. |
 | AI/provider/runtime | Yes | Experimental | `aksara.ai` | Experimental status and CLI examples corrected | Route hint; local greeting and plan template | 12 local CLI checks ([evidence](audit-evidence/v071/ai-cli-execution.json)) | Sockets forbidden in this gate; no provider/planner quality or autonomous execution claim. Full experimental behavior is not certified. |
@@ -220,8 +225,9 @@ and multi-tenancy are explicitly outside these first two stages.
 
 `reference/settings-reference.md` documents the global `aksara.conf.settings`
 and explicit configuration above environment values. `AKSARA_DATABASE_URL`
-precedes `DATABASE_URL`. The deployment tutorial does not follow this usable
-path. Defaults must be checked against `aksara/conf.py`, not copied from prose.
+precedes `DATABASE_URL`. The corrected deployment tutorial uses this explicit
+configuration path. Defaults are checked against `aksara/conf.py`, not copied
+from legacy prose.
 
 The configuration rewrite corrects five task environment names, distinguishes
 keyword overrides from the dataclass environment loader, and passes database
@@ -267,17 +273,17 @@ file-oriented `ai plan` subcommands. Twelve extracted provider-free commands
 passed in the isolated public wheel with socket connections forbidden: help,
 the local greeting response, and a read-mode plan template. This does not prove
 provider-backed execution or plan application. Evidence is
-`audit-evidence/v071/ai-cli-execution.json`. A broader parser-only scan now checks 341 literal Aksara commands from public
-shell fences with zero syntax errors. Eleven pipeline/redirection or usage
+`audit-evidence/v071/ai-cli-execution.json`. The current parser-only scan checks
+316 literal Aksara commands from public shell fences with zero syntax errors. Eleven pipeline/redirection or usage
 examples are explicitly excluded in `cli-docs-syntax.json`; this does not
 validate file existence, application imports, runtime effects, or forwarded
 pytest flags. It does check required arguments and declared choices; this
 caught missing provider names in seven setup commands, now corrected.
 Corrected `ai flows debug/graph`, migration status, and model inspection
 examples. Replaced the nonexistent custom-command framework with an explicit
-application-owned Python command pattern. An isolated-wheel run of the existing public syntax/import contracts now
-passes all 738 Python fences and every documented Aksara import. Evidence in
-`installed-doc-imports.json` binds the result to the current public pages and
+application-owned Python command pattern. The current isolated-wheel
+syntax/import gate checks 549 Python fences and documented Aksara imports.
+`installed-doc-imports.json` binds that result to the public pages and selected
 contract tests. Import resolution does not establish API stability or execute
 snippet bodies; remaining page semantics still require audit.
 
@@ -418,8 +424,8 @@ It does not certify a full process-death campaign, approval UI, external effects
 or a production identity integration. The MCP baseline journey now uses the installed official SDK 2.0.1 with its
 `httpx2` transport. It verifies current-role denial after discovery and the same
 validation through REST. It does not certify a production OAuth integration,
-durable agent resolver or model-provider behavior. The operator journey and
-candidate-wheel certification remain incomplete.
+durable agent resolver or model-provider behavior. The separate operator
+reading review is recorded above; candidate-wheel certification remains incomplete.
 
 Observed friction and corrections: tenant migration generation needs an explicit
 backfill for existing rows; the chapter replaces only the generated operations
@@ -1155,3 +1161,21 @@ Ruff, strict MkDocs, 549 Python-fence syntax/import checks, 316 CLI parses with
 11 exclusions, and 46,729 rendered local links/assets passed. The index contains
 50 artifacts with no stale linked inputs. PAGINATION-001 remains an explicit
 unfixed runtime issue; green unit tests do not establish the missing HTTP metadata.
+
+## Requirement Review Checkpoint
+
+The [requirement review](audit-evidence/v071/requirement-review.md) preserves
+all 63 objective phases, requirements outside those headings, named artifacts
+and remaining acceptance work. It distinguishes scoped evidence from full
+completion. The final per-subitem audit, remaining semantic/usability review and
+actual candidate campaign are still open; version remains 0.7.0.
+
+Reconciled current CLI/import counts, migration/filter/pagination/media evidence
+and operator-reading status in the report. The strategy now accounts for all
+nine functional findings without changing its thesis or authorizing fixes.
+Fresh validation: 174 documentation/packaging tests passed with one upstream
+AnyIO deprecation warning; 42 important external links were reachable with zero
+broken or unverified targets. Ruff and diff whitespace checks passed. The source
+AST audit again confines production changes to the scaffold README return text;
+dependencies remain unchanged. The evidence index has 50 artifacts and zero
+stale linked inputs. No candidate, release or final PR is claimed by this check.
