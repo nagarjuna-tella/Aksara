@@ -3,7 +3,7 @@
   "assessment": "NOT READY: final requirement audit and release gates remain open",
   "candidate_ready": false,
   "input_integrity_pass": true,
-  "reviewed_head": "747835609e57242a3958802eb0f275e6acffb586",
+  "reviewed_head": "3b83f16f9f30be577ab9e663bbe15f85a5e6310b",
   "package_version": "0.7.0",
   "objective_sha256": "fb5ecfb7b24c09cbb001a37a1124b15fff88b2a008be4b77591626afc48414a9",
   "objective_phase_index": [
@@ -453,7 +453,7 @@
     },
     {
       "artifact": "audit-evidence/v071/cli-docs-syntax.json",
-      "sha256": "a0eea3eaea5917981a1b113ece807674c82f011580f8f835a6193b36a5670b29",
+      "sha256": "76782a3da39c1583b8242165ba546a4fbfab51e71ea4b32accb983bfe5c65bcd",
       "recorded_result": true,
       "scope": "Check literal documented Aksara command syntax against an isolated wheel.\n\nParses with Click without invoking callbacks, commands, providers, or databases.\nChecks required arguments and declared choices, but not file existence, application imports,\nruntime effects, or forwarded pytest flags.",
       "checked_linked_page_hashes": 165,
@@ -579,9 +579,9 @@
     },
     {
       "artifact": "audit-evidence/v071/installed-doc-imports.json",
-      "sha256": "161aea4c3574c86d361fdd67a2a6313ff86372482e4420da7572077611ae61d3",
+      "sha256": "373f9525b8708a9e8ead4cce177178780716ecc21e6f69436d6d96ebc2199720",
       "recorded_result": true,
-      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
+      "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
       "checked_linked_page_hashes": 165,
       "stale_linked_pages": [],
       "historical_head": null
@@ -678,7 +678,7 @@
     },
     {
       "artifact": "audit-evidence/v071/rendered-links.json",
-      "sha256": "ec345a2a446c7618483ca2fa2804bd8b495144d02b1b4039b33782ab8aaa587f",
+      "sha256": "5c8282bf7ebb31bf3e0730bd9465a84efc6078abb2799b86c72fcfc47a2c67cb",
       "recorded_result": true,
       "scope": "Rendered href/src targets and HTML fragments; external sites and CSS url() references are not fetched",
       "checked_linked_page_hashes": 167,

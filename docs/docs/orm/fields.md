@@ -6,18 +6,27 @@ Field types define how data is stored in PostgreSQL and validated in Python.
 
 ## Overview
 
-Every field in Aksara maps to a PostgreSQL column type and provides:
+Fields define conversion, validation and schema metadata. Most map to a column;
+many-to-many relations use a junction table. Declaring a field does not apply
+its schema: generate, review and apply migrations before persistence.
 
-- **Type validation** — Ensures correct Python types
-- **Database mapping** — Converts to/from PostgreSQL types
-- **AI metadata** — Describes the field to LLMs
-- **Constraints** — Unique, nullable, default values
+Validation and preparation depend on the write path. Individual save/create,
+bulk operations, generated API input and raw SQL have different boundaries;
+see [bulk writes](bulk-operations.md) and [validation](../advanced/validation.md).
+Python defaults and declared constraints are not interchangeable with database
+defaults and installed constraints.
+
+Unless shown as a complete module, snippets are field declarations or usage
+fragments inside an application with `Model` and `fields` imported from
+`aksara`, relevant related models defined, a connected database, and migrations
+applied for persistence examples.
 
 ---
 
 ## Common Field Options
 
-All fields support these options:
+The base field defines these options. Individual constructors expose a subset
+and may choose different defaults; do not pass every option to every field.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -26,8 +35,8 @@ All fields support these options:
 | `unique` | `bool` | `False` | Enforce uniqueness |
 | `primary_key` | `bool` | `False` | Mark as primary key |
 | `db_index` | `bool` | `False` | Create database index |
-| `ai_description` | `str` | `""` | Human-readable field purpose used in AI context and tool exports |
-| `ai_sensitive` | `bool` | `False` | Hide the field from AI context, Studio AI features, and MCP exports |
+| `ai_description` | `str or None` | `None` | Human-readable field purpose used in AI context and tool exports |
+| `ai_sensitive` | `bool` | `False` | Mark sensitive for AI-aware export/policy paths; not universal redaction |
 | `ai_agent_writable` | `bool` | `True` | Whether AI-driven write paths are allowed to modify the field |
 
 Example:
@@ -79,7 +88,7 @@ PostgreSQL type: `VARCHAR(max_length)`
 
 !!! info "Validation Order"
     When multiple validation parameters are set, they run in this order:
-    `strip_whitespace` → `min_length` → `choices` → `regex`
+    `strip_whitespace` → `min_length` → `max_length` → `choices` → `regex`
 
 ### Text
 
@@ -113,7 +122,7 @@ email = fields.Email(unique=True)
 contact_email = fields.Email(nullable=True)
 ```
 
-PostgreSQL type: `VARCHAR(254)` (maximum email length per RFC)
+PostgreSQL type: `VARCHAR(254)` by default; `max_length` is configurable.
 
 Validation: Must match email format pattern.
 
@@ -128,7 +137,8 @@ avatar_url = fields.URL()
 
 PostgreSQL type: `TEXT`
 
-Validation: Must be a valid HTTP/HTTPS URL.
+Validation checks the configured HTTP/HTTPS URL pattern. It does not prove
+reachability, ownership or that fetching the URL is safe.
 
 ---
 
@@ -193,7 +203,7 @@ uploaded content is a real image before saving it.
     `await instance.save()`.
 
 See [Advanced Media & Email](../advanced/media-and-email.md) for storage
-configuration, S3 usage, and upload endpoint examples.
+configuration, integration limits, and application-owned upload/download checks.
 
 ---
 
@@ -296,21 +306,22 @@ PostgreSQL type: `DOUBLE PRECISION`
 Exact decimal for financial data.
 
 ```python
-price = fields.Decimal(precision=10, scale=2)
-tax_rate = fields.Decimal(precision=5, scale=4)
-percentage = fields.Decimal(precision=5, scale=2, min_value=0, max_value=100)
+price = fields.Decimal(max_digits=10, decimal_places=2)
+tax_rate = fields.Decimal(max_digits=5, decimal_places=4)
+percentage = fields.Decimal(max_digits=5, decimal_places=2, min_value=0, max_value=100)
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `precision` | `int` | `10` | Total digits |
-| `scale` | `int` | `2` | Digits after decimal |
+| `max_digits` | `int` | `10` | Total digits |
+| `decimal_places` | `int` | `2` | Digits after decimal |
 | `min_value` | `float` | `None` | Minimum allowed value |
 | `max_value` | `float` | `None` | Maximum allowed value |
 
-PostgreSQL type: `NUMERIC(precision, scale)`
+PostgreSQL type: `NUMERIC(max_digits, decimal_places)`. The constructor does
+not accept `precision=` or `scale=` aliases.
 
-Example values with `precision=10, scale=2`:
+Example values with `max_digits=10, decimal_places=2`:
 - Valid: `12345678.90`, `0.01`, `-999.99`
 - Invalid: `123456789.00` (too many digits)
 
@@ -470,7 +481,7 @@ pgvector-backed embeddings for similarity search and ranking.
 ```python
 class Document(Model):
     title = fields.String(max_length=200)
-    embedding = fields.Vector(dimensions=384)
+    embedding = fields.Vector(dimensions=3)  # Match the three-value example below
 ```
 
 PostgreSQL type: `VECTOR(n)` when dimensions are specified, otherwise `VECTOR`
@@ -518,7 +529,7 @@ class Article(Model):
 |--------|------|----------|-------------|
 | `enum_class` | `type[Enum]` | Yes | The enum class |
 
-PostgreSQL type: `VARCHAR` (stores the string value)
+PostgreSQL type: `TEXT` (stores the enum value as text).
 
 ### Array
 
@@ -643,7 +654,8 @@ PostgreSQL type: `BYTEA`
 Accepts `bytes`, `bytearray`, `memoryview`, and strings (encoded as UTF-8).
 
 !!! note "AI Metadata Defaults"
-    `BinaryField` defaults to `ai_sensitive=True` and `ai_agent_writable=False` to prevent AI agents from reading or modifying raw binary data.
+    `BinaryField` defaults to `ai_sensitive=True` and `ai_agent_writable=False` for AI-aware visibility and write policies. These flags do not encrypt data or
+    restrict arbitrary application code.
 
 ### FilePath
 
@@ -790,14 +802,14 @@ class User(Model):
         max_length=20,
         default="user",
         ai_description="User role: 'user', 'admin', or 'moderator'",
-        ai_agent_writable=True,  # AI can change roles
+        ai_agent_writable=False, # Role assignment is owned by an authorized service
     )
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `ai_description` | `str` | `""` | Human-readable field purpose used in AI context and tool exports |
-| `ai_sensitive` | `bool` | `False` | Hide the field from AI context, Studio AI features, and MCP exports |
+| `ai_description` | `str or None` | `None` | Human-readable field purpose used in AI context and tool exports |
+| `ai_sensitive` | `bool` | `False` | Mark sensitive for AI-aware export/policy paths; not universal redaction |
 | `ai_agent_writable` | `bool` | `True` | Whether AI-driven write paths are allowed to modify the field |
 
 ---
@@ -808,9 +820,16 @@ These three options control how Aksara presents your schema to AI features.
 
 `ai_description` gives the field intent instead of just a type name. That description is reused in Studio AI Console prompts, exported tool schemas, and other AI-facing context builders, so it is worth writing as if another developer has to understand the field without opening the model.
 
-`ai_sensitive=True` removes a field from AI-facing exports. Use it for hashed passwords, secret tokens, internal identifiers, or any value that should never appear in generated context for external agents.
+`ai_sensitive=True` marks fields as sensitive. PolicyEngine hides them from
+AI-agent principals on paths that consult its visibility decision. It is not
+encryption, logging redaction, or a guarantee about custom responses and direct
+ORM reads. Explicitly select safe output fields at every public boundary.
 
-`ai_agent_writable=False` keeps a field visible while blocking agent-initiated updates. That is the right choice for computed totals, audit fields, approval states, or any value a human or a trusted backend process owns.
+`ai_agent_writable=False` denies writes by AI-agent principals on paths that
+apply the field-write policy. Visibility is a separate decision. Use it for
+computed totals, audit fields, approval states and service-owned role assignment;
+custom endpoints must still call their authorization policy. It does not prevent
+trusted application code from issuing ORM writes.
 
 ```python
 class Customer(Model):
@@ -822,8 +841,8 @@ class Customer(Model):
         ai_description="Internal billing identifier"
     )
     lifetime_value = fields.Decimal(
-        precision=10,
-        scale=2,
+        max_digits=10,
+        decimal_places=2,
         ai_description="Computed revenue total in USD",
         ai_agent_writable=False,
     )
@@ -833,7 +852,9 @@ class Customer(Model):
 
 ## Field Validation
 
-Fields validate data automatically:
+Save/create validate model fields before persistence. Run this fragment with
+a connected application database. It demonstrates model-level failures, not
+every write path or an HTTP error mapping:
 
 ```python
 from aksara.exceptions import ValidationError
@@ -854,23 +875,28 @@ try:
     user = User(email="test@example.com", age="twenty")
     await user.save()
 except ValidationError as e:
-    print(e)  # "Expected integer"
+    print(e)  # Aggregated field validation error for age
 ```
 
 ---
 
 ## Complete Example
 
-```python
-from aksara import Model, fields, CASCADE
+This module defines both related models. Apply its migrations before saving.
+
+```python title="app/catalog_models.py"
+from aksara import Model, fields, SET_NULL
 from enum import Enum
-from decimal import Decimal
 
 
 class ProductStatus(str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
     DISCONTINUED = "discontinued"
+
+
+class Category(Model):
+    name = fields.String(max_length=100)
 
 
 class Product(Model):
@@ -893,13 +919,13 @@ class Product(Model):
     
     # Pricing
     price = fields.Decimal(
-        precision=10,
-        scale=2,
+        max_digits=10,
+        decimal_places=2,
         ai_description="Current price in USD",
     )
     compare_at_price = fields.Decimal(
-        precision=10,
-        scale=2,
+        max_digits=10,
+        decimal_places=2,
         nullable=True,
         ai_description="Original price for showing discounts",
     )
@@ -924,7 +950,7 @@ class Product(Model):
     
     # Relations
     category = fields.ForeignKey(
-        "Category",
+        Category,
         on_delete=SET_NULL,
         nullable=True,
         related_name="products",
@@ -949,7 +975,7 @@ class Product(Model):
 
 ```python
 # Good
-price = fields.Decimal(precision=10, scale=2)  # Exact for money
+price = fields.Decimal(max_digits=10, decimal_places=2)  # Exact for money
 rating = fields.Float()  # Approximate is fine for ratings
 
 # Avoid
@@ -982,7 +1008,7 @@ email = fields.Email()  # What email? For what purpose?
 ### Mark Sensitive Fields
 
 ```python
-# Secure
+# Metadata for enforced AI policy paths; still restrict application output
 password_hash = fields.String(ai_sensitive=True, ai_agent_writable=False)
 ssn = fields.String(ai_sensitive=True)
 api_key = fields.String(ai_sensitive=True)

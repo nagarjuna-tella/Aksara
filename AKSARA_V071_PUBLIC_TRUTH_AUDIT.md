@@ -977,3 +977,33 @@ Ruff, strict MkDocs, 569 Python-fence syntax/import checks, 335 CLI parses
 (11 explicit exclusions), and 47,155 local rendered links/assets passed.
 The truth index contains 45 artifacts with no stale linked inputs; this remains
 a pre-candidate checkpoint.
+
+## Built-in Field Reference Corrections
+
+**PT-036 / P1:** the field reference and filtering example passed unsupported
+`precision`/`scale` arguments to `Decimal`; its Vector example supplied three
+values to a 384-dimensional declaration; the complete Product module omitted
+`SET_NULL` and Category; Enum storage was labeled VARCHAR rather than TEXT.
+Corrected these against the installed constructors and conversion behavior.
+The complete module now defines its relation target and imports its delete rule.
+
+Also corrected the `ai_description=None` default and String validation order,
+qualified URL validation and constructor-option availability, and explained
+that declared constraints require migrations. The AI metadata sections now
+identify the PolicyEngine boundary instead of implying universal redaction,
+encryption or protection from arbitrary ORM code. The illustrative role field
+is service-owned. These are example/documentation changes, not runtime defaults.
+
+The installed import gate now executes the exact Product module, checks Decimal
+and Enum conversion, validates the Vector literal against its declaration, and
+compares documented per-field default tables to installed signatures. It does
+not use syntax success as a claim of database persistence, pgvector availability,
+HTTP validation or universal AI metadata enforcement. Advanced-field database
+and persisted media paths still require their own scoped coverage.
+
+Built-in reference checkpoint validation: **470 docs/packaging and field tests
+passed**, with one upstream AnyIO deprecation warning. Installed syntax/import
+and selected declaration checks cover 569 Python fences; literal CLI parsing
+covers 335 commands with 11 explicit exclusions. Ruff, strict MkDocs and
+47,160 rendered local links/assets passed. The truth index has no stale linked
+inputs. No production source or package metadata changed.

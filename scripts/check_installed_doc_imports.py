@@ -28,6 +28,7 @@ viewsets['test_documented_orm_query_shape']()
 viewsets['test_documented_model_defaults']()
 viewsets['test_documented_admin_mount']()
 viewsets['test_documented_relation_access_shapes']()
+viewsets['test_documented_field_reference_contracts']()
 blocks = list(module['_python_blocks']())
 pages = {str(path.relative_to(module['ROOT'])): hashlib.sha256(path.read_bytes()).hexdigest()
          for path in module['_public_markdown']()}
@@ -51,7 +52,7 @@ def main():
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "viewset_route_and_default_checks": "passed",

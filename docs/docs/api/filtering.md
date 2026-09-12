@@ -20,7 +20,7 @@ from aksara.api import ModelViewSet, AksaraFilterBackend
 
 class Product(Model):
     name = fields.String()
-    price = fields.Decimal(precision=10, scale=2)
+    price = fields.Decimal(max_digits=10, decimal_places=2)
     category = fields.String()
     in_stock = fields.Boolean()
 

@@ -51,7 +51,7 @@
     "docs/docs/ai-mode/workflows.md": "4e6702f63eaac35394fe251166e9f42c9e1f752b1ce18d2e5213028eef65524d",
     "docs/docs/api/actions.md": "c660898508e97efe4caaa18e8e5d293b08e37b157ffb623ab6b4693942bb3343",
     "docs/docs/api/authentication.md": "77224e95b81fc4b9f7664f63632efdada7349f1644a23b64dfd4b81244655dd2",
-    "docs/docs/api/filtering.md": "02eedbae3e845e6d7c32bf1b66800d18a13aa06176669523f56a61ee2f348063",
+    "docs/docs/api/filtering.md": "e28c64c38424cb896835a0a603bb134abd58c54200de49351a4d408e4776930a",
     "docs/docs/api/index.md": "3d04d739d8d5e52a7158c290c9fc9b9b478343daf44c020f8076cfc549b99a30",
     "docs/docs/api/pagination.md": "87d3bf0606c052e923480e4401fdb88b36889e9e711851428b62cea64bb16be3",
     "docs/docs/api/permissions.md": "67a76245fdf6da82e3f0550999ccdb01df2a884c34d8f3e9ea45bd21ec8257a5",
@@ -105,7 +105,7 @@
     "docs/docs/orm/advanced-field-policy.md": "8641cc15aedc39d952932016c66f17c1d94afaa54328229bd71ba913bd519c1b",
     "docs/docs/orm/bulk-operations.md": "25251825cfefc9ce39b0068e5d2f28f588a5ef0f9818f9830aa61f8cfdaac344",
     "docs/docs/orm/expressions-and-transactions.md": "8888daf8b651c7a7a0fb0ce28f5d04e88ee8bde2de99995bce7d5f196d060ef7",
-    "docs/docs/orm/fields.md": "8c5d7ad02bf1314b5822a182d92754b15214655775ae8aee23491ec9f42afaea",
+    "docs/docs/orm/fields.md": "3b3a7c7fdd498187f93853a5db14dc6e2eaf18b298f75510d5608ecb3323f8d4",
     "docs/docs/orm/fixtures.md": "f08bbbab7285479cbd7c2a2aef4dad72e109376f1c0d5b0408e335de7f525187",
     "docs/docs/orm/index.md": "7f0077444977daa2bbb70a286633b93af74fa5312f8551f931a384aa3b25a68c",
     "docs/docs/orm/migration-safety.md": "644c7845d2abb16866d54011d5bd2bb5fa937b2a1ec64d7ebb7a55fdffce9a63",
@@ -171,9 +171,9 @@
   "schema_version": 1,
   "pass": true,
   "source_checkout_framework_imports": false,
-  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount and relation-access shape checks; not full CRUD, arbitrary snippet execution, or API stability",
+  "scope": "Python fence syntax, Aksara import resolution, and documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion checks; not full CRUD, arbitrary snippet execution, or API stability",
   "contract_sha256": "aa4f6b4f8e834704c74546f34c4f836203c33de70112d9d813d6a76bfde07e4c",
-  "viewset_contract_sha256": "19b8cc7ca2adcb7d9012b333fe9309302b2eccdc4cc3ee88a4e4ce18dcc0116f",
+  "viewset_contract_sha256": "4ff21ed0fb49f32247d9f60ef372d4e654f36e7179b013879ff9f0b4d878c605",
   "viewset_route_and_default_checks": "passed",
-  "runner_sha256": "59ea9a34f01386bbf78dce8a7f37d7915f21949e1abe17f1a09b503357e51d91"
+  "runner_sha256": "466d3e9dcf0e58e7477156a29b2de8849f27024c8a39755d284d728b41d9bd00"
 }

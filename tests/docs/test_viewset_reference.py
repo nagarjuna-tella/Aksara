@@ -205,3 +205,66 @@ def test_documented_relation_access_shapes():
     assert not hasattr(ReverseM2MManager, 'filter')
     assert not hasattr(ManyToManyManager, 'contains')
     assert inspect.iscoroutinefunction(ManyToManyManager.ids)
+
+
+def test_documented_field_reference_contracts():
+    """Exercise declarations and conversion, not database/HTTP field lifecycle."""
+    from enum import Enum
+
+    from aksara import fields
+
+    page = (ROOT / 'docs/docs/orm/fields.md').read_text()
+    source = re.search(r'```python title="app/catalog_models.py"\n(.*?)```', page, re.DOTALL)[1]
+    namespace = {'__name__': 'documented_catalog'}
+    exec(compile(source, 'documented-catalog', 'exec'), namespace)  # noqa: S102 - trusted repository documentation
+    product = namespace['Product']
+    category = namespace['Category']
+    instance = product(name='Example', slug='example', price='12.34', sku='SKU-1')
+    assert instance.quantity == 0 and instance.metadata == {}
+    assert product._fields['category'].to_model is category
+    assert product._fields['category'].nullable
+    assert product._fields['price'].sql_type == 'NUMERIC(10, 2)'
+    assert str(product._fields['price'].to_db('12.34')) == '12.34'
+    assert product._fields['status'].sql_type == 'TEXT'
+    assert product._fields['status'].to_db(namespace['ProductStatus'].DRAFT) == 'draft'
+    assert inspect.signature(fields.Field).parameters['ai_description'].default is None
+    assert 'precision' not in inspect.signature(fields.Decimal).parameters
+    assert 'scale' not in inspect.signature(fields.Decimal).parameters
+    assert fields.Binary().ai_sensitive and not fields.Binary().ai_agent_writable
+
+    # Execute the Vector declaration, then validate the literal used by its create fragment.
+    vector_section = page.split('### Vector\n', 1)[1].split('### Enum\n', 1)[0]
+    blocks = re.findall(r'```python\n(.*?)```', vector_section, re.DOTALL)
+    vector_namespace = {'Model': Model, 'fields': fields}
+    exec(blocks[0], vector_namespace)  # noqa: S102 - trusted repository documentation
+    tree = ast.parse(blocks[1])
+    create_call = tree.body[0].value.value
+    values = ast.literal_eval(next(k.value for k in create_call.keywords if k.arg == 'embedding'))
+    vector = vector_namespace['Document']._fields['embedding']
+    assert len(values) == vector.dimensions
+    assert vector.validate(values) == values
+
+    # These typed values cover the reference's conversion claims, not persistence.
+    class ExampleStatus(str, Enum):
+        DRAFT = 'draft'
+
+    assert fields.Enum(ExampleStatus).sql_type == 'TEXT'
+    assert fields.String(strip_whitespace=True, min_length=1, max_length=3).to_db(' a ') == 'a'
+    assert fields.Email().sql_type == 'VARCHAR(254)'
+
+    sections = re.findall(r'^### ([^\n]+)\n(.*?)(?=^### |^## |\Z)', page, re.MULTILINE | re.DOTALL)
+    checked = 0
+    for heading, body in sections:
+        rows = re.findall(r'^\| `([^`]+)` \| [^|]+ \| `([^`]+)` \|', body, re.MULTILINE)
+        if not rows:
+            continue
+        field_name = {'IPAddress / GenericIPAddress': 'IPAddress'}.get(heading, heading)
+        constructor = getattr(fields, field_name)
+        parameters = inspect.signature(constructor).parameters
+        for name, written in rows:
+            expected = {'str': str, 'CASCADE': 'CASCADE'}.get(written)
+            if expected is None:
+                expected = ast.literal_eval(written)
+            assert parameters[name].default == expected, (heading, name, written)
+            checked += 1
+    assert checked >= 30, 'Field default tables were not exercised'
