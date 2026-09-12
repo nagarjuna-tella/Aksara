@@ -1507,3 +1507,67 @@ contain 44,452 checked local links/assets, with zero errors. The first focused
 test run raced the link-artifact refresh and reported one stale-hash assertion;
 the completed rerun of `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py -q` passed all 150 tests with one upstream deprecation warning. This five-page review is scoped
 progress toward C6, not a whole-manual usability certification.
+
+## Middleware contract and tenant-trust review
+
+Five pages were checked against the middleware classes, application registration,
+Principal resolution and security diagnostic implementation. Their scoped
+semantic dispositions and current page/source hashes are recorded in
+`audit-evidence/v071/middleware-page-review.json`.
+
+### PT-048 / P1 — middleware options and logging behavior overstated
+
+The overview used an unread legacy settings dictionary and a nonexistent
+`aksara.middleware.BaseMiddleware`. It conflated list registration order with
+successive `add_middleware` calls. Request-ID documentation promised generators
+and validators that the constructor does not accept. Nonempty client IDs are
+actually preserved, not checked for UUID validity. The old logging reference
+invented masking, exclusions, body capture, custom logger/status options and
+other constructor parameters. `log_body` is reserved, and `log_json=True` passes
+a dictionary to Python logging; a normal formatter does not guarantee JSON.
+
+The four middleware pages now describe actual signatures, context lifetime,
+ordering and operational limits. Four complete HTTP examples replace the
+incomplete CRUD/legacy examples. The logging sample supplies a real JSON
+formatter and teaches the existing record fields. It does not claim redaction,
+stream transmission timing or durable audit evidence.
+
+### PT-049 / P0 — tenant extraction represented as trusted isolation
+
+The tenant guide promised custom resolution, required/default tenant and
+exclusion options absent from the constructor, automatic query scoping and
+schema/database routing. Its schema example interpolated request data into
+search_path and set a connection-local value on a separately acquired
+connection. The security overview incorrectly described the extracting
+middleware as a server-side membership resolver. The implementation extracts a
+header/subdomain and permits a missing value; membership is application-owned.
+
+A negative integration control confirms that a legacy user adapter can consume
+an unverified extracted value through `request.state.tenant_id`. Principal
+resolution not reading raw headers directly is therefore insufficient to make
+that stack safe. Documentation now requires validated membership before trusted
+state and database context are established. The executable Ticket Desk tenant
+chapter remains the recommended protected path. The generic middleware demo
+only echoes context and accesses no tenant records.
+
+The security page also clarifies that AKSARA_MULTI_TENANT and AKSARA_RLS_ENABLED
+are posture declarations read by diagnostics. They do not install database
+policies, change roles or prove RLS enforcement. Actual migrations, restricted
+roles and database tests remain required. This review changes documentation,
+not the extraction/Principal/diagnostic contracts, and does not claim a new
+functional fix or silently add a runtime guarantee.
+
+### Verification
+
+- `.venv/bin/python scripts/check_installed_doc_imports.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/installed-doc-imports.json`: passed 405 Python fence/import checks plus the selected behavior contracts. The new middleware contract executes 24 in-process HTTP requests against the installed public wheel: timing, request-ID reuse/generation/error behavior, tenant absence/whitespace/host precedence, unverified legacy state, logging fields/levels/JSON, ignored body capture and disabled logging. It checks context reset in the same async caller, including an exception; no database or external service is used.
+- `.venv/bin/python -m pytest tests/docs tests/test_v048_docs_lock.py tests/middleware/test_logging.py tests/middleware/test_request_id.py tests/middleware/test_tenant.py tests/security/test_tenant_isolation.py -q`: 199 passed, one upstream deprecation warning.
+- `.venv/bin/ruff check tests/docs/test_middleware_reference.py scripts/check_installed_doc_imports.py`: passed.
+- `.venv/bin/python scripts/check_public_cli_docs.py --python /tmp/aksara-v071-public-baseline/bin/python --output audit-evidence/v071/cli-docs-syntax.json`: 308 forms parsed, zero errors, 11 exclusions.
+- `/Users/nagarjunatella/miniconda3/bin/mkdocs build --strict -f docs/mkdocs.yml -d /tmp/aksara-v071-middleware-site`: passed.
+- `.venv/bin/python scripts/check_rendered_docs_links.py --site /tmp/aksara-v071-middleware-site --base-url https://nagarjuna-tella.github.io/Aksara/ --output audit-evidence/v071/rendered-links.json`: 162 pages, 43,514 local links/assets, zero errors.
+
+An initial test-helper call incorrectly passed request content to HTTPX's `get`
+shortcut; using its general `request` method fixed the test harness before the
+successful installed and focused runs. No production source changed in this
+review. Whole-site semantic/readability acceptance and candidate gates remain
+open; this five-page slice does not stand in for them.

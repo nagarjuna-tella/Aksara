@@ -1,363 +1,110 @@
-# Logging Middleware
+# Request logging
 
-Structured request and response logging.
+`LoggingMiddleware` emits a Python logging record for a handled HTTP request.
+It records method, URL path, status, elapsed milliseconds and the request,
+tenant and user context values visible to it. The logger name is
+`aksara.request`.
 
----
+## A complete example
 
-## Overview
+Save this as `logging_app.py`. It uses Python's standard logging module and
+requires no database. The `/ping` endpoint only demonstrates request context;
+it serves no tenant data and does not authenticate callers.
 
-`LoggingMiddleware` provides automatic logging for all HTTP requests:
-
-```python
-from aksara import Aksara
-from aksara.middleware import LoggingMiddleware
-
-app = Aksara()
-app.add_middleware(LoggingMiddleware)
-```
-
-**Output:**
-```
-INFO  | POST /api/users 201 | 45ms | request_id=abc-123
-```
-
----
-
-## Configuration
-
-### Basic Options
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    log_level="INFO",          # Log level
-    logger_name="aksara.http", # Logger name
-)
-```
-
-### All Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `log_level` | `str` | `"INFO"` | Logging level |
-| `logger_name` | `str` | `"aksara.http"` | Logger name |
-| `log_body` | `bool` | `False` | Log request bodies |
-| `log_response_body` | `bool` | `False` | Log response bodies |
-| `exclude_paths` | `list` | `[]` | Paths to skip |
-| `exclude_methods` | `list` | `["OPTIONS"]` | Methods to skip |
-| `max_body_length` | `int` | `1000` | Max body chars to log |
-| `mask_fields` | `list` | `["password", "token"]` | Fields to mask |
-
----
-
-## Log Format
-
-### Default Format
-
-```
-{level} | {method} {path} {status} | {duration}ms | request_id={request_id}
-```
-
-### With Request Body
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    log_body=True,
-)
-```
-
-```
-INFO  | POST /api/users 201 | 45ms | request_id=abc-123
-      | body: {"email": "jane@example.com", "password": "***"}
-```
-
-### With Response Body
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    log_response_body=True,
-)
-```
-
-```
-INFO  | POST /api/users 201 | 45ms | request_id=abc-123
-      | response: {"id": "user-123", "email": "jane@example.com"}
-```
-
----
-
-## Excluding Paths
-
-Skip logging for certain endpoints:
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    exclude_paths=[
-        "/health",
-        "/metrics",
-        "/favicon.ico",
-        "/static/",
-    ],
-)
-```
-
-### Pattern Matching
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    exclude_patterns=[
-        r"^/static/.*",
-        r"^/assets/.*",
-        r".*\.(css|js|png|jpg)$",
-    ],
-)
-```
-
----
-
-## Masking Sensitive Data
-
-Automatically mask sensitive fields in logs:
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    log_body=True,
-    mask_fields=[
-        "password",
-        "token",
-        "api_key",
-        "secret",
-        "credit_card",
-    ],
-)
-```
-
-**Input:**
-```json
-{"email": "jane@example.com", "password": "secret123"}
-```
-
-**Logged as:**
-```json
-{"email": "jane@example.com", "password": "***"}
-```
-
----
-
-## Custom Logging
-
-### Custom Logger
-
-```python
+```python title="logging_app.py"
+import json
 import logging
-
-# Configure custom logger
-logger = logging.getLogger("myapp.requests")
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter(
-    "%(asctime)s %(levelname)s %(message)s"
-))
-logger.addHandler(handler)
-
-# Use with middleware
-app.add_middleware(
-    LoggingMiddleware,
-    logger_name="myapp.requests",
-)
-```
-
-### Structured Logging
-
-```python
-import structlog
-
-structlog.configure(
-    processors=[
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.JSONRenderer(),
-    ]
-)
-
-logger = structlog.get_logger("http")
-
-app.add_middleware(
-    LoggingMiddleware,
-    logger=logger,
-    structured=True,
-)
-```
-
-**Output:**
-```json
-{
-    "timestamp": "2024-01-15T10:30:00.000Z",
-    "level": "info",
-    "method": "POST",
-    "path": "/api/users",
-    "status": 201,
-    "duration_ms": 45,
-    "request_id": "abc-123"
-}
-```
-
----
-
-## Log Levels by Status
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    status_levels={
-        "2xx": "INFO",
-        "3xx": "INFO",
-        "4xx": "WARNING",
-        "5xx": "ERROR",
-    },
-)
-```
-
-**Result:**
-```
-INFO    | GET /api/users 200 | 12ms
-WARNING | POST /api/users 400 | 5ms
-ERROR   | GET /api/data 500 | 120ms
-```
-
----
-
-## Additional Context
-
-### Include Headers
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    include_headers=["User-Agent", "Accept-Language"],
-)
-```
-
-### Include User Info
-
-```python
-app.add_middleware(
-    LoggingMiddleware,
-    include_user=True,
-)
-```
-
-```
-INFO | POST /api/posts 201 | 45ms | request_id=abc-123 user=jane@example.com
-```
-
----
-
-## Integration with Request ID
-
-Automatically includes request ID when used with `RequestIDMiddleware`:
-
-```python
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(LoggingMiddleware)
-
-# Logs include request_id from context
-```
-
----
-
-## Complete Example
-
-```python
-import logging
-import structlog
 from aksara import Aksara
+from aksara.conf import configure
 from aksara.middleware import (
+    LoggingMiddleware,
     RequestIDMiddleware,
-    LoggingMiddleware,
-    request_id_var,
-)
-
-# Configure structlog
-def add_request_id(logger, method_name, event_dict):
-    event_dict["request_id"] = request_id_var.get()
-    return event_dict
-
-structlog.configure(
-    processors=[
-        add_request_id,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.add_log_level,
-        structlog.processors.JSONRenderer(),
-    ],
-    logger_factory=structlog.PrintLoggerFactory(),
-)
-
-# Create app
-app = Aksara()
-
-# Add middleware
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(
-    LoggingMiddleware,
-    log_level="INFO",
-    log_body=True,
-    log_response_body=False,
-    exclude_paths=[
-        "/health",
-        "/metrics",
-        "/docs",
-        "/openapi.json",
-    ],
-    mask_fields=[
-        "password",
-        "token",
-        "api_key",
-        "authorization",
-    ],
-    status_levels={
-        "2xx": "INFO",
-        "3xx": "INFO",
-        "4xx": "WARNING",
-        "5xx": "ERROR",
-    },
+    TenantMiddleware,
 )
 
 
-@app.post("/api/users")
-async def create_user(request):
-    data = await request.json()
-    user = await User.objects.create(**data)
-    return {"id": str(user.id), "email": user.email}
+class RequestJSONFormatter(logging.Formatter):
+    def format(self, record):
+        if isinstance(record.msg, dict):
+            return json.dumps(record.msg)
+        return super().format(record)
 
 
-@app.get("/api/users/{user_id}")
-async def get_user(request, user_id: str):
-    user = await User.objects.get(id=user_id)
-    return {"id": str(user.id), "email": user.email}
+handler = logging.StreamHandler()
+handler.setFormatter(RequestJSONFormatter())
+request_logger = logging.getLogger("aksara.request")
+request_logger.addHandler(handler)
+request_logger.setLevel(logging.INFO)
+configure(log_requests=True, log_json=True)
+
+app = Aksara(
+    database_url=None,
+    auto_discover_views=False,
+    middlewares=[
+        (RequestIDMiddleware, {}),
+        (TenantMiddleware, {}),
+        (LoggingMiddleware, {}),
+    ],
+)
 
 
-@app.get("/health")
-async def health():
-    # Not logged (excluded path)
-    return {"status": "healthy"}
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
 ```
 
-**Sample Output:**
-```json
-{"timestamp": "2024-01-15T10:30:00.000Z", "level": "info", "request_id": "abc-123", "method": "POST", "path": "/api/users", "status": 201, "duration_ms": 45, "body": {"email": "jane@example.com", "password": "***"}}
-{"timestamp": "2024-01-15T10:30:01.000Z", "level": "info", "request_id": "def-456", "method": "GET", "path": "/api/users/123", "status": 200, "duration_ms": 12}
-{"timestamp": "2024-01-15T10:30:02.000Z", "level": "warning", "request_id": "ghi-789", "method": "GET", "path": "/api/users/999", "status": 404, "duration_ms": 8}
+Run `uvicorn logging_app:app` after installing Uvicorn. `GET /ping` with
+`X-Request-ID: local-demo` and `X-Tenant-Id: example` produces a record with
+`event="http_request"`, `status_code=200`, `request_id="local-demo"` and
+`tenant_id="example"`. `user_id` is `None` unless an outer application component
+has established that context. Tenant extraction is not membership verification.
+
+## Options and output
+
+| Setting or option | Default | Effect |
+| --- | --- | --- |
+| `settings.log_requests` | `True` | Emit request records; `False` skips this middleware's logging. |
+| `settings.log_json` | `False` | `False` emits a formatted text message; `True` passes a dictionary as the logging message. |
+| Constructor `log_body` | `False` | Reserved; currently does not capture request or response bodies. |
+
+With `log_json=True`, a normal text formatter prints a Python dictionary,
+**not necessarily valid JSON**. The example formatter explicitly serializes it.
+Configure handlers once in application startup; avoid repeatedly adding them
+when constructing apps in tests. The settings are process-wide; consult
+[configuration precedence](../reference/settings-reference.md).
+
+The dictionary has `event`, `method`, `path`, `status_code`, `duration_ms`,
+`request_id`, `tenant_id` and `user_id`. The text form uses:
+
+```text
+HTTP GET /ping -> 200 in 1.23ms [request_id=local-demo tenant=example user=None]
 ```
 
----
+Status 400–499 logs at WARNING; 500 or above, or an unavailable status, at ERROR;
+other statuses at INFO. An ordinary exception escaping downstream is logged as
+500 and re-raised. This is fixed behavior, not a `status_levels` option.
+Timing ends when `call_next` returns or raises; it is not full streamed-response
+transmission time.
 
-## Related Documentation
+## Scope and sensitive information
 
-- [Middleware Overview](index.md) — All middleware
-- [Request ID](request-id.md) — Request tracing
-- [Debugging](../debugging/index.md) — Debug tools
+There are no constructor options for `log_level`, `logger_name`, custom `logger`,
+`structured`, `log_response_body`, excluded paths/methods/patterns, masking
+fields, maximum body length or included headers/users. Configure the
+`aksara.request` logger and application-owned handlers/filters for routing and
+formatting, rather than passing unsupported options to middleware.
+
+The middleware does not collect request/response bodies, headers or query-string
+values. It also does not redact sensitive path segments or context identifiers.
+Avoid secrets in URLs and define an application logging policy. `log_body=True`
+does not enable a masking system. Identity is not inferred from request headers
+or `request.state.user` by this logger.
+
+Order matters: context-producing components must wrap the logger if their
+values must remain available while it emits its record. Changes to context
+inside a downstream endpoint or child task need not propagate back to outer
+middleware. See [middleware ordering](index.md).
+
+Request logs are not durable audit events and do not prove a database commit.
+Operators own collection, access, retention and monitoring; see the
+[production guide](../tutorials/deployment.md).
