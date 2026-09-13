@@ -1,4 +1,4 @@
-"""Verify clean-process import and packaged-example boundaries from a candidate wheel."""
+"""Verify clean-process import and packaged-example boundaries from the final wheel."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ print(json.dumps({"examples_path": str(examples), "packaged": "site-packages" in
         args.python,
         "import json, aksara; print(json.dumps({'version': aksara.__version__, 'origin': aksara.__file__}))",
     )
-    assert version["version"] == "0.7.2rc1", version
+    assert version["version"] == "0.7.2", version
     assert "site-packages" in str(version["origin"]), version
 
     result = {
