@@ -6,6 +6,7 @@ Tests the dev tool commands: format, lint, typecheck, test, precommit.
 import os
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -469,10 +470,10 @@ class TestStartprojectDevFiles:
         
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(cli, ["startproject", "myproject"])
-            
+
             assert result.exit_code == 0
-            assert "install its documented dependencies" in result.output
-            assert "pip install -e" not in result.output
+            assert 'pip install -e ".[dev]"' in result.output
+            assert "Follow the setup guide" in result.output
             assert "What's included" in result.output
     
     def test_startproject_creates_pyproject_toml(self, tmp_path):
@@ -484,6 +485,43 @@ class TestStartprojectDevFiles:
             
             assert result.exit_code == 0
             assert Path("myproject/pyproject.toml").exists()
+
+    @pytest.mark.parametrize(
+        ("project_name", "template"),
+        [
+            ("arbitrary_basic_name", "basic"),
+            ("arbitrary_blog_name", "blog"),
+            ("arbitrary_crm_name", "crm"),
+            ("arbitrary_tenant_name", "multitenant"),
+        ],
+    )
+    def test_startproject_makes_package_selection_explicit(
+        self, tmp_path, project_name, template
+    ):
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                cli,
+                ["startproject", project_name, "--template", template],
+            )
+
+            assert result.exit_code == 0
+            project = Path(project_name)
+            metadata = tomllib.loads((project / "pyproject.toml").read_text())
+            wheel = metadata["tool"]["hatch"]["build"]["targets"]["wheel"]
+            if template == "basic":
+                assert wheel["packages"] == ["app"]
+                assert set(wheel["force-include"]) == {
+                    "main.py",
+                    "settings.py",
+                    "migrations",
+                    "static",
+                }
+            else:
+                selected = set(wheel["only-include"])
+                assert {"main.py", "settings.py", "models.py", "migrations"} <= selected
+                assert all((project / path).exists() for path in selected)
 
     def test_startproject_app_templates_are_neutral(self, tmp_path):
         """Test that startproject does not force a live Post app scaffold."""

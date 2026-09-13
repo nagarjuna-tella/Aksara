@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11--3.14-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11–3.14"></a>
   <a href="https://github.com/nagarjuna-tella/Aksara/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/release-v0.7.1-22c55e?style=flat-square" alt="Release v0.7.1">
   <img src="https://img.shields.io/badge/PostgreSQL-required-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL required">

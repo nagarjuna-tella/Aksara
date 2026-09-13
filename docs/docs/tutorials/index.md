@@ -13,7 +13,7 @@ application. Start there if you are new to Aksara.
 | [Durable actions](ticket-desk-durable.md) | Idempotency, workers, retry, cancellation and current authorization |
 | [Optional MCP client](ticket-desk-mcp.md) | Synchronous tool execution with the official client |
 
-The tutorial uses Python 3.11+ and PostgreSQL. The
+The tutorial uses Python 3.11–3.14 and PostgreSQL. The
 [installation guide](../getting-started/installation.md) covers setup. The
 [production guide](deployment.md) covers deployment responsibilities after the
 application works locally; it is a how-to, not another starter application.

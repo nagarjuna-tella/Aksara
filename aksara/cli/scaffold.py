@@ -615,7 +615,7 @@ configure; provider-backed AI and Studio stay disabled until you opt in.
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install "aksara-framework>=0.7.1" "uvicorn[standard]>=0.24.0" "pytest>=8.0.0" "pytest-asyncio>=0.21.0"
+pip install -e ".[dev]"
 # Edit DATABASE_URL in .env, or run the interactive helper:
 aksara dbsetup
 # Define a model and ViewSet from the stubs in app/, then:
@@ -625,12 +625,10 @@ aksara doctor launch-check
 aksara dev
 ```
 
-Run from the generated project directory. These commands install the framework
-and local test tools; they do not package this application. The generated
-`pyproject.toml` does not yet configure Hatch file selection for its `app/`
-directory, so `pip install -e ".[dev]"` fails for a fresh project. Configure your
-application packaging explicitly before using editable installation or building
-an application wheel. This limitation does not require changing runtime defaults.
+Run from the generated project directory. The generated `pyproject.toml`
+explicitly packages the `app/` package, application entry point, settings,
+migrations, and static files. Editable installation and wheel builds therefore
+use the same intentional file selection for any valid project name.
 
 The runtime reads one global `aksara.conf.settings` object. Environment values
 are loaded first; explicit `configure(...)` calls take precedence. The generated
@@ -736,7 +734,8 @@ def get_pyproject_template(project_name: str) -> str:
 name = "{project_name}"
 version = "0.1.0"
 description = "Async PostgreSQL API with generated REST and optional MCP"
-requires-python = ">=3.11"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "aksara-framework>=0.7.1",
     "uvicorn[standard]>=0.24.0",
@@ -758,6 +757,15 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"main.py" = "main.py"
+"settings.py" = "settings.py"
+"migrations" = "migrations"
+"static" = "static"
+
 [tool.black]
 line-length = 88
 target-version = ["py311"]
@@ -773,6 +781,48 @@ python_version = "3.11"
 strict = false
 warn_return_any = true
 warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+'''
+
+
+def get_flat_project_pyproject_template(
+    project_name: str,
+    python_files: list[str],
+) -> str:
+    """Generate packaging metadata for a copied flat domain template."""
+
+    selected = ["__init__.py", *sorted(python_files), "migrations"]
+    rendered_selection = "\n".join(f'    "{path}",' for path in selected)
+    return f'''[project]
+name = "{project_name}"
+version = "0.1.0"
+description = "Aksara domain example application"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+    "aksara-framework>=0.7.1",
+    "uvicorn[standard]>=0.24.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = [
+{rendered_selection}
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

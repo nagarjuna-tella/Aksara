@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
+from types import UnionType
 from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 from uuid import UUID
 
@@ -140,7 +141,7 @@ def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type[ModelViewSet]])
             sections.append("")
 
     sections.extend([
-        "function buildQueryString(params: Record<string, QueryValue> = {}): string {",
+        "function buildQueryString(params: object = {}): string {",
         "  const search = new URLSearchParams();",
         "  for (const [key, value] of Object.entries(params)) {",
         "    if (value === undefined || value === null) continue;",
@@ -153,7 +154,7 @@ def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type[ModelViewSet]])
         "export class AksaraClient {",
         "  constructor(private readonly options: ClientOptions = {}) {}",
         "",
-        "  private async request<T>(path: string, init: RequestInit & { params?: Record<string, QueryValue> } = {}): Promise<T> {",
+        "  private async request<T>(path: string, init: RequestInit & { params?: object } = {}): Promise<T> {",
         "    const fetchImpl = this.options.fetch ?? fetch;",
         "    const url = `${this.options.baseUrl ?? ''}${path}${buildQueryString(init.params)}`;",
         "    const headers = new Headers(this.options.headers ?? {});",
@@ -292,7 +293,7 @@ def _python_type_to_ts(annotation: Any) -> str:
     origin = get_origin(annotation)
     args = get_args(annotation)
 
-    if origin is Union:
+    if origin in (Union, UnionType):
         rendered = [_python_type_to_ts(arg) for arg in args if arg is not type(None)]
         if any(arg is type(None) for arg in args):
             rendered.append("null")

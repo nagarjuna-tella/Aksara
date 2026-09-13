@@ -18,6 +18,8 @@ import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
+from aksara.cli.scaffold import get_flat_project_pyproject_template
+
 # Template metadata
 TEMPLATES = {
     "basic": {
@@ -154,7 +156,19 @@ def copy_template_project(
             except UnicodeDecodeError:
                 # Binary file, skip
                 pass
-    
+
+    python_files = [
+        path.name
+        for path in files
+        if path.parent == project_path
+        and path.suffix == ".py"
+        and path.name != "__init__.py"
+    ]
+    files[project_path / "pyproject.toml"] = get_flat_project_pyproject_template(
+        project_name,
+        python_files,
+    )
+
     return files
 
 

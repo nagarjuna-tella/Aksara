@@ -384,7 +384,8 @@ def startproject(project_name: str, directory: str, template: str):
     The default basic template creates main.py, settings.py, an app/ package,
     migrations/, .env and project metadata, with commented model/API examples.
     Blog, CRM and multitenant copy flat example modules instead; they do not
-    create an app/ package, .env or pyproject.toml. Their defaults differ.
+    create an app/ package or .env. Their generated pyproject.toml explicitly
+    packages those flat modules. Their defaults differ.
 
     Domain examples require application-specific authentication and policy.
     The historical multitenant example has known isolation and migration
@@ -456,7 +457,7 @@ def startproject(project_name: str, directory: str, template: str):
         ui.text(f"  {project_name}/")
         ui.text("  ├── main.py              # App entry point")
         ui.text("  ├── settings.py          # Global settings configuration")
-        ui.text("  ├── pyproject.toml        # basic template only")
+        ui.text("  ├── pyproject.toml        # explicit application packaging")
         ui.text("  ├── .env                  # basic template only")
         ui.text("  ├── README.md")
         ui.text("  ├── app/                  # basic only; domain modules live at project root")
@@ -478,7 +479,8 @@ def startproject(project_name: str, directory: str, template: str):
         ui.next_steps(
             [
                 f"cd {project_name}",
-                "Follow the setup guide for your template; install its documented dependencies.",
+                'pip install -e ".[dev]"',
+                "Follow the setup guide for your template.",
                 "Set DATABASE_URL for a dedicated local PostgreSQL database.",
                 "Generate migrations with the template-specific command in the setup guide; review before applying.",
                 "aksara migrate --migrations-dir migrations",
