@@ -3195,8 +3195,10 @@ class ForeignKey(Field):
             pk_field = target_model._fields.get("id")
             if pk_field:
                 return pk_field.sql_type
-        except Exception:
-            pass
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
         # Default to UUID (most common PK type in Aksara)
         return "UUID"
     
@@ -3215,7 +3217,10 @@ class ForeignKey(Field):
         try:
             target_model = self.to_model
             target_table = target_model.__tablename__
-        except Exception:
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
             # Fallback for unresolved models
             if isinstance(self._to, str):
                 # Convert model name to table name (simple pluralization)
@@ -3258,7 +3263,10 @@ class ForeignKey(Field):
         base = super().get_ai_metadata()
         try:
             target_name = self.to_model.__name__
-        except Exception:
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
             target_name = str(self._to)
         
         base.update({
@@ -3461,7 +3469,10 @@ class ManyToMany(Field):
             target_table = self.to_model.__tablename__
             singular = _singularize(target_table)
             return f"{singular}_id"
-        except Exception:
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
             return "target_id"
     
     @property
@@ -3483,7 +3494,10 @@ class ManyToMany(Field):
         source_table = self._source_model.__tablename__ if self._source_model else "source"
         try:
             target_table = self.to_model.__tablename__
-        except Exception:
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
             # Fallback for unresolved models
             if isinstance(self._to, str):
                 name = self._to.lower()
@@ -3523,7 +3537,10 @@ class ManyToMany(Field):
         base = super().get_ai_metadata()
         try:
             target_name = self.to_model.__name__
-        except Exception:
+        except Exception as exc:
+            from aksara.registry import AmbiguousModelError
+            if isinstance(exc, AmbiguousModelError):
+                raise
             target_name = str(self._to)
         
         base.update({

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-13T01:11:32.251770+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "baseline_python": {
+    "version": "3.11.15",
+    "executable": "/private/tmp/aksara-v072-public-071/bin/python"
+  },
+  "available_supported_pythons": [
+    "3.11.15",
+    "3.14.4"
+  ],
+  "supported_matrix": [
+    {
+      "python": "3.11",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1"
+    },
+    {
+      "python": "3.11",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0"
+    },
+    {
+      "python": "3.14",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1"
+    },
+    {
+      "python": "3.14",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0"
+    }
+  ],
+  "public_wheel_environment": {
+    "aksara": "0.7.1",
+    "fastapi": "0.141.1",
+    "starlette": "1.6.0",
+    "asyncpg": "0.31.0",
+    "source_checkout_imports": false
+  },
+  "database": {
+    "database": "aksara_test",
+    "server_version": "18.4 (Debian 18.4-1.pgdg13+1)",
+    "server_version_num": "180004",
+    "credentials_recorded": false
+  }
+}

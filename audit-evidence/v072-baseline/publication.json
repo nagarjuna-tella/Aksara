@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-09-13T01:11:32.251099+00:00",
+  "pypi": {
+    "version": "0.7.1",
+    "project_url": "https://pypi.org/project/aksara-framework/0.7.1/",
+    "wheel_filename": "aksara_framework-0.7.1-py3-none-any.whl",
+    "wheel_sha256": "42a3a42be08ee5be1075d4f6da3b22fea6acaa5bf678a57db7ecc00ce4fdd197",
+    "upload_time_iso_8601": "2026-09-12T23:21:16.827817Z"
+  },
+  "github_release": {
+    "tag_name": "v0.7.1",
+    "name": "Aksara [v0.7.1] \u2014 Documentation & Developer Experience",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-09-12T23:19:45Z",
+    "url": "https://github.com/nagarjuna-tella/Aksara/releases/tag/v0.7.1"
+  }
+}

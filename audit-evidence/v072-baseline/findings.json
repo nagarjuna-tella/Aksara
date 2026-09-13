@@ -1,0 +1,473 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.1",
+  "package_version": "0.7.1",
+  "source_checkout_framework_imports": false,
+  "total_findings": 22,
+  "reproduced": 22,
+  "source_confirmed_only": 0,
+  "documentation_only_historical_claims": 0,
+  "test_harness_mistakes": 0,
+  "not_reproducible": 0,
+  "findings": [
+    {
+      "id": "CFG-001",
+      "affected_subsystem": "configuration",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "A list-valued origin URL round-trips as one exact value.",
+      "actual_v071_behavior": "https://example.com is split into [\"https\", \"//example.com\"].",
+      "postgresql_required": false,
+      "security_impact": "Security-sensitive allowlist configuration can be corrupted; no bypass was demonstrated.",
+      "data_integrity_impact": "None directly.",
+      "compatibility_implications": "A deterministic grammar may reject formerly ambiguous path-separator inputs.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/conf.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "SDK-001",
+      "affected_subsystem": "TypeScript SDK",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_public_sdk.py --python /private/tmp/aksara-v072-public-071/bin/python --tsc /private/tmp/aksara-v072-ts/node_modules/.bin/tsc --output audit-evidence/v072-baseline/SDK-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Generated Ticket SDK compiles under TypeScript 5.9.3 strict mode.",
+      "actual_v071_behavior": "Generation succeeds but tsc exits 2 with TS2322 because TicketListParams lacks the query helper index signature.",
+      "postgresql_required": false,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Generated clients are unusable under strict compilation.",
+      "compatibility_implications": "Generated list parameter typing becomes assignable without disabling strict mode.",
+      "evidence_artifact": "SDK-001.json",
+      "source_locations_likely_involved": [
+        "aksara/sdk/typescript.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "STORAGE-001",
+      "affected_subsystem": "filesystem storage",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Resolved storage paths remain inside the configured root.",
+      "actual_v071_behavior": "save(\"../media-private/probe.txt\") writes to a sibling prefix directory outside the root.",
+      "postgresql_required": false,
+      "security_impact": "Unsafe direct storage use can read, write, or delete outside the configured root.",
+      "data_integrity_impact": "Direct storage writes can alter unintended files.",
+      "compatibility_implications": "Traversal and outside-root symlinks will be rejected.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/storage.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "ACTION-001",
+      "affected_subsystem": "custom ViewSet actions",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/probe_custom_action_boundary.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/ACTION-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "A custom action declaring the same permission intent as generated routes denies anonymous access.",
+      "actual_v071_behavior": "Generated list returns 403 while the declared protected custom action returns 200.",
+      "postgresql_required": false,
+      "security_impact": "Authorization declarations are bypassed on custom REST actions.",
+      "data_integrity_impact": "A mutating action could perform unauthorized writes.",
+      "compatibility_implications": "Previously unauthorized custom calls become denials.",
+      "evidence_artifact": "ACTION-001.json",
+      "source_locations_likely_involved": [
+        "aksara/api/actions.py",
+        "aksara/api/router.py",
+        "aksara/api/viewsets.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "TASK-001",
+      "affected_subsystem": "ordinary tasks",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_task_stale_recovery.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/TASK-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "A worker that loses ownership cannot overwrite the replacement owner result.",
+      "actual_v071_behavior": "A second worker reclaims active work; the stale first worker later overwrites the newer completed result.",
+      "postgresql_required": true,
+      "security_impact": "Execution ownership is not fenced.",
+      "data_integrity_impact": "Authoritative task state can be overwritten and handler effects can repeat.",
+      "compatibility_implications": "Internal task schema/claim behavior may tighten; ordinary Task remains distinct from Operation.",
+      "evidence_artifact": "TASK-001.json",
+      "source_locations_likely_involved": [
+        "aksara/tasks.py",
+        "aksara/migrations/internal.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "AIPROVIDER001",
+      "affected_subsystem": "experimental provider detection",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_ai_provider_contract.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/AIPROVIDER001.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Configured state reflects explicit usable configuration, separately from defaults and reachability.",
+      "actual_v071_behavior": "Clean environment reports default Ollama configured; keyless explicit custom endpoint reports not configured.",
+      "postgresql_required": false,
+      "security_impact": "Misleading status only; no connection or credential exposure demonstrated.",
+      "data_integrity_impact": "None.",
+      "compatibility_implications": "Experimental configured-state output becomes explicit and deterministic.",
+      "evidence_artifact": "AIPROVIDER001.json",
+      "source_locations_likely_involved": [
+        "aksara/ai/providers_unified.py",
+        "aksara/ai/hub_settings.py",
+        "aksara/cli/main.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "GAP001",
+      "affected_subsystem": "compatibility diagnostics",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_gap_analysis_version_contract.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/GAP001.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Static compatibility rejects Python 3.10 and accepts supported 3.11+.",
+      "actual_v071_behavior": "Python 3.10 is accepted and the diagnostic claims 3.10 is supported.",
+      "postgresql_required": false,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Users may attempt unsupported installation/runtime combinations.",
+      "compatibility_implications": "Diagnostic threshold/message aligns with package metadata.",
+      "evidence_artifact": "GAP001.json",
+      "source_locations_likely_involved": [
+        "aksara/gapanalysis.py",
+        "pyproject.toml"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "AIFLOW001",
+      "affected_subsystem": "experimental workflow imports",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Direct public workflow imports succeed in a clean process regardless of import order.",
+      "actual_v071_behavior": "First import from aksara.ai.workflows exits 1 through a Studio/workflow circular import.",
+      "postgresql_required": false,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "None.",
+      "compatibility_implications": "Experimental import ordering becomes reliable without stability promotion.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/ai/workflows.py",
+        "aksara/studio/__init__.py",
+        "aksara/studio/utils.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "AIFLOW002",
+      "affected_subsystem": "experimental workflow diagnostics",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "A set_env action renders one syntactically coherent assignment.",
+      "actual_v071_behavior": "DATABASE_URL renders as export DATABASE_URL=export DATABASE_URL=....",
+      "postgresql_required": false,
+      "security_impact": "Display-only commands can mislead operators; no secret is executed by the probe.",
+      "data_integrity_impact": "None.",
+      "compatibility_implications": "Diagnostic action example representation/rendering is normalized.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/ai/workflows.py",
+        "aksara/diagnostics.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "EX-001",
+      "affected_subsystem": "historical multitenant example",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Only the exact root path is exempt; /api/projects/ resolves or rejects tenant context.",
+      "actual_v071_behavior": "The root exemption matches every path via startswith, so /api/projects/ bypasses the resolver and reaches downstream.",
+      "postgresql_required": false,
+      "security_impact": "Shipped example demonstrates a tenant-resolution bypass.",
+      "data_integrity_impact": "A copied example could process a protected request without tenant context.",
+      "compatibility_implications": "Example exemption matching tightens to explicit exact/prefix semantics.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "examples/multitenant/middleware.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "SCAFFOLD-001",
+      "affected_subsystem": "generated project packaging",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/probe_scaffold_editable_install.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/SCAFFOLD-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "A fresh generated project supports pip install -e \".[dev]\".",
+      "actual_v071_behavior": "Hatchling cannot infer a package matching the generated distribution name; editable install exits 1.",
+      "postgresql_required": false,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Generated development workflow is broken.",
+      "compatibility_implications": "Generated package selection becomes explicit.",
+      "evidence_artifact": "SCAFFOLD-001.json",
+      "source_locations_likely_involved": [
+        "aksara/cli/scaffold.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "SOFTDELETE001",
+      "affected_subsystem": "soft-delete query visibility",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_soft_delete.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/SOFTDELETE001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "Visibility changes preserve all restrictions on the supplied queryset.",
+      "actual_v071_behavior": "with_deleted and only_deleted construct a fresh manager queryset and lose an ID restriction.",
+      "postgresql_required": true,
+      "security_impact": "Application/tenant predicates can be discarded; RLS was not bypassed by this baseline.",
+      "data_integrity_impact": "Queries can expose rows outside the caller restriction.",
+      "compatibility_implications": "Queryset transformations retain existing semantics.",
+      "evidence_artifact": "SOFTDELETE001.json",
+      "source_locations_likely_involved": [
+        "aksara/contrib/soft_delete.py",
+        "aksara/manager.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "FIXTURE001",
+      "affected_subsystem": "JSON fixtures",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_fixtures.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/fixtures.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "An exported JSON fixture restores missing rows under a documented identity policy.",
+      "actual_v071_behavior": "Exported primary keys are rejected when the row does not already exist.",
+      "postgresql_required": true,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "A dump cannot restore its own rows to an empty table.",
+      "compatibility_implications": "Explicit-key insert/update/conflict semantics must be defined.",
+      "evidence_artifact": "fixtures.json",
+      "source_locations_likely_involved": [
+        "aksara/fixtures.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "FIXTURE002",
+      "affected_subsystem": "YAML fixtures",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_fixtures.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/fixtures.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "Supported YAML export is accepted by the safe loader.",
+      "actual_v071_behavior": "UUID export contains Python-specific tags rejected by safe_load.",
+      "postgresql_required": true,
+      "security_impact": "Unsafe YAML construction remains disabled.",
+      "data_integrity_impact": "Exported UUID fixtures cannot round-trip.",
+      "compatibility_implications": "Exporter changes to portable scalar representations.",
+      "evidence_artifact": "fixtures.json",
+      "source_locations_likely_involved": [
+        "aksara/fixtures.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "FIXTURE003",
+      "affected_subsystem": "fixture model enumeration",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_fixtures.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/fixtures.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "dump_database iterates canonical model classes.",
+      "actual_v071_behavior": "Default registry iteration supplies string names where model classes are required.",
+      "postgresql_required": true,
+      "security_impact": "None identified directly; registry collision behavior is related.",
+      "data_integrity_impact": "Default all-model dumps fail.",
+      "compatibility_implications": "Enumeration follows the canonical registry contract.",
+      "evidence_artifact": "fixtures.json",
+      "source_locations_likely_involved": [
+        "aksara/fixtures.py",
+        "aksara/registry.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "INSPECTOR001",
+      "affected_subsystem": "Inspector query plans",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Offline/synthetic ANALYZE output exposes synthetic provenance or fails explicitly.",
+      "actual_v071_behavior": "Synthetic plan is labeled EXPLAIN ANALYZE with no warning.",
+      "postgresql_required": false,
+      "security_impact": "Invented measurements can be mistaken for real database evidence.",
+      "data_integrity_impact": "None.",
+      "compatibility_implications": "Result provenance becomes explicit; experimental surface remains experimental.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/inspectors/queries.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "ADMINWIDGET001",
+      "affected_subsystem": "Admin array widget",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "/private/tmp/aksara-v072-public-071/bin/python scripts/check_v072_baseline_unit_findings.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/unit-findings.json",
+      "environment": "Python 3.11.15 isolated public wheel; no database",
+      "expected_correct_behavior": "Rendering leaves caller-owned values unchanged.",
+      "actual_v071_behavior": "Rendering min_rows=3 mutates [\"one\"] into [\"one\", \"\", \"\"].",
+      "postgresql_required": false,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "In-memory application data changes during observation.",
+      "compatibility_implications": "Render defensively copies values.",
+      "evidence_artifact": "unit-findings.json",
+      "source_locations_likely_involved": [
+        "aksara/contrib/admin/widgets/array.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "MIGRATION-001",
+      "affected_subsystem": "model registry and migrations",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_domain_template_docs.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/MIGRATION-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "Model collisions are explicit and migration generation never silently omits declared tables.",
+      "actual_v071_behavior": "Built-in User replaces the multitenant application User by simple name; migration commands exit 0 while tenant_users is missing.",
+      "postgresql_required": true,
+      "security_impact": "Silent model replacement can weaken intended application/tenant structure.",
+      "data_integrity_impact": "Declared schema state is silently omitted.",
+      "compatibility_implications": "Unambiguous simple names remain usable; collisions must fail explicitly or use qualified identity.",
+      "evidence_artifact": "MIGRATION-001.json",
+      "source_locations_likely_involved": [
+        "aksara/registry.py",
+        "aksara/cli/main.py",
+        "aksara/migrations",
+        "aksara/contenttypes.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "RELATION001",
+      "affected_subsystem": "eager relation loading",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_queries.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/RELATION001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "select_related(...).first() populates requested relations consistently with all().",
+      "actual_v071_behavior": "first() creates the parent without relation-loading steps; get_related raises ValueError.",
+      "postgresql_required": true,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Requested eager data is absent and may trigger failure or extra work.",
+      "compatibility_implications": "Terminal first() honors existing query intent.",
+      "evidence_artifact": "RELATION001.json",
+      "source_locations_likely_involved": [
+        "aksara/manager.py",
+        "aksara/relations.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "BULK-001",
+      "affected_subsystem": "bulk writes",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_bulk.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/BULK-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "bulk_update applies valid Boolean and timestamp values with field-aware typing.",
+      "actual_v071_behavior": "PostgreSQL infers CASE output as text and asyncpg raises DatatypeMismatchError.",
+      "postgresql_required": true,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Valid bulk writes fail.",
+      "compatibility_implications": "Generated SQL gains field-aware casts without changing declared method semantics.",
+      "evidence_artifact": "BULK-001.json",
+      "source_locations_likely_involved": [
+        "aksara/manager.py",
+        "aksara/fields"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "PAGINATION-001",
+      "affected_subsystem": "generated API pagination",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_public_pagination.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/PAGINATION-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "HTTP and OpenAPI preserve paginator-specific metadata including next_cursor.",
+      "actual_v071_behavior": "Direct paginator results contain metadata that generated response models strip.",
+      "postgresql_required": true,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Clients lose continuation metadata and generated typing disagrees with runtime.",
+      "compatibility_implications": "Response models become paginator-specific.",
+      "evidence_artifact": "PAGINATION-001.json",
+      "source_locations_likely_involved": [
+        "aksara/api/pagination.py",
+        "aksara/api/router.py",
+        "aksara/api/viewsets.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    },
+    {
+      "id": "TESTING-001",
+      "affected_subsystem": "database testing helper",
+      "public_package_version": "0.7.1",
+      "deterministic": true,
+      "network_required": false,
+      "reproduction_command": "AKSARA_DATABASE_URL=<redacted> /private/tmp/aksara-v072-public-071/bin/python scripts/check_testing_helper_cleanup.py --python /private/tmp/aksara-v072-public-071/bin/python --output audit-evidence/v072-baseline/TESTING-001.json",
+      "environment": "Python 3.11.15 isolated public wheel; PostgreSQL 18.4 database aksara_test",
+      "expected_correct_behavior": "cleanup=True pins supported writes to an owned rollback transaction and closes owned resources.",
+      "actual_v071_behavior": "Database.execute commits outside the acquired transaction; writes survive and the pool remains usable after exit.",
+      "postgresql_required": true,
+      "security_impact": "None identified.",
+      "data_integrity_impact": "Tests can leak committed rows and connections despite promised cleanup.",
+      "compatibility_implications": "Same-task rollback scope becomes truthful; HTTP/process boundaries remain explicit.",
+      "evidence_artifact": "TESTING-001.json",
+      "source_locations_likely_involved": [
+        "aksara/testing.py",
+        "aksara/db/engine.py"
+      ],
+      "baseline_classification": "reproduced_defect"
+    }
+  ]
+}

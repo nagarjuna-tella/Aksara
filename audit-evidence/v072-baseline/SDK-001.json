@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "package_version": "0.7.1",
+  "source_checkout_framework_imports": false,
+  "typescript_version": "Version 5.9.3",
+  "input_sha256": {
+    "app/models.py": "d6a2d4615327ea575d851e354703bc695c290468a39b2f21bca3f90cef76dd10",
+    "app/views.py": "64fa980ed425cb7194df5a34c81f5a244c5fec0c0d7f8970150eede122ed25c4"
+  },
+  "documentation_sha256": "2bb262fcfae87806fba4100c85736e46deaffef568b7aaeca0bcb425390bdc51",
+  "runner_sha256": "4dd0edee44dfd71600ed553d5c974e4eb76c3bc2ef2aa9f86c307e2269bda556",
+  "generation_exit": 0,
+  "generated_sha256": "5a3c884304ee43bd12dc365e3fd83ba6794cf8b5048453583c7dc97976939364",
+  "compile_command": "tsc --strict --noEmit --lib ES2022,DOM api.ts",
+  "compile_exit": 2,
+  "compile_output": "api.ts(89,75): error TS2322: Type 'TicketListParams' is not assignable to type 'Record<string, QueryValue>'.\n  Index signature for type 'string' is missing in type 'TicketListParams'.\n",
+  "live_http_executed": false,
+  "runtime_fix_performed": false
+}

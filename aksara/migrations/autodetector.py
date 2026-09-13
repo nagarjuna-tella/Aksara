@@ -407,9 +407,17 @@ def build_state_from_models(models: Dict[str, type]) -> ProjectState:
     from aksara.fields import ForeignKey, OneToOne
 
     state = ProjectState()
+    table_sources: Dict[str, str] = {}
 
     for model_name, model_class in models.items():
         table_name = _get_table_name_for_model(model_class)
+
+        if table_name in state.tables:
+            first_model = table_sources[table_name]
+            raise ValueError(
+                f"Duplicate model table '{table_name}' is declared by "
+                f"'{first_model}' and '{model_name}'"
+            )
 
         table = TableState(name=table_name)
 
@@ -423,6 +431,7 @@ def build_state_from_models(models: Dict[str, type]) -> ProjectState:
             table.fields[col_name] = _model_field_to_state(col_name, field)
 
         state.tables[table_name] = table
+        table_sources[table_name] = model_name
 
     return state
 

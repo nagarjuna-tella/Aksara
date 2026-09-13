@@ -166,10 +166,8 @@ def _fresh_workflow_import_observation() -> dict[str, object]:
 def test_workflow_example_executes_in_a_fresh_installed_process() -> None:
     observation = _fresh_workflow_import_observation()
 
-    assert observation["direct_import_exit"] == 1
-    assert "partially initialized module 'aksara.ai.workflows'" in observation[
-        "direct_import_error"
-    ]
+    assert observation["direct_import_exit"] == 0
+    assert observation["direct_import_error"] == ""
     assert observation["documented_snippet_exit"] == 0
     assert "with 3 steps (2 inspect, 1 run_test)" in observation[
         "documented_snippet_stdout"

@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## v0.7.2 — Audit Closure
+
+Release candidate prepared 2026-09-12.
+
+This maintenance candidate closes all 22 functional findings disclosed by the
+v0.7.1 Public Truth audit. It establishes regression coverage for every repair
+without introducing a v0.8 capability or changing Aksara's product direction.
+
+### Authorization, isolation, and ownership
+
+- Enforced declared ViewSet and action permissions for custom HTTP actions,
+  including object, tenant, and REST/MCP parity boundaries.
+- Made filesystem containment component-aware across read, write, metadata,
+  deletion, URL, and symlink paths.
+- Preserved filtered and tenant-scoped query semantics when changing
+  soft-delete visibility, and corrected the historical multitenant exemption
+  matcher.
+- Added claim tokens, database-time leases, heartbeats, atomic recovery, and
+  stale-owner fencing to ordinary tasks while keeping Tasks distinct from
+  Durable Operations.
+
+### Persistence and generated abstractions
+
+- Made model identity collisions explicit so migration discovery cannot silently
+  discard same-named models.
+- Corrected eager foreign-key loading, Boolean/timestamp bulk updates, JSON/YAML
+  fixture round trips, default fixture model enumeration, and cursor pagination
+  metadata.
+- Made the generated Ticket Desk TypeScript SDK compile in strict mode and
+  verified its list, detail, create, update, filtering, and pagination behavior
+  against a live application.
+
+### Developer and experimental surfaces
+
+- Made all generated project templates installable in editable and wheel form,
+  and made the database testing helper provide real rollback isolation.
+- Aligned environment-list parsing and Python 3.11–3.14 compatibility checks
+  with the supported release policy.
+- Corrected provider configured-state detection, workflow import ordering,
+  diagnostic environment-command rendering, query-plan provenance, and
+  Array Admin widget input mutation.
+
+### Compatibility
+
+- No dependency was added or widened.
+- Durable Operations and stable MCP semantics are unchanged.
+- No v0.8 capability abstraction or roadmap feature is implemented.
+
+
 ## v0.7.1 — Documentation & Developer Experience
 
 Released 2026-09-12.

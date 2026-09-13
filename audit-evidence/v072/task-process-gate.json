@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "package_version": "0.7.2rc1",
+  "package_origin": "/private/tmp/aksara-v072-candidate-venv/lib/python3.11/site-packages/aksara/__init__.py",
+  "source_checkout_framework_imports": false,
+  "database": "aksara_test",
+  "lease_seconds": 0.6,
+  "scenarios": {
+    "healthy_long_running": {
+      "process": {
+        "claimed": true,
+        "process_id": 44783,
+        "status": "completed",
+        "worker_id": "worker-a"
+      },
+      "initial_claim": {
+        "id": "9b149872-73c0-48a2-813c-c060c4a3bbb0",
+        "status": "running",
+        "attempts": 1,
+        "locked_at": "2026-09-13T04:39:23.452142+00:00",
+        "locked_by": "worker-a",
+        "claim_credential_present": true,
+        "lock_expires_at": "2026-09-13T04:39:24.052160+00:00",
+        "completed_at": null,
+        "last_error": null,
+        "result": null,
+        "updated_at": "2026-09-13T04:39:23.452160+00:00"
+      },
+      "after_heartbeat": {
+        "id": "9b149872-73c0-48a2-813c-c060c4a3bbb0",
+        "status": "running",
+        "attempts": 1,
+        "locked_at": "2026-09-13T04:39:24.075420+00:00",
+        "locked_by": "worker-a",
+        "claim_credential_present": true,
+        "lock_expires_at": "2026-09-13T04:39:24.675420+00:00",
+        "completed_at": null,
+        "last_error": null,
+        "result": null,
+        "updated_at": "2026-09-13T04:39:24.075421+00:00"
+      },
+      "recovered": 0,
+      "terminal": {
+        "id": "9b149872-73c0-48a2-813c-c060c4a3bbb0",
+        "status": "completed",
+        "attempts": 1,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:24.275972+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-a\", \"process_id\": 44783}",
+        "updated_at": "2026-09-13T04:39:24.275972+00:00"
+      },
+      "healthy_heartbeat_prevented_recovery": true
+    },
+    "paused_owner_transfer": {
+      "stale_process": {
+        "claimed": true,
+        "process_id": 44784,
+        "status": "completed",
+        "worker_id": "worker-a"
+      },
+      "replacement_process": {
+        "claimed": true,
+        "process_id": 44788,
+        "status": "completed",
+        "worker_id": "worker-b"
+      },
+      "original_claim": {
+        "id": "1f31acb5-0cd3-4517-a090-7c576ec7ce0b",
+        "status": "running",
+        "attempts": 1,
+        "locked_at": "2026-09-13T04:39:24.564054+00:00",
+        "locked_by": "worker-a",
+        "claim_credential_present": true,
+        "lock_expires_at": "2026-09-13T04:39:25.164071+00:00",
+        "completed_at": null,
+        "last_error": null,
+        "result": null,
+        "updated_at": "2026-09-13T04:39:24.564072+00:00"
+      },
+      "after_atomic_transfer": {
+        "id": "1f31acb5-0cd3-4517-a090-7c576ec7ce0b",
+        "status": "pending",
+        "attempts": 1,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": null,
+        "last_error": null,
+        "result": null,
+        "updated_at": "2026-09-13T04:39:25.434460+00:00"
+      },
+      "replacement_terminal": {
+        "id": "1f31acb5-0cd3-4517-a090-7c576ec7ce0b",
+        "status": "completed",
+        "attempts": 2,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:25.680183+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-b\", \"process_id\": 44788}",
+        "updated_at": "2026-09-13T04:39:25.680183+00:00"
+      },
+      "after_stale_completion": {
+        "id": "1f31acb5-0cd3-4517-a090-7c576ec7ce0b",
+        "status": "completed",
+        "attempts": 2,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:25.680183+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-b\", \"process_id\": 44788}",
+        "updated_at": "2026-09-13T04:39:25.680183+00:00"
+      },
+      "recovered": 1,
+      "stale_authoritative_updates": 0
+    },
+    "hard_kill_restart": {
+      "killed_process_id": 44791,
+      "killed_return_code": -9,
+      "dead_owner_claim": {
+        "id": "d8e0563b-f5e4-44d0-bef4-3638b2225ebf",
+        "status": "running",
+        "attempts": 1,
+        "locked_at": "2026-09-13T04:39:25.972488+00:00",
+        "locked_by": "worker-a",
+        "claim_credential_present": true,
+        "lock_expires_at": "2026-09-13T04:39:26.572509+00:00",
+        "completed_at": null,
+        "last_error": null,
+        "result": null,
+        "updated_at": "2026-09-13T04:39:25.972510+00:00"
+      },
+      "recovered": 1,
+      "replacement_process": {
+        "claimed": true,
+        "process_id": 44792,
+        "status": "completed",
+        "worker_id": "worker-b"
+      },
+      "terminal": {
+        "id": "d8e0563b-f5e4-44d0-bef4-3638b2225ebf",
+        "status": "completed",
+        "attempts": 2,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:26.977801+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-b\", \"process_id\": 44792}",
+        "updated_at": "2026-09-13T04:39:26.977801+00:00"
+      }
+    },
+    "competing_workers": {
+      "processes": [
+        {
+          "claimed": false,
+          "process_id": 44793,
+          "status": null,
+          "worker_id": "worker-a"
+        },
+        {
+          "claimed": true,
+          "process_id": 44794,
+          "status": "completed",
+          "worker_id": "worker-b"
+        }
+      ],
+      "effects": [
+        {
+          "worker_id": "worker-b",
+          "process_id": 44794,
+          "called_at": "2026-09-13T04:39:27.209213+00:00"
+        }
+      ],
+      "current_owner_count": 1,
+      "terminal": {
+        "id": "4bb39317-0aa2-40ef-9276-4a868c06edd1",
+        "status": "completed",
+        "attempts": 1,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:27.212651+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-b\", \"process_id\": 44794}",
+        "updated_at": "2026-09-13T04:39:27.212651+00:00"
+      }
+    },
+    "failure_retry_stale_owner": {
+      "replacement_failure": {
+        "claimed": true,
+        "process_id": 44796,
+        "status": "pending",
+        "worker_id": "worker-b"
+      },
+      "retry_success": {
+        "claimed": true,
+        "process_id": 44797,
+        "status": "completed",
+        "worker_id": "worker-c"
+      },
+      "stale_failure": {
+        "claimed": true,
+        "process_id": 44795,
+        "status": "completed",
+        "worker_id": "worker-a"
+      },
+      "recovered": 1,
+      "terminal_before_stale_resume": {
+        "id": "e9ef3ac7-30bb-43f2-ba2a-18d6a770e452",
+        "status": "completed",
+        "attempts": 3,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:28.800790+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-c\", \"process_id\": 44797}",
+        "updated_at": "2026-09-13T04:39:28.800791+00:00"
+      },
+      "terminal_after_stale_failure": {
+        "id": "e9ef3ac7-30bb-43f2-ba2a-18d6a770e452",
+        "status": "completed",
+        "attempts": 3,
+        "locked_at": null,
+        "locked_by": null,
+        "claim_credential_present": false,
+        "lock_expires_at": null,
+        "completed_at": "2026-09-13T04:39:28.800790+00:00",
+        "last_error": null,
+        "result": "{\"worker_id\": \"worker-c\", \"process_id\": 44797}",
+        "updated_at": "2026-09-13T04:39:28.800791+00:00"
+      },
+      "stale_authoritative_updates": 0
+    }
+  },
+  "invariants": {
+    "claim_ownership_unique": true,
+    "heartbeat_proves_current_ownership": true,
+    "recovery_atomically_transfers_ownership": true,
+    "transfer_invalidates_previous_owner": true,
+    "stale_heartbeat_cannot_revive_ownership": true,
+    "stale_success_cannot_overwrite": true,
+    "stale_failure_cannot_overwrite": true,
+    "old_worker_cannot_move_terminal_state_backward": true,
+    "database_time_determines_expiry": true,
+    "worker_shutdown_releases_connections": true
+  },
+  "external_effect_limit": "Ordinary tasks remain at-least-once. Applications must make irreversible external effects repeat-safe; Durable Operations remain the fenced business-execution abstraction.",
+  "disposable_schema_removed": true,
+  "runner_sha256": "1720d7855bffa6215f02a63bc6c637dd81ee5a1658edd00dce322590591f1718"
+}

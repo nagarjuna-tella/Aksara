@@ -28,6 +28,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Literal, Optional, TYPE_CHECKING
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
@@ -86,6 +87,14 @@ _DEFAULT_BASE_URLS: Dict[str, str] = {
     "ollama": "http://localhost:11434",
     "custom": "http://localhost:8080",
 }
+
+
+def _is_valid_http_url(value: Optional[str]) -> bool:
+    """Return whether *value* names a concrete HTTP(S) endpoint."""
+    if not value:
+        return False
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
 class UnifiedAiProvider(BaseModel):
@@ -148,8 +157,22 @@ class UnifiedAiProvider(BaseModel):
 
         mappings = _ENV_MAPPINGS.get(provider, {})
         api_key = os.environ.get(mappings.get("api_key", ""), None)
-        model = os.environ.get(mappings.get("model", ""), None) or _DEFAULT_MODELS.get(provider)
-        base_url = os.environ.get(mappings.get("base_url", ""), None) or _DEFAULT_BASE_URLS.get(provider)
+        explicit_model = os.environ.get(mappings.get("model", ""), None)
+        explicit_base_url = os.environ.get(mappings.get("base_url", ""), None)
+        model = explicit_model or _DEFAULT_MODELS.get(provider)
+
+        # Adapter fallbacks for local/custom providers do not prove that a
+        # user configured them.  Apply the fallback only after another
+        # explicit signal selects that provider.
+        has_explicit_signal = bool(
+            api_key
+            or explicit_model
+            or explicit_base_url
+        )
+        if provider in {"ollama", "custom"} and not has_explicit_signal:
+            base_url = None
+        else:
+            base_url = explicit_base_url or _DEFAULT_BASE_URLS.get(provider)
 
         extra: Dict[str, Any] = {}
         if provider == "azure":
@@ -217,12 +240,21 @@ class UnifiedAiProvider(BaseModel):
         Returns:
             True if the provider can potentially make API calls.
         """
-        # Ollama doesn't need an API key
+        if self.base_url and not _is_valid_http_url(self.base_url):
+            return False
+
+        # Ollama doesn't need an API key.  Its adapter default is deliberately
+        # absent from clean-environment discovery.
         if self.provider == "ollama":
-            return bool(self.base_url)
+            return _is_valid_http_url(self.base_url)
+
+        # Custom HTTP explicitly supports keyless endpoints.  A key alone can
+        # select the adapter's documented default endpoint.
+        if self.provider == "custom":
+            return _is_valid_http_url(self.base_url) or bool(self.api_key)
 
         # Cloud providers need API key
-        if self.provider in ("openai", "anthropic", "azure", "custom"):
+        if self.provider in ("openai", "anthropic", "azure"):
             return bool(self.api_key)
 
         return False

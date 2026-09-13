@@ -55,6 +55,13 @@ def _effort_from_kind(kind: str) -> str:
     return "low"
 
 
+def _render_set_env_command(target: str, example: Optional[str]) -> str:
+    """Render one diagnostic environment action through its canonical renderer."""
+    from aksara.diagnostics import render_set_env_command
+
+    return render_set_env_command(target, example)
+
+
 # =============================================================================
 # Lazy Import Helpers
 # =============================================================================
@@ -183,7 +190,7 @@ def _build_diagnostic_steps(
                 if action.kind == "run_command":
                     cmds.append(action.target)
                 elif action.kind == "set_env":
-                    cmds.append(f"export {action.target}={action.example or '...'}")
+                    cmds.append(_render_set_env_command(action.target, action.example))
                     notes.append(action.title)
                 elif action.kind == "edit_file":
                     notes.append(f"Edit: {action.target}")

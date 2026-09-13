@@ -459,7 +459,7 @@ def finalize_relations() -> None:
     
     Call this after all models are imported, typically at app startup.
     """
-    from aksara.registry import ModelRegistry
+    from aksara.registry import AmbiguousModelError, ModelRegistry
     from aksara.relations import RelationRegistry, register_relation
     
     for model_name, model_cls in ModelRegistry.all().items():
@@ -488,7 +488,9 @@ def finalize_relations() -> None:
                         related_name=field.related_name,
                         on_delete=field.on_delete,
                     )
-            except Exception as e:
+            except AmbiguousModelError:
+                raise
+            except Exception:
                 # Skip if target model not yet loaded (lazy reference)
                 pass
     

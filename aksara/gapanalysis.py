@@ -40,6 +40,8 @@ from typing import Any, Callable, Coroutine, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from aksara.runtime_compatibility import SUPPORTED_PYTHON_LABEL, python_support_status
+
 # ---------------------------------------------------------------------------
 # Type Aliases
 # ---------------------------------------------------------------------------
@@ -914,7 +916,8 @@ async def check_environment() -> List[GapIssue]:
 
     # Check Python version
     py_major, py_minor = sys.version_info[:2]
-    if py_major < 3 or (py_major == 3 and py_minor < 10):
+    support_status = python_support_status((py_major, py_minor))
+    if support_status == "too_old":
         issues.append(
             _make_issue(
                 category="environment",
@@ -922,11 +925,30 @@ async def check_environment() -> List[GapIssue]:
                 code="ENV_PYTHON_VERSION_TOO_OLD",
                 title=f"Python {py_major}.{py_minor} is below the minimum required version",
                 message=(
-                    f"Aksara requires Python 3.10 or newer.  "
+                    f"Aksara supports Python {SUPPORTED_PYTHON_LABEL}.  "
                     f"You are running Python {py_major}.{py_minor}.  "
                     f"Update your Python installation."
                 ),
-                hint="Install Python 3.11+ via pyenv, brew, or your OS package manager.",
+                hint=(
+                    f"Install a supported Python ({SUPPORTED_PYTHON_LABEL}) via "
+                    "pyenv, brew, or your OS package manager."
+                ),
+                meta={"python_version": f"{py_major}.{py_minor}"},
+            )
+        )
+    elif support_status == "too_new":
+        issues.append(
+            _make_issue(
+                category="environment",
+                severity="error",
+                code="ENV_PYTHON_VERSION_UNSUPPORTED",
+                title=f"Python {py_major}.{py_minor} is newer than the supported range",
+                message=(
+                    f"Aksara supports Python {SUPPORTED_PYTHON_LABEL}.  "
+                    f"You are running Python {py_major}.{py_minor}, which has not "
+                    "yet been validated by the release matrix."
+                ),
+                hint=f"Use a supported Python ({SUPPORTED_PYTHON_LABEL}).",
                 meta={"python_version": f"{py_major}.{py_minor}"},
             )
         )

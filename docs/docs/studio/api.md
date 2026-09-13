@@ -61,7 +61,7 @@ features. It is descriptive metadata, not per-record authorization.
   "project": {
     "name": "My App",
     "version": "1.0.0",
-    "aksara_version": "0.7.1",
+    "aksara_version": "0.7.2rc1",
     "python_version": "3.11.5",
     "debug_mode": true,
     "environment": "development"
@@ -249,7 +249,7 @@ Simple health check endpoint.
 ```json
 {
   "status": "healthy",
-  "aksara_version": "0.7.1",
+  "aksara_version": "0.7.2rc1",
   "database": {
     "connected": true,
     "dialect": "postgresql",

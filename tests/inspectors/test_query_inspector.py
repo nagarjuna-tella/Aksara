@@ -143,6 +143,8 @@ class TestExplainQuery:
     def test_analyze_flag(self):
         result = explain_query("SELECT 1", analyze=True)
         assert result.plan_type == "EXPLAIN ANALYZE"
+        assert result.provenance == "synthetic"
+        assert result.analyze_executed is False
 
     def test_no_analyze_flag(self):
         result = explain_query("SELECT 1", analyze=False)
@@ -151,6 +153,7 @@ class TestExplainQuery:
     def test_synthetic_warning(self):
         result = explain_query("SELECT 1", analyze=False)
         assert any("Synthetic" in w for w in result.warnings)
+        assert result.provenance == "synthetic"
 
     def test_plan_has_lines(self):
         result = explain_query("SELECT * FROM orders")

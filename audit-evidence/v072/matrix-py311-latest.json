@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "source_head": "4240c86d39f02fdcc4b506bf07c0326f52df34a7",
+  "boundary": "latest",
+  "versions": {
+    "python": "3.11.5",
+    "fastapi": "0.141.1",
+    "starlette": "1.6.0",
+    "asyncpg": "0.31.0"
+  },
+  "database_tests_required": true,
+  "database": "aksara_test",
+  "summary": "8545 passed, 2 skipped, 29 warnings in 104.91s (0:01:44)",
+  "log": "audit-evidence/v072/matrix-py311-latest.log",
+  "log_sha256": "a63848fd21aa7e7ddf65bafc521e7afeac342cb1e3ae971a1174d1b04e7a8ab9"
+}

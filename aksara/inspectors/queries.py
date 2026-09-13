@@ -13,7 +13,7 @@ Provides:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -53,6 +53,14 @@ class QueryPlanResult(BaseModel):
         default_factory=list,
         description="Warnings or notes about the plan",
     )
+    provenance: Literal["live", "synthetic", "failed", "unavailable"] = Field(
+        default="unavailable",
+        description="Whether the result came from PostgreSQL or a diagnostic fallback",
+    )
+    analyze_executed: bool = Field(
+        default=False,
+        description="Whether PostgreSQL actually executed EXPLAIN ANALYZE",
+    )
 
 
 class QueryStats(BaseModel):
@@ -80,74 +88,15 @@ class QueryStats(BaseModel):
 # =============================================================================
 
 
-def explain_query(sql: str, analyze: bool = False) -> QueryPlanResult:
-    """
-    Run EXPLAIN (or EXPLAIN ANALYZE) on a SQL statement.
+def _synthetic_plan(sql: str, analyze: bool, reason: str) -> QueryPlanResult:
+    """Build a deterministic offline plan with explicit provenance."""
 
-    This does NOT require a live database connection by default — it
-    returns a synthetic plan in test / offline mode.  When a real
-    connection pool is available, it executes against the database.
-
-    Args:
-        sql: SQL statement to explain.
-        analyze: If True, runs EXPLAIN ANALYZE (actually executes query).
-
-    Returns:
-        QueryPlanResult with plan lines and estimated cost.
-    """
     import re
 
     plan_type = "EXPLAIN ANALYZE" if analyze else "EXPLAIN"
-    warnings: List[str] = []
+    warnings = [f"Synthetic plan — {reason}"]
     plan_lines: List[str] = []
     estimated_cost: Optional[float] = None
-
-    # Attempt real EXPLAIN via database pool
-    try:
-        from aksara.db.engine import Database
-
-        db = Database.get_instance()
-        if db and db.pool:
-            import asyncio
-
-            explain_sql = f"{plan_type} {sql}"
-
-            async def _run():
-                rows = await db.fetch(explain_sql)
-                return rows
-
-            try:
-                loop = asyncio.get_running_loop()
-                # If we're inside an event loop, we can't call asyncio.run
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, _run())
-                    rows = future.result(timeout=5)
-            except RuntimeError:
-                rows = asyncio.run(_run())
-
-            for row in rows:
-                line = row[0] if isinstance(row, (tuple, list)) else str(row)
-                plan_lines.append(str(line))
-
-            # Extract cost from first line
-            for line in plan_lines:
-                cost_match = re.search(r'cost=[\d.]+\.\.([\d.]+)', str(line))
-                if cost_match:
-                    estimated_cost = float(cost_match.group(1))
-                    break
-
-            return QueryPlanResult(
-                sql=sql,
-                plan=plan_lines,
-                estimated_cost=estimated_cost,
-                plan_type=plan_type,
-                warnings=warnings,
-            )
-    except Exception:
-        pass
-
-    # Fallback: synthetic plan for tests / offline mode
     sql_upper = sql.strip().upper()
     if sql_upper.startswith("SELECT"):
         plan_lines = [
@@ -177,8 +126,8 @@ def explain_query(sql: str, analyze: bool = False) -> QueryPlanResult:
         estimated_cost = 0.0
         warnings.append("Unsupported statement type for query plan estimation")
 
-    if not analyze:
-        warnings.append("Synthetic plan — no live database connection available")
+    if analyze:
+        warnings.append("EXPLAIN ANALYZE was requested but was not executed")
 
     return QueryPlanResult(
         sql=sql,
@@ -186,6 +135,71 @@ def explain_query(sql: str, analyze: bool = False) -> QueryPlanResult:
         estimated_cost=estimated_cost,
         plan_type=plan_type,
         warnings=warnings,
+        provenance="synthetic",
+        analyze_executed=False,
+    )
+
+
+async def explain_query_async(sql: str, analyze: bool = False) -> QueryPlanResult:
+    """Run a live plan when a connected database exists, otherwise label fallback."""
+
+    import re
+
+    from aksara.db.engine import Database
+
+    plan_type = "EXPLAIN ANALYZE" if analyze else "EXPLAIN"
+    try:
+        database = Database.get_instance()
+    except RuntimeError:
+        return _synthetic_plan(sql, analyze, "no database is configured")
+
+    if database is None or database._pool is None:
+        return _synthetic_plan(sql, analyze, "no live database connection is available")
+
+    try:
+        rows = await database.fetch(f"{plan_type} {sql}")
+    except Exception as exc:
+        return QueryPlanResult(
+            sql=sql,
+            plan=[],
+            estimated_cost=None,
+            plan_type=plan_type,
+            warnings=[f"Live database EXPLAIN failed: {type(exc).__name__}: {exc}"],
+            provenance="failed",
+            analyze_executed=False,
+        )
+
+    plan_lines = [str(row[0]) for row in rows]
+    estimated_cost = None
+    for line in plan_lines:
+        cost_match = re.search(r"cost=[\d.]+\.\.([\d.]+)", line)
+        if cost_match:
+            estimated_cost = float(cost_match.group(1))
+            break
+    return QueryPlanResult(
+        sql=sql,
+        plan=plan_lines,
+        estimated_cost=estimated_cost,
+        plan_type=plan_type,
+        warnings=[],
+        provenance="live",
+        analyze_executed=analyze,
+    )
+
+
+def explain_query(sql: str, analyze: bool = False) -> QueryPlanResult:
+    """Return a query plan from synchronous code with explicit provenance."""
+
+    import asyncio
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(explain_query_async(sql, analyze=analyze))
+    return _synthetic_plan(
+        sql,
+        analyze,
+        "the synchronous API was called from an active event loop; use explain_query_async",
     )
 
 

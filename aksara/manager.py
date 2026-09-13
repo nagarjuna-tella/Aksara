@@ -27,6 +27,13 @@ def _is_vector_field(field: Any) -> bool:
     return isinstance(field, Vector)
 
 
+def _typed_parameter(field: Any, param_idx: int) -> str:
+    """Bind a value with the PostgreSQL type declared by its model field."""
+    if _is_vector_field(field):
+        return f"CAST(${param_idx} AS vector)"
+    return f"CAST(${param_idx} AS {field.sql_type})"
+
+
 # Supported lookup types
 LOOKUP_OPERATORS = {
     "exact": "=",          # field__exact=value (same as field=value)
@@ -189,6 +196,7 @@ class QuerySet(Generic[T]):
         self._search: Optional[Tuple[str, List[str]]] = None  # (term, fields)
         self._limit_value: Optional[int] = None
         self._offset_value: Optional[int] = None
+        self._soft_delete_mode: str | None = None
 
     def _clone(
         self,
@@ -202,6 +210,7 @@ class QuerySet(Generic[T]):
         search: Any = _UNSET,
         limit_value: Any = _UNSET,
         offset_value: Any = _UNSET,
+        soft_delete_mode: Any = _UNSET,
     ) -> "QuerySet[T]":
         """Clone the queryset while overriding selected state."""
         qs = QuerySet(
@@ -216,6 +225,11 @@ class QuerySet(Generic[T]):
         qs._search = self._search if search is _UNSET else search
         qs._limit_value = self._limit_value if limit_value is _UNSET else limit_value
         qs._offset_value = self._offset_value if offset_value is _UNSET else offset_value
+        qs._soft_delete_mode = (
+            self._soft_delete_mode
+            if soft_delete_mode is _UNSET
+            else soft_delete_mode
+        )
         return qs
 
     def limit(self, n: int) -> "QuerySet[T]":
@@ -263,6 +277,14 @@ class QuerySet(Generic[T]):
         new_filters = {**self._filters, **kwargs}
         new_q_objects = self._q_objects + list(args)
         return self._clone(filters=new_filters, q_objects=new_q_objects)
+
+    def with_deleted(self) -> QuerySet[T]:
+        """Include deleted rows without discarding existing query state."""
+        return self._clone(soft_delete_mode="all")
+
+    def only_deleted(self) -> QuerySet[T]:
+        """Select deleted rows without discarding existing query state."""
+        return self._clone(soft_delete_mode="deleted")
     
     def search(self, term: str, fields: List[str]) -> "QuerySet[T]":
         """
@@ -824,10 +846,24 @@ class QuerySet(Generic[T]):
         """
         values = existing_values if existing_values is not None else []
 
-        if not self._filters and not self._q_objects and not self._search:
+        if (
+            not self._filters
+            and not self._q_objects
+            and not self._search
+            and self._soft_delete_mode in {None, "all"}
+        ):
             return "", values
 
         conditions = []
+
+        if self._soft_delete_mode in {"active", "deleted"}:
+            deleted_column = self._base_column_reference(
+                "deleted_at", qualify=qualify_base
+            )
+            null_operator = (
+                "IS NULL" if self._soft_delete_mode == "active" else "IS NOT NULL"
+            )
+            conditions.append(f"{deleted_column} {null_operator}")
 
         for q_object in self._q_objects:
             q_sql = self._compile_q_object(q_object, values, qualify_base=qualify_base)
@@ -1176,7 +1212,13 @@ class QuerySet(Generic[T]):
         if record is None:
             return None
 
-        return self._model._from_record(record)
+        instance = self._model._from_record(record)
+        instances = [instance]
+        if self._select_related:
+            await self._load_select_related(instances, db)
+        if self._prefetch_related:
+            await self._load_prefetch_related(instances, db)
+        return instance
 
     async def count(self) -> int:
         """
@@ -1373,10 +1415,8 @@ class Manager(Generic[T]):
         """Apply the soft-delete filter to a queryset based on its mode flags."""
         if not self._soft_delete_active():
             return qs
-        if getattr(qs, '_deleted_only', False):
-            return qs.filter(deleted_at__isnull=False)
-        if not getattr(qs, '_include_deleted', False):
-            return qs.filter(deleted_at__isnull=True)
+        if qs._soft_delete_mode is None:
+            return qs._clone(soft_delete_mode="active")
         return qs
 
     def filter(self, *args: Q, **kwargs) -> QuerySet[T]:
@@ -1397,15 +1437,11 @@ class Manager(Generic[T]):
 
     def with_deleted(self) -> QuerySet[T]:
         """Start a queryset that includes soft-deleted records."""
-        qs = QuerySet(self._model)
-        qs._include_deleted = True
-        return qs
+        return QuerySet(self._model).with_deleted()
 
     def only_deleted(self) -> QuerySet[T]:
         """Start a queryset that only contains soft-deleted records."""
-        qs = QuerySet(self._model)
-        qs._deleted_only = True
-        return self._apply_soft_delete(qs)
+        return QuerySet(self._model).only_deleted()
     
     def search(self, term: str, fields: List[str]) -> QuerySet[T]:
         """
@@ -1797,9 +1833,7 @@ class Manager(Generic[T]):
                     # Searched CASE requires a boolean WHEN expression — must
                     # compare the primary key column to the parameter, not just
                     # bind the PK value as the condition.
-                    value_sql = f"${param_idx + 1}"
-                    if _is_vector_field(field):
-                        value_sql = f"CAST(${param_idx + 1} AS vector)"
+                    value_sql = _typed_parameter(field, param_idx + 1)
                     when_clauses.append(
                         f"WHEN {quote_identifier('id')} = ${param_idx} THEN {value_sql}"
                     )
@@ -1958,7 +1992,7 @@ class Manager(Generic[T]):
             RETURNING *, (xmax = 0) AS _is_created
         """
 
-        record = await db.fetchrow(query, *insert_values)
+        record: Any = await db.fetchrow(query, *insert_values)
         instance = self._model._from_record(record)
         created = bool(record["_is_created"])
 

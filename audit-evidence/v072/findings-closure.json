@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "release": "0.7.2rc1",
+  "base_release": "0.7.1",
+  "summary": {
+    "total": 22,
+    "fixed": 22,
+    "disproved": 0,
+    "already_resolved": 0,
+    "unresolved": 0
+  },
+  "findings": [
+    {
+      "id": "CFG-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "List parsing reused the platform path delimiter, which conflicts with URI and IPv6 syntax.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/conf.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_configuration.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "JSON arrays and unambiguous comma-separated values are deterministic; ambiguous legacy input now fails clearly.",
+      "security_relevance": "Security-sensitive allowlist values are no longer silently corrupted."
+    },
+    {
+      "id": "SDK-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/SDK-001.json",
+      "root_cause": "Generated parameter interfaces lacked the indexability required by the query serializer.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/sdk/typescript.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/api/test_typescript_sdk.py",
+        "scripts/run_v072_typescript_sdk_gate.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/typescript-sdk-gate.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Generated list parameters compile strictly without any/type-error suppression.",
+      "security_relevance": "No direct security effect."
+    },
+    {
+      "id": "STORAGE-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "Containment used a raw string prefix rather than resolved path components.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/storage.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_storage.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Traversal, absolute escapes, sibling prefixes, and outward symlinks are rejected across storage operations.",
+      "security_relevance": "Closes an unsafe filesystem primitive; exploitability depended on application-controlled storage names."
+    },
+    {
+      "id": "ACTION-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/ACTION-001.json",
+      "root_cause": "Generated custom-action routes omitted the ViewSet/action permission dispatch used by generated CRUD.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/api/router.py",
+        "aksara/api/viewsets.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/api/test_actions.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/support-desk-gate.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Previously unauthorized calls now return a structured denial and never invoke the handler.",
+      "security_relevance": "Authorization tightening; REST and MCP preserve the declared application policy."
+    },
+    {
+      "id": "TASK-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/TASK-001.json",
+      "root_cause": "Ordinary tasks had an age-based lock without an owner token, renewable lease, or fenced terminal update.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/cli/main.py",
+        "aksara/core/migrations/0003_task_claim_ownership.py",
+        "aksara/tasks.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_task_ownership.py",
+        "tests/test_v072_task_processes.py",
+        "tests/migrations/test_v072_task_ownership.py",
+        "scripts/run_v072_task_process_gate.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/task-process-gate.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Adds an internal migration and lease ownership; stale workers cannot heartbeat or complete after transfer.",
+      "security_relevance": "Protects execution-state integrity while retaining at-least-once external-effect semantics."
+    },
+    {
+      "id": "AIPROVIDER001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/AIPROVIDER001.json",
+      "root_cause": "Compatibility heuristics conflated adapter defaults with explicit provider configuration.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/ai/hub_settings.py",
+        "aksara/ai/providers_unified.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/ai/test_v072_provider_configuration.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Configured, reachable, authenticated, and healthy remain separate experimental states.",
+      "security_relevance": "No stable security contract change."
+    },
+    {
+      "id": "GAP001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/GAP001.json",
+      "root_cause": "Gap Analysis carried an obsolete Python 3.10 threshold independent of package policy.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/gapanalysis.py",
+        "aksara/launch_check.py",
+        "aksara/runtime_compatibility.py",
+        "examples/support_desk/main.py",
+        "pyproject.toml"
+      ],
+      "tests": [
+        "tests/test_gapanalysis.py",
+        "tests/test_runtime_compatibility.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Python 3.9/3.10 fail, 3.11-3.14 pass, and later versions are explicitly unsupported.",
+      "security_relevance": "No direct security effect."
+    },
+    {
+      "id": "AIFLOW001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "Studio package initialization eagerly re-exported workflow builders while workflows imported Studio models.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/ai/workflows.py",
+        "aksara/studio/models.py",
+        "aksara/studio/utils.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py",
+        "scripts/check_v072_installed_boundaries.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-boundaries.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Public import names and signatures remain available through lazy forwarding in every tested order.",
+      "security_relevance": "No stable security contract change."
+    },
+    {
+      "id": "AIFLOW002",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "Diagnostic actions passed partially rendered shell snippets into a renderer that prepended another export assignment.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/ai/workflows.py",
+        "aksara/cli/main.py",
+        "aksara/diagnostics.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "New actions store raw values; one renderer supports raw and legacy values without executing secrets.",
+      "security_relevance": "Reduces malformed operator guidance; no command is executed by the framework."
+    },
+    {
+      "id": "EX-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "The example treated '/' as a prefix exemption, so every request path matched.",
+      "production_files": [
+        "aksara/_version.py",
+        "examples/multitenant/middleware.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/patterns/test_multitenant_example.py",
+        "scripts/check_v072_installed_boundaries.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-boundaries.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Root and health exemptions are exact; only explicit subtree prefixes match children.",
+      "security_relevance": "Removes a tenant-resolution bypass from the shipped historical example."
+    },
+    {
+      "id": "SCAFFOLD-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/SCAFFOLD-001.json",
+      "root_cause": "Generated project distribution names did not tell Hatchling which Python packages/modules to include.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/cli/main.py",
+        "aksara/cli/scaffold.py",
+        "aksara/cli/templates/__init__.py",
+        "aksara/launch_check.py",
+        "examples/support_desk/main.py",
+        "pyproject.toml"
+      ],
+      "tests": [
+        "tests/dx/test_scaffold_importable.py",
+        "scripts/run_v072_scaffold_gate.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/scaffold-gate.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Basic, Blog, CRM, and multitenant projects explicitly select packages and support editable/wheel installs.",
+      "security_relevance": "No runtime security change."
+    },
+    {
+      "id": "SOFTDELETE001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/SOFTDELETE001.json",
+      "root_cause": "Visibility helpers replaced the supplied queryset with a new manager queryset.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/contrib/soft_delete.py",
+        "aksara/manager.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_soft_delete.py",
+        "tests/security/test_v072_soft_delete_rls.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/rls-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Visibility is now a clone transformation that preserves predicates, tenant scope, ordering, slicing, annotations, and loading intent.",
+      "security_relevance": "Prevents accidental application-level tenant/query broadening; forced RLS remains defense in depth."
+    },
+    {
+      "id": "FIXTURE001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/fixtures.json",
+      "root_cause": "The loader treated an explicit missing primary key as an update-only target.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/fixtures.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_fixtures.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Dumped explicit identities insert when absent, update when present, and fail strict conflicts explicitly.",
+      "security_relevance": "Restores data-movement integrity; fixtures are not backup certification."
+    },
+    {
+      "id": "FIXTURE002",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/fixtures.json",
+      "root_cause": "YAML export allowed Python-specific UUID tags that safe_load rejects.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/fixtures.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_fixtures.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "UUID/date/time/datetime and nested values use portable safe YAML scalars.",
+      "security_relevance": "Safe loading remains mandatory."
+    },
+    {
+      "id": "FIXTURE003",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/fixtures.json",
+      "root_cause": "Default dumping iterated registry keys instead of canonical model classes.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/fixtures.py",
+        "aksara/registry.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_fixtures.py",
+        "tests/test_v072_registry.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Default and explicit dumps enumerate canonical models and surface name collisions.",
+      "security_relevance": "Prevents silent data omission."
+    },
+    {
+      "id": "INSPECTOR001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "The synchronous offline fallback relabeled synthetic estimates as ANALYZE and discarded the warning.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/inspectors/__init__.py",
+        "aksara/inspectors/queries.py",
+        "aksara/studio/fastapi.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/inspectors/test_v072_query_provenance.py",
+        "tests/docs/test_inspector_reference.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-doc-imports.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Every result reports live/synthetic/failed/unavailable provenance and whether ANALYZE executed.",
+      "security_relevance": "Prevents operators from mistaking invented timing data for a database measurement."
+    },
+    {
+      "id": "ADMINWIDGET001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/unit-findings.json",
+      "root_cause": "Array rendering padded the caller's list object in place.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/contrib/admin/widgets/array.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/admin/test_v072_array_widget.py",
+        "tests/docs/test_admin_widget_boundaries.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-doc-imports.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Rendering defensively copies list and tuple inputs while retaining validation and escaping.",
+      "security_relevance": "Prevents unintended in-memory data mutation."
+    },
+    {
+      "id": "MIGRATION-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/MIGRATION-001.json",
+      "root_cause": "The registry keyed models only by simple class name, allowing later imports to replace earlier models.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/cli/main.py",
+        "aksara/fields.py",
+        "aksara/migrations/autodetector.py",
+        "aksara/model/base.py",
+        "aksara/registry.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_registry.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Canonical identity is module-qualified class name; simple names resolve only when unambiguous and collisions raise AmbiguousModelError.",
+      "security_relevance": "Prevents silent schema/data omission; ambiguous applications now fail explicitly."
+    },
+    {
+      "id": "RELATION001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/RELATION001.json",
+      "root_cause": "QuerySet.first() materialized a row without running the eager-loading phase used by all().",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/manager.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_relations.py",
+        "tests/perf/test_select_related.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "first() honors select_related and prefetch intent with existing signatures.",
+      "security_relevance": "No direct security effect."
+    },
+    {
+      "id": "BULK-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/BULK-001.json",
+      "root_cause": "PostgreSQL inferred searched CASE result parameters without the declared field type.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/manager.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_bulk_update.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/closure-targeted.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "CASE values are cast through field SQL types across the supported scalar/advanced field matrix.",
+      "security_relevance": "Prevents valid writes failing or acquiring unintended types."
+    },
+    {
+      "id": "PAGINATION-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/PAGINATION-001.json",
+      "root_cause": "The router serialized every paginator through one fixed page response model.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/api/pagination.py",
+        "aksara/api/router.py",
+        "aksara/sdk/typescript.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/api/test_v072_pagination_contract.py",
+        "scripts/run_v072_typescript_sdk_gate.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/typescript-sdk-gate.json",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Paginator-specific metadata, including next_cursor, survives HTTP serialization and OpenAPI/SDK generation.",
+      "security_relevance": "No direct security effect."
+    },
+    {
+      "id": "TESTING-001",
+      "baseline_reproduced": true,
+      "baseline_artifact": "audit-evidence/v072-baseline/TESTING-001.json",
+      "root_cause": "The helper opened a raw transaction while yielded Database calls continued to acquire other pool connections.",
+      "production_files": [
+        "aksara/_version.py",
+        "aksara/testing.py",
+        "examples/support_desk/main.py"
+      ],
+      "tests": [
+        "tests/test_v072_testing_database.py"
+      ],
+      "candidate_result": "The public v0.7.1 negative reproduction is absent from the installed v0.7.2rc1 candidate and its permanent regression passes.",
+      "candidate_artifact": "audit-evidence/v072/installed-closure-pytest.log",
+      "final_disposition": "FIXED",
+      "compatibility_change": "Same-task database/model operations bind to the owned transaction, roll back, and close the pool; HTTP/process boundaries remain explicit.",
+      "security_relevance": "Test isolation claims now match actual persistence behavior."
+    }
+  ]
+}

@@ -21,6 +21,7 @@ from typing import Any, Iterable
 from urllib.parse import urlsplit, urlunsplit
 
 from aksara.routing import iter_routes
+from aksara.runtime_compatibility import SUPPORTED_PYTHON_LABEL, python_support_status
 
 CHECK_STATUSES = {"ok", "warning", "error", "skipped"}
 CATEGORY_ORDER = [
@@ -124,15 +125,17 @@ def run_launch_check(
 
     # Environment
     py_version = platform.python_version()
-    if sys.version_info >= (3, 11):
+    support_status = python_support_status(sys.version_info[:2])
+    if support_status == "supported":
         add("environment", "python_version", "ok", f"Python {py_version} detected")
     else:
+        direction = "below" if support_status == "too_old" else "above"
         add(
             "environment",
             "python_version",
             "error",
-            f"Python {py_version} is below Aksara's supported baseline",
-            "Use Python 3.11 or newer",
+            f"Python {py_version} is {direction} Aksara's supported range",
+            f"Use Python {SUPPORTED_PYTHON_LABEL}",
         )
 
     add("environment", "aksara_version", "ok", f"Aksara {version} installed")

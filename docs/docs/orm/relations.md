@@ -397,13 +397,12 @@ for post in posts:
     print(author.name)
 ```
 
-!!! warning "Known v0.7.0 terminal-method limitation"
-    `select_related(...).first()` does not populate the related-object cache.
-    Calling `get_related()` on that result raises `ValueError`. Use the
-    documented `select_related(...).all()` path (with an appropriately bounded
-    query) or explicitly load the related record. QuerySet has no `get()`
-    method; `Model.objects.get()` is a manager method. These names are not
-    interchangeable. A separate runtime consistency fix is required.
+`select_related()` preserves its eager-loading contract with both `all()` and
+`first()`. A successful `first()` call populates each requested relation before
+returning; nullable relations are marked as loaded and return `None` through
+`get_related()`. A query with no matching parent returns `None` without issuing
+relation queries. QuerySet has no `get()` method; `Model.objects.get()` remains
+a manager method.
 
 ### Prefetch Related (For M2M)
 

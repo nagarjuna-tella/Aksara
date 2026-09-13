@@ -146,7 +146,7 @@ assume all authentication adapters or custom endpoints use that status. See the
 
 ## Scope of `aksara.testing` helpers
 
-The 0.7.0 helper module has a narrower contract than a full test framework:
+The helper module has a narrower contract than a full test framework:
 
 | Helper | Behavior and limit |
 |---|---|
@@ -154,13 +154,19 @@ The 0.7.0 helper module has a narrower contract than a full test framework:
 | `create_test_app()` | Async application construction; optionally applies migrations; the caller still owns lifespan and cleanup |
 | `AksaraTestCase` | Plain class with explicit async setup/teardown methods; it is not `unittest.IsolatedAsyncioTestCase` and pytest does not automatically invoke those names |
 | `AksaraTestClient` | Synchronous request methods even under its async context manager; `with_user()` adds an `X-Test-User-Id` header, not a production authentication mechanism |
-| `test_database()` | Do not rely on its `cleanup=True` as general ORM/HTTP rollback isolation: it opens a raw pool transaction without binding application queries to that connection |
+| `test_database()` | With `cleanup=True`, pins same-task `Database` and ORM work to one transaction, rolls it back on every exit, and closes its owned pool |
 
 `AksaraTestCase` does not create a client, implement `authenticate()`, or roll back
-every test. The cleanup branch of `test_database()` also does not disconnect its
-pool. Use explicit application fixtures rather than depending on these helpers
-for those guarantees. These are current limitations, not changes introduced by
-this documentation release.
+every test. `test_database(cleanup=True)` covers database activity performed in
+the async task that entered the helper, including nested `atomic()` savepoints.
+An independent connection cannot see those uncommitted writes, and the outer
+rollback removes them after successful, exceptional, or cancelled exits.
+
+The helper does not automatically place synchronous `TestClient` requests,
+separate worker processes, or independently managed database connections inside
+that transaction. Use explicit application fixtures and disposable database
+schemas for those boundaries. With `cleanup=False`, writes commit normally, but
+the helper still closes the pool it created.
 
 There are no public `async_test`, `db_session`, `MigrationTestCase`,
 `setup_test_database`, `capture_tasks`, or `mock_ai` helpers in `aksara.testing`.

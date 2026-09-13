@@ -45,24 +45,20 @@ with HTTP 422. `count` describes the filtered query, not just the returned page.
 Concurrent inserts/deletes can shift offsets; do not promise repeatable traversal
 of a changing dataset without an application-specific consistency contract.
 
-## Current custom-pagination integration limitation
+## Custom pagination classes
 
-**Known defect in 0.7.0 (PAGINATION-001):** setting `pagination_class` to
-`PageNumberPagination` or `CursorPagination` changes row selection, but the
-generated route's fixed response schema discards their additional metadata.
-A page-number HTTP response loses `page`, `size` and `total_pages`; a cursor HTTP
-response loses `next_cursor`. Both can include `limit: null` and `offset: null`.
+Setting `pagination_class` changes both the generated route parameters and its
+response schema. `PageNumberPagination` exposes `page` and `size` and retains
+`page`, `size`, and `total_pages` in HTTP responses. `CursorPagination` exposes
+`cursor` and `page_size` and returns `next_cursor` as a string or `null`.
+`LimitOffsetPagination` exposes `limit` and `offset` and uses its own default and
+maximum limit. These contracts also appear in OpenAPI and generated TypeScript
+client types.
 
-Do not build a generated cursor client assuming it will receive a usable next
-cursor. Use the default limit/offset path until a separate runtime patch fixes
-the response integration, or own and test an application endpoint and response
-schema explicitly. Calling a ViewSet or paginator directly is not proof of the
-HTTP response contract.
-
-`LimitOffsetPagination` uses the same envelope as the generated route. Setting
-it explicitly is supported, but the class has its own `default_limit` and
-`max_limit`. Those are separate from the ViewSet attributes used by the generated
-route's request validation; keep them aligned if you customize either.
+An application-defined paginator can declare `response_schema_fields` for a
+concrete generated response schema. Without that declaration, Aksara uses an
+unstructured mapping so FastAPI response serialization preserves custom
+metadata rather than discarding unknown keys.
 
 ## Paginator class behavior
 
@@ -73,14 +69,11 @@ what the paginator returns before the generated response schema is applied.
 |---|---|---|---|
 | `LimitOffsetPagination` | `limit`, `offset` | 20 / 100; offset 0 | `count`, `limit`, `offset`, `results` |
 | `PageNumberPagination` | `page`, `size` | page 1; size 20 / 100 | `count`, `page`, `size`, `total_pages`, `results` |
-| `CursorPagination` | `cursor`, `page_size` | size 20 / 100 | `count`, `results`, optional `next_cursor` |
+| `CursorPagination` | `cursor`, `page_size` | size 20 / 100 | `count`, `results`, `next_cursor` (string or null) |
 
-Page-number parsing falls back to page 1/default size when integer parsing
-fails, clamps a page below 1 to 1, restores the default for size below 1, and
-caps size at the maximum. Cursor page-size parsing similarly falls back and
-caps. These are paginator behaviors, not a promise of strict invalid-input
-rejection. The generated route still validates its own `limit`/`offset` query
-parameters even when another pagination class selects rows.
+Direct paginator use normalizes malformed or out-of-range numeric values. The
+generated HTTP route gives each built-in paginator typed, bounded parameters and
+returns HTTP 422 for invalid numeric bounds.
 
 ## Cursor limits
 

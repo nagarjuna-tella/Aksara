@@ -12,7 +12,7 @@ The **AI Hub** is Aksara's unified AI provider management interface. It provides
 
 The AI Hub consolidates all AI provider management into one place:
 
-- **Provider Detection** — Inspect provider configuration hints from environment variables and built-in defaults
+- **Provider Detection** — Inspect explicit provider configuration from environment variables
 - **Provider Configuration** — Set up new providers via UI, CLI, or programmatically
 - **Connectivity Testing** — Ping providers to verify API keys and network access
 - **Agent Interface** — Run prompts against any configured provider with project context
@@ -62,8 +62,10 @@ aksara ai-provider configure openai --api-key <API_KEY>
    aksara ai-provider detect
    ```
 
-   The compatibility detector can report the default Ollama profile without a
-   running server. It also treats a keyless custom endpoint as unconfigured.
+   Adapter defaults are not treated as explicit configuration. A keyless
+   custom HTTP endpoint is configured when its URL is set. Configuration does
+   not imply reachability, authentication success, or health; use `ping` to
+   test the endpoint.
    Detection is therefore a hint, not a connectivity result.
 
 3. Test connectivity:

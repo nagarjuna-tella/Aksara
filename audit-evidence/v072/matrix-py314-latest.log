@@ -1,0 +1,229 @@
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 10%]
+........................................................................ [ 10%]
+........................................................................ [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+..........................................................s............. [ 42%]
+.........s.............................................................. [ 43%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 63%]
+........................................................................ [ 64%]
+........................................................................ [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 67%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+........................................................................ [ 87%]
+........................................................................ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+........................................................................ [ 94%]
+........................................................................ [ 95%]
+........................................................................ [ 96%]
+........................................................................ [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+...................................................                      [100%]
+=============================== warnings summary ===============================
+../../../../../../private/tmp/aksara-v072-py314-latest/lib/python3.14/site-packages/starlette/testclient.py:53
+  /private/tmp/aksara-v072-py314-latest/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/cli/test_ai_chat_cli.py::TestChatTextOutput::test_success_output
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_ai_chat_cli.py:153: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/cli/test_dev_tools.py::TestPrecommitInitCommand::test_precommit_init_creates_file
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:228: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestPrecommitInitCommand::test_precommit_init_does_not_overwrite
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:249: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestPrecommitInitCommand::test_precommit_init_shows_next_steps
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:267: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_creates_precommit_config
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:413: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_creates_editorconfig
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:430: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_pyproject_has_dev_tools
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:446: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_shows_dev_instructions
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:471: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_creates_pyproject_toml
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:483: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_makes_package_selection_explicit[arbitrary_basic_name-basic]
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_makes_package_selection_explicit[arbitrary_blog_name-blog]
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_makes_package_selection_explicit[arbitrary_crm_name-crm]
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_makes_package_selection_explicit[arbitrary_tenant_name-multitenant]
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:503: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_dev_tools.py::TestStartprojectDevFiles::test_startproject_app_templates_are_neutral
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_dev_tools.py:530: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+tests/cli/test_sdk_cli.py::TestSdkCli::test_generate_sdk_writes_file
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_sdk_cli.py:41: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with self.runner.isolated_filesystem():
+
+tests/cli/test_ui.py::TestRootFlagPropagation::test_quiet_preserves_error_output
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/cli/test_ui.py:196: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/patterns/test_startproject_templates.py::TestCLIIntegration::test_startproject_with_unknown_template
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/patterns/test_startproject_templates.py:234: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/patterns/test_startproject_templates.py::TestCLIIntegration::test_startproject_with_basic_template
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/patterns/test_startproject_templates.py:248: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_preview_invalid_json_syntax
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:261: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_preview_truncated_json
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:275: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_preview_empty_file
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:289: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_preview_json_null
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:302: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_preview_json_array
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:314: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIInvalidJSON::test_plan_apply_invalid_json_syntax
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:326: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIPlanApplyConfirmation::test_plan_apply_no_confirmation_aborts
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:357: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIPlanApplyConfirmation::test_plan_apply_empty_confirmation_aborts
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:381: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_debug_cli_extensions.py::TestCLIPlanApplyConfirmation::test_plan_apply_yes_flag_skips_confirmation
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_debug_cli_extensions.py:406: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem():
+
+tests/test_v049_global_invariants.py::TestMinimalProjectSmokeTest::test_startproject_creates_structure
+  /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook Pro/projects/Aksara/tests/test_v049_global_invariants.py:351: DeprecationWarning: 'isolated_filesystem' is deprecated and will be removed in Click 9.0. Use 'tempfile.TemporaryDirectory' or pytest's 'tmp_path' fixture with absolute paths instead.
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8545 passed, 2 skipped, 29 warnings in 109.42s (0:01:49)

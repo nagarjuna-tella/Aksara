@@ -7,12 +7,24 @@ Provides AI metadata helper functions for model/field introspection.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Type
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from aksara.model.base import Model
-    from aksara.fields import Field
+
+
+class AmbiguousModelError(LookupError):
+    """Raised when a simple model name identifies more than one model."""
+
+    def __init__(self, name: str, candidates: list[str]):
+        self.name = name
+        self.candidates = tuple(sorted(candidates))
+        choices = ", ".join(self.candidates)
+        super().__init__(
+            f"Model name '{name}' is ambiguous. Use one of: {choices}"
+        )
 
 
 class ModelRegistry:
@@ -23,49 +35,119 @@ class ModelRegistry:
     via the ModelMeta metaclass.
     """
 
-    _models: Dict[str, Type["Model"]] = {}
-    _view: "Mapping[str, Type[Model]]" = MappingProxyType(_models)
+    _models: dict[str, type[Model]] = {}
+    _view: Mapping[str, type[Model]] = MappingProxyType(_models)
     _version: int = 0
 
+    @staticmethod
+    def identity(model: type[Model]) -> str:
+        """Return the stable qualified identity used for ambiguous models."""
+        return f"{model.__module__}.{model.__qualname__}"
+
     @classmethod
-    def register(cls, model: Type["Model"]) -> None:
+    def _sort_models(cls) -> None:
+        """Keep enumeration deterministic without replacing the live mapping."""
+        ordered = sorted(cls._models.items())
+        cls._models.clear()
+        cls._models.update(ordered)
+
+    @classmethod
+    def register(cls, model: type[Model]) -> None:
         """
         Register a model class.
 
         Args:
             model: The model class to register
         """
-        cls._models[model.__name__] = model
+        simple_name = model.__name__
+        identity = cls.identity(model)
+        same_name = {
+            key: registered
+            for key, registered in cls._models.items()
+            if registered.__name__ == simple_name
+        }
+        other_identities = {
+            cls.identity(registered)
+            for registered in same_name.values()
+            if cls.identity(registered) != identity
+        }
+
+        for key, registered in same_name.items():
+            if cls.identity(registered) == identity:
+                del cls._models[key]
+
+        if other_identities:
+            for key, registered in list(same_name.items()):
+                registered_identity = cls.identity(registered)
+                if registered_identity != identity:
+                    cls._models.pop(key, None)
+                    cls._models[registered_identity] = registered
+            cls._models[identity] = model
+        else:
+            cls._models[simple_name] = model
+
+        cls._sort_models()
         cls._version += 1
 
     @classmethod
-    def get(cls, name: str) -> Type["Model"]:
+    def get(cls, name: str) -> type[Model]:
         """
         Get a model class by name.
 
         Args:
-            name: The model class name
+            name: An unambiguous class name or exact qualified identity
 
         Returns:
             The model class
 
         Raises:
             KeyError: If model not found
+            AmbiguousModelError: If a simple name identifies multiple models
         """
-        return cls._models[name]
+        if "." in name:
+            for model in cls._models.values():
+                if cls.identity(model) == name:
+                    return model
+            raise KeyError(name)
+
+        matches = [
+            model for model in cls._models.values()
+            if model.__name__ == name
+        ]
+        if not matches:
+            raise KeyError(name)
+        if len(matches) > 1:
+            raise AmbiguousModelError(
+                name,
+                [cls.identity(model) for model in matches],
+            )
+        return matches[0]
 
     @classmethod
-    def all(cls) -> "Mapping[str, Type[Model]]":
+    def reference(cls, model: type[Model]) -> str:
+        """Return the shortest registry reference that identifies ``model``."""
+        matches = [
+            registered for registered in cls._models.values()
+            if registered.__name__ == model.__name__
+        ]
+        identities = {cls.identity(registered) for registered in matches}
+        if identities == {cls.identity(model)}:
+            return model.__name__
+        return cls.identity(model)
+
+    @classmethod
+    def all(cls) -> Mapping[str, type[Model]]:
         """
         Get all registered models as a read-only view of the live registry.
 
         Returns:
-            Read-only mapping of model name -> model class.
+            Read-only mapping of model reference -> model class. Unambiguous
+            models use their simple class name; collisions use qualified identities.
         """
         return cls._view
 
     @classmethod
-    def snapshot(cls) -> Dict[str, Type["Model"]]:
+    def snapshot(cls) -> dict[str, type[Model]]:
         """Return a shallow copy of the registry for callers that need stability."""
         return cls._models.copy()
 
@@ -80,7 +162,7 @@ class ModelRegistry:
 # AI Metadata Helper Functions
 # =============================================================================
 
-def get_models(ai_exposed_only: bool = False) -> List[Type["Model"]]:
+def get_models(ai_exposed_only: bool = False) -> list[type[Model]]:
     """
     Get all registered models.
     
@@ -101,7 +183,7 @@ def get_models(ai_exposed_only: bool = False) -> List[Type["Model"]]:
     return models
 
 
-def get_model_meta(model: Type["Model"]) -> Dict[str, Any]:
+def get_model_meta(model: type[Model]) -> dict[str, Any]:
     """
     Get AI metadata for a model.
     
@@ -141,10 +223,10 @@ def get_model_meta(model: Type["Model"]) -> Dict[str, Any]:
 
 
 def get_model_fields(
-    model: Type["Model"],
+    model: type[Model],
     include_sensitive: bool = False,
     writable_only: bool = False,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Get field metadata for a model.
     
@@ -207,9 +289,9 @@ def get_model_fields(
 
 
 def get_model_schema_for_ai(
-    model: Type["Model"],
+    model: type[Model],
     include_sensitive: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get a complete schema description suitable for AI/LLM consumption.
     
@@ -242,7 +324,7 @@ def get_model_schema_for_ai(
     }
 
 
-def get_all_schemas_for_ai(include_sensitive: bool = False) -> List[Dict[str, Any]]:
+def get_all_schemas_for_ai(include_sensitive: bool = False) -> list[dict[str, Any]]:
     """
     Get schemas for all AI-exposed models.
     

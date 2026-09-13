@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -83,6 +84,29 @@ def test_ready_launch_check_with_mocked_database(monkeypatch, tmp_path):
     report = run_launch_check(root)
     assert report.status == "ready"
     assert report.ok is True
+
+
+@pytest.mark.parametrize(
+    ("version", "expected_status"),
+    [
+        ((3, 9, 0), "error"),
+        ((3, 10, 0), "error"),
+        ((3, 11, 0), "ok"),
+        ((3, 14, 0), "ok"),
+        ((3, 15, 0), "error"),
+    ],
+)
+def test_python_release_policy(monkeypatch, tmp_path, version, expected_status):
+    root = _project(tmp_path, name=f"python_{version[0]}_{version[1]}")
+    monkeypatch.setattr(sys, "version_info", version)
+    monkeypatch.setattr("aksara.launch_check.platform.python_version", lambda: ".".join(map(str, version)))
+
+    report = run_launch_check(root, check_database=False)
+
+    python_check = next(check for check in report.checks if check.name == "python_version")
+    assert python_check.status == expected_status
+    if expected_status == "error":
+        assert python_check.hint == "Use Python 3.11–3.14"
 
 
 def test_missing_project_blocks(tmp_path):

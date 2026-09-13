@@ -144,7 +144,11 @@ class FileSystemStorage(Storage):
         self.location.mkdir(parents=True, exist_ok=True)
 
     def _safe_name(self, name: str) -> str:
-        normalized = str(PurePosixPath(name)).lstrip("/")
+        portable_name = str(name).replace("\\", "/")
+        candidate = PurePosixPath(portable_name)
+        if candidate.is_absolute():
+            raise ValueError("Storage name must be relative to MEDIA_ROOT")
+        normalized = str(candidate)
         if normalized in {"", "."}:
             raise ValueError("Storage name cannot be empty")
         return normalized
@@ -153,7 +157,9 @@ class FileSystemStorage(Storage):
         relative_name = self._safe_name(name)
         full_path = (self.location / relative_name).resolve()
         base_dir = self.location.resolve()
-        if not str(full_path).startswith(str(base_dir)):
+        try:
+            full_path.relative_to(base_dir)
+        except ValueError:
             raise ValueError("Resolved storage path escapes MEDIA_ROOT")
         return full_path
 
@@ -202,7 +208,9 @@ class FileSystemStorage(Storage):
         return await asyncio.to_thread(lambda: self._full_path(name).stat().st_size)
 
     def url(self, name: str) -> str:
-        parts = [quote(part) for part in self._safe_name(name).split("/")]
+        safe_name = self._safe_name(name)
+        self._full_path(safe_name)
+        parts = [quote(part) for part in safe_name.split("/")]
         return f"{self.base_url}{'/'.join(parts)}"
 
     def path(self, name: str) -> Optional[str]:

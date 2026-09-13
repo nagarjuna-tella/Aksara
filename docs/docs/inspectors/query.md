@@ -26,24 +26,23 @@ SQL may still contain sensitive values; limit access to this output.
 
 ## Query-plan limitations
 
-`explain_query(sql, analyze=False)` is synchronous. It attempts a database call
-through the configured pool, but catches exceptions and falls back to synthetic
-output. With an active event loop it attempts the call in another thread/loop;
-a connected pool alone does not establish that the returned plan came from
-PostgreSQL.
+`explain_query(sql, analyze=False)` is synchronous. Use
+`await explain_query_async(...)` when an application event loop is already
+running. Both forms use the configured pool when it is connected and return a
+clearly labelled synthetic result when live execution is unavailable. A live
+database error produces a failed result instead of a fabricated plan.
 
 The returned `QueryPlanResult` includes `sql`, `plan`, `estimated_cost`,
-`plan_type`, and `warnings`. A synthetic SELECT plan uses a fixed cost of 35.50;
-that is fabricated output, not a performance measurement or estimate for your
-schema. Invalid SQL and database failures can therefore return a plan-shaped
-result instead of raising.
+`plan_type`, `warnings`, `provenance`, and `analyze_executed`. Provenance is
+`live`, `synthetic`, `failed`, or `unavailable`. A synthetic SELECT plan uses a
+fixed cost of 35.50; that is fabricated output, not a performance measurement or
+estimate for your schema.
 
-!!! warning "EXPLAIN ANALYZE output does not prove execution"
-    `analyze=True` requests execution when the database path succeeds, and can
-    therefore perform writes or other SQL side effects. Yet the v0.7.0 fallback
-    still labels synthetic output `EXPLAIN ANALYZE` and omits its usual synthetic
-    warning. Neither that label nor an empty warning list proves execution.
-    This diagnostic defect requires a separate runtime patch.
+!!! warning "EXPLAIN ANALYZE executes SQL only for live results"
+    `analyze=True` can perform writes or other SQL side effects. Treat it as
+    executed only when `provenance == "live"` and `analyze_executed` is true.
+    Synthetic results always retain a warning and report
+    `analyze_executed == false`.
 
 Do not use this helper as a SQL validation, read-only, authorization, or
 performance gate. For measured plans, use the direct database-backed procedure

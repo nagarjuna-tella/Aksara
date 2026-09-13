@@ -4,11 +4,13 @@ Tests for Multitenant Example Pattern
 Tests the multitenant example app structure and imports.
 """
 
-import pytest
 import importlib
 import sys
 from pathlib import Path
 
+import pytest
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 # Add examples to path
 examples_path = Path(__file__).parent.parent.parent / "examples"
@@ -132,6 +134,56 @@ class TestMultitenantMiddleware:
         
         assert issubclass(TenantMiddleware, BaseHTTPMiddleware)
         assert hasattr(TenantMiddleware, "dispatch")
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("path", "expected_exempt"),
+        [
+            ("/", True),
+            ("/health", True),
+            ("/health/details", False),
+            ("/api/tenants", True),
+            ("/api/tenants/", True),
+            ("/api/projects/", False),
+        ],
+    )
+    async def test_exempt_path_matching_is_deliberate(self, path, expected_exempt):
+        from multitenant.middleware import TenantMiddleware
+
+        middleware = TenantMiddleware(lambda scope, receive, send: None)
+
+        assert middleware._is_exempt_path(path) is expected_exempt
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("tenant", "expected_status", "expected_downstream"),
+        [(None, 403, 0), (object(), 200, 1)],
+    )
+    async def test_protected_route_resolves_tenant(
+        self, tenant, expected_status, expected_downstream
+    ):
+        from multitenant.middleware import TenantMiddleware
+
+        calls = {"resolver": 0, "downstream": 0}
+        middleware = TenantMiddleware(lambda scope, receive, send: None)
+
+        async def resolve_tenant(request):
+            calls["resolver"] += 1
+            return tenant
+
+        async def call_next(request):
+            calls["downstream"] += 1
+            return JSONResponse({"ok": True})
+
+        middleware._resolve_tenant = resolve_tenant
+        request = Request(
+            {"type": "http", "method": "GET", "path": "/api/projects/", "headers": []}
+        )
+
+        response = await middleware.dispatch(request, call_next)
+
+        assert response.status_code == expected_status
+        assert calls == {"resolver": 1, "downstream": expected_downstream}
 
 
 class TestMultitenantViewSets:

@@ -1,21 +1,28 @@
-"""Verify SDK probe provenance without hiding the compiler failure it records."""
+"""Preserve the historical v0.7.1 SDK probe and verify the current contract."""
 
-import hashlib
 import json
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_sdk_probe_uses_current_documented_inputs():
+def test_sdk_probe_preserves_v071_compiler_failure():
     evidence = json.loads((ROOT / "audit-evidence/v071/typescript-sdk-probe.json").read_text())
     assert evidence["source_checkout_framework_imports"] is False
-    runner = ROOT / "scripts/check_public_sdk.py"
-    guide = ROOT / "docs/docs/how-to/typescript-client.md"
-    assert evidence["runner_sha256"] == hashlib.sha256(runner.read_bytes()).hexdigest()
-    assert evidence["documentation_sha256"] == hashlib.sha256(guide.read_bytes()).hexdigest()
-    source = (ROOT / "docs/docs/getting-started/first-project.md").read_text()
-    snippets = dict(re.findall(r'^```python title="([^\"]+)"\n(.*?)^```', source, re.MULTILINE | re.DOTALL))
-    for file, digest in evidence["input_sha256"].items():
-        assert hashlib.sha256(snippets[file].encode()).hexdigest() == digest
+    assert evidence["package_version"] == "0.7.0"
+    assert evidence["compile_exit"] == 2
+    assert "TS2322" in evidence["compile_output"]
+    assert all(len(digest) == 64 for digest in evidence["input_sha256"].values())
+
+
+def test_current_sdk_guide_requires_strict_compile_and_runtime_exercise():
+    guide = (ROOT / "docs/docs/how-to/typescript-client.md").read_text()
+    runner = (ROOT / "scripts/run_v072_typescript_sdk_gate.py").read_text()
+
+    assert "tsc --strict --noEmit --lib ES2022,DOM api.ts" in guide
+    assert "The canonical Ticket Desk output passes this strict check" in guide
+    assert "createTicket" in runner
+    assert "getTicket" in runner
+    assert "updateTicket" in runner
+    assert "listTickets" in runner
+    assert "resolved=true" in runner

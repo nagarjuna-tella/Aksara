@@ -237,8 +237,9 @@ async def test_database(
     """
     Context manager for test database connections.
     
-    Creates a database connection for testing and optionally
-    cleans up data after the test.
+    Creates an owned database pool for testing. With cleanup enabled, database
+    calls made in the current async context use one pinned connection and are
+    rolled back when the context exits. The owned pool is always closed.
     
     Usage:
         from aksara.testing import test_database
@@ -246,35 +247,41 @@ async def test_database(
         async def test_queries():
             async with test_database("postgresql://localhost/test") as db:
                 # Run tests
-                user = await User.objects.using(db).create(name="Test")
+                user = await User.objects.create(name="Test")
                 assert user.id is not None
     
     Args:
         database_url: PostgreSQL connection URL
-        cleanup: Whether to rollback changes after test (default: True)
+        cleanup: Whether to pin same-context operations to a rollback
+            transaction (default: True)
         
     Yields:
         Connected Database instance
     """
     from aksara.db import Database
-    
+    from aksara.db.session import session_context
+
+    previous_database = Database._instance
     db = Database(database_url)
-    await db.connect()
-    
-    # Start a transaction for isolation
-    if cleanup:
-        async with db.pool.acquire() as conn:
-            tr = conn.transaction()
-            await tr.start()
-            try:
-                yield db
-            finally:
-                await tr.rollback()
-    else:
-        try:
+    try:
+        await db.connect()
+
+        if cleanup:
+            async with session_context(db) as connection:
+                transaction = connection.transaction()
+                await transaction.start()
+                try:
+                    yield db
+                finally:
+                    await transaction.rollback()
+        else:
             yield db
-        finally:
+    finally:
+        try:
             await db.disconnect()
+        finally:
+            if Database._instance is db:
+                Database._instance = previous_database
 
 
 def create_test_user(

@@ -71,8 +71,8 @@ class ArrayAdminWidget(Widget):
         if value is None:
             return []
         
-        if isinstance(value, list):
-            return value
+        if isinstance(value, (list, tuple)):
+            return list(value)
         
         if isinstance(value, str):
             # Try to parse as JSON

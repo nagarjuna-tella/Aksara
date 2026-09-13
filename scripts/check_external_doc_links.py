@@ -27,7 +27,7 @@ POST_MERGE_LOCAL_TARGETS = {
 
 
 def check(url):
-    request = urllib.request.Request(url, headers={'User-Agent': 'Aksara-docs-link-check/0.7.1'})
+    request = urllib.request.Request(url, headers={'User-Agent': 'Aksara-docs-link-check/0.7.2rc1'})
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return {'url': url, 'status': response.status, 'final_url': response.url,

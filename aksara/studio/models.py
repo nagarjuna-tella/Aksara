@@ -1478,6 +1478,14 @@ class StudioQueryPlanResult(BaseModel):
         default_factory=list,
         description="Warnings or notes about the plan",
     )
+    provenance: Literal["live", "synthetic", "failed", "unavailable"] = Field(
+        default="unavailable",
+        description="Whether the result came from PostgreSQL or a diagnostic fallback",
+    )
+    analyze_executed: bool = Field(
+        default=False,
+        description="Whether PostgreSQL actually executed EXPLAIN ANALYZE",
+    )
 
 
 class StudioModelInspectorField(BaseModel):

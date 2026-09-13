@@ -384,7 +384,8 @@ def startproject(project_name: str, directory: str, template: str):
     The default basic template creates main.py, settings.py, an app/ package,
     migrations/, .env and project metadata, with commented model/API examples.
     Blog, CRM and multitenant copy flat example modules instead; they do not
-    create an app/ package, .env or pyproject.toml. Their defaults differ.
+    create an app/ package or .env. Their generated pyproject.toml explicitly
+    packages those flat modules. Their defaults differ.
 
     Domain examples require application-specific authentication and policy.
     The historical multitenant example has known isolation and migration
@@ -456,7 +457,7 @@ def startproject(project_name: str, directory: str, template: str):
         ui.text(f"  {project_name}/")
         ui.text("  ├── main.py              # App entry point")
         ui.text("  ├── settings.py          # Global settings configuration")
-        ui.text("  ├── pyproject.toml        # basic template only")
+        ui.text("  ├── pyproject.toml        # explicit application packaging")
         ui.text("  ├── .env                  # basic template only")
         ui.text("  ├── README.md")
         ui.text("  ├── app/                  # basic only; domain modules live at project root")
@@ -478,7 +479,8 @@ def startproject(project_name: str, directory: str, template: str):
         ui.next_steps(
             [
                 f"cd {project_name}",
-                "Follow the setup guide for your template; install its documented dependencies.",
+                'pip install -e ".[dev]"',
+                "Follow the setup guide for your template.",
                 "Set DATABASE_URL for a dedicated local PostgreSQL database.",
                 "Generate migrations with the template-specific command in the setup guide; review before applying.",
                 "aksara migrate --migrations-dir migrations",
@@ -5711,7 +5713,11 @@ def doctor_run(output_format: str):
                     kind_sym = {"set_env": "ENV", "run_command": "CMD", "open_doc": "DOC", "edit_file": "FILE", "add_setting": "CFG"}.get(action.kind, action.kind.upper())
                     click.echo(f"            \033[36m→ [{kind_sym}]\033[0m {action.title}")
                     if action.example:
-                        click.echo(f"              \033[90m$ {action.example}\033[0m")
+                        example = action.example
+                        if action.kind == "set_env":
+                            from aksara.diagnostics import render_set_env_command
+                            example = render_set_env_command(action.target, example)
+                        click.echo(f"              \033[90m$ {example}\033[0m")
             click.echo()
 
         if not report.issues:
@@ -5918,7 +5924,11 @@ def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bo
                     ks = kind_sym.get(action.kind, action.kind.upper())
                     click.echo(f"       \033[36m→ [{ks}]\033[0m {action.title}")
                     if action.example:
-                        click.echo(f"         \033[90m$ {action.example}\033[0m")
+                        example = action.example
+                        if action.kind == "set_env":
+                            from aksara.diagnostics import render_set_env_command
+                            example = render_set_env_command(action.target, example)
+                        click.echo(f"         \033[90m$ {example}\033[0m")
             else:
                 click.echo(f"     \033[90m(no fix actions available)\033[0m")
             click.echo()
@@ -6505,9 +6515,12 @@ def inspect_models(model: Optional[str], fields: bool, relationships: bool, as_j
 
     if model:
         # Single model inspection
-        from aksara.registry import ModelRegistry
+        from aksara.registry import AmbiguousModelError, ModelRegistry
         try:
             model_cls = ModelRegistry.get(model)
+        except AmbiguousModelError as exc:
+            click.echo(f"  \033[31m✗\033[0m {exc}")
+            sys.exit(1)
         except KeyError:
             click.echo(f"  \033[31m✗\033[0m Model not found: {model}")
             click.echo()
@@ -8036,6 +8049,9 @@ def tasks_reenqueue(task_id, all_failed, queue, yes):
                     SET status = 'pending',
                         attempts = 0,
                         locked_at = NULL,
+                        locked_by = NULL,
+                        claim_token = NULL,
+                        lock_expires_at = NULL,
                         last_error = NULL,
                         available_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
@@ -8060,6 +8076,9 @@ def tasks_reenqueue(task_id, all_failed, queue, yes):
                     SET status = 'pending',
                         attempts = 0,
                         locked_at = NULL,
+                        locked_by = NULL,
+                        claim_token = NULL,
+                        lock_expires_at = NULL,
                         last_error = NULL,
                         available_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP

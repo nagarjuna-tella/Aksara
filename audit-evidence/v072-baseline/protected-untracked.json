@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "directories": [
+    {
+      "path": "audit-evidence/current-state/",
+      "files": 26,
+      "content_tree_sha256": "e018f9cdbcfc933cf3769fb0f3cb8ce7bdb7b09c0b717e336af5d2e3f7dfef5f"
+    },
+    {
+      "path": "audit-evidence/v055/",
+      "files": 50,
+      "content_tree_sha256": "8f65c3605d3a0ffa139df6053348c1bebc480d2a28028f6601f748b9ff205008"
+    },
+    {
+      "path": "benchmarks/results/",
+      "files": 51,
+      "content_tree_sha256": "1777e5606c4754c089b82bf61dba318e3c549520d8b2798aaa3e138b460068e3"
+    }
+  ],
+  "preservation_required": true
+}

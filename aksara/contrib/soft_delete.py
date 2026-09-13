@@ -195,7 +195,7 @@ def with_deleted(target):
     if isinstance(target, Manager):
         return target.with_deleted()
     if isinstance(target, QuerySet):
-        return target._model.objects.with_deleted()
+        return target.with_deleted()
     raise TypeError(
         "with_deleted() expects a Manager or QuerySet, got "
         f"{type(target).__name__}"
@@ -221,7 +221,7 @@ def only_deleted(target):
     if isinstance(target, Manager):
         return target.only_deleted()
     if isinstance(target, QuerySet):
-        return target._model.objects.only_deleted()
+        return target.only_deleted()
     raise TypeError(
         "only_deleted() expects a Manager or QuerySet, got "
         f"{type(target).__name__}"

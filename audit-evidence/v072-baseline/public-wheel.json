@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "package": "aksara-framework",
+  "version": "0.7.1",
+  "filename": "aksara_framework-0.7.1-py3-none-any.whl",
+  "sha256": "42a3a42be08ee5be1075d4f6da3b22fea6acaa5bf678a57db7ecc00ce4fdd197",
+  "matches_pypi_digest": true,
+  "isolated_environment": "/private/tmp/aksara-v072-public-071",
+  "python": "3.11.15",
+  "cli_version": "aksara, version 0.7.1",
+  "source_checkout_framework_imports": false
+}

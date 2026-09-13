@@ -6,6 +6,8 @@ Centralized settings management with environment variable support.
 
 from __future__ import annotations
 
+import ipaddress
+import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
@@ -44,9 +46,48 @@ def _get_float_env(key: str, default: float) -> float:
 
 
 def _split_list_env(value: str) -> List[str]:
-    """Split comma or path-separated environment values into a list."""
-    raw_parts = value.replace(os.pathsep, ",").split(",")
-    return [part.strip() for part in raw_parts if part.strip()]
+    """Parse a JSON array or comma-separated environment value.
+
+    The grammar is intentionally platform independent. Colons and semicolons
+    remain data so URI schemes, ports, and IPv6 addresses round-trip exactly.
+    """
+    stripped = value.strip()
+    if not stripped:
+        return []
+
+    bracket_end = stripped.find("]") if stripped.startswith("[") else -1
+    bracketed_ipv6 = False
+    if bracket_end > 0:
+        suffix = stripped[bracket_end + 1 :]
+        try:
+            ipaddress.IPv6Address(stripped[1:bracket_end])
+            bracketed_ipv6 = not suffix or (
+                suffix.startswith(":") and suffix[1:].isdigit()
+            )
+        except ValueError:
+            pass
+
+    if stripped.startswith("[") and not bracketed_ipv6:
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "Invalid list-valued environment variable: malformed JSON array"
+            ) from exc
+        if not isinstance(parsed, list) or any(
+            not isinstance(item, str) or not item.strip() for item in parsed
+        ):
+            raise ValueError(
+                "Invalid list-valued environment variable: expected non-empty strings"
+            )
+        return [item.strip() for item in parsed]
+
+    parts = [part.strip() for part in stripped.split(",")]
+    if any(not part for part in parts):
+        raise ValueError(
+            "Invalid list-valued environment variable: empty comma-separated item"
+        )
+    return parts
 
 
 @dataclass
@@ -333,7 +374,7 @@ class Settings:
         self.email_timeout = _get_float_env("AKSARA_EMAIL_TIMEOUT", self.email_timeout)
 
         env_supported_locales = os.environ.get("AKSARA_SUPPORTED_LOCALES")
-        if env_supported_locales:
+        if env_supported_locales is not None:
             self.supported_locales = [
                 locale for locale in _split_list_env(env_supported_locales)
             ]
@@ -343,7 +384,7 @@ class Settings:
             self.default_locale = env_default_locale
 
         env_locale_paths = os.environ.get("AKSARA_LOCALE_PATHS")
-        if env_locale_paths:
+        if env_locale_paths is not None:
             self.locale_paths = _split_list_env(env_locale_paths)
 
         self.use_tz = _get_bool_env("AKSARA_USE_TZ", self.use_tz)
@@ -411,10 +452,10 @@ class Settings:
         if env_mcp_host:
             self.mcp_transport_host = env_mcp_host
         env_mcp_hosts = os.environ.get("AKSARA_MCP_ALLOWED_HOSTS")
-        if env_mcp_hosts:
+        if env_mcp_hosts is not None:
             self.mcp_allowed_hosts = _split_list_env(env_mcp_hosts)
         env_mcp_origins = os.environ.get("AKSARA_MCP_ALLOWED_ORIGINS")
-        if env_mcp_origins:
+        if env_mcp_origins is not None:
             self.mcp_allowed_origins = _split_list_env(env_mcp_origins)
         self.mcp_max_request_body_size = _get_int_env(
             "AKSARA_MCP_MAX_REQUEST_BODY_SIZE", self.mcp_max_request_body_size

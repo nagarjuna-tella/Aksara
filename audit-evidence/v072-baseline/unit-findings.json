@@ -1,0 +1,63 @@
+{
+  "package_version": "0.7.1",
+  "findings": {
+    "CFG-001": {
+      "input": "https://example.com",
+      "observed": [
+        "https",
+        "//example.com"
+      ],
+      "url_round_trip": false
+    },
+    "STORAGE-001": {
+      "operation": "save",
+      "input": "../media-private/probe.txt",
+      "returned_name": "../media-private/probe.txt",
+      "outside_root_created": true,
+      "root": "disposable/media",
+      "resolved_target": "disposable/media-private/probe.txt"
+    },
+    "AIFLOW002": {
+      "commands": [
+        "export DATABASE_URL=export DATABASE_URL=\"postgresql://example.invalid/app\""
+      ],
+      "duplicated_export_prefix": true
+    },
+    "INSPECTOR001": {
+      "plan_type": "EXPLAIN ANALYZE",
+      "plan": [
+        "Seq Scan  (cost=0.00..35.50 rows=10 width=64)",
+        "  Filter: (condition from WHERE clause)"
+      ],
+      "warnings": [],
+      "synthetic_provenance_present": false
+    },
+    "ADMINWIDGET001": {
+      "before": [
+        "one"
+      ],
+      "after": [
+        "one",
+        "",
+        ""
+      ],
+      "input_preserved": false
+    },
+    "AIFLOW001": {
+      "direct_import_exit": 1,
+      "error_tail": "ImportError: cannot import name 'build_agent_workflow' from partially initialized module 'aksara.ai.workflows' (most likely due to a circular import) (/private/tmp/aksara-v072-public-071/lib/python3.11/site-packages/aksara/ai/workflows.py)"
+    },
+    "EX-001": {
+      "path": "/api/projects/",
+      "status": 200,
+      "resolver_calls": 0,
+      "downstream_calls": 1,
+      "root_exemption_bypasses_tenant_resolution": true
+    }
+  },
+  "schema_version": 1,
+  "source_checkout_framework_imports": false,
+  "released_example_sha256": "183141e923c3607d7157b1fa5d5c98d3af17e59ca04245ecbbfb2195e387f5cb",
+  "runner_sha256": "2e1a985a7f0daeec6f8159329f0f69962dd57b8531e9f6688e043100758e289a",
+  "scope": "Independent provider-free reproductions against the public v0.7.1 wheel, plus EX-001 executed from the exact released repository example. All filesystem writes use disposable temporary directories."
+}

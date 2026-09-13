@@ -13,10 +13,10 @@ serializers, ViewSets, and middleware that attempts to resolve a tenant from
 request headers or a host name. It is useful for understanding an earlier
 application design, not for proving safe SaaS isolation.
 
-Its middleware exempts paths by prefix and includes `/` in that exemption list.
-Every normal request therefore skips the tenant resolver. This is the known
-EX-001 defect; it remains unchanged in the documentation release. Startup and
-OpenAPI success do not prove tenant selection or isolation.
+Its middleware exempts only the documented public endpoints and explicit
+subtrees. Ordinary application paths now run the tenant resolver. Startup,
+OpenAPI success, and resolver execution still do not prove tenant authorization
+or database isolation.
 
 Even after a resolver correction, a client-supplied tenant ID, slug, or host is
 not proof that the authenticated actor belongs to that tenant. Application
@@ -24,14 +24,12 @@ membership checks and the database role/RLS configuration must be designed and
 tested together. The template does not supply the canonical tutorial's
 restricted-role, forced-RLS evidence.
 
-There is also a migration discovery limitation: the registry keys models by
-class name. In the installed v0.7.0 CLI flow, discovery of the built-in auth
-`User` replaces this example's `User`. Migration generation and application
-return success, but the declared `tenant_users` table is absent. This is
-MIGRATION-001; the inspection commands below do not produce a complete working
-tenant application. Changing `Meta.table_name` alone does not disambiguate a
-class-name collision. Use distinct application model names and inspect the
-actual migration operations and resulting tables.
+The model registry retains both this example's `User` and Aksara's built-in auth
+`User`. Its canonical identity is the Python module plus qualified class name,
+for example `models.User` and `aksara.auth.models.User`. Simple class names keep
+working when unique; ambiguous lookups report the qualified choices instead of
+selecting whichever model was imported last. Continue to inspect generated
+migration operations and resulting tables before deployment.
 
 ## Generate only for local inspection
 

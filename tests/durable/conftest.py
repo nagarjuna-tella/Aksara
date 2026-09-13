@@ -66,7 +66,14 @@ async def durable_db() -> AsyncIterator[Database]:
         await admin.execute(f'SET search_path TO "{schema}", public')
         runtime = _migration("aksara_core_migrations_0001_runtime_tables")()
         durable = _migration("aksara_core_migrations_0002_durable_operations")()
-        for operation in (*runtime.operations, *durable.operations):
+        task_ownership = _migration(
+            "aksara_core_migrations_0003_task_claim_ownership"
+        )()
+        for operation in (
+            *runtime.operations,
+            *durable.operations,
+            *task_ownership.operations,
+        ):
             await operation.apply(admin)
         await admin.execute(
             """

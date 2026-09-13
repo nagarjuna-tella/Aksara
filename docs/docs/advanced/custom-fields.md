@@ -106,8 +106,10 @@ explicit serializer hook when API validation must expose the same rule and
 verify both HTTP responses and stored values.
 
 `bulk_update()` and `upsert()` do not run full save preparation. The text-only
-conversion here can be used by those paths; it does not remove the current
-[Boolean/timestamp bulk-update limitation](../orm/bulk-operations.md#current-bulk-update-limitation).
+conversion here can be used by those paths. `bulk_update()` casts converted
+values to each field's declared PostgreSQL type; custom fields must therefore
+return values compatible with their `sql_type`. See
+[field typing in bulk updates](../orm/bulk-operations.md#field-typing-in-bulk-updates).
 Upsert callers must also supply required insertion values such as `updated_at`;
 an `auto_now` model field does not make that timestamp an automatic database
 default. See the bulk/upsert guide for the complete insertion contract.

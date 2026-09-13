@@ -13,7 +13,7 @@ From a working directory on macOS or Linux:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install "aksara-framework==0.7.1"
+python -m pip install "aksara-framework==0.7.2rc1"
 aksara --version
 python -m pip show aksara-framework
 ```
@@ -33,7 +33,7 @@ No model provider is needed to build a REST application.
 For the optional framework development/test tools:
 
 ```bash
-python -m pip install "aksara-framework[dev]==0.7.1"
+python -m pip install "aksara-framework[dev]==0.7.2rc1"
 ```
 
 Quote extras such as `[dev]` so shells do not treat the brackets as a filename

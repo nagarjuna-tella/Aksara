@@ -96,9 +96,10 @@ tenant scope, and retention use the separate
 aksara generate sdk --help
 ```
 
-The TypeScript generator is **Evolving** and the public 0.7.0 output has a known
-strict-compilation failure. Read the [TypeScript guide](../how-to/typescript-client.md)
-for the reproducible limitation and application-import requirements.
+The TypeScript generator is **Evolving**. The canonical generated client passes
+strict TypeScript compilation; read the
+[TypeScript guide](../how-to/typescript-client.md) for the verification command
+and application-import requirements.
 
 ## Optional AI tooling
 

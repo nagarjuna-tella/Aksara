@@ -59,13 +59,11 @@ and deleted rows; `only_deleted()` selects rows with a non-null timestamp.
 A queryset is not directly awaitable. `await queryset.all()` returns a list. Use `first()`
 and handle `None` when restoring a selected record.
 
-!!! warning "Existing queryset helpers lose query restrictions"
-    In v0.7.0, the module-level `with_deleted(queryset)` and
-    `only_deleted(queryset)` helpers create a fresh queryset. They discard prior
-    filters, ordering, and other query state. This can broaden a selection,
-    including application tenant filters. Start from the manager as shown above
-    and apply restrictions afterwards. A runtime correction requires a separate
-    patch; this guide does not change that behavior.
+The module-level `with_deleted(queryset)` and `only_deleted(queryset)` helpers
+clone the supplied queryset and preserve its filters, Q expressions, ordering,
+limits, annotations, and relation-loading state. Changing visibility therefore
+does not broaden an already restricted tenant or customer selection. The
+manager-first forms shown above remain the clearest starting point for new code.
 
 !!! warning "Queryset deletion is physical deletion"
     `ArchivedDocument.objects.filter(...).delete()` executes SQL `DELETE`.

@@ -55,7 +55,7 @@ def test_readme_mentions_launch_path(fragment):
         "# Roadmap",
         "Where Aksara is now",
         "v0.7 release",
-        "Now — v0.7.1 public truth and developer experience",
+        "Now — v0.7.2 audit closure",
         "v0.7.x maintenance",
         "Next — operating authorized application work",
         "durable authorized operations",

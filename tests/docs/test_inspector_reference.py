@@ -33,7 +33,7 @@ def test_inspector_examples():
             ModelRegistry.register(model)
 
 
-def test_synthetic_analyze_lacks_warning():
+def test_synthetic_analyze_exposes_provenance_and_execution_state():
     with patch.object(Database, 'get_instance', return_value=None):
         normal = explain_query('SELECT definitely_invalid_syntax')
         assert normal.estimated_cost == 35.5
@@ -41,4 +41,6 @@ def test_synthetic_analyze_lacks_warning():
         analyzed = explain_query('SELECT definitely_invalid_syntax', analyze=True)
         assert analyzed.plan == normal.plan
         assert analyzed.plan_type == 'EXPLAIN ANALYZE'
-        assert analyzed.warnings == []
+        assert analyzed.provenance == normal.provenance == 'synthetic'
+        assert analyzed.analyze_executed is False
+        assert any('not executed' in warning for warning in analyzed.warnings)

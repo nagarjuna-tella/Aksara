@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "package": {
+    "version": "0.7.2rc1"
+  },
+  "source_checkout_framework_imports": false,
+  "typescript_version": "Version 5.9.3",
+  "compile_command": "tsc --strict --lib ES2022,DOM --target ES2022 --module NodeNext --moduleResolution NodeNext",
+  "compile_exit": 0,
+  "runtime": {
+    "create": true,
+    "detail": true,
+    "update": true,
+    "list": true,
+    "pagination": true,
+    "filter_query": true,
+    "request_count": 8
+  },
+  "checks": [
+    "canonical Ticket Desk SDK generated from installed package",
+    "TypeScript strict compilation passed",
+    "generated client CRUD and query contract passed over HTTP"
+  ],
+  "input_sha256": {
+    "app/models.py": "d6a2d4615327ea575d851e354703bc695c290468a39b2f21bca3f90cef76dd10",
+    "app/views.py": "64fa980ed425cb7194df5a34c81f5a244c5fec0c0d7f8970150eede122ed25c4",
+    "app/urls.py": "1ef6d3fb2da36a5baf0a8d43a54a5f75ad4ac9c560cc51698b4ccf497788e970",
+    "app/auth.py": "d6712a3aeb3f36a2715f22b7cc39e07914373a115204b69a8f28e1039966bd4b",
+    "main.py (append)": "18b76e7d6b1885778b0531fb9fb3be906e9846ac251a73aa4882a6af505b85c8",
+    "generate_client.py": "f73e93d7d15ac677c26793f79d20012f629856aed82c5afd6250dacfe4030313"
+  },
+  "generated_sha256": "8c866eaf6f72b431580088f3c1556d54c6af17743d40e29b15123ce5d74a1a71",
+  "runner_sha256": "419a8f428f7763778bf877e9963665ac0ccc72b27b3038a0e38cdfff973b33f3",
+  "disposable_schema_removed": true,
+  "credential_free": true
+}

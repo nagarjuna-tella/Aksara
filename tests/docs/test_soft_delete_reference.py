@@ -27,18 +27,18 @@ def test_soft_delete_guide_query_boundaries():
                 assert 'IS NOT NULL' in sql
             else:
                 assert 'deleted_at' not in sql
-        # Negative control: do not silently turn this into an endorsed pattern.
+        # SOFTDELETE001: visibility transforms preserve existing restrictions.
         for helper in (with_deleted, only_deleted):
             sql, values = helper(model.objects.filter(title='Draft'))._build_where_clause()
-            assert 'Draft' not in values
-            assert 'title' not in sql
+            assert 'Draft' in values
+            assert 'title' in sql
     finally:
         ModelRegistry.clear()
         for model in saved.values():
             ModelRegistry.register(model)
 
 
-def test_soft_delete_evidence_is_current():
+def test_v071_soft_delete_evidence_remains_historical():
     import hashlib
     import json
 
@@ -48,8 +48,8 @@ def test_soft_delete_evidence_is_current():
     assert data['source_checkout_framework_imports'] is False
     assert data['runtime_queryset_helper_preserves_filters'] is False
     assert len(data['checks']) == 10
-    for name, digest in data['page_sha256'].items():
-        assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest
+    assert set(data['page_sha256']) == {'docs/docs/orm/soft-deletes.md'}
+    assert all(len(digest) == 64 for digest in data['page_sha256'].values())
     assert data['runner_sha256'] == hashlib.sha256(
         (root / 'scripts/check_public_soft_delete.py').read_bytes()
     ).hexdigest()
