@@ -98,8 +98,17 @@
     "credential_scan_findings": 0
   },
   "hosted_ci": {
-    "status": "pending",
-    "postgresql_16_required": true
+    "status": "pass",
+    "pull_request": 33,
+    "validated_head_sha": "33f253ba30b9d66713603ef8c0c1250d1f0960f6",
+    "checks": {
+      "total": 21,
+      "successful": 21,
+      "failed": 0,
+      "pending": 0
+    },
+    "postgresql_16_required": true,
+    "evidence": "audit-evidence/v072/hosted-ci.json"
   },
   "publication": {
     "tag": false,

@@ -2,15 +2,14 @@
 
 ## Recommendation
 
-**READY FOR v0.7.2rc1 REVIEW, subject to hosted validation.**
+**READY FOR v0.7.2rc1 REVIEW.**
 
 All 22 functional findings disclosed by the v0.7.1 Public Truth audit are
 closed in the installed candidate: 22 `FIXED`, zero `DISPROVED`, zero
 `ALREADY_RESOLVED`, and zero unresolved. Every local source, PostgreSQL,
 installed-wheel, upgrade, security, documentation, packaging, and compatibility
-gate passes. Hosted PostgreSQL 16 and the release matrix remain the independent
-PR check; this document must be updated with their result before the candidate
-is declared fully ready.
+gate passes. The independent hosted PostgreSQL 16 release matrix also passes in
+full on the final candidate-content commit.
 
 No merge, tag, GitHub Release, or PyPI publication is authorized or has occurred.
 
@@ -180,10 +179,20 @@ environment contains 52 components. Evidence:
 
 ## Hosted CI
 
-Hosted validation is pending until the branch and final evidence commit are
-pushed and the PR is opened. PostgreSQL 16 is required. Every hosted failure
-must be inspected; this section and `hosted-ci.json` will be updated only after
-the complete matrix reaches a terminal state.
+PR #33 completed **21 of 21 hosted checks successfully** on candidate-content
+commit `33f253ba30b9d66713603ef8c0c1250d1f0960f6`, with zero failed and zero
+pending checks. The matrix includes all four Python/FastAPI/Starlette full-suite
+cells against PostgreSQL 16, package construction, installed-wheel documentation,
+packaged Support Desk, strict docs, security/fuzz/diagnostics, dependency audit,
+SBOM, static analysis, two secret scans, and CodeQL. The first hosted run exposed
+six false positives where Gitleaks classified committed SHA-256 evidence digests
+as API keys; six exact, reviewable fingerprints were added to `.gitleaksignore`,
+and both hosted secret scans then passed. No credential was suppressed.
+
+The machine-readable check inventory, conclusions, and GitHub job URLs are in
+[`hosted-ci.json`](audit-evidence/v072/hosted-ci.json). The evidence-only commit
+that records this result changes no runtime or package content; the complete
+hosted matrix is verified again on that final PR head before review handoff.
 
 ## Known limitations outside the closed ledger
 

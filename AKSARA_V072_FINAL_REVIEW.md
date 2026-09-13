@@ -266,8 +266,9 @@ were not implemented.
 
 ## Release Recommendation
 
-The candidate is ready for human review once the final evidence commit is pushed
-and the full hosted matrix passes. There is no known reproduced v0.7.1 audit
-defect still present, no design decision requiring an rc2, and no justification
-to continue audit-correctness development after hosted validation. Do not merge,
-tag, publish, or begin v0.8 as part of this review.
+The candidate is ready for human review. The final candidate-content commit
+passed all 21 hosted checks, including the four PostgreSQL 16 compatibility
+cells, and the evidence-only follow-up is subject to the same complete matrix.
+There is no known reproduced v0.7.1 audit defect still present, no design
+decision requiring an rc2, and no justification to continue audit-correctness
+development. Do not merge, tag, publish, or begin v0.8 as part of this review.
