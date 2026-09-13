@@ -191,6 +191,10 @@ array entries that are not non-empty strings are rejected.
 | `task_cleanup_interval_seconds` | `AKSARA_TASK_CLEANUP_INTERVAL_SECONDS` | `3600.0` |
 | `task_cron_check_interval_seconds` | `AKSARA_TASK_CRON_CHECK_INTERVAL_SECONDS` | `30.0` |
 
+`task_stale_lock_timeout_seconds` is the database-time lease duration for an
+ordinary running task. Its worker renews the lease while the callable remains
+active; recovery makes an expired claim eligible for another worker.
+
 A database-backed `Aksara` lifespan starts its built-in `TaskWorker` when
 `tasks_enabled=True`. This is not the durable Operation worker. Custom worker
 entry points and task registrations still need application configuration. See

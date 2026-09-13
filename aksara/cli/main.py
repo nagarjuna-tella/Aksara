@@ -8039,6 +8039,9 @@ def tasks_reenqueue(task_id, all_failed, queue, yes):
                     SET status = 'pending',
                         attempts = 0,
                         locked_at = NULL,
+                        locked_by = NULL,
+                        claim_token = NULL,
+                        lock_expires_at = NULL,
                         last_error = NULL,
                         available_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
@@ -8063,6 +8066,9 @@ def tasks_reenqueue(task_id, all_failed, queue, yes):
                     SET status = 'pending',
                         attempts = 0,
                         locked_at = NULL,
+                        locked_by = NULL,
+                        claim_token = NULL,
+                        lock_expires_at = NULL,
                         last_error = NULL,
                         available_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP

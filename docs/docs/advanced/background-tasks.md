@@ -266,24 +266,28 @@ worker = TaskWorker(db, retry_delay_seconds=5.0, retry_backoff_base=1.0)
 ## Stale Lock Recovery
 
 If a worker process crashes after claiming a task but before completing it, the
-row stays `status='running'` indefinitely. Aksara detects this automatically:
+row would otherwise stay `status='running'`. Aksara detects this automatically:
 
-Every `lock_recovery_interval_seconds` (default: 60 s) the worker queries for
-tasks whose `locked_at` is older than `stale_lock_timeout_seconds` (default:
-300 s / 5 min) and resets them to `pending` so another worker can retry them.
+Each ordinary task claim receives a worker identity, a unique claim token, and a
+lease expiry computed from PostgreSQL time. While the callable runs, its worker
+renews that lease. Every `lock_recovery_interval_seconds` (default: 60 s), the
+worker resets expired leases to `pending` so another worker can retry them.
+After recovery, the previous claim token can no longer renew the lease or write
+success, failure, or retry state. A healthy long-running callable therefore
+remains owned, while a paused or crashed worker can be replaced safely.
 
-For an ordinary unlinked task, this age test is not a heartbeat or ownership
-fence. A callable that is still running beyond `stale_lock_timeout_seconds` can
-be reclaimed and executed by another worker, and the older callable can later
-overwrite the stored result. Set the timeout above the longest expected runtime,
-make ordinary tasks safe to repeat, and split long work where practical. Use a
-[Durable Operation](durable-operations.md) when fenced ownership, current
-reauthorization, or guarded application writes are required.
+Ordinary tasks still provide at-least-once execution. A paused callable may
+resume after its lease has transferred, so external effects inside ordinary
+task code must remain safe to repeat. The ownership fence protects the
+authoritative `aksara_tasks` row; it does not make application or provider side
+effects exactly once. Use a [Durable Operation](durable-operations.md) when you
+also need current reauthorization, guarded application writes, or recorded
+external-effect intent.
 
 ```python
 worker = TaskWorker(
     db,
-    stale_lock_timeout_seconds=300.0,    # age before "stuck"
+    stale_lock_timeout_seconds=300.0,    # lease duration before recovery
     lock_recovery_interval_seconds=60.0, # how often to sweep
 )
 ```
@@ -351,7 +355,10 @@ record.max_attempts
 record.last_error       # last failure message
 record.result           # return value (when completed)
 record.available_at     # when the task becomes eligible
-record.locked_at        # when the worker claimed it
+record.locked_at        # most recent claim/heartbeat time
+record.locked_by        # current worker identity while running
+record.claim_token      # unique token for the current claim
+record.lock_expires_at  # database-time lease deadline
 record.completed_at
 record.created_at
 record.updated_at
@@ -412,8 +419,8 @@ aksara tasks list --task-name send_welcome  # substring match on task_name
 
 ### Re-enqueue Failed Tasks
 
-Re-enqueue resets `attempts`, `locked_at`, `last_error`, and `available_at`
-so the task is picked up as fresh:
+Re-enqueue resets `attempts`, all claim/lease fields, `last_error`, and
+`available_at` so the task is picked up as fresh:
 
 ```bash
 aksara tasks reenqueue <uuid>           # one task by ID
