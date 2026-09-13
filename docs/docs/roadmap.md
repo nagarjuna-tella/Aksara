@@ -1,6 +1,6 @@
 # Roadmap
 
-> Reviewed September 11, 2026. Release horizons are directional, not a promise.
+> Reviewed September 12, 2026. Release horizons are directional, not a promise.
 
 Aksara is a PostgreSQL-backed Python application framework with generated APIs,
 shared authorization boundaries, and durable actions that recheck authority
@@ -36,10 +36,15 @@ Operations require application-owned identity resolvers and action policy.
 Custom code must participate in the supported enforcement paths. AI agents are
 optional consumers of this backend, not a prerequisite for building an app.
 
-## Now — v0.7.1 public truth and developer experience
+## Now — v0.7.2 audit closure
 
-v0.7.1 is the current documentation and developer-experience release, with
-**no intentional production semantic or dependency changes**. It delivered:
+v0.7.1 established public truth and developer experience with no intentional
+runtime semantic or dependency changes. v0.7.2 is the bounded maintenance
+release that closes the 22 functional findings disclosed by that audit. It adds
+regression evidence for each repair while preserving the existing product
+thesis and stable Durable Operations contract.
+
+v0.7.1 delivered:
 
 - an executable Quick Start and one progressive application tutorial;
 - a coherent manual for models, APIs, identity, tenants, tasks and Operations;
@@ -57,9 +62,9 @@ retention, export and backup responsibilities.
 ### v0.7.x maintenance
 
 Later patches may address verified bugs, security, compatibility, packaging,
-documentation and narrow adoption defects. Functional fixes need explicit review
-and regression evidence; they will not be hidden in this documentation release.
-No later patch number is reserved for speculative work.
+documentation and narrow adoption defects. Functional fixes need explicit
+review and regression evidence. v0.7.2 is reserved for the finite Public Truth
+audit ledger; later patch numbers remain unassigned.
 
 ## Next — operating authorized application work
 
@@ -79,7 +84,7 @@ Use one production reference application to prove:
 Use existing public APIs and standard integrations where they suffice. Propose
 new APIs only for demonstrated gaps, with separate design and failure tests.
 Revisit this thesis if independent users encounter more fundamental modeling or
-identity blockers first. No v0.8 runtime work belongs in v0.7.1.
+identity blockers first. No v0.8 runtime work belongs in v0.7.2.
 
 ## Later — supported modeling, integrations and stabilization
 

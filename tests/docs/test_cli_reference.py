@@ -10,6 +10,11 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_generated_cli_reference_matches_recorded_contract():
     module = runpy.run_path(str(ROOT / "scripts/generate_public_cli_reference.py"))
     contract = json.loads(module["EVIDENCE"].read_text())
+    from aksara import __version__
+
+    # Reuse the immutable v0.7.1 parser inventory while rendering the current
+    # package identity. Candidate-wheel validation regenerates the live probe.
+    contract["package_version"] = __version__
     assert module["PAGE"].read_text() == module["render"](contract)
     assert contract["source_checkout_framework_imports"] is False
     commands = {tuple(command["path"]): command for command in contract["commands"]}

@@ -14,7 +14,7 @@ a production app needs its real identity source and the
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install "aksara-framework==0.7.1"
+python -m pip install "aksara-framework==0.7.2rc1"
 aksara --version
 aksara startproject ticket_desk
 cd ticket_desk

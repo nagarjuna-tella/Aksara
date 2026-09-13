@@ -13,6 +13,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -187,6 +188,21 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _wheel_version(path: Path) -> str:
+    """Read the candidate version from its embedded wheel metadata."""
+    with zipfile.ZipFile(path) as archive:
+        metadata_name = next(
+            name
+            for name in archive.namelist()
+            if name.endswith(".dist-info/METADATA")
+        )
+        metadata = archive.read(metadata_name).decode("utf-8")
+    for line in metadata.splitlines():
+        if line.startswith("Version: "):
+            return line.removeprefix("Version: ").strip()
+    raise RuntimeError(f"wheel metadata has no Version field: {path}")
+
+
 def _unused_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -228,6 +244,7 @@ class InstalledPackageGate:
         evidence_output: Path,
     ) -> None:
         self.wheel = wheel.resolve()
+        self.expected_version = _wheel_version(self.wheel)
         self.database_url = database_url
         self.candidate_sha = candidate_sha
         self.evidence_output = evidence_output.resolve()
@@ -393,8 +410,8 @@ class InstalledPackageGate:
                 version=installed["version"],
             )
             self.check(
-                "final package version",
-                installed["version"] == "0.7.1",
+                "candidate package version",
+                installed["version"] == self.expected_version,
                 version=installed["version"],
             )
 
@@ -402,15 +419,15 @@ class InstalledPackageGate:
             help_result = await self.command([cli, "--help"], cwd=temp_root, env=clean_env)
             self.check(
                 "CLI version and commands",
-                "0.7.1" in version_result.stdout
+                self.expected_version in version_result.stdout
                 and "startproject" in help_result.stdout
                 and "doctor" in help_result.stdout,
-                version="0.7.1",
+                version=self.expected_version,
                 startproject=True,
                 doctor=True,
             )
             self.results["cli"] = {
-                "version": "0.7.1",
+                "version": self.expected_version,
                 "help": "pass",
                 "startproject_command": True,
                 "doctor_command": True,
