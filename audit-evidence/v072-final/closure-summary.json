@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "release": "0.7.2",
+  "historical_candidate_ledger": "audit-evidence/v072/findings-closure.json",
+  "historical_candidate_release": "0.7.2rc1",
+  "summary": {
+    "total": 22,
+    "fixed": 22,
+    "disproved": 0,
+    "already_resolved": 0,
+    "unresolved": 0
+  },
+  "all_final_dispositions": [
+    "FIXED"
+  ],
+  "ledger_sha256": "e5d1771fb437801d80b9a4526203ae5f3e0558394c2c76dc2e3d81629e9fd55e",
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725"
+}

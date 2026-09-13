@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "candidate_wheel": "aksara_framework-0.7.2-py3-none-any.whl",
+  "candidate_wheel_sha256": "9f12a1e7df0a1b5e270beb6e4b49e12a03a3fa1e9a6914746af863428023ff8e",
+  "templates": [
+    {
+      "template": "basic",
+      "project_name": "northwind_portal",
+      "editable_install": true,
+      "wheel": "northwind_portal-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "5b7330af5b6f10730790c10bf058fb3d0777a7dc7105fb3abf04b1cbb42a8b5b",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "blog",
+      "project_name": "editorial_workspace",
+      "editable_install": true,
+      "wheel": "editorial_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "bced7f31daac3239c1f67b3b851cfb6cbb3b3d408160f5b0a514ba0402fd91df",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "crm",
+      "project_name": "customer_workspace",
+      "editable_install": true,
+      "wheel": "customer_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "19d1955ffe21c48fd13e751964254e06d28c07f9068e4d6be9417de32b68f977",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "multitenant",
+      "project_name": "tenant_workspace",
+      "editable_install": true,
+      "wheel": "tenant_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "2c419d88b0d421a0c9004fbd0dc2cefddd1ae99f45f20a8d7c1abcd0fb803ae8",
+      "installed_import": true,
+      "source_project_imports": false
+    }
+  ],
+  "basic_journey": {
+    "editable_tests": "1 passed",
+    "makemigrations": true,
+    "migrate": true,
+    "health": 200,
+    "create": 201,
+    "list": 200,
+    "installed_wheel_health": 200,
+    "installed_wheel_list": 200
+  },
+  "disposable_schema_removed": true,
+  "source_checkout_framework_imports": false,
+  "credential_free": true,
+  "runner_sha256": "97713ffac3ed1e5f3ebf4099f8520ff8483452df0c8c38a3169f7230b2f71c12"
+}

@@ -1,4 +1,4 @@
-"""Run installed-candidate ordinary-task ownership scenarios in real processes."""
+"""Run installed-final ordinary-task ownership scenarios in real processes."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ async def main():
     parser.add_argument("--lease-seconds", type=float, required=True)
     args = parser.parse_args()
     assert "site-packages" in str(Path(aksara.__file__).resolve())
-    assert aksara.__version__ == "0.7.2rc1"
+    assert aksara.__version__ == "0.7.2"
     database = Database(os.environ["DATABASE_URL"], min_size=1, max_size=4)
     await database.connect()
     try:
@@ -351,7 +351,7 @@ async def failure_retry(c: Campaign) -> dict:
 
 
 async def run(args) -> dict:
-    assert aksara.__version__ == "0.7.2rc1"
+    assert aksara.__version__ == "0.7.2"
     assert "site-packages" in str(Path(aksara.__file__).resolve()), aksara.__file__
     schema = f"aksara_v072_task_gate_{uuid4().hex[:12]}"
     admin = await asyncpg.connect(args.database_url)
@@ -433,7 +433,7 @@ def main() -> None:
     result = asyncio.run(run(args))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(evidence_safe(result), indent=2) + "\n")
-    print("PASS: 5 installed-candidate process ownership scenarios and 10 invariants")
+    print("PASS: 5 installed-final process ownership scenarios and 10 invariants")
 
 
 if __name__ == "__main__":

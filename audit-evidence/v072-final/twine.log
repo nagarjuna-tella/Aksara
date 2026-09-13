@@ -1,0 +1,9 @@
+twine version 7.0.0 (readme-renderer: 46.0, requests: 2.34.2, requests-
+toolbelt: 1.0.0, urllib3: 2.7.0, keyring: 25.7.0, rfc3986: 2.0.0, rich:
+15.0.0, packaging: 26.3, id: 1.6.1)
+Checking /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook
+Pro/projects/Aksara/dist/aksara_framework-0.7.2-py3-none-any.whl: PASSED
+Checking /Users/nagarjunatella/Desktop/Desktop - Nagarjuna’s MacBook
+Pro/projects/Aksara/dist/aksara_framework-0.7.2.tar.gz: PASSED
+wheel metadata: Version 0.7.2
+sdist metadata: Version 0.7.2

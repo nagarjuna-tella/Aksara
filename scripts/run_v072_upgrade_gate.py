@@ -1,4 +1,4 @@
-"""Exercise a public v0.7.1 application schema through a v0.7.2rc1 upgrade."""
+"""Exercise a public v0.7.1 application schema through a final v0.7.2 upgrade."""
 
 from __future__ import annotations
 
@@ -132,7 +132,7 @@ import aksara._examples.support_desk as support_desk
 async def main():
     dsn, tenant_id, ids_json = sys.argv[1:4]
     ids = json.loads(ids_json)
-    assert aksara.__version__ == "0.7.2rc1"
+    assert aksara.__version__ == "0.7.2"
     assert "site-packages" in str(Path(aksara.__file__).resolve())
     conn = await asyncpg.connect(dsn)
     database = None
@@ -305,7 +305,7 @@ async def run(args: argparse.Namespace) -> dict:
             "durable_runtime": "preserved row here; execution/revocation/retry covered by the candidate packaged Support Desk gate",
             "database": urlsplit(args.database_url).path.lstrip("/"),
             "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-            "scope": "Public PyPI v0.7.1 installed package creates and seeds a Support Desk schema; the installed v0.7.2rc1 wheel upgrades it and verifies persisted data, relations, queued-task ownership migration, Durable Operation state, REST authorization, Admin, and MCP discovery.",
+            "scope": "Public PyPI v0.7.1 installed package creates and seeds a Support Desk schema; the installed final v0.7.2 wheel upgrades it and verifies persisted data, relations, queued-task ownership migration, Durable Operation state, REST authorization, Admin, and MCP discovery.",
         }
     finally:
         await admin.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
@@ -324,7 +324,7 @@ def main() -> None:
     result = asyncio.run(run(args))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
-    print("PASS: public v0.7.1 Support Desk data and runtime state survive candidate upgrade")
+    print("PASS: public v0.7.1 Support Desk data and runtime state survive final v0.7.2 upgrade")
 
 
 if __name__ == "__main__":

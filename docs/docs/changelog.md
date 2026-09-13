@@ -11,11 +11,12 @@ the [current guide](getting-started/first-project.md) and
 
 ## v0.7.2 — Audit Closure
 
-Release candidate prepared 2026-09-12.
+Released 2026-09-13.
 
-This maintenance candidate closes all 22 functional findings disclosed by the
-v0.7.1 Public Truth audit. It establishes regression coverage for every repair
-without introducing a v0.8 capability or changing Aksara's product direction.
+v0.7.1 established public truth. v0.7.2 closes the complete functional defect
+ledger exposed by that audit: all 22 findings are repaired and covered by
+regressions. This maintenance release introduces no v0.8 capability and does
+not change Aksara's product direction.
 
 ### Authorization, isolation, and ownership
 
@@ -54,7 +55,9 @@ without introducing a v0.8 capability or changing Aksara's product direction.
 ### Compatibility
 
 - No dependency was added or widened.
+- No database engine was added.
 - Durable Operations and stable MCP semantics are unchanged.
+- Experimental AI surfaces remain Experimental.
 - No v0.8 capability abstraction or roadmap feature is implemented.
 
 
