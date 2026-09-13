@@ -7,7 +7,7 @@ tenant boundaries control what that identity can do.
 
 Start with [First project: a ticket desk](first-project.md). It takes an empty
 project through installation, a model, migration, protected API, server startup
-and runnable tests. You need Python 3.11+ and a local PostgreSQL database; see
+and runnable tests. You need Python 3.11–3.14 and a local PostgreSQL database; see
 [installation](installation.md) and [runtime compatibility](../reference/runtime-compatibility.md)
 for the supported environment. No AI provider is required.
 

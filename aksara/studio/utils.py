@@ -25,6 +25,7 @@ from aksara.routing import iter_routes
 from aksara.studio.models import (
     # v0.5.19: Agent Mode models
     AgentContextSection,
+    AgentWorkflow,
     # v0.5.20: Agent Playbooks models
     AgentPlaybook,
     StudioAgentContext,
@@ -2243,7 +2244,22 @@ def build_query_plan(sql: str, analyze: bool = False) -> "StudioQueryPlanResult"
         estimated_cost=result.estimated_cost,
         plan_type=result.plan_type,
         warnings=result.warnings,
+        provenance=result.provenance,
+        analyze_executed=result.analyze_executed,
     )
+
+
+async def build_query_plan_async(
+    sql: str,
+    analyze: bool = False,
+) -> Any:
+    """Build a Studio query plan without blocking the application event loop."""
+
+    from aksara.inspectors.queries import explain_query_async
+    from aksara.studio.models import StudioQueryPlanResult
+
+    result = await explain_query_async(sql=sql, analyze=analyze)
+    return StudioQueryPlanResult(**result.model_dump())
 
 
 def build_model_inspector(model_name: str) -> Optional["StudioModelInspectorSummary"]:
@@ -2456,12 +2472,42 @@ def build_search_results(
 # v0.5.23: Agentic Workflows — Plans, Not Pushes
 # =============================================================================
 
-# Re-export builder functions so aksara.studio imports work.
-from aksara.ai.workflows import (  # noqa: E402, F401
-    build_agent_workflow,
-    summarize_agent_workflow,
-    workflow_stats,
-)
+def build_agent_workflow(
+    goal: str,
+    *,
+    playbook: Optional[str] = None,
+    include_diagnostics: bool = True,
+    include_search: bool = True,
+    search_query: Optional[str] = None,
+    search_limit: int = 10,
+    diagnostics_limit: int = 10,
+) -> AgentWorkflow:
+    """Forward lazily so importing workflows does not re-enter this module."""
+    from aksara.ai.workflows import build_agent_workflow as build
+
+    return build(
+        goal,
+        playbook=playbook,
+        include_diagnostics=include_diagnostics,
+        include_search=include_search,
+        search_query=search_query,
+        search_limit=search_limit,
+        diagnostics_limit=diagnostics_limit,
+    )
+
+
+def summarize_agent_workflow(workflow: AgentWorkflow) -> str:
+    """Forward lazily so either public import order remains valid."""
+    from aksara.ai.workflows import summarize_agent_workflow as summarize
+
+    return summarize(workflow)
+
+
+def workflow_stats(workflow: AgentWorkflow) -> Dict[str, Any]:
+    """Forward lazily so either public import order remains valid."""
+    from aksara.ai.workflows import workflow_stats as stats
+
+    return stats(workflow)
 
 # =============================================================================
 # v0.5.25: AI Hub & Unified Provider System
@@ -2499,8 +2545,8 @@ def build_ai_hub_providers() -> "StudioAiProvidersSummary":
             provider=prov.provider,
             configured=prov.is_configured(),
             reachable=reachable,
-            model=safe.get("model", ""),
-            base_url=safe.get("base_url", ""),
+            model=safe.get("model") or "",
+            base_url=safe.get("base_url") or "",
             error=error_msg,
         ))
 
@@ -3402,4 +3448,3 @@ def build_aihub_routes(reachable_kinds: Optional[set] = None) -> "AiHubRoutes":
         ))
 
     return AiHubRoutes(routes=routes, warnings=warnings)
-

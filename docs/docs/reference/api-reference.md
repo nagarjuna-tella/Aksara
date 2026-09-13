@@ -18,9 +18,10 @@ the class names look familiar. There is no generated PUT route or supported
 
 [`@action`](../api/actions.md) declares a custom method's route and metadata.
 `detail` and `methods` are required; the route options are `path` and `name`.
-Custom HTTP handlers must explicitly enforce authorization: neither ViewSet
-permissions nor decorator permission metadata automatically wrap the handler
-in v0.7.0. MCP execution checks are a separate path.
+Custom HTTP handlers run the effective ViewSet or action permission list before
+dispatch, including declared object checks for detail actions. Applications
+still own identity middleware, collection query scope, and custom field/write
+policy. MCP execution adds its own transport-specific checks.
 
 ## Serializers
 

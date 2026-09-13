@@ -2,7 +2,7 @@
 
 Build a small support-ticket API from an installed Aksara package. This is the
 first stage of the application tutorial: model → migration → REST → identity →
-tests. You need Python 3.11+ and a disposable local PostgreSQL database.
+tests. You need Python 3.11–3.14 and a disposable local PostgreSQL database.
 
 The example uses a single local bearer secret to teach server-owned identity.
 It is a development adapter, not a login service. Keep the server on loopback;
@@ -14,7 +14,7 @@ a production app needs its real identity source and the
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install "aksara-framework==0.7.1"
+python -m pip install "aksara-framework==0.7.2rc1"
 aksara --version
 aksara startproject ticket_desk
 cd ticket_desk

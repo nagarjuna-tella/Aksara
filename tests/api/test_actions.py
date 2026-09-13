@@ -11,23 +11,24 @@ Tests cover:
 - Backward compatibility (no actions scenario)
 """
 
-import pytest
+from typing import ClassVar
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
-from unittest.mock import MagicMock, AsyncMock, patch
 
+import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
+from aksara.api import ModelViewSet, include_viewset
 from aksara.api.actions import (
     action,
+    extract_docstring_description,
+    extract_docstring_summary,
     get_action_metadata,
     is_action,
-    extract_docstring_summary,
-    extract_docstring_description,
 )
-from aksara.api import ModelViewSet, include_viewset
-
+from aksara.permissions import AllowAny, BasePermission
 
 # =============================================================================
 # Test Fixtures
@@ -685,3 +686,218 @@ class TestActionEdgeCases:
         response = client.post("/items/123/mark-as-complete")
         assert response.status_code == 200
         assert response.json()["marked"] is True
+
+
+class TestActionAuthorization:
+    """Regression coverage for ACTION-001 custom action authorization."""
+
+    def test_action_inherits_viewset_permission_and_does_not_call_handler(self):
+        calls = []
+
+        class Denied(BasePermission):
+            message = "Declared action permission denied."
+
+            def has_permission(self, request, view=None):
+                return False
+
+        class ProtectedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/protected-items"
+            permission_classes: ClassVar = [Denied]
+
+            @action(detail=False, methods=["post"])
+            async def mutate(self, request: Request):
+                calls.append("handler")
+                return {"mutated": True}
+
+        client = TestClient(FastAPI())
+        include_viewset(client.app, ProtectedViewSet)
+
+        response = client.post("/protected-items/mutate")
+
+        assert response.status_code == 403
+        assert response.json() == {"detail": "Declared action permission denied."}
+        assert calls == []
+
+    def test_action_without_request_parameter_is_still_authorized(self):
+        calls = []
+
+        class Denied(BasePermission):
+            def has_permission(self, request, view=None):
+                return False
+
+        class ProtectedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/implicit-request-items"
+            permission_classes: ClassVar = [Denied]
+
+            @action(detail=False, methods=["get"])
+            async def status(self):
+                calls.append("handler")
+                return {"called": True}
+
+        app = FastAPI()
+        include_viewset(app, ProtectedViewSet)
+
+        response = TestClient(app).get("/implicit-request-items/status")
+
+        assert response.status_code == 403
+        assert calls == []
+
+    def test_allowed_action_without_request_parameter_still_executes(self):
+        class PublicViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/implicit-public-items"
+            permission_classes: ClassVar = [AllowAny]
+
+            @action(detail=False, methods=["get"])
+            async def status(self):
+                return {"called": True}
+
+        app = FastAPI()
+        include_viewset(app, PublicViewSet)
+
+        response = TestClient(app).get("/implicit-public-items/status")
+
+        assert response.status_code == 200
+        assert response.json() == {"called": True}
+
+    def test_action_permission_override_replaces_viewset_permission(self):
+        class Denied(BasePermission):
+            def has_permission(self, request, view=None):
+                return False
+
+        class ProtectedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/override-items"
+            permission_classes: ClassVar = [Denied]
+
+            @action(
+                detail=False,
+                methods=["get"],
+                permission_classes=[AllowAny],
+            )
+            async def public_summary(self, request: Request):
+                return {"public": True}
+
+        app = FastAPI()
+        include_viewset(app, ProtectedViewSet)
+
+        response = TestClient(app).get("/override-items/public_summary")
+
+        assert response.status_code == 200
+        assert response.json() == {"public": True}
+
+    @pytest.mark.parametrize(
+        ("authenticated", "expected_status"),
+        [(False, 403), (True, 200)],
+    )
+    def test_action_request_permission_handles_authentication(
+        self, authenticated, expected_status
+    ):
+        class HeaderAuthenticated(BasePermission):
+            message = "Authentication required."
+
+            def has_permission(self, request, view=None):
+                return request.headers.get("x-authenticated") == "true"
+
+        class ProtectedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/authenticated-items"
+            permission_classes: ClassVar = [AllowAny]
+
+            @action(
+                detail=False,
+                methods=["get"],
+                permission_classes=[HeaderAuthenticated],
+            )
+            async def summary(self, request: Request):
+                return {"allowed": True}
+
+        app = FastAPI()
+        include_viewset(app, ProtectedViewSet)
+        headers = {"x-authenticated": "true"} if authenticated else {}
+
+        response = TestClient(app).get(
+            "/authenticated-items/summary", headers=headers
+        )
+
+        assert response.status_code == expected_status
+
+    def test_detail_action_enforces_object_permission_before_handler(self):
+        calls = []
+        record = MagicMock(tenant_id="tenant-a")
+        original_get = MockModel.objects.get
+        MockModel.objects.get = AsyncMock(return_value=record)
+
+        class SameTenant(BasePermission):
+            message = "Object belongs to another tenant."
+
+            def has_permission(self, request, view=None):
+                return True
+
+            def has_object_permission(self, request, view, obj):
+                return request.headers.get("x-tenant-id") == obj.tenant_id
+
+        class ProtectedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/tenant-items"
+
+            @action(
+                detail=True,
+                methods=["post"],
+                permission_classes=[SameTenant],
+            )
+            async def mutate(self, pk: str, request: Request):
+                calls.append(pk)
+                return {"mutated": True}
+
+        try:
+            app = FastAPI()
+            include_viewset(app, ProtectedViewSet)
+            client = TestClient(app)
+
+            denied = client.post(
+                "/tenant-items/item-1/mutate",
+                headers={"x-tenant-id": "tenant-b"},
+            )
+            allowed = client.post(
+                "/tenant-items/item-1/mutate",
+                headers={"x-tenant-id": "tenant-a"},
+            )
+        finally:
+            MockModel.objects.get = original_get
+
+        assert denied.status_code == 403
+        assert denied.json() == {"detail": "Object belongs to another tenant."}
+        assert allowed.status_code == 200
+        assert calls == ["item-1"]
+
+    def test_application_can_override_action_permission_resolution(self):
+        calls = []
+
+        class Denied(BasePermission):
+            message = "Application action hook denied."
+
+            def has_permission(self, request, view=None):
+                return False
+
+        class HookedViewSet(ModelViewSet):
+            model = MockModel
+            prefix = "/hooked-items"
+
+            def get_action_permissions(self, action_method):
+                calls.append(action_method.__name__)
+                return [Denied()]
+
+            @action(detail=False, methods=["get"])
+            async def status(self, request: Request):
+                return {"called": True}
+
+        app = FastAPI()
+        include_viewset(app, HookedViewSet)
+
+        response = TestClient(app).get("/hooked-items/status")
+
+        assert response.status_code == 403
+        assert calls == ["status"]

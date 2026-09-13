@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "package": {
+    "version": "0.7.1",
+    "scaffold_sha256": "a6d2b1935c4ddce576414fead664e28dafab3fd975f88523f3a5358dd54bd7f3"
+  },
+  "editable_install_success": false,
+  "exit_code": 1,
+  "hatch_file_selection_error": true,
+  "missing_project_package": true,
+  "generated_pyproject_sha256": "f0d3c8e730d21545c84bc38483f60a4d2516888a23c398e59761a78e88ed54f4",
+  "source_checkout_framework_imports": false,
+  "runner_sha256": "6f72f63fc052e0199d477322d568b14d9c6e099fa987a704eb46b79cf3b61294",
+  "scope": "Unchanged generated project editable packaging only; failure does not test server startup or dependency-only local development"
+}

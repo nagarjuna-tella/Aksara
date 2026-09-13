@@ -720,18 +720,29 @@ class TestCheckStudio:
 class TestCheckEnvironment:
     """Tests for the environment category checker."""
 
-    def test_python_too_old_produces_error(self):
-        with patch.object(sys, "version_info", (3, 9, 0)):
+    @pytest.mark.parametrize("version", [(3, 9, 0), (3, 10, 0)])
+    def test_python_too_old_produces_error(self, version):
+        with patch.object(sys, "version_info", version):
             from aksara.gapanalysis import check_environment
             issues = run_async(check_environment())
         assert any(i.code == "ENV_PYTHON_VERSION_TOO_OLD" for i in issues)
 
-    def test_python_modern_no_version_error(self):
-        with patch.object(sys, "version_info", (3, 11, 0)):
+    @pytest.mark.parametrize("version", [(3, 11, 0), (3, 14, 0)])
+    def test_python_supported_no_version_error(self, version):
+        with patch.object(sys, "version_info", version):
             from aksara.gapanalysis import check_environment
             with patch("aksara.gapanalysis._lazy_settings", return_value=MagicMock()):
                 issues = run_async(check_environment())
-        assert not any(i.code == "ENV_PYTHON_VERSION_TOO_OLD" for i in issues)
+        assert not any(i.code.startswith("ENV_PYTHON_VERSION_") for i in issues)
+
+    def test_future_python_produces_explicit_unsupported_error(self):
+        with patch.object(sys, "version_info", (3, 15, 0)):
+            from aksara.gapanalysis import check_environment
+            with patch("aksara.gapanalysis._lazy_settings", return_value=MagicMock()):
+                issues = run_async(check_environment())
+        issue = next(i for i in issues if i.code == "ENV_PYTHON_VERSION_UNSUPPORTED")
+        assert issue.severity == "error"
+        assert "3.11–3.14" in issue.message
 
     def test_debug_in_production_produces_error(self):
         settings = MagicMock()
@@ -1420,14 +1431,14 @@ class TestVersionBump:
     def test_library_version(self):
         from aksara._version import __version__
 
-        assert __version__ == "0.7.1"
+        assert __version__ == "0.7.2rc1"
 
     def test_aksara_package_version(self):
         import aksara
 
-        assert aksara.__version__ == "0.7.1"
+        assert aksara.__version__ == "0.7.2rc1"
 
     def test_cli_version(self):
         from aksara.cli.main import CLI_VERSION
 
-        assert CLI_VERSION == "0.7.1"
+        assert CLI_VERSION == "0.7.2rc1"

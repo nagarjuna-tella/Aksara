@@ -1,0 +1,28 @@
+{
+  "checks": [
+    "exact guide seed inserts",
+    "JSON export includes primary key and selected fields",
+    "existing primary key updated",
+    "FIXTURE001 exported primary key is not restored to empty table",
+    "omitted primary key inserts",
+    "FIXTURE002 UUID YAML dump rejected by safe loader",
+    "FIXTURE003 registry iteration supplies names not models",
+    "explicit model names export",
+    "strict mode leaves earlier successful insert",
+    "outer atomic transaction rolls back earlier insert",
+    "malformed JSON raises with strict=False",
+    "malformed JSON raises with strict=True",
+    "models mapping is not an allowlist"
+  ],
+  "package_version": "0.7.1",
+  "schema_version": 1,
+  "pass": true,
+  "runtime_export_restore_roundtrip": false,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Fixture API observations against PostgreSQL; owned schema and admin role. Exact guide seed/export helpers plus API error and transaction boundaries; no migration, RLS or concurrency proof. Export/restore, YAML and registry defects are negative controls.",
+  "page_sha256": {
+    "docs/docs/orm/fixtures.md": "e3051b0e2c12c3c6c14b424b22b6de49600ac72b2be606038190664d1d1d2c69"
+  },
+  "runner_sha256": "f641018418f5884360c7b0bb9dda983685f4301e8b5fc9e4d9b908e64b20f8eb"
+}

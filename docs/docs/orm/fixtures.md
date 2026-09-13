@@ -31,30 +31,32 @@ async def export_notes():
     return await dump_data(FixtureNote, fields=["title"], format="json")
 ```
 
-Omitting `pk` creates a new row. Repeating `seed_note` creates another row; this
-is not idempotent seeding. Inspect the returned `loaded`, `errors`, and `skipped`
-counts when using lenient mode.
-
-A nonempty `pk` means **update an existing row**, not insert-or-update. If that
-primary key is missing, loading fails. Exports include a `pk` even when `fields`
-selects only particular fields, so exporting and loading into an empty table is
-not a supported restore path in v0.7.0. Do not simply remove identifiers from
-relational fixtures: doing so changes identities and can break references.
+Omitting `pk` has **seed** semantics: it creates a row and lets the model generate
+its primary key. Repeating `seed_note` creates another row, so seeding is not
+idempotent. A fixture with `pk` has **restore** semantics: it updates the row when
+that primary key exists and inserts it with the supplied identity when it does
+not. The primary key is therefore the conflict identity; these helpers do not
+merge records by another unique field. Inspect the returned `loaded`, `errors`,
+and `skipped` counts when using lenient mode.
 
 ## Export selected records
 
 `dump_data(model, filters=None, fields=None, format="json")` returns a string.
 Filters use the model's query API. A nonempty `fields` list selects non-primary
-fields; `None` or an empty list exports all of them. Model names and primary keys
-are always included. UUIDs and datetimes are encoded as strings in JSON; other
-field types need application-specific verification. Foreign keys are identifiers,
-not recursively exported related objects.
+fields; `None` or an empty list exports all of them. Model references and primary
+keys are always included. UUID, date, time, and datetime values use portable
+strings; nested lists and dictionaries are converted recursively. Foreign keys
+are identifiers rather than recursively exported related objects. Load referenced
+records before dependants; `dump_database()` orders selected registered models by
+their foreign-key dependencies when the dependency graph permits it.
 
 `dump_database(models=["FixtureNote"], format="json")` exports explicitly named
-registered models. Despite its name, it does not traverse database tables or
-provide backup guarantees. In v0.7.0 its default registry iteration fails when
-models are registered; supply explicit model names. Export filtering still obeys
-normal manager behavior, including exclusion of soft-deleted rows.
+registered models. Omitting `models` exports every registered model. A simple
+model name works when unique. When two registered classes share a name, use the
+qualified identity shown by `aksara inspect models`, such as
+`tenant.models.User`. Despite its name, this helper does not traverse arbitrary
+database tables or provide backup guarantees. Export filtering still obeys normal
+manager behavior, including exclusion of soft-deleted rows.
 
 ## Errors and transaction boundaries
 
@@ -68,22 +70,19 @@ earlier successful writes. Use a supported outer
 [transaction](expressions-and-transactions.md) when the entire import must roll
 back together, and let failures leave that transaction.
 
-The optional `models` mapping selects supplied classes for matching names, but
+The optional `models` mapping selects supplied classes for matching references, but
 falls back to the global registry for other names. It is **not an allowlist**.
 These helpers do not apply REST serializer, Principal, or PolicyEngine checks.
 Restrict who can invoke imports and validate permitted models, fields, tenant
 identifiers, and data before calling them. Do not expose raw fixture loading as
 an authenticated user's general upload endpoint.
 
-## YAML limitation
+## YAML fixtures
 
-YAML requires PyYAML. In v0.7.0, `dump_data(..., format="yaml")` emits Python UUID
-tags that `load_data(..., format="yaml")` rejects with its safe loader. Prefer
-JSON for the limited workflow above. Do not switch to an unsafe YAML loader to
-work around this. The explicit-model `dump_database` path first converts through
-JSON and has different serialization behavior; it still does not fix the
-missing-primary-key restore limitation.
+YAML requires PyYAML. The exporter emits the same portable scalar structure as
+JSON and the loader uses `yaml.safe_load`; UUIDs and temporal values do not use
+Python-specific object tags. Do not switch to an unsafe YAML loader.
 
-The missing-row restore, single-model YAML round-trip, and default registry
-iteration defects require separately scoped runtime patches. This documentation
-release changes none of those behaviors.
+Fixture loading validates and saves records one at a time. Cyclic foreign keys,
+schema creation, roles, policies, large-data consistency, and files remain outside
+this utility's contract. Use PostgreSQL backup tooling for disaster recovery.

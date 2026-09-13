@@ -26,6 +26,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
 
@@ -159,8 +160,13 @@ class ProviderConfig(BaseModel):
         cfg = self.active_config
         if cfg is None:
             return False
-        if self.kind == "ollama":
-            return bool(getattr(cfg, "base_url", ""))
+        base_url = getattr(cfg, "base_url", "")
+        if base_url:
+            parsed = urlparse(base_url)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                return False
+        if self.kind in {"ollama", "custom"}:
+            return bool(base_url)
         return bool(getattr(cfg, "api_key", ""))
 
     @property
@@ -403,8 +409,9 @@ def _provider_from_env(kind: ProviderKind) -> ProviderConfig:
             raw[field_name] = val
 
     cfg_cls = _CONFIG_CLASSES[kind]
-    # Keep Ollama placeholders unconfigured until an explicit OLLAMA_* env var exists.
-    if kind == "ollama" and not raw:
+    # Local/custom adapter defaults are not evidence of environment
+    # configuration.  Explicitly constructed config objects retain defaults.
+    if kind in {"ollama", "custom"} and not raw:
         cfg = cfg_cls(base_url="")
     else:
         cfg = cfg_cls(**raw)

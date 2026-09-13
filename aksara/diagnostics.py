@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import os
 import platform
+import re
+import shlex
 import sys
 import tempfile
 import time
@@ -71,7 +73,10 @@ class DiagnosticAction(BaseModel):
     kind: DiagnosticActionKind = Field(..., description="Action type")
     target: str = Field(..., description="Env var name, filename, doc URL, setting key, or command")
     title: str = Field(..., description="Human-friendly title")
-    example: Optional[str] = Field(default=None, description="Full example snippet")
+    example: Optional[str] = Field(
+        default=None,
+        description="Example value or snippet; set_env actions store the value only",
+    )
     description: Optional[str] = Field(default=None, description="Optional extra detail")
 
 
@@ -90,6 +95,37 @@ def build_action(
         example=example,
         description=description,
     )
+
+
+def render_set_env_command(target: str, example: Optional[str]) -> str:
+    """Render a structured ``set_env`` action as one shell assignment.
+
+    Current diagnostics store only the example value.  Older callers may still
+    provide ``export NAME=value`` or ``NAME=value``; accepting those forms here
+    preserves compatibility without duplicating the assignment prefix.
+    """
+    value = "" if example is None else example.strip()
+    legacy_prefix = re.compile(
+        rf"^(?:export\s+)?{re.escape(target)}\s*=\s*",
+    )
+    legacy_match = legacy_prefix.match(value)
+    if legacy_match:
+        value = value[legacy_match.end():].strip()
+
+    if example is None:
+        rendered = "..."
+    elif not value:
+        rendered = "''"
+    elif (
+        len(value) >= 2
+        and value[0] == value[-1]
+        and value[0] in {"'", '"'}
+    ) or (value.startswith("$(") and value.endswith(")")):
+        rendered = value
+    else:
+        rendered = shlex.quote(value)
+
+    return f"export {target}={rendered}"
 
 
 class DiagnosticIssue(BaseModel):
@@ -208,7 +244,7 @@ async def check_database_connectivity() -> List[DiagnosticIssue]:
                         kind="set_env",
                         target="DATABASE_URL",
                         title="Set DATABASE_URL",
-                        example='export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"',
+                        example="postgresql://user:pass@localhost:5432/dbname",
                     ),
                     build_action(
                         kind="open_doc",
@@ -465,7 +501,7 @@ async def check_ai_provider_secrets() -> List[DiagnosticIssue]:
                             kind="set_env",
                             target=hint.env_var,
                             title=f"Set {hint.env_var}",
-                            example=f'export {hint.env_var}="your-secret-here"',
+                            example="your-secret-here",
                         ),
                     ],
                 ))
@@ -538,7 +574,7 @@ async def check_required_settings() -> List[DiagnosticIssue]:
                         kind="set_env",
                         target="DATABASE_URL",
                         title="Set DATABASE_URL",
-                        example='export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"',
+                        example="postgresql://user:pass@localhost:5432/dbname",
                     ),
                 ],
             ))
@@ -625,7 +661,7 @@ async def check_cache_available() -> List[DiagnosticIssue]:
                         kind="set_env",
                         target="AKSARA_CACHE_URL",
                         title="Set cache URL",
-                        example='export AKSARA_CACHE_URL="redis://localhost:6379/0"',
+                        example="redis://localhost:6379/0",
                     ),
                 ],
             ))
@@ -710,7 +746,7 @@ async def check_security() -> List[DiagnosticIssue]:
                         kind="set_env",
                         target="AKSARA_DEBUG",
                         title="Disable debug mode",
-                        example='export AKSARA_DEBUG="false"',
+                        example="false",
                     ),
                 ],
             ))
@@ -766,7 +802,7 @@ async def check_security() -> List[DiagnosticIssue]:
                         kind="set_env",
                         target="SECRET_KEY",
                         title="Set a SECRET_KEY",
-                        example='export SECRET_KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(64))")"',
+                        example="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')",
                     ),
                 ],
             ))

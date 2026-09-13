@@ -188,7 +188,6 @@ from aksara.studio.utils import (
     # v0.5.20: Agent Playbooks utils
     build_agent_prompt_from_playbook,
     # v0.5.21: Query & Model Inspector utils
-    build_query_plan,
     build_model_inspector,
     build_all_models_inspector,
     # v0.5.22: Semantic Search utils
@@ -1219,7 +1218,9 @@ async def studio_db_plan(
     Returns:
         StudioQueryPlanResult with plan lines and estimated cost.
     """
-    return build_query_plan(body.sql, analyze=body.analyze)
+    from aksara.studio.utils import build_query_plan_async
+
+    return await build_query_plan_async(body.sql, analyze=body.analyze)
 
 
 @router.get(

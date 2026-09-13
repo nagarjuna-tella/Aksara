@@ -39,6 +39,7 @@ async def db():
     # Clean up
     try:
         await database.execute("DROP TABLE IF EXISTS sr_posts CASCADE")
+        await database.execute("DROP TABLE IF EXISTS sr_profiles CASCADE")
         await database.execute("DROP TABLE IF EXISTS sr_users CASCADE")
         await database.execute("DROP TABLE IF EXISTS sr_categories CASCADE")
     except Exception:
@@ -73,11 +74,17 @@ def select_related_models():
         title = fields.String(max_length=200)
         author = fields.ForeignKey(SRUser, on_delete=CASCADE, related_name="posts")
         category = fields.ForeignKey(SRCategory, on_delete=CASCADE, related_name="posts", nullable=True)
+
+    class SRProfile(Model):
+        __tablename__ = "sr_profiles"
+        user = fields.OneToOne(SRUser, on_delete=CASCADE, related_name="profile")
+        bio = fields.String(max_length=200)
     
     return {
         'User': SRUser,
         'Category': SRCategory,
         'Post': SRPost,
+        'Profile': SRProfile,
     }
 
 
@@ -90,6 +97,7 @@ async def setup_select_related_tables(db, select_related_models):
     await db.execute(models['User'].get_create_table_sql())
     await db.execute(models['Category'].get_create_table_sql())
     await db.execute(models['Post'].get_create_table_sql())
+    await db.execute(models['Profile'].get_create_table_sql())
     
     # Create test data
     user1 = await models['User'].objects.create(name="Alice", email="alice@example.com")
@@ -97,6 +105,7 @@ async def setup_select_related_tables(db, select_related_models):
     
     cat1 = await models['Category'].objects.create(name="Tech")
     cat2 = await models['Category'].objects.create(name="Science")
+    await models['Profile'].objects.create(user_id=user1.id, bio="Alice profile")
     
     # Create posts
     await models['Post'].objects.create(title="Post 1", author_id=user1.id, category_id=cat1.id)
@@ -244,6 +253,78 @@ class TestSelectRelatedQuerySet:
             posts[0].get_related("title")
         
         assert "not a ForeignKey" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_first_populates_non_null_relation_and_matches_all(self, db, setup_select_related_tables):
+        models = setup_select_related_tables
+
+        from_all = await models['Post'].objects.order_by("title").select_related("author").all()
+        async with capture_queries() as log:
+            first = await models['Post'].objects.order_by("title").select_related("author").first()
+
+        assert first is not None
+        assert first.id == from_all[0].id
+        assert first.get_related("author").id == from_all[0].get_related("author").id
+        assert log.count == 2
+
+    @pytest.mark.asyncio
+    async def test_first_preserves_ordering_and_multiple_relations(self, db, setup_select_related_tables):
+        models = setup_select_related_tables
+
+        async with capture_queries() as log:
+            first = await (
+                models['Post'].objects
+                .order_by("-title")
+                .select_related("author", "category")
+                .first()
+            )
+
+        assert first is not None and first.title == "Post 4"
+        assert first.get_related("author").name == "Bob"
+        assert first.get_related("category") is None
+        # The nullable relation has no identifier, so it needs no DB query.
+        assert log.count == 2
+
+    @pytest.mark.asyncio
+    async def test_first_marks_nullable_relation_as_loaded(self, db, setup_select_related_tables):
+        models = setup_select_related_tables
+
+        first = await (
+            models['Post'].objects
+            .filter(title="Post 4")
+            .select_related("category")
+            .first()
+        )
+
+        assert first is not None
+        assert first.is_prefetched("category")
+        assert first.get_related("category") is None
+
+    @pytest.mark.asyncio
+    async def test_first_with_no_result_does_not_query_relations(self, db, setup_select_related_tables):
+        models = setup_select_related_tables
+
+        async with capture_queries() as log:
+            result = await (
+                models['Post'].objects
+                .filter(title="missing")
+                .select_related("author", "category")
+                .first()
+            )
+
+        assert result is None
+        assert log.count == 1
+
+    @pytest.mark.asyncio
+    async def test_first_populates_one_to_one_relation(self, db, setup_select_related_tables):
+        models = setup_select_related_tables
+
+        async with capture_queries() as log:
+            profile = await models['Profile'].objects.select_related("user").first()
+
+        assert profile is not None
+        assert profile.get_related("user").name == "Alice"
+        assert log.count == 2
 
 
 @pytest.mark.skipif(not os.getenv("DATABASE_URL"), reason="DATABASE_URL not set")

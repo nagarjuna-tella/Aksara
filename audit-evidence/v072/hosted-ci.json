@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-13T05:04:26.183656Z",
+  "repository": "nagarjuna-tella/Aksara",
+  "pull_request": 33,
+  "pull_request_url": "https://github.com/nagarjuna-tella/Aksara/pull/33",
+  "validated_head_sha": "33f253ba30b9d66713603ef8c0c1250d1f0960f6",
+  "base_sha": "a0422cf8fa004b41a2ccdaa9aa91c8036357159d",
+  "status": "pass",
+  "summary": {
+    "total": 21,
+    "successful": 21,
+    "failed": 0,
+    "pending": 0
+  },
+  "postgresql_16_required": true,
+  "note": "This complete hosted matrix validates the final candidate content. The following evidence-only commit records this result and does not change runtime or package content; its hosted checks are verified live after push.",
+  "checks": [
+    {
+      "id": 103675833488,
+      "name": "Analyze Python (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181256/job/103675833488",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675983496,
+      "name": "CodeQL",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/runs/103675983496",
+      "app": "GitHub Advanced Security"
+    },
+    {
+      "id": 103675833670,
+      "name": "Dependency audit",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833670",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833691,
+      "name": "Dependency audit",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181277/job/103675833691",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833655,
+      "name": "Docs strict build",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833655",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833639,
+      "name": "Full test suite (3.11, latest-supported)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833639",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833636,
+      "name": "Full test suite (3.11, minimum)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833636",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833715,
+      "name": "Full test suite (3.14, latest-supported)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833715",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833688,
+      "name": "Full test suite (3.14, minimum)",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833688",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833583,
+      "name": "Installed-wheel documentation journey",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833583",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833662,
+      "name": "Package build verification",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833662",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833647,
+      "name": "Packaged production reference app",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833647",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833621,
+      "name": "Production diagnostics",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833621",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833673,
+      "name": "SBOM generation",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833673",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833646,
+      "name": "Secret scan",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833646",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833658,
+      "name": "Secret scan",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181277/job/103675833658",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833627,
+      "name": "Security and diagnostics tests",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181277/job/103675833627",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833577,
+      "name": "Security docs check",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181277/job/103675833577",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833661,
+      "name": "Security, fuzz, and diagnostics tests",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833661",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833609,
+      "name": "Static analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181250/job/103675833609",
+      "app": "GitHub Actions"
+    },
+    {
+      "id": 103675833708,
+      "name": "Static analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34739181277/job/103675833708",
+      "app": "GitHub Actions"
+    }
+  ]
+}

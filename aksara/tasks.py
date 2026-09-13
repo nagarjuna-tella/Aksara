@@ -8,11 +8,10 @@ Reliability features
 --------------------
 * FOR UPDATE SKIP LOCKED — prevents double-processing when multiple app
   instances share the same database.
-* Stale lock recovery — the worker periodically resets tasks whose
-  locked_at timestamp is older than task_stale_lock_timeout_seconds
-  (default 300 s / 5 min), rescuing work that was claimed by a worker
-  that crashed before it could finish.  The check runs every
-  task_lock_recovery_interval_seconds (default 60 s).
+* Lease-backed stale lock recovery — workers heartbeat active ordinary tasks
+  and periodically reset expired leases left by crashed workers. Per-claim
+  tokens fence late heartbeats and result writes from a previous owner. The
+  check runs every task_lock_recovery_interval_seconds (default 60 s).
 * Exponential backoff — retry delays grow as
   retry_delay_seconds * retry_backoff_base^(attempt-1), capped at
   retry_max_delay_seconds.  Set retry_backoff_base=1.0 for flat delays.
@@ -63,6 +62,9 @@ TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
     max_attempts INTEGER NOT NULL DEFAULT 3,
     available_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     locked_at TIMESTAMP WITH TIME ZONE,
+    locked_by VARCHAR(255),
+    claim_token UUID,
+    lock_expires_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
     last_error TEXT,
     result JSONB,
@@ -72,6 +74,11 @@ TASKS_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{TASKS_TABLE}" (
 TASKS_INDEX_SQL = (
     f'CREATE INDEX IF NOT EXISTS "idx_{TASKS_TABLE}_pending" '
     f'ON "{TASKS_TABLE}" (queue, status, available_at, created_at)'
+)
+TASKS_LEASE_INDEX_SQL = (
+    f'CREATE INDEX IF NOT EXISTS "idx_{TASKS_TABLE}_running_lease" '
+    f'ON "{TASKS_TABLE}" (lock_expires_at, id) '
+    "WHERE status = 'running'"
 )
 # Idempotent migration: adds queue column to tables created before this feature.
 _TASKS_MIGRATE_QUEUE_SQL = (
@@ -86,6 +93,10 @@ _TASKS_MIGRATE_TENANT_ID_SQL = (
     f'ALTER TABLE "{TASKS_TABLE}" ADD COLUMN IF NOT EXISTS '
     f'tenant_id VARCHAR(255)'
 )
+_TASKS_MIGRATE_OWNERSHIP_SQL = f'''ALTER TABLE "{TASKS_TABLE}"
+    ADD COLUMN IF NOT EXISTS locked_by VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS claim_token UUID,
+    ADD COLUMN IF NOT EXISTS lock_expires_at TIMESTAMP WITH TIME ZONE'''
 
 CRON_STATE_TABLE = "aksara_cron_state"
 CRON_STATE_TABLE_SQL = f'''CREATE TABLE IF NOT EXISTS "{CRON_STATE_TABLE}" (
@@ -118,6 +129,9 @@ class TaskRecord:
     operation_application_namespace: str | None = None
     available_at: Optional[datetime] = None
     locked_at: Optional[datetime] = None
+    locked_by: str | None = None
+    claim_token: UUID | None = None
+    lock_expires_at: datetime | None = None
     completed_at: Optional[datetime] = None
     last_error: Optional[str] = None
     result: Any = None
@@ -142,6 +156,9 @@ class TaskRecord:
             max_attempts=record["max_attempts"],
             available_at=record.get("available_at"),
             locked_at=record.get("locked_at"),
+            locked_by=record.get("locked_by"),
+            claim_token=record.get("claim_token"),
+            lock_expires_at=record.get("lock_expires_at"),
             completed_at=record.get("completed_at"),
             last_error=record.get("last_error"),
             result=_decode_json_value(record.get("result")),
@@ -302,13 +319,14 @@ async def ensure_tasks_table(db: Optional[Database] = None) -> None:
         f"""
         SELECT
             (
-                SELECT COUNT(*) = 15
+                SELECT COUNT(*) = 18
                 FROM information_schema.columns
                 WHERE table_schema = current_schema()
                   AND table_name = '{TASKS_TABLE}'
                   AND column_name IN (
                       'id', 'task_name', 'queue', 'tenant_id', 'payload', 'status',
                       'attempts', 'max_attempts', 'available_at', 'locked_at',
+                      'locked_by', 'claim_token', 'lock_expires_at',
                       'completed_at', 'last_error', 'result', 'created_at', 'updated_at'
                   )
             )
@@ -319,6 +337,13 @@ async def ensure_tasks_table(db: Optional[Database] = None) -> None:
                   AND tablename = '{TASKS_TABLE}'
                   AND indexname = 'idx_{TASKS_TABLE}_pending'
             )
+            AND EXISTS (
+                SELECT 1
+                FROM pg_indexes
+                WHERE schemaname = current_schema()
+                  AND tablename = '{TASKS_TABLE}'
+                  AND indexname = 'idx_{TASKS_TABLE}_running_lease'
+            )
         """
     )
     if ready:
@@ -328,7 +353,9 @@ async def ensure_tasks_table(db: Optional[Database] = None) -> None:
     await database.execute(TASKS_TABLE_SQL)
     await database.execute(_TASKS_MIGRATE_QUEUE_SQL)
     await database.execute(_TASKS_MIGRATE_TENANT_ID_SQL)
+    await database.execute(_TASKS_MIGRATE_OWNERSHIP_SQL)
     await database.execute(TASKS_INDEX_SQL)
+    await database.execute(TASKS_LEASE_INDEX_SQL)
     _TASKS_SCHEMA_READY_FOR.add(database)
 
 
@@ -540,9 +567,10 @@ class TaskWorker:
     Multiple app instances can share the same queue safely — PostgreSQL row
     locks (FOR UPDATE SKIP LOCKED) prevent double-processing.
 
-    The worker also runs periodic stale lock recovery: tasks whose locked_at
-    is older than stale_lock_timeout_seconds are reset to 'pending' so they
-    can be re-claimed by a healthy worker.
+    The worker also runs periodic stale lock recovery. Active ordinary tasks
+    renew a database-time lease; an expired lease is reset to ``pending`` so a
+    healthy worker can claim it. A per-claim token prevents a previous owner
+    from renewing or writing terminal state after ownership transfers.
 
     Set concurrency > 1 to process multiple tasks simultaneously within a
     single worker instance.
@@ -679,9 +707,9 @@ class TaskWorker:
     async def recover_stale_locks(self) -> int:
         """Reset tasks stuck in 'running' state back to 'pending'.
 
-        A task is considered stale when its locked_at timestamp is older than
-        stale_lock_timeout_seconds, which typically means the worker that claimed
-        it crashed before completing execution.
+        A task is considered stale when its database-time lease expires. Rows
+        created by older Aksara versions fall back to the historical locked_at
+        age test until their first post-upgrade claim.
 
         Returns the number of tasks recovered.
         """
@@ -694,12 +722,22 @@ class TaskWorker:
                 SET
                     status = 'pending',
                     locked_at = NULL,
-                    available_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    locked_by = NULL,
+                    claim_token = NULL,
+                    lock_expires_at = NULL,
+                    available_at = clock_timestamp(),
+                    updated_at = clock_timestamp()
                 WHERE
                     status = 'running'
                     AND (to_jsonb(task) ->> 'operation_id') IS NULL
-                    AND locked_at < CURRENT_TIMESTAMP - ($1::double precision * INTERVAL '1 second')
+                    AND (
+                        lock_expires_at <= clock_timestamp()
+                        OR (
+                            lock_expires_at IS NULL
+                            AND locked_at < clock_timestamp()
+                                - ($1::double precision * INTERVAL '1 second')
+                        )
+                    )
                 RETURNING id
             )
             SELECT COUNT(*) AS count FROM recovered
@@ -797,6 +835,8 @@ class TaskWorker:
                             UPDATE "{TASKS_TABLE}"
                             SET status = $2::varchar, result = $3::jsonb,
                                 last_error = $4, locked_at = NULL,
+                                locked_by = NULL, claim_token = NULL,
+                                lock_expires_at = NULL,
                                 completed_at = CASE WHEN $2::varchar = 'completed'
                                     THEN COALESCE($5, CURRENT_TIMESTAMP) ELSE completed_at END,
                                 available_at = CASE WHEN $2::varchar = 'pending'
@@ -806,6 +846,8 @@ class TaskWorker:
                               AND operation_application_namespace = $7
                               AND locked_at < CURRENT_TIMESTAMP
                                   - ($6::double precision * INTERVAL '1 second')
+                              AND locked_by IS NOT DISTINCT FROM $8
+                              AND claim_token IS NOT DISTINCT FROM $9
                             ''',
                             task_record.id,
                             status,
@@ -816,6 +858,8 @@ class TaskWorker:
                             operation["completed_at"],
                             self.stale_lock_timeout_seconds,
                             self.durable_service.application_namespace,
+                            task_record.locked_by,
+                            task_record.claim_token,
                         )
                         recovered += update_status == "UPDATE 1"
         return recovered
@@ -895,13 +939,19 @@ class TaskWorker:
                 SET
                     status = 'running',
                     attempts = attempts + 1,
-                    locked_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    locked_at = clock_timestamp(),
+                    locked_by = $3,
+                    claim_token = gen_random_uuid(),
+                    lock_expires_at = clock_timestamp()
+                        + ($4::double precision * INTERVAL '1 second'),
+                    updated_at = clock_timestamp()
                 WHERE id IN (SELECT id FROM next_task)
                 RETURNING *
                 ''',
                 self.queues,
                 self.durable_service.application_namespace,
+                self.worker_id,
+                self.stale_lock_timeout_seconds,
             )
         elif self.queues is not None:
             record = await database.fetchrow(
@@ -921,12 +971,18 @@ class TaskWorker:
                 SET
                     status = 'running',
                     attempts = attempts + 1,
-                    locked_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    locked_at = clock_timestamp(),
+                    locked_by = $2,
+                    claim_token = gen_random_uuid(),
+                    lock_expires_at = clock_timestamp()
+                        + ($3::double precision * INTERVAL '1 second'),
+                    updated_at = clock_timestamp()
                 WHERE id IN (SELECT id FROM next_task)
                 RETURNING *
                 ''',
                 self.queues,
+                self.worker_id,
+                self.stale_lock_timeout_seconds,
             )
         elif self.durable_service is not None:
             record = await database.fetchrow(
@@ -947,12 +1003,18 @@ class TaskWorker:
                 SET
                     status = 'running',
                     attempts = attempts + 1,
-                    locked_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    locked_at = clock_timestamp(),
+                    locked_by = $2,
+                    claim_token = gen_random_uuid(),
+                    lock_expires_at = clock_timestamp()
+                        + ($3::double precision * INTERVAL '1 second'),
+                    updated_at = clock_timestamp()
                 WHERE id IN (SELECT id FROM next_task)
                 RETURNING *
                 ''',
                 self.durable_service.application_namespace,
+                self.worker_id,
+                self.stale_lock_timeout_seconds,
             )
         else:
             record = await database.fetchrow(
@@ -970,11 +1032,17 @@ class TaskWorker:
                 SET
                     status = 'running',
                     attempts = attempts + 1,
-                    locked_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    locked_at = clock_timestamp(),
+                    locked_by = $1,
+                    claim_token = gen_random_uuid(),
+                    lock_expires_at = clock_timestamp()
+                        + ($2::double precision * INTERVAL '1 second'),
+                    updated_at = clock_timestamp()
                 WHERE id IN (SELECT id FROM next_task)
                 RETURNING *
-                '''
+                ''',
+                self.worker_id,
+                self.stale_lock_timeout_seconds,
             )
 
         if record is None:
@@ -1129,38 +1197,101 @@ class TaskWorker:
                 await self._project_current_operation_task(task_record)
             return
 
+        heartbeat_task: asyncio.Task[None] | None = None
+        if task_record.locked_by is not None and task_record.claim_token is not None:
+            heartbeat_task = asyncio.create_task(
+                self._maintain_task_lease(task_record),
+                name=f"aksara-task-heartbeat-{task_record.id}",
+            )
+
         # Restore the tenant context captured at enqueue time so the
         # callable observes the same tenant scope it was scheduled
         # under. Without this, tenant-aware ORM operations inside the
         # task run with tenant_id_var=None and escape tenant isolation.
-        tenant_token = tenant_id_var.set(task_record.tenant_id)
         try:
+            tenant_token = tenant_id_var.set(task_record.tenant_id)
             try:
-                task_definition = get_registered_task(task_record.task_name)
-                result = await self._execute_callable(task_definition, task_record.payload)
-            except Exception as exc:
-                logger.exception("Task '%s' failed", task_record.task_name)
-                await self._mark_failure(task_record, str(exc), db=database)
-                return
-        finally:
-            tenant_id_var.reset(tenant_token)
+                try:
+                    task_definition = get_registered_task(task_record.task_name)
+                    result = await self._execute_callable(
+                        task_definition, task_record.payload
+                    )
+                except Exception as exc:
+                    logger.exception("Task '%s' failed", task_record.task_name)
+                    await self._mark_failure(task_record, str(exc), db=database)
+                    return
+            finally:
+                tenant_id_var.reset(tenant_token)
 
-        encoded_result = _encode_json_value(result)
-        await database.execute(
+            encoded_result = _encode_json_value(result)
+            update_status = await database.execute(
+                f'''
+                UPDATE "{TASKS_TABLE}"
+                SET
+                    status = 'completed',
+                    result = $1,
+                    last_error = NULL,
+                    locked_at = NULL,
+                    locked_by = NULL,
+                    claim_token = NULL,
+                    lock_expires_at = NULL,
+                    completed_at = clock_timestamp(),
+                    updated_at = clock_timestamp()
+                WHERE id = $2 AND status = 'running'
+                  AND locked_by = $3 AND claim_token = $4
+                ''',
+                json.dumps(encoded_result),
+                task_record.id,
+                task_record.locked_by,
+                task_record.claim_token,
+            )
+            if update_status != "UPDATE 1":
+                logger.warning(
+                    "Ignored completion from stale owner '%s' for task '%s'",
+                    task_record.locked_by,
+                    task_record.id,
+                )
+        finally:
+            if heartbeat_task is not None:
+                heartbeat_task.cancel()
+                await asyncio.gather(heartbeat_task, return_exceptions=True)
+
+    async def _maintain_task_lease(self, task_record: TaskRecord) -> None:
+        """Renew one ordinary task lease until ownership changes or work ends."""
+
+        interval = max(min(self.stale_lock_timeout_seconds / 3.0, 30.0), 0.01)
+        while True:
+            await asyncio.sleep(interval)
+            try:
+                if not await self._renew_task_lease(task_record):
+                    return
+            except Exception:  # noqa: BLE001 - retry transient database failures
+                logger.exception(
+                    "Task lease heartbeat failed for task '%s'", task_record.id
+                )
+
+    async def _renew_task_lease(self, task_record: TaskRecord) -> bool:
+        """Renew a claim using database time, returning false after ownership loss."""
+
+        if task_record.locked_by is None or task_record.claim_token is None:
+            return False
+        database = _get_db(self._db)
+        update_status = await database.execute(
             f'''
             UPDATE "{TASKS_TABLE}"
-            SET
-                status = 'completed',
-                result = $1,
-                last_error = NULL,
-                locked_at = NULL,
-                completed_at = CURRENT_TIMESTAMP,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $2
+            SET locked_at = clock_timestamp(),
+                lock_expires_at = clock_timestamp()
+                    + ($1::double precision * INTERVAL '1 second'),
+                updated_at = clock_timestamp()
+            WHERE id = $2 AND status = 'running'
+              AND locked_by = $3 AND claim_token = $4
             ''',
-            json.dumps(encoded_result),
+            self.stale_lock_timeout_seconds,
             task_record.id,
+            task_record.locked_by,
+            task_record.claim_token,
         )
+        return update_status == "UPDATE 1"
 
     async def _process_operation_task(self, task_record: TaskRecord) -> None:
         """Delegate a linked task to Operation claim/fence authority."""
@@ -1317,7 +1448,8 @@ class TaskWorker:
             f'''
             UPDATE "{TASKS_TABLE}"
             SET status = $2::varchar, result = $3::jsonb, last_error = $4,
-                locked_at = NULL,
+                locked_at = NULL, locked_by = NULL, claim_token = NULL,
+                lock_expires_at = NULL,
                 completed_at = CASE WHEN $2::varchar = 'completed'
                     THEN CURRENT_TIMESTAMP ELSE NULL END,
                 available_at = CASE WHEN $2::varchar = 'pending'
@@ -1330,6 +1462,8 @@ class TaskWorker:
             WHERE id = $1 AND operation_id = $6 AND status = 'running'
               AND operation_application_namespace = $9
               AND attempts = $7 AND locked_at = $8
+              AND locked_by IS NOT DISTINCT FROM $10
+              AND claim_token IS NOT DISTINCT FROM $11
             ''',
             task_record.id,
             status,
@@ -1340,6 +1474,8 @@ class TaskWorker:
             task_record.attempts,
             task_record.locked_at,
             task_record.operation_application_namespace,
+            task_record.locked_by,
+            task_record.claim_token,
         )
 
     async def _execute_callable(
@@ -1384,13 +1520,20 @@ class TaskWorker:
                     status = 'pending',
                     last_error = $1,
                     locked_at = NULL,
-                    available_at = CURRENT_TIMESTAMP + ($2::double precision * INTERVAL '1 second'),
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = $3
+                    locked_by = NULL,
+                    claim_token = NULL,
+                    lock_expires_at = NULL,
+                    available_at = clock_timestamp()
+                        + ($2::double precision * INTERVAL '1 second'),
+                    updated_at = clock_timestamp()
+                WHERE id = $3 AND status = 'running'
+                  AND locked_by = $4 AND claim_token = $5
                 ''',
                 error,
                 delay,
                 task_record.id,
+                task_record.locked_by,
+                task_record.claim_token,
             )
             return
 
@@ -1401,11 +1544,17 @@ class TaskWorker:
                 status = 'failed',
                 last_error = $1,
                 locked_at = NULL,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $2
+                locked_by = NULL,
+                claim_token = NULL,
+                lock_expires_at = NULL,
+                updated_at = clock_timestamp()
+            WHERE id = $2 AND status = 'running'
+              AND locked_by = $3 AND claim_token = $4
             ''',
             error,
             task_record.id,
+            task_record.locked_by,
+            task_record.claim_token,
         )
 
 

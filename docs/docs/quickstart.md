@@ -1,7 +1,7 @@
 # Quickstart
 
 Build a protected ticket API with one model, a migration, generated REST,
-server-owned identity and runnable tests. Python 3.11+ and PostgreSQL are required.
+server-owned identity and runnable tests. Python 3.11–3.14 and PostgreSQL are required.
 
 Start with [First project: a ticket desk](getting-started/first-project.md).
 It is the canonical step-by-step guide, including the exact files to create.
@@ -11,7 +11,7 @@ initial learning path.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install "aksara-framework==0.7.1"
+python -m pip install "aksara-framework==0.7.2rc1"
 aksara startproject ticket_desk
 cd ticket_desk
 aksara dbsetup

@@ -20,18 +20,23 @@ cd tenant_demo
 If this README is already inside a project created by `startproject`, skip those
 two commands and work in that project's directory. The generated copy has flat
 `models.py`, `views.py`, `settings.py` and `main.py` modules. It does not contain
-an `app/` package, `.env`, or a `pyproject.toml` for editable installation.
+an `app/` package or `.env`. Its generated `pyproject.toml` explicitly selects
+the flat application modules for editable installation and wheel builds.
 The repository source uses package-relative imports; it is not the same layout
 as a generated standalone copy.
 
 ## Run the generated copy locally
 
-Use an environment with Aksara installed. Export `DATABASE_URL` for a dedicated
-local PostgreSQL database before running these commands. This example prefers
+Create an environment and install the generated application, then export
+`DATABASE_URL` for a dedicated local PostgreSQL database before running these
+commands. This example prefers
 it over `AKSARA_DATABASE_URL`; keep both values consistent if both are set.
 Do not use a production database for example migrations.
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 aksara makemigrations --app models --output migrations
 aksara migrate --migrations-dir migrations
 aksara doctor launch-check

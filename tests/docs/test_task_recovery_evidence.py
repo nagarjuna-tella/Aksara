@@ -1,13 +1,12 @@
-"""Keep the ordinary-task recovery warning tied to installed evidence."""
+"""Preserve v0.7.1 task evidence and verify the current recovery contract."""
 
-import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_task_stale_recovery_negative_evidence_is_current():
+def test_v071_task_stale_recovery_evidence_remains_historical():
     path = ROOT / "audit-evidence/v071/task-stale-recovery.json"
     evidence = json.loads(path.read_text())
 
@@ -18,20 +17,21 @@ def test_task_stale_recovery_negative_evidence_is_current():
     assert evidence["ordinary_task_stale_fence_pass"] is False
     assert evidence["reclaimed_result_before_stale_completion"] == "reclaimed_second"
     assert evidence["final_result_after_stale_completion"] == "stale_first"
-    for source, digest in evidence["source_sha256"].items():
-        assert hashlib.sha256((ROOT / source).read_bytes()).hexdigest() == digest
-    for page, digest in evidence["page_sha256"].items():
-        assert hashlib.sha256((ROOT / page).read_bytes()).hexdigest() == digest
-    assert evidence["runner_sha256"] == hashlib.sha256(
-        (ROOT / "scripts/check_task_stale_recovery.py").read_bytes()
-    ).hexdigest()
+    assert set(evidence["source_sha256"]) == {"aksara/tasks.py"}
+    assert set(evidence["page_sha256"]) == {
+        "docs/docs/advanced/background-tasks.md"
+    }
+    assert all(len(digest) == 64 for digest in evidence["source_sha256"].values())
+    assert all(len(digest) == 64 for digest in evidence["page_sha256"].values())
+    assert len(evidence["runner_sha256"]) == 64
 
 
 def test_task_guide_states_the_recovery_and_lifecycle_boundaries():
     guide = (ROOT / "docs/docs/advanced/background-tasks.md").read_text()
 
-    assert "this age test is not a heartbeat or ownership\nfence" in guide
-    assert "the older callable can later\noverwrite the stored result" in guide
+    assert "a unique claim token" in guide
+    assert "previous claim token can no longer renew the lease or write" in guide
+    assert "external effects inside ordinary\ntask code must remain safe to repeat" in guide
     assert "await worker.stop()" in guide
     assert "await db.disconnect()" in guide
 

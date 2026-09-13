@@ -21,6 +21,7 @@ from aksara.inspectors.queries import (
     QueryPlanResult,
     QueryStats,
     explain_query,
+    explain_query_async,
     get_query_stats,
 )
 
@@ -37,5 +38,6 @@ __all__ = [
     "QueryPlanResult",
     "QueryStats",
     "explain_query",
+    "explain_query_async",
     "get_query_stats",
 ]

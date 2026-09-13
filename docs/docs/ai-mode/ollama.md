@@ -60,6 +60,6 @@ for chunk in adapter.generate_stream("Tell me a story"):
 - Default base URL: `http://localhost:11434`
 - Uses `/api/generate` endpoint (not the OpenAI-compatible endpoint)
 - Streaming uses newline-delimited JSON
-- The experimental compatibility command `aksara ai-provider detect` can list
-  the default Ollama profile even when the server is absent. Use
+- The experimental compatibility command `aksara ai-provider detect` reports
+  Ollama as configured only after an explicit Ollama setting is present. Use
   `aksara ai-provider ping --provider ollama` to test reachability.

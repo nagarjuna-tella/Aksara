@@ -6,10 +6,11 @@ Provides standardized pagination classes for Aksara ViewSets.
 v0.5.39: Added CursorPagination for high-performance keyset-based pagination.
 """
 
-from typing import Any, Dict, Optional, TYPE_CHECKING
-from fastapi import Request
 import base64
 import json
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from fastapi import Request
 
 if TYPE_CHECKING:
     from aksara.manager import QuerySet
@@ -17,6 +18,11 @@ if TYPE_CHECKING:
 
 class BasePagination:
     """Base class for pagination backends."""
+
+    # Subclasses can describe their response metadata for generated OpenAPI.
+    # Unknown custom paginators fall back to an unstructured mapping so
+    # response validation cannot discard application-defined keys.
+    response_schema_fields: ClassVar[dict[str, Any]] = {}
     
     async def paginate_queryset(self, queryset: "QuerySet", request: Request) -> Any:
         """
@@ -31,7 +37,7 @@ class BasePagination:
         """
         raise NotImplementedError("paginate_queryset must be implemented by subclasses")
         
-    def get_paginated_response(self, data: list) -> Dict[str, Any]:
+    def get_paginated_response(self, data: list) -> dict[str, Any]:
         """
         Return the paginated response format.
         
@@ -52,6 +58,11 @@ class LimitOffsetPagination(BasePagination):
     """
     default_limit = 20
     max_limit = 100
+    response_schema_fields: ClassVar[dict[str, Any]] = {
+        "count": int,
+        "limit": int,
+        "offset": int,
+    }
     
     def __init__(self):
         self.count = 0
@@ -80,7 +91,7 @@ class LimitOffsetPagination(BasePagination):
         # and store limit/offset so the viewset can use them.
         return queryset
         
-    def get_paginated_response(self, data: list) -> Dict[str, Any]:
+    def get_paginated_response(self, data: list) -> dict[str, Any]:
         return {
             "count": self.count,
             "limit": self.limit,
@@ -99,6 +110,12 @@ class PageNumberPagination(BasePagination):
     max_page_size = 100
     page_query_param = "page"
     page_size_query_param = "size"
+    response_schema_fields: ClassVar[dict[str, Any]] = {
+        "count": int,
+        "page": int,
+        "size": int,
+        "total_pages": int,
+    }
     
     def __init__(self):
         self.count = 0
@@ -132,7 +149,7 @@ class PageNumberPagination(BasePagination):
         
         return queryset
         
-    def get_paginated_response(self, data: list) -> Dict[str, Any]:
+    def get_paginated_response(self, data: list) -> dict[str, Any]:
         return {
             "count": self.count,
             "page": self.page,
@@ -171,6 +188,10 @@ class CursorPagination(BasePagination):
     default_page_size = 20
     max_page_size = 100
     cursor_query_param = "cursor"
+    response_schema_fields: ClassVar[dict[str, Any]] = {
+        "count": int,
+        "next_cursor": str | None,
+    }
     
     def __init__(self):
         self.count = 0
@@ -226,7 +247,7 @@ class CursorPagination(BasePagination):
 
         return queryset
 
-    def get_paginated_response(self, data: list) -> Dict[str, Any]:
+    def get_paginated_response(self, data: list) -> dict[str, Any]:
         """
         Return paginated response with cursor for next page.
 
@@ -236,8 +257,10 @@ class CursorPagination(BasePagination):
         Returns:
             Dict with count, next_cursor, and results
         """
+        self.next_cursor = None
         response = {
             "count": self.count,
+            "next_cursor": None,
             "results": data,
         }
 

@@ -1,10 +1,9 @@
 # Inspect TypeScript client generation
 
-**Evolving; generated v0.7.0 output has a known type-checking defect.** Aksara can
-render a fetch-based CRUD client from ViewSets, but the ticket-desk output does
-not currently pass TypeScript 5.9.3. Treat it as generated material to review,
-not a production-ready client. The defect requires a separately scoped generator
-patch; v0.7.1 documentation work does not change runtime generation.
+**Evolving.** Aksara renders a fetch-based CRUD client from ViewSets. Generated
+list parameters remain specific to each ViewSet and are compatible with the
+internal query serializer under TypeScript strict mode. Treat the output as
+generated material to review for your application.
 
 ## Generate from explicit ViewSets
 
@@ -38,17 +37,10 @@ With TypeScript 5.9.3 available in a development environment:
 tsc --strict --noEmit --lib ES2022,DOM api.ts
 ```
 
-For the v0.7.0 ticket-desk ViewSet, this fails with:
-
-```text
-TS2322: Type 'TicketListParams' is not assignable to type 'Record<string, QueryValue>'.
-Index signature for type 'string' is missing in type 'TicketListParams'.
-```
-
-Generation succeeding is therefore not sufficient validation. Do not silence
-the error with a blanket TypeScript suppression or interpret it as a backend
-API failure. Until a generator patch is available and verified, use your
-application's existing HTTP client against the [REST API](../api/index.md).
+The canonical Ticket Desk output passes this strict check. Generation succeeding
+is still not sufficient validation: compile the generated file and exercise it
+against your application's [REST API](../api/index.md), especially when you use
+custom serializers or mounted route prefixes.
 
 ## CLI discovery
 

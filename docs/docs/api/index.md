@@ -44,19 +44,18 @@ examples and the actual customization hooks.
 | Normalize or validate model data | [Serializers](serializers.md) | Validation does not authenticate the caller or establish tenant ownership. Extra input is not universally rejected. |
 | Establish identity | [Authentication](authentication.md) | Password/session helpers do not install login routes or token-verification middleware. |
 | Restrict requests and objects | [Permissions](permissions.md) | Hooks are synchronous; list filtering and object access are separate concerns. |
-| Add a custom endpoint | [Actions](actions.md) | Custom HTTP handlers must explicitly enforce authorization. |
+| Add a custom endpoint | [Actions](actions.md) | Registration enforces declared request and object permissions; application code still owns query scope and field policy. |
 | Register endpoints | [Routing](routing.md) | Registration makes routes available; it does not establish caller identity. |
 | Handle rejected or failed requests | [Exceptions and responses](../reference/exceptions.md) | Validation, HTTP and database errors do not share one response envelope. |
 | Understand identity, tenancy, and policy together | [Identity concepts](../concepts/application-boundaries.md) | Resolve identity and tenant membership on the server. |
 
 ## Custom HTTP action boundary
 
-!!! warning "Known v0.7.0 limitation"
-    A registered `@action` HTTP handler does not automatically run the ViewSet's
-    permission checks or the decorator's `permission_classes` metadata. Merely
-    adding `IsAuthenticated` to the class does not protect that custom handler.
-    Follow the explicit checked example in [Actions](actions.md). Custom writes
-    must also enforce object, tenant, payload, and transaction requirements.
+Registered `@action` HTTP handlers run their effective permission list before
+dispatch. An action override replaces the ViewSet list; `None` inherits it.
+Detail actions also evaluate declared object permissions. Custom writes must
+still enforce application-specific tenant, payload, and transaction
+requirements that cannot be inferred from the decorator.
 
 Generated CRUD and MCP execution have their own enforcement paths. MCP approval
 metadata does not install an HTTP approval workflow, and exposing a method over

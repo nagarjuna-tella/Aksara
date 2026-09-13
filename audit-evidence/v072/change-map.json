@@ -1,0 +1,588 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "base": "a0422cf8fa004b41a2ccdaa9aa91c8036357159d",
+  "candidate_head": "4240c86d39f02fdcc4b506bf07c0326f52df34a7",
+  "changed_production_files": {
+    "aksara/_version.py": {
+      "issue_ids": [
+        "ACTION-001",
+        "ADMINWIDGET001",
+        "AIFLOW001",
+        "AIFLOW002",
+        "AIPROVIDER001",
+        "BULK-001",
+        "CFG-001",
+        "EX-001",
+        "FIXTURE001",
+        "FIXTURE002",
+        "FIXTURE003",
+        "GAP001",
+        "INSPECTOR001",
+        "MIGRATION-001",
+        "PAGINATION-001",
+        "RELATION001",
+        "SCAFFOLD-001",
+        "SDK-001",
+        "SOFTDELETE001",
+        "STORAGE-001",
+        "TASK-001",
+        "TESTING-001"
+      ],
+      "functions_or_classes": [
+        "__version__"
+      ],
+      "reason": "Candidate identity after closing the complete 22-item ledger.",
+      "compatibility_impact": "Version metadata only.",
+      "tests": [
+        "tests/test_v048_packaging_sanity.py"
+      ]
+    },
+    "aksara/ai/hub_settings.py": {
+      "issue_ids": [
+        "AIPROVIDER001"
+      ],
+      "functions_or_classes": [
+        "provider status serialization"
+      ],
+      "reason": "Report explicit configuration independently from adapter defaults and reachability.",
+      "compatibility_impact": "Corrects experimental status reporting.",
+      "tests": [
+        "tests/ai/test_v072_provider_configuration.py"
+      ]
+    },
+    "aksara/ai/providers_unified.py": {
+      "issue_ids": [
+        "AIPROVIDER001"
+      ],
+      "functions_or_classes": [
+        "ProviderConfig",
+        "provider detection"
+      ],
+      "reason": "Require explicit, valid provider configuration.",
+      "compatibility_impact": "Malformed URLs fail clearly; defaults no longer imply configured.",
+      "tests": [
+        "tests/ai/test_v072_provider_configuration.py"
+      ]
+    },
+    "aksara/ai/workflows.py": {
+      "issue_ids": [
+        "AIFLOW001",
+        "AIFLOW002"
+      ],
+      "functions_or_classes": [
+        "workflow imports",
+        "_render_set_env_command"
+      ],
+      "reason": "Break the import cycle and use the canonical environment-command renderer.",
+      "compatibility_impact": "Public import order now works; malformed duplicated export prefixes are normalized.",
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py"
+      ]
+    },
+    "aksara/api/pagination.py": {
+      "issue_ids": [
+        "PAGINATION-001"
+      ],
+      "functions_or_classes": [
+        "pagination response models"
+      ],
+      "reason": "Preserve paginator-specific metadata in runtime responses and OpenAPI.",
+      "compatibility_impact": "Adds previously dropped response metadata.",
+      "tests": [
+        "tests/api/test_v072_pagination_contract.py"
+      ]
+    },
+    "aksara/api/router.py": {
+      "issue_ids": [
+        "ACTION-001",
+        "PAGINATION-001"
+      ],
+      "functions_or_classes": [
+        "route generation",
+        "custom action dispatch"
+      ],
+      "reason": "Enforce declared permissions for custom actions and select paginator-specific response models.",
+      "compatibility_impact": "Unauthorized custom actions now fail closed; response schemas become accurate.",
+      "tests": [
+        "tests/api/test_actions.py",
+        "tests/api/test_v072_pagination_contract.py"
+      ]
+    },
+    "aksara/api/viewsets.py": {
+      "issue_ids": [
+        "ACTION-001"
+      ],
+      "functions_or_classes": [
+        "action",
+        "ModelViewSet custom actions"
+      ],
+      "reason": "Define deterministic ViewSet and action permission precedence.",
+      "compatibility_impact": "Calls that previously bypassed declared permissions are denied.",
+      "tests": [
+        "tests/api/test_actions.py"
+      ]
+    },
+    "aksara/cli/main.py": {
+      "issue_ids": [
+        "MIGRATION-001",
+        "TASK-001",
+        "SCAFFOLD-001",
+        "AIFLOW002"
+      ],
+      "functions_or_classes": [
+        "inspect_models",
+        "tasks_reenqueue",
+        "startproject",
+        "doctor rendering"
+      ],
+      "reason": "Expose collision errors, clear ownership fields on re-enqueue, guide valid scaffold installs, and render environment actions canonically.",
+      "compatibility_impact": "Ambiguity and authorization-sensitive state now fail clearly; documented scaffold workflow succeeds.",
+      "tests": [
+        "tests/test_v072_registry.py",
+        "tests/test_v072_task_ownership.py",
+        "tests/cli/test_dev_tools.py",
+        "tests/ai/test_v072_workflow_boundaries.py"
+      ]
+    },
+    "aksara/cli/scaffold.py": {
+      "issue_ids": [
+        "SCAFFOLD-001"
+      ],
+      "functions_or_classes": [
+        "project pyproject templates",
+        "README templates"
+      ],
+      "reason": "Generate explicit package selection and candidate guidance.",
+      "compatibility_impact": "Generated projects support editable and wheel installation.",
+      "tests": [
+        "tests/dx/test_scaffold_importable.py",
+        "scripts/run_v072_scaffold_gate.py"
+      ]
+    },
+    "aksara/cli/templates/__init__.py": {
+      "issue_ids": [
+        "SCAFFOLD-001"
+      ],
+      "functions_or_classes": [
+        "copy_template_project",
+        "get_flat_project_pyproject_template"
+      ],
+      "reason": "Give all domain templates intentional package metadata.",
+      "compatibility_impact": "Domain scaffolds become installable Python projects.",
+      "tests": [
+        "scripts/run_v072_scaffold_gate.py"
+      ]
+    },
+    "aksara/conf.py": {
+      "issue_ids": [
+        "CFG-001"
+      ],
+      "functions_or_classes": [
+        "_parse_list"
+      ],
+      "reason": "Replace platform path-separator parsing with a deterministic list grammar.",
+      "compatibility_impact": "Ambiguous input is rejected instead of silently split.",
+      "tests": [
+        "tests/test_v072_configuration.py"
+      ]
+    },
+    "aksara/contrib/admin/widgets/array.py": {
+      "issue_ids": [
+        "ADMINWIDGET001"
+      ],
+      "functions_or_classes": [
+        "ArrayAdminWidget.render"
+      ],
+      "reason": "Copy caller values before adding visual rows.",
+      "compatibility_impact": "Rendering no longer mutates application data.",
+      "tests": [
+        "tests/admin/test_v072_array_widget.py"
+      ]
+    },
+    "aksara/contrib/soft_delete.py": {
+      "issue_ids": [
+        "SOFTDELETE001"
+      ],
+      "functions_or_classes": [
+        "with_deleted",
+        "only_deleted"
+      ],
+      "reason": "Transform the supplied queryset rather than replacing it.",
+      "compatibility_impact": "Existing predicates, tenant scope, ordering and limits are preserved.",
+      "tests": [
+        "tests/test_soft_delete.py",
+        "tests/security/test_v072_soft_delete_rls.py"
+      ]
+    },
+    "aksara/core/migrations/0003_task_claim_ownership.py": {
+      "issue_ids": [
+        "TASK-001"
+      ],
+      "functions_or_classes": [
+        "Migration"
+      ],
+      "reason": "Add ordinary-task owner, token and lease columns and claim index.",
+      "compatibility_impact": "Additive internal schema migration for v0.7.1 task rows.",
+      "tests": [
+        "tests/migrations/test_v072_task_ownership.py"
+      ]
+    },
+    "aksara/diagnostics.py": {
+      "issue_ids": [
+        "AIFLOW002"
+      ],
+      "functions_or_classes": [
+        "DiagnosticAction",
+        "render_set_env_command"
+      ],
+      "reason": "Store raw values and centralize shell-display rendering.",
+      "compatibility_impact": "Legacy already-formatted values remain readable; new output is syntactically coherent.",
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py"
+      ]
+    },
+    "aksara/fields.py": {
+      "issue_ids": [
+        "MIGRATION-001"
+      ],
+      "functions_or_classes": [
+        "ForeignKey",
+        "ManyToMany"
+      ],
+      "reason": "Propagate ambiguous registry identity rather than silently guessing a table.",
+      "compatibility_impact": "Unambiguous legacy names work; collisions fail explicitly.",
+      "tests": [
+        "tests/test_v072_registry.py"
+      ]
+    },
+    "aksara/fixtures.py": {
+      "issue_ids": [
+        "FIXTURE001",
+        "FIXTURE002",
+        "FIXTURE003"
+      ],
+      "functions_or_classes": [
+        "dump_database",
+        "dump_model",
+        "load_fixture"
+      ],
+      "reason": "Use canonical registry values, restore missing explicit identities, and emit portable YAML scalars.",
+      "compatibility_impact": "Exported JSON/YAML fixtures round-trip; conflicts remain explicit.",
+      "tests": [
+        "tests/test_v072_fixtures.py"
+      ]
+    },
+    "aksara/gapanalysis.py": {
+      "issue_ids": [
+        "GAP001"
+      ],
+      "functions_or_classes": [
+        "environment compatibility checks"
+      ],
+      "reason": "Read the authoritative supported Python boundary.",
+      "compatibility_impact": "Python 3.10 is correctly rejected.",
+      "tests": [
+        "tests/test_gapanalysis.py",
+        "tests/test_runtime_compatibility.py"
+      ]
+    },
+    "aksara/inspectors/__init__.py": {
+      "issue_ids": [
+        "INSPECTOR001"
+      ],
+      "functions_or_classes": [
+        "explain_query",
+        "explain_query_async"
+      ],
+      "reason": "Export explicit live and fallback query inspection APIs.",
+      "compatibility_impact": "Results expose provenance and whether ANALYZE ran.",
+      "tests": [
+        "tests/inspectors/test_v072_query_provenance.py"
+      ]
+    },
+    "aksara/inspectors/queries.py": {
+      "issue_ids": [
+        "INSPECTOR001"
+      ],
+      "functions_or_classes": [
+        "QueryPlan",
+        "explain_query",
+        "explain_query_async"
+      ],
+      "reason": "Separate live execution from synthetic estimates and retain warnings.",
+      "compatibility_impact": "Synthetic output cannot be read as measured ANALYZE.",
+      "tests": [
+        "tests/inspectors/test_v072_query_provenance.py"
+      ]
+    },
+    "aksara/launch_check.py": {
+      "issue_ids": [
+        "GAP001",
+        "SCAFFOLD-001"
+      ],
+      "functions_or_classes": [
+        "launch compatibility checks"
+      ],
+      "reason": "Use one Python support policy and validate generated packaging guidance.",
+      "compatibility_impact": "Unsupported future Python versions are explicit.",
+      "tests": [
+        "tests/test_v048_launch_check.py",
+        "tests/test_runtime_compatibility.py"
+      ]
+    },
+    "aksara/manager.py": {
+      "issue_ids": [
+        "SOFTDELETE001",
+        "RELATION001",
+        "BULK-001"
+      ],
+      "functions_or_classes": [
+        "QuerySet._clone",
+        "QuerySet.first",
+        "Manager.bulk_update"
+      ],
+      "reason": "Preserve query semantics, eager-load terminal first results, and cast CASE values by field type.",
+      "compatibility_impact": "Correctness tightening with no signature change.",
+      "tests": [
+        "tests/test_soft_delete.py",
+        "tests/test_relations.py",
+        "tests/test_v072_bulk_update.py"
+      ]
+    },
+    "aksara/migrations/autodetector.py": {
+      "issue_ids": [
+        "MIGRATION-001"
+      ],
+      "functions_or_classes": [
+        "MigrationAutodetector"
+      ],
+      "reason": "Use canonical model identities and reject ambiguity.",
+      "compatibility_impact": "Migration generation can no longer silently omit a colliding model.",
+      "tests": [
+        "tests/test_v072_registry.py"
+      ]
+    },
+    "aksara/model/base.py": {
+      "issue_ids": [
+        "MIGRATION-001"
+      ],
+      "functions_or_classes": [
+        "ModelMeta"
+      ],
+      "reason": "Register qualified model identity while preserving unambiguous simple lookup.",
+      "compatibility_impact": "Same-name collisions become explicit.",
+      "tests": [
+        "tests/test_v072_registry.py"
+      ]
+    },
+    "aksara/registry.py": {
+      "issue_ids": [
+        "MIGRATION-001",
+        "FIXTURE003"
+      ],
+      "functions_or_classes": [
+        "ModelRegistry",
+        "AmbiguousModelError"
+      ],
+      "reason": "Make qualified module/class identity canonical and enumerate model classes.",
+      "compatibility_impact": "Unambiguous simple names remain compatible; ambiguous names fail deterministically.",
+      "tests": [
+        "tests/test_v072_registry.py",
+        "tests/test_v072_fixtures.py"
+      ]
+    },
+    "aksara/runtime_compatibility.py": {
+      "issue_ids": [
+        "GAP001"
+      ],
+      "functions_or_classes": [
+        "MIN_PYTHON",
+        "MAX_PYTHON",
+        "python_support"
+      ],
+      "reason": "Centralize the supported Python 3.11 through 3.14 policy.",
+      "compatibility_impact": "Future unsupported interpreters are classified explicitly.",
+      "tests": [
+        "tests/test_runtime_compatibility.py"
+      ]
+    },
+    "aksara/sdk/typescript.py": {
+      "issue_ids": [
+        "SDK-001",
+        "PAGINATION-001"
+      ],
+      "functions_or_classes": [
+        "TypeScriptGenerator",
+        "QueryValue",
+        "pagination types"
+      ],
+      "reason": "Generate strict-compatible query parameters and match paginator response metadata.",
+      "compatibility_impact": "Generated types become usable without any suppression.",
+      "tests": [
+        "tests/api/test_typescript_sdk.py",
+        "scripts/run_v072_typescript_sdk_gate.py"
+      ]
+    },
+    "aksara/storage.py": {
+      "issue_ids": [
+        "STORAGE-001"
+      ],
+      "functions_or_classes": [
+        "FileSystemStorage",
+        "_resolve_path"
+      ],
+      "reason": "Apply component-aware resolved containment to every filesystem operation.",
+      "compatibility_impact": "Traversal and outward symlinks are rejected.",
+      "tests": [
+        "tests/test_storage.py"
+      ]
+    },
+    "aksara/studio/fastapi.py": {
+      "issue_ids": [
+        "INSPECTOR001"
+      ],
+      "functions_or_classes": [
+        "query inspection endpoint"
+      ],
+      "reason": "Await the live database inspection path.",
+      "compatibility_impact": "Studio reports actual execution provenance.",
+      "tests": [
+        "tests/inspectors/test_v072_query_provenance.py"
+      ]
+    },
+    "aksara/studio/models.py": {
+      "issue_ids": [
+        "AIFLOW001"
+      ],
+      "functions_or_classes": [
+        "workflow model definitions"
+      ],
+      "reason": "Keep workflow data types independent of workflow builder imports.",
+      "compatibility_impact": "Public imports become order-independent.",
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py"
+      ]
+    },
+    "aksara/studio/utils.py": {
+      "issue_ids": [
+        "AIFLOW001"
+      ],
+      "functions_or_classes": [
+        "lazy workflow forwarding"
+      ],
+      "reason": "Avoid package initialization re-entering a partially imported workflow module.",
+      "compatibility_impact": "Existing public names and signatures remain available.",
+      "tests": [
+        "tests/ai/test_v072_workflow_boundaries.py",
+        "scripts/check_v072_installed_boundaries.py"
+      ]
+    },
+    "aksara/tasks.py": {
+      "issue_ids": [
+        "TASK-001"
+      ],
+      "functions_or_classes": [
+        "TaskRecord",
+        "TaskWorker",
+        "claim",
+        "heartbeat",
+        "completion"
+      ],
+      "reason": "Fence ordinary task ownership with database-time leases and conditional terminal writes.",
+      "compatibility_impact": "Stale workers cannot update authoritative state; task/Operation separation remains.",
+      "tests": [
+        "tests/test_v072_task_ownership.py",
+        "tests/test_v072_task_processes.py"
+      ]
+    },
+    "aksara/testing.py": {
+      "issue_ids": [
+        "TESTING-001"
+      ],
+      "functions_or_classes": [
+        "test_database"
+      ],
+      "reason": "Pin same-task database activity to the owned rollback transaction and tear down resources.",
+      "compatibility_impact": "Documented rollback isolation now holds within its stated boundary.",
+      "tests": [
+        "tests/test_v072_testing_database.py"
+      ]
+    },
+    "examples/multitenant/middleware.py": {
+      "issue_ids": [
+        "EX-001"
+      ],
+      "functions_or_classes": [
+        "TenantMiddleware._is_exempt_path"
+      ],
+      "reason": "Use exact exemptions and explicit subtree prefixes.",
+      "compatibility_impact": "Protected routes no longer inherit the root exemption.",
+      "tests": [
+        "tests/patterns/test_multitenant_example.py",
+        "scripts/check_v072_installed_boundaries.py"
+      ]
+    },
+    "examples/support_desk/main.py": {
+      "issue_ids": [
+        "ACTION-001",
+        "ADMINWIDGET001",
+        "AIFLOW001",
+        "AIFLOW002",
+        "AIPROVIDER001",
+        "BULK-001",
+        "CFG-001",
+        "EX-001",
+        "FIXTURE001",
+        "FIXTURE002",
+        "FIXTURE003",
+        "GAP001",
+        "INSPECTOR001",
+        "MIGRATION-001",
+        "PAGINATION-001",
+        "RELATION001",
+        "SCAFFOLD-001",
+        "SDK-001",
+        "SOFTDELETE001",
+        "STORAGE-001",
+        "TASK-001",
+        "TESTING-001"
+      ],
+      "functions_or_classes": [
+        "app version"
+      ],
+      "reason": "Identify the packaged reference app as the audit-closure candidate used to validate the ledger.",
+      "compatibility_impact": "Version metadata only.",
+      "tests": [
+        "scripts/run_support_desk_gate.py"
+      ]
+    },
+    "pyproject.toml": {
+      "issue_ids": [
+        "GAP001",
+        "SCAFFOLD-001"
+      ],
+      "functions_or_classes": [
+        "project.version",
+        "project.requires-python"
+      ],
+      "reason": "Publish the candidate identity and enforce the documented Python 3.11 through 3.14 range.",
+      "compatibility_impact": "Python 3.15 and later require an explicit future compatibility decision; runtime dependencies are unchanged.",
+      "tests": [
+        "tests/test_runtime_compatibility.py",
+        "tests/test_v048_packaging_sanity.py"
+      ]
+    }
+  },
+  "changed_production_file_count": 36,
+  "runtime_logic_changed": true,
+  "runtime_changes_limited_to_22_findings": true,
+  "dependencies_changed": false,
+  "requires_python_changed_for_gap001": true,
+  "schema_migrations_changed": [
+    "aksara/core/migrations/0003_task_claim_ownership.py"
+  ],
+  "schema_change_issue": "TASK-001",
+  "unmapped_production_files": [],
+  "runner_sha256": "2bda41e1abde75e22356d63f66ff9b6eb50bb356f582e0f8a1307167e6322ee1"
+}
