@@ -83,20 +83,18 @@ batch size with row width and PostgreSQL parameter limits in mind. Field
 preparation, such as file storage or relationship work, can perform additional
 operations, so row count divided by batch size is not a universal query count.
 
-## Current bulk-update limitation
+## Field typing in bulk updates
 
-**Known defect in 0.7.0 (BULK-001):** the generated CASE values for ordinary
-Boolean and timestamp fields are inferred as text by PostgreSQL. Updating
-`resolved` or `updated_at` with `bulk_update()` fails with a database type
-mismatch. The text-only helper above was executed successfully, but this does
-not establish general scalar bulk-update support. Vector fields use a separate
-explicit cast path; they are not evidence that all other types work.
+`bulk_update()` casts each CASE value to the PostgreSQL type declared by its
+model field. This preserves different per-row values for text, numeric, Boolean,
+UUID, temporal, enum, nullable, JSON, Array, and Vector fields without relying
+on PostgreSQL's inference for otherwise untyped parameters. Field conversion
+still runs before execution, so invalid values fail according to the field's
+normal database conversion contract.
 
-For a uniform change, use a filtered `QuerySet.update()`; for different values
-per row, use supported individual updates within an explicit transaction until
-a separately reviewed runtime patch fixes typed CASE generation. Do not coerce
-your schema to text to accommodate this defect. Verify the actual fields used
-by your application against PostgreSQL.
+For a uniform change, a filtered `QuerySet.update()` remains simpler. Use
+`bulk_update()` when rows need different values and verify custom field types
+against PostgreSQL before adopting them in a bulk path.
 
 ## Transactions and partial failure
 

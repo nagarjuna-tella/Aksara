@@ -6505,9 +6505,12 @@ def inspect_models(model: Optional[str], fields: bool, relationships: bool, as_j
 
     if model:
         # Single model inspection
-        from aksara.registry import ModelRegistry
+        from aksara.registry import AmbiguousModelError, ModelRegistry
         try:
             model_cls = ModelRegistry.get(model)
+        except AmbiguousModelError as exc:
+            click.echo(f"  \033[31m✗\033[0m {exc}")
+            sys.exit(1)
         except KeyError:
             click.echo(f"  \033[31m✗\033[0m Model not found: {model}")
             click.echo()

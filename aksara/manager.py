@@ -27,6 +27,13 @@ def _is_vector_field(field: Any) -> bool:
     return isinstance(field, Vector)
 
 
+def _typed_parameter(field: Any, param_idx: int) -> str:
+    """Bind a value with the PostgreSQL type declared by its model field."""
+    if _is_vector_field(field):
+        return f"CAST(${param_idx} AS vector)"
+    return f"CAST(${param_idx} AS {field.sql_type})"
+
+
 # Supported lookup types
 LOOKUP_OPERATORS = {
     "exact": "=",          # field__exact=value (same as field=value)
@@ -1205,7 +1212,13 @@ class QuerySet(Generic[T]):
         if record is None:
             return None
 
-        return self._model._from_record(record)
+        instance = self._model._from_record(record)
+        instances = [instance]
+        if self._select_related:
+            await self._load_select_related(instances, db)
+        if self._prefetch_related:
+            await self._load_prefetch_related(instances, db)
+        return instance
 
     async def count(self) -> int:
         """
@@ -1820,9 +1833,7 @@ class Manager(Generic[T]):
                     # Searched CASE requires a boolean WHEN expression — must
                     # compare the primary key column to the parameter, not just
                     # bind the PK value as the condition.
-                    value_sql = f"${param_idx + 1}"
-                    if _is_vector_field(field):
-                        value_sql = f"CAST(${param_idx + 1} AS vector)"
+                    value_sql = _typed_parameter(field, param_idx + 1)
                     when_clauses.append(
                         f"WHEN {quote_identifier('id')} = ${param_idx} THEN {value_sql}"
                     )
@@ -1981,7 +1992,7 @@ class Manager(Generic[T]):
             RETURNING *, (xmax = 0) AS _is_created
         """
 
-        record = await db.fetchrow(query, *insert_values)
+        record: Any = await db.fetchrow(query, *insert_values)
         instance = self._model._from_record(record)
         created = bool(record["_is_created"])
 

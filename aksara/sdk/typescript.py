@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Optional, TYPE_CHECKING, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -32,9 +32,27 @@ class ViewSetSdkSpec:
     filter_fields: list[str]
     search_enabled: bool
     ordering_enabled: bool
+    pagination_kind: str = "limit_offset"
 
 
-def discover_viewset_sdk_specs(views_module: Optional[str] = None) -> list[ViewSetSdkSpec]:
+def _pagination_kind(pagination_class: type | None) -> str:
+    """Map a ViewSet pagination class to its generated client contract."""
+    from aksara.api.pagination import (
+        CursorPagination,
+        LimitOffsetPagination,
+        PageNumberPagination,
+    )
+
+    if pagination_class is None or issubclass(pagination_class, LimitOffsetPagination):
+        return "limit_offset"
+    if issubclass(pagination_class, PageNumberPagination):
+        return "page_number"
+    if issubclass(pagination_class, CursorPagination):
+        return "cursor"
+    return "custom"
+
+
+def discover_viewset_sdk_specs(views_module: str | None = None) -> list[ViewSetSdkSpec]:
     """Discover ViewSets and resolve their CRUD schema metadata."""
     specs: list[ViewSetSdkSpec] = []
     for viewset_cls in auto_discover_viewsets(views_module=views_module):
@@ -49,17 +67,18 @@ def discover_viewset_sdk_specs(views_module: Optional[str] = None) -> list[ViewS
                 filter_fields=viewset.get_filter_fields(),
                 search_enabled=bool(viewset.search_fields),
                 ordering_enabled=bool(viewset.ordering_fields or viewset.ordering),
+                pagination_kind=_pagination_kind(viewset.pagination_class),
             )
         )
     return specs
 
 
-def generate_typescript_sdk_from_discovery(views_module: Optional[str] = None) -> str:
+def generate_typescript_sdk_from_discovery(views_module: str | None = None) -> str:
     """Generate the TypeScript SDK from auto-discovered ViewSets."""
     return generate_typescript_sdk(discover_viewset_sdk_specs(views_module=views_module))
 
 
-def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type["ModelViewSet"]]) -> str:
+def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type[ModelViewSet]]) -> str:
     """Generate a fetch-based TypeScript SDK for CRUD ViewSets."""
     specs = [_coerce_viewset_spec(viewset) for viewset in viewsets]
 
@@ -80,6 +99,22 @@ def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type["ModelViewSet"]
         "  offset: number;",
         "  results: T[];",
         "}",
+        "",
+        "export interface PageNumberPaginatedResponse<T> {",
+        "  count: number;",
+        "  page: number;",
+        "  size: number;",
+        "  total_pages: number;",
+        "  results: T[];",
+        "}",
+        "",
+        "export interface CursorPaginatedResponse<T> {",
+        "  count: number;",
+        "  next_cursor: string | null;",
+        "  results: T[];",
+        "}",
+        "",
+        "export type CustomPaginatedResponse<T> = Record<string, unknown> & { results: T[] };",
         "",
         "export interface DeleteResponse {",
         "  deleted: boolean;",
@@ -154,7 +189,7 @@ def generate_typescript_sdk(viewsets: list[ViewSetSdkSpec | type["ModelViewSet"]
     return "\n".join(sections).rstrip() + "\n"
 
 
-def _coerce_viewset_spec(viewset: ViewSetSdkSpec | type["ModelViewSet"]) -> ViewSetSdkSpec:
+def _coerce_viewset_spec(viewset: ViewSetSdkSpec | type[ModelViewSet]) -> ViewSetSdkSpec:
     if isinstance(viewset, ViewSetSdkSpec):
         return viewset
 
@@ -168,6 +203,7 @@ def _coerce_viewset_spec(viewset: ViewSetSdkSpec | type["ModelViewSet"]) -> View
         filter_fields=instance.get_filter_fields(),
         search_enabled=bool(instance.search_fields),
         ordering_enabled=bool(instance.ordering_fields or instance.ordering),
+        pagination_kind=_pagination_kind(instance.pagination_class),
     )
 
 
@@ -183,7 +219,14 @@ def _render_interface(name: str, schema: type[BaseModel]) -> str:
 
 def _render_list_params_interface(spec: ViewSetSdkSpec) -> str:
     interface_name = f"{spec.model_name}ListParams"
-    lines = [f"export interface {interface_name} {{", "  limit?: number;", "  offset?: number;"]
+    lines = [f"export interface {interface_name} {{"]
+
+    if spec.pagination_kind == "limit_offset":
+        lines.extend(["  limit?: number;", "  offset?: number;"])
+    elif spec.pagination_kind == "page_number":
+        lines.extend(["  page?: number;", "  size?: number;"])
+    elif spec.pagination_kind == "cursor":
+        lines.extend(["  cursor?: string;", "  page_size?: number;"])
 
     if spec.search_enabled:
         lines.append("  search?: string;")
@@ -205,10 +248,16 @@ def _render_client_methods(spec: ViewSetSdkSpec) -> list[str]:
     read_type = spec.read_schema.__name__
     create_type = spec.create_schema.__name__
     update_type = spec.update_schema.__name__
+    pagination_type = {
+        "limit_offset": "PaginatedResponse",
+        "page_number": "PageNumberPaginatedResponse",
+        "cursor": "CursorPaginatedResponse",
+        "custom": "CustomPaginatedResponse",
+    }[spec.pagination_kind]
 
     return [
-        f"  async list{collection_name}(params: {params_type} = {{}}): Promise<PaginatedResponse<{read_type}>> {{",
-        f"    return this.request<PaginatedResponse<{read_type}>>('{base_path}', {{ params }});",
+        f"  async list{collection_name}(params: {params_type} = {{}}): Promise<{pagination_type}<{read_type}>> {{",
+        f"    return this.request<{pagination_type}<{read_type}>>('{base_path}', {{ params }});",
         "  }",
         "",
         f"  async get{item_name}(pk: string): Promise<{read_type}> {{",

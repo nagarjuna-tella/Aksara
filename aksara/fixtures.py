@@ -22,8 +22,10 @@ Usage:
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
+from enum import Enum
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -31,20 +33,90 @@ if TYPE_CHECKING:
 
 
 class FixtureEncoder(json.JSONEncoder):
-    """JSON encoder that handles UUID and datetime objects."""
+    """JSON encoder for portable fixture scalar values."""
     
     def default(self, obj: Any) -> Any:
-        if isinstance(obj, UUID):
-            return str(obj)
-        if isinstance(obj, datetime):
-            return obj.isoformat()
+        portable = _to_portable(obj)
+        if portable is not obj:
+            return portable
         return super().default(obj)
 
 
+def _to_portable(value: Any) -> Any:
+    """Convert supported Python values to JSON/YAML-safe scalar structures."""
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+    if isinstance(value, timedelta):
+        return value.total_seconds()
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, Enum):
+        return _to_portable(value.value)
+    if isinstance(value, dict):
+        return {key: _to_portable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_portable(item) for item in value]
+    return value
+
+
+def _primary_key(model: type[Model]) -> tuple[str, Any]:
+    """Return the declared primary-key name and field."""
+    for name, field in model._fields.items():
+        if field.primary_key:
+            return name, field
+    raise ValueError(f"Model {model.__name__} has no primary key")
+
+
+def _prepare_fields(model: type[Model], values: dict[str, Any]) -> dict[str, Any]:
+    """Convert portable fixture scalars through their declared fields."""
+    prepared: dict[str, Any] = {}
+    for name, value in values.items():
+        field = model._fields.get(name)
+        if field is not None:
+            prepared[name] = field.to_python(value)
+    return prepared
+
+
+def _order_models(models: list[type[Model]]) -> list[type[Model]]:
+    """Place referenced models before dependants when a fixture can do so."""
+    from aksara.fields import ForeignKey
+    from aksara.registry import ModelRegistry
+
+    selected = set(models)
+    position = {model: index for index, model in enumerate(models)}
+    dependencies: dict[type[Model], set[type[Model]]] = {}
+    for model in selected:
+        dependencies[model] = {
+            field.to_model
+            for field in model._fields.values()
+            if isinstance(field, ForeignKey) and field.to_model in selected
+        }
+
+    ordered: list[type[Model]] = []
+    remaining = set(selected)
+    while remaining:
+        ready = sorted(
+            (model for model in remaining if not (dependencies[model] & remaining)),
+            key=lambda model: (position[model], ModelRegistry.reference(model)),
+        )
+        if not ready:
+            # Cycles cannot be made insert-safe by ordering alone. Preserve all
+            # models and leave constraint handling to the caller/database.
+            ready = sorted(
+                remaining,
+                key=lambda model: (position[model], ModelRegistry.reference(model)),
+            )
+        ordered.extend(ready)
+        remaining.difference_update(ready)
+    return ordered
+
+
 async def dump_data(
-    model: Type[Model],
-    filters: Optional[Dict[str, Any]] = None,
-    fields: Optional[List[str]] = None,
+    model: type[Model],
+    filters: dict[str, Any] | None = None,
+    fields: list[str] | None = None,
     format: str = "json",
 ) -> str:
     """
@@ -74,10 +146,12 @@ async def dump_data(
     
     # Serialize instances
     data = []
+    from aksara.registry import ModelRegistry
+    pk_name, _pk_field = _primary_key(model)
     for instance in instances:
         record = {
-            "model": model.__name__,
-            "pk": instance.id,
+            "model": ModelRegistry.reference(model),
+            "pk": instance._data.get(pk_name),
             "fields": {},
         }
         
@@ -103,23 +177,24 @@ async def dump_data(
         data.append(record)
     
     # Format output
+    portable_data = _to_portable(data)
     if format.lower() == "yaml":
         try:
             import yaml
-            return yaml.dump(data, default_flow_style=False, sort_keys=False)
+            return yaml.safe_dump(portable_data, default_flow_style=False, sort_keys=False)
         except ImportError:
             raise ImportError("PyYAML is required for YAML format. Install with: pip install pyyaml")
     else:
         # Default to JSON
-        return json.dumps(data, indent=2, cls=FixtureEncoder)
+        return json.dumps(portable_data, indent=2, cls=FixtureEncoder)
 
 
 async def load_data(
     data: str,
-    models: Optional[Dict[str, Type[Model]]] = None,
+    models: dict[str, type[Model]] | None = None,
     format: str = "json",
     strict: bool = False,
-) -> Dict[str, int]:
+) -> dict[str, int]:
     """
     Load fixture data from JSON or YAML string.
     
@@ -142,6 +217,7 @@ async def load_data(
         result = await load_data(data)
         print(f"Loaded {result['loaded']} records")
     """
+    from aksara.manager import DoesNotExist
     from aksara.registry import ModelRegistry
     
     # Parse fixture data
@@ -185,33 +261,34 @@ async def load_data(
                 stats["skipped"] += 1
                 continue
             
-            # Create or update instance
-            if pk:
-                # Update existing
+            prepared_fields = _prepare_fields(model_class, fields)
+            pk_name, pk_field = _primary_key(model_class)
+
+            # A supplied primary key has restore semantics: update the matching
+            # row, or insert a missing row with that identity. Omitting it has
+            # seed semantics and lets the model generate its primary key.
+            if pk is not None:
+                prepared_pk = pk_field.to_python(pk)
                 try:
-                    instance = await model_class.objects.get(id=pk)
-                    for field_name, value in fields.items():
-                        if field_name in instance._fields:
-                            instance._data[field_name] = value
-                except Exception as e:
-                    if strict:
-                        raise
-                    stats["errors"] += 1
-                    continue
+                    instance = await model_class.objects.get(**{pk_name: prepared_pk})
+                except DoesNotExist:
+                    instance = model_class(**{pk_name: prepared_pk, **prepared_fields})
+                else:
+                    for field_name, value in prepared_fields.items():
+                        instance._data[field_name] = value
             else:
-                # Create new
-                instance = model_class(**fields)
+                instance = model_class(**prepared_fields)
             
             # Save the instance
             try:
                 await instance.save()
                 stats["loaded"] += 1
-            except Exception as e:
+            except Exception:
                 if strict:
                     raise
                 stats["errors"] += 1
         
-        except Exception as e:
+        except Exception:
             if strict:
                 raise
             stats["errors"] += 1
@@ -220,9 +297,9 @@ async def load_data(
 
 
 async def dump_database(
-    app_label: Optional[str] = None,
-    models: Optional[List[str]] = None,
-    filters: Optional[Dict[str, Any]] = None,
+    app_label: str | None = None,
+    models: list[str] | None = None,
+    filters: dict[str, Any] | None = None,
     format: str = "json",
 ) -> str:
     """
@@ -262,9 +339,11 @@ async def dump_database(
                 models_to_export.append(model_class)
     else:
         # Get all models (optionally filtered by app_label)
-        for model_class in ModelRegistry.all():
-            if app_label is None or getattr(model_class.Meta, 'app_label', None) == app_label:
+        for model_class in ModelRegistry.all().values():
+            if app_label is None or model_class.meta.app_label == app_label:
                 models_to_export.append(model_class)
+
+    models_to_export = _order_models(models_to_export)
     
     # Export each model
     for model_class in models_to_export:
@@ -280,7 +359,11 @@ async def dump_database(
     if format.lower() == "yaml":
         try:
             import yaml
-            return yaml.dump(all_data, default_flow_style=False, sort_keys=False)
+            return yaml.safe_dump(
+                _to_portable(all_data),
+                default_flow_style=False,
+                sort_keys=False,
+            )
         except ImportError:
             raise ImportError("PyYAML is required for YAML format. Install with: pip install pyyaml")
     else:

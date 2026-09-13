@@ -28,11 +28,9 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError, create_model
 from pydantic import Field as PydanticField
 
@@ -40,9 +38,12 @@ from aksara.api.actions import (
     extract_docstring_description,
     extract_docstring_summary,
     get_action_metadata,
-    is_action,
 )
-from aksara.api.schemas import generate_read_schema
+from aksara.api.pagination import (
+    CursorPagination,
+    LimitOffsetPagination,
+    PageNumberPagination,
+)
 from aksara.api.viewsets import ModelViewSet
 from aksara.exceptions import (
     DatabaseError,
@@ -61,29 +62,147 @@ if TYPE_CHECKING:
 
 # Cache of paginated response wrappers, keyed by the Read schema class so
 # we don't recreate the wrapper Pydantic model on every viewset registration.
-_paginated_schema_cache: Dict[Type[BaseModel], Type[BaseModel]] = {}
+_paginated_schema_cache: dict[
+    tuple[type[BaseModel], type | None],
+    type[BaseModel],
+] = {}
 # Cache for the delete-response wrapper, keyed by model name.
-_delete_schema_cache: Dict[str, Type[BaseModel]] = {}
+_delete_schema_cache: dict[str, type[BaseModel]] = {}
 
 
-def _build_paginated_schema(read_schema: Type[BaseModel]) -> Type[BaseModel]:
+def _build_paginated_schema(
+    read_schema: type[BaseModel],
+    pagination_class: type | None = None,
+) -> Any:
     """
     Construct (and cache) a Pydantic wrapper that documents the paginated
-    list response shape `{count, limit, offset, results: [ReadSchema]}` so
-    FastAPI emits a concrete OpenAPI schema instead of a generic object.
+    list response shape for the selected paginator. Unknown custom paginator
+    classes use an unstructured mapping so response validation preserves their
+    application-defined metadata.
     """
-    cached = _paginated_schema_cache.get(read_schema)
+    key = (read_schema, pagination_class)
+    cached = _paginated_schema_cache.get(key)
     if cached is not None:
         return cached
-    wrapper = create_model(
-        f"Paginated{read_schema.__name__}",
-        count=(int, PydanticField(default=0)),
-        limit=(Optional[int], PydanticField(default=None)),
-        offset=(Optional[int], PydanticField(default=None)),
-        results=(List[read_schema], PydanticField(default_factory=list)),
+
+    if pagination_class is None:
+        metadata_fields = LimitOffsetPagination.response_schema_fields
+        paginator_name = "LimitOffset"
+    else:
+        metadata_fields = getattr(pagination_class, "response_schema_fields", {})
+        paginator_name = pagination_class.__name__.removesuffix("Pagination")
+
+    if not metadata_fields:
+        return dict[str, Any]
+
+    model_fields: dict[str, Any] = {
+        name: (annotation, PydanticField(...))
+        for name, annotation in metadata_fields.items()
+    }
+    model_fields["results"] = (
+        list[read_schema],  # type: ignore[valid-type]
+        PydanticField(default_factory=list),
     )
-    _paginated_schema_cache[read_schema] = wrapper
+    wrapper = create_model(
+        f"{paginator_name}Paginated{read_schema.__name__}",
+        **model_fields,
+    )
+    _paginated_schema_cache[key] = wrapper
     return wrapper
+
+
+def _create_list_endpoint(
+    viewset: ModelViewSet,
+    filter_fields: list[str],
+) -> Callable:
+    """Create a list endpoint whose query contract matches its paginator."""
+
+    async def execute(request: Request, limit: int, offset: int) -> dict[str, Any]:
+        filters = _extract_filters(request, filter_fields)
+        try:
+            return await viewset.list(
+                request=request,
+                limit=limit,
+                offset=offset,
+                **filters,
+            )
+        except Exception as exc:
+            _handle_exception(exc)
+            raise AssertionError("unreachable")
+
+    pagination_class = viewset.pagination_class
+    if pagination_class is None:
+        async def list_limit_offset(
+            request: Request,
+            limit: int = Query(
+                default=viewset.default_limit,
+                ge=1,
+                le=viewset.max_limit,
+                description="Maximum number of items to return",
+            ),
+            offset: int = Query(
+                default=0,
+                ge=0,
+                description="Number of items to skip",
+            ),
+        ) -> dict[str, Any]:
+            return await execute(request, limit, offset)
+
+        return list_limit_offset
+
+    if issubclass(pagination_class, LimitOffsetPagination):
+        async def list_explicit_limit_offset(
+            request: Request,
+            limit: int = Query(
+                default=pagination_class.default_limit,
+                ge=1,
+                le=pagination_class.max_limit,
+                description="Maximum number of items to return",
+            ),
+            offset: int = Query(
+                default=0,
+                ge=0,
+                description="Number of items to skip",
+            ),
+        ) -> dict[str, Any]:
+            return await execute(request, limit, offset)
+
+        return list_explicit_limit_offset
+
+    if issubclass(pagination_class, PageNumberPagination):
+        async def list_page_number(
+            request: Request,
+            page: int = Query(default=1, ge=1, description="Page number"),
+            size: int = Query(
+                default=pagination_class.default_page_size,
+                ge=1,
+                le=pagination_class.max_page_size,
+                description="Number of items per page",
+            ),
+        ) -> dict[str, Any]:
+            return await execute(request, size, (page - 1) * size)
+
+        return list_page_number
+
+    if issubclass(pagination_class, CursorPagination):
+        async def list_cursor(
+            request: Request,
+            cursor: str | None = Query(default=None, description="Continuation cursor"),
+            page_size: int = Query(
+                default=pagination_class.default_page_size,
+                ge=1,
+                le=pagination_class.max_page_size,
+                description="Number of items per page",
+            ),
+        ) -> dict[str, Any]:
+            return await execute(request, page_size, 0)
+
+        return list_cursor
+
+    async def list_custom(request: Request) -> dict[str, Any]:
+        return await execute(request, viewset.default_limit, 0)
+
+    return list_custom
 
 
 def _build_delete_schema(model_name: str) -> Type[BaseModel]:
@@ -188,7 +307,10 @@ def include_viewset(
     CreateSchema = viewset.create_schema
     UpdateSchema = viewset.update_schema
     ReadSchema = viewset.read_schema
-    PaginatedReadSchema = _build_paginated_schema(ReadSchema)
+    PaginatedReadSchema = _build_paginated_schema(
+        ReadSchema,
+        viewset.pagination_class,
+    )
     DeleteResponseSchema = _build_delete_schema(viewset.model.__name__)
 
     # Get filterable fields for query params
@@ -197,42 +319,17 @@ def include_viewset(
     # =========================================================================
     # LIST endpoint (no {pk})
     # =========================================================================
-    # Publish the paginated Read schema as the documented response so the
-    # OpenAPI spec describes a concrete model instead of a generic dict.
-    @router.get(
+    # Publish the selected paginator's response and query contracts.
+    list_endpoint = _create_list_endpoint(viewset, filter_fields)
+    router.add_api_route(
         f"{prefix}/",
+        list_endpoint,
+        methods=["GET"],
         tags=tags,
         summary=f"List {viewset.model.__name__}",
         description=f"Get a paginated list of {viewset.model.__name__} records.",
         response_model=PaginatedReadSchema,
     )
-    async def list_items(
-        request: Request,
-        limit: int = Query(
-            default=viewset.default_limit,
-            ge=1,
-            le=viewset.max_limit,
-            description="Maximum number of items to return",
-        ),
-        offset: int = Query(
-            default=0,
-            ge=0,
-            description="Number of items to skip",
-        ),
-    ) -> Dict[str, Any]:
-        """List all items with pagination."""
-        # Extract filter params from query string
-        filters = _extract_filters(request, filter_fields)
-        
-        try:
-            return await viewset.list(
-                request=request,
-                limit=limit,
-                offset=offset,
-                **filters,
-            )
-        except Exception as e:
-            return _handle_exception(e)
     
     # =========================================================================
     # CREATE endpoint (no {pk})

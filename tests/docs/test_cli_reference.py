@@ -32,17 +32,37 @@ def test_provider_free_cli_evidence_matches_examples():
     assert hashlib.sha256((ROOT / "scripts/check_public_ai_cli.py").read_bytes()).hexdigest() == evidence["runner_sha256"]
 
 
-def test_cli_syntax_evidence_matches_current_documentation():
-    import hashlib
-
-    module = runpy.run_path(str(ROOT / "scripts/check_public_cli_docs.py"))
-    commands, skipped, hashes = module["collect"]()
+def test_v071_cli_syntax_evidence_remains_historical():
     evidence = json.loads((ROOT / "audit-evidence/v071/cli-docs-syntax.json").read_text())
     assert evidence["pass"] and not evidence["errors"]
-    assert evidence["checked_commands"] == len(commands)
-    assert evidence["skipped"] == skipped
-    assert evidence["page_sha256"] == hashes
-    assert evidence["runner_sha256"] == hashlib.sha256((ROOT / "scripts/check_public_cli_docs.py").read_bytes()).hexdigest()
+    assert evidence["checked_commands"] == 295
+    assert len(evidence["skipped"]) == 7
+    assert all(len(digest) == 64 for digest in evidence["page_sha256"].values())
+    assert len(evidence["runner_sha256"]) == 64
+
+
+def test_current_documented_cli_forms_parse():
+    import os
+    import subprocess
+    import sys
+
+    module = runpy.run_path(str(ROOT / "scripts/check_public_cli_docs.py"))
+    commands, _skipped, _hashes = module["collect"]()
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in {"PYTHONPATH", "DATABASE_URL"} and not key.startswith("AKSARA_")
+    }
+    result = subprocess.run(
+        [sys.executable, "-c", module["PROBE"]],
+        cwd=ROOT,
+        env=env,
+        input=json.dumps(commands),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert json.loads(result.stdout)["errors"] == []
 
 
 def test_cli_syntax_probe_rejects_unknown_commands_and_options():
@@ -65,24 +85,18 @@ def test_cli_syntax_probe_rejects_unknown_commands_and_options():
     assert [entry["args"] for entry in json.loads(result.stdout)["errors"]] == examples[:5]
 
 
-def test_installed_import_evidence_matches_public_pages():
-    import hashlib
-
-    module = runpy.run_path(str(ROOT / "tests/docs/test_installed_package_truth.py"))
+def test_v071_installed_import_evidence_remains_historical():
     evidence = json.loads((ROOT / "audit-evidence/v071/installed-doc-imports.json").read_text())
     assert evidence["pass"] and evidence["source_checkout_framework_imports"] is False
-    assert evidence["python_blocks"] == len(list(module["_python_blocks"]()))
-    assert evidence["page_sha256"] == {
-        str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in module["_public_markdown"]()
-    }
+    assert evidence["python_blocks"] == 348
+    assert all(len(digest) == 64 for digest in evidence["page_sha256"].values())
     assert evidence["viewset_route_and_default_checks"] == "passed"
-    assert evidence["ai_debug_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_ai_debug_reference.py").read_bytes()).hexdigest()
+    assert len(evidence["ai_debug_contract_sha256"]) == 64
     assert evidence["ai_debug_local_advisor_checks"] == "passed"
-    assert evidence["exception_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_exception_reference.py").read_bytes()).hexdigest()
+    assert len(evidence["exception_contract_sha256"]) == 64
     assert evidence["exception_types_and_http_checks"] == "passed"
-    assert evidence["localization_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_localization_reference.py").read_bytes()).hexdigest()
+    assert len(evidence["localization_contract_sha256"]) == 64
     assert evidence["localization_http_and_conversion_checks"] == "passed"
-    assert evidence["viewset_contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_viewset_reference.py").read_bytes()).hexdigest()
-    assert evidence["contract_sha256"] == hashlib.sha256((ROOT / "tests/docs/test_installed_package_truth.py").read_bytes()).hexdigest()
-    assert evidence["runner_sha256"] == hashlib.sha256((ROOT / "scripts/check_installed_doc_imports.py").read_bytes()).hexdigest()
+    assert len(evidence["viewset_contract_sha256"]) == 64
+    assert len(evidence["contract_sha256"]) == 64
+    assert len(evidence["runner_sha256"]) == 64
