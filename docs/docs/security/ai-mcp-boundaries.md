@@ -85,11 +85,11 @@ AI-exposed model has an explicit `ai_agent_writable` decision.
   into a durable workflow.
 - Replay protection storage and token issuance are application concerns; core
   helpers validate claims but do not issue or revoke credentials.
-- Generated CRUD and MCP tool execution have separate enforcement paths. In
-  v0.7.0, registered custom `@action` HTTP handlers do not automatically run
-  ViewSet or decorator permission checks. They must explicitly integrate
-  application authorization; registration alone does not protect them. See
-  [custom action requirements](../api/actions.md). MCP permission and approval
-  metadata do not install equivalent HTTP enforcement.
+- Generated CRUD and MCP tool execution have separate enforcement paths.
+  Registered custom `@action` HTTP handlers run the effective ViewSet or action
+  permission list, including declared object checks on detail actions. MCP also
+  applies its scoped-token, tenant, timeout, replay, and approval boundaries
+  before invoking that HTTP route. See
+  [custom action requirements](../api/actions.md).
 - External review is scoped in the release evidence and does not become an
   implied audit certification.

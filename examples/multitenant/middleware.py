@@ -37,21 +37,32 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """
     
     # Paths that don't require tenant context
-    EXEMPT_PATHS = [
+    EXEMPT_PATHS = {
         "/",
         "/health",
+        "/openapi.json",
+    }
+    EXEMPT_PREFIXES = (
         "/docs",
         "/redoc",
-        "/openapi.json",
         "/admin",
         "/studio",
         "/api/tenants",  # Tenant management doesn't need tenant context
-    ]
+    )
+
+    def _is_exempt_path(self, path: str) -> bool:
+        """Match exact exemptions and explicitly declared path subtrees."""
+        if path in self.EXEMPT_PATHS:
+            return True
+        return any(
+            path == prefix or path.startswith(f"{prefix}/")
+            for prefix in self.EXEMPT_PREFIXES
+        )
     
     async def dispatch(self, request: Request, call_next):
         # Skip tenant resolution for exempt paths
         path = request.url.path
-        if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
+        if self._is_exempt_path(path):
             return await call_next(request)
         
         # Try to resolve tenant

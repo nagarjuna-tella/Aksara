@@ -4,14 +4,11 @@
 A detail action uses `{pk}`; a collection action does not. It does not create a
 `get_object()` or `get_request_data()` helper.
 
-!!! warning "Explicit HTTP authorization required in 0.7.0"
-    Custom HTTP actions are registered as bound methods. Unlike generated CRUD
-    handlers, they do not automatically run ViewSet or decorator permission
-    checks. A local installed-wheel probe returned 200 from an anonymous custom
-    action declaring `IsAuthenticated`, while the generated list returned 403.
-    Put the required checks in the handler or delegate to a checked CRUD method.
-    This limitation is recorded for a separate runtime patch; this documentation
-    release does not change it.
+!!! note "Custom actions use declared HTTP permissions"
+    Route registration evaluates the action's effective permission list before
+    calling its handler. `permission_classes=None` inherits the ViewSet list;
+    an explicit action list replaces it. A denial returns HTTP 403 with the
+    permission's message and the handler is not called.
 
 ## A checked detail action
 
@@ -44,10 +41,13 @@ path is `GET /api/tickets/{pk}/summary`, without a trailing slash. The handler
 receives `pk`, matching the generated path parameter. A parameter named `id`
 does not automatically rename that path parameter.
 
-The example delegates to `retrieve`, so it uses the ViewSet's permission list.
-For other handlers, call the relevant view and object checks explicitly and
-establish the application's tenant and policy boundary. `self.check_permissions`
-uses the ViewSet list; it does not inspect an action's decorator override.
+The action wrapper checks `IsAuthenticated` before this handler runs. The
+example still delegates to `retrieve` for the standard object lookup and
+serialization path. When an effective permission overrides
+`has_object_permission`, a detail action loads the target and evaluates that
+object decision before dispatch. Collection actions still require an
+application query scope, and applications still establish identity and tenant
+context before permission evaluation.
 
 ## Decorator arguments
 
@@ -58,7 +58,7 @@ uses the ViewSet list; it does not inspect an action's decorator override.
 | `path` | Optional route segment, default method name |
 | `name` | Optional route name, default method name |
 | `summary`, `description` | Optional OpenAPI text; otherwise derived from the docstring |
-| `permission_classes` | Action permission metadata used by generated tool execution; not automatic HTTP enforcement |
+| `permission_classes` | HTTP and generated-tool permission override; `None` inherits the ViewSet list |
 | `ai_exposed` | Action exposure metadata, default true; other ViewSet/model/registration conditions still apply |
 | `requires_approval` | MCP signed approval-grant requirement, default false; not an HTTP approval workflow |
 
@@ -82,8 +82,8 @@ query scope; object permission does not filter an entire list automatically.
 
 Eligible custom actions can appear in generated MCP discovery when the model,
 ViewSet, action, and application exposure settings permit it. Discovery is
-permission-filtered, and the MCP executor performs its own execution-time
-checks. Do not infer equivalent HTTP wrapping from MCP metadata.
+permission-filtered, and MCP performs its own execution-time checks before its
+internal HTTP call reaches the same action permission wrapper.
 
 `requires_approval=True` concerns signed, bounded MCP grants. It neither stores
 a durable approval workflow nor automatically gates direct HTTP calls. For

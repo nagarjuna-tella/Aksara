@@ -27,27 +27,33 @@ Usage:
 from __future__ import annotations
 
 import inspect
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Request, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field as PydanticField, ValidationError, create_model
+from pydantic import BaseModel, ValidationError, create_model
+from pydantic import Field as PydanticField
 
-from aksara.api.viewsets import ModelViewSet
-from aksara.api.schemas import generate_read_schema
 from aksara.api.actions import (
+    extract_docstring_description,
+    extract_docstring_summary,
     get_action_metadata,
     is_action,
-    extract_docstring_summary,
-    extract_docstring_description,
+)
+from aksara.api.schemas import generate_read_schema
+from aksara.api.viewsets import ModelViewSet
+from aksara.exceptions import (
+    DatabaseError,
+    ForeignKeyConstraintError,
+    UniqueConstraintError,
 )
 from aksara.exceptions import (
     ValidationError as AksaraValidationError,
-    UniqueConstraintError,
-    ForeignKeyConstraintError,
-    DatabaseError,
 )
+from aksara.manager import DoesNotExist
+from aksara.permissions import BasePermission
 
 if TYPE_CHECKING:
     from aksara.app import Aksara
@@ -435,17 +441,108 @@ def _register_actions_by_detail(
         if description is None:
             description = extract_docstring_description(method)
         
-        # Register the route
-        # Use the bound method directly so FastAPI can inspect its signature
+        endpoint = _build_action_endpoint(viewset, method, meta)
+
+        # functools.wraps exposes the bound action signature to FastAPI while
+        # the wrapper enforces its declared authorization before dispatch.
         router.add_api_route(
             path=full_path,
-            endpoint=method,
+            endpoint=endpoint,
             methods=meta["methods"],
             tags=tags,
             name=meta["name"],
             summary=summary,
             description=description,
         )
+
+
+def _build_action_endpoint(
+    viewset: ModelViewSet,
+    method: Callable[..., Any],
+    metadata: dict[str, Any],
+) -> Callable[..., Any]:
+    """Wrap a custom action in its declared request and object permissions."""
+
+    signature = inspect.signature(method)
+    request_parameter = next(
+        (
+            parameter.name
+            for parameter in signature.parameters.values()
+            if parameter.name == "request" or parameter.annotation is Request
+        ),
+        None,
+    )
+    injected_request = request_parameter is None
+    if injected_request:
+        request_parameter = "aksara_request"
+    assert request_parameter is not None
+
+    @wraps(method)
+    async def authorized_action(*args: Any, **kwargs: Any) -> Any:
+        request = kwargs.get(request_parameter)
+        if request is None:
+            raise RuntimeError("Custom actions must declare a request parameter")
+        if injected_request:
+            kwargs.pop(request_parameter)
+
+        permissions = viewset.get_action_permissions(method)
+        viewset.check_permissions(request, permissions)
+        viewset.check_ai_access(
+            request,
+            permissions,
+            ai_exposed=bool(metadata.get("ai_exposed", True)) and viewset.ai_exposed,
+        )
+
+        if metadata["detail"] and _has_object_permission(permissions):
+            pk = kwargs.get("pk")
+            try:
+                instance = await viewset.model.objects.get(
+                    **{viewset.lookup_field: pk}
+                )
+            except DoesNotExist:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"{viewset.model.__name__} not found",
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid {viewset.lookup_field} format: {pk}",
+                )
+            viewset.check_object_permissions(request, instance, permissions)
+
+        result = method(*args, **kwargs)
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+    if injected_request:
+        injected = inspect.Parameter(
+            request_parameter,
+            inspect.Parameter.KEYWORD_ONLY,
+            annotation=Request,
+        )
+        parameters = list(signature.parameters.values())
+        variadic_index = next(
+            (
+                index
+                for index, parameter in enumerate(parameters)
+                if parameter.kind is inspect.Parameter.VAR_KEYWORD
+            ),
+            len(parameters),
+        )
+        parameters.insert(variadic_index, injected)
+        authorized_action.__signature__ = signature.replace(parameters=parameters)  # type: ignore[attr-defined]
+
+    return authorized_action
+
+
+def _has_object_permission(permissions: list[BasePermission]) -> bool:
+    """Return whether any permission declares an object-specific decision."""
+    return any(
+        type(permission).has_object_permission is not BasePermission.has_object_permission
+        for permission in permissions
+    )
 
 
 def _extract_filters(request: Request, allowed_fields: List[str]) -> Dict[str, Any]:

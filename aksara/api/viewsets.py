@@ -223,8 +223,35 @@ class ModelViewSet:
                     permissions.append(perm_cls)
             self._permission_instances = permissions
         return self._permission_instances
+
+    def get_action_permissions(self, action_method: Any) -> list[BasePermission]:
+        """Resolve permissions for a custom action.
+
+        An explicit ``permission_classes`` value on ``@action`` replaces the
+        ViewSet permission list. ``None`` inherits ``get_permissions()``, so
+        applications that override that hook retain their custom behavior.
+        """
+        from aksara.api.actions import get_action_metadata
+
+        metadata = get_action_metadata(action_method) or {}
+        configured = metadata.get("permission_classes")
+        if configured is None:
+            return self.get_permissions()
+
+        permissions: list[BasePermission] = []
+        for permission_class in configured:
+            permissions.append(
+                permission_class()
+                if isinstance(permission_class, type)
+                else permission_class
+            )
+        return permissions
     
-    def check_permissions(self, request: Request) -> None:
+    def check_permissions(
+        self,
+        request: Request,
+        permissions: list[BasePermission] | None = None,
+    ) -> None:
         """
         Check view-level permissions.
         
@@ -236,14 +263,20 @@ class ModelViewSet:
         Raises:
             HTTPException: 403 if permission denied.
         """
-        for permission in self.get_permissions():
+        active_permissions = self.get_permissions() if permissions is None else permissions
+        for permission in active_permissions:
             if not permission.has_permission(request, self):
                 raise HTTPException(
                     status_code=403,
                     detail=permission.message,
                 )
     
-    def check_object_permissions(self, request: Request, obj: Model) -> None:
+    def check_object_permissions(
+        self,
+        request: Request,
+        obj: Model,
+        permissions: list[BasePermission] | None = None,
+    ) -> None:
         """
         Check object-level permissions.
         
@@ -256,7 +289,8 @@ class ModelViewSet:
         Raises:
             HTTPException: 403 if permission denied.
         """
-        for permission in self.get_permissions():
+        active_permissions = self.get_permissions() if permissions is None else permissions
+        for permission in active_permissions:
             if not permission.has_object_permission(request, self, obj):
                 raise HTTPException(
                     status_code=403,
@@ -276,7 +310,13 @@ class ModelViewSet:
             "route_permission_granted": bool(self.get_permissions()),
         }
     
-    def check_ai_access(self, request: Request) -> None:
+    def check_ai_access(
+        self,
+        request: Request,
+        permissions: list[BasePermission] | None = None,
+        *,
+        ai_exposed: bool | None = None,
+    ) -> None:
         """
         Check if AI agent access is allowed.
         
@@ -287,7 +327,8 @@ class ModelViewSet:
             HTTPException: 403 if AI access denied.
         """
         # Check viewset-level ai_exposed
-        if not self.ai_exposed:
+        effective_ai_exposed = self.ai_exposed if ai_exposed is None else ai_exposed
+        if not effective_ai_exposed:
             if self._is_ai_request(request):
                 raise HTTPException(
                     status_code=403,
@@ -295,7 +336,8 @@ class ModelViewSet:
                 )
         
         # Check permission-level ai_allow
-        for permission in self.get_permissions():
+        active_permissions = self.get_permissions() if permissions is None else permissions
+        for permission in active_permissions:
             if not permission.ai_allow and self._is_ai_request(request):
                 raise HTTPException(
                     status_code=403,

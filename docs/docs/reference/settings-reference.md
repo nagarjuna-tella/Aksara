@@ -148,9 +148,17 @@ arbitrary application's token verifier. Provision those components explicitly.
 Authentication middleware must resolve credentials to a server-owned
 `Principal`; these settings do not verify tokens by themselves.
 
-On POSIX systems the current environment-list parser also splits on `:`, which
-breaks origin URLs and host/port patterns. Until a separate parser fix is
-released, use explicit lists in application configuration for these values:
+List-valued environment settings use a platform-independent grammar. Supply a
+comma-separated list for ordinary values, or a JSON string array when a value
+itself needs comma-safe representation. Colons and semicolons are data, so URI
+schemes, ports, and IPv6 addresses remain intact:
+
+```bash
+export AKSARA_MCP_ALLOWED_ORIGINS='https://app.example.com,https://admin.example.com:8443'
+export AKSARA_MCP_ALLOWED_HOSTS='["api.example.com:443", "[2001:db8::1]:8443"]'
+```
+
+Explicit Python lists remain supported:
 
 ```python
 from aksara import configure
@@ -161,8 +169,10 @@ configure(
 )
 ```
 
-Replace these domains with your deployment's allowed hosts and origins. This
-preserves the supplied strings; it does not remove the need for authentication.
+Replace these domains with your deployment's allowed hosts and origins. These
+forms preserve the supplied strings; they do not remove the need for
+authentication. Empty comma-separated items, malformed JSON arrays, and JSON
+array entries that are not non-empty strings are rejected.
 
 ## Background task settings
 
