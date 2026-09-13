@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "normal exit leaves write committed",
+    "normal exit leaves helper pool usable",
+    "exception exit leaves write committed",
+    "exception exit leaves helper pool usable",
+    "cleanup=False disconnects normally"
+  ],
+  "package_version": "0.7.1",
+  "runtime_rollback_isolation_pass": false,
+  "runtime_cleanup_disconnect_pass": false,
+  "probe_owned_connections_closed": true,
+  "schema_version": 1,
+  "pass": true,
+  "source_checkout_framework_imports": false,
+  "disposable_schema_removed": true,
+  "scope": "Negative cleanup=True probe on normal and exceptional exit: direct Database.execute writes persist and the helper pool remains usable. cleanup=False disconnection is a control. Admin role, owned schema; not HTTP, ORM model writes, RLS or a sustained resource-leak measurement",
+  "source_sha256": {
+    "aksara/testing.py": "18717d039c79158248adc231d94cc5a6c7c4d07d7ba96cd47aff6c6e2541cbc7"
+  },
+  "runner_sha256": "94bd1d10bcf4e32b3aa93b823e7051b7a3b1418d2597521a9897667588df88f4"
+}

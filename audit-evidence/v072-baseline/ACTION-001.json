@@ -1,0 +1,11 @@
+{
+  "package_version": "0.7.1",
+  "generated_list_status": 403,
+  "custom_action_status": 200,
+  "runtime_boundary_pass": false,
+  "schema_version": 1,
+  "defect": "ACTION-001",
+  "severity": "P1",
+  "source_checkout_framework_imports": false,
+  "scope": "Anonymous in-process HTTP request to inert custom action; no database, network provider, or data mutation"
+}
