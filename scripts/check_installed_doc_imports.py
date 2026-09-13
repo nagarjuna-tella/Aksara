@@ -63,9 +63,9 @@ import contextlib, io
 inspectors = runpy.run_path(sys.argv[8])
 with contextlib.redirect_stdout(io.StringIO()):
     inspectors['test_inspector_examples']()
-inspectors['test_synthetic_analyze_lacks_warning']()
+inspectors['test_synthetic_analyze_exposes_provenance_and_execution_state']()
 widgets = runpy.run_path(sys.argv[9])
-widgets['test_array_render_mutates_input_list']()
+widgets['test_array_render_does_not_mutate_input_list']()
 widgets['test_json_render_escapes_textarea_closure']()
 admin_actions = runpy.run_path(sys.argv[10])
 admin_actions['test_documented_admin_action']()
@@ -107,7 +107,7 @@ def main():
     assert not Path(evidence.pop("package_path")).is_relative_to(ROOT)
     evidence.update({"schema_version": 1, "pass": True,
                      "source_checkout_framework_imports": False,
-                     "scope": "Python fence syntax, Aksara import resolution, all current JSON fence parsing, selected JSON response-model validation, and fresh-process execution of the exact documented Agent Workflow snippet; also covers documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and offline synthetic ANALYZE negative control; includes widget array mutation negative control and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
+                     "scope": "Python fence syntax, Aksara import resolution, all current JSON fence parsing, selected JSON response-model validation, and fresh-process execution of the exact documented Agent Workflow snippet; also covers documented ViewSet registration/defaults, serializer validation, anonymous denial in the explicit-check action, routing discovery, standalone signal dispatch and Admin anonymous mount, relation-access shape and field declaration/conversion and locale/timezone HTTP examples and exception type/HTTP response and debug HTML/JSON address boundaries and local rule-based advisor visibility/context checks with network connections blocked without catalogs or a database; includes exact middleware HTTP examples, extraction/absence, context reset and log record boundaries; includes exact model metadata example and introspection shapes; includes inspector declaration/trace examples and explicit offline synthetic ANALYZE provenance; includes widget array input preservation and JSON value escaping; includes exact Admin action fragment registration and mocked update/message behavior; includes diagnostic suggestion example and mocked fix-plan filtering/exit status; includes local search example and collection/filter behavior; includes Studio origin/bearer dependencies via in-process HTTP; includes deterministic planner validation, codegen and isolated patch-preview examples; includes controlled gap checker ordering, failure handling and category validation; not full CRUD, arbitrary snippet execution, or API stability",
                      "contract_sha256": hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
                      "viewset_contract_sha256": hashlib.sha256(VIEWSET_CONTRACT.read_bytes()).hexdigest(),
                      "localization_contract_sha256": hashlib.sha256(LOCALIZATION_CONTRACT.read_bytes()).hexdigest(),
@@ -123,10 +123,10 @@ def main():
                      "model_meta_checks": "passed",
                      "inspector_contract_sha256": hashlib.sha256(INSPECTOR_CONTRACT.read_bytes()).hexdigest(),
                      "inspector_offline_checks": "passed",
-                     "runtime_synthetic_analyze_warning_present": False,
+                     "runtime_synthetic_analyze_warning_present": True,
                      "widget_contract_sha256": hashlib.sha256(WIDGET_CONTRACT.read_bytes()).hexdigest(),
                      "widget_checks": "passed",
-                     "runtime_array_render_preserves_input": False,
+                     "runtime_array_render_preserves_input": True,
                      "admin_action_contract_sha256": hashlib.sha256(ADMIN_ACTION_CONTRACT.read_bytes()).hexdigest(),
                      "admin_action_fragment_checks": "passed",
                      "diagnostic_suggestion_contract_sha256": hashlib.sha256(SUGGESTION_CONTRACT.read_bytes()).hexdigest(),

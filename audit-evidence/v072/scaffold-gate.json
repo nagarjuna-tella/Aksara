@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "candidate_wheel": "aksara_framework-0.7.2rc1-py3-none-any.whl",
+  "candidate_wheel_sha256": "a3ab5b8930dad1adb92a5c7610624f3d94768e0f51740bbe61d17bab8aacb982",
+  "templates": [
+    {
+      "template": "basic",
+      "project_name": "northwind_portal",
+      "editable_install": true,
+      "wheel": "northwind_portal-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "2e8c5436472a2703d7f218ef3dfe2e6b5ad52ebb189400f8f47854248c63f091",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "blog",
+      "project_name": "editorial_workspace",
+      "editable_install": true,
+      "wheel": "editorial_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "4b27c04b4231d1098c6c831755b198db60b7d7a533f4eeb6ed2ab264f369dde8",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "crm",
+      "project_name": "customer_workspace",
+      "editable_install": true,
+      "wheel": "customer_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "8f9043e7105f10c020b1b850765a1a6a5ff3f06f024eb6575ef93ffc919d75fb",
+      "installed_import": true,
+      "source_project_imports": false
+    },
+    {
+      "template": "multitenant",
+      "project_name": "tenant_workspace",
+      "editable_install": true,
+      "wheel": "tenant_workspace-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "e3ed3f6e50cc4382365571c3db269a323afe9ea4dc7c0db580f2f298e8e2cf28",
+      "installed_import": true,
+      "source_project_imports": false
+    }
+  ],
+  "basic_journey": {
+    "editable_tests": "1 passed",
+    "makemigrations": true,
+    "migrate": true,
+    "health": 200,
+    "create": 201,
+    "list": 200,
+    "installed_wheel_health": 200,
+    "installed_wheel_list": 200
+  },
+  "disposable_schema_removed": true,
+  "source_checkout_framework_imports": false,
+  "credential_free": true,
+  "runner_sha256": "97713ffac3ed1e5f3ebf4099f8520ff8483452df0c8c38a3169f7230b2f71c12"
+}

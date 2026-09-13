@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.2-rc1",
+  "package_version": "0.7.2rc1",
+  "base_sha": "a0422cf8fa004b41a2ccdaa9aa91c8036357159d",
+  "implementation_sha": "4240c86d39f02fdcc4b506bf07c0326f52df34a7",
+  "finding_closure": {
+    "total": 22,
+    "fixed": 22,
+    "disproved": 0,
+    "already_resolved": 0,
+    "unresolved": 0
+  },
+  "matrix": {
+    "python311_minimum": {
+      "passed": 8545,
+      "skipped": 2,
+      "status": "pass"
+    },
+    "python311_latest": {
+      "passed": 8545,
+      "skipped": 2,
+      "status": "pass"
+    },
+    "python314_minimum": {
+      "passed": 8545,
+      "skipped": 2,
+      "status": "pass"
+    },
+    "python314_latest": {
+      "passed": 8545,
+      "skipped": 2,
+      "status": "pass"
+    }
+  },
+  "targeted": {
+    "closure": 232,
+    "installed_closure": 213,
+    "tasks": 54,
+    "task_process_scenarios": 5,
+    "durable": 234,
+    "invariants": 24,
+    "mcp": 68,
+    "rls": 22,
+    "security": 430,
+    "fuzz": 165,
+    "diagnostics": 314,
+    "migrations": 458,
+    "docs": 127
+  },
+  "documentation": {
+    "python_fences": 348,
+    "json_fences": 15,
+    "cli_forms": 295,
+    "examples": 5,
+    "tutorial_stages": 6,
+    "tutorial_assertions": 86,
+    "rendered_pages": 162,
+    "internal_links_assets": 42339,
+    "external_links": 41
+  },
+  "installed": {
+    "package_checks": 15,
+    "support_desk_checks": 66,
+    "scaffold_templates": 4,
+    "typescript_checks": 3,
+    "workflow_import_orders": 4
+  },
+  "artifacts": {
+    "wheel": {
+      "filename": "aksara_framework-0.7.2rc1-py3-none-any.whl",
+      "sha256": "a3ab5b8930dad1adb92a5c7610624f3d94768e0f51740bbe61d17bab8aacb982"
+    },
+    "sdist": {
+      "filename": "aksara_framework-0.7.2rc1.tar.gz",
+      "sha256": "5e881e01e1679bde0d725672120a1883dfd6945d0aaf4ac37050702894e179c4"
+    },
+    "twine": "pass",
+    "sbom": {
+      "spec": "CycloneDX 1.6",
+      "components": 52,
+      "validated": true
+    }
+  },
+  "change_map": {
+    "production_package_files": 36,
+    "unmapped": 0,
+    "dependencies_changed": false,
+    "schema_migrations": [
+      "aksara/core/migrations/0003_task_claim_ownership.py"
+    ]
+  },
+  "security": {
+    "bandit_high": 0,
+    "known_dependency_vulnerabilities": 0,
+    "doctor_checks": 12,
+    "gitleaks_findings": 0,
+    "credential_scan_findings": 0
+  },
+  "hosted_ci": {
+    "status": "pending",
+    "postgresql_16_required": true
+  },
+  "publication": {
+    "tag": false,
+    "github_release": false,
+    "pypi_candidate": false,
+    "authorized": false
+  },
+  "scope": "Finite closure of the 22 v0.7.1 audit findings; no v0.8 capability, merge, tag, or publication."
+}

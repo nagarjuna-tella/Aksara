@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_head": "4240c86d39f02fdcc4b506bf07c0326f52df34a7",
+  "package_version": "0.7.2rc1",
+  "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "database": "aksara_test",
+  "database_credentials_recorded": false,
+  "matrix": {
+    "py311-min": {
+      "python": "3.11.5",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "asyncpg": "0.31.0"
+    },
+    "py311-latest": {
+      "python": "3.11.5",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "asyncpg": "0.31.0"
+    },
+    "py314-min": {
+      "python": "3.14.4",
+      "fastapi": "0.136.1",
+      "starlette": "1.0.1",
+      "asyncpg": "0.31.0"
+    },
+    "py314-latest": {
+      "python": "3.14.4",
+      "fastapi": "0.141.1",
+      "starlette": "1.6.0",
+      "asyncpg": "0.31.0"
+    }
+  },
+  "candidate_python": "3.11.5",
+  "candidate_import_origin": "isolated site-packages",
+  "typescript": "5.9.3"
+}

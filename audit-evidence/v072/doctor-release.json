@@ -1,0 +1,111 @@
+{
+  "check": "production-check",
+  "policy": "release-candidate",
+  "status": "pass",
+  "results": [
+    {
+      "id": "security.secret_key",
+      "title": "SECRET_KEY",
+      "severity": "info",
+      "status": "pass",
+      "message": "SECRET_KEY is set and does not appear to be a known default.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.debug_mode",
+      "title": "Debug mode",
+      "severity": "info",
+      "status": "pass",
+      "message": "debug=False.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.cors",
+      "title": "CORS configuration",
+      "severity": "info",
+      "status": "pass",
+      "message": "No CORS wildcard detected.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.studio_exposure",
+      "title": "Studio production exposure",
+      "severity": "info",
+      "status": "pass",
+      "message": "Studio is not exposed in production or requires authentication.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.mcp_exposure",
+      "title": "MCP exposure",
+      "severity": "info",
+      "status": "pass",
+      "message": "MCP is enabled and an authentication mechanism is configured.",
+      "recommendation": "Verify AKSARA_AI_AGENT_TOKEN is strong and rotated regularly."
+    },
+    {
+      "id": "security.mcp_hardening",
+      "title": "MCP credential hardening",
+      "severity": "info",
+      "status": "pass",
+      "message": "MCP scoped tokens, TTL, and audience validation are all configured.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.ai_console_exposure",
+      "title": "AI Console",
+      "severity": "info",
+      "status": "pass",
+      "message": "AI Console is not enabled (default).",
+      "recommendation": ""
+    },
+    {
+      "id": "security.cookies",
+      "title": "Cookie security",
+      "severity": "info",
+      "status": "pass",
+      "message": "cookie_secure=True.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.rate_limits",
+      "title": "Rate limiting",
+      "severity": "info",
+      "status": "pass",
+      "message": "Admin rate limiting is enabled.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.rls",
+      "title": "Multi-tenancy with RLS",
+      "severity": "info",
+      "status": "pass",
+      "message": "Multi-tenancy is enabled and RLS is configured.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.ai_field_defaults",
+      "title": "AI writable-field policy",
+      "severity": "info",
+      "status": "pass",
+      "message": "The deployment declares that every AI-exposed model field was reviewed and ai_agent_writable is explicit.",
+      "recommendation": ""
+    },
+    {
+      "id": "security.matrix",
+      "title": "Security matrix",
+      "severity": "info",
+      "status": "pass",
+      "message": "security_matrix.yml loaded and validated from /Users/nagarjunatella/Desktop/Desktop - Nagarjuna\u2019s MacBook Pro/projects/Aksara/security/security_matrix.release.yml.",
+      "recommendation": ""
+    }
+  ],
+  "summary": {
+    "blocks": 0,
+    "failures": 0,
+    "warnings": 0,
+    "passes": 12
+  },
+  "exit_code": 0,
+  "release_ready": true
+}
