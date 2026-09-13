@@ -31,7 +31,8 @@ def test_ai_provider_pages_use_loaded_environment_names_and_adapter_defaults():
     assert "AKSARA_CUSTOM_LLM_" not in custom
     assert "`/v1/completions`" in custom
     assert "| `response_field` | `text` |" in custom
-    assert "default local Ollama profile" in providers
-    assert "keyless custom endpoint" in providers
+    assert "Adapter defaults do not count as configuration" in providers
+    assert "explicit keyless custom endpoint" in providers
+    assert "configured state does not imply" in providers
     assert 'click.echo("    OLLAMA_BASE_URL' in cli
     assert 'click.echo("    CUSTOM_LLM_BASE_URL' in cli

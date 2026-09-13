@@ -66,7 +66,7 @@ aksara agent workflow "Fix login" --format json
 ### Python API
 
 ```python
-from aksara.studio import (
+from aksara.ai.workflows import (
     build_agent_workflow,
     summarize_agent_workflow,
     workflow_stats,
@@ -87,14 +87,11 @@ for step in wf.steps:
         print(f"  $ {cmd}")
 ```
 
-Import these helpers through `aksara.studio`, as above. In v0.7.0, importing
-`aksara.ai.workflows` as the first Aksara submodule can fail because of the
-documented `AIFLOW001` circular-import defect. The aggregate Studio import is
-the supported workaround; a runtime fix belongs in a separately scoped patch.
-Enable diagnostics and search after the basic call works. In v0.7.0, a
-diagnostic `set_env` action whose example already contains `export` can be
-rendered as `export NAME=export NAME=...` (`AIFLOW002`). Workflow commands are
-display-only suggestions: review and correct them before execution.
+The direct workflow import and the aggregate `aksara.studio` re-export are both
+order-independent. Diagnostic `set_env` actions keep the variable name and
+example value separately, so rendered workflow commands contain one `export`
+assignment. Workflow commands are display-only suggestions: review them before
+execution.
 
 ---
 

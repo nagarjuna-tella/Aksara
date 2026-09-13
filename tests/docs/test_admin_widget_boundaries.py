@@ -5,11 +5,11 @@ from types import SimpleNamespace
 from aksara.contrib.admin.widgets import ArrayAdminWidget, JSONAdminWidget
 
 
-def test_array_render_mutates_input_list():
+def test_array_render_does_not_mutate_input_list():
     values = []
     widget = ArrayAdminWidget(min_rows=2)
     widget.render('tags', values, SimpleNamespace(nullable=True))
-    assert values == ['', '']
+    assert values == []
 
 
 def test_json_render_escapes_textarea_closure():

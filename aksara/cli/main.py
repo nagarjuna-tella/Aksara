@@ -5713,7 +5713,11 @@ def doctor_run(output_format: str):
                     kind_sym = {"set_env": "ENV", "run_command": "CMD", "open_doc": "DOC", "edit_file": "FILE", "add_setting": "CFG"}.get(action.kind, action.kind.upper())
                     click.echo(f"            \033[36m→ [{kind_sym}]\033[0m {action.title}")
                     if action.example:
-                        click.echo(f"              \033[90m$ {action.example}\033[0m")
+                        example = action.example
+                        if action.kind == "set_env":
+                            from aksara.diagnostics import render_set_env_command
+                            example = render_set_env_command(action.target, example)
+                        click.echo(f"              \033[90m$ {example}\033[0m")
             click.echo()
 
         if not report.issues:
@@ -5920,7 +5924,11 @@ def doctor_fix_plan(output_format: str, only_errors: bool, only_with_actions: bo
                     ks = kind_sym.get(action.kind, action.kind.upper())
                     click.echo(f"       \033[36m→ [{ks}]\033[0m {action.title}")
                     if action.example:
-                        click.echo(f"         \033[90m$ {action.example}\033[0m")
+                        example = action.example
+                        if action.kind == "set_env":
+                            from aksara.diagnostics import render_set_env_command
+                            example = render_set_env_command(action.target, example)
+                        click.echo(f"         \033[90m$ {example}\033[0m")
             else:
                 click.echo(f"     \033[90m(no fix actions available)\033[0m")
             click.echo()
