@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "pull_request": 34,
+  "url": "https://github.com/nagarjuna-tella/Aksara/pull/34",
+  "state": "OPEN",
+  "merge_state": "BLOCKED",
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+  "hosted_validated_pr_head_sha": "e490ba01ee0379676cdaa04889157877485153ce",
+  "base_sha": "e56cd56b7c247f38a10d6eb51ef688f7e79c9cfe",
+  "final_pr_head_sha": "the evidence-only child commit containing this record; exact SHA is recorded in PR #34 and the final handoff",
+  "intervening_diff_contract": "Only release evidence, its manifest, and hosted-validation metadata may differ from hosted_validated_pr_head_sha.",
+  "counts": {
+    "total": 21,
+    "successful": 21,
+    "failed": 0,
+    "pending": 0
+  },
+  "postgresql_16_required": true,
+  "checks": [
+    {
+      "name": "CodeQL",
+      "workflow": "",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/runs/103768315928"
+    },
+    {
+      "name": "Analyze Python (python)",
+      "workflow": "CodeQL",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830831/job/103768165509"
+    },
+    {
+      "name": "Dependency audit",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165888"
+    },
+    {
+      "name": "Docs strict build",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165929"
+    },
+    {
+      "name": "Full test suite (3.11, latest-supported)",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165961"
+    },
+    {
+      "name": "Full test suite (3.11, minimum)",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165999"
+    },
+    {
+      "name": "Full test suite (3.14, latest-supported)",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165931"
+    },
+    {
+      "name": "Full test suite (3.14, minimum)",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165937"
+    },
+    {
+      "name": "Installed-wheel documentation journey",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165845"
+    },
+    {
+      "name": "Package build verification",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165702"
+    },
+    {
+      "name": "Packaged production reference app",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165895"
+    },
+    {
+      "name": "Production diagnostics",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165879"
+    },
+    {
+      "name": "SBOM generation",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165825"
+    },
+    {
+      "name": "Secret scan",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165790"
+    },
+    {
+      "name": "Security, fuzz, and diagnostics tests",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165824"
+    },
+    {
+      "name": "Static analysis",
+      "workflow": "Release Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830878/job/103768165906"
+    },
+    {
+      "name": "Dependency audit",
+      "workflow": "Security CI",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830830/job/103768165807"
+    },
+    {
+      "name": "Secret scan",
+      "workflow": "Security CI",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830830/job/103768165635"
+    },
+    {
+      "name": "Security and diagnostics tests",
+      "workflow": "Security CI",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830830/job/103768165749"
+    },
+    {
+      "name": "Security docs check",
+      "workflow": "Security CI",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830830/job/103768165766"
+    },
+    {
+      "name": "Static analysis",
+      "workflow": "Security CI",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "details_url": "https://github.com/nagarjuna-tella/Aksara/actions/runs/34773830830/job/103768165742"
+    }
+  ]
+}

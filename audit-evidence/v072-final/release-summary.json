@@ -4,7 +4,7 @@
   "package_version": "0.7.2",
   "merged_implementation_sha": "e56cd56b7c247f38a10d6eb51ef688f7e79c9cfe",
   "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
-  "final_pr_head_sha": null,
+  "final_pr_head_sha": "the evidence-only child commit containing hosted-ci.json; exact SHA is recorded in PR #34 and the final handoff",
   "final_merge_sha": null,
   "finding_closure": {
     "total": 22,
@@ -120,21 +120,19 @@
     "credential_scan_findings": 0
   },
   "hosted_ci": {
-    "status": "pending",
-    "pull_request": null,
-    "validated_head_sha": null,
+    "status": "pass",
+    "pull_request": 34,
+    "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+    "hosted_validated_head_sha": "e490ba01ee0379676cdaa04889157877485153ce",
+    "final_pr_head_sha": "the evidence-only child commit containing this update; exact SHA is recorded in PR #34 and the final handoff",
     "checks": {
-      "total": null,
-      "successful": 0,
-      "failed": 0,
-      "pending": null
-    },
-    "candidate_pr_33_checks": {
       "total": 21,
       "successful": 21,
       "failed": 0,
       "pending": 0
-    }
+    },
+    "postgresql_16_required": true,
+    "evidence": "audit-evidence/v072-final/hosted-ci.json"
   },
   "publication": {
     "schema_version": 1,

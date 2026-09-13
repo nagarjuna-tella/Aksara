@@ -210,11 +210,22 @@ and [`sbom.json`](audit-evidence/v072-final/sbom.json).
 ## Hosted CI
 
 Merged candidate PR #33 completed **21 of 21** hosted checks successfully. The
-finalization PR and its hosted matrix are pending creation. Before handoff, this
-section and the machine-readable release summary will be updated with the PR
-number, validated content SHA, hosted check inventory, and final PR head
-identity. Any later evidence-only head will retain the content SHA above and
-will be verified to contain no production/package changes.
+finalization PR is [#34](https://github.com/nagarjuna-tella/Aksara/pull/34).
+Its first complete run passed **21 of 21** checks, with zero failures and zero
+pending checks, on PR head
+`e490ba01ee0379676cdaa04889157877485153ce`. The matrix covers all four
+Python/FastAPI/Starlette cells against hosted PostgreSQL 16, package construction,
+installed-wheel documentation, packaged Support Desk, strict docs, security,
+fuzz, diagnostics, dependency audit, SBOM, static analysis, both secret scans,
+and CodeQL.
+
+The content validated locally remains
+`f36306ee50e177495d806a5e6bc4aed7f5de0725`. The commit containing this hosted
+inventory is an evidence-only child of `e490ba01ee0379676cdaa04889157877485153ce`;
+its exact SHA is recorded in PR #34 and the final handoff because a Git commit
+cannot contain its own SHA. The complete hosted matrix must pass again on that
+final evidence-only head. Evidence:
+[`hosted-ci.json`](audit-evidence/v072-final/hosted-ci.json).
 
 ## Evidence integrity
 
