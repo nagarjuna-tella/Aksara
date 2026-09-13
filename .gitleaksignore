@@ -42,6 +42,14 @@ audit-evidence/v071/startproject-guidance.json:generic-api-key:90
 audit-evidence/v071/startproject-guidance.json:generic-api-key:110
 audit-evidence/v071/startproject-guidance.json:generic-api-key:123
 
+# The v0.7.2 audit baseline records the same installed-document SHA-256 map.
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:60
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:131
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:148
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:156
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:162
+audit-evidence/v072-baseline/installed-doc-imports.json:generic-api-key:207
+
 # v0.7.2rc1 regenerates the same documented-file and source-file digest maps.
 audit-evidence/v072/cli-docs-syntax.json:generic-api-key:95
 audit-evidence/v072/cli-docs-syntax.json:generic-api-key:166
