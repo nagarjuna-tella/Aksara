@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "package": {
+    "version": "0.7.2",
+    "origin": "/private/tmp/aksara-v072-final-venv/lib/python3.11/site-packages/aksara/__init__.py"
+  },
+  "workflow_imports": {
+    "workflow_first": {
+      "module": "aksara.ai.workflows",
+      "callable": true
+    },
+    "studio_first": {
+      "studio": "aksara.studio",
+      "workflow": "aksara.ai.workflows"
+    },
+    "workflow_then_studio": {
+      "same_module": true,
+      "studio": "aksara.studio"
+    },
+    "studio_then_workflow": {
+      "callable": true,
+      "same_module": true
+    }
+  },
+  "packaged_multitenant_example": {
+    "examples_path": "/private/tmp/aksara-v072-final-venv/lib/python3.11/site-packages/aksara/_examples",
+    "packaged": true,
+    "cases": {
+      "/": true,
+      "/health": true,
+      "/health/child": false,
+      "/docs/child": true,
+      "/api/projects/": false
+    }
+  },
+  "runner_sha256": "1bd035339a21657b7583bfe90559d768c39426ffb6c61f12c8e565d51877642f",
+  "scope": "Fresh installed-wheel processes for workflow import order and the packaged EX-001 path matcher."
+}

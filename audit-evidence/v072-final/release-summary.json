@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "release": "v0.7.2",
+  "package_version": "0.7.2",
+  "merged_implementation_sha": "e56cd56b7c247f38a10d6eb51ef688f7e79c9cfe",
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+  "final_pr_head_sha": null,
+  "final_merge_sha": null,
+  "finding_closure": {
+    "total": 22,
+    "fixed": 22,
+    "disproved": 0,
+    "already_resolved": 0,
+    "unresolved": 0
+  },
+  "matrix": {
+    "python311_minimum": {
+      "passed": 8545,
+      "skipped": 2,
+      "warnings": 29,
+      "status": "pass"
+    },
+    "python311_latest": {
+      "passed": 8545,
+      "skipped": 2,
+      "warnings": 29,
+      "status": "pass"
+    },
+    "python314_minimum": {
+      "passed": 8545,
+      "skipped": 2,
+      "warnings": 29,
+      "status": "pass"
+    },
+    "python314_latest": {
+      "passed": 8545,
+      "skipped": 2,
+      "warnings": 29,
+      "status": "pass"
+    }
+  },
+  "targeted": {
+    "closure_mapped_source": 421,
+    "closure_mapped_installed": 421,
+    "tasks": 57,
+    "task_process_scenarios": 5,
+    "task_process_invariants": 10,
+    "durable": 234,
+    "invariants": 24,
+    "mcp": 68,
+    "rls": 28,
+    "security": 430,
+    "fuzz": 165,
+    "diagnostics": 314,
+    "migrations": 458,
+    "docs": 127
+  },
+  "documentation": {
+    "python_fences": 348,
+    "json_fences": 15,
+    "cli_forms": 295,
+    "cli_exclusions": 7,
+    "current_markdown_files": 165,
+    "current_fences": 595,
+    "examples": 5,
+    "tutorial_stages": 6,
+    "tutorial_assertions": 86,
+    "rendered_pages": 162,
+    "internal_links_assets": 42339,
+    "external_links": 41
+  },
+  "installed": {
+    "package_checks": 15,
+    "support_desk_checks": 66,
+    "scaffold_templates": 4,
+    "typescript_checks": 3,
+    "typescript_version": "5.9.3",
+    "workflow_import_orders": 4
+  },
+  "migration": {
+    "identifier": "aksara_core_migrations_0003_task_claim_ownership",
+    "clean_install": "pass",
+    "public_v071_upgrade": "pass",
+    "repeat_idempotency": "pass",
+    "queued_task_preserved": true,
+    "application_data_preserved": true,
+    "relations_preserved": true,
+    "durable_operation_preserved": true,
+    "ownership_fields_verified": true,
+    "stale_authoritative_updates": 0
+  },
+  "artifacts": {
+    "wheel": {
+      "filename": "aksara_framework-0.7.2-py3-none-any.whl",
+      "sha256": "9f12a1e7df0a1b5e270beb6e4b49e12a03a3fa1e9a6914746af863428023ff8e"
+    },
+    "sdist": {
+      "filename": "aksara_framework-0.7.2.tar.gz",
+      "sha256": "2c9f7f9a9cdd48652f80af7eef606139063eb413a3507bea1c00f63f62a1135b"
+    },
+    "twine": "pass",
+    "sbom": {
+      "spec": "CycloneDX 1.6",
+      "components": 52,
+      "validated": true
+    }
+  },
+  "no_functional_change": {
+    "runtime_logic_changed": false,
+    "dependencies_changed": false,
+    "schema_migrations_changed": false,
+    "new_fixes_after_merged_implementation": false,
+    "normalized_wheel_equivalent_to_rc1": true
+  },
+  "security": {
+    "bandit_high": 0,
+    "known_dependency_vulnerabilities": 0,
+    "doctor_checks": 12,
+    "gitleaks_findings": 0,
+    "credential_scan_findings": 0
+  },
+  "hosted_ci": {
+    "status": "pending",
+    "pull_request": null,
+    "validated_head_sha": null,
+    "checks": {
+      "total": null,
+      "successful": 0,
+      "failed": 0,
+      "pending": null
+    },
+    "candidate_pr_33_checks": {
+      "total": 21,
+      "successful": 21,
+      "failed": 0,
+      "pending": 0
+    }
+  },
+  "publication": {
+    "schema_version": 1,
+    "checked_at": "2026-09-13",
+    "pypi_current_version": "0.7.1",
+    "pypi_0_7_2_exists": false,
+    "local_v0_7_2_tag_exists": false,
+    "remote_v0_7_2_tag_exists": false,
+    "github_v0_7_2_release_exists": false,
+    "publication_authorized": false
+  },
+  "scope": "Final release identity and evidence for the already merged 22-finding Audit Closure implementation; no v0.8 capability, merge, tag, or publication."
+}

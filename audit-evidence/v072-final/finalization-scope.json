@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "merged_implementation_sha": "e56cd56b7c247f38a10d6eb51ef688f7e79c9cfe",
+  "evaluated_head_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+  "changed_production_package_files": [
+    "aksara/_version.py",
+    "aksara/cli/scaffold.py",
+    "examples/support_desk/main.py",
+    "pyproject.toml"
+  ],
+  "normalized_version_only": {
+    "aksara/_version.py": true,
+    "aksara/cli/scaffold.py": true,
+    "examples/support_desk/main.py": true,
+    "pyproject.toml": true
+  },
+  "runtime_logic_changed": false,
+  "dependencies_changed": false,
+  "schema_migrations_changed": false,
+  "existing_task_migration": "aksara/core/migrations/0003_task_claim_ownership.py"
+}

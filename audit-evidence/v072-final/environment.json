@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+  "merged_implementation_base_sha": "e56cd56b7c247f38a10d6eb51ef688f7e79c9cfe",
+  "package_version": "0.7.2",
+  "database": "aksara_test",
+  "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "credentials_recorded": false,
+  "supported_python": [
+    "3.11",
+    "3.12",
+    "3.13",
+    "3.14"
+  ],
+  "supported_web_minimum": {
+    "fastapi": "0.136.1",
+    "starlette": "1.0.1"
+  },
+  "supported_web_latest": {
+    "fastapi": "0.141.1",
+    "starlette": "1.6.0"
+  }
+}

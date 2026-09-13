@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725",
+  "package_version": "0.7.2",
+  "boundary": "minimum",
+  "python": "3.11.5",
+  "fastapi": "0.136.1",
+  "starlette": "1.0.1",
+  "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "database": "aksara_test",
+  "database_tests_required": true,
+  "passed": 8545,
+  "skipped": 2,
+  "warnings": 29,
+  "seconds": 109.9,
+  "expected_skips": "two provider tests requiring external provider credentials",
+  "log": "audit-evidence/v072-final/matrix-py311-min.log"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "candidate_wheel": "aksara_framework-0.7.2rc1-py3-none-any.whl",
+  "final_wheel": "aksara_framework-0.7.2-py3-none-any.whl",
+  "normalization": [
+    "0.7.2rc1",
+    "0.7.2-rc1",
+    "shields badge 0.7.2--rc1",
+    "0.7.2",
+    "dist-info directory name",
+    "RECORD excluded because it hashes normalized metadata"
+  ],
+  "member_sets_equal": true,
+  "normalized_content_differences": [],
+  "candidate_members": 287,
+  "final_members": 287,
+  "runtime_logic_changed": false,
+  "dependencies_changed": false
+}

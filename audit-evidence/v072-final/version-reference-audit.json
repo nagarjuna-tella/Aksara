@@ -1,0 +1,455 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "searched_patterns": [
+    "0.7.2rc1",
+    "0.7.2-rc1",
+    "v0.7.2-rc1",
+    "relevant rc1 wording"
+  ],
+  "current_release_surfaces_remaining": [],
+  "files": {
+    ".gitleaksignore": {
+      "classification": "historical release-record rationale - preserved",
+      "line_numbers": [
+        53
+      ]
+    },
+    "AKSARA_V071_PUBLIC_TRUTH_AUDIT.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        2716,
+        2741
+      ]
+    },
+    "AKSARA_V072_AUDIT_CLOSURE.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        7
+      ]
+    },
+    "AKSARA_V072_BASELINE.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        15
+      ]
+    },
+    "AKSARA_V072_FINAL_REVIEW.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        5,
+        8
+      ]
+    },
+    "RELEASE_EVIDENCE_v0.7.0-rc1.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1,
+        20
+      ]
+    },
+    "RELEASE_EVIDENCE_v0.7.1-rc1.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1,
+        20,
+        67,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        134,
+        135,
+        137,
+        138
+      ]
+    },
+    "RELEASE_EVIDENCE_v0.7.2-rc1.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1,
+        5,
+        20,
+        168,
+        169,
+        208,
+        210
+      ]
+    },
+    "RELEASE_NOTES_v0.7.2-rc1.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        4
+      ]
+    },
+    "audit-evidence/v070/artifact-manifest.sha256": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1
+      ]
+    },
+    "audit-evidence/v070/environment.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        18
+      ]
+    },
+    "audit-evidence/v070/release-summary.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        18
+      ]
+    },
+    "audit-evidence/v071-final/rc-reference-audit.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        6,
+        7,
+        8,
+        44,
+        45
+      ]
+    },
+    "audit-evidence/v071-rc1/artifact-manifest.sha256": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42
+      ]
+    },
+    "audit-evidence/v071-rc1/environment.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        3
+      ]
+    },
+    "audit-evidence/v071-rc1/matrix-py311-latest.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        23
+      ]
+    },
+    "audit-evidence/v071-rc1/matrix-py311-minimum.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        23
+      ]
+    },
+    "audit-evidence/v071-rc1/matrix-py314-latest.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        23
+      ]
+    },
+    "audit-evidence/v071-rc1/matrix-py314-minimum.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        23
+      ]
+    },
+    "audit-evidence/v071-rc1/release-summary.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        3
+      ]
+    },
+    "audit-evidence/v071/requirement-review.md": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        113,
+        155,
+        618,
+        622
+      ]
+    },
+    "audit-evidence/v072/artifact-hashes.sha256": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        1,
+        2
+      ]
+    },
+    "audit-evidence/v072/artifact-manifest.sha256": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        6,
+        60,
+        61
+      ]
+    },
+    "audit-evidence/v072/cli-docs-syntax.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        2
+      ]
+    },
+    "audit-evidence/v072/environment.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        4
+      ]
+    },
+    "audit-evidence/v072/example-execution.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        26,
+        81,
+        136,
+        191,
+        221
+      ]
+    },
+    "audit-evidence/v072/external-links.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        277,
+        279
+      ]
+    },
+    "audit-evidence/v072/findings-closure.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        3,
+        26,
+        46,
+        65,
+        85,
+        109,
+        129,
+        152,
+        174,
+        195,
+        215,
+        239,
+        260,
+        279,
+        298,
+        319,
+        341,
+        361,
+        384,
+        404,
+        423,
+        445,
+        464
+      ]
+    },
+    "audit-evidence/v072/installed-boundaries.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        5
+      ]
+    },
+    "audit-evidence/v072/installed-doc-imports.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        2
+      ]
+    },
+    "audit-evidence/v072/installed-package-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        3,
+        11,
+        18,
+        27,
+        140,
+        146
+      ]
+    },
+    "audit-evidence/v072/package-build.log": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        16
+      ]
+    },
+    "audit-evidence/v072/performance-sanity.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        9
+      ]
+    },
+    "audit-evidence/v072/pip-audit.log": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        108
+      ]
+    },
+    "audit-evidence/v072/release-summary.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        3,
+        4,
+        71,
+        75
+      ]
+    },
+    "audit-evidence/v072/sbom.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        2337
+      ]
+    },
+    "audit-evidence/v072/scaffold-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        4
+      ]
+    },
+    "audit-evidence/v072/snippet-coverage.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        5
+      ]
+    },
+    "audit-evidence/v072/support-desk-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        7,
+        15
+      ]
+    },
+    "audit-evidence/v072/task-process-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        4
+      ]
+    },
+    "audit-evidence/v072/tutorial-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        17,
+        31,
+        48,
+        61,
+        77,
+        92,
+        96
+      ]
+    },
+    "audit-evidence/v072/twine.log": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        2,
+        3
+      ]
+    },
+    "audit-evidence/v072/typescript-sdk-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        5
+      ]
+    },
+    "audit-evidence/v072/upgrade-gate.json": {
+      "classification": "historical RC evidence or release record - preserved",
+      "line_numbers": [
+        74,
+        88
+      ]
+    },
+    "scripts/build_v072_closure.py": {
+      "classification": "historical RC evidence generator or verifier - preserved",
+      "line_numbers": [
+        71,
+        80,
+        107
+      ]
+    },
+    "scripts/check_scaffold_equivalence.py": {
+      "classification": "current test fixture normalization - RC spellings retained and final spelling added",
+      "line_numbers": [
+        40,
+        41,
+        43,
+        55
+      ]
+    },
+    "scripts/check_startproject_guidance.py": {
+      "classification": "current test fixture normalization - RC spellings retained and final spelling added",
+      "line_numbers": [
+        57,
+        58,
+        60,
+        123
+      ]
+    },
+    "scripts/check_v071_runtime_scope.py": {
+      "classification": "unrelated historical text - preserved",
+      "line_numbers": [
+        25
+      ]
+    },
+    "scripts/check_v072_finalization_scope.py": {
+      "classification": "final release scope guard - candidate spelling required for comparison",
+      "line_numbers": [
+        26
+      ]
+    },
+    "scripts/verify_v072_manifest.py": {
+      "classification": "historical RC evidence generator or verifier - preserved",
+      "line_numbers": [
+        1
+      ]
+    }
+  },
+  "matched_files": 50,
+  "matched_lines": 189,
+  "validated_content_sha": "f36306ee50e177495d806a5e6bc4aed7f5de0725"
+}

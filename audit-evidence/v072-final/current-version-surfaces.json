@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "expected": "0.7.2",
+  "surfaces": {
+    "source": "0.7.2",
+    "project_metadata": "0.7.2",
+    "installed_cli": "0.7.2",
+    "wheel_metadata": "0.7.2",
+    "sdist_metadata": "0.7.2"
+  },
+  "historical_rc_evidence_preserved": true
+}

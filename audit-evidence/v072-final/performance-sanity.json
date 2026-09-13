@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "gate": "v070-durable-performance-pathology",
+  "status": "pass",
+  "purpose": "pathology and contention detection; not a throughput claim",
+  "started_at": "2026-09-13T17:38:21.160017+00:00",
+  "finished_at": "2026-09-13T17:38:22.622970+00:00",
+  "environment": {
+    "aksara": "0.7.2",
+    "python": "3.11.5",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "postgresql": "18.4 (Debian 18.4-1.pgdg13+1)",
+    "database": "aksara_test",
+    "application_role": {
+      "superuser": false,
+      "bypass_rls": false
+    }
+  },
+  "workload": {
+    "operations": 256,
+    "concurrent_workers": 8,
+    "terminal_noise_rows": 3000,
+    "task_linked_operations": 8,
+    "pruned_operations": 32
+  },
+  "metrics": {
+    "admission": {
+      "samples": 256,
+      "min_ms": 128.694,
+      "median_ms": 195.027,
+      "p95_ms": 246.937,
+      "max_ms": 252.338
+    },
+    "claim": {
+      "samples": 256,
+      "min_ms": 3.563,
+      "median_ms": 4.934,
+      "p95_ms": 8.062,
+      "max_ms": 13.797
+    },
+    "heartbeat": {
+      "samples": 256,
+      "min_ms": 1.567,
+      "median_ms": 2.338,
+      "p95_ms": 3.883,
+      "max_ms": 5.625
+    },
+    "atomic_completion": {
+      "samples": 256,
+      "min_ms": 3.504,
+      "median_ms": 6.736,
+      "p95_ms": 10.546,
+      "max_ms": 12.062
+    },
+    "status_read": {
+      "samples": 64,
+      "min_ms": 0.637,
+      "median_ms": 0.853,
+      "p95_ms": 0.886,
+      "max_ms": 0.904
+    },
+    "cancellation": {
+      "samples": 16,
+      "min_ms": 6.115,
+      "median_ms": 7.038,
+      "p95_ms": 9.879,
+      "max_ms": 9.879
+    },
+    "reclaim": {
+      "samples": 8,
+      "min_ms": 6.577,
+      "median_ms": 6.95,
+      "p95_ms": 7.152,
+      "max_ms": 7.152
+    }
+  },
+  "aggregate": {
+    "admission_total_ms": 271.402,
+    "admission_per_second": 943.25,
+    "execution_total_ms": 490.801,
+    "execution_per_second": 521.6,
+    "concurrent_same_key_total_ms": 8.502,
+    "task_linked_total_ms": 72.562,
+    "prune_total_ms": 68.287
+  },
+  "invariants": {
+    "one_operation_for_concurrent_same_key": true,
+    "all_claimed_operations_completed": true,
+    "reclaim_advanced_every_fence": true,
+    "claim_plan_uses_partial_index": true,
+    "mutations_match_successful_operations": true,
+    "pruning_is_bounded_and_complete": true,
+    "pool_fully_idle": true
+  },
+  "query_plan": [
+    {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 8.31,
+        "Total Cost": 8.33,
+        "Plan Rows": 1,
+        "Plan Width": 4633,
+        "Disabled": false,
+        "Plans": [
+          {
+            "Node Type": "LockRows",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 8.31,
+            "Total Cost": 8.33,
+            "Plan Rows": 1,
+            "Plan Width": 4633,
+            "Disabled": false,
+            "Plans": [
+              {
+                "Node Type": "Sort",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 8.31,
+                "Total Cost": 8.32,
+                "Plan Rows": 1,
+                "Plan Width": 4633,
+                "Disabled": false,
+                "Sort Key": [
+                  "available_at",
+                  "created_at"
+                ],
+                "Plans": [
+                  {
+                    "Node Type": "Result",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 0.27,
+                    "Total Cost": 8.3,
+                    "Plan Rows": 1,
+                    "Plan Width": 4633,
+                    "Disabled": false,
+                    "One-Time Filter": "(current_setting('aksara.current_tenant_id'::text, true) = '4c1a621f-f341-41e7-877c-9f23dc7469b7'::text)",
+                    "Plans": [
+                      {
+                        "Node Type": "Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Scan Direction": "Forward",
+                        "Index Name": "idx_aksara_operations_claim",
+                        "Relation Name": "aksara_operations",
+                        "Alias": "aksara_operations",
+                        "Startup Cost": 0.27,
+                        "Total Cost": 8.3,
+                        "Plan Rows": 1,
+                        "Plan Width": 4633,
+                        "Disabled": false,
+                        "Index Cond": "(((application_namespace)::text = 'v070-performance-cfc381170d'::text) AND (tenant_scope = '4c1a621f-f341-41e7-877c-9f23dc7469b7'::text))",
+                        "Filter": "((((state)::text = 'ready'::text) AND (available_at <= clock_timestamp())) OR (((state)::text = 'running'::text) AND (lease_expires_at <= clock_timestamp())))"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "row_counts": {
+    "aksara_operations": 3288,
+    "aksara_operation_attempts": 280,
+    "aksara_operation_transitions": 856,
+    "aksara_operation_outbox": 856
+  },
+  "relation_sizes_bytes": {
+    "aksara_operations": 2842624,
+    "aksara_operation_attempts": 253952,
+    "aksara_operation_transitions": 409600,
+    "aksara_operation_outbox": 614400
+  },
+  "prune_result": {
+    "outbox": 0,
+    "transitions": 0,
+    "results": 0,
+    "errors": 0,
+    "operations": 32,
+    "idempotency": 32
+  },
+  "limitations": [
+    "Local single-host PostgreSQL sanity run; hosted PostgreSQL 16 is validated by CI.",
+    "Numbers detect obvious regressions and do not define a capacity or latency SLO."
+  ]
+}

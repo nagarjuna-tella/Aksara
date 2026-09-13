@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "pass": true,
+  "public_v071": {
+    "ids": {
+      "agent": "fd347ed8-6362-4cea-830a-b0e8f8503e35",
+      "operation": "2e3ca64c-47a9-4333-a028-40319c47e65d",
+      "organization": "c5364027-ac1c-433d-a6ee-d8296dda0801",
+      "task": "7483ce62-743c-4d40-8a82-97f391a1da7d",
+      "ticket": "04f1dff0-4ff2-4397-a052-bafdc0caaee0"
+    },
+    "migrations": [
+      "aksara_contrib_auth_migrations_0001_initial",
+      "aksara_core_migrations_0001_runtime_tables",
+      "aksara_core_migrations_0002_durable_operations",
+      "support_desk_0001_initial",
+      "support_desk_0002_ticket_priority"
+    ],
+    "origin": "/private/tmp/aksara-v072-public-071/lib/python3.11/site-packages/aksara/__init__.py",
+    "task_columns_before": [
+      "attempts",
+      "available_at",
+      "completed_at",
+      "created_at",
+      "id",
+      "last_error",
+      "locked_at",
+      "max_attempts",
+      "operation_application_namespace",
+      "operation_id",
+      "payload",
+      "queue",
+      "result",
+      "status",
+      "task_name",
+      "tenant_id",
+      "updated_at"
+    ],
+    "version": "0.7.1"
+  },
+  "candidate": {
+    "data_preserved": true,
+    "durable_operation_preserved": true,
+    "migrations_applied": [
+      "aksara_core_migrations_0003_task_claim_ownership"
+    ],
+    "migrations_idempotent": true,
+    "origin": "/private/tmp/aksara-v072-final-venv/lib/python3.11/site-packages/aksara/__init__.py",
+    "queued_task_upgraded": true,
+    "relation_preserved": true,
+    "task_claimed_with_owner_token": true,
+    "task_columns_after": [
+      "attempts",
+      "available_at",
+      "claim_token",
+      "completed_at",
+      "created_at",
+      "id",
+      "last_error",
+      "lock_expires_at",
+      "locked_at",
+      "locked_by",
+      "max_attempts",
+      "operation_application_namespace",
+      "operation_id",
+      "payload",
+      "queue",
+      "result",
+      "status",
+      "task_name",
+      "tenant_id",
+      "updated_at"
+    ],
+    "version": "0.7.2"
+  },
+  "application_surfaces": {
+    "admin_status": 200,
+    "anonymous_status": 403,
+    "authorized_status": 200,
+    "mcp_catalog_status": 200,
+    "mcp_ticket_tool": true,
+    "preserved_ticket_visible": true
+  },
+  "doctor": "covered by the candidate packaged Support Desk gate on the same wheel",
+  "durable_runtime": "preserved row here; execution/revocation/retry covered by the candidate packaged Support Desk gate",
+  "database": "aksara_test",
+  "runner_sha256": "de2b51596f5d44304e5081f3963fc815b6e5f93736a6d1f72a10c46ffe6758a5",
+  "scope": "Public PyPI v0.7.1 installed package creates and seeds a Support Desk schema; the installed final v0.7.2 wheel upgrades it and verifies persisted data, relations, queued-task ownership migration, Durable Operation state, REST authorization, Admin, and MCP discovery."
+}
